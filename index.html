@@ -58,11 +58,17 @@
 <body>
     <div class="container">
         <h1>正在建造中，預定 2025 年上線</h1>
-        <div class="animation"></div>
+        <div class="animation" role="img" aria-label="Loading"></div>
         <p>恭喜你發現這裡，hydai 正在努力寫網站中！晚點再來看看吧！</p>
         <footer>
-            &copy; 2024-2025 ff14.tw | All Rights Reserved
+            &copy; <span id="year-range">2024-2025</span> ff14.tw | All Rights Reserved
         </footer>
+        <script>
+            const startYear = 2024;
+            const currentYear = new Date().getFullYear();
+            const yearRange = startYear === currentYear ? `${startYear}` : `${startYear}-${currentYear}`;
+            document.getElementById('year-range').textContent = yearRange;
+        </script>
     </div>
 </body>
 </html>
