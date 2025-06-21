@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>副本資料庫 - FF14.tw</title>
+    <meta name="description" content="FF14副本完整資料庫，包含所有副本資訊、獎勵和攻略指南。">
+    <link rel="stylesheet" href="../../assets/css/common.css">
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <a href="/" class="logo">FF14.tw</a>
+            <nav class="nav">
+                <a href="/">首頁</a>
+                <a href="/#tools">工具</a>
+                <a href="https://github.com/hydai/ff14.tw" target="_blank">GitHub</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container">
+            <section class="hero">
+                <h1>副本資料庫</h1>
+                <p>完整的FF14副本資訊查詢，包含獎勵、機制說明和攻略指南</p>
+            </section>
+
+            <div class="tool-container">
+                <!-- 搜尋和過濾器 -->
+                <div class="filter-section">
+                    <div class="search-box">
+                        <input type="text" id="searchInput" placeholder="搜尋副本名稱...">
+                    </div>
+                    
+                    <div class="filter-controls">
+                        <div class="filter-group">
+                            <label for="typeFilter">類型過濾：</label>
+                            <select id="typeFilter">
+                                <option value="">所有類型</option>
+                                <option value="四人迷宮">四人迷宮</option>
+                                <option value="公會令">公會令</option>
+                                <option value="8人討伐殲滅戰">8人討伐殲滅戰</option>
+                                <option value="24人大型任務">24人大型任務</option>
+                                <option value="絕境戰">絕境戰</option>
+                                <option value="誅滅戰">誅滅戰</option>
+                            </select>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label for="expansionFilter">版本過濾：</label>
+                            <select id="expansionFilter">
+                                <option value="">所有版本</option>
+                                <option value="2.x">2.x (重生之境)</option>
+                                <option value="3.x">3.x (蒼穹之禁城)</option>
+                                <option value="4.x">4.x (紅蓮之狂潮)</option>
+                                <option value="5.x">5.x (曉月之終途)</option>
+                                <option value="6.x">6.x (曉月之終途)</option>
+                                <option value="7.x">7.x (黃金之遺產)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label for="levelFilter">等級過濾：</label>
+                            <select id="levelFilter">
+                                <option value="">所有等級</option>
+                                <option value="1-50">1-50</option>
+                                <option value="51-60">51-60</option>
+                                <option value="61-70">61-70</option>
+                                <option value="71-80">71-80</option>
+                                <option value="81-90">81-90</option>
+                                <option value="91-100">91-100</option>
+                            </select>
+                        </div>
+                        
+                        <button id="resetFilters" class="btn btn-secondary">重置過濾</button>
+                    </div>
+                </div>
+
+                <!-- 副本列表 -->
+                <div class="dungeon-list" id="dungeonList">
+                    <!-- 副本卡片將由 JavaScript 動態生成 -->
+                </div>
+                
+                <!-- 載入中提示 -->
+                <div class="loading" id="loading" style="display: none;">
+                    <p>載入中...</p>
+                </div>
+                
+                <!-- 無結果提示 -->
+                <div class="no-results" id="noResults" style="display: none;">
+                    <p>找不到符合條件的副本</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024-2025 FF14.tw | 本站非官方網站，與 Square Enix 無關 | Made with ❤️ by hydai</p>
+        </div>
+    </footer>
+
+    <script src="../../assets/js/common.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,124 @@
+{
+  "dungeons": [
+    {
+      "id": 1,
+      "name": "薩斯塔沙溶洞",
+      "level": 15,
+      "type": "四人迷宮",
+      "expansion": "2.x",
+      "image": null,
+      "tombstoneReward": "詩學古典神典石: 100",
+      "specialDrops": ["薩斯塔沙之臂", "船長帽"],
+      "mechanics": "注意BOSS的範圍攻擊，小怪會召喚援軍。",
+      "description": "位於拉諾西亞的海盜洞窟，充滿了寶藏和危險。"
+    },
+    {
+      "id": 2,
+      "name": "塔姆·塔拉墓園",
+      "level": 16,
+      "type": "四人迷宮",
+      "expansion": "2.x",
+      "image": null,
+      "tombstoneReward": "詩學古典神典石: 120",
+      "specialDrops": ["亡靈法杖", "墓園護腕"],
+      "mechanics": "避開陷阱機關，注意亡靈怪物的詛咒效果。",
+      "description": "古老的墓園迷宮，充滿了不死生物和黑暗魔法。"
+    },
+    {
+      "id": 3,
+      "name": "銅鈴銅山",
+      "level": 17,
+      "type": "四人迷宮",
+      "expansion": "2.x",
+      "image": null,
+      "tombstoneReward": "詩學古典神典石: 110",
+      "specialDrops": ["銅製護盾", "礦工頭盔"],
+      "mechanics": "利用炸彈清除路障，小心礦車軌道。",
+      "description": "廢棄的銅礦場，隱藏著豐富的礦物和危險的陷阱。"
+    },
+    {
+      "id": 4,
+      "name": "魔科學研究所",
+      "level": 60,
+      "type": "四人迷宮",
+      "expansion": "3.x",
+      "image": null,
+      "tombstoneReward": "詩學古典神典石: 150",
+      "specialDrops": ["魔科學武器", "研究員護目鏡"],
+      "mechanics": "躲避激光陷阱，注意機械怪物的自爆攻擊。",
+      "description": "伊修加德的秘密研究設施，充滿了先進的魔科學技術。"
+    },
+    {
+      "id": 5,
+      "name": "紅玉海底宮殿",
+      "level": 70,
+      "type": "四人迷宮",
+      "expansion": "4.x",
+      "image": null,
+      "tombstoneReward": "詩學古典神典石: 200",
+      "specialDrops": ["海底寶珠", "龍宮衣裳"],
+      "mechanics": "水下戰鬥機制，注意氧氣條和水流方向。",
+      "description": "沉沒在紅玉海底的古代宮殿，蘊含著東方的神秘力量。"
+    },
+    {
+      "id": 6,
+      "name": "伊芙利特討伐戰",
+      "level": 20,
+      "type": "8人討伐殲滅戰",
+      "expansion": "2.x",
+      "image": null,
+      "tombstoneReward": "詩學古典神典石: 80",
+      "specialDrops": ["伊芙利特之角", "火神武器"],
+      "mechanics": "躲避地面火焰，注意地獄烈焰的詠唱。",
+      "description": "挑戰火焰蠻神伊芙利特，體驗烈火的洗禮。"
+    },
+    {
+      "id": 7,
+      "name": "加魯達討伐戰",
+      "level": 28,
+      "type": "8人討伐殲滅戰",
+      "expansion": "2.x",
+      "image": null,
+      "tombstoneReward": "詩學古典神典石: 100",
+      "specialDrops": ["加魯達之羽", "風神武器"],
+      "mechanics": "利用風柱躲避攻擊，注意龍捲風的位置。",
+      "description": "面對風暴蠻神加魯達，在狂風中尋找勝機。"
+    },
+    {
+      "id": 8,
+      "name": "古代人迷宮",
+      "level": 50,
+      "type": "24人大型任務",
+      "expansion": "2.x",
+      "image": null,
+      "tombstoneReward": "詩學古典神典石: 150",
+      "specialDrops": ["古代人裝備", "阿拉格合金"],
+      "mechanics": "三個聯盟協調作戰，注意分配攻擊目標。",
+      "description": "古代阿拉格帝國的遺跡，需要24名冒險者合作探索。"
+    },
+    {
+      "id": 9,
+      "name": "絕巴哈姆特討伐戰",
+      "level": 80,
+      "type": "絕境戰",
+      "expansion": "4.x",
+      "image": null,
+      "tombstoneReward": "無",
+      "specialDrops": ["絕巴哈姆特之劍", "究極幻想武器"],
+      "mechanics": "極高難度挑戰，需要完美的團隊配合和走位。",
+      "description": "最終極的挑戰，只有最強的冒險者才能征服。"
+    },
+    {
+      "id": 10,
+      "name": "極伊芙利特討伐戰",
+      "level": 50,
+      "type": "誅滅戰",
+      "expansion": "2.x",
+      "image": null,
+      "tombstoneReward": "詩學古典神典石: 120",
+      "specialDrops": ["極火神武器", "伊芙利特坐騎"],
+      "mechanics": "極難版本，攻擊力大幅提升，機制更加複雜。",
+      "description": "伊芙利特的極難挑戰，獲得專屬坐騎的機會。"
+    }
+  ]
+}
