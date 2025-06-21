@@ -1,17 +1,53 @@
 /* 副本資料庫樣式 */
 
+/* 擴展 CSS 變數 */
+:root {
+    --text-muted: #666;
+    --text-light: #999;
+    --white: #ffffff;
+    --gray-50: #f9fafb;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-300: #d1d5db;
+    --gray-400: #9ca3af;
+    --gray-500: #6b7280;
+    --gray-600: #4b5563;
+    --gray-700: #374151;
+    --gray-800: #1f2937;
+    --success-color: #10b981;
+    --warning-color: #f59e0b;
+    --error-color: #ef4444;
+    --highlight-bg: #fef3c7;
+    --highlight-text: #92400e;
+    --focus-ring: rgba(74, 144, 226, 0.3);
+    --card-hover-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    --transition-fast: 0.15s ease;
+    --transition-normal: 0.3s ease;
+    --transition-slow: 0.5s ease;
+    --border-radius-sm: 6px;
+    --border-radius-md: 8px;
+    --border-radius-lg: 12px;
+    --border-radius-xl: 16px;
+    --spacing-xs: 0.25rem;
+    --spacing-sm: 0.5rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 1.5rem;
+    --spacing-xl: 2rem;
+    --spacing-2xl: 3rem;
+}
+
 .hero {
     text-align: center;
-    margin-bottom: 2rem;
+    margin-bottom: var(--spacing-xl);
 }
 
 .hero h1 {
     color: var(--primary-color);
-    margin-bottom: 0.5rem;
+    margin-bottom: var(--spacing-sm);
 }
 
 .hero p {
-    color: #666;
+    color: var(--text-muted);
     font-size: 1.1rem;
 }
 
@@ -22,101 +58,107 @@
 
 /* 過濾器區域 */
 .filter-section {
-    background: white;
-    padding: 2rem;
-    border-radius: 12px;
+    background: var(--white);
+    padding: var(--spacing-xl);
+    border-radius: var(--border-radius-lg);
     box-shadow: var(--shadow);
-    margin-bottom: 2rem;
+    margin-bottom: var(--spacing-xl);
 }
 
 .search-box {
-    margin-bottom: 1.5rem;
+    margin-bottom: var(--spacing-lg);
 }
 
 .search-box input {
     width: 100%;
-    padding: 1rem;
+    padding: var(--spacing-md);
     border: 2px solid var(--border-color);
-    border-radius: 8px;
+    border-radius: var(--border-radius-md);
     font-size: 1.1rem;
-    transition: border-color 0.3s;
+    transition: border-color var(--transition-normal), box-shadow var(--transition-normal);
 }
 
 .search-box input:focus {
     outline: none;
     border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px var(--focus-ring);
 }
 
 .filter-controls {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1rem;
+    gap: var(--spacing-md);
     align-items: end;
 }
 
 .filter-group {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: var(--spacing-sm);
 }
 
 .filter-group label {
     font-weight: 500;
     color: var(--dark-color);
+    font-size: 0.9rem;
 }
 
 .filter-group select {
-    padding: 0.75rem;
+    padding: var(--spacing-sm) var(--spacing-md);
     border: 2px solid var(--border-color);
-    border-radius: 6px;
+    border-radius: var(--border-radius-sm);
     font-size: 1rem;
-    transition: border-color 0.3s;
+    transition: border-color var(--transition-normal), box-shadow var(--transition-normal);
+    background-color: var(--white);
 }
 
 .filter-group select:focus {
     outline: none;
     border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px var(--focus-ring);
 }
 
 .btn {
-    padding: 0.75rem 1.5rem;
+    padding: var(--spacing-sm) var(--spacing-lg);
     border: none;
-    border-radius: 6px;
+    border-radius: var(--border-radius-sm);
     font-size: 1rem;
     cursor: pointer;
-    transition: all 0.3s;
+    transition: all var(--transition-normal);
     font-weight: 500;
 }
 
 .btn-secondary {
-    background-color: #6c757d;
-    color: white;
+    background-color: var(--gray-600);
+    color: var(--white);
 }
 
 .btn-secondary:hover {
-    background-color: #5a6268;
+    background-color: var(--gray-700);
     transform: translateY(-2px);
+    box-shadow: var(--card-hover-shadow);
 }
 
 /* 副本列表 */
 .dungeon-list {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-    gap: 1.5rem;
+    gap: var(--spacing-lg);
 }
 
 .dungeon-card {
-    background: white;
-    border-radius: 12px;
+    background: var(--white);
+    border-radius: var(--border-radius-lg);
     box-shadow: var(--shadow);
     overflow: hidden;
-    transition: transform 0.3s, box-shadow 0.3s;
+    transition: transform var(--transition-normal), box-shadow var(--transition-normal);
     cursor: pointer;
+    border: 1px solid var(--gray-200);
 }
 
 .dungeon-card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    box-shadow: var(--card-hover-shadow);
 }
 
 .dungeon-image {
@@ -132,14 +174,14 @@
 }
 
 .dungeon-content {
-    padding: 1.5rem;
+    padding: var(--spacing-lg);
 }
 
 .dungeon-header {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 1rem;
+    margin-bottom: var(--spacing-md);
 }
 
 .dungeon-title {
@@ -147,58 +189,61 @@
     font-weight: 600;
     color: var(--dark-color);
     margin: 0;
+    line-height: 1.3;
 }
 
 .dungeon-level {
     background: var(--primary-color);
-    color: white;
-    padding: 0.25rem 0.75rem;
-    border-radius: 20px;
+    color: var(--white);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--border-radius-xl);
     font-size: 0.9rem;
     font-weight: 500;
+    white-space: nowrap;
 }
 
 .dungeon-meta {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-bottom: 1rem;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
 }
 
 .dungeon-type {
     background: var(--secondary-color);
-    color: white;
-    padding: 0.25rem 0.75rem;
-    border-radius: 15px;
+    color: var(--white);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--border-radius-lg);
     font-size: 0.8rem;
     font-weight: 500;
 }
 
 .dungeon-expansion {
-    background: #6c757d;
-    color: white;
-    padding: 0.25rem 0.75rem;
-    border-radius: 15px;
+    background: var(--gray-600);
+    color: var(--white);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--border-radius-lg);
     font-size: 0.8rem;
     font-weight: 500;
 }
 
 .dungeon-rewards {
-    margin-bottom: 1rem;
+    margin-bottom: var(--spacing-md);
 }
 
 .dungeon-rewards h4 {
     font-size: 1rem;
     color: var(--primary-color);
-    margin-bottom: 0.5rem;
+    margin-bottom: var(--spacing-sm);
+    font-weight: 600;
 }
 
 .reward-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0.5rem 0;
-    border-bottom: 1px solid #f0f0f0;
+    padding: var(--spacing-sm) 0;
+    border-bottom: 1px solid var(--gray-200);
 }
 
 .reward-item:last-child {
@@ -216,66 +261,167 @@
 }
 
 .dungeon-description {
-    color: #666;
+    color: var(--text-muted);
     font-size: 0.95rem;
     line-height: 1.5;
-    margin-top: 1rem;
+    margin-top: var(--spacing-md);
 }
 
 /* 特殊掉落物標籤 */
 .special-drops {
-    margin-top: 1rem;
+    margin-top: var(--spacing-md);
 }
 
 .special-drops h4 {
     font-size: 0.9rem;
     color: var(--accent-color);
-    margin-bottom: 0.5rem;
+    margin-bottom: var(--spacing-sm);
+    font-weight: 600;
 }
 
 .drops-list {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem;
+    gap: var(--spacing-sm);
 }
 
 .drop-item {
-    background: #ffe6e6;
+    background: var(--gray-100);
     color: var(--accent-color);
-    padding: 0.25rem 0.5rem;
-    border-radius: 12px;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--border-radius-lg);
     font-size: 0.8rem;
     font-weight: 500;
+    border: 1px solid var(--gray-300);
 }
 
 /* 載入和無結果狀態 */
 .loading, .no-results {
     text-align: center;
-    padding: 3rem;
-    color: #666;
+    padding: var(--spacing-2xl);
+    color: var(--text-muted);
 }
 
 .loading p, .no-results p {
     font-size: 1.2rem;
 }
 
+/* 載入動畫 */
+.loading::before {
+    content: '';
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid var(--primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 1rem;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* 搜尋高亮 */
+.search-highlight {
+    background-color: var(--highlight-bg);
+    color: var(--highlight-text);
+    padding: var(--spacing-xs);
+    border-radius: var(--border-radius-sm);
+    font-weight: 500;
+}
+
+/* 卡片焦點狀態 */
+.dungeon-card.card-focused {
+    transform: translateY(-8px) !important;
+    box-shadow: 0 12px 35px var(--focus-ring) !important;
+    border: 2px solid var(--primary-color) !important;
+}
+
 /* 響應式設計 */
+@media (max-width: 1024px) {
+    .filter-controls {
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: var(--spacing-sm);
+    }
+    
+    .dungeon-list {
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: var(--spacing-md);
+    }
+}
+
 @media (max-width: 768px) {
     .filter-controls {
         grid-template-columns: 1fr;
+        gap: var(--spacing-sm);
     }
     
     .dungeon-list {
         grid-template-columns: 1fr;
+        gap: var(--spacing-md);
     }
     
     .dungeon-header {
         flex-direction: column;
-        gap: 0.5rem;
+        gap: var(--spacing-sm);
         align-items: flex-start;
     }
     
     .filter-section {
-        padding: 1rem;
+        padding: var(--spacing-md);
+        margin-bottom: var(--spacing-md);
+    }
+    
+    .hero {
+        margin-bottom: var(--spacing-md);
+    }
+    
+    .hero h1 {
+        font-size: 2rem;
+    }
+    
+    .search-box input {
+        font-size: 1rem;
+        padding: var(--spacing-sm);
+    }
+}
+
+@media (max-width: 480px) {
+    .dungeon-list {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-sm);
+    }
+    
+    .dungeon-card {
+        border-radius: var(--border-radius-md);
+    }
+    
+    .dungeon-content {
+        padding: var(--spacing-md);
+    }
+    
+    .filter-section {
+        padding: var(--spacing-sm);
+        border-radius: var(--border-radius-md);
+    }
+    
+    .hero h1 {
+        font-size: 1.5rem;
+    }
+    
+    .hero p {
+        font-size: 1rem;
+    }
+    
+    .search-box input {
+        font-size: 0.9rem;
+    }
+    
+    .btn {
+        padding: var(--spacing-xs) var(--spacing-md);
+        font-size: 0.9rem;
     }
 }
