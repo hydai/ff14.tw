@@ -32,11 +32,17 @@ class MiniCactpotCalculator {
     }
 
     initializeGrid() {
-        this.elements.grid.addEventListener('click', (e) => {
+        // 移除可能存在的舊事件監聽器
+        this.elements.grid.removeEventListener('click', this.handleGridClick);
+        
+        // 綁定新的事件監聽器
+        this.handleGridClick = (e) => {
             if (e.target.classList.contains('grid-cell')) {
                 this.handleCellClick(parseInt(e.target.dataset.position));
             }
-        });
+        };
+        
+        this.elements.grid.addEventListener('click', this.handleGridClick);
     }
 
     handleCellClick(position) {
@@ -266,6 +272,33 @@ class MiniCactpotCalculator {
 
 // 全域函數
 function resetGrid() {
+    // 移除舊的事件監聽器
+    if (calculator && calculator.handleGridClick) {
+        calculator.elements.grid.removeEventListener('click', calculator.handleGridClick);
+    }
+    
+    // 清除所有格子的狀態
+    document.querySelectorAll('.grid-cell').forEach(cell => {
+        cell.classList.remove('selected', 'revealed');
+        cell.innerHTML = '';
+    });
+    
+    // 清除期望值顯示
+    document.querySelectorAll('.expectation-cell').forEach(cell => {
+        cell.classList.remove('active', 'best');
+        const valueElement = cell.querySelector('.expectation-value');
+        if (valueElement) {
+            valueElement.remove();
+        }
+    });
+    
+    // 隱藏最佳選擇資訊
+    document.getElementById('best-choice-info').style.display = 'none';
+    
+    // 重置選擇計數顯示
+    document.getElementById('selected-count').textContent = '0';
+    
+    // 重置計算器實例
     calculator = new MiniCactpotCalculator();
     FF14Utils.showToast('已重置九宮格', 'success');
 }
