@@ -1,0 +1,242 @@
+/* Wondrous Tails Calculator Styles */
+
+.grid-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.wondrous-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    background: var(--gradient-primary);
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: var(--shadow-lg);
+    max-width: 400px;
+    width: 100%;
+}
+
+.grid-cell {
+    width: 80px;
+    height: 80px;
+    background: rgba(255, 255, 255, 0.9);
+    border: 2px solid var(--color-border);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.grid-cell:hover {
+    background: rgba(255, 255, 255, 1);
+    border-color: var(--color-primary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.grid-cell.placed {
+    background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+    color: white;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 15px rgba(52, 152, 219, 0.5);
+}
+
+.grid-cell.placed::before {
+    content: '⭐';
+    font-size: 2rem;
+    animation: glow 2s ease-in-out infinite alternate;
+}
+
+@keyframes glow {
+    from {
+        text-shadow: 0 0 5px rgba(255, 255, 255, 0.8);
+    }
+    to {
+        text-shadow: 0 0 20px rgba(255, 255, 255, 1), 0 0 30px rgba(52, 152, 219, 0.8);
+    }
+}
+
+.grid-info {
+    text-align: center;
+    font-size: 1.1rem;
+    color: var(--color-text-secondary);
+    font-weight: 500;
+}
+
+.grid-info span {
+    color: var(--color-primary);
+    font-weight: bold;
+}
+
+.controls {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+}
+
+.results-panel {
+    background: var(--color-background-secondary);
+    border-radius: 12px;
+    padding: 2rem;
+    border: 1px solid var(--color-border);
+    max-width: 600px;
+    margin: 0 auto;
+    animation: slideIn 0.5s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.results-panel h3 {
+    text-align: center;
+    margin-bottom: 1.5rem;
+    color: var(--color-primary);
+    font-size: 1.5rem;
+}
+
+.probability-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.prob-item {
+    text-align: center;
+    padding: 1rem;
+    background: white;
+    border-radius: 8px;
+    border: 1px solid var(--color-border);
+    transition: transform 0.3s ease;
+}
+
+.prob-item:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.prob-label {
+    font-size: 0.9rem;
+    color: var(--color-text-secondary);
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+.prob-value {
+    font-size: 2rem;
+    font-weight: bold;
+    color: var(--color-primary);
+}
+
+.prob-value.high {
+    color: var(--color-success);
+    animation: pulse 2s ease-in-out infinite;
+}
+
+.prob-value.medium {
+    color: var(--color-warning);
+}
+
+.prob-value.low {
+    color: var(--color-text-secondary);
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+}
+
+.recommendation {
+    background: rgba(52, 152, 219, 0.1);
+    border: 1px solid var(--color-primary);
+    border-radius: 8px;
+    padding: 1.5rem;
+    text-align: center;
+}
+
+.recommendation h4 {
+    margin-bottom: 0.5rem;
+    color: var(--color-primary);
+}
+
+.recommendation p {
+    margin: 0;
+    color: var(--color-text);
+    line-height: 1.5;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .grid-cell {
+        width: 60px;
+        height: 60px;
+        font-size: 1.2rem;
+    }
+    
+    .grid-cell.placed::before {
+        font-size: 1.5rem;
+    }
+    
+    .wondrous-grid {
+        padding: 15px;
+        max-width: 300px;
+    }
+    
+    .probability-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .controls {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .results-panel {
+        padding: 1.5rem;
+        margin: 0 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .grid-cell {
+        width: 50px;
+        height: 50px;
+        font-size: 1rem;
+    }
+    
+    .grid-cell.placed::before {
+        font-size: 1.2rem;
+    }
+    
+    .wondrous-grid {
+        padding: 10px;
+        max-width: 250px;
+    }
+    
+    .prob-value {
+        font-size: 1.5rem;
+    }
+}
