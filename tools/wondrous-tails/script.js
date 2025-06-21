@@ -9,7 +9,6 @@ class WondrousTailsCalculator {
             grid: document.getElementById('wondrous-grid'),
             placedCount: document.getElementById('placed-count'),
             resetBtn: document.getElementById('reset-btn'),
-            calculateBtn: document.getElementById('calculate-btn'),
             resultsPanel: document.getElementById('results-panel'),
             prob1Line: document.getElementById('prob-1-line'),
             prob2Lines: document.getElementById('prob-2-lines'),
@@ -43,13 +42,8 @@ class WondrousTailsCalculator {
             this.resetGrid();
         };
         
-        this.handleCalculate = () => {
-            this.calculateProbabilities();
-        };
-        
         this.elements.grid.addEventListener('click', this.handleCellClick);
         this.elements.resetBtn.addEventListener('click', this.handleReset);
-        this.elements.calculateBtn.addEventListener('click', this.handleCalculate);
     }
     
     toggleCell(position) {
@@ -81,8 +75,13 @@ class WondrousTailsCalculator {
         // Update counter
         this.elements.placedCount.textContent = this.placedCount;
         
-        // Hide results when grid changes
-        this.elements.resultsPanel.style.display = 'none';
+        // Auto-calculate probabilities if there are placed objects
+        if (this.placedCount > 0) {
+            this.calculateProbabilities();
+        } else {
+            // Hide results when no objects are placed
+            this.elements.resultsPanel.style.display = 'none';
+        }
     }
     
     resetGrid() {
@@ -187,14 +186,12 @@ class WondrousTailsCalculator {
     
     calculateProbabilities() {
         if (this.placedCount === 0) {
-            FF14Utils.showToast('請先放置一些物件', 'error');
             return;
         }
         
         const possibleStates = this.generatePossibleStates();
         
         if (possibleStates.length === 0) {
-            FF14Utils.showToast('無法計算：物件數量超出限制', 'error');
             return;
         }
         
@@ -253,9 +250,6 @@ class WondrousTailsCalculator {
         
         // Show results panel
         this.elements.resultsPanel.style.display = 'block';
-        this.elements.resultsPanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        
-        FF14Utils.showToast('機率計算完成');
     }
     
     updateProbabilityColors(element, probability) {
