@@ -65,8 +65,9 @@ Each tool typically uses a class-based architecture:
 - **Event Handler Management**: Use named methods for event handlers to enable proper cleanup
 - **State Management**: Maintain tool state in class properties
 - **Reset Functionality**: Implement complete state and DOM cleanup for reset buttons
+- **Real-time Updates**: Prefer automatic calculation over manual trigger buttons for better UX
 
-Example pattern from Mini Cactpot:
+Example pattern from current tools:
 ```javascript
 class ToolCalculator {
     constructor() {
@@ -83,6 +84,14 @@ class ToolCalculator {
         // Use named methods for removable event handlers
         this.handleClick = (e) => { /* handler logic */ };
         this.elements.grid.addEventListener('click', this.handleClick);
+    }
+    
+    updateDisplay() {
+        // Update UI elements
+        // Trigger automatic calculations when state changes
+        if (this.hasValidState()) {
+            this.calculateResults();
+        }
     }
 }
 
@@ -163,6 +172,20 @@ function resetTool() {
 - Implement pulsing/glowing effects for highlighted items
 - Add slide-in animations for result panels
 - Ensure sufficient color contrast with `!important` when necessary
+
+## User Experience Patterns
+
+### Real-time Calculation Preference
+- Prefer automatic calculation over manual trigger buttons
+- Update results immediately when user interacts with tool inputs
+- Avoid unnecessary toast notifications for routine operations
+- Only show toast messages for important feedback (errors, copy operations)
+
+### Probability and Gaming Tools
+- Use percentage displays with color coding (high/medium/low probability)
+- Provide actionable recommendations based on calculated results
+- Implement combination algorithms for complex probability calculations
+- Support grid-based interactions for game mechanics (4x4, 3x3 layouts)
 
 ## AI Command Memories
 
