@@ -58,12 +58,49 @@ All pages include:
 - `FF14_JOBS` constant with job categories
 - Common DOM patterns: back-to-top button, tool card interactions
 
+### Tool JavaScript Architecture
+Each tool typically uses a class-based architecture:
+- **Main Calculator Class**: Encapsulates all tool logic and state
+- **DOM Element Caching**: Store frequently accessed elements in `this.elements`
+- **Event Handler Management**: Use named methods for event handlers to enable proper cleanup
+- **State Management**: Maintain tool state in class properties
+- **Reset Functionality**: Implement complete state and DOM cleanup for reset buttons
+
+Example pattern from Mini Cactpot:
+```javascript
+class ToolCalculator {
+    constructor() {
+        this.state = {}; // Tool-specific state
+        this.elements = {
+            // Cache frequently accessed DOM elements
+            grid: document.getElementById('tool-grid'),
+            result: document.getElementById('result-display')
+        };
+        this.initializeEvents();
+    }
+    
+    initializeEvents() {
+        // Use named methods for removable event handlers
+        this.handleClick = (e) => { /* handler logic */ };
+        this.elements.grid.addEventListener('click', this.handleClick);
+    }
+}
+
 ### Adding New Tools
 1. Create directory under `tools/[tool-name]/`
 2. Copy HTML structure from existing tool, update title/descriptions
 3. Import shared CSS/JS: `../../assets/css/common.css` and `../../assets/js/common.js`
-4. Add tool card to main `index.html` with icon, title, description
-5. Use established styling patterns and `FF14Utils` functions
+4. Follow the class-based JavaScript architecture pattern
+5. Implement proper event handler management for reset functionality
+6. Add tool card to main `index.html` with icon, title, description
+7. Use established styling patterns and `FF14Utils` functions
+
+### CSS Best Practices
+- Use `!important` sparingly, only when overriding deeply nested styles
+- Implement animations for enhanced user experience (see Mini Cactpot for examples)
+- Use CSS custom properties for consistent theming
+- Provide clear visual feedback for interactive elements
+- Ensure proper contrast for accessibility
 
 ## Development Guidelines
 
@@ -95,6 +132,37 @@ All pages must use identical footer with complete copyright notice:
     </div>
 </footer>
 ```
+
+## Common Development Patterns
+
+### Reset Functionality Implementation
+When implementing reset buttons, ensure complete cleanup:
+```javascript
+function resetTool() {
+    // Remove old event listeners
+    if (calculator && calculator.handleEvents) {
+        calculator.elements.container.removeEventListener('click', calculator.handleEvents);
+    }
+    
+    // Clear all DOM states
+    document.querySelectorAll('.interactive-element').forEach(el => {
+        el.classList.remove('active', 'selected', 'highlighted');
+        el.innerHTML = '';
+    });
+    
+    // Reset display counters
+    document.getElementById('status-display').textContent = 'initial-state';
+    
+    // Create new calculator instance
+    calculator = new ToolCalculator();
+}
+```
+
+### Visual Enhancement Patterns
+- Use gradients and animations for important elements (best choices, results)
+- Implement pulsing/glowing effects for highlighted items
+- Add slide-in animations for result panels
+- Ensure sufficient color contrast with `!important` when necessary
 
 ## AI Command Memories
 
