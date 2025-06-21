@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>角色卡產生器 - FF14.tw</title>
+    <meta name="description" content="快速生成你的FF14角色資訊卡片，支援多種樣式和自訂選項。">
+    <link rel="stylesheet" href="../../assets/css/common.css">
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <a href="/" class="logo">FF14.tw</a>
+            <nav class="nav">
+                <a href="/">首頁</a>
+                <a href="/#tools">工具</a>
+                <a href="https://github.com/hydai/ff14.tw" target="_blank">GitHub</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container">
+            <section class="hero">
+                <h1>角色卡產生器</h1>
+                <p>創造專屬於你的FF14角色卡片，展示你的冒險者資訊</p>
+            </section>
+
+            <div class="tool-container">
+                <div class="input-section">
+                    <div class="form-group">
+                        <label for="characterName">角色名稱</label>
+                        <input type="text" id="characterName" placeholder="輸入角色名稱">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="serverName">伺服器</label>
+                        <select id="serverName">
+                            <option value="">選擇伺服器</option>
+                            <option value="陸行鳥">陸行鳥</option>
+                            <option value="莫古力">莫古力</option>
+                            <option value="貓小胖">貓小胖</option>
+                            <option value="紅玉海">紅玉海</option>
+                            <option value="神意之地">神意之地</option>
+                            <option value="幻影群島">幻影群島</option>
+                            <option value="拉諾西亞">拉諾西亞</option>
+                            <option value="潮風亭">潮風亭</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="jobName">職業</label>
+                        <select id="jobName">
+                            <option value="">選擇職業</option>
+                            <optgroup label="坦克">
+                                <option value="騎士">騎士</option>
+                                <option value="戰士">戰士</option>
+                                <option value="暗黑騎士">暗黑騎士</option>
+                                <option value="絕槍戰士">絕槍戰士</option>
+                            </optgroup>
+                            <optgroup label="治療">
+                                <option value="白魔法師">白魔法師</option>
+                                <option value="學者">學者</option>
+                                <option value="占星術士">占星術士</option>
+                                <option value="賢者">賢者</option>
+                            </optgroup>
+                            <optgroup label="近戰">
+                                <option value="武僧">武僧</option>
+                                <option value="龍騎士">龍騎士</option>
+                                <option value="忍者">忍者</option>
+                                <option value="武士">武士</option>
+                                <option value="鐮刀">鐮刀</option>
+                            </optgroup>
+                            <optgroup label="遠程">
+                                <option value="詩人">詩人</option>
+                                <option value="機工士">機工士</option>
+                                <option value="舞者">舞者</option>
+                            </optgroup>
+                            <optgroup label="魔法">
+                                <option value="黑魔法師">黑魔法師</option>
+                                <option value="召喚師">召喚師</option>
+                                <option value="赤魔法師">赤魔法師</option>
+                            </optgroup>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="jobLevel">等級</label>
+                        <input type="number" id="jobLevel" min="1" max="100" placeholder="1-100">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="gearScore">裝備等級</label>
+                        <input type="number" id="gearScore" min="0" max="999" placeholder="裝備等級">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="characterTitle">稱號</label>
+                        <input type="text" id="characterTitle" placeholder="角色稱號（可選）">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="freeCompany">部隊名稱</label>
+                        <input type="text" id="freeCompany" placeholder="部隊名稱（可選）">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="cardTheme">卡片主題</label>
+                        <select id="cardTheme">
+                            <option value="default">預設藍色</option>
+                            <option value="dark">暗黑主題</option>
+                            <option value="gold">金色豪華</option>
+                            <option value="nature">自然綠色</option>
+                        </select>
+                    </div>
+
+                    <div class="button-group">
+                        <button id="generateCard" class="btn">產生角色卡</button>
+                        <button id="downloadCard" class="btn btn-secondary">下載圖片</button>
+                    </div>
+                </div>
+
+                <div class="preview-section">
+                    <div id="characterCard" class="character-card theme-default">
+                        <div class="card-header">
+                            <div class="character-info">
+                                <h2 class="character-name">角色名稱</h2>
+                                <p class="character-title">稱號</p>
+                                <p class="server-name">伺服器</p>
+                            </div>
+                            <div class="job-info">
+                                <div class="job-icon">⚔️</div>
+                                <div class="job-details">
+                                    <span class="job-name">職業</span>
+                                    <span class="job-level">Lv. --</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card-body">
+                            <div class="stats-grid">
+                                <div class="stat-item">
+                                    <span class="stat-label">裝備等級</span>
+                                    <span class="stat-value">---</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">部隊</span>
+                                    <span class="stat-value">---</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card-footer">
+                            <p>FF14.tw 角色卡產生器</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024-2025 FF14.tw | 本站非官方網站，與 Square Enix 無關</p>
+        </div>
+    </footer>
+
+    <script src="../../assets/js/common.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

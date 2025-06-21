@@ -1,0 +1,226 @@
+/* 角色卡產生器專用樣式 */
+
+.tool-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem;
+    margin-top: 2rem;
+}
+
+.input-section {
+    background: white;
+    padding: 2rem;
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    height: fit-content;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: var(--dark-color);
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 0.8rem;
+    border: 2px solid var(--border-color);
+    border-radius: 5px;
+    font-size: 1rem;
+    transition: border-color 0.3s;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+.button-group {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.button-group .btn {
+    flex: 1;
+}
+
+.preview-section {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+}
+
+/* 角色卡樣式 */
+.character-card {
+    width: 350px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 15px;
+    padding: 0;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    overflow: hidden;
+    color: white;
+    font-family: 'Noto Sans TC', sans-serif;
+}
+
+.card-header {
+    padding: 2rem;
+    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(10px);
+}
+
+.character-info {
+    margin-bottom: 1.5rem;
+}
+
+.character-name {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.character-title {
+    font-size: 1rem;
+    opacity: 0.9;
+    margin-bottom: 0.3rem;
+    font-style: italic;
+}
+
+.server-name {
+    font-size: 0.9rem;
+    opacity: 0.8;
+}
+
+.job-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.job-icon {
+    width: 50px;
+    height: 50px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+.job-details {
+    display: flex;
+    flex-direction: column;
+}
+
+.job-name {
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.job-level {
+    font-size: 1rem;
+    opacity: 0.9;
+}
+
+.card-body {
+    padding: 2rem;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.stat-item {
+    text-align: center;
+    background: rgba(255,255,255,0.1);
+    padding: 1rem;
+    border-radius: 8px;
+    backdrop-filter: blur(5px);
+}
+
+.stat-label {
+    display: block;
+    font-size: 0.8rem;
+    opacity: 0.8;
+    margin-bottom: 0.5rem;
+}
+
+.stat-value {
+    display: block;
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.card-footer {
+    padding: 1rem 2rem;
+    background: rgba(0,0,0,0.2);
+    text-align: center;
+    font-size: 0.8rem;
+    opacity: 0.8;
+}
+
+/* 主題變化 */
+.theme-dark {
+    background: linear-gradient(135deg, #2c3e50 0%, #4a4a4a 100%);
+}
+
+.theme-gold {
+    background: linear-gradient(135deg, #f39c12 0%, #d35400 100%);
+}
+
+.theme-nature {
+    background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+}
+
+/* 響應式設計 */
+@media (max-width: 968px) {
+    .tool-container {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+    }
+    
+    .preview-section {
+        order: -1;
+    }
+    
+    .character-card {
+        width: 100%;
+        max-width: 350px;
+    }
+}
+
+@media (max-width: 480px) {
+    .button-group {
+        flex-direction: column;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* 動畫效果 */
+.character-card {
+    transition: transform 0.3s ease;
+}
+
+.character-card:hover {
+    transform: scale(1.02);
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
+}

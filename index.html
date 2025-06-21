@@ -3,66 +3,87 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ff14.tw 正在建造中</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background: linear-gradient(to bottom, #ff7e5f, #feb47b);
-            color: #333;
-            text-align: center;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-        }
-        .container {
-            max-width: 800px;
-            padding: 20px;
-        }
-        h1 {
-            font-size: 3rem;
-            color: #fff;
-        }
-        p {
-            font-size: 1.2rem;
-            color: #fff;
-            margin: 20px 0;
-        }
-        .animation {
-            width: 100px;
-            height: 100px;
-            border: 8px solid #fff;
-            border-top: 8px solid #ff7e5f;
-            border-radius: 50%;
-            animation: spin 2s linear infinite;
-            margin: 20px auto;
-        }
-        @keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
-            100% {
-                transform: rotate(360deg);
-            }
-        }
-        footer {
-            margin-top: 40px;
-            color: rgba(255, 255, 255, 0.8);
-            font-size: 0.9rem;
-        }
-    </style>
+    <title>FF14.tw - Final Fantasy XIV工具箱</title>
+    <meta name="description" content="FF14.tw 提供各種Final Fantasy XIV相關的實用工具，包含角色卡產生器、宗長計算機等。">
+    <link rel="stylesheet" href="assets/css/common.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="container">
-        <h1>正在建造中，預定 2025 年上線</h1>
-        <div class="animation"></div>
-        <p>恭喜你發現這裡，hydai 正在努力寫網站中！晚點再來看看吧！</p>
-        <footer>
-            &copy; 2024-2025 ff14.tw | All Rights Reserved
-        </footer>
-    </div>
+    <header class="header">
+        <div class="container">
+            <a href="/" class="logo">FF14.tw</a>
+            <nav class="nav">
+                <a href="/">首頁</a>
+                <a href="#tools">工具</a>
+                <a href="https://github.com/hydai/ff14.tw" target="_blank">GitHub</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container">
+            <section class="hero">
+                <h1>Final Fantasy XIV 工具箱</h1>
+                <p>提供各種FF14相關的實用工具，讓你的艾歐澤亞冒險更加便利！</p>
+            </section>
+
+            <section id="tools" class="tools-section">
+                <h2>可用工具</h2>
+                <div class="tools-grid">
+                    <a href="tools/character-card/" class="tool-card">
+                        <div class="tool-icon">🎴</div>
+                        <h3 class="tool-title">角色卡產生器</h3>
+                        <p class="tool-description">快速生成你的FF14角色資訊卡片，支援多種樣式和自訂選項。</p>
+                    </a>
+
+                    <a href="tools/sect-calculator/" class="tool-card">
+                        <div class="tool-icon">🧮</div>
+                        <h3 class="tool-title">宗長計算機</h3>
+                        <p class="tool-description">計算宗長任務的最佳路線和時間規劃，提高效率完成任務。</p>
+                    </a>
+
+                    <div class="tool-card" style="opacity: 0.6;">
+                        <div class="tool-icon">⚔️</div>
+                        <h3 class="tool-title">裝備分析器</h3>
+                        <p class="tool-description">分析裝備屬性和配裝建議（開發中）</p>
+                    </div>
+
+                    <div class="tool-card" style="opacity: 0.6;">
+                        <div class="tool-icon">📊</div>
+                        <h3 class="tool-title">副本掉落查詢</h3>
+                        <p class="tool-description">查詢副本掉落物品和獲得機率（開發中）</p>
+                    </div>
+
+                    <div class="tool-card" style="opacity: 0.6;">
+                        <div class="tool-icon">🎯</div>
+                        <h3 class="tool-title">木人計算器</h3>
+                        <p class="tool-description">計算木人輸出和技能循環優化（開發中）</p>
+                    </div>
+
+                    <div class="tool-card" style="opacity: 0.6;">
+                        <div class="tool-icon">🏠</div>
+                        <h3 class="tool-title">房屋裝潢助手</h3>
+                        <p class="tool-description">協助規劃房屋裝潢和家具擺設（開發中）</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="about-section">
+                <h2>關於 FF14.tw</h2>
+                <p>FF14.tw 致力於為台灣的Final Fantasy XIV玩家提供實用的遊戲工具。我們的目標是讓每個冒險者都能在艾歐澤亞的旅程中更加便利和愉快。</p>
+                <p>如果你有任何建議或想法，歡迎在 GitHub 上與我們交流！</p>
+            </section>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024-2025 FF14.tw | 本站非官方網站，與 Square Enix 無關 | Made with ❤️ by hydai</p>
+        </div>
+    </footer>
+
+    <script src="assets/js/common.js"></script>
 </body>
 </html>

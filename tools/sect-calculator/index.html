@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>宗長計算機 - FF14.tw</title>
+    <meta name="description" content="計算宗長任務的最佳路線和時間規劃，提高效率完成任務。">
+    <link rel="stylesheet" href="../../assets/css/common.css">
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <a href="/" class="logo">FF14.tw</a>
+            <nav class="nav">
+                <a href="/">首頁</a>
+                <a href="/#tools">工具</a>
+                <a href="https://github.com/hydai/ff14.tw" target="_blank">GitHub</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container">
+            <section class="hero">
+                <h1>宗長計算機</h1>
+                <p>最佳化你的宗長任務路線，提升效率並節省時間</p>
+            </section>
+
+            <div class="tool-container">
+                <div class="input-section">
+                    <div class="form-group">
+                        <label for="currentLevel">目前宗長等級</label>
+                        <input type="number" id="currentLevel" min="1" max="100" placeholder="輸入目前等級">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="targetLevel">目標等級</label>
+                        <input type="number" id="targetLevel" min="1" max="100" placeholder="輸入目標等級">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="currentXP">目前經驗值</label>
+                        <input type="number" id="currentXP" min="0" placeholder="目前等級的經驗值">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="dailyTime">每日可用時間（小時）</label>
+                        <input type="number" id="dailyTime" min="0.5" max="24" step="0.5" placeholder="每日練習時間">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="taskPreference">任務偏好</label>
+                        <select id="taskPreference">
+                            <option value="balanced">平衡路線</option>
+                            <option value="fast">快速升級</option>
+                            <option value="safe">穩定路線</option>
+                            <option value="profitable">兼顧收益</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="includeDaily">包含每日任務</label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-item">
+                                <input type="checkbox" id="includeTribeQuests" checked>
+                                <span>蠻族任務</span>
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" id="includeRoulette" checked>
+                                <span>每日隨機任務</span>
+                            </label>
+                            <label class="checkbox-item">
+                                <input type="checkbox" id="includeHuntLog" checked>
+                                <span>討伐筆記</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="button-group">
+                        <button id="calculateRoute" class="btn">計算最佳路線</button>
+                        <button id="resetForm" class="btn btn-secondary">重置</button>
+                    </div>
+                </div>
+
+                <div class="result-section">
+                    <div id="calculationResult" class="result-card hidden">
+                        <h3>計算結果</h3>
+                        
+                        <div class="summary-stats">
+                            <div class="stat-box">
+                                <span class="stat-label">需要經驗值</span>
+                                <span class="stat-value" id="requiredXP">0</span>
+                            </div>
+                            <div class="stat-box">
+                                <span class="stat-label">預估天數</span>
+                                <span class="stat-value" id="estimatedDays">0</span>
+                            </div>
+                            <div class="stat-box">
+                                <span class="stat-label">總時數</span>
+                                <span class="stat-value" id="totalHours">0</span>
+                            </div>
+                        </div>
+
+                        <div class="route-plan">
+                            <h4>每日建議路線</h4>
+                            <div id="dailyRoutePlan" class="route-steps">
+                                <!-- 動態生成 -->
+                            </div>
+                        </div>
+
+                        <div class="tips-section">
+                            <h4>優化建議</h4>
+                            <ul id="optimizationTips">
+                                <!-- 動態生成 -->
+                            </ul>
+                        </div>
+
+                        <div class="button-group">
+                            <button id="exportPlan" class="btn btn-secondary">匯出計劃</button>
+                            <button id="sharePlan" class="btn btn-secondary">分享</button>
+                        </div>
+                    </div>
+
+                    <div id="placeholderCard" class="placeholder-card">
+                        <div class="placeholder-icon">🧮</div>
+                        <h3>宗長計算機</h3>
+                        <p>輸入你的宗長資訊，我們將為你計算最佳的升級路線和時間規劃。</p>
+                        <ul class="feature-list">
+                            <li>✨ 智能路線規劃</li>
+                            <li>⏰ 時間效率最佳化</li>
+                            <li>📊 詳細進度追蹤</li>
+                            <li>💡 個人化建議</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024-2025 FF14.tw | 本站非官方網站，與 Square Enix 無關</p>
+        </div>
+    </footer>
+
+    <script src="../../assets/js/common.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
