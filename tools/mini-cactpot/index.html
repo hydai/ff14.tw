@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini Cactpot 計算機 - FF14.tw</title>
+    <meta name="description" content="FF14 Mini Cactpot 最佳策略計算工具，分析期望值並推薦最佳選擇">
+    <link rel="stylesheet" href="../../assets/css/common.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="logo">FF14.tw</div>
+            <nav class="nav">
+                <a href="../../index.html">首頁</a>
+                <a href="https://github.com/hydai/ff14.tw" target="_blank">GitHub</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container">
+            <div class="page-header">
+                <h1>Mini Cactpot 計算機</h1>
+                <p>選擇三個格子後，分析所有可能組合並推薦最佳線條</p>
+            </div>
+
+            <div class="tool-content">
+                <div class="cactpot-grid-container">
+                    <h2>九宮格</h2>
+                    <p class="instruction">點選三個格子並輸入對應數字 (1-9)</p>
+                    <div class="cactpot-grid" id="cactpot-grid">
+                        <div class="grid-cell" data-position="0"></div>
+                        <div class="grid-cell" data-position="1"></div>
+                        <div class="grid-cell" data-position="2"></div>
+                        <div class="grid-cell" data-position="3"></div>
+                        <div class="grid-cell" data-position="4"></div>
+                        <div class="grid-cell" data-position="5"></div>
+                        <div class="grid-cell" data-position="6"></div>
+                        <div class="grid-cell" data-position="7"></div>
+                        <div class="grid-cell" data-position="8"></div>
+                    </div>
+                    <div class="grid-info">
+                        已選擇: <span id="selected-count">0</span>/3 個格子
+                    </div>
+                </div>
+
+                <div class="controls">
+                    <button class="btn btn-secondary" id="reset-btn" onclick="resetGrid()">重置</button>
+                    <button class="btn btn-primary" id="calculate-btn" onclick="calculateExpectedValues()" disabled>計算期望值</button>
+                </div>
+
+                <div class="results" id="results" style="display: none;">
+                    <h2>分析結果</h2>
+                    <div class="best-choice">
+                        <h3>最佳選擇</h3>
+                        <div id="best-line"></div>
+                    </div>
+                    <div class="all-lines">
+                        <h3>所有線條期望值</h3>
+                        <div class="lines-grid" id="lines-grid"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 FF14.tw. 本網站與 Square Enix 無關聯。</p>
+        </div>
+    </footer>
+
+    <script src="../../assets/js/common.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
