@@ -69,6 +69,35 @@ All pages include:
 
 - 總是使用繁體中文與台灣用語來撰寫文件
 
+## UI Consistency Requirements
+
+### Navigation Bar Structure
+All tool pages must maintain consistent navigation:
+```html
+<header class="header">
+    <div class="container">
+        <a href="/" class="logo">FF14.tw</a>
+        <nav class="nav">
+            <a href="/">首頁</a>
+            <a href="/#tools">工具</a>
+            <a href="https://github.com/hydai/ff14.tw" target="_blank">GitHub</a>
+        </nav>
+    </div>
+</header>
+```
+
+### Footer Structure
+All pages must use identical footer with complete copyright notice:
+```html
+<footer class="footer">
+    <div class="container">
+        <p>&copy; 2024-2025 FF14.tw | 本站非官方網站，與 Square Enix 無關 | Made with ❤️ by hydai</p>
+    </div>
+</footer>
+```
+
 ## AI Command Memories
 
 - 當我呼叫 GitCommit 請幫我根據目前修改產生一個 git commit
+- 所有頁面的導航列都需保持一致的風格
+- 所有頁面的頁尾都需與首頁風格一致
