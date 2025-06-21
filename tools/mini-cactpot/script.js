@@ -23,7 +23,7 @@ class MiniCactpotCalculator {
     }
 
     initializeGrid() {
-        const gridElement = document.getElementById('cactpot-grid');
+        const gridElement = document.getElementById('extended-grid');
         gridElement.addEventListener('click', (e) => {
             if (e.target.classList.contains('grid-cell')) {
                 this.handleCellClick(parseInt(e.target.dataset.position));
@@ -110,13 +110,11 @@ class MiniCactpotCalculator {
         
         document.getElementById('selected-count').textContent = selectedCount;
         
-        const calculateBtn = document.getElementById('calculate-btn');
-        calculateBtn.disabled = revealedCount !== 3;
-        
+        // 當輸入完成三個數字時，自動計算並顯示期望值
         if (revealedCount === 3) {
-            calculateBtn.textContent = '計算期望值';
+            this.calculateAndDisplayExpectations();
         } else {
-            calculateBtn.textContent = `請輸入數字 (${revealedCount}/3)`;
+            this.clearExpectations();
         }
     }
 
@@ -165,7 +163,7 @@ class MiniCactpotCalculator {
         }
     }
 
-    calculateExpectedValues() {
+    calculateAndDisplayExpectations() {
         const combinations = this.getAllPossibleCombinations();
         const lineResults = [];
         
@@ -190,14 +188,73 @@ class MiniCactpotCalculator {
                 positions: line,
                 expectedValue: expectedValue,
                 minMGP: minMGP,
-                maxMGP: maxMGP
+                maxMGP: maxMGP,
+                lineIndex: lineIdx
             });
         }
         
         // 排序找出最佳和最差選擇
         lineResults.sort((a, b) => b.expectedValue - a.expectedValue);
         
-        this.displayResults(lineResults, combinations.length);
+        this.displayExpectationsInGrid(lineResults);
+        this.showBestChoice(lineResults[0]);
+    }
+
+    clearExpectations() {
+        // 清除所有期望值顯示
+        const expectationCells = document.querySelectorAll('.expectation-cell');
+        expectationCells.forEach(cell => {
+            cell.classList.remove('active', 'best');
+            const valueElement = cell.querySelector('.expectation-value');
+            if (valueElement) {
+                valueElement.remove();
+            }
+        });
+        
+        // 隱藏最佳選擇資訊
+        document.getElementById('best-choice-info').style.display = 'none';
+    }
+
+    displayExpectationsInGrid(lineResults) {
+        // 清除之前的期望值
+        this.clearExpectations();
+        
+        // 顯示期望值在對應的格子中
+        lineResults.forEach((result, index) => {
+            const cell = document.querySelector(`[data-line="${result.lineIndex}"]`);
+            if (cell) {
+                cell.classList.add('active');
+                if (index === 0) {
+                    cell.classList.add('best');
+                }
+                
+                // 創建期望值顯示元素
+                const valueElement = document.createElement('div');
+                valueElement.className = 'expectation-value';
+                valueElement.textContent = FF14Utils.formatNumber(Math.round(result.expectedValue));
+                cell.appendChild(valueElement);
+            }
+        });
+    }
+
+    showBestChoice(bestResult) {
+        const bestChoiceInfo = document.getElementById('best-choice-info');
+        const bestLineSummary = document.getElementById('best-line-summary');
+        
+        bestLineSummary.innerHTML = `
+            <div style="font-size: 1.1rem; margin-bottom: 0.5rem;">
+                <strong>${bestResult.name}</strong>
+            </div>
+            <div style="font-size: 1.3rem; color: var(--success); font-weight: bold;">
+                期望值：${FF14Utils.formatNumber(Math.round(bestResult.expectedValue))} MGP
+            </div>
+            <div style="font-size: 0.9rem; color: var(--text-secondary); margin-top: 0.5rem;">
+                範圍：${FF14Utils.formatNumber(bestResult.minMGP)} - ${FF14Utils.formatNumber(bestResult.maxMGP)} MGP
+            </div>
+        `;
+        
+        bestChoiceInfo.style.display = 'block';
+        bestChoiceInfo.scrollIntoView({ behavior: 'smooth' });
     }
 
     displayResults(lineResults, totalCombinations) {
@@ -248,12 +305,7 @@ class MiniCactpotCalculator {
 // 全域函數
 function resetGrid() {
     calculator = new MiniCactpotCalculator();
-    document.getElementById('results').style.display = 'none';
     FF14Utils.showToast('已重置九宮格', 'success');
-}
-
-function calculateExpectedValues() {
-    calculator.calculateExpectedValues();
 }
 
 // 初始化

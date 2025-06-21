@@ -29,18 +29,34 @@
 
             <div class="tool-content">
                 <div class="cactpot-grid-container">
-                    <h2>九宮格</h2>
-                    <p class="instruction">點選三個格子並輸入對應數字 (1-9)</p>
-                    <div class="cactpot-grid" id="cactpot-grid">
+                    <h2>Mini Cactpot 期望值計算器</h2>
+                    <p class="instruction">點選三個格子並輸入對應數字 (1-9)，期望值將自動顯示在對應位置</p>
+                    <div class="extended-grid" id="extended-grid">
+                        <!-- Row 1: 期望值顯示 -->
+                        <div class="expectation-cell diagonal-left" data-line="6">↘</div>
+                        <div class="expectation-cell vertical" data-line="3">↓</div>
+                        <div class="expectation-cell vertical" data-line="4">↓</div>
+                        <div class="expectation-cell vertical" data-line="5">↓</div>
+                        <div class="expectation-cell diagonal-right" data-line="7">↙</div>
+                        
+                        <!-- Row 2-4: 原始九宮格與橫列期望值 -->
+                        <div class="expectation-cell horizontal" data-line="0">→</div>
                         <div class="grid-cell" data-position="0"></div>
                         <div class="grid-cell" data-position="1"></div>
                         <div class="grid-cell" data-position="2"></div>
+                        <div class="empty-cell"></div>
+                        
+                        <div class="expectation-cell horizontal" data-line="1">→</div>
                         <div class="grid-cell" data-position="3"></div>
                         <div class="grid-cell" data-position="4"></div>
                         <div class="grid-cell" data-position="5"></div>
+                        <div class="empty-cell"></div>
+                        
+                        <div class="expectation-cell horizontal" data-line="2">→</div>
                         <div class="grid-cell" data-position="6"></div>
                         <div class="grid-cell" data-position="7"></div>
                         <div class="grid-cell" data-position="8"></div>
+                        <div class="empty-cell"></div>
                     </div>
                     <div class="grid-info">
                         已選擇: <span id="selected-count">0</span>/3 個格子
@@ -49,19 +65,11 @@
 
                 <div class="controls">
                     <button class="btn btn-secondary" id="reset-btn" onclick="resetGrid()">重置</button>
-                    <button class="btn btn-primary" id="calculate-btn" onclick="calculateExpectedValues()" disabled>計算期望值</button>
                 </div>
 
-                <div class="results" id="results" style="display: none;">
-                    <h2>分析結果</h2>
-                    <div class="best-choice">
-                        <h3>最佳選擇</h3>
-                        <div id="best-line"></div>
-                    </div>
-                    <div class="all-lines">
-                        <h3>所有線條期望值</h3>
-                        <div class="lines-grid" id="lines-grid"></div>
-                    </div>
+                <div class="best-choice-info" id="best-choice-info" style="display: none;">
+                    <h3>🏆 最佳選擇</h3>
+                    <div id="best-line-summary"></div>
                 </div>
             </div>
         </div>
