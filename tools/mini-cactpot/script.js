@@ -19,12 +19,20 @@ class MiniCactpotCalculator {
             '左直行', '中直行', '右直行',
             '左斜線', '右斜線'
         ];
+        
+        // DOM 元素快取
+        this.elements = {
+            grid: document.getElementById('extended-grid'),
+            selectedCount: document.getElementById('selected-count'),
+            bestChoiceInfo: document.getElementById('best-choice-info'),
+            bestLineSummary: document.getElementById('best-line-summary')
+        };
+        
         this.initializeGrid();
     }
 
     initializeGrid() {
-        const gridElement = document.getElementById('extended-grid');
-        gridElement.addEventListener('click', (e) => {
+        this.elements.grid.addEventListener('click', (e) => {
             if (e.target.classList.contains('grid-cell')) {
                 this.handleCellClick(parseInt(e.target.dataset.position));
             }
@@ -103,12 +111,13 @@ class MiniCactpotCalculator {
             this.updateUI();
         }
     }
+    
 
     updateUI() {
         const selectedCount = this.selectedCells.length;
         const revealedCount = this.selectedCells.filter(pos => this.grid[pos] !== null).length;
         
-        document.getElementById('selected-count').textContent = selectedCount;
+        this.elements.selectedCount.textContent = selectedCount;
         
         // 當輸入完成三個數字時，自動計算並顯示期望值
         if (revealedCount === 3) {
@@ -164,11 +173,14 @@ class MiniCactpotCalculator {
     }
 
     calculateAndDisplayExpectations() {
+        const lineResults = this.calculateExpectedValues();
+        this.displayExpectationsInGrid(lineResults);
+        this.showBestChoice(lineResults[0]);
+    }
+    
+    calculateExpectedValues() {
         const combinations = this.getAllPossibleCombinations();
-        const lineResults = [];
-        
-        for (let lineIdx = 0; lineIdx < this.lines.length; lineIdx++) {
-            const line = this.lines[lineIdx];
+        const lineResults = this.lines.map((line, lineIdx) => {
             let totalMGP = 0;
             let minMGP = Infinity;
             let maxMGP = -Infinity;
@@ -181,23 +193,18 @@ class MiniCactpotCalculator {
                 maxMGP = Math.max(maxMGP, mgp);
             });
             
-            const expectedValue = totalMGP / combinations.length;
-            
-            lineResults.push({
+            return {
                 name: this.lineNames[lineIdx],
                 positions: line,
-                expectedValue: expectedValue,
-                minMGP: minMGP,
-                maxMGP: maxMGP,
+                expectedValue: totalMGP / combinations.length,
+                minMGP,
+                maxMGP,
                 lineIndex: lineIdx
-            });
-        }
+            };
+        });
         
-        // 排序找出最佳和最差選擇
-        lineResults.sort((a, b) => b.expectedValue - a.expectedValue);
-        
-        this.displayExpectationsInGrid(lineResults);
-        this.showBestChoice(lineResults[0]);
+        // 排序找出最佳選擇
+        return lineResults.sort((a, b) => b.expectedValue - a.expectedValue);
     }
 
     clearExpectations() {
@@ -212,94 +219,49 @@ class MiniCactpotCalculator {
         });
         
         // 隱藏最佳選擇資訊
-        document.getElementById('best-choice-info').style.display = 'none';
+        this.elements.bestChoiceInfo.style.display = 'none';
     }
 
     displayExpectationsInGrid(lineResults) {
-        // 清除之前的期望值
         this.clearExpectations();
         
-        // 顯示期望值在對應的格子中
         lineResults.forEach((result, index) => {
-            const cell = document.querySelector(`[data-line="${result.lineIndex}"]`);
-            if (cell) {
-                cell.classList.add('active');
-                if (index === 0) {
-                    cell.classList.add('best');
-                }
-                
-                // 創建期望值顯示元素
-                const valueElement = document.createElement('div');
-                valueElement.className = 'expectation-value';
-                valueElement.textContent = FF14Utils.formatNumber(Math.round(result.expectedValue));
-                cell.appendChild(valueElement);
-            }
+            this.updateExpectationCell(result, index === 0);
         });
+    }
+    
+    updateExpectationCell(result, isBest) {
+        const cell = document.querySelector(`[data-line="${result.lineIndex}"]`);
+        if (!cell) return;
+        
+        cell.classList.add('active');
+        if (isBest) {
+            cell.classList.add('best');
+        }
+        
+        const valueElement = document.createElement('div');
+        valueElement.className = 'expectation-value';
+        valueElement.textContent = FF14Utils.formatNumber(Math.round(result.expectedValue));
+        cell.appendChild(valueElement);
     }
 
     showBestChoice(bestResult) {
-        const bestChoiceInfo = document.getElementById('best-choice-info');
-        const bestLineSummary = document.getElementById('best-line-summary');
-        
-        bestLineSummary.innerHTML = `
-            <div style="font-size: 1.1rem; margin-bottom: 0.5rem;">
+        this.elements.bestLineSummary.innerHTML = `
+            <div class="best-choice-title">
                 <strong>${bestResult.name}</strong>
             </div>
-            <div style="font-size: 1.3rem; color: var(--success); font-weight: bold;">
+            <div class="best-choice-value">
                 期望值：${FF14Utils.formatNumber(Math.round(bestResult.expectedValue))} MGP
             </div>
-            <div style="font-size: 0.9rem; color: var(--text-secondary); margin-top: 0.5rem;">
+            <div class="best-choice-range">
                 範圍：${FF14Utils.formatNumber(bestResult.minMGP)} - ${FF14Utils.formatNumber(bestResult.maxMGP)} MGP
             </div>
         `;
         
-        bestChoiceInfo.style.display = 'block';
-        bestChoiceInfo.scrollIntoView({ behavior: 'smooth' });
+        this.elements.bestChoiceInfo.style.display = 'block';
+        this.elements.bestChoiceInfo.scrollIntoView({ behavior: 'smooth' });
     }
 
-    displayResults(lineResults, totalCombinations) {
-        const resultsElement = document.getElementById('results');
-        const bestLineElement = document.getElementById('best-line');
-        const linesGridElement = document.getElementById('lines-grid');
-        
-        // 顯示最佳選擇
-        const bestLine = lineResults[0];
-        bestLineElement.innerHTML = `
-            <div class="best-line-display">
-                <div>🏆 推薦選擇：${bestLine.name}</div>
-                <div>期望值：<span class="mgp-display">${FF14Utils.formatNumber(Math.round(bestLine.expectedValue))} MGP</span></div>
-                <div>範圍：${FF14Utils.formatNumber(bestLine.minMGP)} - ${FF14Utils.formatNumber(bestLine.maxMGP)} MGP</div>
-            </div>
-        `;
-        
-        // 顯示所有線條結果
-        linesGridElement.innerHTML = '';
-        lineResults.forEach((line, index) => {
-            const lineDiv = document.createElement('div');
-            lineDiv.className = 'line-result';
-            
-            if (index === 0) {
-                lineDiv.classList.add('best');
-            } else if (index === lineResults.length - 1) {
-                lineDiv.classList.add('worst');
-            }
-            
-            lineDiv.innerHTML = `
-                <div class="line-name">${line.name}</div>
-                <div class="line-expected">${FF14Utils.formatNumber(Math.round(line.expectedValue))} MGP</div>
-                <div class="line-range">
-                    範圍：${FF14Utils.formatNumber(line.minMGP)} - ${FF14Utils.formatNumber(line.maxMGP)}
-                </div>
-            `;
-            
-            linesGridElement.appendChild(lineDiv);
-        });
-        
-        resultsElement.style.display = 'block';
-        resultsElement.scrollIntoView({ behavior: 'smooth' });
-        
-        FF14Utils.showToast(`已分析 ${FF14Utils.formatNumber(totalCombinations)} 種可能組合`, 'success');
-    }
 }
 
 // 全域函數

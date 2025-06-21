@@ -141,6 +141,24 @@
     color: var(--success);
 }
 
+.best-choice-title {
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+    font-weight: bold;
+}
+
+.best-choice-value {
+    font-size: 1.3rem;
+    color: var(--success);
+    font-weight: bold;
+}
+
+.best-choice-range {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-top: 0.5rem;
+}
+
 @keyframes glow {
     from {
         box-shadow: 0 0 5px var(--success-light);
