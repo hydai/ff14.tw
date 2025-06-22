@@ -1,0 +1,112 @@
+{
+  "dungeons": [
+    {
+      "id": 90,
+      "name": "巴哈姆特大迷宮 入侵之章4",
+      "level": 50,
+      "type": "8人討伐殲滅戰",
+      "expansion": "2.x",
+      "image": null,
+      "tombstoneReward": "詩學古典神典石: 20",
+      "specialDrops": ["陳舊的樂譜：白銀兇鳥展翅翱翔", "白銀甲冑的碎片", "亞拉戈高位以太石：武器", "亞拉戈高位以太石：身體防具"],
+      "mechanics": "入侵篇的終極戰鬥，巴哈姆特完全覺醒的威脅。",
+      "description": "龍神巴哈姆特的完全覺醒，世界末日級別的毀滅力量。"
+    },
+    {
+      "id": 91,
+      "name": "巴哈姆特大迷宮 真源之章1",
+      "level": 50,
+      "type": "8人討伐殲滅戰",
+      "expansion": "2.x",
+      "image": null,
+      "tombstoneReward": "詩學古典神典石: 30",
+      "specialDrops": ["亞拉戈新型以太石：頭部防具", "亞拉戈新型以太石：手部防具", "亞拉戈新型以太石：腳部防具"],
+      "mechanics": "真源篇的開始，探尋巴哈姆特力量的真正源頭。",
+      "description": "龍神力量的最深層秘密，創世與毀滅的源泉。"
+    },
+    {
+      "id": 92,
+      "name": "巴哈姆特大迷宮 真源之章2",
+      "level": 50,
+      "type": "8人討伐殲滅戰",
+      "expansion": "2.x",
+      "image": null,
+      "tombstoneReward": "詩學古典神典石: 30",
+      "specialDrops": ["亞拉戈新型以太石：頭部防具", "亞拉戈新型以太石：腿部防具"],
+      "mechanics": "深入龍神的本質，面對原始創造力的考驗。",
+      "description": "巴哈姆特作為創造神的一面，生命誕生的力量。"
+    },
+    {
+      "id": 93,
+      "name": "巴哈姆特大迷宮 真源之章3",
+      "level": 50,
+      "type": "8人討伐殲滅戰",
+      "expansion": "2.x",
+      "image": null,
+      "tombstoneReward": "詩學古典神典石: 30",
+      "specialDrops": ["陳舊的樂譜：死灰復燃", "亞拉戈新型以太石：手部防具", "亞拉戈新型以太石：腳部防具"],
+      "mechanics": "真源篇的高潮，與龍神最純粹力量的對決。",
+      "description": "巴哈姆特真正本質的體現，超越理解的絕對力量。"
+    },
+    {
+      "id": 94,
+      "name": "巴哈姆特大迷宮 真源之章4",
+      "level": 50,
+      "type": "8人討伐殲滅戰",
+      "expansion": "2.x",
+      "image": null,
+      "tombstoneReward": "詩學古典神典石: 30",
+      "specialDrops": ["陳舊的樂譜：Answers -生死答問-", "龍炎碎片", "亞拉戈新型以太石：身體防具"],
+      "mechanics": "巴哈姆特迷宮的最終戰，回答生死的終極問題。",
+      "description": "一切的終結與新生，龍神給出的最終答案。"
+    },
+    {
+      "id": 95,
+      "name": "巴哈姆特零式大迷宮 入侵之章1",
+      "level": 50,
+      "type": "8人討伐殲滅戰",
+      "expansion": "2.x",
+      "image": null,
+      "tombstoneReward": "詩學古典神典石: 20",
+      "specialDrops": ["亞拉戈高位以太石：頭部防具", "亞拉戈高位以太石：腳部防具"],
+      "mechanics": "零式難度的巴哈姆特挑戰，極限的戰鬥技巧要求。",
+      "description": "為真正的勇者準備的終極試煉，超越極限的挑戰。"
+    },
+    {
+      "id": 96,
+      "name": "巴哈姆特零式大迷宮 入侵之章2",
+      "level": 50,
+      "type": "8人討伐殲滅戰",
+      "expansion": "2.x",
+      "image": null,
+      "tombstoneReward": "詩學古典神典石: 20",
+      "specialDrops": ["亞拉戈高位以太石：手部防具", "亞拉戈高位以太石：腿部防具"],
+      "mechanics": "零式版本的更高難度挑戰，完美配合的要求。",
+      "description": "只有最精英的勇者才能征服的絕對困難。"
+    },
+    {
+      "id": 97,
+      "name": "巴哈姆特零式大迷宮 入侵之章3",
+      "level": 50,
+      "type": "8人討伐殲滅戰",
+      "expansion": "2.x",
+      "image": null,
+      "tombstoneReward": "詩學古典神典石: 20",
+      "specialDrops": ["亞拉戈高位以太石：頭部防具", "亞拉戈高位以太石：手部防具", "亞拉戈高位以太石：腳部防具"],
+      "mechanics": "零式難度的極限考驗，技巧與策略的完美結合。",
+      "description": "勇者意志與技巧的最終考驗，超越自我的試煉。"
+    },
+    {
+      "id": 98,
+      "name": "巴哈姆特零式大迷宮 入侵之章4",
+      "level": 50,
+      "type": "8人討伐殲滅戰",
+      "expansion": "2.x",
+      "image": null,
+      "tombstoneReward": "詩學古典神典石: 20",
+      "specialDrops": ["陳舊的樂譜：白銀兇鳥展翅翱翔", "白銀甲冑的碎片", "亞拉戈高位以太石：武器", "亞拉戈高位以太石：身體防具"],
+      "mechanics": "零式版本的最終戰，龍神完全體的極限挑戰。",
+      "description": "零式巴哈姆特的完全覺醒，傳說級別的最終戰鬥。"
+    }
+  ]
+}

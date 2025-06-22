@@ -120,6 +120,7 @@ class ToolCalculator {
         }
     }
 }
+```
 
 ### Adding New Tools
 1. Create directory under `tools/[tool-name]/`
@@ -319,3 +320,4 @@ For tools with visual content:
 - 當我呼叫 GitCommit 請幫我根據目前修改產生一個 git commit
 - 所有頁面的導航列都需保持一致的風格，包含版權聲明連結
 - 所有頁面的頁尾都需與首頁風格一致
+- ucc 代表我希望更新 CLAUDE.md 檔案

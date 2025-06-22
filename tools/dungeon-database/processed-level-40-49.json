@@ -1,0 +1,76 @@
+{
+  "dungeons": [
+    {
+      "id": 24,
+      "name": "對龍城塞石衛塔",
+      "level": 41,
+      "type": "四人迷宮",
+      "expansion": "2.x",
+      "image": null,
+      "tombstoneReward": "詩學古典神典石: 55",
+      "specialDrops": ["九宮幻卡：藍龍", "管弦樂琴樂譜：極寒戰線", "戰神鋼"],
+      "mechanics": "攀登高塔對抗巨龍，注意龍息和墜落攻擊。",
+      "description": "為了對抗巨龍而建造的要塞，見證著龍族戰爭的歷史。"
+    },
+    {
+      "id": 25,
+      "name": "山中戰線澤梅爾要塞",
+      "level": 44,
+      "type": "四人迷宮",
+      "expansion": "2.x",
+      "image": null,
+      "tombstoneReward": "詩學古典神典石: 60",
+      "specialDrops": ["九宮幻卡：冥鬼之眼", "管弦樂琴樂譜：澤梅爾要塞"],
+      "mechanics": "突破要塞的重重防線，對抗帝國軍的反擊。",
+      "description": "加雷馬帝國的軍事要塞，戰略位置極為重要。"
+    },
+    {
+      "id": 26,
+      "name": "毒霧洞窟黃金谷",
+      "level": 47,
+      "type": "四人迷宮",
+      "expansion": "2.x",
+      "image": null,
+      "tombstoneReward": "詩學古典神典石: 65",
+      "specialDrops": ["魔界花骨朵", "九宮幻卡：魔界花", "管弦樂琴樂譜：守財奴的愚行", "食蟲植物幼苗"],
+      "mechanics": "在充滿毒氣的環境中戰鬥，小心植物怪物的毒性攻擊。",
+      "description": "被毒霧籠罩的危險峽谷，生長著各種有毒的植物。"
+    },
+    {
+      "id": 27,
+      "name": "迦樓羅討伐戰",
+      "level": 44,
+      "type": "8人討伐殲滅戰",
+      "expansion": "2.x",
+      "image": null,
+      "tombstoneReward": "詩學古典神典石: 80",
+      "specialDrops": ["迦樓羅之羽"],
+      "mechanics": "利用風柱躲避攻擊，注意龍捲風的位置。",
+      "description": "面對風暴蠻神迦樓羅，在狂風中尋找勝機。"
+    },
+    {
+      "id": 28,
+      "name": "殲滅特殊陣型妖異",
+      "level": 40,
+      "type": "公會令",
+      "expansion": "2.x",
+      "image": null,
+      "tombstoneReward": "無",
+      "specialDrops": [],
+      "mechanics": "破解妖異的特殊陣型，找出攻擊的時機。",
+      "description": "對抗採用特殊戰術的妖異群體，需要靈活的應對策略。"
+    },
+    {
+      "id": 29,
+      "name": "制止巨人族混戰，守護遺物",
+      "level": 40,
+      "type": "公會令",
+      "expansion": "2.x",
+      "image": null,
+      "tombstoneReward": "無",
+      "specialDrops": [],
+      "mechanics": "在三方混戰中保護重要遺物，避免被波及。",
+      "description": "調停巨人族之間的衝突，保護珍貴的古代遺物不被破壞。"
+    }
+  ]
+}
