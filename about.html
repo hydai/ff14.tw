@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>關於我們 - FF14.tw</title>
+    <meta name="description" content="了解 FF14.tw 的理念與貢獻者們">
+    <link rel="stylesheet" href="assets/css/common.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .about-content {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+        
+        .about-section {
+            background: white;
+            border-radius: 12px;
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow);
+            border-left: 4px solid var(--primary-color);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .about-section:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+        
+        .about-section h2 {
+            color: var(--primary-color);
+            margin-bottom: 1.5rem;
+            font-size: 1.8rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .about-section h2::before {
+            font-size: 1.5rem;
+        }
+        
+        .about-section p {
+            line-height: 1.8;
+            margin-bottom: 1.25rem;
+            color: var(--text-color);
+            text-align: justify;
+            font-size: 1.05rem;
+        }
+        
+        .about-section p:last-child {
+            margin-bottom: 0;
+        }
+        
+        .about-section a {
+            color: var(--primary-color);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: border-bottom-color 0.2s ease;
+        }
+        
+        .about-section a:hover {
+            border-bottom-color: var(--primary-color);
+        }
+        
+        .mission-section h2::before {
+            content: "🎯";
+        }
+        
+        .mission-section {
+            border-left-color: var(--secondary-color);
+            background: linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%);
+        }
+        
+        .mission-section h2 {
+            color: var(--secondary-color);
+        }
+        
+        .vision-section h2::before {
+            content: "🌟";
+        }
+        
+        .vision-section {
+            border-left-color: var(--accent-color);
+            background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+        }
+        
+        .vision-section h2 {
+            color: var(--accent-color);
+        }
+        
+        .features-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .features-list li {
+            padding: 0.75rem 0;
+            border-bottom: 1px solid rgba(74, 144, 226, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.05rem;
+        }
+        
+        .features-list li:last-child {
+            border-bottom: none;
+        }
+        
+        .features-list li::before {
+            content: "✨";
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+        
+        .contributors-section h2::before {
+            content: "👥";
+        }
+        
+        .hero {
+            text-align: center;
+            padding: 3rem 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 12px;
+            margin-bottom: 3rem;
+            box-shadow: var(--shadow);
+        }
+        
+        .hero h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .hero p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin: 0;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .nav a.active {
+            background-color: rgba(255,255,255,0.3);
+            font-weight: 600;
+        }
+        
+        .contribute-box {
+            margin-top: 2rem; 
+            padding: 1.5rem; 
+            background: linear-gradient(135deg, #e8f5e8 0%, #d4ecd4 100%); 
+            border-radius: 12px; 
+            text-align: center;
+        }
+        
+        .contribute-box p {
+            margin: 0; 
+            font-weight: 500; 
+            color: #2e7d32;
+        }
+        
+        @media (max-width: 768px) {
+            .about-content {
+                padding: 1rem;
+            }
+            
+            .about-section {
+                padding: 2rem 1.5rem;
+                margin-bottom: 1.5rem;
+            }
+            
+            .about-section h2 {
+                font-size: 1.5rem;
+                flex-direction: column;
+                text-align: center;
+                gap: 0.5rem;
+            }
+            
+            .hero {
+                padding: 2rem 1rem;
+                margin-bottom: 2rem;
+            }
+            
+            .hero h1 {
+                font-size: 2rem;
+            }
+            
+            .hero p {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <a href="/" class="logo">FF14.tw</a>
+            <nav class="nav">
+                <a href="/">首頁</a>
+                <a href="/#tools">工具</a>
+                <a href="/about.html" class="active">關於</a>
+                <a href="/copyright.html">版權聲明</a>
+                <a href="https://github.com/hydai/ff14.tw" target="_blank">GitHub</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container">
+            <section class="hero">
+                <h1>關於 FF14.tw</h1>
+                <p>致力於為繁體中文 Final Fantasy XIV 玩家社群打造最實用的工具平台</p>
+            </section>
+
+            <div class="about-content">
+                <section class="about-section">
+                    <h2>我們的故事</h2>
+                    <p>FF14.tw 誕生於對 Final Fantasy XIV 的熱愛以及對繁體中文玩家社群的關懷。我們發現許多實用的遊戲輔助工具都只有英文或日文版本，繁體中文玩家常常需要在語言障礙中摸索，因此決定打造一個完全針對繁體中文玩家優化的工具平台。</p>
+                    <p>從最初的簡單工具開始，我們逐漸發展出涵蓋遊戲各個面向的完整工具箱。每一個工具都經過精心設計，不僅在功能上力求完善，更在使用體驗上追求極致。</p>
+                </section>
+
+                <section class="about-section mission-section">
+                    <h2>我們的使命</h2>
+                    <p>讓每個艾歐澤亞的冒險者都能在遊戲旅程中更加便利和愉快。我們相信好的工具不應該有語言門檻，每個玩家都應該能輕鬆地使用最適合自己的輔助工具。</p>
+                    <ul class="features-list">
+                        <li>提供完全免費的遊戲輔助工具</li>
+                        <li>使用繁體中文與台灣玩家熟悉的遊戲術語</li>
+                        <li>持續優化使用體驗與工具功能</li>
+                        <li>建立開放友善的玩家社群</li>
+                        <li>推動本土化遊戲工具發展</li>
+                    </ul>
+                </section>
+
+                <section class="about-section vision-section">
+                    <h2>我們的願景</h2>
+                    <p>成為繁體中文 Final Fantasy XIV 玩家最信賴的工具平台，不僅提供實用的工具，更要建立一個互助合作的社群生態。我們希望透過技術的力量，讓玩家們能更專注於享受遊戲本身的樂趣。</p>
+                    <p>未來我們將繼續擴展工具種類，同時也歡迎社群成員的貢獻與建議，共同打造更完善的平台。</p>
+                </section>
+
+                <section class="about-section contributors-section">
+                    <h2>參與貢獻</h2>
+                    <p>FF14.tw 是一個開源專案，我們歡迎所有熱愛 Final Fantasy XIV 的玩家參與貢獻。無論是程式開發、UI/UX 設計、翻譯工作，或是提供建議與回報問題，每一份貢獻都讓這個平台變得更好。</p>
+                    
+                    <div class="contribute-box">
+                        <p>想要加入我們嗎？歡迎透過 <a href="https://github.com/hydai/ff14.tw" target="_blank">GitHub</a> 貢獻程式碼或提供建議！</p>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024-2025 FF14.tw | 本站非官方網站，與 Square Enix 無關 | Made with ❤️ by hydai</p>
+        </div>
+    </footer>
+
+    <script src="assets/js/common.js"></script>
+</body>
+</html>
