@@ -247,6 +247,34 @@ function resetTool() {
 - **Loading States**: Provide visual feedback during data loading with animations
 - **Focus Management**: Clear visual indicators for focused elements with proper contrast
 
+## Data Processing and Import Workflows
+
+### CSV to JSON Data Processing
+For tools requiring external data import (like dungeon-database), follow this systematic approach:
+1. **Data Splitting**: Use bash/awk to split large CSV files by logical groups (e.g., level ranges)
+2. **Progressive Processing**: Process data in chunks to manage memory and maintain quality
+3. **Translation Pipeline**: Implement consistent Traditional Chinese translation with Taiwan terminology
+4. **Data Merging**: Use Node.js scripts to combine processed chunks with validation
+5. **Metadata Generation**: Include statistics, categories, and version information in final output
+
+### Data Import Commands
+```bash
+# Split CSV by level ranges (example from dungeon-database)
+awk -F',' 'NR==1 {header=$0; next} $4>=10 && $4<=19 {print header > "ff14-level-10-19.csv"; print > "ff14-level-10-19.csv"}' source.csv
+
+# Merge processed JSON files
+node merge-data.js
+
+# Validate final output
+wc -l dungeons.json  # Check line count for completeness
+```
+
+### Data Quality Standards
+- Use Traditional Chinese with Taiwan gaming terminology consistently
+- FF14 expansion mapping: 2.x-7.x corresponding to game versions
+- Maintain consistent ID numbering across datasets
+- Include proper data source attribution (e.g., 灰機Wiki references)
+
 ## AI Command Memories
 
 - 當我呼叫 GitCommit 請幫我根據目前修改產生一個 git commit
