@@ -275,6 +275,25 @@ wc -l dungeons.json  # Check line count for completeness
 - Maintain consistent ID numbering across datasets
 - Include proper data source attribution (e.g., 灰機Wiki references)
 
+### FF14-Specific Classification Standards
+For dungeon-database and similar FF14 content tools, follow official game classifications:
+- **四人迷宮**: Standard 4-person dungeons
+- **8人大型任務**: 8-person team raids (Bahamut, Alexander, Omega, Eden, Pandaemonium, Arcadion series)
+- **8人討伐殲滅戰**: 8-person battle content (primal fights,殲滅戰, 殲殛戰, 狂想作戰, 終極之戰, 博茲雅堡壘追憶戰, 詩魂戰, etc.)
+- **24人大型任務**: 24-person alliance raids
+- **誅滅戰**: Primal elimination battles
+- **絕境戰**: Ultimate difficulty challenges  
+- **幻巧戰**: Special phantom battle content
+- **公會令**: Guild directive content
+
+### Image Asset Management
+For tools with visual content:
+- Use ID-based naming: `images/{id}.jpg` format
+- Implement graceful fallback for missing images
+- Standard aspect ratio: 2:1 (width:height) recommended
+- File size optimization: <200KB per image
+- Error handling with `onerror` and `onload` attributes
+
 ## AI Command Memories
 
 - 當我呼叫 GitCommit 請幫我根據目前修改產生一個 git commit
