@@ -25,6 +25,11 @@ This is a static website with **no build process**. Files can be edited directly
 
 **No package management, linting, or testing commands** - the project uses vanilla web technologies only.
 
+**Testing Tools:**
+- Open browser developer tools to check for JavaScript errors
+- Test tool functionality manually by interacting with UI elements
+- Verify responsive design by resizing browser window or using device simulation
+
 ## Shared Architecture Patterns
 
 ### Tool Structure
@@ -145,7 +150,7 @@ class ToolCalculator {
 ## UI Consistency Requirements
 
 ### Navigation Bar Structure
-All tool pages must maintain consistent navigation:
+All tool pages must maintain consistent navigation with copyright link:
 ```html
 <header class="header">
     <div class="container">
@@ -153,6 +158,7 @@ All tool pages must maintain consistent navigation:
         <nav class="nav">
             <a href="/">首頁</a>
             <a href="/#tools">工具</a>
+            <a href="/copyright.html">版權聲明</a>
             <a href="https://github.com/hydai/ff14.tw" target="_blank">GitHub</a>
         </nav>
     </div>
@@ -294,8 +300,22 @@ For tools with visual content:
 - File size optimization: <200KB per image
 - Error handling with `onerror` and `onload` attributes
 
+## Legal and Copyright Requirements
+
+### Copyright Page Integration
+- All navigation bars must include `/copyright.html` link with text "版權聲明"
+- Copyright page contains specific legal disclaimers for SQUARE ENIX content usage
+- Non-commercial fan site status declaration required for all FF14-related content
+- Data source attribution required for external sources (e.g., 灰機Wiki)
+
+### Content Guidelines
+- Always use Traditional Chinese with Taiwan gaming terminology
+- Include proper attribution for external data sources
+- Follow FF14 official terminology and classification standards
+- Maintain non-commercial educational use stance for all game content
+
 ## AI Command Memories
 
 - 當我呼叫 GitCommit 請幫我根據目前修改產生一個 git commit
-- 所有頁面的導航列都需保持一致的風格
+- 所有頁面的導航列都需保持一致的風格，包含版權聲明連結
 - 所有頁面的頁尾都需與首頁風格一致
