@@ -150,14 +150,14 @@ class ToolCalculator {
 ## UI Consistency Requirements
 
 ### Navigation Bar Structure
-All tool pages must maintain consistent navigation with copyright link:
+All pages must maintain consistent navigation structure (4 items only):
 ```html
 <header class="header">
     <div class="container">
         <a href="/" class="logo">FF14.tw</a>
         <nav class="nav">
             <a href="/">首頁</a>
-            <a href="/#tools">工具</a>
+            <a href="/about.html">關於</a>
             <a href="/copyright.html">版權聲明</a>
             <a href="https://github.com/hydai/ff14.tw" target="_blank">GitHub</a>
         </nav>
