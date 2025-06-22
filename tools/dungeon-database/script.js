@@ -347,7 +347,15 @@ class DungeonDatabase {
     }
 
     createImageHtml(image, name) {
-        return image ? `<img src="${image}" alt="${name}">` : '圖片準備中';
+        if (!image) return '圖片準備中';
+        
+        return `<img src="${image}" 
+                     alt="${name}" 
+                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                     onload="this.style.display='block'; this.nextElementSibling.style.display='none';">
+                <div class="image-placeholder" style="display:none;">
+                    <span>圖片載入中...</span>
+                </div>`;
     }
 
     createDungeonHeader(dungeon) {
