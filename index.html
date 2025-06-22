@@ -9,6 +9,261 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* 首頁專用樣式 - 簡潔工具展示 */
+        .hero {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 20px;
+            margin-bottom: 4rem;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        }
+        
+        .hero h1 {
+            font-size: 3rem;
+            margin-bottom: 1.5rem;
+            color: white;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+        
+        .hero p {
+            font-size: 1.3rem;
+            opacity: 0.95;
+            margin: 0;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            line-height: 1.6;
+        }
+        
+        .tools-section {
+            margin-bottom: 4rem;
+        }
+        
+        .tools-section h2 {
+            text-align: center;
+            font-size: 2.5rem;
+            color: var(--dark-color);
+            margin-bottom: 3rem;
+            font-weight: 600;
+            position: relative;
+        }
+        
+        .tools-section h2::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            border-radius: 2px;
+        }
+        
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .tool-card {
+            background: white;
+            border-radius: 16px;
+            padding: 2.5rem 2rem;
+            text-decoration: none;
+            color: inherit;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            border: 2px solid transparent;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .tool-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.3s ease;
+        }
+        
+        .tool-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+            border-color: var(--primary-color);
+        }
+        
+        .tool-card:hover::before {
+            transform: scaleX(1);
+        }
+        
+        .tool-card.available {
+            cursor: pointer;
+        }
+        
+        .tool-card.available:hover .tool-icon {
+            transform: scale(1.1) rotate(5deg);
+        }
+        
+        .tool-card.coming-soon {
+            opacity: 0.7;
+            cursor: not-allowed;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            position: relative;
+        }
+        
+        .tool-card.coming-soon::after {
+            content: '即將推出';
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: var(--secondary-color);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .tool-icon {
+            font-size: 3.5rem;
+            margin-bottom: 1.5rem;
+            display: block;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+        
+        .tool-title {
+            font-size: 1.4rem;
+            margin-bottom: 1rem;
+            color: var(--dark-color);
+            font-weight: 600;
+            text-align: center;
+            line-height: 1.3;
+        }
+        
+        .tool-description {
+            color: #666;
+            line-height: 1.6;
+            text-align: center;
+            margin: 0;
+            font-size: 0.95rem;
+        }
+        
+        .tools-stats {
+            display: flex;
+            justify-content: center;
+            gap: 3rem;
+            margin: 3rem 0;
+            padding: 2rem;
+            background: linear-gradient(135deg, #f8f9ff 0%, #e8f0ff 100%);
+            border-radius: 16px;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-number {
+            display: block;
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        
+        /* 簡化導航 */
+        .nav a[href="#tools"] {
+            display: none;
+        }
+        
+        @media (max-width: 768px) {
+            .hero {
+                padding: 3rem 1.5rem;
+                margin-bottom: 3rem;
+            }
+            
+            .hero h1 {
+                font-size: 2.2rem;
+            }
+            
+            .hero p {
+                font-size: 1.1rem;
+            }
+            
+            .tools-section h2 {
+                font-size: 2rem;
+                margin-bottom: 2rem;
+            }
+            
+            .tools-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+            
+            .tool-card {
+                padding: 2rem 1.5rem;
+            }
+            
+            .tool-icon {
+                font-size: 3rem;
+            }
+            
+            .tool-title {
+                font-size: 1.2rem;
+            }
+            
+            .tools-stats {
+                flex-direction: column;
+                gap: 1.5rem;
+                margin: 2rem 0;
+            }
+            
+            .stat-number {
+                font-size: 2rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .hero {
+                padding: 2.5rem 1rem;
+                border-radius: 12px;
+            }
+            
+            .hero h1 {
+                font-size: 1.8rem;
+            }
+            
+            .hero p {
+                font-size: 1rem;
+            }
+            
+            .tools-grid {
+                gap: 1rem;
+            }
+            
+            .tool-card {
+                padding: 1.5rem;
+            }
+        }
+    </style>
 </head>
 <body>
     <header class="header">
@@ -32,54 +287,41 @@
             </section>
 
             <section id="tools" class="tools-section">
-                <h2>可用工具</h2>
                 <div class="tools-grid">
-                    <a href="tools/mini-cactpot/index.html" class="tool-card">
+                    <a href="tools/mini-cactpot/index.html" class="tool-card available">
                         <div class="tool-icon">🎰</div>
                         <h3 class="tool-title">Mini Cactpot 計算機</h3>
                         <p class="tool-description">分析 Mini Cactpot 最佳策略，計算期望值並推薦最佳線條選擇</p>
                     </a>
 
-                    <a href="tools/wondrous-tails/index.html" class="tool-card">
+                    <a href="tools/wondrous-tails/index.html" class="tool-card available">
                         <div class="tool-icon">📋</div>
                         <h3 class="tool-title">Wondrous Tails 預測器</h3>
                         <p class="tool-description">分析天書奇談盤面，計算連線成功機率，協助決策是否重置</p>
                     </a>
 
-                    <div class="tool-card" style="opacity: 0.6;">
-                        <div class="tool-icon">🎴</div>
-                        <h3 class="tool-title">角色卡產生器</h3>
-                        <p class="tool-description">快速生成你的FF14角色資訊卡片，支援多種樣式和自訂選項（開發中）</p>
-                    </div>
-
-                    <div class="tool-card" style="opacity: 0.6;">
-                        <div class="tool-icon">🧮</div>
-                        <h3 class="tool-title">宗長計算機</h3>
-                        <p class="tool-description">計算宗長任務的最佳路線和時間規劃，提高效率完成任務（開發中）</p>
-                    </div>
-
-                    <div class="tool-card" style="opacity: 0.6;">
-                        <div class="tool-icon">⚔️</div>
-                        <h3 class="tool-title">裝備分析器</h3>
-                        <p class="tool-description">分析裝備屬性和配裝建議（開發中）</p>
-                    </div>
-
-                    <a href="tools/dungeon-database/index.html" class="tool-card">
+                    <a href="tools/dungeon-database/index.html" class="tool-card available">
                         <div class="tool-icon">🏰</div>
                         <h3 class="tool-title">副本資料庫</h3>
-                        <p class="tool-description">完整的FF14副本資訊查詢，包含獎勵、機制說明和攻略指南（開發中）</p>
+                        <p class="tool-description">完整的FF14副本資訊查詢，包含獎勵、機制說明和攻略指南</p>
                     </a>
 
-                    <div class="tool-card" style="opacity: 0.6;">
-                        <div class="tool-icon">🎯</div>
-                        <h3 class="tool-title">木人計算器</h3>
-                        <p class="tool-description">計算木人輸出和技能循環優化（開發中）</p>
+                    <div class="tool-card coming-soon">
+                        <div class="tool-icon">🎴</div>
+                        <h3 class="tool-title">角色卡產生器</h3>
+                        <p class="tool-description">快速生成你的FF14角色資訊卡片，支援多種樣式和自訂選項</p>
                     </div>
 
-                    <div class="tool-card" style="opacity: 0.6;">
-                        <div class="tool-icon">🏠</div>
-                        <h3 class="tool-title">房屋裝潢助手</h3>
-                        <p class="tool-description">協助規劃房屋裝潢和家具擺設（開發中）</p>
+                    <div class="tool-card coming-soon">
+                        <div class="tool-icon">🧮</div>
+                        <h3 class="tool-title">宗長計算機</h3>
+                        <p class="tool-description">計算宗長任務的最佳路線和時間規劃，提高效率完成任務</p>
+                    </div>
+
+                    <div class="tool-card coming-soon">
+                        <div class="tool-icon">⚔️</div>
+                        <h3 class="tool-title">裝備分析器</h3>
+                        <p class="tool-description">分析裝備屬性和配裝建議，提供最佳配裝方案</p>
                     </div>
                 </div>
             </section>
