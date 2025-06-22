@@ -425,3 +425,95 @@
         font-size: 0.9rem;
     }
 }
+
+/* 資料來源區塊 */
+.data-source {
+    background: linear-gradient(135deg, var(--gray-50) 0%, var(--white) 100%);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--border-radius-lg);
+    margin: var(--spacing-2xl) 0;
+    box-shadow: var(--card-shadow);
+    transition: all var(--transition-normal);
+}
+
+.data-source:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--card-hover-shadow);
+}
+
+.data-source-content {
+    padding: var(--spacing-xl);
+}
+
+.data-source h3 {
+    color: var(--primary-color);
+    margin-bottom: var(--spacing-md);
+    font-size: 1.3rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.data-source h3::before {
+    content: '📖';
+    font-size: 1.1rem;
+}
+
+.data-source p {
+    color: var(--text-muted);
+    line-height: 1.6;
+    margin-bottom: var(--spacing-md);
+}
+
+.data-source p:last-child {
+    margin-bottom: 0;
+}
+
+.data-source a {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 500;
+    border-bottom: 1px solid transparent;
+    transition: all var(--transition-fast);
+}
+
+.data-source a:hover {
+    color: var(--secondary-color);
+    border-bottom-color: var(--secondary-color);
+    text-decoration: none;
+}
+
+/* 響應式設計 - 資料來源區塊 */
+@media (max-width: 768px) {
+    .data-source {
+        margin: var(--spacing-lg) 0;
+        border-radius: var(--border-radius-md);
+    }
+    
+    .data-source-content {
+        padding: var(--spacing-lg);
+    }
+    
+    .data-source h3 {
+        font-size: 1.2rem;
+    }
+    
+    .data-source p {
+        font-size: 0.95rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .data-source-content {
+        padding: var(--spacing-md);
+    }
+    
+    .data-source h3 {
+        font-size: 1.1rem;
+    }
+    
+    .data-source p {
+        font-size: 0.9rem;
+    }
+}
