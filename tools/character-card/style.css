@@ -133,18 +133,22 @@
 /* 橫版特殊樣式 */
 .character-card.layout-horizontal .card-header {
     padding: 3rem 4rem;
-    flex: 0 0 auto;
+    flex: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .character-card.layout-horizontal .card-body {
     padding: 0 4rem 3rem;
-    flex: 1;
+    flex: 0 0 auto;
     display: flex;
-    align-items: flex-end;
+    justify-content: center;
+    align-items: center;
 }
 
 .character-card.layout-horizontal .character-info {
-    margin-bottom: 2rem;
+    flex: 1;
 }
 
 .character-card.layout-horizontal .character-name {
@@ -162,6 +166,7 @@
 }
 
 .character-card.layout-horizontal .job-info {
+    flex: 0 0 auto;
     align-items: center;
     justify-content: center;
     text-align: center;
@@ -172,36 +177,20 @@
     width: 120px;
     height: 120px;
     font-size: 4rem;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
 }
 
 .character-card.layout-horizontal .job-name {
     font-size: 2rem;
-    margin-bottom: 0.8rem;
 }
 
-.character-card.layout-horizontal .job-level {
-    font-size: 1.8rem;
-}
-
-.character-card.layout-horizontal .stats-grid {
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
-    width: 100%;
-}
-
-.character-card.layout-horizontal .stat-item {
-    padding: 1.5rem;
+.character-card.layout-horizontal .company-info {
     text-align: center;
-}
-
-.character-card.layout-horizontal .stat-label {
-    font-size: 1.2rem;
-    margin-bottom: 0.8rem;
-}
-
-.character-card.layout-horizontal .stat-value {
-    font-size: 2rem;
+    background: rgba(255,255,255,0.15);
+    padding: 1.5rem;
+    border-radius: 15px;
+    backdrop-filter: blur(5px);
+    min-width: 200px;
 }
 
 /* 通用樣式 */
@@ -262,9 +251,26 @@
     margin-bottom: 0.5rem;
 }
 
-.job-level {
-    font-size: 1.8rem;
-    opacity: 0.9;
+/* 部隊資訊樣式 */
+.company-info {
+    text-align: center;
+    background: rgba(255,255,255,0.1);
+    padding: 2rem;
+    border-radius: 15px;
+    backdrop-filter: blur(5px);
+}
+
+.company-label {
+    display: block;
+    font-size: 1.3rem;
+    opacity: 0.8;
+    margin-bottom: 1rem;
+}
+
+.company-name {
+    display: block;
+    font-size: 2rem;
+    font-weight: 600;
 }
 
 .card-body {

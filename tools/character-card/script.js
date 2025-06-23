@@ -6,8 +6,6 @@ document.addEventListener('DOMContentLoaded', function() {
         characterName: document.getElementById('characterName'),
         serverName: document.getElementById('serverName'),
         jobName: document.getElementById('jobName'),
-        jobLevel: document.getElementById('jobLevel'),
-        gearScore: document.getElementById('gearScore'),
         characterTitle: document.getElementById('characterTitle'),
         freeCompany: document.getElementById('freeCompany'),
         cardLayout: document.getElementById('cardLayout'),
@@ -28,10 +26,8 @@ document.addEventListener('DOMContentLoaded', function() {
             characterTitle: characterCard.querySelectorAll(`${layoutSelector} .character-title`),
             serverName: characterCard.querySelectorAll(`${layoutSelector} .server-name`),
             jobName: characterCard.querySelectorAll(`${layoutSelector} .job-name`),
-            jobLevel: characterCard.querySelectorAll(`${layoutSelector} .job-level`),
             jobIcon: characterCard.querySelectorAll(`${layoutSelector} .job-icon`),
-            gearScore: characterCard.querySelectorAll(`${layoutSelector} .stat-value`),
-            freeCompany: characterCard.querySelectorAll(`${layoutSelector} .stat-value`)
+            freeCompany: characterCard.querySelectorAll(`${layoutSelector} .company-name`)
         };
     }
 
@@ -164,23 +160,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const jobIcon = jobIcons[jobName] || '⚔️';
         cardElements.jobIcon.forEach(el => el.textContent = jobIcon);
 
-        // 更新等級
-        const jobLevel = inputs.jobLevel.value;
-        const levelText = (jobLevel && FF14Utils.validateNumber(jobLevel, 1, 100)) ? `Lv. ${jobLevel}` : 'Lv. --';
-        cardElements.jobLevel.forEach(el => el.textContent = levelText);
-
-        // 更新裝備等級
-        const gearScore = inputs.gearScore.value;
-        const gearText = (gearScore && FF14Utils.validateNumber(gearScore, 0, 999)) ? gearScore : '---';
-        if (cardElements.gearScore.length > 0) {
-            cardElements.gearScore[0].textContent = gearText;
-        }
-
         // 更新部隊名稱
         const freeCompany = inputs.freeCompany.value.trim() || '---';
-        if (cardElements.freeCompany.length > 1) {
-            cardElements.freeCompany[1].textContent = freeCompany;
-        }
+        cardElements.freeCompany.forEach(el => el.textContent = freeCompany);
 
         // 更新主題和版型
         const theme = inputs.cardTheme.value || 'default';
@@ -211,7 +193,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (!inputs.jobName.value) {
             FF14Utils.showToast('請選擇職業', 'error');
-            inputs.jobName.focus();
             return;
         }
 
@@ -609,17 +590,6 @@ document.addEventListener('DOMContentLoaded', function() {
     updateCharacterCard();
 
     // 為輸入欄位添加一些預設的驗證
-    inputs.jobLevel.addEventListener('input', function() {
-        const value = parseInt(this.value);
-        if (value > 100) this.value = 100;
-        if (value < 1) this.value = '';
-    });
-
-    inputs.gearScore.addEventListener('input', function() {
-        const value = parseInt(this.value);
-        if (value > 999) this.value = 999;
-        if (value < 0) this.value = '';
-    });
 
     // 角色名稱長度限制
     inputs.characterName.addEventListener('input', function() {
