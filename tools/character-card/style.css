@@ -132,18 +132,11 @@
 
 /* 橫版特殊樣式 */
 .character-card.layout-horizontal .card-header {
-    padding: 3rem 4rem;
-    flex: 1;
+    padding: 4rem;
+    width: 100%;
+    height: 100%;
     display: flex;
     justify-content: space-between;
-    align-items: center;
-}
-
-.character-card.layout-horizontal .card-body {
-    padding: 0 4rem 3rem;
-    flex: 0 0 auto;
-    display: flex;
-    justify-content: center;
     align-items: center;
 }
 
@@ -158,7 +151,14 @@
 
 .character-card.layout-horizontal .character-title {
     font-size: 1.5rem;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.8rem;
+}
+
+.character-card.layout-horizontal .company-name {
+    font-size: 1.4rem;
+    margin-bottom: 0.8rem;
+    opacity: 0.9;
+    color: #e8f4fd;
 }
 
 .character-card.layout-horizontal .server-name {
@@ -184,15 +184,6 @@
     font-size: 2rem;
 }
 
-.character-card.layout-horizontal .company-info {
-    text-align: center;
-    background: rgba(255,255,255,0.15);
-    padding: 1.5rem;
-    border-radius: 15px;
-    backdrop-filter: blur(5px);
-    min-width: 200px;
-}
-
 /* 通用樣式 */
 .card-header {
     padding: 4rem;
@@ -215,6 +206,14 @@
     font-size: 1.8rem;
     opacity: 0.9;
     margin-bottom: 0.8rem;
+    font-style: italic;
+}
+
+.company-name {
+    font-size: 1.6rem;
+    opacity: 0.85;
+    margin-bottom: 0.8rem;
+    color: #e8f4fd;
     font-style: italic;
 }
 
@@ -251,27 +250,6 @@
     margin-bottom: 0.5rem;
 }
 
-/* 部隊資訊樣式 */
-.company-info {
-    text-align: center;
-    background: rgba(255,255,255,0.1);
-    padding: 2rem;
-    border-radius: 15px;
-    backdrop-filter: blur(5px);
-}
-
-.company-label {
-    display: block;
-    font-size: 1.3rem;
-    opacity: 0.8;
-    margin-bottom: 1rem;
-}
-
-.company-name {
-    display: block;
-    font-size: 2rem;
-    font-weight: 600;
-}
 
 .card-body {
     padding: 4rem;

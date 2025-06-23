@@ -161,8 +161,15 @@ document.addEventListener('DOMContentLoaded', function() {
         cardElements.jobIcon.forEach(el => el.textContent = jobIcon);
 
         // 更新部隊名稱
-        const freeCompany = inputs.freeCompany.value.trim() || '---';
-        cardElements.freeCompany.forEach(el => el.textContent = freeCompany);
+        const freeCompany = inputs.freeCompany.value.trim();
+        cardElements.freeCompany.forEach(el => {
+            if (freeCompany) {
+                el.textContent = `《${freeCompany}》`;
+                el.style.display = 'block';
+            } else {
+                el.style.display = 'none';
+            }
+        });
 
         // 更新主題和版型
         const theme = inputs.cardTheme.value || 'default';
