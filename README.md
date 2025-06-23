@@ -32,13 +32,16 @@ FF14.tw 是一個專為繁體中文版《Final Fantasy XIV》玩家設計的多�
 - 💡 策略建議系統
 - 🎮 4x4 互動式介面
 
-## 🚧 開發中工具
-
-### 角色卡產生器 (`character-card/`) - 開發中
+### 角色卡產生器 (`character-card/`)
 快速生成專屬的 FF14 角色資訊卡片
-- ✨ 多種主題樣式選擇
-- 📱 支援圖片下載功能
-- 🎨 自訂角色資訊與外觀
+- 🎨 角色名稱顏色自訂功能
+- 🖼️ 背景圖片上傳與編輯（位置、縮放、旋轉）
+- 📐 多種版型選擇（橫版/直版）
+- 🌏 完整伺服器與職業選擇
+- ⚡ 可折疊的直覺式介面
+- 🖱️ 圖片拖拽調整功能
+
+## 🚧 開發中工具
 
 ### 宗長計算機 (`sect-calculator/`) - 開發中
 宗長職業升級路線最佳化工具
@@ -63,13 +66,18 @@ npx serve .
 ### 專案結構
 ```
 ff14.tw/
+├── .gitignore              # Git 忽略規則
 ├── index.html              # 主頁
-├── copyright.html           # 版權聲明頁
+├── about.html              # 關於頁面
+├── copyright.html          # 版權聲明頁
 ├── assets/                 # 共用資源
 │   ├── css/common.css      # 全域樣式
-│   └── js/common.js        # 共用函式庫
+│   ├── js/common.js        # 共用函式庫
+│   └── images/             # 圖片資源
+│       └── se/             # Square Enix 官方素材
+│           └── FFXIVJobIcons/  # FF14 職業圖示 (45個)
 └── tools/                  # 工具目錄
-    ├── character-card/     # 角色卡產生器 (開發中)
+    ├── character-card/     # 角色卡產生器
     ├── dungeon-database/   # 副本資料庫
     ├── mini-cactpot/      # Mini Cactpot 計算機
     ├── sect-calculator/   # 宗長計算機 (開發中)
@@ -81,6 +89,8 @@ ff14.tw/
 - **CSS 架構**：基於 CSS 自訂屬性的設計系統
 - **JavaScript 工具**：`FF14Utils` 全域物件提供常用函式
 - **類別架構**：每個工具使用 class-based 的 JavaScript 架構
+- **圖片資源**：整合 Square Enix 官方 Fankit 素材
+- **響應式設計**：多breakpoint 適配各種裝置
 
 ## 🚀 部署
 
@@ -103,6 +113,10 @@ ff14.tw/
 ## 📄 版權聲明
 
 本網站為非官方粉絲網站，與 SQUARE ENIX 公司無關。所有 Final Fantasy XIV 相關內容之著作權歸 SQUARE ENIX 所有。
+
+**圖片資源聲明：**
+- FF14 職業圖示來源：Square Enix Official Fankit
+- 所有遊戲相關圖片版權歸 SQUARE ENIX 所有
 
 網站內容採用教育與非商業用途，符合合理使用原則。
 
