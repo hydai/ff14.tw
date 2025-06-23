@@ -141,12 +141,18 @@
     text-align: right;
 }
 
+.character-section {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.3rem;
+}
+
 .info-line {
     display: flex;
     align-items: baseline;
     justify-content: flex-end;
     gap: 0.5rem;
-    margin-bottom: 1rem;
     font-size: 0.9rem;
     opacity: 0.8;
     flex-wrap: wrap;
@@ -172,7 +178,6 @@
     align-items: center;
     justify-content: flex-end;
     gap: 1rem;
-    flex-direction: row-reverse;
 }
 
 .name-info {
@@ -188,8 +193,11 @@
     padding: 3rem;
 }
 
+.character-card.layout-horizontal .character-section {
+    gap: 0.4rem;
+}
+
 .character-card.layout-horizontal .info-line {
-    margin-bottom: 1.5rem;
     font-size: 1rem;
 }
 
@@ -238,8 +246,11 @@
     padding: 2.5rem;
 }
 
+.character-card.layout-vertical .character-section {
+    gap: 0.3rem;
+}
+
 .character-card.layout-vertical .info-line {
-    margin-bottom: 1.2rem;
     font-size: 0.9rem;
 }
 
