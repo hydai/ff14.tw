@@ -1,0 +1,70 @@
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+*.cache
+
+# Backup files
+*.backup
+*.bak
+*~
+*_original.*
+
+# Data directories and files
+data/
+temp/
+tmp/
+logs/
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Node modules (if any)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS generated files
+.fseventsd
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Local environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Build outputs (if any)
+dist/
+build/
+*.min.js
+*.min.css
+
+# Image processing temp files
+assets/images/temp/
+assets/images/processing/
+
+# Database backups
+*.json.backup
+dungeons_original.json
+
+# Personal notes and TODO files
+TODO.md
+NOTES.md
+notes/
