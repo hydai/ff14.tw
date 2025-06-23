@@ -143,17 +143,27 @@
 
 .info-line {
     display: flex;
-    align-items: center;
+    align-items: baseline;
     gap: 0.5rem;
     margin-bottom: 1rem;
     font-size: 0.9rem;
     opacity: 0.8;
     flex-wrap: wrap;
+    line-height: 1.2;
 }
 
 .separator {
     color: rgba(255, 255, 255, 0.6);
     font-weight: bold;
+    line-height: 1.2;
+}
+
+.info-line .character-title,
+.info-line .company-name,
+.info-line .server-name {
+    line-height: 1.2;
+    vertical-align: baseline;
+    display: inline-block;
 }
 
 .name-row {
@@ -204,15 +214,18 @@
 
 .character-card.layout-horizontal .character-title {
     font-size: 1rem;
+    line-height: 1.2;
 }
 
 .character-card.layout-horizontal .company-name {
     font-size: 1rem;
     color: #e8f4fd;
+    line-height: 1.2;
 }
 
 .character-card.layout-horizontal .server-name {
     font-size: 1rem;
+    line-height: 1.2;
 }
 
 /* 直版特殊調整 */
@@ -251,15 +264,18 @@
 
 .character-card.layout-vertical .character-title {
     font-size: 0.9rem;
+    line-height: 1.2;
 }
 
 .character-card.layout-vertical .company-name {
     font-size: 0.9rem;
     color: #e8f4fd;
+    line-height: 1.2;
 }
 
 .character-card.layout-vertical .server-name {
     font-size: 0.9rem;
+    line-height: 1.2;
 }
 
 /* 通用樣式 */
