@@ -9,7 +9,8 @@ document.addEventListener('DOMContentLoaded', function() {
         characterTitle: document.getElementById('characterTitle'),
         freeCompany: document.getElementById('freeCompany'),
         cardLayout: document.getElementById('cardLayout'),
-        cardTheme: document.getElementById('cardTheme'),
+        nameColor: document.getElementById('nameColor'),
+        nameColorText: document.getElementById('nameColorText'),
         characterImage: document.getElementById('characterImage')
     };
 
@@ -235,17 +236,36 @@ document.addEventListener('DOMContentLoaded', function() {
         // 重新排列資訊行元素
         reorganizeInfoLine();
 
-        // 更新主題和版型
-        const theme = inputs.cardTheme.value || 'default';
+        // 更新版型
         const layout = inputs.cardLayout.value || 'horizontal';
-        characterCard.className = `character-card theme-${theme} layout-${layout}`;
+        characterCard.className = `character-card layout-${layout}`;
         if (characterCard.classList.contains('has-background')) {
             characterCard.classList.add('has-background');
         }
+        
+        // 更新角色名稱顏色
+        const nameColor = inputs.nameColor.value || '#FFFFFF';
+        cardElements.characterName.forEach(el => {
+            el.style.color = nameColor;
+        });
     }
 
     // 版型切換監聽
     inputs.cardLayout.addEventListener('change', switchLayout);
+    
+    // 角色名稱顏色監聽
+    inputs.nameColor.addEventListener('change', function() {
+        inputs.nameColorText.value = this.value;
+        updateCharacterCard();
+    });
+    
+    inputs.nameColorText.addEventListener('input', function() {
+        const color = this.value.trim();
+        if (/^#[0-9A-Fa-f]{6}$/.test(color)) {
+            inputs.nameColor.value = color;
+            updateCharacterCard();
+        }
+    });
 
     // 產生角色卡按鈕
     document.getElementById('generateCard').addEventListener('click', function() {

@@ -426,17 +426,37 @@
     opacity: 0.8;
 }
 
-/* 主題變化 */
-.theme-dark {
-    background: linear-gradient(135deg, #2c3e50 0%, #4a4a4a 100%);
+/* 顏色選擇器樣式 */
+.color-input-wrapper {
+    display: flex;
+    gap: 0.8rem;
+    align-items: center;
 }
 
-.theme-gold {
-    background: linear-gradient(135deg, #f39c12 0%, #d35400 100%);
+.color-input-wrapper input[type="color"] {
+    width: 50px;
+    height: 40px;
+    border: 2px solid var(--border-color);
+    border-radius: 5px;
+    background: white;
+    cursor: pointer;
+    padding: 0;
 }
 
-.theme-nature {
-    background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+.color-input-wrapper input[type="color"]::-webkit-color-swatch {
+    border: none;
+    border-radius: 3px;
+}
+
+.color-input-wrapper input[type="color"]::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+.color-input-wrapper input[type="text"] {
+    flex: 1;
+    text-transform: uppercase;
+    font-family: monospace;
+    font-size: 0.9rem;
 }
 
 /* 響應式設計 */
