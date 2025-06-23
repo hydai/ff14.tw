@@ -129,6 +129,32 @@ document.addEventListener('DOMContentLoaded', function() {
         updateCharacterCard();
     }
 
+    // 更新分隔符號顯示狀態
+    function updateSeparators() {
+        const infoLines = document.querySelectorAll('.info-line');
+        infoLines.forEach(infoLine => {
+            const elements = infoLine.children;
+            let visibleCount = 0;
+            
+            // 統計可見元素數量
+            for (let i = 0; i < elements.length; i++) {
+                const element = elements[i];
+                if (!element.classList.contains('separator') && 
+                    element.style.display !== 'none' && 
+                    element.textContent.trim() !== '' &&
+                    element.textContent.trim() !== '---') {
+                    visibleCount++;
+                }
+            }
+            
+            // 顯示或隱藏分隔符號
+            const separators = infoLine.querySelectorAll('.separator');
+            separators.forEach(sep => {
+                sep.style.display = visibleCount > 1 ? 'inline' : 'none';
+            });
+        });
+    }
+
     // 更新角色卡函數
     function updateCharacterCard() {
         const cardElements = getCardElements();
@@ -142,7 +168,7 @@ document.addEventListener('DOMContentLoaded', function() {
         cardElements.characterTitle.forEach(el => {
             if (characterTitle) {
                 el.textContent = `《${characterTitle}》`;
-                el.style.display = 'block';
+                el.style.display = 'inline';
             } else {
                 el.style.display = 'none';
             }
@@ -173,11 +199,14 @@ document.addEventListener('DOMContentLoaded', function() {
         cardElements.freeCompany.forEach(el => {
             if (freeCompany) {
                 el.textContent = `《${freeCompany}》`;
-                el.style.display = 'block';
+                el.style.display = 'inline';
             } else {
                 el.style.display = 'none';
             }
         });
+
+        // 更新分隔符號的顯示狀態
+        updateSeparators();
 
         // 更新主題和版型
         const theme = inputs.cardTheme.value || 'default';

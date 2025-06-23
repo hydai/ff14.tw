@@ -141,11 +141,25 @@
     text-align: left;
 }
 
+.info-line {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+    opacity: 0.8;
+    flex-wrap: wrap;
+}
+
+.separator {
+    color: rgba(255, 255, 255, 0.6);
+    font-weight: bold;
+}
+
 .name-row {
     display: flex;
     align-items: center;
     gap: 1rem;
-    margin-bottom: 1.5rem;
 }
 
 .name-info {
@@ -154,21 +168,18 @@
     gap: 0.3rem;
 }
 
-.details-info {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    margin-left: 0;
-}
-
 /* 橫版特殊調整 */
 .character-card.layout-horizontal .business-card-layout {
     padding: 3rem;
 }
 
+.character-card.layout-horizontal .info-line {
+    margin-bottom: 1.5rem;
+    font-size: 1rem;
+}
+
 .character-card.layout-horizontal .name-row {
     gap: 1.5rem;
-    margin-bottom: 2rem;
 }
 
 .character-card.layout-horizontal .job-icon {
@@ -191,27 +202,17 @@
     color: #e8f4fd;
 }
 
-.character-card.layout-horizontal .details-info {
-    margin-left: calc(80px + 1.5rem);
-    gap: 0.8rem;
-}
-
 .character-card.layout-horizontal .character-title {
-    font-size: 1.3rem;
-    margin: 0;
+    font-size: 1rem;
 }
 
 .character-card.layout-horizontal .company-name {
-    font-size: 1.2rem;
-    margin: 0;
-    opacity: 0.85;
+    font-size: 1rem;
     color: #e8f4fd;
 }
 
 .character-card.layout-horizontal .server-name {
-    font-size: 1.1rem;
-    margin: 0;
-    opacity: 0.8;
+    font-size: 1rem;
 }
 
 /* 直版特殊調整 */
@@ -219,9 +220,13 @@
     padding: 2.5rem;
 }
 
+.character-card.layout-vertical .info-line {
+    margin-bottom: 1.2rem;
+    font-size: 0.9rem;
+}
+
 .character-card.layout-vertical .name-row {
     gap: 1.2rem;
-    margin-bottom: 1.8rem;
 }
 
 .character-card.layout-vertical .job-icon {
@@ -244,27 +249,17 @@
     color: #e8f4fd;
 }
 
-.character-card.layout-vertical .details-info {
-    margin-left: calc(70px + 1.2rem);
-    gap: 0.7rem;
-}
-
 .character-card.layout-vertical .character-title {
-    font-size: 1.2rem;
-    margin: 0;
+    font-size: 0.9rem;
 }
 
 .character-card.layout-vertical .company-name {
-    font-size: 1.1rem;
-    margin: 0;
-    opacity: 0.85;
+    font-size: 0.9rem;
     color: #e8f4fd;
 }
 
 .character-card.layout-vertical .server-name {
-    font-size: 1rem;
-    margin: 0;
-    opacity: 0.8;
+    font-size: 0.9rem;
 }
 
 /* 通用樣式 */
