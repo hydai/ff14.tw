@@ -81,12 +81,6 @@
     height: 600px;
 }
 
-.character-card.layout-horizontal .card-content {
-    display: flex;
-    width: 100%;
-    height: 100%;
-}
-
 .character-card.layout-horizontal .card-left {
     flex: 1.2;
     display: flex;
@@ -113,6 +107,8 @@
 /* 版型控制 */
 .horizontal-layout {
     display: flex;
+    width: 100%;
+    height: 100%;
 }
 
 .character-card.layout-vertical .horizontal-layout {
@@ -120,7 +116,7 @@
 }
 
 .character-card.layout-vertical .vertical-layout {
-    display: block !important;
+    display: flex !important;
 }
 
 .vertical-layout {
@@ -128,6 +124,7 @@
     height: 100%;
     display: flex;
     flex-direction: column;
+    justify-content: flex-end;
 }
 
 /* 名片風格佈局 */
@@ -714,6 +711,8 @@
     z-index: 2;
     background: rgba(0,0,0,0.2);
     backdrop-filter: blur(1px);
+    width: 100%;
+    height: 100%;
 }
 
 /* 當有背景圖片時的樣式調整 */
