@@ -186,11 +186,11 @@
 .name-info {
     display: flex;
     flex-direction: column;
-    gap: 0.2rem;
+    gap: 0.3rem;
     text-align: left;
     align-items: flex-start;
     order: 2;
-    min-height: 4rem;
+    min-height: 3rem;
 }
 
 .job-icon {
@@ -218,7 +218,7 @@
 }
 
 .character-card.layout-horizontal .name-info {
-    min-height: 5rem;
+    min-height: 4rem;
 }
 
 .character-card.layout-horizontal .job-icon {
@@ -236,9 +236,7 @@
 }
 
 .character-card.layout-horizontal .job-name {
-    font-size: 1.2rem;
-    opacity: 0.9;
-    color: #e8f4fd;
+    display: none;
 }
 
 .character-card.layout-horizontal .character-title {
@@ -278,7 +276,7 @@
 }
 
 .character-card.layout-vertical .name-info {
-    min-height: 4.5rem;
+    min-height: 3.5rem;
 }
 
 .character-card.layout-vertical .job-icon {
@@ -296,9 +294,7 @@
 }
 
 .character-card.layout-vertical .job-name {
-    font-size: 1.1rem;
-    opacity: 0.9;
-    color: #e8f4fd;
+    display: none;
 }
 
 .character-card.layout-vertical .character-title {
@@ -387,9 +383,7 @@
 }
 
 .job-name {
-    font-size: 2.2rem;
-    font-weight: 600;
-    margin-bottom: 0.5rem;
+    display: none;
 }
 
 
