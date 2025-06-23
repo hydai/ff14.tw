@@ -717,3 +717,139 @@
     border-color: #999;
     background: #f5f5f5;
 }
+
+/* 職業選擇樣式 */
+.job-category {
+    margin-bottom: 2rem;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 1.5rem;
+    background: #fafbfc;
+    transition: all 0.3s ease;
+}
+
+.job-category:hover {
+    border-color: var(--primary-color);
+    background: #f8f9ff;
+}
+
+.job-category-title {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    margin: 0 0 1rem 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--dark-color);
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.job-category-icon {
+    font-size: 1.3rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    border-radius: 50%;
+    color: white;
+    font-size: 1rem;
+}
+
+.job-category .selection-grid {
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 0.6rem;
+}
+
+.job-btn {
+    position: relative;
+    overflow: hidden;
+}
+
+.job-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+    transition: left 0.5s ease;
+}
+
+.job-btn:hover::before {
+    left: 100%;
+}
+
+.job-btn.selected {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    border-color: var(--primary-color);
+    box-shadow: 0 4px 12px rgba(74, 144, 226, 0.4);
+    transform: translateY(-2px);
+}
+
+.job-btn.selected::after {
+    content: '✓';
+    position: absolute;
+    top: 0.2rem;
+    right: 0.3rem;
+    font-size: 0.7rem;
+    font-weight: bold;
+    color: white;
+}
+
+/* 職業選擇結果顯示 */
+#selectedJob {
+    background: linear-gradient(135deg, #e8f5e8 0%, #f0f8ff 100%);
+    border: 2px solid var(--primary-color);
+    margin-top: 1.5rem;
+}
+
+#selectedJob .selected-value {
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+/* 響應式設計 - 職業選擇 */
+@media (max-width: 768px) {
+    .job-category {
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .job-category .selection-grid {
+        grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+        gap: 0.5rem;
+    }
+    
+    .job-category-title {
+        font-size: 1rem;
+        gap: 0.6rem;
+    }
+    
+    .job-category-icon {
+        width: 1.8rem;
+        height: 1.8rem;
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .job-category {
+        padding: 0.8rem;
+        margin-bottom: 1rem;
+    }
+    
+    .job-category .selection-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.4rem;
+    }
+    
+    .job-btn {
+        padding: 0.6rem 0.8rem;
+        font-size: 0.85rem;
+    }
+}

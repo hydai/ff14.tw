@@ -190,39 +190,86 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="jobName">職業</label>
-                        <select id="jobName">
-                            <option value="">選擇職業</option>
-                            <optgroup label="坦克">
-                                <option value="騎士">騎士</option>
-                                <option value="戰士">戰士</option>
-                                <option value="暗黑騎士">暗黑騎士</option>
-                                <option value="絕槍戰士">絕槍戰士</option>
-                            </optgroup>
-                            <optgroup label="治療">
-                                <option value="白魔法師">白魔法師</option>
-                                <option value="學者">學者</option>
-                                <option value="占星術士">占星術士</option>
-                                <option value="賢者">賢者</option>
-                            </optgroup>
-                            <optgroup label="近戰">
-                                <option value="武僧">武僧</option>
-                                <option value="龍騎士">龍騎士</option>
-                                <option value="忍者">忍者</option>
-                                <option value="武士">武士</option>
-                                <option value="鐮刀">鐮刀</option>
-                            </optgroup>
-                            <optgroup label="遠程">
-                                <option value="詩人">詩人</option>
-                                <option value="機工士">機工士</option>
-                                <option value="舞者">舞者</option>
-                            </optgroup>
-                            <optgroup label="魔法">
-                                <option value="黑魔法師">黑魔法師</option>
-                                <option value="召喚師">召喚師</option>
-                                <option value="赤魔法師">赤魔法師</option>
-                            </optgroup>
-                        </select>
+                        <label>職業選擇</label>
+                        
+                        <!-- 坦克職業 -->
+                        <div class="job-category">
+                            <h4 class="job-category-title">
+                                <span class="job-category-icon">🛡️</span>
+                                坦克
+                            </h4>
+                            <div class="selection-grid">
+                                <button type="button" class="selection-btn job-btn" data-job="騎士" data-category="坦克">騎士</button>
+                                <button type="button" class="selection-btn job-btn" data-job="戰士" data-category="坦克">戰士</button>
+                                <button type="button" class="selection-btn job-btn" data-job="暗黑騎士" data-category="坦克">暗黑騎士</button>
+                                <button type="button" class="selection-btn job-btn" data-job="絕槍戰士" data-category="坦克">絕槍戰士</button>
+                            </div>
+                        </div>
+
+                        <!-- 治療職業 -->
+                        <div class="job-category">
+                            <h4 class="job-category-title">
+                                <span class="job-category-icon">💚</span>
+                                治療
+                            </h4>
+                            <div class="selection-grid">
+                                <button type="button" class="selection-btn job-btn" data-job="白魔法師" data-category="治療">白魔法師</button>
+                                <button type="button" class="selection-btn job-btn" data-job="學者" data-category="治療">學者</button>
+                                <button type="button" class="selection-btn job-btn" data-job="占星術士" data-category="治療">占星術士</button>
+                                <button type="button" class="selection-btn job-btn" data-job="賢者" data-category="治療">賢者</button>
+                            </div>
+                        </div>
+
+                        <!-- 近戰職業 -->
+                        <div class="job-category">
+                            <h4 class="job-category-title">
+                                <span class="job-category-icon">⚔️</span>
+                                近戰
+                            </h4>
+                            <div class="selection-grid">
+                                <button type="button" class="selection-btn job-btn" data-job="武僧" data-category="近戰">武僧</button>
+                                <button type="button" class="selection-btn job-btn" data-job="龍騎士" data-category="近戰">龍騎士</button>
+                                <button type="button" class="selection-btn job-btn" data-job="忍者" data-category="近戰">忍者</button>
+                                <button type="button" class="selection-btn job-btn" data-job="武士" data-category="近戰">武士</button>
+                                <button type="button" class="selection-btn job-btn" data-job="鐮刀" data-category="近戰">鐮刀</button>
+                            </div>
+                        </div>
+
+                        <!-- 遠程職業 -->
+                        <div class="job-category">
+                            <h4 class="job-category-title">
+                                <span class="job-category-icon">🏹</span>
+                                遠程
+                            </h4>
+                            <div class="selection-grid">
+                                <button type="button" class="selection-btn job-btn" data-job="詩人" data-category="遠程">詩人</button>
+                                <button type="button" class="selection-btn job-btn" data-job="機工士" data-category="遠程">機工士</button>
+                                <button type="button" class="selection-btn job-btn" data-job="舞者" data-category="遠程">舞者</button>
+                            </div>
+                        </div>
+
+                        <!-- 魔法職業 -->
+                        <div class="job-category">
+                            <h4 class="job-category-title">
+                                <span class="job-category-icon">🔮</span>
+                                魔法
+                            </h4>
+                            <div class="selection-grid">
+                                <button type="button" class="selection-btn job-btn" data-job="黑魔法師" data-category="魔法">黑魔法師</button>
+                                <button type="button" class="selection-btn job-btn" data-job="召喚師" data-category="魔法">召喚師</button>
+                                <button type="button" class="selection-btn job-btn" data-job="赤魔法師" data-category="魔法">赤魔法師</button>
+                            </div>
+                        </div>
+
+                        <!-- 已選擇的職業顯示 -->
+                        <div class="selected-server" id="selectedJob" style="display: none;">
+                            <span class="selected-label">已選擇職業：</span>
+                            <span class="selected-value" id="selectedJobName"></span>
+                            <button type="button" class="clear-btn" id="clearJob">重新選擇</button>
+                        </div>
+                        
+                        <!-- 隐藏的input用於表單提交 -->
+                        <input type="hidden" id="jobName" name="jobName" value="">
                     </div>
 
                     <div class="form-group">

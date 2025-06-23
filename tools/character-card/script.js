@@ -111,9 +111,9 @@ document.addEventListener('DOMContentLoaded', function() {
         rotate: 0
     };
 
-    // 監聽所有輸入變化
+    // 監聽所有輸入變化（除了jobName和serverName，因為它們現在由按鈕控制）
     Object.keys(inputs).forEach(key => {
-        if (inputs[key]) {
+        if (inputs[key] && key !== 'jobName' && key !== 'serverName') {
             inputs[key].addEventListener('input', updateCharacterCard);
             inputs[key].addEventListener('change', updateCharacterCard);
         }
@@ -537,7 +537,7 @@ document.addEventListener('DOMContentLoaded', function() {
         serverSelection = { region: null, datacenter: null, server: null };
         
         // 清除所有選中狀態
-        document.querySelectorAll('.selection-btn').forEach(btn => btn.classList.remove('selected'));
+        document.querySelectorAll('[data-region]').forEach(btn => btn.classList.remove('selected'));
         
         // 隱藏所有步驟
         serverSelectionElements.datacenterStep.style.display = 'none';
@@ -546,6 +546,60 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // 清空隱藏input
         serverSelectionElements.hiddenInput.value = '';
+        
+        // 更新角色卡
+        updateCharacterCard();
+    });
+
+    // 職業選擇相關元素
+    const jobSelectionElements = {
+        jobButtons: document.querySelectorAll('.job-btn'),
+        selectedJob: document.getElementById('selectedJob'),
+        selectedJobName: document.getElementById('selectedJobName'),
+        clearJob: document.getElementById('clearJob'),
+        hiddenJobInput: document.getElementById('jobName')
+    };
+
+    // 職業選擇處理
+    jobSelectionElements.jobButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const job = this.dataset.job;
+            const category = this.dataset.category;
+            
+            // 清除所有職業按鈕的選中狀態
+            jobSelectionElements.jobButtons.forEach(btn => btn.classList.remove('selected'));
+            
+            // 設置當前按鈕為選中狀態
+            this.classList.add('selected');
+            
+            // 顯示選擇結果
+            showSelectedJob(job, category);
+            
+            // 更新隱藏的input值
+            jobSelectionElements.hiddenJobInput.value = job;
+            
+            // 更新角色卡
+            updateCharacterCard();
+        });
+    });
+
+    // 顯示已選擇的職業
+    function showSelectedJob(job, category) {
+        const displayText = `${category} - ${job}`;
+        jobSelectionElements.selectedJobName.textContent = displayText;
+        jobSelectionElements.selectedJob.style.display = 'flex';
+    }
+
+    // 重新選擇職業按鈕
+    jobSelectionElements.clearJob.addEventListener('click', function() {
+        // 清除所有選中狀態
+        jobSelectionElements.jobButtons.forEach(btn => btn.classList.remove('selected'));
+        
+        // 隱藏選擇結果
+        jobSelectionElements.selectedJob.style.display = 'none';
+        
+        // 清空隱藏input
+        jobSelectionElements.hiddenJobInput.value = '';
         
         // 更新角色卡
         updateCharacterCard();
