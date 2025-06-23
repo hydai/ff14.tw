@@ -56,7 +56,7 @@ class DungeonDatabase {
             }
             
             const data = await response.json();
-            this.dungeons = data.dungeons || [];
+            this.dungeons = (data.dungeons || []).filter(dungeon => dungeon.visible !== false);
             this.filteredDungeons = [...this.dungeons];
             this.renderDungeons();
             
