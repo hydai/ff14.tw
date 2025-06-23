@@ -47,7 +47,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
 
-    // 任務效率數據
+    // 任務效率資料
     const taskEfficiency = {
         balanced: {
             mainQuest: { xpPerHour: 50000, description: '主線任務' },
@@ -188,7 +188,7 @@ document.addEventListener('DOMContentLoaded', function() {
         resultElements.placeholderCard.classList.add('hidden');
         resultElements.calculationResult.classList.remove('hidden');
 
-        // 更新統計數據
+        // 更新統計資料
         resultElements.requiredXP.textContent = FF14Utils.formatNumber(calculation.requiredXP);
         resultElements.estimatedDays.textContent = `${calculation.estimatedDays} 天`;
         resultElements.totalHours.textContent = `${calculation.totalHours.toFixed(1)} 小時`;
