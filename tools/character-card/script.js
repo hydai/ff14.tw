@@ -35,6 +35,31 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
 
+    // 伺服器資料結構
+    const serverData = {
+        'Japan': {
+            'Elemental': ['Aegis', 'Atomos', 'Carbuncle', 'Garuda', 'Gungnir', 'Kujata', 'Ramuh', 'Tonberry', 'Typhon', 'Unicorn'],
+            'Gaia': ['Alexander', 'Bahamut', 'Durandal', 'Fenrir', 'Ifrit', 'Ridill', 'Tiamat', 'Ultima', 'Valefor', 'Yojimbo', 'Zeromus'],
+            'Mana': ['Anima', 'Asura', 'Belias', 'Chocobo', 'Hades', 'Ixion', 'Mandragora', 'Masamune', 'Pandaemonium', 'Shinryu', 'Titan']
+        },
+        'Oceanian': {
+            'Materia': ['Bismarck', 'Ravana', 'Sephirot', 'Sophia', 'Zurvan']
+        },
+        'Europe': {
+            'Chaos': ['Cerberus', 'Louisoix', 'Moogle', 'Omega', 'Phantom', 'Ragnarok', 'Sagittarius', 'Spriggan'],
+            'Light': ['Alpha', 'Lich', 'Odin', 'Phoenix', 'Shiva', 'Twintania', 'Zodiark']
+        },
+        'North America': {
+            'Aether': ['Adamantoise', 'Cactuar', 'Faerie', 'Gilgamesh', 'Jenova', 'Midgardsormr', 'Sargatanas', 'Siren'],
+            'Crystal': ['Balmung', 'Brynhildr', 'Coeurl', 'Diabolos', 'Goblin', 'Malboro', 'Mateus', 'Zalera'],
+            'Dynamis': ['Halicarnassus', 'Maduin', 'Marilith', 'Seraph'],
+            'Primal': ['Behemoth', 'Excalibur', 'Exodus', 'Famfrit', 'Hyperion', 'Lamia', 'Leviathan', 'Ultros']
+        },
+        'Taiwan': {
+            '繁體中文版': ['陸行鳥', '莫古力', '貓小胖', '紅玉海', '神意之地', '幻影群島', '拉諾西亞', '潮風亭']
+        }
+    };
+
     // 職業圖示對應
     const jobIcons = {
         '騎士': '🛡️',
@@ -377,6 +402,154 @@ document.addEventListener('DOMContentLoaded', function() {
     characterCard.addEventListener('touchstart', startDrag);
     document.addEventListener('touchmove', doDrag);
     document.addEventListener('touchend', endDrag);
+
+    // 伺服器選擇相關元素
+    const serverSelectionElements = {
+        regionButtons: document.querySelectorAll('[data-region]'),
+        datacenterStep: document.getElementById('datacenterStep'),
+        datacenterGrid: document.getElementById('datacenterGrid'),
+        serverStep: document.getElementById('serverStep'),
+        serverGrid: document.getElementById('serverGrid'),
+        selectedServer: document.getElementById('selectedServer'),
+        selectedServerName: document.getElementById('selectedServerName'),
+        clearServer: document.getElementById('clearServer'),
+        hiddenInput: document.getElementById('serverName')
+    };
+
+    // 伺服器選擇狀態
+    let serverSelection = {
+        region: null,
+        datacenter: null,
+        server: null
+    };
+
+    // 區域選擇處理
+    serverSelectionElements.regionButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const region = this.dataset.region;
+            
+            // 更新選擇狀態
+            serverSelection.region = region;
+            serverSelection.datacenter = null;
+            serverSelection.server = null;
+            
+            // 更新按鈕狀態
+            serverSelectionElements.regionButtons.forEach(btn => btn.classList.remove('selected'));
+            this.classList.add('selected');
+            
+            // 顯示資料中心選擇
+            showDatacenterSelection(region);
+            
+            // 隱藏伺服器選擇和結果
+            serverSelectionElements.serverStep.style.display = 'none';
+            serverSelectionElements.selectedServer.style.display = 'none';
+        });
+    });
+
+    // 顯示資料中心選擇
+    function showDatacenterSelection(region) {
+        const datacenters = serverData[region];
+        if (!datacenters) return;
+
+        // 清空並重新生成資料中心按鈕
+        serverSelectionElements.datacenterGrid.innerHTML = '';
+        
+        Object.keys(datacenters).forEach(datacenter => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'selection-btn';
+            button.dataset.datacenter = datacenter;
+            button.textContent = datacenter;
+            
+            button.addEventListener('click', function() {
+                // 更新選擇狀態
+                serverSelection.datacenter = datacenter;
+                serverSelection.server = null;
+                
+                // 更新按鈕狀態
+                serverSelectionElements.datacenterGrid.querySelectorAll('.selection-btn').forEach(btn => btn.classList.remove('selected'));
+                this.classList.add('selected');
+                
+                // 顯示伺服器選擇
+                showServerSelection(region, datacenter);
+                
+                // 隱藏結果
+                serverSelectionElements.selectedServer.style.display = 'none';
+            });
+            
+            serverSelectionElements.datacenterGrid.appendChild(button);
+        });
+
+        // 顯示資料中心步驟
+        serverSelectionElements.datacenterStep.style.display = 'block';
+    }
+
+    // 顯示伺服器選擇
+    function showServerSelection(region, datacenter) {
+        const servers = serverData[region][datacenter];
+        if (!servers) return;
+
+        // 清空並重新生成伺服器按鈕
+        serverSelectionElements.serverGrid.innerHTML = '';
+        
+        servers.forEach(server => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'selection-btn';
+            button.dataset.server = server;
+            button.textContent = server;
+            
+            button.addEventListener('click', function() {
+                // 更新選擇狀態
+                serverSelection.server = server;
+                
+                // 更新按鈕狀態
+                serverSelectionElements.serverGrid.querySelectorAll('.selection-btn').forEach(btn => btn.classList.remove('selected'));
+                this.classList.add('selected');
+                
+                // 顯示選擇結果
+                showSelectedServer(region, datacenter, server);
+                
+                // 更新隱藏的input值
+                serverSelectionElements.hiddenInput.value = server;
+                
+                // 更新角色卡
+                updateCharacterCard();
+            });
+            
+            serverSelectionElements.serverGrid.appendChild(button);
+        });
+
+        // 顯示伺服器步驟
+        serverSelectionElements.serverStep.style.display = 'block';
+    }
+
+    // 顯示已選擇的伺服器
+    function showSelectedServer(region, datacenter, server) {
+        const displayText = `${region} > ${datacenter} > ${server}`;
+        serverSelectionElements.selectedServerName.textContent = displayText;
+        serverSelectionElements.selectedServer.style.display = 'flex';
+    }
+
+    // 重新選擇按鈕
+    serverSelectionElements.clearServer.addEventListener('click', function() {
+        // 重置選擇狀態
+        serverSelection = { region: null, datacenter: null, server: null };
+        
+        // 清除所有選中狀態
+        document.querySelectorAll('.selection-btn').forEach(btn => btn.classList.remove('selected'));
+        
+        // 隱藏所有步驟
+        serverSelectionElements.datacenterStep.style.display = 'none';
+        serverSelectionElements.serverStep.style.display = 'none';
+        serverSelectionElements.selectedServer.style.display = 'none';
+        
+        // 清空隱藏input
+        serverSelectionElements.hiddenInput.value = '';
+        
+        // 更新角色卡
+        updateCharacterCard();
+    });
 
     // 初始化角色卡
     updateCharacterCard();
