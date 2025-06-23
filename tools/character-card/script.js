@@ -56,27 +56,27 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
 
-    // 職業圖示對應
+    // 職業圖示對應 - 使用官方 SE 圖示
     const jobIcons = {
-        '騎士': '🛡️',
-        '戰士': '🪓',
-        '暗黑騎士': '⚔️',
-        '絕槍戰士': '🔫',
-        '白魔法師': '✨',
-        '學者': '📚',
-        '占星術士': '🔮',
-        '賢者': '🌟',
-        '武僧': '👊',
-        '龍騎士': '🐉',
-        '忍者': '🥷',
-        '武士': '⚡',
-        '鐮刀': '🗡️',
-        '詩人': '🎵',
-        '機工士': '🔧',
-        '舞者': '💃',
-        '黑魔法師': '🔥',
-        '召喚師': '👹',
-        '赤魔法師': '🎭'
+        '騎士': 'assets/images/se/FFXIVJobIcons/01_TANK/Job/Paladin.png',
+        '戰士': 'assets/images/se/FFXIVJobIcons/01_TANK/Job/Warrior.png',
+        '暗黑騎士': 'assets/images/se/FFXIVJobIcons/01_TANK/Job/DarkKnight.png',
+        '絕槍戰士': 'assets/images/se/FFXIVJobIcons/01_TANK/Job/Gunbreaker.png',
+        '白魔法師': 'assets/images/se/FFXIVJobIcons/02_HEALER/Job/WhiteMage.png',
+        '學者': 'assets/images/se/FFXIVJobIcons/02_HEALER/Job/Scholar.png',
+        '占星術士': 'assets/images/se/FFXIVJobIcons/02_HEALER/Job/Astrologian.png',
+        '賢者': 'assets/images/se/FFXIVJobIcons/02_HEALER/Job/Sage.png',
+        '武僧': 'assets/images/se/FFXIVJobIcons/03_DPS/Job/Monk.png',
+        '龍騎士': 'assets/images/se/FFXIVJobIcons/03_DPS/Job/Dragoon.png',
+        '忍者': 'assets/images/se/FFXIVJobIcons/03_DPS/Job/Ninja.png',
+        '武士': 'assets/images/se/FFXIVJobIcons/03_DPS/Job/Samurai.png',
+        '鐮刀': 'assets/images/se/FFXIVJobIcons/03_DPS/Job/Reaper.png',
+        '詩人': 'assets/images/se/FFXIVJobIcons/03_DPS/Job/Bard.png',
+        '機工士': 'assets/images/se/FFXIVJobIcons/03_DPS/Job/Machinist.png',
+        '舞者': 'assets/images/se/FFXIVJobIcons/03_DPS/Job/Dancer.png',
+        '黑魔法師': 'assets/images/se/FFXIVJobIcons/03_DPS/Job/BlackMage.png',
+        '召喚師': 'assets/images/se/FFXIVJobIcons/03_DPS/Job/Summoner.png',
+        '赤魔法師': 'assets/images/se/FFXIVJobIcons/03_DPS/Job/RedMage.png'
     };
 
     // 圖片編輯相關元素
@@ -157,8 +157,16 @@ document.addEventListener('DOMContentLoaded', function() {
         cardElements.jobName.forEach(el => el.textContent = jobName);
 
         // 更新職業圖示
-        const jobIcon = jobIcons[jobName] || '⚔️';
-        cardElements.jobIcon.forEach(el => el.textContent = jobIcon);
+        const jobIconPath = jobIcons[jobName];
+        cardElements.jobIcon.forEach(el => {
+            if (jobIconPath) {
+                // 清除舊內容並添加圖片
+                el.innerHTML = `<img src="../../${jobIconPath}" alt="${jobName}" class="job-icon-img">`;
+            } else {
+                // 回退到預設圖示
+                el.textContent = '⚔️';
+            }
+        });
 
         // 更新部隊名稱
         const freeCompany = inputs.freeCompany.value.trim();

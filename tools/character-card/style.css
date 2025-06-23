@@ -178,6 +178,12 @@
     height: 120px;
     font-size: 4rem;
     margin-bottom: 1rem;
+    padding: 12px;
+}
+
+.character-card.layout-horizontal .job-icon-img {
+    width: 100%;
+    height: 100%;
 }
 
 .character-card.layout-horizontal .job-name {
@@ -237,6 +243,15 @@
     align-items: center;
     justify-content: center;
     font-size: 3rem;
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+.job-icon-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border-radius: 50%;
 }
 
 .job-details {
