@@ -133,29 +133,45 @@ document.addEventListener('DOMContentLoaded', function() {
         updateCharacterCard();
     }
 
-    // 更新分隔符號顯示狀態
-    function updateSeparators() {
+    // 重新排列資訊行元素，確保動態左對齊
+    function reorganizeInfoLine() {
         const infoLines = document.querySelectorAll('.info-line');
         infoLines.forEach(infoLine => {
-            const elements = infoLine.children;
-            let visibleCount = 0;
-            
-            // 統計可見元素數量
-            for (let i = 0; i < elements.length; i++) {
-                const element = elements[i];
-                if (!element.classList.contains('separator') && 
-                    element.style.display !== 'none' && 
-                    element.textContent.trim() !== '' &&
-                    element.textContent.trim() !== '---') {
-                    visibleCount++;
-                }
-            }
-            
-            // 顯示或隱藏分隔符號
+            const titleElement = infoLine.querySelector('.character-title');
+            const companyElement = infoLine.querySelector('.company-name');
+            const serverElement = infoLine.querySelector('.server-name');
             const separators = infoLine.querySelectorAll('.separator');
-            separators.forEach(sep => {
-                sep.style.display = visibleCount > 1 ? 'inline' : 'none';
-            });
+            
+            // 檢查哪些元素有內容
+            const hasTitle = titleElement && titleElement.style.display !== 'none' && 
+                           titleElement.textContent.trim() && titleElement.textContent.trim() !== '---';
+            const hasCompany = companyElement && companyElement.style.display !== 'none' && 
+                             companyElement.textContent.trim() && companyElement.textContent.trim() !== '---';
+            const hasServer = serverElement && serverElement.style.display !== 'none' &&
+                            serverElement.textContent.trim() && 
+                            serverElement.textContent.trim() !== '伺服器';
+            
+            // 創建可見元素的數組
+            const visibleElements = [];
+            if (hasTitle) visibleElements.push('title');
+            if (hasCompany) visibleElements.push('company');
+            if (hasServer) visibleElements.push('server');
+            
+            // 隱藏所有分隔符號
+            separators.forEach(sep => sep.style.display = 'none');
+            
+            // 如果只有一個或沒有元素，不需要分隔符號
+            if (visibleElements.length <= 1) return;
+            
+            // 根據可見元素重新顯示相應的分隔符號
+            if (visibleElements.length >= 2) {
+                // 顯示第一個分隔符號（在第二個元素前）
+                if (separators[0]) separators[0].style.display = 'inline';
+            }
+            if (visibleElements.length >= 3) {
+                // 顯示第二個分隔符號（在第三個元素前）
+                if (separators[1]) separators[1].style.display = 'inline';
+            }
         });
     }
 
@@ -178,9 +194,16 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        // 更新伺服器
-        const serverName = inputs.serverName.value || '伺服器';
-        cardElements.serverName.forEach(el => el.textContent = serverName);
+        // 更新伺服器（選填）
+        const serverName = inputs.serverName.value;
+        cardElements.serverName.forEach(el => {
+            if (serverName) {
+                el.textContent = serverName;
+                el.style.display = 'inline';
+            } else {
+                el.style.display = 'none';
+            }
+        });
 
         // 更新職業
         const jobName = inputs.jobName.value || '職業';
@@ -209,8 +232,8 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        // 更新分隔符號的顯示狀態
-        updateSeparators();
+        // 重新排列資訊行元素
+        reorganizeInfoLine();
 
         // 更新主題和版型
         const theme = inputs.cardTheme.value || 'default';
@@ -230,12 +253,6 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!inputs.characterName.value.trim()) {
             FF14Utils.showToast('請輸入角色名稱', 'error');
             inputs.characterName.focus();
-            return;
-        }
-
-        if (!inputs.serverName.value) {
-            FF14Utils.showToast('請選擇伺服器', 'error');
-            inputs.serverName.focus();
             return;
         }
 
