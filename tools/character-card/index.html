@@ -212,6 +212,14 @@
                     </div>
 
                     <div class="form-group">
+                        <label for="cardLayout">卡片版型</label>
+                        <select id="cardLayout">
+                            <option value="horizontal">橫版 (800x600)</option>
+                            <option value="vertical">直版 (600x800)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
                         <label for="cardTheme">卡片主題</label>
                         <select id="cardTheme">
                             <option value="default">預設藍色</option>
@@ -260,17 +268,34 @@
                         </div>
                     </div>
                     
-                    <div id="characterCard" class="character-card theme-default">
+                    <div id="characterCard" class="character-card theme-default layout-horizontal">
                         <div class="card-background" id="cardBackground">
                             <img id="backgroundImage" class="background-image" style="display: none;">
                         </div>
                         <div class="card-content">
-                            <div class="card-header">
-                                <div class="character-info">
-                                    <h2 class="character-name">角色名稱</h2>
-                                    <p class="character-title">稱號</p>
-                                    <p class="server-name">伺服器</p>
+                            <!-- 橫版布局 -->
+                            <div class="card-left horizontal-layout">
+                                <div class="card-header">
+                                    <div class="character-info">
+                                        <h2 class="character-name">角色名稱</h2>
+                                        <p class="character-title">稱號</p>
+                                        <p class="server-name">伺服器</p>
+                                    </div>
                                 </div>
+                                <div class="card-body">
+                                    <div class="stats-grid">
+                                        <div class="stat-item">
+                                            <span class="stat-label">裝備等級</span>
+                                            <span class="stat-value">---</span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <span class="stat-label">部隊</span>
+                                            <span class="stat-value">---</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-right horizontal-layout">
                                 <div class="job-info">
                                     <div class="job-icon">⚔️</div>
                                     <div class="job-details">
@@ -279,22 +304,36 @@
                                     </div>
                                 </div>
                             </div>
-                            
-                            <div class="card-body">
-                                <div class="stats-grid">
-                                    <div class="stat-item">
-                                        <span class="stat-label">裝備等級</span>
-                                        <span class="stat-value">---</span>
+
+                            <!-- 直版布局 -->
+                            <div class="vertical-layout" style="display: none;">
+                                <div class="card-header">
+                                    <div class="character-info">
+                                        <h2 class="character-name">角色名稱</h2>
+                                        <p class="character-title">稱號</p>
+                                        <p class="server-name">伺服器</p>
                                     </div>
-                                    <div class="stat-item">
-                                        <span class="stat-label">部隊</span>
-                                        <span class="stat-value">---</span>
+                                    <div class="job-info">
+                                        <div class="job-icon">⚔️</div>
+                                        <div class="job-details">
+                                            <span class="job-name">職業</span>
+                                            <span class="job-level">Lv. --</span>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                            
-                            <div class="card-footer">
-                                <p>FF14.tw 角色卡產生器</p>
+                                
+                                <div class="card-body">
+                                    <div class="stats-grid">
+                                        <div class="stat-item">
+                                            <span class="stat-label">裝備等級</span>
+                                            <span class="stat-value">---</span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <span class="stat-label">部隊</span>
+                                            <span class="stat-value">---</span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>

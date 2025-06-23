@@ -10,22 +10,30 @@ document.addEventListener('DOMContentLoaded', function() {
         gearScore: document.getElementById('gearScore'),
         characterTitle: document.getElementById('characterTitle'),
         freeCompany: document.getElementById('freeCompany'),
+        cardLayout: document.getElementById('cardLayout'),
         cardTheme: document.getElementById('cardTheme'),
         characterImage: document.getElementById('characterImage')
     };
 
     // 獲取角色卡元素
     const characterCard = document.getElementById('characterCard');
-    const cardElements = {
-        characterName: characterCard.querySelector('.character-name'),
-        characterTitle: characterCard.querySelector('.character-title'),
-        serverName: characterCard.querySelector('.server-name'),
-        jobName: characterCard.querySelector('.job-name'),
-        jobLevel: characterCard.querySelector('.job-level'),
-        jobIcon: characterCard.querySelector('.job-icon'),
-        gearScore: characterCard.querySelectorAll('.stat-value')[0],
-        freeCompany: characterCard.querySelectorAll('.stat-value')[1]
-    };
+    
+    // 獲取兩種版型的元素
+    function getCardElements() {
+        const isHorizontal = characterCard.classList.contains('layout-horizontal');
+        const layoutSelector = isHorizontal ? '.horizontal-layout' : '.vertical-layout';
+        
+        return {
+            characterName: characterCard.querySelectorAll(`${layoutSelector} .character-name`),
+            characterTitle: characterCard.querySelectorAll(`${layoutSelector} .character-title`),
+            serverName: characterCard.querySelectorAll(`${layoutSelector} .server-name`),
+            jobName: characterCard.querySelectorAll(`${layoutSelector} .job-name`),
+            jobLevel: characterCard.querySelectorAll(`${layoutSelector} .job-level`),
+            jobIcon: characterCard.querySelectorAll(`${layoutSelector} .job-icon`),
+            gearScore: characterCard.querySelectorAll(`${layoutSelector} .stat-value`),
+            freeCompany: characterCard.querySelectorAll(`${layoutSelector} .stat-value`)
+        };
+    }
 
     // 職業圖示對應
     const jobIcons = {
@@ -82,61 +90,80 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    // 版型切換函數
+    function switchLayout() {
+        const layout = inputs.cardLayout.value || 'horizontal';
+        
+        // 移除舊的版型class
+        characterCard.classList.remove('layout-horizontal', 'layout-vertical');
+        
+        // 添加新的版型class
+        characterCard.classList.add(`layout-${layout}`);
+        
+        // 更新角色卡內容
+        updateCharacterCard();
+    }
+
     // 更新角色卡函數
     function updateCharacterCard() {
+        const cardElements = getCardElements();
+        
         // 更新角色名稱
         const characterName = inputs.characterName.value.trim() || '角色名稱';
-        cardElements.characterName.textContent = characterName;
+        cardElements.characterName.forEach(el => el.textContent = characterName);
 
         // 更新稱號
         const characterTitle = inputs.characterTitle.value.trim();
-        if (characterTitle) {
-            cardElements.characterTitle.textContent = `《${characterTitle}》`;
-            cardElements.characterTitle.style.display = 'block';
-        } else {
-            cardElements.characterTitle.style.display = 'none';
-        }
+        cardElements.characterTitle.forEach(el => {
+            if (characterTitle) {
+                el.textContent = `《${characterTitle}》`;
+                el.style.display = 'block';
+            } else {
+                el.style.display = 'none';
+            }
+        });
 
         // 更新伺服器
         const serverName = inputs.serverName.value || '伺服器';
-        cardElements.serverName.textContent = serverName;
+        cardElements.serverName.forEach(el => el.textContent = serverName);
 
         // 更新職業
         const jobName = inputs.jobName.value || '職業';
-        cardElements.jobName.textContent = jobName;
+        cardElements.jobName.forEach(el => el.textContent = jobName);
 
         // 更新職業圖示
         const jobIcon = jobIcons[jobName] || '⚔️';
-        cardElements.jobIcon.textContent = jobIcon;
+        cardElements.jobIcon.forEach(el => el.textContent = jobIcon);
 
         // 更新等級
         const jobLevel = inputs.jobLevel.value;
-        if (jobLevel && FF14Utils.validateNumber(jobLevel, 1, 100)) {
-            cardElements.jobLevel.textContent = `Lv. ${jobLevel}`;
-        } else {
-            cardElements.jobLevel.textContent = 'Lv. --';
-        }
+        const levelText = (jobLevel && FF14Utils.validateNumber(jobLevel, 1, 100)) ? `Lv. ${jobLevel}` : 'Lv. --';
+        cardElements.jobLevel.forEach(el => el.textContent = levelText);
 
         // 更新裝備等級
         const gearScore = inputs.gearScore.value;
-        if (gearScore && FF14Utils.validateNumber(gearScore, 0, 999)) {
-            cardElements.gearScore.textContent = gearScore;
-        } else {
-            cardElements.gearScore.textContent = '---';
+        const gearText = (gearScore && FF14Utils.validateNumber(gearScore, 0, 999)) ? gearScore : '---';
+        if (cardElements.gearScore.length > 0) {
+            cardElements.gearScore[0].textContent = gearText;
         }
 
         // 更新部隊名稱
-        const freeCompany = inputs.freeCompany.value.trim();
-        if (freeCompany) {
-            cardElements.freeCompany.textContent = freeCompany;
-        } else {
-            cardElements.freeCompany.textContent = '---';
+        const freeCompany = inputs.freeCompany.value.trim() || '---';
+        if (cardElements.freeCompany.length > 1) {
+            cardElements.freeCompany[1].textContent = freeCompany;
         }
 
-        // 更新主題
+        // 更新主題和版型
         const theme = inputs.cardTheme.value || 'default';
-        characterCard.className = `character-card theme-${theme}`;
+        const layout = inputs.cardLayout.value || 'horizontal';
+        characterCard.className = `character-card theme-${theme} layout-${layout}`;
+        if (characterCard.classList.contains('has-background')) {
+            characterCard.classList.add('has-background');
+        }
     }
+
+    // 版型切換監聽
+    inputs.cardLayout.addEventListener('change', switchLayout);
 
     // 產生角色卡按鈕
     document.getElementById('generateCard').addEventListener('click', function() {
@@ -218,7 +245,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 圖片變換函數
     function updateImageTransform() {
-        const transform = `translate(${imageTransform.x}px, ${imageTransform.y}px) scale(${imageTransform.scale}) rotate(${imageTransform.rotate}deg)`;
+        const transform = `translate(calc(-50% + ${imageTransform.x}px), calc(-50% + ${imageTransform.y}px)) scale(${imageTransform.scale}) rotate(${imageTransform.rotate}deg)`;
         imageElements.backgroundImage.style.transform = transform;
     }
 

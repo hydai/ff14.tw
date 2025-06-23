@@ -60,7 +60,6 @@
 
 /* 角色卡樣式 */
 .character-card {
-    width: 350px;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     border-radius: 15px;
     padding: 0;
@@ -68,8 +67,139 @@
     overflow: hidden;
     color: white;
     font-family: 'Noto Sans TC', sans-serif;
+    transition: all 0.3s ease;
 }
 
+/* 橫版卡片 (800x600) */
+.character-card.layout-horizontal {
+    width: 400px;
+    height: 300px;
+}
+
+.character-card.layout-horizontal .card-content {
+    display: flex;
+    width: 100%;
+    height: 100%;
+}
+
+.character-card.layout-horizontal .card-left {
+    flex: 1.2;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.character-card.layout-horizontal .card-right {
+    flex: 0.8;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 1rem;
+    border-left: 1px solid rgba(255,255,255,0.2);
+}
+
+/* 直版卡片 (600x800) */
+.character-card.layout-vertical {
+    width: 300px;
+    height: 400px;
+}
+
+/* 版型控制 */
+.horizontal-layout {
+    display: flex;
+}
+
+.character-card.layout-vertical .horizontal-layout {
+    display: none;
+}
+
+.character-card.layout-vertical .vertical-layout {
+    display: block !important;
+}
+
+.vertical-layout {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 橫版特殊樣式 */
+.character-card.layout-horizontal .card-header {
+    padding: 1rem 1.5rem;
+    flex: 0 0 auto;
+}
+
+.character-card.layout-horizontal .card-body {
+    padding: 0 1.5rem 1rem;
+    flex: 1;
+    display: flex;
+    align-items: flex-end;
+}
+
+.character-card.layout-horizontal .character-info {
+    margin-bottom: 0.5rem;
+}
+
+.character-card.layout-horizontal .character-name {
+    font-size: 1.4rem;
+    margin-bottom: 0.3rem;
+}
+
+.character-card.layout-horizontal .character-title {
+    font-size: 0.8rem;
+    margin-bottom: 0.2rem;
+}
+
+.character-card.layout-horizontal .server-name {
+    font-size: 0.8rem;
+}
+
+.character-card.layout-horizontal .job-info {
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    flex-direction: column;
+}
+
+.character-card.layout-horizontal .job-icon {
+    width: 50px;
+    height: 50px;
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.character-card.layout-horizontal .job-name {
+    font-size: 1rem;
+    margin-bottom: 0.2rem;
+}
+
+.character-card.layout-horizontal .job-level {
+    font-size: 0.9rem;
+}
+
+.character-card.layout-horizontal .stats-grid {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+    width: 100%;
+}
+
+.character-card.layout-horizontal .stat-item {
+    padding: 0.5rem;
+    text-align: center;
+}
+
+.character-card.layout-horizontal .stat-label {
+    font-size: 0.7rem;
+    margin-bottom: 0.2rem;
+}
+
+.character-card.layout-horizontal .stat-value {
+    font-size: 1rem;
+}
+
+/* 通用樣式 */
 .card-header {
     padding: 2rem;
     background: rgba(255,255,255,0.1);
@@ -194,9 +324,18 @@
         order: -1;
     }
     
-    .character-card {
+    .character-card.layout-horizontal {
         width: 100%;
-        max-width: 350px;
+        max-width: 400px;
+        height: auto;
+        min-height: 250px;
+    }
+    
+    .character-card.layout-vertical {
+        width: 100%;
+        max-width: 300px;
+        height: auto;
+        min-height: 400px;
     }
 }
 
@@ -207,6 +346,19 @@
     
     .stats-grid {
         grid-template-columns: 1fr;
+    }
+    
+    .character-card.layout-horizontal {
+        flex-direction: column;
+        max-width: 300px;
+    }
+    
+    .character-card.layout-horizontal .card-content {
+        flex-direction: column;
+    }
+    
+    .character-card.layout-horizontal .card-right {
+        padding: 1rem 1.5rem;
     }
 }
 
@@ -318,11 +470,18 @@
 }
 
 .background-image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+    max-width: none;
+    max-height: none;
+    width: auto;
+    height: auto;
+    min-width: 100%;
+    min-height: 100%;
     transition: all 0.3s ease;
     transform-origin: center;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
 }
 
 .card-content {
