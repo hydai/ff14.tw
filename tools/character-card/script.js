@@ -86,6 +86,7 @@ document.addEventListener('DOMContentLoaded', function() {
         positionGroup: document.getElementById('positionGroup'),
         scaleGroup: document.getElementById('scaleGroup'),
         rotateGroup: document.getElementById('rotateGroup'),
+        opacityGroup: document.getElementById('opacityGroup'),
         actionGroup: document.getElementById('actionGroup'),
         moveUp: document.getElementById('moveUp'),
         moveDown: document.getElementById('moveDown'),
@@ -95,6 +96,8 @@ document.addEventListener('DOMContentLoaded', function() {
         scaleValue: document.getElementById('scaleValue'),
         rotateSlider: document.getElementById('rotateSlider'),
         rotateValue: document.getElementById('rotateValue'),
+        opacitySlider: document.getElementById('opacitySlider'),
+        opacityValue: document.getElementById('opacityValue'),
         resetImage: document.getElementById('resetImage'),
         removeImage: document.getElementById('removeImage')
     };
@@ -104,7 +107,8 @@ document.addEventListener('DOMContentLoaded', function() {
         x: 0,
         y: 0,
         scale: 1,
-        rotate: 0
+        rotate: 0,
+        opacity: 40 // 預設背景透明度 40%
     };
 
     // 監聽所有輸入變化（除了jobName和serverName，因為它們現在由按鈕控制）
@@ -291,12 +295,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 imageElements.positionGroup.style.display = 'flex';
                 imageElements.scaleGroup.style.display = 'flex';
                 imageElements.rotateGroup.style.display = 'flex';
+                imageElements.opacityGroup.style.display = 'flex';
                 imageElements.actionGroup.style.display = 'flex';
                 
                 characterCard.classList.add('has-background');
                 
                 // 重置變換狀態
                 resetImageTransform();
+                // 立即應用背景透明度
+                updateBackgroundOpacity();
                 FF14Utils.showToast('圖片上傳成功！');
             };
             reader.readAsDataURL(file);
@@ -309,13 +316,26 @@ document.addEventListener('DOMContentLoaded', function() {
         imageElements.backgroundImage.style.transform = transform;
     }
 
+    // 更新背景不透明度函數
+    function updateBackgroundOpacity() {
+        const cardContent = characterCard.querySelector('.card-content');
+        if (cardContent) {
+            // 將百分比轉換為 0-1 的值用於 CSS
+            const opacityValue = imageTransform.opacity / 100;
+            cardContent.style.backgroundColor = `rgba(0,0,0,${opacityValue})`;
+        }
+    }
+
     function resetImageTransform() {
-        imageTransform = { x: 0, y: 0, scale: 1, rotate: 0 };
+        imageTransform = { x: 0, y: 0, scale: 1, rotate: 0, opacity: 40 };
         imageElements.scaleSlider.value = 1;
         imageElements.rotateSlider.value = 0;
+        imageElements.opacitySlider.value = 40;
         imageElements.scaleValue.textContent = '100%';
         imageElements.rotateValue.textContent = '0°';
+        imageElements.opacityValue.textContent = '40%';
         updateImageTransform();
+        updateBackgroundOpacity();
     }
 
     // 圖片位置控制
@@ -353,6 +373,13 @@ document.addEventListener('DOMContentLoaded', function() {
         updateImageTransform();
     });
 
+    // 不透明度控制
+    imageElements.opacitySlider.addEventListener('input', function() {
+        imageTransform.opacity = parseInt(this.value);
+        imageElements.opacityValue.textContent = imageTransform.opacity + '%';
+        updateBackgroundOpacity();
+    });
+
     // 重置圖片
     imageElements.resetImage.addEventListener('click', function() {
         resetImageTransform();
@@ -368,10 +395,18 @@ document.addEventListener('DOMContentLoaded', function() {
         imageElements.positionGroup.style.display = 'none';
         imageElements.scaleGroup.style.display = 'none';
         imageElements.rotateGroup.style.display = 'none';
+        imageElements.opacityGroup.style.display = 'none';
         imageElements.actionGroup.style.display = 'none';
         
         characterCard.classList.remove('has-background');
         inputs.characterImage.value = '';
+        
+        // 重置背景透明度
+        const cardContent = characterCard.querySelector('.card-content');
+        if (cardContent) {
+            cardContent.style.backgroundColor = '';
+        }
+        
         resetImageTransform();
         FF14Utils.showToast('圖片已移除');
     });
