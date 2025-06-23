@@ -718,12 +718,12 @@
     background: #f5f5f5;
 }
 
-/* 職業選擇樣式 */
+/* 職業選擇樣式 - 緊湊設計 */
 .job-category {
-    margin-bottom: 2rem;
+    margin-bottom: 1rem;
     border: 1px solid var(--border-color);
-    border-radius: 10px;
-    padding: 1.5rem;
+    border-radius: 8px;
+    padding: 0.8rem;
     background: #fafbfc;
     transition: all 0.3s ease;
 }
@@ -736,36 +736,38 @@
 .job-category-title {
     display: flex;
     align-items: center;
-    gap: 0.8rem;
-    margin: 0 0 1rem 0;
-    font-size: 1.1rem;
+    gap: 0.5rem;
+    margin: 0 0 0.6rem 0;
+    font-size: 0.95rem;
     font-weight: 600;
     color: var(--dark-color);
-    padding-bottom: 0.5rem;
-    border-bottom: 2px solid #e9ecef;
+    padding-bottom: 0.3rem;
+    border-bottom: 1px solid #e9ecef;
 }
 
 .job-category-icon {
-    font-size: 1.3rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 2rem;
-    height: 2rem;
+    width: 1.4rem;
+    height: 1.4rem;
     background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
     border-radius: 50%;
     color: white;
-    font-size: 1rem;
+    font-size: 0.8rem;
 }
 
 .job-category .selection-grid {
-    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-    gap: 0.6rem;
+    grid-template-columns: repeat(auto-fit, minmax(85px, 1fr));
+    gap: 0.4rem;
 }
 
 .job-btn {
     position: relative;
     overflow: hidden;
+    padding: 0.5rem 0.7rem;
+    font-size: 0.85rem;
+    border-radius: 6px;
 }
 
 .job-btn::before {
@@ -787,16 +789,16 @@
     background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
     color: white;
     border-color: var(--primary-color);
-    box-shadow: 0 4px 12px rgba(74, 144, 226, 0.4);
-    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(74, 144, 226, 0.3);
+    transform: translateY(-1px);
 }
 
 .job-btn.selected::after {
     content: '✓';
     position: absolute;
-    top: 0.2rem;
-    right: 0.3rem;
-    font-size: 0.7rem;
+    top: 0.1rem;
+    right: 0.2rem;
+    font-size: 0.6rem;
     font-weight: bold;
     color: white;
 }
@@ -805,51 +807,65 @@
 #selectedJob {
     background: linear-gradient(135deg, #e8f5e8 0%, #f0f8ff 100%);
     border: 2px solid var(--primary-color);
-    margin-top: 1.5rem;
+    margin-top: 1rem;
+    padding: 0.8rem 1rem;
+    border-radius: 8px;
 }
 
 #selectedJob .selected-value {
     font-weight: 600;
     color: var(--primary-color);
+    font-size: 0.95rem;
 }
 
 /* 響應式設計 - 職業選擇 */
 @media (max-width: 768px) {
     .job-category {
-        padding: 1rem;
-        margin-bottom: 1.5rem;
+        padding: 0.6rem;
+        margin-bottom: 0.8rem;
     }
     
     .job-category .selection-grid {
-        grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
-        gap: 0.5rem;
+        grid-template-columns: repeat(auto-fit, minmax(75px, 1fr));
+        gap: 0.3rem;
     }
     
     .job-category-title {
-        font-size: 1rem;
-        gap: 0.6rem;
+        font-size: 0.9rem;
+        gap: 0.4rem;
+        margin-bottom: 0.5rem;
     }
     
     .job-category-icon {
-        width: 1.8rem;
-        height: 1.8rem;
-        font-size: 0.9rem;
+        width: 1.2rem;
+        height: 1.2rem;
+        font-size: 0.7rem;
+    }
+    
+    .job-btn {
+        padding: 0.4rem 0.6rem;
+        font-size: 0.8rem;
     }
 }
 
 @media (max-width: 480px) {
     .job-category {
-        padding: 0.8rem;
-        margin-bottom: 1rem;
+        padding: 0.5rem;
+        margin-bottom: 0.6rem;
     }
     
     .job-category .selection-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 0.4rem;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.25rem;
     }
     
     .job-btn {
+        padding: 0.4rem 0.5rem;
+        font-size: 0.75rem;
+    }
+    
+    #selectedJob {
         padding: 0.6rem 0.8rem;
-        font-size: 0.85rem;
+        margin-top: 0.8rem;
     }
 }
