@@ -324,3 +324,43 @@ For tools with visual content:
 
 ### Language and Terminology
 - 使用台灣用語：「資料」而非「數據」
+- 使用台灣用語：「智慧」而非「智能」
+- 所有內容必須使用繁體中文與台灣慣用詞彙
+- 避免中國用語，確保在地化品質
+
+## Git Operations
+
+### Commit Message Standards
+When creating commits, use descriptive Traditional Chinese messages following this pattern:
+```
+功能類別：簡短描述主要變更
+
+- 詳細變更項目1
+- 詳細變更項目2
+- 其他重要資訊
+
+🤖 Generated with [Claude Code](https://claude.ai/code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+```
+
+### Common Git Workflows
+- Use `git status` and `git diff` to review changes before committing
+- Stage specific files rather than using `git add .`
+- Always include meaningful commit messages in Traditional Chinese
+- Check recent commit history with `git log --oneline -5` for message style consistency
+
+## Assets and Resources
+
+### Official FF14 Assets
+The project includes Square Enix official assets in `assets/images/se/FFXIVJobIcons/`:
+- **45 job icons** organized by role (Tank/Healer/DPS/Crafter/Gatherer/Limited)
+- **Proper attribution**: All assets from Square Enix Official Fankit
+- **Usage guidelines**: Non-commercial educational use only
+- **File structure**: Organized by job categories (00_ROLE through 06_LIMITED)
+
+### Asset Management Patterns
+- Job icons follow path pattern: `assets/images/se/FFXIVJobIcons/{category}/{type}/{JobName}.png`
+- Use relative paths from tool directories: `../../assets/images/se/...`
+- Implement fallback mechanisms for missing assets
+- Optimize images for web delivery (<200KB recommended)
