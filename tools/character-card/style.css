@@ -370,11 +370,19 @@
 
 @media (max-width: 768px) {
     .controls-row {
-        gap: 1.5rem;
+        gap: 1rem;
         justify-content: center;
     }
     
+    .control-group {
+        min-width: 100px;
+    }
+    
     .control-group input[type="range"] {
+        width: 100px;
+    }
+    
+    .file-input {
         width: 100px;
     }
 }
@@ -434,9 +442,10 @@
 
 .controls-row {
     display: flex;
-    gap: 3rem;
-    align-items: center;
+    gap: 2rem;
+    align-items: flex-start;
     flex-wrap: wrap;
+    justify-content: space-between;
 }
 
 .control-group {
@@ -444,6 +453,8 @@
     flex-direction: column;
     align-items: center;
     gap: 0.8rem;
+    flex: 1;
+    min-width: 120px;
 }
 
 .control-group label {
@@ -515,6 +526,33 @@
     padding: 0.4rem 0.8rem;
     font-size: 0.8rem;
     margin: 0 0.2rem;
+}
+
+.file-input {
+    padding: 0.5rem;
+    border: 2px solid var(--border-color);
+    border-radius: 5px;
+    background: white;
+    cursor: pointer;
+    font-size: 0.8rem;
+    width: 120px;
+    text-align: center;
+}
+
+.file-input:hover {
+    border-color: var(--primary-color);
+}
+
+.action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.action-buttons .btn {
+    margin: 0;
+    width: 100%;
+    padding: 0.3rem 0.6rem;
 }
 
 /* 角色卡背景圖片樣式 */

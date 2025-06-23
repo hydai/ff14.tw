@@ -60,8 +60,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 圖片編輯相關元素
     const imageElements = {
-        controls: document.getElementById('imageControls'),
+        controls: document.querySelector('.image-controls'),
         backgroundImage: document.getElementById('backgroundImage'),
+        positionGroup: document.getElementById('positionGroup'),
+        scaleGroup: document.getElementById('scaleGroup'),
+        rotateGroup: document.getElementById('rotateGroup'),
+        actionGroup: document.getElementById('actionGroup'),
         moveUp: document.getElementById('moveUp'),
         moveDown: document.getElementById('moveDown'),
         moveLeft: document.getElementById('moveLeft'),
@@ -232,7 +236,13 @@ document.addEventListener('DOMContentLoaded', function() {
             reader.onload = function(e) {
                 imageElements.backgroundImage.src = e.target.result;
                 imageElements.backgroundImage.style.display = 'block';
-                imageElements.controls.style.display = 'block';
+                
+                // 顯示編輯控制項
+                imageElements.positionGroup.style.display = 'flex';
+                imageElements.scaleGroup.style.display = 'flex';
+                imageElements.rotateGroup.style.display = 'flex';
+                imageElements.actionGroup.style.display = 'flex';
+                
                 characterCard.classList.add('has-background');
                 
                 // 重置變換狀態
@@ -303,7 +313,13 @@ document.addEventListener('DOMContentLoaded', function() {
     imageElements.removeImage.addEventListener('click', function() {
         imageElements.backgroundImage.style.display = 'none';
         imageElements.backgroundImage.src = '';
-        imageElements.controls.style.display = 'none';
+        
+        // 隱藏編輯控制項
+        imageElements.positionGroup.style.display = 'none';
+        imageElements.scaleGroup.style.display = 'none';
+        imageElements.rotateGroup.style.display = 'none';
+        imageElements.actionGroup.style.display = 'none';
+        
         characterCard.classList.remove('has-background');
         inputs.characterImage.value = '';
         resetImageTransform();
