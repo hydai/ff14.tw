@@ -32,6 +32,104 @@
             </section>
 
             <div class="tool-container">
+                <div class="preview-section">
+                    <div class="image-controls" id="imageControls" style="display: none;">
+                        <div class="control-group">
+                            <label>位置調整</label>
+                            <div class="position-controls">
+                                <button type="button" class="control-btn" id="moveUp">↑</button>
+                                <button type="button" class="control-btn" id="moveDown">↓</button>
+                                <button type="button" class="control-btn" id="moveLeft">←</button>
+                                <button type="button" class="control-btn" id="moveRight">→</button>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <label>縮放</label>
+                            <input type="range" id="scaleSlider" min="0.5" max="2" step="0.1" value="1">
+                            <span id="scaleValue">100%</span>
+                        </div>
+                        <div class="control-group">
+                            <label>旋轉</label>
+                            <input type="range" id="rotateSlider" min="0" max="360" step="1" value="0">
+                            <span id="rotateValue">0°</span>
+                        </div>
+                        <div class="control-group">
+                            <button type="button" class="btn btn-secondary" id="resetImage">重置圖片</button>
+                            <button type="button" class="btn btn-secondary" id="removeImage">移除圖片</button>
+                        </div>
+                    </div>
+                    
+                    <div id="characterCard" class="character-card theme-default layout-horizontal">
+                        <div class="card-background" id="cardBackground">
+                            <img id="backgroundImage" class="background-image" style="display: none;">
+                        </div>
+                        <div class="card-content">
+                            <!-- 橫版布局 -->
+                            <div class="card-left horizontal-layout">
+                                <div class="card-header">
+                                    <div class="character-info">
+                                        <h2 class="character-name">角色名稱</h2>
+                                        <p class="character-title">稱號</p>
+                                        <p class="server-name">伺服器</p>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="stats-grid">
+                                        <div class="stat-item">
+                                            <span class="stat-label">裝備等級</span>
+                                            <span class="stat-value">---</span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <span class="stat-label">部隊</span>
+                                            <span class="stat-value">---</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-right horizontal-layout">
+                                <div class="job-info">
+                                    <div class="job-icon">⚔️</div>
+                                    <div class="job-details">
+                                        <span class="job-name">職業</span>
+                                        <span class="job-level">Lv. --</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 直版布局 -->
+                            <div class="vertical-layout" style="display: none;">
+                                <div class="card-header">
+                                    <div class="character-info">
+                                        <h2 class="character-name">角色名稱</h2>
+                                        <p class="character-title">稱號</p>
+                                        <p class="server-name">伺服器</p>
+                                    </div>
+                                    <div class="job-info">
+                                        <div class="job-icon">⚔️</div>
+                                        <div class="job-details">
+                                            <span class="job-name">職業</span>
+                                            <span class="job-level">Lv. --</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="card-body">
+                                    <div class="stats-grid">
+                                        <div class="stat-item">
+                                            <span class="stat-label">裝備等級</span>
+                                            <span class="stat-value">---</span>
+                                        </div>
+                                        <div class="stat-item">
+                                            <span class="stat-label">部隊</span>
+                                            <span class="stat-value">---</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="input-section">
                     <div class="form-group">
                         <label for="characterName">角色名稱</label>
@@ -238,104 +336,6 @@
                     <div class="button-group">
                         <button id="generateCard" class="btn">產生角色卡</button>
                         <button id="downloadCard" class="btn btn-secondary">下載圖片</button>
-                    </div>
-                </div>
-
-                <div class="preview-section">
-                    <div class="image-controls" id="imageControls" style="display: none;">
-                        <div class="control-group">
-                            <label>位置調整</label>
-                            <div class="position-controls">
-                                <button type="button" class="control-btn" id="moveUp">↑</button>
-                                <button type="button" class="control-btn" id="moveDown">↓</button>
-                                <button type="button" class="control-btn" id="moveLeft">←</button>
-                                <button type="button" class="control-btn" id="moveRight">→</button>
-                            </div>
-                        </div>
-                        <div class="control-group">
-                            <label>縮放</label>
-                            <input type="range" id="scaleSlider" min="0.5" max="2" step="0.1" value="1">
-                            <span id="scaleValue">100%</span>
-                        </div>
-                        <div class="control-group">
-                            <label>旋轉</label>
-                            <input type="range" id="rotateSlider" min="0" max="360" step="1" value="0">
-                            <span id="rotateValue">0°</span>
-                        </div>
-                        <div class="control-group">
-                            <button type="button" class="btn btn-secondary" id="resetImage">重置圖片</button>
-                            <button type="button" class="btn btn-secondary" id="removeImage">移除圖片</button>
-                        </div>
-                    </div>
-                    
-                    <div id="characterCard" class="character-card theme-default layout-horizontal">
-                        <div class="card-background" id="cardBackground">
-                            <img id="backgroundImage" class="background-image" style="display: none;">
-                        </div>
-                        <div class="card-content">
-                            <!-- 橫版布局 -->
-                            <div class="card-left horizontal-layout">
-                                <div class="card-header">
-                                    <div class="character-info">
-                                        <h2 class="character-name">角色名稱</h2>
-                                        <p class="character-title">稱號</p>
-                                        <p class="server-name">伺服器</p>
-                                    </div>
-                                </div>
-                                <div class="card-body">
-                                    <div class="stats-grid">
-                                        <div class="stat-item">
-                                            <span class="stat-label">裝備等級</span>
-                                            <span class="stat-value">---</span>
-                                        </div>
-                                        <div class="stat-item">
-                                            <span class="stat-label">部隊</span>
-                                            <span class="stat-value">---</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="card-right horizontal-layout">
-                                <div class="job-info">
-                                    <div class="job-icon">⚔️</div>
-                                    <div class="job-details">
-                                        <span class="job-name">職業</span>
-                                        <span class="job-level">Lv. --</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- 直版布局 -->
-                            <div class="vertical-layout" style="display: none;">
-                                <div class="card-header">
-                                    <div class="character-info">
-                                        <h2 class="character-name">角色名稱</h2>
-                                        <p class="character-title">稱號</p>
-                                        <p class="server-name">伺服器</p>
-                                    </div>
-                                    <div class="job-info">
-                                        <div class="job-icon">⚔️</div>
-                                        <div class="job-details">
-                                            <span class="job-name">職業</span>
-                                            <span class="job-level">Lv. --</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="card-body">
-                                    <div class="stats-grid">
-                                        <div class="stat-item">
-                                            <span class="stat-label">裝備等級</span>
-                                            <span class="stat-value">---</span>
-                                        </div>
-                                        <div class="stat-item">
-                                            <span class="stat-label">部隊</span>
-                                            <span class="stat-value">---</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>

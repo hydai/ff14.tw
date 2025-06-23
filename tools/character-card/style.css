@@ -1,8 +1,8 @@
 /* 角色卡產生器專用樣式 */
 
 .tool-container {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+    display: flex;
+    flex-direction: column;
     gap: 3rem;
     margin-top: 2rem;
 }
@@ -55,7 +55,12 @@
 .preview-section {
     display: flex;
     justify-content: center;
-    align-items: flex-start;
+    align-items: center;
+    background: white;
+    padding: 3rem;
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    overflow-x: auto;
 }
 
 /* 角色卡樣式 */
@@ -72,8 +77,8 @@
 
 /* 橫版卡片 (800x600) */
 .character-card.layout-horizontal {
-    width: 400px;
-    height: 300px;
+    width: 800px;
+    height: 600px;
 }
 
 .character-card.layout-horizontal .card-content {
@@ -95,14 +100,14 @@
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    padding: 1rem;
+    padding: 2rem;
     border-left: 1px solid rgba(255,255,255,0.2);
 }
 
 /* 直版卡片 (600x800) */
 .character-card.layout-vertical {
-    width: 300px;
-    height: 400px;
+    width: 600px;
+    height: 800px;
 }
 
 /* 版型控制 */
@@ -127,33 +132,33 @@
 
 /* 橫版特殊樣式 */
 .character-card.layout-horizontal .card-header {
-    padding: 1rem 1.5rem;
+    padding: 3rem 4rem;
     flex: 0 0 auto;
 }
 
 .character-card.layout-horizontal .card-body {
-    padding: 0 1.5rem 1rem;
+    padding: 0 4rem 3rem;
     flex: 1;
     display: flex;
     align-items: flex-end;
 }
 
 .character-card.layout-horizontal .character-info {
-    margin-bottom: 0.5rem;
+    margin-bottom: 2rem;
 }
 
 .character-card.layout-horizontal .character-name {
-    font-size: 1.4rem;
-    margin-bottom: 0.3rem;
+    font-size: 3rem;
+    margin-bottom: 1rem;
 }
 
 .character-card.layout-horizontal .character-title {
-    font-size: 0.8rem;
-    margin-bottom: 0.2rem;
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
 }
 
 .character-card.layout-horizontal .server-name {
-    font-size: 0.8rem;
+    font-size: 1.3rem;
 }
 
 .character-card.layout-horizontal .job-info {
@@ -164,86 +169,86 @@
 }
 
 .character-card.layout-horizontal .job-icon {
-    width: 50px;
-    height: 50px;
-    font-size: 1.5rem;
-    margin-bottom: 0.5rem;
+    width: 120px;
+    height: 120px;
+    font-size: 4rem;
+    margin-bottom: 1.5rem;
 }
 
 .character-card.layout-horizontal .job-name {
-    font-size: 1rem;
-    margin-bottom: 0.2rem;
+    font-size: 2rem;
+    margin-bottom: 0.8rem;
 }
 
 .character-card.layout-horizontal .job-level {
-    font-size: 0.9rem;
+    font-size: 1.8rem;
 }
 
 .character-card.layout-horizontal .stats-grid {
     grid-template-columns: 1fr;
-    gap: 0.5rem;
+    gap: 1.5rem;
     width: 100%;
 }
 
 .character-card.layout-horizontal .stat-item {
-    padding: 0.5rem;
+    padding: 1.5rem;
     text-align: center;
 }
 
 .character-card.layout-horizontal .stat-label {
-    font-size: 0.7rem;
-    margin-bottom: 0.2rem;
+    font-size: 1.2rem;
+    margin-bottom: 0.8rem;
 }
 
 .character-card.layout-horizontal .stat-value {
-    font-size: 1rem;
+    font-size: 2rem;
 }
 
 /* 通用樣式 */
 .card-header {
-    padding: 2rem;
+    padding: 4rem;
     background: rgba(255,255,255,0.1);
     backdrop-filter: blur(10px);
 }
 
 .character-info {
-    margin-bottom: 1.5rem;
+    margin-bottom: 3rem;
 }
 
 .character-name {
-    font-size: 1.8rem;
+    font-size: 3.5rem;
     font-weight: 700;
-    margin-bottom: 0.5rem;
+    margin-bottom: 1rem;
     text-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }
 
 .character-title {
-    font-size: 1rem;
+    font-size: 1.8rem;
     opacity: 0.9;
-    margin-bottom: 0.3rem;
+    margin-bottom: 0.8rem;
     font-style: italic;
 }
 
 .server-name {
-    font-size: 0.9rem;
+    font-size: 1.5rem;
     opacity: 0.8;
 }
 
 .job-info {
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: 2rem;
 }
 
 .job-icon {
-    width: 50px;
-    height: 50px;
+    width: 100px;
+    height: 100px;
     background: rgba(255,255,255,0.2);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.5rem;
+    font-size: 3rem;
 }
 
 .job-details {
@@ -252,43 +257,44 @@
 }
 
 .job-name {
-    font-size: 1.2rem;
+    font-size: 2.2rem;
     font-weight: 600;
+    margin-bottom: 0.5rem;
 }
 
 .job-level {
-    font-size: 1rem;
+    font-size: 1.8rem;
     opacity: 0.9;
 }
 
 .card-body {
-    padding: 2rem;
+    padding: 4rem;
 }
 
 .stats-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 1rem;
+    gap: 2rem;
 }
 
 .stat-item {
     text-align: center;
     background: rgba(255,255,255,0.1);
-    padding: 1rem;
-    border-radius: 8px;
+    padding: 2rem;
+    border-radius: 15px;
     backdrop-filter: blur(5px);
 }
 
 .stat-label {
     display: block;
-    font-size: 0.8rem;
+    font-size: 1.3rem;
     opacity: 0.8;
-    margin-bottom: 0.5rem;
+    margin-bottom: 1rem;
 }
 
 .stat-value {
     display: block;
-    font-size: 1.2rem;
+    font-size: 2.5rem;
     font-weight: 600;
 }
 
@@ -314,51 +320,65 @@
 }
 
 /* 響應式設計 */
-@media (max-width: 968px) {
+@media (max-width: 1200px) {
     .tool-container {
-        grid-template-columns: 1fr;
         gap: 2rem;
     }
     
     .preview-section {
-        order: -1;
+        padding: 2rem;
     }
     
     .character-card.layout-horizontal {
-        width: 100%;
-        max-width: 400px;
-        height: auto;
-        min-height: 250px;
+        width: 800px;
+        height: 600px;
+        flex-shrink: 0;
     }
     
     .character-card.layout-vertical {
-        width: 100%;
-        max-width: 300px;
-        height: auto;
-        min-height: 400px;
+        width: 600px;
+        height: 800px;
+        flex-shrink: 0;
     }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 968px) {
+    .character-card.layout-horizontal {
+        transform: scale(0.75);
+        transform-origin: center;
+    }
+    
+    .character-card.layout-vertical {
+        transform: scale(0.75);
+        transform-origin: center;
+    }
+}
+
+@media (max-width: 768px) {
     .button-group {
         flex-direction: column;
     }
     
-    .stats-grid {
-        grid-template-columns: 1fr;
+    .character-card.layout-horizontal {
+        transform: scale(0.6);
+    }
+    
+    .character-card.layout-vertical {
+        transform: scale(0.6);
+    }
+}
+
+@media (max-width: 480px) {
+    .preview-section {
+        padding: 1rem;
     }
     
     .character-card.layout-horizontal {
-        flex-direction: column;
-        max-width: 300px;
+        transform: scale(0.5);
     }
     
-    .character-card.layout-horizontal .card-content {
-        flex-direction: column;
-    }
-    
-    .character-card.layout-horizontal .card-right {
-        padding: 1rem 1.5rem;
+    .character-card.layout-vertical {
+        transform: scale(0.5);
     }
 }
 
