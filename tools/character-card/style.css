@@ -972,3 +972,72 @@
         margin-top: 0.8rem;
     }
 }
+
+/* 可折疊介面樣式 */
+.collapsible-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 8px;
+    transition: background-color 0.3s ease;
+}
+
+.collapsible-header:hover {
+    background-color: #f8f9ff;
+}
+
+.collapsible-header label {
+    margin: 0;
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--dark-color);
+}
+
+.collapse-toggle {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.3rem;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.collapse-toggle:hover {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.toggle-icon {
+    font-size: 1rem;
+    font-weight: bold;
+    transition: transform 0.3s ease;
+    display: inline-block;
+}
+
+.collapse-toggle.collapsed .toggle-icon {
+    transform: rotate(-90deg);
+}
+
+.collapsible-content {
+    overflow: hidden;
+    transition: max-height 0.4s ease, opacity 0.3s ease;
+    max-height: 2000px;
+    opacity: 1;
+}
+
+.collapsible-content.collapsed {
+    max-height: 0;
+    opacity: 0;
+    margin-bottom: 0;
+}
+
+.collapsible-content.collapsed .job-category,
+.collapsible-content.collapsed .server-selection-step {
+    margin-bottom: 0;
+}

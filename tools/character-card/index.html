@@ -129,41 +129,48 @@
                     </div>
 
                     <div class="form-group">
-                        <label>伺服器選擇</label>
+                        <div class="collapsible-header" id="serverCollapsibleHeader">
+                            <label>伺服器選擇</label>
+                            <button type="button" class="collapse-toggle" id="serverCollapseToggle">
+                                <span class="toggle-icon">▼</span>
+                            </button>
+                        </div>
                         
-                        <!-- 第一層：區域選擇 -->
-                        <div class="server-selection-step">
-                            <h4>選擇區域</h4>
-                            <div class="selection-grid">
-                                <button type="button" class="selection-btn" data-region="Japan">Japan</button>
-                                <button type="button" class="selection-btn" data-region="Oceanian">Oceanian</button>
-                                <button type="button" class="selection-btn" data-region="Europe">Europe</button>
-                                <button type="button" class="selection-btn" data-region="North America">North America</button>
-                                <button type="button" class="selection-btn" data-region="Taiwan">Taiwan</button>
-                            </div>
-                        </div>
-
-                        <!-- 第二層：資料中心選擇 -->
-                        <div class="server-selection-step" id="datacenterStep" style="display: none;">
-                            <h4>選擇資料中心</h4>
-                            <div class="selection-grid" id="datacenterGrid">
-                                <!-- 動態生成 -->
-                            </div>
-                        </div>
-
-                        <!-- 第三層：伺服器選擇 -->
-                        <div class="server-selection-step" id="serverStep" style="display: none;">
-                            <h4>選擇伺服器</h4>
-                            <div class="selection-grid" id="serverGrid">
-                                <!-- 動態生成 -->
-                            </div>
-                        </div>
-
                         <!-- 已選擇的伺服器顯示 -->
                         <div class="selected-server" id="selectedServer" style="display: none;">
                             <span class="selected-label">已選擇：</span>
                             <span class="selected-value" id="selectedServerName"></span>
                             <button type="button" class="clear-btn" id="clearServer">重新選擇</button>
+                        </div>
+
+                        <div class="collapsible-content" id="serverCollapsibleContent">
+                            <!-- 第一層：區域選擇 -->
+                            <div class="server-selection-step">
+                                <h4>選擇區域</h4>
+                                <div class="selection-grid">
+                                    <button type="button" class="selection-btn" data-region="Japan">Japan</button>
+                                    <button type="button" class="selection-btn" data-region="Oceanian">Oceanian</button>
+                                    <button type="button" class="selection-btn" data-region="Europe">Europe</button>
+                                    <button type="button" class="selection-btn" data-region="North America">North America</button>
+                                    <button type="button" class="selection-btn" data-region="Taiwan">Taiwan</button>
+                                </div>
+                            </div>
+
+                            <!-- 第二層：資料中心選擇 -->
+                            <div class="server-selection-step" id="datacenterStep" style="display: none;">
+                                <h4>選擇資料中心</h4>
+                                <div class="selection-grid" id="datacenterGrid">
+                                    <!-- 動態生成 -->
+                                </div>
+                            </div>
+
+                            <!-- 第三層：伺服器選擇 -->
+                            <div class="server-selection-step" id="serverStep" style="display: none;">
+                                <h4>選擇伺服器</h4>
+                                <div class="selection-grid" id="serverGrid">
+                                    <!-- 動態生成 -->
+                                </div>
+                            </div>
                         </div>
                         
                         <!-- 隱藏的input用於表單提交 -->
@@ -171,82 +178,89 @@
                     </div>
 
                     <div class="form-group">
-                        <label>職業選擇</label>
+                        <div class="collapsible-header" id="jobCollapsibleHeader">
+                            <label>職業選擇</label>
+                            <button type="button" class="collapse-toggle" id="jobCollapseToggle">
+                                <span class="toggle-icon">▼</span>
+                            </button>
+                        </div>
                         
-                        <!-- 坦克職業 -->
-                        <div class="job-category">
-                            <h4 class="job-category-title">
-                                <span class="job-category-icon">🛡️</span>
-                                坦克
-                            </h4>
-                            <div class="selection-grid">
-                                <button type="button" class="selection-btn job-btn" data-job="騎士" data-category="坦克">騎士</button>
-                                <button type="button" class="selection-btn job-btn" data-job="戰士" data-category="坦克">戰士</button>
-                                <button type="button" class="selection-btn job-btn" data-job="暗黑騎士" data-category="坦克">暗黑騎士</button>
-                                <button type="button" class="selection-btn job-btn" data-job="絕槍戰士" data-category="坦克">絕槍戰士</button>
-                            </div>
-                        </div>
-
-                        <!-- 治療職業 -->
-                        <div class="job-category">
-                            <h4 class="job-category-title">
-                                <span class="job-category-icon">💚</span>
-                                治療
-                            </h4>
-                            <div class="selection-grid">
-                                <button type="button" class="selection-btn job-btn" data-job="白魔法師" data-category="治療">白魔法師</button>
-                                <button type="button" class="selection-btn job-btn" data-job="學者" data-category="治療">學者</button>
-                                <button type="button" class="selection-btn job-btn" data-job="占星術士" data-category="治療">占星術士</button>
-                                <button type="button" class="selection-btn job-btn" data-job="賢者" data-category="治療">賢者</button>
-                            </div>
-                        </div>
-
-                        <!-- 近戰職業 -->
-                        <div class="job-category">
-                            <h4 class="job-category-title">
-                                <span class="job-category-icon">⚔️</span>
-                                近戰
-                            </h4>
-                            <div class="selection-grid">
-                                <button type="button" class="selection-btn job-btn" data-job="武僧" data-category="近戰">武僧</button>
-                                <button type="button" class="selection-btn job-btn" data-job="龍騎士" data-category="近戰">龍騎士</button>
-                                <button type="button" class="selection-btn job-btn" data-job="忍者" data-category="近戰">忍者</button>
-                                <button type="button" class="selection-btn job-btn" data-job="武士" data-category="近戰">武士</button>
-                                <button type="button" class="selection-btn job-btn" data-job="鐮刀" data-category="近戰">鐮刀</button>
-                            </div>
-                        </div>
-
-                        <!-- 遠程職業 -->
-                        <div class="job-category">
-                            <h4 class="job-category-title">
-                                <span class="job-category-icon">🏹</span>
-                                遠程
-                            </h4>
-                            <div class="selection-grid">
-                                <button type="button" class="selection-btn job-btn" data-job="詩人" data-category="遠程">詩人</button>
-                                <button type="button" class="selection-btn job-btn" data-job="機工士" data-category="遠程">機工士</button>
-                                <button type="button" class="selection-btn job-btn" data-job="舞者" data-category="遠程">舞者</button>
-                            </div>
-                        </div>
-
-                        <!-- 魔法職業 -->
-                        <div class="job-category">
-                            <h4 class="job-category-title">
-                                <span class="job-category-icon">🔮</span>
-                                魔法
-                            </h4>
-                            <div class="selection-grid">
-                                <button type="button" class="selection-btn job-btn" data-job="黑魔法師" data-category="魔法">黑魔法師</button>
-                                <button type="button" class="selection-btn job-btn" data-job="召喚師" data-category="魔法">召喚師</button>
-                                <button type="button" class="selection-btn job-btn" data-job="赤魔法師" data-category="魔法">赤魔法師</button>
-                            </div>
-                        </div>
-
                         <!-- 已選擇的職業顯示 -->
                         <div class="selected-server" id="selectedJob" style="display: none;">
                             <span class="selected-label">已選擇職業：</span>
                             <span class="selected-value" id="selectedJobName"></span>
                             <button type="button" class="clear-btn" id="clearJob">重新選擇</button>
+                        </div>
+
+                        <div class="collapsible-content" id="jobCollapsibleContent">
+                            <!-- 坦克職業 -->
+                            <div class="job-category">
+                                <h4 class="job-category-title">
+                                    <span class="job-category-icon">🛡️</span>
+                                    坦克
+                                </h4>
+                                <div class="selection-grid">
+                                    <button type="button" class="selection-btn job-btn" data-job="騎士" data-category="坦克">騎士</button>
+                                    <button type="button" class="selection-btn job-btn" data-job="戰士" data-category="坦克">戰士</button>
+                                    <button type="button" class="selection-btn job-btn" data-job="暗黑騎士" data-category="坦克">暗黑騎士</button>
+                                    <button type="button" class="selection-btn job-btn" data-job="絕槍戰士" data-category="坦克">絕槍戰士</button>
+                                </div>
+                            </div>
+
+                            <!-- 治療職業 -->
+                            <div class="job-category">
+                                <h4 class="job-category-title">
+                                    <span class="job-category-icon">💚</span>
+                                    治療
+                                </h4>
+                                <div class="selection-grid">
+                                    <button type="button" class="selection-btn job-btn" data-job="白魔法師" data-category="治療">白魔法師</button>
+                                    <button type="button" class="selection-btn job-btn" data-job="學者" data-category="治療">學者</button>
+                                    <button type="button" class="selection-btn job-btn" data-job="占星術士" data-category="治療">占星術士</button>
+                                    <button type="button" class="selection-btn job-btn" data-job="賢者" data-category="治療">賢者</button>
+                                </div>
+                            </div>
+
+                            <!-- 近戰職業 -->
+                            <div class="job-category">
+                                <h4 class="job-category-title">
+                                    <span class="job-category-icon">⚔️</span>
+                                    近戰
+                                </h4>
+                                <div class="selection-grid">
+                                    <button type="button" class="selection-btn job-btn" data-job="武僧" data-category="近戰">武僧</button>
+                                    <button type="button" class="selection-btn job-btn" data-job="龍騎士" data-category="近戰">龍騎士</button>
+                                    <button type="button" class="selection-btn job-btn" data-job="忍者" data-category="近戰">忍者</button>
+                                    <button type="button" class="selection-btn job-btn" data-job="武士" data-category="近戰">武士</button>
+                                    <button type="button" class="selection-btn job-btn" data-job="鐮刀" data-category="近戰">鐮刀</button>
+                                </div>
+                            </div>
+
+                            <!-- 遠程職業 -->
+                            <div class="job-category">
+                                <h4 class="job-category-title">
+                                    <span class="job-category-icon">🏹</span>
+                                    遠程
+                                </h4>
+                                <div class="selection-grid">
+                                    <button type="button" class="selection-btn job-btn" data-job="詩人" data-category="遠程">詩人</button>
+                                    <button type="button" class="selection-btn job-btn" data-job="機工士" data-category="遠程">機工士</button>
+                                    <button type="button" class="selection-btn job-btn" data-job="舞者" data-category="遠程">舞者</button>
+                                </div>
+                            </div>
+
+                            <!-- 魔法職業 -->
+                            <div class="job-category">
+                                <h4 class="job-category-title">
+                                    <span class="job-category-icon">🔮</span>
+                                    魔法
+                                </h4>
+                                <div class="selection-grid">
+                                    <button type="button" class="selection-btn job-btn" data-job="黑魔法師" data-category="魔法">黑魔法師</button>
+                                    <button type="button" class="selection-btn job-btn" data-job="召喚師" data-category="魔法">召喚師</button>
+                                    <button type="button" class="selection-btn job-btn" data-job="赤魔法師" data-category="魔法">赤魔法師</button>
+                                </div>
+                            </div>
                         </div>
                         
                         <!-- 隐藏的input用於表單提交 -->

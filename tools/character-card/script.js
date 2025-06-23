@@ -540,6 +540,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // 更新角色卡
                 updateCharacterCard();
+                
+                // 自動折疊伺服器選擇區域
+                autoCollapse('server');
             });
             
             serverSelectionElements.serverGrid.appendChild(button);
@@ -574,6 +577,11 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // 更新角色卡
         updateCharacterCard();
+        
+        // 自動展開伺服器選擇區域
+        if (collapsibleState.server) {
+            toggleCollapsible('server');
+        }
     });
 
     // 職業選擇相關元素
@@ -605,6 +613,9 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // 更新角色卡
             updateCharacterCard();
+            
+            // 自動折疊職業選擇區域
+            autoCollapse('job');
         });
     });
 
@@ -628,6 +639,81 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // 更新角色卡
         updateCharacterCard();
+        
+        // 自動展開職業選擇區域
+        if (collapsibleState.job) {
+            toggleCollapsible('job');
+        }
+    });
+
+    // 可折疊功能相關元素
+    const collapsibleElements = {
+        serverHeader: document.getElementById('serverCollapsibleHeader'),
+        serverToggle: document.getElementById('serverCollapseToggle'),
+        serverContent: document.getElementById('serverCollapsibleContent'),
+        jobHeader: document.getElementById('jobCollapsibleHeader'),
+        jobToggle: document.getElementById('jobCollapseToggle'),
+        jobContent: document.getElementById('jobCollapsibleContent')
+    };
+
+    // 折疊狀態管理
+    let collapsibleState = {
+        server: false, // false = 展開, true = 折疊
+        job: false
+    };
+
+    // 折疊/展開函數
+    function toggleCollapsible(section) {
+        const isCollapsed = collapsibleState[section];
+        const content = collapsibleElements[`${section}Content`];
+        const toggle = collapsibleElements[`${section}Toggle`];
+        
+        if (isCollapsed) {
+            // 展開
+            content.classList.remove('collapsed');
+            toggle.classList.remove('collapsed');
+            collapsibleState[section] = false;
+        } else {
+            // 折疊
+            content.classList.add('collapsed');
+            toggle.classList.add('collapsed');
+            collapsibleState[section] = true;
+        }
+    }
+
+    // 自動折疊函數（選擇後調用）
+    function autoCollapse(section) {
+        if (!collapsibleState[section]) { // 只有在展開狀態才自動折疊
+            setTimeout(() => {
+                toggleCollapsible(section);
+            }, 500); // 延遲500ms讓用戶看到選擇結果
+        }
+    }
+
+    // 伺服器折疊按鈕事件
+    collapsibleElements.serverHeader.addEventListener('click', function(e) {
+        if (e.target.classList.contains('collapse-toggle') || e.target.classList.contains('toggle-icon')) {
+            return; // 讓按鈕本身的事件處理
+        }
+        toggleCollapsible('server');
+    });
+
+    collapsibleElements.serverToggle.addEventListener('click', function(e) {
+        e.stopPropagation();
+        toggleCollapsible('server');
+    });
+
+    // 職業折疊按鈕事件
+    collapsibleElements.jobHeader.addEventListener('click', function(e) {
+        if (e.target.classList.contains('collapse-toggle') || e.target.classList.contains('toggle-icon')) {
+            return; // 讓按鈕本身的事件處理
+        }
+        toggleCollapsible('job');
+    });
+
+    collapsibleElements.jobToggle.addEventListener('click', function(e) {
+        e.stopPropagation();
+        toggleCollapsible('job');
     });
 
     // 初始化角色卡
