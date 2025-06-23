@@ -12,7 +12,8 @@
       "公會令": "公會任務",
       "誅滅戰": "蠻神討伐戰",
       "絕境戰": "極限難度挑戰",
-      "幻巧戰": "特殊幻巧戰鬥"
+      "幻巧戰": "特殊幻巧戰鬥",
+      "異聞迷宮": "變體迷宮內容"
     },
     "expansions": {
       "2.x": "重生之境",
@@ -24,14 +25,15 @@
     },
     "statistics": {
       "byType": {
-        "四人迷宮": 520,
-        "公會令": 25,
-        "8人討伐殲滅戰": 103,
-        "24人大型任務": 17,
+        "四人迷宮": 514,
+        "公會令": 26,
+        "8人討伐殲滅戰": 101,
+        "24人大型任務": 16,
         "8人大型任務": 131,
         "絕境戰": 6,
         "幻巧戰": 2,
-        "誅滅戰": 1
+        "誅滅戰": 1,
+        "異聞迷宮": 6
       },
       "byExpansion": {
         "2.x": 488,
@@ -42,8 +44,8 @@
         "7.x": 42
       }
     },
-    "visible_count": 655,
-    "hidden_count": 149
+    "visible_count": 643,
+    "hidden_count": 160
   },
   "dungeons": [
     {
@@ -98,7 +100,7 @@
     },
     {
       "id": 4,
-      "name": "完成集團戰訓練！",
+      "name": "完成集團戰訓練",
       "shortCode": "go001",
       "level": 10,
       "type": "公會令",
@@ -112,7 +114,7 @@
     },
     {
       "id": 5,
-      "name": "討伐彷徨死靈！",
+      "name": "討伐彷徨死靈",
       "shortCode": "go002",
       "level": 10,
       "type": "公會令",
@@ -140,7 +142,7 @@
     },
     {
       "id": 7,
-      "name": "捕獲金幣龜！",
+      "name": "捕獲金幣龜",
       "shortCode": "go004",
       "level": 15,
       "type": "公會令",
@@ -221,7 +223,7 @@
     },
     {
       "id": 12,
-      "name": "驅除劇毒妖花！",
+      "name": "驅除劇毒妖花",
       "shortCode": "go005",
       "level": 20,
       "type": "公會令",
@@ -263,7 +265,7 @@
     },
     {
       "id": 15,
-      "name": "擊潰哥布林炸彈軍團！",
+      "name": "擊潰哥布林炸彈軍團",
       "shortCode": "go008",
       "level": 25,
       "type": "公會令",
@@ -472,7 +474,7 @@
       "name": "殲滅特殊陣型妖異",
       "shortCode": null,
       "level": 40,
-      "type": "8人討伐殲滅戰",
+      "type": "公會令",
       "expansion": "2.x",
       "image": "images/28.jpg",
       "tombstoneReward": "無",
@@ -6224,7 +6226,7 @@
     },
     {
       "id": 365,
-      "name": "突破所有關門，討伐最深處的敵人！",
+      "name": "突破所有關門，討伐最深處的敵人",
       "shortCode": "go003",
       "level": 15,
       "type": "公會令",
@@ -6234,11 +6236,11 @@
       "specialDrops": [],
       "mechanics": "依照指示完成目標。",
       "description": "公會令任務，通過完成特定目標來獲得獎勵。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 366,
-      "name": "消滅惡徒團伙寄生蜂團！",
+      "name": "消滅惡徒團伙寄生蜂團",
       "shortCode": "go006",
       "level": 15,
       "type": "公會令",
@@ -6248,11 +6250,11 @@
       "specialDrops": [],
       "mechanics": "依照指示完成目標。",
       "description": "公會令任務，通過完成特定目標來獲得獎勵。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 367,
-      "name": "討伐夢幻之布拉奇希奧！",
+      "name": "討伐夢幻之布拉奇希奧",
       "shortCode": "go007",
       "level": 15,
       "type": "公會令",
@@ -6262,11 +6264,11 @@
       "specialDrops": [],
       "mechanics": "依照指示完成目標。",
       "description": "公會令任務，通過完成特定目標來獲得獎勵。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 368,
-      "name": "討伐汙染源頭魔界花！",
+      "name": "討伐汙染源頭魔界花",
       "shortCode": "go009",
       "level": 15,
       "type": "公會令",
@@ -6276,11 +6278,11 @@
       "specialDrops": [],
       "mechanics": "依照指示完成目標。",
       "description": "公會令任務，通過完成特定目標來獲得獎勵。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 369,
-      "name": "討伐坑道中出現的妖異！",
+      "name": "討伐坑道中出現的妖異",
       "shortCode": "go010",
       "level": 15,
       "type": "公會令",
@@ -6290,11 +6292,11 @@
       "specialDrops": [],
       "mechanics": "依照指示完成目標。",
       "description": "公會令任務，通過完成特定目標來獲得獎勵。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 370,
-      "name": "注意無敵的眷屬，討伐大型妖異！",
+      "name": "注意無敵的眷屬，討伐大型妖異",
       "shortCode": "go011",
       "level": 15,
       "type": "公會令",
@@ -6304,11 +6306,11 @@
       "specialDrops": [],
       "mechanics": "依照指示完成目標。",
       "description": "公會令任務，通過完成特定目標來獲得獎勵。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 371,
-      "name": "討伐爆彈怪的女王！",
+      "name": "討伐爆彈怪的女王",
       "shortCode": "go012",
       "level": 15,
       "type": "公會令",
@@ -6318,11 +6320,11 @@
       "specialDrops": [],
       "mechanics": "依照指示完成目標。",
       "description": "公會令任務，通過完成特定目標來獲得獎勵。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 372,
-      "name": "殲滅特殊陣型的妖異！",
+      "name": "殲滅特殊陣型的妖異",
       "shortCode": "go013",
       "level": 15,
       "type": "公會令",
@@ -6332,11 +6334,11 @@
       "specialDrops": [],
       "mechanics": "依照指示完成目標。",
       "description": "公會令任務，通過完成特定目標來獲得獎勵。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 373,
-      "name": "制止三方混戰的巨人族，守住遺物！",
+      "name": "制止三方混戰的巨人族，守住遺物",
       "shortCode": "go014",
       "level": 15,
       "type": "公會令",
@@ -6346,7 +6348,7 @@
       "specialDrops": [],
       "mechanics": "依照指示完成目標。",
       "description": "公會令任務，通過完成特定目標來獲得獎勵。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 374,
@@ -6368,20 +6370,6 @@
       "shortCode": "z1z2",
       "level": 15,
       "type": "四人迷宮",
-      "expansion": "2.x",
-      "image": null,
-      "tombstoneReward": "詩學古典神典石: 100",
-      "specialDrops": [],
-      "mechanics": "待補充機制說明。",
-      "description": "待補充副本描述。",
-      "visible": true
-    },
-    {
-      "id": 376,
-      "name": "水晶塔 暗之世界",
-      "shortCode": "l1r3",
-      "level": 15,
-      "type": "24人大型任務",
       "expansion": "2.x",
       "image": null,
       "tombstoneReward": "詩學古典神典石: 100",
@@ -7204,7 +7192,7 @@
     },
     {
       "id": 435,
-      "name": "魚道現身！",
+      "name": "魚道現身",
       "shortCode": "ec005",
       "level": 15,
       "type": "四人迷宮",
@@ -8618,7 +8606,7 @@
     },
     {
       "id": 536,
-      "name": "第11關：女王陛下萬歲！",
+      "name": "第11關：女王陛下萬歲",
       "shortCode": "lovm_chal011",
       "level": 15,
       "type": "四人迷宮",
@@ -8796,7 +8784,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 549,
@@ -8810,7 +8798,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 550,
@@ -10074,7 +10062,7 @@
     },
     {
       "id": 640,
-      "name": "飛翔吧，前往維爾利特！",
+      "name": "飛翔吧，前往維爾利特",
       "shortCode": "ec022",
       "level": 15,
       "type": "四人迷宮",
@@ -10088,7 +10076,7 @@
     },
     {
       "id": 641,
-      "name": "飛翔吧，前往維爾利特！",
+      "name": "飛翔吧，前往維爾利特",
       "shortCode": "ec023",
       "level": 15,
       "type": "四人迷宮",
@@ -11225,7 +11213,7 @@
       "name": "異聞迷宮 異聞希拉狄哈水道",
       "shortCode": "w5d2",
       "level": 81,
-      "type": "四人迷宮",
+      "type": "異聞迷宮",
       "expansion": "6.x",
       "image": null,
       "tombstoneReward": "詩學古典神典石: 100",
@@ -11239,7 +11227,7 @@
       "name": "異聞迷宮 零式異聞希拉狄哈水道",
       "shortCode": "w5d2_2",
       "level": 91,
-      "type": "四人迷宮",
+      "type": "異聞迷宮",
       "expansion": "6.x",
       "image": null,
       "tombstoneReward": "詩學古典神典石: 100",
@@ -11771,7 +11759,7 @@
       "name": "異聞迷宮 異聞六根山",
       "shortCode": "e5d2",
       "level": 15,
-      "type": "四人迷宮",
+      "type": "異聞迷宮",
       "expansion": "2.x",
       "image": null,
       "tombstoneReward": "詩學古典神典石: 100",
@@ -11785,7 +11773,7 @@
       "name": "異聞迷宮 零式異聞六根山",
       "shortCode": "e5d2_2",
       "level": 25,
-      "type": "四人迷宮",
+      "type": "異聞迷宮",
       "expansion": "2.x",
       "image": null,
       "tombstoneReward": "詩學古典神典石: 100",
@@ -12135,7 +12123,7 @@
       "name": "異聞迷宮 異聞阿羅阿羅島",
       "shortCode": "o5d2",
       "level": 15,
-      "type": "四人迷宮",
+      "type": "異聞迷宮",
       "expansion": "2.x",
       "image": null,
       "tombstoneReward": "詩學古典神典石: 100",
@@ -12149,7 +12137,7 @@
       "name": "異聞迷宮 零式異聞阿羅阿羅島",
       "shortCode": "o5d2_2",
       "level": 25,
-      "type": "四人迷宮",
+      "type": "異聞迷宮",
       "expansion": "2.x",
       "image": null,
       "tombstoneReward": "詩學古典神典石: 100",
@@ -12244,7 +12232,7 @@
     },
     {
       "id": 795,
-      "name": "打倒！沙爾托菲特盜賊團",
+      "name": "打倒沙爾托菲特盜賊團",
       "shortCode": "ec057",
       "level": 15,
       "type": "四人迷宮",
