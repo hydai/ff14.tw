@@ -10,7 +10,8 @@ document.addEventListener('DOMContentLoaded', function() {
         gearScore: document.getElementById('gearScore'),
         characterTitle: document.getElementById('characterTitle'),
         freeCompany: document.getElementById('freeCompany'),
-        cardTheme: document.getElementById('cardTheme')
+        cardTheme: document.getElementById('cardTheme'),
+        characterImage: document.getElementById('characterImage')
     };
 
     // 獲取角色卡元素
@@ -47,6 +48,30 @@ document.addEventListener('DOMContentLoaded', function() {
         '黑魔法師': '🔥',
         '召喚師': '👹',
         '赤魔法師': '🎭'
+    };
+
+    // 圖片編輯相關元素
+    const imageElements = {
+        controls: document.getElementById('imageControls'),
+        backgroundImage: document.getElementById('backgroundImage'),
+        moveUp: document.getElementById('moveUp'),
+        moveDown: document.getElementById('moveDown'),
+        moveLeft: document.getElementById('moveLeft'),
+        moveRight: document.getElementById('moveRight'),
+        scaleSlider: document.getElementById('scaleSlider'),
+        scaleValue: document.getElementById('scaleValue'),
+        rotateSlider: document.getElementById('rotateSlider'),
+        rotateValue: document.getElementById('rotateValue'),
+        resetImage: document.getElementById('resetImage'),
+        removeImage: document.getElementById('removeImage')
+    };
+
+    // 圖片變換狀態
+    let imageTransform = {
+        x: 0,
+        y: 0,
+        scale: 1,
+        rotate: 0
     };
 
     // 監聽所有輸入變化
@@ -159,6 +184,156 @@ document.addEventListener('DOMContentLoaded', function() {
         // TODO: 實作圖片下載功能
         // 可以使用 html2canvas 或 canvas API 來將角色卡轉換成圖片
     });
+
+    // 圖片上傳處理
+    inputs.characterImage.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            // 檢查檔案大小 (5MB 限制)
+            if (file.size > 5 * 1024 * 1024) {
+                FF14Utils.showToast('圖片檔案過大，請選擇小於 5MB 的圖片', 'error');
+                return;
+            }
+
+            // 檢查檔案類型
+            if (!file.type.startsWith('image/')) {
+                FF14Utils.showToast('請選擇有效的圖片檔案', 'error');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                imageElements.backgroundImage.src = e.target.result;
+                imageElements.backgroundImage.style.display = 'block';
+                imageElements.controls.style.display = 'block';
+                characterCard.classList.add('has-background');
+                
+                // 重置變換狀態
+                resetImageTransform();
+                FF14Utils.showToast('圖片上傳成功！');
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    // 圖片變換函數
+    function updateImageTransform() {
+        const transform = `translate(${imageTransform.x}px, ${imageTransform.y}px) scale(${imageTransform.scale}) rotate(${imageTransform.rotate}deg)`;
+        imageElements.backgroundImage.style.transform = transform;
+    }
+
+    function resetImageTransform() {
+        imageTransform = { x: 0, y: 0, scale: 1, rotate: 0 };
+        imageElements.scaleSlider.value = 1;
+        imageElements.rotateSlider.value = 0;
+        imageElements.scaleValue.textContent = '100%';
+        imageElements.rotateValue.textContent = '0°';
+        updateImageTransform();
+    }
+
+    // 圖片位置控制
+    imageElements.moveUp.addEventListener('click', function() {
+        imageTransform.y -= 10;
+        updateImageTransform();
+    });
+
+    imageElements.moveDown.addEventListener('click', function() {
+        imageTransform.y += 10;
+        updateImageTransform();
+    });
+
+    imageElements.moveLeft.addEventListener('click', function() {
+        imageTransform.x -= 10;
+        updateImageTransform();
+    });
+
+    imageElements.moveRight.addEventListener('click', function() {
+        imageTransform.x += 10;
+        updateImageTransform();
+    });
+
+    // 縮放控制
+    imageElements.scaleSlider.addEventListener('input', function() {
+        imageTransform.scale = parseFloat(this.value);
+        imageElements.scaleValue.textContent = Math.round(imageTransform.scale * 100) + '%';
+        updateImageTransform();
+    });
+
+    // 旋轉控制
+    imageElements.rotateSlider.addEventListener('input', function() {
+        imageTransform.rotate = parseInt(this.value);
+        imageElements.rotateValue.textContent = imageTransform.rotate + '°';
+        updateImageTransform();
+    });
+
+    // 重置圖片
+    imageElements.resetImage.addEventListener('click', function() {
+        resetImageTransform();
+        FF14Utils.showToast('圖片已重置');
+    });
+
+    // 移除圖片
+    imageElements.removeImage.addEventListener('click', function() {
+        imageElements.backgroundImage.style.display = 'none';
+        imageElements.backgroundImage.src = '';
+        imageElements.controls.style.display = 'none';
+        characterCard.classList.remove('has-background');
+        inputs.characterImage.value = '';
+        resetImageTransform();
+        FF14Utils.showToast('圖片已移除');
+    });
+
+    // 拖拉功能 (滑鼠/觸控)
+    let isDragging = false;
+    let lastX = 0;
+    let lastY = 0;
+
+    function startDrag(e) {
+        if (!imageElements.backgroundImage.src) return;
+        
+        isDragging = true;
+        const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+        const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+        lastX = clientX;
+        lastY = clientY;
+        
+        characterCard.style.cursor = 'grabbing';
+        e.preventDefault();
+    }
+
+    function doDrag(e) {
+        if (!isDragging) return;
+        
+        const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+        const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+        
+        const deltaX = clientX - lastX;
+        const deltaY = clientY - lastY;
+        
+        imageTransform.x += deltaX;
+        imageTransform.y += deltaY;
+        
+        lastX = clientX;
+        lastY = clientY;
+        
+        updateImageTransform();
+        e.preventDefault();
+    }
+
+    function endDrag() {
+        isDragging = false;
+        characterCard.style.cursor = 'default';
+    }
+
+    // 滑鼠事件
+    characterCard.addEventListener('mousedown', startDrag);
+    document.addEventListener('mousemove', doDrag);
+    document.addEventListener('mouseup', endDrag);
+
+    // 觸控事件
+    characterCard.addEventListener('touchstart', startDrag);
+    document.addEventListener('touchmove', doDrag);
+    document.addEventListener('touchend', endDrag);
 
     // 初始化角色卡
     updateCharacterCard();

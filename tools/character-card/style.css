@@ -210,6 +210,142 @@
     }
 }
 
+/* 圖片上傳相關樣式 */
+.form-hint {
+    display: block;
+    margin-top: 0.3rem;
+    font-size: 0.8rem;
+    color: var(--text-light);
+}
+
+/* 圖片編輯控制項 */
+.image-controls {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    margin-bottom: 2rem;
+    border: 2px solid var(--primary-color);
+}
+
+.control-group {
+    margin-bottom: 1rem;
+}
+
+.control-group:last-child {
+    margin-bottom: 0;
+}
+
+.control-group label {
+    display: block;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    color: var(--dark-color);
+}
+
+.position-controls {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+    width: fit-content;
+}
+
+.position-controls .control-btn:nth-child(1) {
+    grid-column: 2;
+}
+
+.position-controls .control-btn:nth-child(3) {
+    grid-column: 1;
+    grid-row: 2;
+}
+
+.position-controls .control-btn:nth-child(4) {
+    grid-column: 3;
+    grid-row: 2;
+}
+
+.position-controls .control-btn:nth-child(2) {
+    grid-column: 2;
+    grid-row: 3;
+}
+
+.control-btn {
+    width: 40px;
+    height: 40px;
+    border: 2px solid var(--primary-color);
+    background: white;
+    color: var(--primary-color);
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+}
+
+.control-btn:hover {
+    background: var(--primary-color);
+    color: white;
+}
+
+.control-group input[type="range"] {
+    width: 200px;
+    margin-right: 1rem;
+}
+
+.control-group span {
+    display: inline-block;
+    min-width: 50px;
+    font-weight: 500;
+    color: var(--primary-color);
+}
+
+/* 角色卡背景圖片樣式 */
+.character-card {
+    position: relative;
+    overflow: hidden;
+}
+
+.card-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    z-index: 1;
+}
+
+.background-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: all 0.3s ease;
+    transform-origin: center;
+}
+
+.card-content {
+    position: relative;
+    z-index: 2;
+    background: rgba(0,0,0,0.3);
+    backdrop-filter: blur(2px);
+}
+
+/* 當有背景圖片時的樣式調整 */
+.character-card.has-background .card-content {
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(3px);
+}
+
+.character-card.has-background .card-header {
+    background: rgba(255,255,255,0.15);
+}
+
+.character-card.has-background .stat-item {
+    background: rgba(255,255,255,0.2);
+}
+
 /* 動畫效果 */
 .character-card {
     transition: transform 0.3s ease;
