@@ -3,6 +3,7 @@
   "_INSTRUCTIONS": {
     "id": "數字型態，必須是唯一值",
     "name": "副本名稱，字串型態",
+    "shortCode": "遊戲內部代號，字串型態，來自官方遊戲資料",
     "level": "副本等級，數字型態",
     "type": "副本類型，選項：四人迷宮 | 公會令 | 8人討伐殲滅戰 | 24人大型任務 | 絕境戰 | 誅滅戰",
     "expansion": "版本，選項：2.x | 3.x | 4.x | 5.x | 6.x | 7.x",
@@ -15,6 +16,7 @@
   "template": {
     "id": 999,
     "name": "範例副本名稱",
+    "shortCode": "example_code",
     "level": 50,
     "type": "四人迷宮",
     "expansion": "2.x",

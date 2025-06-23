@@ -321,3 +321,6 @@ For tools with visual content:
 - 所有頁面的導航列都需保持一致的風格，包含版權聲明連結
 - 所有頁面的頁尾都需與首頁風格一致
 - ucc 代表我希望更新 CLAUDE.md 檔案
+
+### Language and Terminology
+- 使用台灣用語：「資料」而非「數據」
