@@ -37,18 +37,18 @@
 .game-board {
     display: grid;
     grid-template-columns: repeat(6, 1fr);
-    gap: 4px;
+    gap: 5px;
     margin-bottom: var(--spacing-lg);
-    padding: var(--spacing-md);
-    background: var(--border-color);
+    padding: var(--spacing-lg);
+    background: linear-gradient(135deg, #455a64, #37474f);
     border-radius: var(--border-radius-md);
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--shadow-xl);
 }
 
 .board-cell {
     aspect-ratio: 1;
-    background: var(--card-bg);
-    border: 2px solid var(--border-color);
+    background: #f8f9fa;
+    border: 2px solid #dee2e6;
     border-radius: var(--border-radius-sm);
     cursor: pointer;
     position: relative;
@@ -60,34 +60,42 @@
     transition: all var(--transition-normal);
 }
 
-.board-cell:hover:not(.obstacle):not(.occupied) {
-    background: var(--primary-light);
-    border-color: var(--primary);
+.board-cell:hover:not(.obstacle):not(.occupied):not(.clicked):not(.empty) {
+    background: #e3f2fd;
+    border-color: #2196f3;
     transform: scale(1.05);
+    box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.2);
 }
 
 .board-cell.obstacle {
-    background: var(--text-secondary);
+    background: #37474f;
+    color: white;
     cursor: not-allowed;
-    opacity: 0.8;
+    border-color: #263238;
 }
 
 .board-cell.sword {
-    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    background: linear-gradient(135deg, #ff5252, #e53935);
     color: white;
-    border-color: #c0392b;
+    border-color: #d32f2f;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+    font-size: 1.1rem;
 }
 
 .board-cell.chest {
-    background: linear-gradient(135deg, #f39c12, #d68910);
-    color: white;
-    border-color: #d68910;
+    background: linear-gradient(135deg, #ffd54f, #ffb300);
+    color: #5d4037;
+    border-color: #f57c00;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+    font-size: 1.1rem;
 }
 
 .board-cell.fox {
-    background: linear-gradient(135deg, #3498db, #2980b9);
+    background: linear-gradient(135deg, #64b5f6, #1976d2);
     color: white;
-    border-color: #2980b9;
+    border-color: #1565c0;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+    font-size: 1.1rem;
 }
 
 .board-cell.occupied {
@@ -96,14 +104,15 @@
 }
 
 .board-cell.clicked {
-    background: var(--surface);
-    border-color: var(--text-muted);
+    background: #eceff1;
+    border-color: #b0bec5;
     cursor: not-allowed;
+    opacity: 0.6;
 }
 
 .board-cell.empty {
-    background: #f0f0f0;
-    border-color: #ccc;
+    background: #fff3e0;
+    border-color: #ffb74d;
     position: relative;
 }
 
@@ -113,8 +122,9 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    color: #999;
-    font-size: 1.2rem;
+    color: #ff6f00;
+    font-size: 1.5rem;
+    font-weight: bold;
 }
 
 /* Controls */
