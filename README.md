@@ -41,6 +41,15 @@ FF14.tw 是一個專為繁體中文版《Final Fantasy XIV》玩家設計的多�
 - ⚡ 可折疊的直覺式介面
 - 🖱️ 圖片拖拽調整功能
 
+### Faux Hollows Foxes 計算機 (`faux-hollows-foxes/`)
+6x6 棋盤策略遊戲最佳化工具
+- 🦊 11 次點擊限制挑戰
+- 🎯 三種圖形計分系統（劍/寶箱/宗長）
+- 🎮 單格填入機制，支援自由策略
+- 📊 即時分數計算與驗證
+- 🚫 圖形數量與形狀限制檢查
+- 🎨 視覺化狀態區分設計
+
 ## 🚧 開發中工具
 
 ### 宗長計算機 (`sect-calculator/`) - 開發中
@@ -79,6 +88,7 @@ ff14.tw/
 └── tools/                  # 工具目錄
     ├── character-card/     # 角色卡產生器
     ├── dungeon-database/   # 副本資料庫
+    ├── faux-hollows-foxes/ # Faux Hollows Foxes 計算機
     ├── mini-cactpot/      # Mini Cactpot 計算機
     ├── sect-calculator/   # 宗長計算機 (開發中)
     └── wondrous-tails/    # Wondrous Tails 預測器

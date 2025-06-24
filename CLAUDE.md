@@ -246,7 +246,16 @@ function resetTool() {
 - Use percentage displays with color coding (high/medium/low probability)
 - Provide actionable recommendations based on calculated results
 - Implement combination algorithms for complex probability calculations
-- Support grid-based interactions for game mechanics (4x4, 3x3 layouts)
+- Support grid-based interactions for game mechanics (4x4, 3x3, 6x6 layouts)
+
+### Grid-Based Puzzle Tools (e.g., Faux Hollows Foxes)
+- **Single Cell Mechanism**: Allow users to fill cells individually rather than auto-filling shapes
+- **State Management**: Implement multiple cell states (empty, obstacle, various shapes, clicked-empty)
+- **Visual State Differentiation**: Use distinct colors/styles for different cell states
+- **Shape Validation**: Check shape completeness and validity (e.g., 2x2, 2x3, 3x2 patterns)
+- **Constraint System**: Implement game-specific rules (click limits, shape quantity limits)
+- **Real-time Validation**: Validate shapes and constraints after each user action
+- **Error Feedback**: Provide clear error messages for rule violations
 
 ### Advanced UX Features
 - **Keyboard Navigation**: Implement arrow key navigation for card-based tools (up/down arrows, Enter to select, Escape to clear)
