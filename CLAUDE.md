@@ -249,13 +249,14 @@ function resetTool() {
 - Support grid-based interactions for game mechanics (4x4, 3x3, 6x6 layouts)
 
 ### Grid-Based Puzzle Tools (e.g., Faux Hollows Foxes)
-- **Single Cell Mechanism**: Allow users to fill cells individually rather than auto-filling shapes
-- **State Management**: Implement multiple cell states (empty, obstacle, various shapes, clicked-empty)
-- **Visual State Differentiation**: Use distinct colors/styles for different cell states
-- **Shape Validation**: Check shape completeness and validity (e.g., 2x2, 2x3, 3x2 patterns)
-- **Constraint System**: Implement game-specific rules (click limits, shape quantity limits)
-- **Real-time Validation**: Validate shapes and constraints after each user action
-- **Error Feedback**: Provide clear error messages for rule violations
+- **Direct Click Operations**: Implement phase-specific click behavior (direct obstacle placement vs popup selection)
+- **Auto-Fill Logic**: Analyze matching board patterns to auto-complete guaranteed positions
+- **Probability Calculations**: Real-time probability updates based on remaining matching board configurations
+- **State Management**: Implement multiple cell states (empty, obstacle, sword, chest, fox, empty-marked)
+- **Visual State Differentiation**: Use FF14 official colors with distinct gradients for each cell type
+- **Phase-Based UX**: Different interaction patterns for obstacle phase (direct click) vs treasure phase (popup menu)
+- **Error Tolerance**: Allow overwriting filled cells without penalty in treasure phase
+- **Smart Click Counting**: Only increment clicks for new placements, not modifications
 
 ### Advanced UX Features
 - **Keyboard Navigation**: Implement arrow key navigation for card-based tools (up/down arrows, Enter to select, Escape to clear)
@@ -323,6 +324,99 @@ For tools with visual content:
 - Include proper attribution for external data sources
 - Follow FF14 official terminology and classification standards
 - Maintain non-commercial educational use stance for all game content
+
+## Faux Hollows Foxes Implementation Patterns
+
+### Core Architecture
+The Faux Hollows Foxes calculator implements a sophisticated grid-based puzzle solver with the following key components:
+
+#### Data Structure
+```javascript
+// Board data format embedded in script.js
+static BOARD_DATA = [
+    // 252 pre-defined board configurations
+    // 0=empty, 1=obstacle, 2=sword, 3=chest, 4=fox_or_empty
+    [[4,0,0,4,3,3],[0,0,0,1,3,3],...],
+    ...
+];
+```
+
+#### Phase-Based Click Handling
+```javascript
+onCellClick(cell) {
+    if (this.obstaclesConfirmed) {
+        // Treasure phase: show popup for multiple options
+        this.selectedCell = index;
+        this.showPopup();
+    } else {
+        // Obstacle phase: direct placement/removal
+        if (this.board[index] === 'obstacle') {
+            this.clearCell(index);  // Toggle off
+        } else {
+            this.setObstacle(index);  // Place obstacle
+        }
+        this.updateBoard();  // Trigger auto-fill and probability calculations
+    }
+}
+```
+
+#### Auto-Fill Algorithm
+```javascript
+tryAutoFillObstacles() {
+    // Analyze all matching boards to find guaranteed obstacle positions
+    for (let i = 0; i < 36; i++) {
+        let allAreObstacles = true;
+        for (const board of matchingBoards) {
+            if (board[row][col] !== 1) {
+                allAreObstacles = false;
+                break;
+            }
+        }
+        if (allAreObstacles) {
+            this.setObstacle(i);  // Auto-fill confirmed positions
+        }
+    }
+}
+```
+
+#### Probability Calculation System
+```javascript
+updateTreasureProbabilitiesBasedOnMatches() {
+    // Calculate sword, chest, fox probabilities for each empty cell
+    const probabilities = { sword: Array(36).fill(0), chest: Array(36).fill(0), fox: Array(36).fill(0) };
+    
+    for (const board of matchingBoards) {
+        for (let i = 0; i < 36; i++) {
+            if (this.board[i] === null) {  // Only for empty cells
+                if (board[row][col] === 2) probabilities.sword[i]++;
+                else if (board[row][col] === 3) probabilities.chest[i]++;
+                else if (board[row][col] === 4) probabilities.fox[i]++;
+            }
+        }
+    }
+    
+    // Convert counts to percentages
+    this.treasureProbabilities = probabilities;
+}
+```
+
+### Visual Design Patterns
+- **FF14 Official Colors**: Earth gray obstacles, light blue swords, pink chests, earth yellow foxes
+- **Three-Section Probability Display**: Split each cell to show sword/chest/fox probabilities separately
+- **Gradient Backgrounds**: Use CSS gradients for visual depth and official game aesthetics
+- **Color-Coded Popup Buttons**: Each button type has distinct background matching game element colors
+
+### Error Handling and User Experience
+- **Smart Click Counting**: Only increment for new placements, not modifications
+- **Overwrite Protection**: Prevent overwriting obstacles, allow treasure modifications
+- **Phase Transition**: Automatic detection when obstacles are confirmed, switch to treasure mode
+- **Toast Notifications**: Minimal, only for important state changes and errors
+
+### Performance Optimizations
+- **Embedded Data**: 252 board configurations stored in script to avoid network requests
+- **Event Delegation**: Single click handler for entire board using event bubbling
+- **Selective Updates**: Only recalculate probabilities when board state changes
+- **Efficient Matching**: Early termination in board matching algorithm
 
 ## AI Command Memories
 
