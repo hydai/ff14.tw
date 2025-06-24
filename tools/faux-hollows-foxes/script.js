@@ -371,7 +371,10 @@ class FauxHollowsFoxes {
         this.updateObstacleProbabilitiesBasedOnMatches();
         console.log(`已載入 ${FauxHollowsFoxes.BOARD_DATA.length} 個盤面配置`);
         this.updateProbabilityDisplay();
-        this.updateMatchingBoards();
+        
+        // 初始化時顯示所有盤面的數量
+        const matchingCount = this.countMatchingBoards();
+        this.elements.matchingBoards.textContent = matchingCount;
     }
 
     updateObstacleProbabilitiesBasedOnMatches() {
@@ -442,6 +445,11 @@ class FauxHollowsFoxes {
     }
 
     updateProbabilityDisplay() {
+        console.log('進入 updateProbabilityDisplay');
+        console.log('showProbabilities:', this.showProbabilities);
+        console.log('obstaclesConfirmed:', this.obstaclesConfirmed);
+        console.log('showTreasureProbabilities:', this.showTreasureProbabilities);
+        
         for (let i = 0; i < 36; i++) {
             const cell = this.elements.board.children[i];
             
@@ -459,12 +467,15 @@ class FauxHollowsFoxes {
                 } else if (this.showProbabilities) {
                     // 顯示障礙物機率
                     if (this.obstacleProbabilities[i] > 0) {
+                        console.log(`格子 ${i} 設定機率: ${this.obstacleProbabilities[i]}%`);
                         cell.textContent = `${this.obstacleProbabilities[i]}%`;
                         cell.classList.add('probability-display');
                     }
                 }
+            } else {
+                // 如果格子已經被設置，確保顯示正確的內容
+                this.updateCellDisplay(cell, i);
             }
-            // 如果格子已經被設置（包括empty），則不顯示機率
         }
     }
 
@@ -496,6 +507,47 @@ class FauxHollowsFoxes {
             
             cell.innerHTML = `<div class="treasure-prob-container">${itemsHtml}</div>`;
             cell.classList.add('treasure-probability-display');
+        }
+    }
+
+    updateCellDisplay(cell, index) {
+        const value = this.board[index];
+        
+        switch (value) {
+            case 'obstacle':
+                cell.className = 'board-cell obstacle';
+                cell.textContent = '✕';
+                break;
+            case 'sword':
+                cell.className = 'board-cell sword';
+                cell.textContent = '⚔️';
+                break;
+            case 'chest':
+                cell.className = 'board-cell chest';
+                cell.textContent = '📦';
+                break;
+            case 'fox':
+                cell.className = 'board-cell fox';
+                cell.textContent = '🦊';
+                break;
+            case 'empty':
+                cell.className = 'board-cell empty';
+                cell.textContent = '◯';
+                break;
+            case 'clicked':
+                cell.className = 'board-cell clicked';
+                cell.textContent = '';
+                break;
+            default:
+                // 處理其他特殊情況
+                if (value && value.startsWith('sword')) {
+                    cell.className = 'board-cell sword connected';
+                    cell.textContent = '⚔️';
+                } else if (value && value.startsWith('chest')) {
+                    cell.className = 'board-cell chest connected';
+                    cell.textContent = '📦';
+                }
+                break;
         }
     }
 
@@ -682,6 +734,105 @@ class FauxHollowsFoxes {
         }
     }
 
+    checkAndFillGuaranteedObstacles() {
+        console.log('=== checkAndFillGuaranteedObstacles 開始 ===');
+        console.log('當前障礙物機率:', this.obstacleProbabilities);
+        
+        // 檢查是否有100%機率的障礙物位置，自動填充並檢查是否完成
+        let hasFilledAny = false;
+        let guaranteedPositions = [];
+        
+        for (let i = 0; i < 36; i++) {
+            // 跳過已設置的位置
+            if (this.board[i] !== null) {
+                console.log(`位置 ${i} 已設置為: ${this.board[i]}`);
+                continue;
+            }
+            
+            console.log(`位置 ${i} 機率: ${this.obstacleProbabilities[i]}%`);
+            
+            // 如果這個位置的障礙物機率是100%，自動填充
+            if (this.obstacleProbabilities[i] === 100) {
+                console.log(`發現100%機率障礙物位置: ${i}`);
+                guaranteedPositions.push(i);
+                this.setObstacle(i);
+                hasFilledAny = true;
+            }
+        }
+        
+        console.log('100%機率位置:', guaranteedPositions);
+        console.log('是否有填充:', hasFilledAny);
+        
+        // 如果有自動填充，重新計算機率並遞迴檢查
+        if (hasFilledAny) {
+            this.updateObstacleProbabilitiesBasedOnMatches();
+            FF14Utils.showToast('已自動填充100%機率的障礙物位置', 'success');
+            // 遞迴檢查是否還有新的100%機率位置
+            this.checkAndFillGuaranteedObstacles();
+        } else {
+            console.log('沒有100%機率位置，檢查是否完成');
+            // 沒有更多100%機率的位置時，檢查是否可以切換到寶物階段
+            this.checkIfObstaclesComplete();
+        }
+    }
+
+    checkIfObstaclesComplete() {
+        console.log('=== checkIfObstaclesComplete 開始 ===');
+        
+        // 檢查所有未設置位置的障礙物機率是否都已確定（100%或0%）
+        let allObstacleProbabilitiesDetermined = true;
+        let undeterminedPositions = [];
+        let guaranteedObstacles = [];
+        
+        for (let i = 0; i < 36; i++) {
+            // 跳過已設置的位置
+            if (this.board[i] !== null) continue;
+            
+            const probability = this.obstacleProbabilities[i];
+            console.log(`位置 ${i} 障礙物機率: ${probability}%`);
+            
+            if (probability === 100) {
+                // 100%機率的位置應該被自動填充，如果沒有就有問題
+                guaranteedObstacles.push(i);
+                console.log(`位置 ${i} 應該是100%障礙物但未填充！`);
+            } else if (probability === 0) {
+                // 0%機率，確定不是障礙物
+                console.log(`位置 ${i} 確定不是障礙物 (0%)`);
+            } else {
+                // 介於0-100%之間，未確定
+                allObstacleProbabilitiesDetermined = false;
+                undeterminedPositions.push({position: i, probability});
+            }
+        }
+        
+        console.log('所有障礙物機率都已確定:', allObstacleProbabilitiesDetermined);
+        console.log('未確定的位置:', undeterminedPositions);
+        console.log('100%機率但未填充的位置:', guaranteedObstacles);
+        
+        // 如果有100%機率但未填充的位置，先填充它們
+        if (guaranteedObstacles.length > 0) {
+            console.log('發現未填充的100%機率位置，自動填充');
+            for (const pos of guaranteedObstacles) {
+                this.setObstacle(pos);
+            }
+            // 重新計算機率並再次檢查
+            this.updateObstacleProbabilitiesBasedOnMatches();
+            this.checkIfObstaclesComplete();
+            return;
+        }
+        
+        // 只有當所有位置的障礙物機率都已確定時，才切換到寶物階段
+        if (allObstacleProbabilitiesDetermined && !this.obstaclesConfirmed) {
+            console.log('所有障礙物位置已確定，切換到寶物階段！');
+            this.obstaclesConfirmed = true;
+            this.showTreasureProbabilities = true;
+            this.updateTreasureProbabilitiesBasedOnMatches();
+            FF14Utils.showToast('所有障礙物位置已確定！現在顯示寶物機率，點擊格子可填寫實際發現的寶物', 'success');
+        } else {
+            console.log('還有未確定的障礙物位置，繼續障礙物階段');
+        }
+    }
+
     checkObstaclesConfirmed() {
         // 檢查是否所有障礙物位置都已確定
         const matchingBoards = [];
@@ -706,6 +857,7 @@ class FauxHollowsFoxes {
         }
         
         // 如果沒有任何障礙物，則未確認
+        let allObstaclesConfirmed;
         if (obstacleCount === 0) {
             allObstaclesConfirmed = false;
         } else {
@@ -805,8 +957,7 @@ class FauxHollowsFoxes {
             this.elements.matchingBoards.textContent = matchingCount;
             this.updateObstacleProbabilitiesBasedOnMatches();
             
-            // 檢查障礙物是否已確認（但不重複調用自動填充）
-            this.checkObstaclesConfirmedWithoutAutoFill();
+            // 不要自動檢查障礙物確認，讓用戶手動控制
             
             this.updateProbabilityDisplay();
         }
@@ -856,8 +1007,8 @@ class FauxHollowsFoxes {
             // 嘗試自動填充障礙物
             this.tryAutoFillObstacles();
             
-            // 檢查障礙物是否已確認
-            this.checkObstaclesConfirmed();
+            // 只檢查是否完成，不重複自動填充
+            this.checkIfObstaclesComplete();
             
             this.updateProbabilityDisplay();
         }
