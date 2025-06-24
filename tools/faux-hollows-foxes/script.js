@@ -287,7 +287,6 @@ class FauxHollowsFoxes {
         this.elements = {
             board: document.getElementById('game-board'),
             remainingClicks: document.getElementById('remaining-clicks'),
-            currentScore: document.getElementById('current-score'),
             matchingBoards: document.getElementById('matching-boards'),
             resetBtn: document.getElementById('reset-btn'),
             autoCalculateBtn: document.getElementById('auto-calculate'),
@@ -1272,7 +1271,6 @@ class FauxHollowsFoxes {
 
     updateDisplay() {
         this.elements.remainingClicks.textContent = FauxHollowsFoxes.CONSTANTS.MAX_CLICKS - this.clickCount;
-        this.elements.currentScore.textContent = this.score;
 
         // Check if game is complete
         if (this.clickCount >= FauxHollowsFoxes.CONSTANTS.MAX_CLICKS) {
