@@ -50,14 +50,6 @@ FF14.tw 是一個專為繁體中文版《Final Fantasy XIV》玩家設計的多�
 - 🚫 圖形數量與形狀限制檢查
 - 🎨 視覺化狀態區分設計
 
-## 🚧 開發中工具
-
-### 宗長計算機 (`sect-calculator/`) - 開發中
-宗長職業升級路線最佳化工具
-- 📈 個人化升級規劃
-- ⏰ 時間效率最佳化
-- 💯 多種任務路線選擇
-- 📋 詳細進度追蹤
 
 ## 🏗️ 技術架構
 
@@ -90,7 +82,6 @@ ff14.tw/
     ├── dungeon-database/   # 副本資料庫
     ├── faux-hollows-foxes/ # Faux Hollows Foxes 計算機
     ├── mini-cactpot/      # Mini Cactpot 計算機
-    ├── sect-calculator/   # 宗長計算機 (開發中)
     └── wondrous-tails/    # Wondrous Tails 預測器
 ```
 
