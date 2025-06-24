@@ -319,8 +319,14 @@ class FauxHollowsFoxes {
     initializeEvents() {
         // Board cell clicks
         this.handleCellClick = (e) => {
-            if (e.target.classList.contains('board-cell')) {
-                this.onCellClick(e.target);
+            // Find the board-cell element (could be clicked element or its parent)
+            let targetCell = e.target;
+            while (targetCell && !targetCell.classList.contains('board-cell')) {
+                targetCell = targetCell.parentElement;
+            }
+            
+            if (targetCell && targetCell.classList.contains('board-cell')) {
+                this.onCellClick(targetCell);
             }
         };
         this.elements.board.addEventListener('click', this.handleCellClick);
@@ -442,6 +448,7 @@ class FauxHollowsFoxes {
             if (this.board[i] === null) {
                 // 清除之前的顯示
                 cell.textContent = '';
+                cell.innerHTML = '';
                 cell.classList.remove('probability-display', 'treasure-probability-display');
                 
                 if (this.showTreasureProbabilities && this.obstaclesConfirmed) {
@@ -657,7 +664,7 @@ class FauxHollowsFoxes {
             this.showTreasureProbabilities = true;
             this.updateTreasureProbabilitiesBasedOnMatches();
             this.updateProbabilityDisplay(); // 需要更新UI顯示
-            FF14Utils.showToast('障礙物位置已確認！現在顯示寶物機率', 'success');
+            FF14Utils.showToast('障礙物位置已確認！現在顯示寶物機率，點擊格子可填寫實際發現的寶物', 'success');
         }
     }
 
@@ -719,7 +726,7 @@ class FauxHollowsFoxes {
             this.showTreasureProbabilities = true;
             this.updateTreasureProbabilitiesBasedOnMatches();
             this.updateProbabilityDisplay(); // 需要更新UI顯示
-            FF14Utils.showToast('障礙物位置已確認！現在顯示寶物機率', 'success');
+            FF14Utils.showToast('障礙物位置已確認！現在顯示寶物機率，點擊格子可填寫實際發現的寶物', 'success');
         }
     }
 
@@ -799,8 +806,11 @@ class FauxHollowsFoxes {
             return;
         }
 
-        this.selectedCell = index;
-        this.showPopup();
+        // Allow clicking on cells with treasure probabilities or empty cells
+        if (this.board[index] === null || cell.classList.contains('treasure-probability-display')) {
+            this.selectedCell = index;
+            this.showPopup();
+        }
     }
 
     showPopup() {
