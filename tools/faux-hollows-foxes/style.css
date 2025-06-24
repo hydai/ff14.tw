@@ -161,6 +161,17 @@
     font-weight: 600;
 }
 
+.board-cell.treasure-probability-display {
+    background: linear-gradient(135deg, #fff3e0, #fce4ec);
+    border-color: #ff9800;
+    color: #e65100;
+    font-size: 0.6rem;
+    font-weight: 600;
+    line-height: 1.1;
+    padding: 2px;
+    text-align: center;
+}
+
 /* Controls */
 .controls {
     display: flex;

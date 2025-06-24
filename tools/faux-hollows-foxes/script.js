@@ -275,7 +275,14 @@ class FauxHollowsFoxes {
         this.score = 0;
         this.selectedCell = null;
         this.obstacleProbabilities = Array(36).fill(0);
+        this.treasureProbabilities = {
+            sword: Array(36).fill(0),
+            chest: Array(36).fill(0),
+            fox: Array(36).fill(0)
+        };
         this.showProbabilities = true;
+        this.showTreasureProbabilities = false;
+        this.obstaclesConfirmed = false;
         
         this.elements = {
             board: document.getElementById('game-board'),
@@ -389,22 +396,82 @@ class FauxHollowsFoxes {
         }
     }
 
-    updateProbabilityDisplay() {
-        if (!this.showProbabilities) return;
+    updateTreasureProbabilitiesBasedOnMatches() {
+        const treasureCount = {
+            sword: Array(36).fill(0),
+            chest: Array(36).fill(0),
+            fox: Array(36).fill(0)
+        };
+        let matchingBoardsCount = 0;
 
+        // 只統計符合當前使用者盤面的配置
+        for (const board of FauxHollowsFoxes.BOARD_DATA) {
+            if (this.boardMatches(board)) {
+                matchingBoardsCount++;
+                // 統計這個符合盤面中的寶物位置
+                for (let row = 0; row < 6; row++) {
+                    for (let col = 0; col < 6; col++) {
+                        const index = row * 6 + col;
+                        const value = board[row][col];
+                        if (value === 2) { // 2 代表劍
+                            treasureCount.sword[index]++;
+                        } else if (value === 3) { // 3 代表寶箱
+                            treasureCount.chest[index]++;
+                        } else if (value === 4) { // 4 代表宗長
+                            treasureCount.fox[index]++;
+                        }
+                    }
+                }
+            }
+        }
+
+        // 基於符合的盤面計算機率
+        for (let i = 0; i < 36; i++) {
+            this.treasureProbabilities.sword[i] = matchingBoardsCount > 0 ? 
+                Math.round((treasureCount.sword[i] / matchingBoardsCount) * 100) : 0;
+            this.treasureProbabilities.chest[i] = matchingBoardsCount > 0 ? 
+                Math.round((treasureCount.chest[i] / matchingBoardsCount) * 100) : 0;
+            this.treasureProbabilities.fox[i] = matchingBoardsCount > 0 ? 
+                Math.round((treasureCount.fox[i] / matchingBoardsCount) * 100) : 0;
+        }
+    }
+
+    updateProbabilityDisplay() {
         for (let i = 0; i < 36; i++) {
             const cell = this.elements.board.children[i];
             if (this.board[i] === null) {
-                // 只在未設置的格子上顯示機率
-                if (this.obstacleProbabilities[i] > 0) {
-                    cell.textContent = `${this.obstacleProbabilities[i]}%`;
-                    cell.classList.add('probability-display');
-                } else {
-                    // 如果機率為0，清除顯示
-                    cell.textContent = '';
-                    cell.classList.remove('probability-display');
+                // 清除之前的顯示
+                cell.textContent = '';
+                cell.classList.remove('probability-display', 'treasure-probability-display');
+                
+                if (this.showTreasureProbabilities && this.obstaclesConfirmed) {
+                    // 顯示寶物機率
+                    this.displayTreasureProbabilities(cell, i);
+                } else if (this.showProbabilities) {
+                    // 顯示障礙物機率
+                    if (this.obstacleProbabilities[i] > 0) {
+                        cell.textContent = `${this.obstacleProbabilities[i]}%`;
+                        cell.classList.add('probability-display');
+                    }
                 }
             }
+        }
+    }
+
+    displayTreasureProbabilities(cell, index) {
+        const swordProb = this.treasureProbabilities.sword[index];
+        const chestProb = this.treasureProbabilities.chest[index];
+        const foxProb = this.treasureProbabilities.fox[index];
+        
+        // 只顯示有機率的項目
+        const probabilities = [];
+        if (swordProb > 0) probabilities.push(`劍${swordProb}%`);
+        if (chestProb > 0) probabilities.push(`箱${chestProb}%`);
+        if (foxProb > 0) probabilities.push(`狐${foxProb}%`);
+        
+        if (probabilities.length > 0) {
+            cell.innerHTML = probabilities.join('<br>');
+            cell.classList.add('treasure-probability-display');
         }
     }
 
@@ -433,6 +500,12 @@ class FauxHollowsFoxes {
         
         // 重新計算基於當前符合盤面的障礙物機率
         this.updateObstacleProbabilitiesBasedOnMatches();
+        
+        // 如果障礙物已確認，也計算寶物機率
+        if (this.obstaclesConfirmed) {
+            this.updateTreasureProbabilitiesBasedOnMatches();
+        }
+        
         this.updateProbabilityDisplay();
         
         // 檢查是否可以自動填充障礙物
@@ -508,6 +581,132 @@ class FauxHollowsFoxes {
         if (obstacleCount >= 2 && this.elements.gameHint) {
             this.elements.gameHint.classList.add('hidden');
         }
+
+        // 檢查障礙物是否已確認（自動填充完成後）
+        this.checkObstaclesConfirmed();
+    }
+
+    checkObstaclesConfirmedWithoutAutoFill() {
+        // 與 checkObstaclesConfirmed 相同的邏輯，但不觸發自動填充
+        const matchingBoards = [];
+        for (const board of FauxHollowsFoxes.BOARD_DATA) {
+            if (this.boardMatches(board)) {
+                matchingBoards.push(board);
+            }
+        }
+
+        if (matchingBoards.length === 0) {
+            this.obstaclesConfirmed = false;
+            return;
+        }
+
+        // 檢查障礙物是否已確認
+        let obstacleCount = 0;
+        for (let i = 0; i < 36; i++) {
+            if (this.board[i] === 'obstacle') {
+                obstacleCount++;
+            }
+        }
+        
+        let allObstaclesConfirmed = false;
+        if (obstacleCount === 0) {
+            allObstaclesConfirmed = false;
+        } else {
+            // 檢查每個位置：如果在所有符合盤面中都是障礙物，則必須已被設定為障礙物
+            allObstaclesConfirmed = true;
+            for (let i = 0; i < 36; i++) {
+                const row = Math.floor(i / 6);
+                const col = i % 6;
+                
+                // 檢查這個位置在所有符合盤面中是否都是障礙物
+                let allAreObstacles = true;
+                for (const board of matchingBoards) {
+                    if (board[row][col] !== 1) {
+                        allAreObstacles = false;
+                        break;
+                    }
+                }
+                
+                // 如果這個位置在所有符合盤面中都是障礙物，但使用者還沒設定為障礙物
+                if (allAreObstacles && this.board[i] !== 'obstacle') {
+                    allObstaclesConfirmed = false;
+                    break;
+                }
+            }
+        }
+
+        const wasConfirmed = this.obstaclesConfirmed;
+        this.obstaclesConfirmed = allObstaclesConfirmed;
+
+        // 如果障礙物剛確認，啟動寶物機率顯示
+        if (!wasConfirmed && this.obstaclesConfirmed) {
+            this.showTreasureProbabilities = true;
+            this.updateTreasureProbabilitiesBasedOnMatches();
+            this.updateProbabilityDisplay(); // 需要更新UI顯示
+            FF14Utils.showToast('障礙物位置已確認！現在顯示寶物機率', 'success');
+        }
+    }
+
+    checkObstaclesConfirmed() {
+        // 檢查是否所有障礙物位置都已確定
+        const matchingBoards = [];
+        for (const board of FauxHollowsFoxes.BOARD_DATA) {
+            if (this.boardMatches(board)) {
+                matchingBoards.push(board);
+            }
+        }
+
+        if (matchingBoards.length === 0) {
+            this.obstaclesConfirmed = false;
+            return;
+        }
+
+        // 檢查障礙物是否已確認
+        // 條件：至少有一些障礙物已設定，且所有符合盤面中必須為障礙物的位置都已設定
+        let obstacleCount = 0;
+        for (let i = 0; i < 36; i++) {
+            if (this.board[i] === 'obstacle') {
+                obstacleCount++;
+            }
+        }
+        
+        // 如果沒有任何障礙物，則未確認
+        if (obstacleCount === 0) {
+            allObstaclesConfirmed = false;
+        } else {
+            // 檢查每個位置：如果在所有符合盤面中都是障礙物，則必須已被設定為障礙物
+            allObstaclesConfirmed = true;
+            for (let i = 0; i < 36; i++) {
+                const row = Math.floor(i / 6);
+                const col = i % 6;
+                
+                // 檢查這個位置在所有符合盤面中是否都是障礙物
+                let allAreObstacles = true;
+                for (const board of matchingBoards) {
+                    if (board[row][col] !== 1) {
+                        allAreObstacles = false;
+                        break;
+                    }
+                }
+                
+                // 如果這個位置在所有符合盤面中都是障礙物，但使用者還沒設定為障礙物
+                if (allAreObstacles && this.board[i] !== 'obstacle') {
+                    allObstaclesConfirmed = false;
+                    break;
+                }
+            }
+        }
+
+        const wasConfirmed = this.obstaclesConfirmed;
+        this.obstaclesConfirmed = allObstaclesConfirmed;
+
+        // 如果障礙物剛確認，啟動寶物機率顯示
+        if (!wasConfirmed && this.obstaclesConfirmed) {
+            this.showTreasureProbabilities = true;
+            this.updateTreasureProbabilitiesBasedOnMatches();
+            this.updateProbabilityDisplay(); // 需要更新UI顯示
+            FF14Utils.showToast('障礙物位置已確認！現在顯示寶物機率', 'success');
+        }
     }
 
     tryAutoFillObstacles() {
@@ -570,6 +769,10 @@ class FauxHollowsFoxes {
             const matchingCount = this.countMatchingBoards();
             this.elements.matchingBoards.textContent = matchingCount;
             this.updateObstacleProbabilitiesBasedOnMatches();
+            
+            // 檢查障礙物是否已確認（但不重複調用自動填充）
+            this.checkObstaclesConfirmedWithoutAutoFill();
+            
             this.updateProbabilityDisplay();
         }
     }
@@ -962,6 +1165,15 @@ class FauxHollowsFoxes {
         this.board = Array(36).fill(null);
         this.clickCount = 0;
         this.score = 0;
+        this.selectedCell = null;
+        this.obstacleProbabilities = Array(36).fill(0);
+        this.treasureProbabilities = {
+            sword: Array(36).fill(0),
+            chest: Array(36).fill(0),
+            fox: Array(36).fill(0)
+        };
+        this.obstaclesConfirmed = false;
+        this.showTreasureProbabilities = false;
         
         // Reset UI
         this.initializeBoard();
