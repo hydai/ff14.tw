@@ -101,32 +101,32 @@
 }
 
 .board-cell.obstacle {
-    background: #37474f;
+    background: linear-gradient(135deg, #8d8575, #6d6458);
     color: white;
     cursor: not-allowed;
-    border-color: #263238;
+    border-color: #5a5448;
 }
 
 .board-cell.sword {
-    background: linear-gradient(135deg, #ff5252, #e53935);
+    background: linear-gradient(135deg, #87ceeb, #5dade2);
     color: white;
-    border-color: #d32f2f;
+    border-color: #3498db;
     box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
     font-size: 1.1rem;
 }
 
 .board-cell.chest {
-    background: linear-gradient(135deg, #ffd54f, #ffb300);
-    color: #5d4037;
-    border-color: #f57c00;
+    background: linear-gradient(135deg, #f8bbd9, #e91e63);
+    color: white;
+    border-color: #c2185b;
     box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
     font-size: 1.1rem;
 }
 
 .board-cell.fox {
-    background: linear-gradient(135deg, #64b5f6, #1976d2);
+    background: linear-gradient(135deg, #deb887, #cd853f);
     color: white;
-    border-color: #1565c0;
+    border-color: #8b4513;
     box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
     font-size: 1.1rem;
 }
@@ -164,8 +164,11 @@
     background: linear-gradient(135deg, #e8f5e8, #f0f8f0);
     border-color: #4caf50;
     color: #2e7d32;
-    font-size: 0.75rem;
-    font-weight: 600;
+    font-size: 1rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .board-cell.treasure-probability-display {
@@ -210,18 +213,18 @@
 }
 
 .sword-prob {
-    background: linear-gradient(135deg, #ffebee, #fce4ec);
-    color: #c62828;
+    background: linear-gradient(135deg, #e6f3ff, #cce7ff);
+    color: #1976d2;
 }
 
 .chest-prob {
-    background: linear-gradient(135deg, #fff8e1, #fff3e0);
-    color: #ef6c00;
+    background: linear-gradient(135deg, #fce4ec, #f8bbd9);
+    color: #c2185b;
 }
 
 .fox-prob {
-    background: linear-gradient(135deg, #e3f2fd, #e1f5fe);
-    color: #1565c0;
+    background: linear-gradient(135deg, #f5f1e8, #e6ddd4);
+    color: #8b4513;
 }
 
 /* Controls */
@@ -394,6 +397,10 @@
 
     .board-cell {
         font-size: 0.75rem;
+    }
+
+    .board-cell.probability-display {
+        font-size: 0.85rem;
     }
 
     .treasure-prob-item {
