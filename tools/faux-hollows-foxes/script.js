@@ -821,10 +821,23 @@ class FauxHollowsFoxes {
             return;
         }
 
-        // Allow clicking on cells with treasure probabilities or empty cells
-        if (this.board[index] === null || cell.classList.contains('treasure-probability-display')) {
-            this.selectedCell = index;
-            this.showPopup();
+        // In treasure phase (obstacles confirmed), allow clicking on treasure cells and empty cells
+        if (this.obstaclesConfirmed) {
+            // Allow clicking on: null cells, treasure probability display, or existing treasure cells
+            const canClick = this.board[index] === null || 
+                           cell.classList.contains('treasure-probability-display') ||
+                           ['sword', 'chest', 'fox', 'empty'].includes(this.board[index]);
+            
+            if (canClick) {
+                this.selectedCell = index;
+                this.showPopup();
+            }
+        } else {
+            // In obstacle phase, only allow clicking on null cells or treasure probability display
+            if (this.board[index] === null || cell.classList.contains('treasure-probability-display')) {
+                this.selectedCell = index;
+                this.showPopup();
+            }
         }
     }
 
@@ -940,12 +953,30 @@ class FauxHollowsFoxes {
     }
 
     placeSingleCell(index, type) {
-        // Allow placing on cells that are null or showing treasure probabilities
         const cell = this.elements.board.children[index];
-        if (this.board[index] !== null && !cell.classList.contains('treasure-probability-display')) {
-            FF14Utils.showToast('此格子已被佔用！', 'error');
-            return;
+        
+        // In treasure phase (obstacles confirmed), allow overwriting treasure cells
+        if (this.obstaclesConfirmed) {
+            // Allow placing on: null cells, treasure probability display, or existing treasure cells
+            const canPlace = this.board[index] === null || 
+                           cell.classList.contains('treasure-probability-display') ||
+                           ['sword', 'chest', 'fox', 'empty'].includes(this.board[index]);
+            
+            if (!canPlace) {
+                FF14Utils.showToast('此格子無法修改！', 'error');
+                return;
+            }
+        } else {
+            // In obstacle phase, only allow placing on null cells or treasure probability display
+            if (this.board[index] !== null && !cell.classList.contains('treasure-probability-display')) {
+                FF14Utils.showToast('此格子已被佔用！', 'error');
+                return;
+            }
         }
+
+        // If overwriting an existing treasure cell, don't increment click count
+        const isOverwriting = this.obstaclesConfirmed && 
+                             ['sword', 'chest', 'fox', 'empty'].includes(this.board[index]);
 
         // Place the single cell
         this.board[index] = type;
@@ -961,22 +992,47 @@ class FauxHollowsFoxes {
             cell.textContent = '箱';
         }
         
-        this.clickCount++;
+        // Only increment click count if not overwriting
+        if (!isOverwriting) {
+            this.clickCount++;
+        }
     }
 
     placeEmpty(index) {
-        // Allow placing empty on cells that are null or showing treasure probabilities
         const cell = this.elements.board.children[index];
-        if (this.board[index] !== null && !cell.classList.contains('treasure-probability-display')) {
-            FF14Utils.showToast('此格子已被佔用！', 'error');
-            return;
+        
+        // In treasure phase (obstacles confirmed), allow overwriting treasure cells
+        if (this.obstaclesConfirmed) {
+            // Allow placing on: null cells, treasure probability display, or existing treasure cells
+            const canPlace = this.board[index] === null || 
+                           cell.classList.contains('treasure-probability-display') ||
+                           ['sword', 'chest', 'fox', 'empty'].includes(this.board[index]);
+            
+            if (!canPlace) {
+                FF14Utils.showToast('此格子無法修改！', 'error');
+                return;
+            }
+        } else {
+            // In obstacle phase, only allow placing on null cells or treasure probability display
+            if (this.board[index] !== null && !cell.classList.contains('treasure-probability-display')) {
+                FF14Utils.showToast('此格子已被佔用！', 'error');
+                return;
+            }
         }
+
+        // If overwriting an existing treasure cell, don't increment click count
+        const isOverwriting = this.obstaclesConfirmed && 
+                             ['sword', 'chest', 'fox', 'empty'].includes(this.board[index]);
 
         this.board[index] = 'empty';
         cell.className = 'board-cell empty';
         cell.innerHTML = '';
         cell.textContent = '';
-        this.clickCount++;
+        
+        // Only increment click count if not overwriting
+        if (!isOverwriting) {
+            this.clickCount++;
+        }
     }
 
     checkShapeLimits(type) {
