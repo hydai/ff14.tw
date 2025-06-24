@@ -1,0 +1,284 @@
+/* Faux Hollows Foxes Calculator Styles */
+
+.game-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: var(--spacing-lg);
+}
+
+.game-info {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: var(--spacing-lg);
+    padding: var(--spacing-md);
+    background: var(--card-bg);
+    border-radius: var(--border-radius-md);
+    box-shadow: var(--shadow-sm);
+}
+
+.info-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.info-label {
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.info-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+/* Game Board */
+.game-board {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 4px;
+    margin-bottom: var(--spacing-lg);
+    padding: var(--spacing-md);
+    background: var(--border-color);
+    border-radius: var(--border-radius-md);
+    box-shadow: var(--shadow-md);
+}
+
+.board-cell {
+    aspect-ratio: 1;
+    background: var(--card-bg);
+    border: 2px solid var(--border-color);
+    border-radius: var(--border-radius-sm);
+    cursor: pointer;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+    font-weight: 600;
+    transition: all var(--transition-normal);
+}
+
+.board-cell:hover:not(.obstacle):not(.occupied) {
+    background: var(--primary-light);
+    border-color: var(--primary);
+    transform: scale(1.05);
+}
+
+.board-cell.obstacle {
+    background: var(--text-secondary);
+    cursor: not-allowed;
+    opacity: 0.8;
+}
+
+.board-cell.sword {
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    color: white;
+    border-color: #c0392b;
+}
+
+.board-cell.chest {
+    background: linear-gradient(135deg, #f39c12, #d68910);
+    color: white;
+    border-color: #d68910;
+}
+
+.board-cell.fox {
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    color: white;
+    border-color: #2980b9;
+}
+
+.board-cell.occupied {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.board-cell.clicked {
+    background: var(--surface);
+    border-color: var(--text-muted);
+    cursor: not-allowed;
+}
+
+.board-cell.empty {
+    background: #f0f0f0;
+    border-color: #ccc;
+    position: relative;
+}
+
+.board-cell.empty::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #999;
+    font-size: 1.2rem;
+}
+
+/* Controls */
+.controls {
+    display: flex;
+    gap: var(--spacing-md);
+    justify-content: center;
+    margin-bottom: var(--spacing-lg);
+}
+
+/* Result Panel */
+.result-panel {
+    background: var(--card-bg);
+    border-radius: var(--border-radius-md);
+    padding: var(--spacing-lg);
+    box-shadow: var(--shadow-md);
+    text-align: center;
+    animation: slideUp 0.3s ease-out;
+}
+
+.result-score {
+    font-size: 1.5rem;
+    margin: var(--spacing-md) 0;
+}
+
+.result-score span {
+    color: var(--primary);
+    font-weight: 700;
+}
+
+.result-details {
+    margin-top: var(--spacing-md);
+    padding-top: var(--spacing-md);
+    border-top: 1px solid var(--border-color);
+}
+
+/* Popup Styles */
+.popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.popup-content {
+    background: var(--card-bg);
+    border-radius: var(--border-radius-lg);
+    padding: var(--spacing-lg);
+    max-width: 400px;
+    width: 90%;
+    box-shadow: var(--shadow-xl);
+    animation: popIn 0.2s ease-out;
+}
+
+.popup-content h3 {
+    margin-bottom: var(--spacing-md);
+    text-align: center;
+}
+
+.popup-options {
+    display: grid;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+}
+
+.popup-btn {
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--surface);
+    border: 2px solid var(--border-color);
+    border-radius: var(--border-radius-md);
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    font-weight: 500;
+}
+
+.popup-btn:hover {
+    background: var(--primary-light);
+    border-color: var(--primary);
+    transform: translateY(-2px);
+}
+
+.popup-btn[data-type="obstacle"] {
+    border-color: var(--text-secondary);
+}
+
+.popup-btn[data-type="sword"] {
+    border-color: #e74c3c;
+}
+
+.popup-btn[data-type="chest"] {
+    border-color: #f39c12;
+}
+
+.popup-btn[data-type="fox"] {
+    border-color: #3498db;
+}
+
+.popup-btn[data-type="empty"] {
+    border-color: #95a5a6;
+}
+
+.popup-close {
+    width: 100%;
+    padding: var(--spacing-sm);
+    background: var(--surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-md);
+    cursor: pointer;
+    transition: all var(--transition-normal);
+}
+
+.popup-close:hover {
+    background: var(--border-color);
+}
+
+/* Animations */
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes popIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .game-container {
+        padding: var(--spacing-md);
+    }
+
+    .game-board {
+        gap: 2px;
+        padding: var(--spacing-sm);
+    }
+
+    .board-cell {
+        font-size: 0.75rem;
+    }
+
+    .controls {
+        flex-direction: column;
+    }
+
+    .controls .btn {
+        width: 100%;
+    }
+}
