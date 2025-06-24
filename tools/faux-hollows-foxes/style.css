@@ -144,8 +144,8 @@
 }
 
 .board-cell.empty {
-    background: #fff3e0;
-    border-color: #ffb74d;
+    background: linear-gradient(135deg, #8b4513, #654321);
+    border-color: #5a3e17;
     position: relative;
 }
 
@@ -155,7 +155,7 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    color: #ff6f00;
+    color: white;
     font-size: 1.5rem;
     font-weight: bold;
 }
