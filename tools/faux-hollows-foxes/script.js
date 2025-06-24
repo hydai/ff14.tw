@@ -423,7 +423,7 @@ class FauxHollowsFoxes {
                             treasureCount.sword[index]++;
                         } else if (value === 3) { // 3 代表寶箱
                             treasureCount.chest[index]++;
-                        } else if (value === 4) { // 4 代表宗長
+                        } else if (value === 4) { // 4 代表可能是宗長或空格（宗長的可能位置）
                             treasureCount.fox[index]++;
                         }
                     }
@@ -565,8 +565,18 @@ class FauxHollowsFoxes {
                 // null 值表示未設置，應該被視為「未知」，可以匹配任何資料庫值
                 if (userValue !== null) {
                     const userMappedValue = this.mapUserValueToDbValue(userValue);
-                    if (userMappedValue !== dbValue) {
-                        return false;
+                    
+                    // 特殊處理：資料庫中的 4 表示可能是宗長或空格
+                    if (dbValue === 4) {
+                        // 如果資料庫是 4，使用者可以是 fox(4) 或 empty(0)
+                        if (userMappedValue !== 4 && userMappedValue !== 0) {
+                            return false;
+                        }
+                    } else {
+                        // 一般情況：必須完全匹配
+                        if (userMappedValue !== dbValue) {
+                            return false;
+                        }
                     }
                 }
                 // 如果 userValue === null，則跳過此位置的檢查（未知狀態可匹配任何值）
@@ -578,6 +588,7 @@ class FauxHollowsFoxes {
 
     mapUserValueToDbValue(userValue) {
         // 將使用者盤面的值映射到資料庫格式
+        // 資料庫格式：0=空格, 1=障礙物, 2=劍, 3=寶箱, 4=可能是宗長或空格
         switch (userValue) {
             case 'obstacle': return 1;
             case 'sword': return 2;
