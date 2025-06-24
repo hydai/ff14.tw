@@ -821,7 +821,7 @@ class FauxHollowsFoxes {
             return;
         }
 
-        // In treasure phase (obstacles confirmed), allow clicking on treasure cells and empty cells
+        // In treasure phase (obstacles confirmed), show popup for treasure selection
         if (this.obstaclesConfirmed) {
             // Allow clicking on: null cells, treasure probability display, or existing treasure cells
             const canClick = this.board[index] === null || 
@@ -833,11 +833,34 @@ class FauxHollowsFoxes {
                 this.showPopup();
             }
         } else {
-            // In obstacle phase, only allow clicking on null cells or treasure probability display
+            // In obstacle phase, directly place/remove obstacles
             if (this.board[index] === null || cell.classList.contains('treasure-probability-display')) {
-                this.selectedCell = index;
-                this.showPopup();
+                // Place obstacle on empty cell
+                this.setObstacle(index);
+            } else if (this.board[index] === 'obstacle') {
+                // Remove obstacle if clicking on existing obstacle
+                this.clearCell(index);
+            } else {
+                // Cell is occupied by something else, do nothing
+                return;
             }
+            
+            this.updateDisplay();
+            this.checkForCompletedShapes();
+            this.validateShapes();
+            
+            // 更新符合盤面計數並觸發自動填充
+            const matchingCount = this.countMatchingBoards();
+            this.elements.matchingBoards.textContent = matchingCount;
+            this.updateObstacleProbabilitiesBasedOnMatches();
+            
+            // 嘗試自動填充障礙物
+            this.tryAutoFillObstacles();
+            
+            // 檢查障礙物是否已確認
+            this.checkObstaclesConfirmed();
+            
+            this.updateProbabilityDisplay();
         }
     }
 
