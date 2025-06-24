@@ -72,19 +72,30 @@ Each tool typically uses a class-based architecture:
 - **State Management**: Maintain tool state in class properties
 - **Reset Functionality**: Implement complete state and DOM cleanup for reset buttons
 - **Real-time Updates**: Prefer automatic calculation over manual trigger buttons for better UX
-- **Constants Organization**: Use static CONSTANTS object for configuration values
+- **Constants Organization**: Use static CONSTANTS object for configuration values with meaningful names
 - **Performance Optimization**: Implement debouncing for search/filter operations
 - **Data Separation**: Store data in JSON files for easy maintenance (see dungeon-database)
+- **Code Quality**: Avoid magic numbers, extract reusable methods, maintain single responsibility principle
 
 Example pattern from current tools:
 ```javascript
 class ToolCalculator {
-    // Constants definition at class level
+    // Constants definition at class level - avoid magic numbers
     static CONSTANTS = {
+        BOARD_SIZE: 6,
+        TOTAL_CELLS: 36,
+        PERCENTAGE: 100,
         DEBOUNCE_DELAY: 300,
         CSS_CLASSES: {
             ACTIVE: 'active',
             FOCUSED: 'focused'
+        },
+        CELL_VALUES: {
+            EMPTY: 0,
+            OBSTACLE: 1,
+            SWORD: 2,
+            CHEST: 3,
+            FOX_OR_EMPTY: 4
         }
     };
 
@@ -103,6 +114,11 @@ class ToolCalculator {
         // Use named methods for removable event handlers
         this.handleClick = (e) => { /* handler logic */ };
         this.elements.grid.addEventListener('click', this.handleClick);
+    }
+    
+    // Extract common methods to reduce code duplication
+    getMatchingData() {
+        return this.data.filter(item => this.matchesCriteria(item));
     }
     
     debouncedOperation() {
@@ -133,6 +149,8 @@ class ToolCalculator {
 8. **Data Management**: For tools with external data, create JSON files with corresponding data-template.json and README.md
 9. **Performance**: Implement debouncing for search/filter operations
 10. **Accessibility**: Add keyboard navigation and focus management
+11. **Code Quality**: Define constants for magic numbers, extract reusable methods, break down large functions
+12. **Method Naming**: Use descriptive names like `handleTreasurePhaseClick()` instead of generic `onClick()`
 
 ### CSS Best Practices
 - Use `!important` sparingly, only when overriding deeply nested styles
@@ -328,74 +346,136 @@ For tools with visual content:
 ## Faux Hollows Foxes Implementation Patterns
 
 ### Core Architecture
-The Faux Hollows Foxes calculator implements a sophisticated grid-based puzzle solver with the following key components:
+The Faux Hollows Foxes calculator implements a sophisticated grid-based puzzle solver with constants-based architecture and clean method separation:
 
-#### Data Structure
+#### Constants-Driven Design
 ```javascript
+static CONSTANTS = {
+    BOARD_SIZE: 6,
+    TOTAL_CELLS: 36,
+    MAX_CLICKS: 11,
+    PERCENTAGE: 100,
+    SCORES: { SWORD: 100, CHEST: 60, FOX: 20 },
+    CELL_VALUES: { EMPTY: 0, OBSTACLE: 1, SWORD: 2, CHEST: 3, FOX_OR_EMPTY: 4 }
+};
+
 // Board data format embedded in script.js
 static BOARD_DATA = [
-    // 252 pre-defined board configurations
-    // 0=empty, 1=obstacle, 2=sword, 3=chest, 4=fox_or_empty
-    [[4,0,0,4,3,3],[0,0,0,1,3,3],...],
+    // 252 pre-defined board configurations using CELL_VALUES constants
+    [[CELL_VALUES.FOX_OR_EMPTY,CELL_VALUES.EMPTY,CELL_VALUES.EMPTY,CELL_VALUES.FOX_OR_EMPTY,CELL_VALUES.CHEST,CELL_VALUES.CHEST],...],
     ...
 ];
 ```
 
-#### Phase-Based Click Handling
+#### Phase-Based Click Handling with Method Extraction
 ```javascript
-onCellClick(cell) {
+onCellClick(event) {
+    const cell = event.target;
+    const index = parseInt(cell.dataset.index);
+    
     if (this.obstaclesConfirmed) {
-        // Treasure phase: show popup for multiple options
-        this.selectedCell = index;
-        this.showPopup();
+        this.handleTreasurePhaseClick(cell, index);
     } else {
-        // Obstacle phase: direct placement/removal
-        if (this.board[index] === 'obstacle') {
-            this.clearCell(index);  // Toggle off
-        } else {
-            this.setObstacle(index);  // Place obstacle
-        }
-        this.updateBoard();  // Trigger auto-fill and probability calculations
+        this.handleObstaclePhaseClick(cell, index);
     }
+}
+
+handleTreasurePhaseClick(cell, index) {
+    this.selectedCell = index;
+    this.showPopup();
+}
+
+handleObstaclePhaseClick(cell, index) {
+    if (this.board[index] === 'obstacle') {
+        this.clearCell(index);
+    } else {
+        this.setObstacle(index);
+    }
+    this.updateBoard();
 }
 ```
 
-#### Auto-Fill Algorithm
+#### Extracted Common Methods
+```javascript
+getMatchingBoards() {
+    return FauxHollowsFoxes.BOARD_DATA.filter(board => this.boardMatches(board));
+}
+
+convertIndexToRowCol(index) {
+    const row = Math.floor(index / FauxHollowsFoxes.CONSTANTS.BOARD_SIZE);
+    const col = index % FauxHollowsFoxes.CONSTANTS.BOARD_SIZE;
+    return { row, col };
+}
+
+updateCellDisplay(index) {
+    const cell = document.querySelector(`[data-index="${index}"]`);
+    if (this.board[index] === 'obstacle') {
+        cell.classList.add('obstacle');
+        cell.innerHTML = '🚫';
+    } else if (this.board[index] === 'sword') {
+        cell.classList.add('sword');
+        cell.innerHTML = '⚔️';
+    }
+    // Additional display logic...
+}
+```
+
+#### Auto-Fill Algorithm with Constants
 ```javascript
 tryAutoFillObstacles() {
-    // Analyze all matching boards to find guaranteed obstacle positions
-    for (let i = 0; i < 36; i++) {
+    const matchingBoards = this.getMatchingBoards();
+    
+    for (let i = 0; i < FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS; i++) {
+        const { row, col } = this.convertIndexToRowCol(i);
+        
         let allAreObstacles = true;
         for (const board of matchingBoards) {
-            if (board[row][col] !== 1) {
+            if (board[row][col] !== FauxHollowsFoxes.CONSTANTS.CELL_VALUES.OBSTACLE) {
                 allAreObstacles = false;
                 break;
             }
         }
-        if (allAreObstacles) {
-            this.setObstacle(i);  // Auto-fill confirmed positions
+        
+        if (allAreObstacles && this.board[i] === null) {
+            this.setObstacle(i);
         }
     }
 }
 ```
 
-#### Probability Calculation System
+#### Probability Calculation with Performance Optimization
 ```javascript
 updateTreasureProbabilitiesBasedOnMatches() {
-    // Calculate sword, chest, fox probabilities for each empty cell
-    const probabilities = { sword: Array(36).fill(0), chest: Array(36).fill(0), fox: Array(36).fill(0) };
+    const matchingBoards = this.getMatchingBoards();
+    const totalMatches = matchingBoards.length;
+    const probabilities = {
+        sword: new Array(FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS).fill(0),
+        chest: new Array(FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS).fill(0),
+        fox: new Array(FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS).fill(0)
+    };
     
     for (const board of matchingBoards) {
-        for (let i = 0; i < 36; i++) {
-            if (this.board[i] === null) {  // Only for empty cells
-                if (board[row][col] === 2) probabilities.sword[i]++;
-                else if (board[row][col] === 3) probabilities.chest[i]++;
-                else if (board[row][col] === 4) probabilities.fox[i]++;
+        for (let i = 0; i < FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS; i++) {
+            if (this.board[i] === null) {
+                const { row, col } = this.convertIndexToRowCol(i);
+                const cellValue = board[row][col];
+                
+                if (cellValue === FauxHollowsFoxes.CONSTANTS.CELL_VALUES.SWORD) probabilities.sword[i]++;
+                else if (cellValue === FauxHollowsFoxes.CONSTANTS.CELL_VALUES.CHEST) probabilities.chest[i]++;
+                else if (cellValue === FauxHollowsFoxes.CONSTANTS.CELL_VALUES.FOX_OR_EMPTY) probabilities.fox[i]++;
             }
         }
     }
     
-    // Convert counts to percentages
+    // Convert to percentages using CONSTANTS.PERCENTAGE
+    for (let i = 0; i < FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS; i++) {
+        if (totalMatches > 0) {
+            probabilities.sword[i] = Math.round((probabilities.sword[i] / totalMatches) * FauxHollowsFoxes.CONSTANTS.PERCENTAGE);
+            probabilities.chest[i] = Math.round((probabilities.chest[i] / totalMatches) * FauxHollowsFoxes.CONSTANTS.PERCENTAGE);
+            probabilities.fox[i] = Math.round((probabilities.fox[i] / totalMatches) * FauxHollowsFoxes.CONSTANTS.PERCENTAGE);
+        }
+    }
+    
     this.treasureProbabilities = probabilities;
 }
 ```
