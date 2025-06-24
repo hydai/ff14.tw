@@ -164,12 +164,51 @@
 .board-cell.treasure-probability-display {
     background: linear-gradient(135deg, #fff3e0, #fce4ec);
     border-color: #ff9800;
-    color: #e65100;
-    font-size: 0.6rem;
+    padding: 0;
+    overflow: hidden;
+}
+
+.treasure-prob-container {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.treasure-prob-item {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.55rem;
     font-weight: 600;
-    line-height: 1.1;
-    padding: 2px;
+    line-height: 1;
+    padding: 1px;
     text-align: center;
+    border-bottom: 1px solid rgba(255, 152, 0, 0.2);
+}
+
+.treasure-prob-item:last-child {
+    border-bottom: none;
+}
+
+.treasure-prob-item.empty-prob {
+    display: none;
+}
+
+.sword-prob {
+    background: linear-gradient(135deg, #ffebee, #fce4ec);
+    color: #c62828;
+}
+
+.chest-prob {
+    background: linear-gradient(135deg, #fff8e1, #fff3e0);
+    color: #ef6c00;
+}
+
+.fox-prob {
+    background: linear-gradient(135deg, #e3f2fd, #e1f5fe);
+    color: #1565c0;
 }
 
 /* Controls */

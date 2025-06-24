@@ -463,14 +463,28 @@ class FauxHollowsFoxes {
         const chestProb = this.treasureProbabilities.chest[index];
         const foxProb = this.treasureProbabilities.fox[index];
         
-        // 只顯示有機率的項目
-        const probabilities = [];
-        if (swordProb > 0) probabilities.push(`劍${swordProb}%`);
-        if (chestProb > 0) probabilities.push(`箱${chestProb}%`);
-        if (foxProb > 0) probabilities.push(`狐${foxProb}%`);
+        // 收集有機率的項目，並按優先順序排列（劍、寶箱、宗長）
+        const allProbabilities = [
+            { type: 'sword', text: `劍${swordProb}%`, prob: swordProb, className: 'sword-prob' },
+            { type: 'chest', text: `箱${chestProb}%`, prob: chestProb, className: 'chest-prob' },
+            { type: 'fox', text: `狐${foxProb}%`, prob: foxProb, className: 'fox-prob' }
+        ];
         
-        if (probabilities.length > 0) {
-            cell.innerHTML = probabilities.join('<br>');
+        // 只保留有機率的項目（自動往上替補）
+        const validProbabilities = allProbabilities.filter(item => item.prob > 0);
+        
+        if (validProbabilities.length > 0) {
+            // 創建三等份結構，只顯示有效的機率
+            let itemsHtml = '';
+            for (let i = 0; i < 3; i++) {
+                if (validProbabilities[i]) {
+                    itemsHtml += `<div class="treasure-prob-item ${validProbabilities[i].className}">${validProbabilities[i].text}</div>`;
+                } else {
+                    itemsHtml += `<div class="treasure-prob-item empty-prob"></div>`;
+                }
+            }
+            
+            cell.innerHTML = `<div class="treasure-prob-container">${itemsHtml}</div>`;
             cell.classList.add('treasure-probability-display');
         }
     }
