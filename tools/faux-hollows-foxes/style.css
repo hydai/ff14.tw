@@ -182,13 +182,14 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.7rem;
+    font-size: 0.9rem;
     font-weight: 700;
-    line-height: 1;
-    padding: 2px;
+    line-height: 0.9;
+    padding: 1px;
     text-align: center;
     border-bottom: 1px solid rgba(255, 152, 0, 0.2);
     box-sizing: border-box;
+    min-height: 0;
 }
 
 .treasure-prob-item:last-child {
@@ -387,8 +388,9 @@
     }
 
     .treasure-prob-item {
-        font-size: 0.6rem;
+        font-size: 0.75rem;
         padding: 1px;
+        line-height: 0.8;
     }
 
     .controls {
