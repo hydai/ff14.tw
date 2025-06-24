@@ -829,7 +829,35 @@ class FauxHollowsFoxes {
     }
 
     showPopup() {
+        // 根據遊戲階段顯示不同的選項
+        this.updatePopupOptions();
         this.elements.popup.style.display = 'flex';
+    }
+
+    updatePopupOptions() {
+        const popupBtns = this.elements.popup.querySelectorAll('.popup-btn');
+        
+        if (this.obstaclesConfirmed) {
+            // 填寶物階段：顯示劍、寶箱、宗長、空格、清除
+            popupBtns.forEach(btn => {
+                const type = btn.dataset.type;
+                if (type === 'sword' || type === 'chest' || type === 'fox' || type === 'empty' || type === 'clear') {
+                    btn.style.display = 'flex';
+                } else {
+                    btn.style.display = 'none';
+                }
+            });
+        } else {
+            // 填障礙物階段：只顯示障礙物、清除
+            popupBtns.forEach(btn => {
+                const type = btn.dataset.type;
+                if (type === 'obstacle' || type === 'clear') {
+                    btn.style.display = 'flex';
+                } else {
+                    btn.style.display = 'none';
+                }
+            });
+        }
     }
 
     closePopup() {

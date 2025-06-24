@@ -323,19 +323,19 @@
 }
 
 .popup-btn[data-type="sword"] {
-    border-color: #e74c3c;
-}
-
-.popup-btn[data-type="chest"] {
-    border-color: #f39c12;
-}
-
-.popup-btn[data-type="fox"] {
     border-color: #3498db;
 }
 
+.popup-btn[data-type="chest"] {
+    border-color: #c2185b;
+}
+
+.popup-btn[data-type="fox"] {
+    border-color: #8b4513;
+}
+
 .popup-btn[data-type="empty"] {
-    border-color: #95a5a6;
+    border-color: #8b4513;
 }
 
 .popup-close {
