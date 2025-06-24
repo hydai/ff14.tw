@@ -445,11 +445,14 @@ class FauxHollowsFoxes {
     updateProbabilityDisplay() {
         for (let i = 0; i < 36; i++) {
             const cell = this.elements.board.children[i];
+            
+            // 先清除所有機率顯示類別
+            cell.classList.remove('probability-display', 'treasure-probability-display');
+            
             if (this.board[i] === null) {
-                // 清除之前的顯示
+                // 只在未設置的格子上顯示機率
                 cell.textContent = '';
                 cell.innerHTML = '';
-                cell.classList.remove('probability-display', 'treasure-probability-display');
                 
                 if (this.showTreasureProbabilities && this.obstaclesConfirmed) {
                     // 顯示寶物機率
@@ -462,6 +465,7 @@ class FauxHollowsFoxes {
                     }
                 }
             }
+            // 如果格子已經被設置（包括empty），則不顯示機率
         }
     }
 
@@ -897,15 +901,17 @@ class FauxHollowsFoxes {
     }
 
     placeSingleCell(index, type) {
-        if (this.board[index] !== null) {
+        // Allow placing on cells that are null or showing treasure probabilities
+        const cell = this.elements.board.children[index];
+        if (this.board[index] !== null && !cell.classList.contains('treasure-probability-display')) {
             FF14Utils.showToast('此格子已被佔用！', 'error');
             return;
         }
 
         // Place the single cell
         this.board[index] = type;
-        const cell = this.elements.board.children[index];
         cell.className = `board-cell ${type}`;
+        cell.innerHTML = '';
         
         // Set display text
         if (type === 'fox') {
@@ -920,14 +926,17 @@ class FauxHollowsFoxes {
     }
 
     placeEmpty(index) {
-        if (this.board[index] !== null) {
+        // Allow placing empty on cells that are null or showing treasure probabilities
+        const cell = this.elements.board.children[index];
+        if (this.board[index] !== null && !cell.classList.contains('treasure-probability-display')) {
             FF14Utils.showToast('此格子已被佔用！', 'error');
             return;
         }
 
         this.board[index] = 'empty';
-        const cell = this.elements.board.children[index];
         cell.className = 'board-cell empty';
+        cell.innerHTML = '';
+        cell.textContent = '';
         this.clickCount++;
     }
 
