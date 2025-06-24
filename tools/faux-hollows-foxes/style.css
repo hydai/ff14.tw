@@ -33,6 +33,13 @@
     color: var(--primary);
 }
 
+.info-unit {
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-left: 0.25rem;
+}
+
 /* Game Board */
 .game-board {
     display: grid;
@@ -127,6 +134,14 @@
     font-weight: bold;
 }
 
+.board-cell.probability-display {
+    background: linear-gradient(135deg, #e8f5e8, #f0f8f0);
+    border-color: #4caf50;
+    color: #2e7d32;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
 /* Controls */
 .controls {
     display: flex;
@@ -178,32 +193,38 @@
 .popup-content {
     background: var(--card-bg);
     border-radius: var(--border-radius-lg);
-    padding: var(--spacing-lg);
-    max-width: 400px;
-    width: 90%;
+    padding: var(--spacing-xl);
+    max-width: 480px;
+    width: 95%;
     box-shadow: var(--shadow-xl);
     animation: popIn 0.2s ease-out;
 }
 
 .popup-content h3 {
-    margin-bottom: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
     text-align: center;
+    font-size: 1.5rem;
 }
 
 .popup-options {
     display: grid;
-    gap: var(--spacing-sm);
-    margin-bottom: var(--spacing-md);
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
 }
 
 .popup-btn {
-    padding: var(--spacing-sm) var(--spacing-md);
+    padding: var(--spacing-lg) var(--spacing-xl);
     background: var(--surface);
-    border: 2px solid var(--border-color);
-    border-radius: var(--border-radius-md);
+    border: 3px solid var(--border-color);
+    border-radius: var(--border-radius-lg);
     cursor: pointer;
     transition: all var(--transition-normal);
-    font-weight: 500;
+    font-weight: 600;
+    font-size: 1.1rem;
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .popup-btn:hover {
@@ -234,17 +255,21 @@
 
 .popup-close {
     width: 100%;
-    padding: var(--spacing-sm);
+    padding: var(--spacing-md);
     background: var(--surface);
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius-md);
+    border: 2px solid var(--border-color);
+    border-radius: var(--border-radius-lg);
     cursor: pointer;
     transition: all var(--transition-normal);
+    font-size: 1rem;
+    font-weight: 500;
+    min-height: 50px;
 }
 
 .popup-close:hover {
     background: var(--border-color);
 }
+
 
 /* Animations */
 @keyframes slideUp {
@@ -273,6 +298,11 @@
 @media (max-width: 768px) {
     .game-container {
         padding: var(--spacing-md);
+    }
+
+    .game-info {
+        flex-direction: column;
+        gap: var(--spacing-sm);
     }
 
     .game-board {

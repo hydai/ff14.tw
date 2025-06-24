@@ -36,6 +36,11 @@
                         <span class="info-label">當前得分：</span>
                         <span id="current-score" class="info-value">0</span>
                     </div>
+                    <div class="info-item">
+                        <span class="info-label">符合盤面：</span>
+                        <span id="matching-boards" class="info-value">252</span>
+                        <span class="info-unit">種</span>
+                    </div>
                 </div>
 
                 <div id="game-board" class="game-board">
@@ -44,6 +49,7 @@
 
                 <div class="controls">
                     <button id="reset-btn" class="btn btn-primary">重置遊戲</button>
+                    <button id="toggle-probabilities" class="btn btn-secondary">隱藏機率</button>
                     <button id="auto-calculate" class="btn btn-secondary">計算最佳策略</button>
                 </div>
 
@@ -59,13 +65,14 @@
                 <div class="popup-content">
                     <h3>選擇此格類型</h3>
                     <div class="popup-options">
-                        <button class="popup-btn" data-type="obstacle">障礙物</button>
-                        <button class="popup-btn" data-type="sword">劍 (2x3)</button>
-                        <button class="popup-btn" data-type="chest">寶箱 (2x2)</button>
-                        <button class="popup-btn" data-type="fox">宗長 (1x1)</button>
-                        <button class="popup-btn" data-type="empty">空格</button>
-                        <button class="popup-btn" data-type="clear">清除</button>
+                        <button class="popup-btn" data-type="obstacle">🚫 障礙物</button>
+                        <button class="popup-btn" data-type="sword">⚔️ 劍 (2x3)</button>
+                        <button class="popup-btn" data-type="chest">📦 寶箱 (2x2)</button>
+                        <button class="popup-btn" data-type="fox">🦊 宗長 (1x1)</button>
+                        <button class="popup-btn" data-type="empty">✅ 空格</button>
+                        <button class="popup-btn" data-type="clear">🗑️ 清除</button>
                     </div>
+                    
                     <button class="popup-close">取消</button>
                 </div>
             </div>
