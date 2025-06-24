@@ -6,6 +6,25 @@
     padding: var(--spacing-lg);
 }
 
+.game-hint {
+    background: linear-gradient(135deg, #e8f5e9, #f1f8e9);
+    border: 2px solid #4caf50;
+    border-radius: var(--border-radius-md);
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+    text-align: center;
+}
+
+.game-hint p {
+    margin: 0;
+    color: #2e7d32;
+    font-weight: 500;
+}
+
+.game-hint.hidden {
+    display: none;
+}
+
 .game-info {
     display: flex;
     justify-content: space-between;

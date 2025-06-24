@@ -290,7 +290,8 @@ class FauxHollowsFoxes {
             resultDetails: document.getElementById('result-details'),
             popup: document.getElementById('cell-popup'),
             popupBtns: document.querySelectorAll('.popup-btn'),
-            popupClose: document.querySelector('.popup-close')
+            popupClose: document.querySelector('.popup-close'),
+            gameHint: document.getElementById('game-hint')
         };
 
         this.initializeBoard();
@@ -354,30 +355,38 @@ class FauxHollowsFoxes {
     }
 
     calculateObstacleProbabilities() {
-        const obstacleCount = Array(36).fill(0);
-        const totalBoards = FauxHollowsFoxes.BOARD_DATA.length;
+        // 初始計算：基於所有盤面
+        this.updateObstacleProbabilitiesBasedOnMatches();
+        console.log(`已載入 ${FauxHollowsFoxes.BOARD_DATA.length} 個盤面配置`);
+        this.updateProbabilityDisplay();
+        this.updateMatchingBoards();
+    }
 
-        // 統計每個位置的障礙物出現次數
+    updateObstacleProbabilitiesBasedOnMatches() {
+        const obstacleCount = Array(36).fill(0);
+        let matchingBoardsCount = 0;
+
+        // 只統計符合當前使用者盤面的配置
         for (const board of FauxHollowsFoxes.BOARD_DATA) {
-            for (let row = 0; row < 6; row++) {
-                for (let col = 0; col < 6; col++) {
-                    const index = row * 6 + col;
-                    if (board[row][col] === 1) { // 1 代表障礙物
-                        obstacleCount[index]++;
+            if (this.boardMatches(board)) {
+                matchingBoardsCount++;
+                // 統計這個符合盤面中的障礙物位置
+                for (let row = 0; row < 6; row++) {
+                    for (let col = 0; col < 6; col++) {
+                        const index = row * 6 + col;
+                        if (board[row][col] === 1) { // 1 代表障礙物
+                            obstacleCount[index]++;
+                        }
                     }
                 }
             }
         }
 
-        // 計算機率百分比
+        // 基於符合的盤面計算機率
         for (let i = 0; i < 36; i++) {
-            this.obstacleProbabilities[i] = totalBoards > 0 ? 
-                Math.round((obstacleCount[i] / totalBoards) * 100) : 0;
+            this.obstacleProbabilities[i] = matchingBoardsCount > 0 ? 
+                Math.round((obstacleCount[i] / matchingBoardsCount) * 100) : 0;
         }
-
-        console.log(`已載入 ${totalBoards} 個盤面配置`);
-        this.updateProbabilityDisplay();
-        this.updateMatchingBoards();
     }
 
     updateProbabilityDisplay() {
@@ -385,9 +394,16 @@ class FauxHollowsFoxes {
 
         for (let i = 0; i < 36; i++) {
             const cell = this.elements.board.children[i];
-            if (this.board[i] === null && this.obstacleProbabilities[i] > 0) {
-                cell.textContent = `${this.obstacleProbabilities[i]}%`;
-                cell.classList.add('probability-display');
+            if (this.board[i] === null) {
+                // 只在未設置的格子上顯示機率
+                if (this.obstacleProbabilities[i] > 0) {
+                    cell.textContent = `${this.obstacleProbabilities[i]}%`;
+                    cell.classList.add('probability-display');
+                } else {
+                    // 如果機率為0，清除顯示
+                    cell.textContent = '';
+                    cell.classList.remove('probability-display');
+                }
             }
         }
     }
@@ -414,6 +430,13 @@ class FauxHollowsFoxes {
     updateMatchingBoards() {
         const matchingCount = this.countMatchingBoards();
         this.elements.matchingBoards.textContent = matchingCount;
+        
+        // 重新計算基於當前符合盤面的障礙物機率
+        this.updateObstacleProbabilitiesBasedOnMatches();
+        this.updateProbabilityDisplay();
+        
+        // 檢查是否可以自動填充障礙物
+        this.checkAndAutoFillObstacles();
     }
 
     countMatchingBoards() {
@@ -430,7 +453,11 @@ class FauxHollowsFoxes {
 
     boardMatches(dbBoard) {
         // 檢查使用者當前盤面是否與資料庫盤面相符
+        if (!dbBoard || dbBoard.length !== 6) return false;
+        
         for (let row = 0; row < 6; row++) {
+            if (!dbBoard[row] || dbBoard[row].length !== 6) return false;
+            
             for (let col = 0; col < 6; col++) {
                 const index = row * 6 + col;
                 const userValue = this.board[index];
@@ -460,6 +487,90 @@ class FauxHollowsFoxes {
             case 'fox': return 4;
             case 'empty': return 0; // 空格在資料庫中是 0
             default: return 0;
+        }
+    }
+
+    checkAndAutoFillObstacles() {
+        // 計算已經放置的障礙物數量
+        let obstacleCount = 0;
+        for (let i = 0; i < 36; i++) {
+            if (this.board[i] === 'obstacle') {
+                obstacleCount++;
+            }
+        }
+
+        // 如果已經有2個或以上的障礙物，檢查是否可以自動填充
+        if (obstacleCount >= 2) {
+            this.tryAutoFillObstacles();
+        }
+
+        // 如果有2個障礙物了，隱藏提示
+        if (obstacleCount >= 2 && this.elements.gameHint) {
+            this.elements.gameHint.classList.add('hidden');
+        }
+    }
+
+    tryAutoFillObstacles() {
+        // 收集所有符合的盤面
+        const matchingBoards = [];
+        for (const board of FauxHollowsFoxes.BOARD_DATA) {
+            if (this.boardMatches(board)) {
+                matchingBoards.push(board);
+            }
+        }
+
+        // 如果沒有符合的盤面，不執行自動填充
+        if (matchingBoards.length === 0) return;
+
+        // 檢查所有符合盤面中，每個位置的障礙物是否一致
+        const confirmedObstacles = [];
+        
+        for (let i = 0; i < 36; i++) {
+            // 跳過已經設置的格子
+            if (this.board[i] !== null) continue;
+
+            const row = Math.floor(i / 6);
+            const col = i % 6;
+            
+            // 檢查這個位置在所有符合盤面中是否都是障礙物
+            let allAreObstacles = true;
+            let allAreNotObstacles = true;
+            
+            for (const board of matchingBoards) {
+                if (board[row][col] === 1) {
+                    allAreNotObstacles = false;
+                } else {
+                    allAreObstacles = false;
+                }
+            }
+
+            // 如果所有符合的盤面在這個位置都是障礙物，則自動填充
+            if (allAreObstacles) {
+                confirmedObstacles.push(i);
+            }
+        }
+
+        // 自動填充確定的障礙物
+        if (confirmedObstacles.length > 0) {
+            let fillCount = 0;
+            for (const index of confirmedObstacles) {
+                this.setObstacle(index);
+                fillCount++;
+            }
+            
+            // 顯示自動填充的提示
+            FF14Utils.showToast(`已自動填充 ${fillCount} 個確定的障礙物位置`, 'success');
+            
+            // 更新顯示（但不觸發 updateMatchingBoards 避免遞迴）
+            this.updateDisplay();
+            this.checkForCompletedShapes();
+            this.validateShapes();
+            
+            // 手動更新符合盤面計數，但不觸發自動填充
+            const matchingCount = this.countMatchingBoards();
+            this.elements.matchingBoards.textContent = matchingCount;
+            this.updateObstacleProbabilitiesBasedOnMatches();
+            this.updateProbabilityDisplay();
         }
     }
 
@@ -529,10 +640,7 @@ class FauxHollowsFoxes {
     setObstacle(index) {
         const cell = this.elements.board.children[index];
         
-        // Clear previous state
-        this.clearCell(index);
-        
-        // Set as obstacle
+        // Set as obstacle directly without clearing first
         this.board[index] = 'obstacle';
         cell.className = 'board-cell obstacle';
         cell.textContent = '✕';
@@ -863,6 +971,11 @@ class FauxHollowsFoxes {
         // Restore probability display if enabled
         this.updateProbabilityDisplay();
         this.updateMatchingBoards();
+        
+        // 顯示提示
+        if (this.elements.gameHint) {
+            this.elements.gameHint.classList.remove('hidden');
+        }
     }
 }
 
