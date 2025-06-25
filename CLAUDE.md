@@ -46,6 +46,7 @@ All pages include:
 - Header with logo and navigation (`header.header > .container`)
 - Main content area (`main.main > .container`) 
 - Footer with copyright
+- Favicon link: `<link rel="icon" type="image/x-icon" href="assets/images/ff14tw.ico">` (adjust path for subdirectories)
 - Links to shared resources: `../../assets/css/common.css` and `../../assets/js/common.js`
 
 ### CSS Architecture
@@ -356,160 +357,11 @@ For tools with visual content:
 - Follow FF14 official terminology and classification standards
 - Maintain non-commercial educational use stance for all game content
 
-## Faux Hollows Foxes Implementation Patterns
+## Faux Hollows Foxes Patterns
 
-### Core Architecture
-The Faux Hollows Foxes calculator implements a sophisticated grid-based puzzle solver with constants-based architecture and clean method separation:
+6x6 grid puzzle with 252 board configurations.
+Constants-driven design, phase-based interactions.
 
-#### Constants-Driven Design
-```javascript
-static CONSTANTS = {
-    BOARD_SIZE: 6,
-    TOTAL_CELLS: 36,
-    MAX_CLICKS: 11,
-    PERCENTAGE: 100,
-    SCORES: { SWORD: 100, CHEST: 60, FOX: 20 },
-    CELL_VALUES: { EMPTY: 0, OBSTACLE: 1, SWORD: 2, CHEST: 3, FOX_OR_EMPTY: 4 }
-};
-
-// Board data format embedded in script.js
-static BOARD_DATA = [
-    // 252 pre-defined board configurations using CELL_VALUES constants
-    [[CELL_VALUES.FOX_OR_EMPTY,CELL_VALUES.EMPTY,CELL_VALUES.EMPTY,CELL_VALUES.FOX_OR_EMPTY,CELL_VALUES.CHEST,CELL_VALUES.CHEST],...],
-    ...
-];
-```
-
-#### Phase-Based Click Handling with Method Extraction
-```javascript
-onCellClick(event) {
-    const cell = event.target;
-    const index = parseInt(cell.dataset.index);
-    
-    if (this.obstaclesConfirmed) {
-        this.handleTreasurePhaseClick(cell, index);
-    } else {
-        this.handleObstaclePhaseClick(cell, index);
-    }
-}
-
-handleTreasurePhaseClick(cell, index) {
-    this.selectedCell = index;
-    this.showPopup();
-}
-
-handleObstaclePhaseClick(cell, index) {
-    if (this.board[index] === 'obstacle') {
-        this.clearCell(index);
-    } else {
-        this.setObstacle(index);
-    }
-    this.updateBoard();
-}
-```
-
-#### Extracted Common Methods
-```javascript
-getMatchingBoards() {
-    return FauxHollowsFoxes.BOARD_DATA.filter(board => this.boardMatches(board));
-}
-
-convertIndexToRowCol(index) {
-    const row = Math.floor(index / FauxHollowsFoxes.CONSTANTS.BOARD_SIZE);
-    const col = index % FauxHollowsFoxes.CONSTANTS.BOARD_SIZE;
-    return { row, col };
-}
-
-updateCellDisplay(index) {
-    const cell = document.querySelector(`[data-index="${index}"]`);
-    if (this.board[index] === 'obstacle') {
-        cell.classList.add('obstacle');
-        cell.innerHTML = '🚫';
-    } else if (this.board[index] === 'sword') {
-        cell.classList.add('sword');
-        cell.innerHTML = '⚔️';
-    }
-    // Additional display logic...
-}
-```
-
-#### Auto-Fill Algorithm with Constants
-```javascript
-tryAutoFillObstacles() {
-    const matchingBoards = this.getMatchingBoards();
-    
-    for (let i = 0; i < FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS; i++) {
-        const { row, col } = this.convertIndexToRowCol(i);
-        
-        let allAreObstacles = true;
-        for (const board of matchingBoards) {
-            if (board[row][col] !== FauxHollowsFoxes.CONSTANTS.CELL_VALUES.OBSTACLE) {
-                allAreObstacles = false;
-                break;
-            }
-        }
-        
-        if (allAreObstacles && this.board[i] === null) {
-            this.setObstacle(i);
-        }
-    }
-}
-```
-
-#### Probability Calculation with Performance Optimization
-```javascript
-updateTreasureProbabilitiesBasedOnMatches() {
-    const matchingBoards = this.getMatchingBoards();
-    const totalMatches = matchingBoards.length;
-    const probabilities = {
-        sword: new Array(FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS).fill(0),
-        chest: new Array(FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS).fill(0),
-        fox: new Array(FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS).fill(0)
-    };
-    
-    for (const board of matchingBoards) {
-        for (let i = 0; i < FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS; i++) {
-            if (this.board[i] === null) {
-                const { row, col } = this.convertIndexToRowCol(i);
-                const cellValue = board[row][col];
-                
-                if (cellValue === FauxHollowsFoxes.CONSTANTS.CELL_VALUES.SWORD) probabilities.sword[i]++;
-                else if (cellValue === FauxHollowsFoxes.CONSTANTS.CELL_VALUES.CHEST) probabilities.chest[i]++;
-                else if (cellValue === FauxHollowsFoxes.CONSTANTS.CELL_VALUES.FOX_OR_EMPTY) probabilities.fox[i]++;
-            }
-        }
-    }
-    
-    // Convert to percentages using CONSTANTS.PERCENTAGE
-    for (let i = 0; i < FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS; i++) {
-        if (totalMatches > 0) {
-            probabilities.sword[i] = Math.round((probabilities.sword[i] / totalMatches) * FauxHollowsFoxes.CONSTANTS.PERCENTAGE);
-            probabilities.chest[i] = Math.round((probabilities.chest[i] / totalMatches) * FauxHollowsFoxes.CONSTANTS.PERCENTAGE);
-            probabilities.fox[i] = Math.round((probabilities.fox[i] / totalMatches) * FauxHollowsFoxes.CONSTANTS.PERCENTAGE);
-        }
-    }
-    
-    this.treasureProbabilities = probabilities;
-}
-```
-
-### Visual Design Patterns
-- **FF14 Official Colors**: Earth gray obstacles, light blue swords, pink chests, earth yellow foxes
-- **Three-Section Probability Display**: Split each cell to show sword/chest/fox probabilities separately
-- **Gradient Backgrounds**: Use CSS gradients for visual depth and official game aesthetics
-- **Color-Coded Popup Buttons**: Each button type has distinct background matching game element colors
-
-### Error Handling and User Experience
-- **Smart Click Counting**: Only increment for new placements, not modifications
-- **Overwrite Protection**: Prevent overwriting obstacles, allow treasure modifications
-- **Phase Transition**: Automatic detection when obstacles are confirmed, switch to treasure mode
-- **Toast Notifications**: Minimal, only for important state changes and errors
-
-### Performance Optimizations
-- **Embedded Data**: 252 board configurations stored in script to avoid network requests
-- **Event Delegation**: Single click handler for entire board using event bubbling
-- **Selective Updates**: Only recalculate probabilities when board state changes
-- **Efficient Matching**: Early termination in board matching algorithm
 
 ## AI Command Memories
 
@@ -548,6 +400,11 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 
 ## Assets and Resources
 
+### Site Favicon
+- **Location**: `assets/images/ff14tw.ico`
+- **Usage**: Include in all HTML pages with `<link rel="icon" type="image/x-icon" href="/assets/images/ff14tw.ico">`
+- **Format**: ICO file format for maximum browser compatibility
+
 ### Official FF14 Assets
 The project includes Square Enix official assets in `assets/images/se/FFXIVJobIcons/`:
 - **45 job icons** organized by role (Tank/Healer/DPS/Crafter/Gatherer/Limited)
@@ -563,43 +420,8 @@ The project includes Square Enix official assets in `assets/images/se/FFXIVJobIc
 
 ## Changelog Management
 
-### Changelog Page Structure
-The `changelog.html` page follows a structured format to track project updates:
-
-```html
-<article class="changelog-entry">
-    <div class="changelog-header">
-        <h3 class="changelog-version">v1.5.0</h3>
-        <time class="changelog-date" datetime="2025-06-25">2025年6月25日</time>
-    </div>
-    <div class="changelog-content">
-        <h4>新功能</h4>
-        <ul>
-            <li><span class="tag tag-new">新增</span> Feature description</li>
-        </ul>
-        <h4>改進</h4>
-        <ul>
-            <li><span class="tag tag-improved">改進</span> Improvement description</li>
-        </ul>
-        <h4>修正</h4>
-        <ul>
-            <li><span class="tag tag-fixed">修正</span> Bug fix description</li>
-        </ul>
-    </div>
-</article>
-```
-
-### Tag System
-- `tag-new`: 新功能或新工具 (綠色)
-- `tag-improved`: 功能優化或體驗提升 (藍色)  
-- `tag-fixed`: 錯誤修復 (橙色)
-- `tag-info`: 重要資訊或里程碑 (紫色)
-
-### Update Guidelines
-When adding new changelog entries:
-1. Use semantic versioning (major.minor.patch)
-2. Group related changes under appropriate categories
-3. Write concise, user-focused descriptions
-4. Include implementation dates
-5. Prioritize user-visible changes over technical details
-6. Reference git commits for detailed technical changes
+### Changelog Tags
+- `tag-new`: 新功能 (綠)
+- `tag-improved`: 改進 (藍)  
+- `tag-fixed`: 修正 (橙)
+- `tag-info`: 資訊 (紫)
