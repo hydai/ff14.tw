@@ -89,6 +89,73 @@ h3 {
     background-color: rgba(255,255,255,0.2);
 }
 
+.nav a.active {
+    background-color: rgba(255,255,255,0.3);
+    font-weight: 600;
+}
+
+/* 下拉選單 */
+.nav-dropdown {
+    position: relative;
+    display: inline-block;
+    vertical-align: top;
+}
+
+.nav-dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: white;
+    min-width: 180px;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+    border-radius: 8px;
+    z-index: 1000;
+    top: 100%;
+    left: 0;
+    margin-top: 0.2rem;
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    pointer-events: none;
+}
+
+.nav-dropdown-content a {
+    color: var(--text-color) !important;
+    padding: 0.75rem 1rem;
+    text-decoration: none;
+    display: block;
+    transition: background-color 0.3s;
+    border-radius: 0;
+}
+
+.nav-dropdown-content a:hover {
+    background-color: var(--light-color);
+}
+
+.nav-dropdown:hover .nav-dropdown-content {
+    display: block;
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.nav-dropdown-content:hover {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.nav-dropdown > a {
+    display: inline-block;
+    vertical-align: top;
+}
+
+.nav-dropdown > a::after {
+    content: ' ▼';
+    font-size: 0.8rem;
+    margin-left: 0.5rem;
+}
+
 /* 主要內容區域 */
 .main {
     min-height: calc(100vh - 120px);
