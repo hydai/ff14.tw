@@ -169,20 +169,33 @@ class ToolCalculator {
 ## UI Consistency Requirements
 
 ### Navigation Bar Structure
-All pages must maintain consistent navigation structure (4 items only):
+All pages must maintain consistent navigation structure (4 items with dropdown):
 ```html
 <header class="header">
     <div class="container">
         <a href="/" class="logo">FF14.tw</a>
         <nav class="nav">
             <a href="/">首頁</a>
-            <a href="/about.html">關於</a>
             <a href="/copyright.html">版權聲明</a>
             <a href="https://github.com/hydai/ff14.tw" target="_blank">GitHub</a>
+            <div class="nav-dropdown">
+                <a href="#">關於本站</a>
+                <div class="nav-dropdown-content">
+                    <a href="/about.html">關於</a>
+                    <a href="/changelog.html">修改紀錄</a>
+                </div>
+            </div>
         </nav>
     </div>
 </header>
 ```
+
+**Navigation Design Principles:**
+- Dropdown menu positioned at the rightmost to avoid visual disruption
+- Four main navigation items: Home → Copyright → GitHub → About Site (dropdown)
+- Dropdown integrates "About" and "Changelog" under "關於本站"
+- Smooth animations with hover delay to improve UX
+- Consistent across all pages and tools
 
 ### Footer Structure
 All pages must use identical footer with complete copyright notice:
@@ -547,3 +560,46 @@ The project includes Square Enix official assets in `assets/images/se/FFXIVJobIc
 - Use relative paths from tool directories: `../../assets/images/se/...`
 - Implement fallback mechanisms for missing assets
 - Optimize images for web delivery (<200KB recommended)
+
+## Changelog Management
+
+### Changelog Page Structure
+The `changelog.html` page follows a structured format to track project updates:
+
+```html
+<article class="changelog-entry">
+    <div class="changelog-header">
+        <h3 class="changelog-version">v1.5.0</h3>
+        <time class="changelog-date" datetime="2025-06-25">2025年6月25日</time>
+    </div>
+    <div class="changelog-content">
+        <h4>新功能</h4>
+        <ul>
+            <li><span class="tag tag-new">新增</span> Feature description</li>
+        </ul>
+        <h4>改進</h4>
+        <ul>
+            <li><span class="tag tag-improved">改進</span> Improvement description</li>
+        </ul>
+        <h4>修正</h4>
+        <ul>
+            <li><span class="tag tag-fixed">修正</span> Bug fix description</li>
+        </ul>
+    </div>
+</article>
+```
+
+### Tag System
+- `tag-new`: 新功能或新工具 (綠色)
+- `tag-improved`: 功能優化或體驗提升 (藍色)  
+- `tag-fixed`: 錯誤修復 (橙色)
+- `tag-info`: 重要資訊或里程碑 (紫色)
+
+### Update Guidelines
+When adding new changelog entries:
+1. Use semantic versioning (major.minor.patch)
+2. Group related changes under appropriate categories
+3. Write concise, user-focused descriptions
+4. Include implementation dates
+5. Prioritize user-visible changes over technical details
+6. Reference git commits for detailed technical changes

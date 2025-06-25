@@ -70,9 +70,12 @@ ff14.tw/
 ├── .gitignore              # Git 忽略規則
 ├── index.html              # 主頁
 ├── about.html              # 關於頁面
+├── changelog.html          # 修改紀錄頁面
 ├── copyright.html          # 版權聲明頁
 ├── assets/                 # 共用資源
-│   ├── css/common.css      # 全域樣式
+│   ├── css/
+│   │   ├── common.css      # 全域樣式（含下拉式選單）
+│   │   └── changelog.css   # 修改紀錄頁面專用樣式
 │   ├── js/common.js        # 共用函式庫
 │   └── images/             # 圖片資源
 │       └── se/             # Square Enix 官方素材
@@ -87,6 +90,7 @@ ff14.tw/
 
 ### 共用架構模式
 - **HTML 結構**：統一的 header/nav/main/footer 佈局
+- **導航系統**：整合式下拉選單設計，「關於本站」包含關於與修改紀錄
 - **CSS 架構**：基於 CSS 自訂屬性的設計系統
 - **JavaScript 工具**：`FF14Utils` 全域物件提供常用函式
 - **類別架構**：每個工具使用 class-based 的 JavaScript 架構
