@@ -70,6 +70,28 @@ h3 {
     font-weight: bold;
     text-decoration: none;
     color: white;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.logo-main {
+    font-size: 1.8rem;
+}
+
+.logo-separator {
+    font-size: 1.4rem;
+    opacity: 0.7;
+}
+
+.logo-tool {
+    font-size: 1.4rem;
+    font-weight: normal;
+}
+
+/* 工具頁面標題隱藏 */
+.tool-page-title {
+    display: none;
 }
 
 .nav {
@@ -368,6 +390,22 @@ h3 {
     
     h1 {
         font-size: 2rem;
+    }
+    
+    .logo {
+        font-size: 1.4rem;
+    }
+    
+    .logo-main {
+        font-size: 1.4rem;
+    }
+    
+    .logo-separator {
+        font-size: 1.2rem;
+    }
+    
+    .logo-tool {
+        font-size: 1.2rem;
     }
     
     .tools-grid {

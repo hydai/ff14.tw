@@ -148,9 +148,10 @@ function initHamburgerMenu() {
     // 處理下拉選單在手機版的行為
     const dropdowns = nav.querySelectorAll('.nav-dropdown');
     dropdowns.forEach(dropdown => {
-        const dropdownLink = dropdown.querySelector('> a');
+        const dropdownLink = dropdown.querySelector(':scope > a');
         
-        dropdownLink.addEventListener('click', function(e) {
+        if (dropdownLink) {
+            dropdownLink.addEventListener('click', function(e) {
             // 只在手機版阻止預設行為
             if (window.innerWidth <= 768) {
                 e.preventDefault();
@@ -165,7 +166,8 @@ function initHamburgerMenu() {
                 // 切換當前下拉選單
                 dropdown.classList.toggle('active');
             }
-        });
+            });
+        }
     });
     
     // 視窗大小改變時重置選單狀態
@@ -188,10 +190,39 @@ function initHamburgerMenu() {
     });
 }
 
+// 動態更新 logo 文字
+function updateLogoText() {
+    const logo = document.querySelector('.logo');
+    const h1 = document.querySelector('h1');
+    
+    if (!logo || !h1) return;
+    
+    // 檢查是否在工具頁面（URL 包含 /tools/）
+    if (window.location.pathname.includes('/tools/')) {
+        // 取得工具名稱
+        const toolName = h1.textContent.trim();
+        
+        // 更新 logo 文字
+        logo.innerHTML = `<span class="logo-main">FF14.tw</span><span class="logo-separator"> | </span><span class="logo-tool">${toolName}</span>`;
+        
+        // 為 h1 加上隱藏類別
+        h1.classList.add('tool-page-title');
+        
+        // 如果有描述文字，調整其上邊距
+        const description = document.querySelector('.description');
+        if (description) {
+            description.style.marginTop = '0';
+        }
+    }
+}
+
 // 頁面載入完成後執行
 document.addEventListener('DOMContentLoaded', function() {
     // 初始化漢堡選單功能
     initHamburgerMenu();
+    
+    // 動態更新 logo 文字（工具頁面）
+    updateLogoText();
     
     // 為所有工具卡片添加點擊效果
     const toolCards = document.querySelectorAll('.tool-card');
