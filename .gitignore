@@ -20,7 +20,6 @@ Thumbs.db
 *_original.*
 
 # Data directories and files
-data/
 temp/
 tmp/
 logs/
