@@ -2,6 +2,11 @@
 
 /* Wondrous Tails Calculator Styles */
 
+.page-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
 .grid-container {
     display: flex;
     flex-direction: column;

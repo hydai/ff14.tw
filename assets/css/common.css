@@ -94,6 +94,14 @@ h3 {
     display: none;
 }
 
+/* 工具頁面描述文字置中 */
+.description {
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+    margin-bottom: 2rem;
+}
+
 .nav {
     display: flex;
     gap: 2rem;

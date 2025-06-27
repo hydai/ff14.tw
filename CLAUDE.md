@@ -212,8 +212,10 @@ Tool pages automatically display tool name in navigation:
 - **Format**: `FF14.tw | Tool Name`
 - **Implementation**: JavaScript detects `/tools/` URL and updates logo
 - **Visual Optimization**: Original h1 title hidden to save vertical space
-- **Responsive**: Font sizes adjust for mobile displays
+- **Responsive**: Font sizes adjust for mobile displays (480px breakpoint for small screens)
 - **CSS Classes**: `.logo-main`, `.logo-separator`, `.logo-tool` for styling
+- **Execution Order**: Logo update runs before hamburger menu initialization
+- **Mobile Support**: Flex layout maintained across all screen sizes
 
 ### Footer Structure
 All pages must use identical footer with complete copyright notice:
@@ -233,6 +235,8 @@ Tools with external data (like dungeon-database) follow this structure:
 - **Data Template**: `data-template.json` with format documentation and examples
 - **Developer Guide**: `README.md` explaining data structure and update procedures
 - **CORS Handling**: Implement error handling for local development vs production
+- **File Location**: Data files stored in `/data/` directory at project root
+- **Path Configuration**: Use relative paths (e.g., `../../data/dungeons.json`) for GitHub Pages compatibility
 
 ### Data Loading Pattern
 ```javascript

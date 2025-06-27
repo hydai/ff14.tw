@@ -7,15 +7,17 @@
 - 純靜態 HTML/CSS/JavaScript
 - 工具獨立封裝 (`tools/`)
 - 繁體中文介面
-- 響應式設計
+- 響應式設計（含手機版漢堡選單）
+- 工具名稱動態顯示於導航列
 - 開源專案
 
 ## 🛠️ 已實作工具
 
 ### 副本資料庫 (`dungeon-database/`)
-- 362 個副本 (2.x - 7.x)
+- 804 個副本 (2.x - 7.x，640 個可見項目)
 - 搜尋過濾功能
 - 圖片預覽
+- 鍵盤導航支援
 - 資料來源：灰機Wiki
 
 ### Mini Cactpot 計算機 (`mini-cactpot/`)
@@ -62,11 +64,13 @@ ff14.tw/
 ├── about.html              # 關於頁面
 ├── changelog.html          # 修改紀錄頁面
 ├── copyright.html          # 版權聲明頁
+├── data/                   # 資料檔案
+│   └── dungeons.json       # 副本資料庫 JSON
 ├── assets/                 # 共用資源
 │   ├── css/
-│   │   ├── common.css      # 全域樣式（含下拉式選單）
+│   │   ├── common.css      # 全域樣式（含下拉式選單、漢堡選單）
 │   │   └── changelog.css   # 修改紀錄頁面專用樣式
-│   ├── js/common.js        # 共用函式庫
+│   ├── js/common.js        # 共用函式庫（含動態 logo、漢堡選單）
 │   └── images/             # 圖片資源
 │       ├── ff14tw.ico      # 網站 favicon
 │       └── se/             # Square Enix 官方素材

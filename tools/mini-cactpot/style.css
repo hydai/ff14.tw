@@ -1,5 +1,10 @@
 @import url('/assets/css/tools-common.css');
 
+.page-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
 .tool-content {
     max-width: 800px;
     margin: 0 auto;
