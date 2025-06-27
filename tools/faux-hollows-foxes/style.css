@@ -494,3 +494,65 @@
         padding: var(--spacing-md);
     }
 }
+
+/* 最佳化高亮效果 */
+.board-cell.optimal-highlight {
+    position: relative;
+    z-index: 10;
+}
+
+/* 劍類型的高亮 - 藍色發光 */
+.board-cell.optimal-highlight[data-optimal-type="sword"] .sword-prob {
+    background: linear-gradient(135deg, #2196f3, #1976d2) !important;
+    color: white !important;
+    box-shadow: 0 0 15px rgba(33, 150, 243, 0.8), inset 0 0 10px rgba(255, 255, 255, 0.3);
+    animation: sword-glow 2s ease-in-out infinite;
+    font-weight: 900;
+    border: 2px solid #1565c0;
+}
+
+/* 寶箱類型的高亮 - 紅色發光 */
+.board-cell.optimal-highlight[data-optimal-type="chest"] .chest-prob {
+    background: linear-gradient(135deg, #f44336, #d32f2f) !important;
+    color: white !important;
+    box-shadow: 0 0 15px rgba(244, 67, 54, 0.8), inset 0 0 10px rgba(255, 255, 255, 0.3);
+    animation: chest-glow 2s ease-in-out infinite;
+    font-weight: 900;
+    border: 2px solid #b71c1c;
+}
+
+@keyframes sword-glow {
+    0%, 100% {
+        box-shadow: 0 0 15px rgba(33, 150, 243, 0.8), inset 0 0 10px rgba(255, 255, 255, 0.3);
+        transform: scale(1);
+    }
+    50% {
+        box-shadow: 0 0 25px rgba(33, 150, 243, 1), inset 0 0 15px rgba(255, 255, 255, 0.5);
+        transform: scale(1.05);
+    }
+}
+
+@keyframes chest-glow {
+    0%, 100% {
+        box-shadow: 0 0 15px rgba(244, 67, 54, 0.8), inset 0 0 10px rgba(255, 255, 255, 0.3);
+        transform: scale(1);
+    }
+    50% {
+        box-shadow: 0 0 25px rgba(244, 67, 54, 1), inset 0 0 15px rgba(255, 255, 255, 0.5);
+        transform: scale(1.05);
+    }
+}
+
+/* 整個格子的微妙發光效果 */
+.board-cell.optimal-highlight {
+    animation: cell-pulse 2s ease-in-out infinite;
+}
+
+@keyframes cell-pulse {
+    0%, 100% {
+        background-color: #f8f9fa;
+    }
+    50% {
+        background-color: #fff;
+    }
+}

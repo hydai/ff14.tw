@@ -1023,6 +1023,7 @@ class FauxHollowsFoxes {
         }
 
         this.closePopup();
+        this.clearHighlights();
         this.updateDisplay();
         this.checkForCompletedShapes();
         this.validateShapes();
@@ -1393,7 +1394,94 @@ class FauxHollowsFoxes {
 
 
     autoCalculate() {
-        FF14Utils.showToast('自動計算功能開發中...', 'info');
+        // 清除之前的高亮
+        this.clearHighlights();
+        
+        // 確保寶物機率已更新
+        if (this.obstaclesConfirmed) {
+            this.updateTreasureProbabilitiesBasedOnMatches();
+            
+            // 找出最高機率的劍和寶箱位置
+            const optimalCells = this.findOptimalCells();
+            
+            if (optimalCells.length > 0) {
+                // 高亮這些格子
+                optimalCells.forEach(cellData => {
+                    const cell = this.elements.board.children[cellData.index];
+                    cell.classList.add('optimal-highlight');
+                    cell.dataset.optimalType = cellData.type;
+                    cell.dataset.optimalProbability = cellData.probability;
+                });
+                
+                FF14Utils.showToast(`找到 ${optimalCells.length} 個最佳位置`, 'success');
+            } else {
+                FF14Utils.showToast('沒有找到明顯的最佳位置', 'info');
+            }
+        } else {
+            FF14Utils.showToast('請先放置障礙物', 'info');
+        }
+    }
+    
+    findOptimalCells() {
+        const optimalCells = [];
+        let maxSwordProb = 0;
+        let maxChestProb = 0;
+        
+        // 先找出最高機率
+        for (let i = 0; i < FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS; i++) {
+            // 跳過已經有內容的格子
+            if (this.board[i] !== null) continue;
+            
+            const swordProb = this.treasureProbabilities.sword[i];
+            const chestProb = this.treasureProbabilities.chest[i];
+            
+            if (swordProb > maxSwordProb) {
+                maxSwordProb = swordProb;
+            }
+            
+            if (chestProb > maxChestProb) {
+                maxChestProb = chestProb;
+            }
+        }
+        
+        // 找出所有等於最高機率的格子
+        for (let i = 0; i < FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS; i++) {
+            // 跳過已經有內容的格子
+            if (this.board[i] !== null) continue;
+            
+            const swordProb = this.treasureProbabilities.sword[i];
+            const chestProb = this.treasureProbabilities.chest[i];
+            
+            // 加入所有最高機率的劍位置
+            if (swordProb > 0 && swordProb === maxSwordProb) {
+                optimalCells.push({
+                    index: i,
+                    type: 'sword',
+                    probability: swordProb
+                });
+            }
+            
+            // 加入所有最高機率的寶箱位置
+            if (chestProb > 0 && chestProb === maxChestProb) {
+                optimalCells.push({
+                    index: i,
+                    type: 'chest',
+                    probability: chestProb
+                });
+            }
+        }
+        
+        return optimalCells;
+    }
+    
+    clearHighlights() {
+        // 清除所有高亮效果
+        const cells = this.elements.board.querySelectorAll('.optimal-highlight');
+        cells.forEach(cell => {
+            cell.classList.remove('optimal-highlight');
+            delete cell.dataset.optimalType;
+            delete cell.dataset.optimalProbability;
+        });
     }
 
     reset() {
@@ -1410,6 +1498,9 @@ class FauxHollowsFoxes {
         };
         this.obstaclesConfirmed = false;
         this.showTreasureProbabilities = false;
+        
+        // 清除高亮
+        this.clearHighlights();
         
         // Reset UI
         this.initializeBoard();
