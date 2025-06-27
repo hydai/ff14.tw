@@ -384,10 +384,10 @@ Constants-driven design, phase-based interactions.
 
 ## AI Command Memories
 
-- 當我呼叫 GitCommit 請幫我根據目前修改產生一個 git commit
+- 當我呼叫 GitCommit 請幫我根據目前修改，對 changelog 進行更新以後，再產生一個 git commit
 - 所有頁面的導航列都需保持一致的風格，包含版權聲明連結
 - 所有頁面的頁尾都需與首頁風格一致
-- ucc 代表我希望更新 CLAUDE.md 檔案
+- 當我呼叫 Update 時，請更新 README.md 與 CLAUDE.md
 
 ### Language and Terminology
 - 使用台灣用語：「資料」而非「數據」
