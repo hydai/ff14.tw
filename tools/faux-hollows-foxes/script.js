@@ -292,6 +292,7 @@ class FauxHollowsFoxes {
         this.showProbabilities = true;
         this.showTreasureProbabilities = false;
         this.obstaclesConfirmed = false;
+        this.showOptimalHighlight = true; // 預設開啟高亮功能
         
         this.elements = {
             board: document.getElementById('game-board'),
@@ -312,6 +313,9 @@ class FauxHollowsFoxes {
         this.initializeBoard();
         this.initializeEvents();
         this.calculateObstacleProbabilities();
+        
+        // 設定按鈕初始文字
+        this.elements.autoCalculateBtn.textContent = '關閉最佳策略';
     }
 
     initializeBoard() {
@@ -364,9 +368,9 @@ class FauxHollowsFoxes {
             this.reset();
         });
 
-        // Auto calculate button
+        // Auto calculate button (toggle)
         this.elements.autoCalculateBtn.addEventListener('click', () => {
-            this.autoCalculate();
+            this.toggleOptimalHighlight();
         });
 
         // Toggle probabilities button
@@ -584,6 +588,9 @@ class FauxHollowsFoxes {
         
         // 檢查是否可以自動填充障礙物
         this.checkAndAutoFillObstacles();
+        
+        // 更新最佳策略高亮
+        this.updateOptimalHighlight();
     }
 
     countMatchingBoards() {
@@ -721,6 +728,9 @@ class FauxHollowsFoxes {
             this.updateTreasureProbabilitiesBasedOnMatches();
             this.updateProbabilityDisplay(); // 需要更新UI顯示
             FF14Utils.showToast('障礙物位置已確認！現在顯示寶物機率，點擊格子可填寫實際發現的寶物', 'success');
+            
+            // 更新最佳策略高亮
+            this.updateOptimalHighlight();
         }
     }
 
@@ -762,6 +772,9 @@ class FauxHollowsFoxes {
             this.showTreasureProbabilities = true;
             this.updateTreasureProbabilitiesBasedOnMatches();
             FF14Utils.showToast('所有障礙物位置已確定！現在顯示寶物機率，點擊格子可填寫實際發現的寶物', 'success');
+            
+            // 更新最佳策略高亮
+            this.updateOptimalHighlight();
         }
     }
 
@@ -825,6 +838,9 @@ class FauxHollowsFoxes {
             this.updateTreasureProbabilitiesBasedOnMatches();
             this.updateProbabilityDisplay(); // 需要更新UI顯示
             FF14Utils.showToast('障礙物位置已確認！現在顯示寶物機率，點擊格子可填寫實際發現的寶物', 'success');
+            
+            // 更新最佳策略高亮
+            this.updateOptimalHighlight();
         }
     }
 
@@ -1023,11 +1039,11 @@ class FauxHollowsFoxes {
         }
 
         this.closePopup();
-        this.clearHighlights();
         this.updateDisplay();
         this.checkForCompletedShapes();
         this.validateShapes();
         this.updateMatchingBoards();
+        this.updateOptimalHighlight();
     }
 
     setObstacle(index) {
@@ -1393,32 +1409,41 @@ class FauxHollowsFoxes {
     }
 
 
-    autoCalculate() {
+    toggleOptimalHighlight() {
+        this.showOptimalHighlight = !this.showOptimalHighlight;
+        
+        if (this.showOptimalHighlight) {
+            this.elements.autoCalculateBtn.textContent = '關閉最佳策略';
+            this.updateOptimalHighlight();
+        } else {
+            this.elements.autoCalculateBtn.textContent = '顯示最佳策略';
+            this.clearHighlights();
+        }
+    }
+    
+    updateOptimalHighlight() {
         // 清除之前的高亮
         this.clearHighlights();
         
+        // 如果功能關閉或障礙物未確認，不進行高亮
+        if (!this.showOptimalHighlight || !this.obstaclesConfirmed) {
+            return;
+        }
+        
         // 確保寶物機率已更新
-        if (this.obstaclesConfirmed) {
-            this.updateTreasureProbabilitiesBasedOnMatches();
-            
-            // 找出最高機率的劍和寶箱位置
-            const optimalCells = this.findOptimalCells();
-            
-            if (optimalCells.length > 0) {
-                // 高亮這些格子
-                optimalCells.forEach(cellData => {
-                    const cell = this.elements.board.children[cellData.index];
-                    cell.classList.add('optimal-highlight');
-                    cell.dataset.optimalType = cellData.type;
-                    cell.dataset.optimalProbability = cellData.probability;
-                });
-                
-                FF14Utils.showToast(`找到 ${optimalCells.length} 個最佳位置`, 'success');
-            } else {
-                FF14Utils.showToast('沒有找到明顯的最佳位置', 'info');
-            }
-        } else {
-            FF14Utils.showToast('請先放置障礙物', 'info');
+        this.updateTreasureProbabilitiesBasedOnMatches();
+        
+        // 找出最高機率的劍和寶箱位置
+        const optimalCells = this.findOptimalCells();
+        
+        if (optimalCells.length > 0) {
+            // 高亮這些格子
+            optimalCells.forEach(cellData => {
+                const cell = this.elements.board.children[cellData.index];
+                cell.classList.add('optimal-highlight');
+                cell.dataset.optimalType = cellData.type;
+                cell.dataset.optimalProbability = cellData.probability;
+            });
         }
     }
     
@@ -1498,9 +1523,13 @@ class FauxHollowsFoxes {
         };
         this.obstaclesConfirmed = false;
         this.showTreasureProbabilities = false;
+        this.showOptimalHighlight = true; // 重置時回復預設開啟
         
         // 清除高亮
         this.clearHighlights();
+        
+        // 更新按鈕文字
+        this.elements.autoCalculateBtn.textContent = '關閉最佳策略';
         
         // Reset UI
         this.initializeBoard();
