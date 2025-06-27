@@ -195,7 +195,10 @@ function updateLogoText() {
     const logo = document.querySelector('.logo');
     const h1 = document.querySelector('h1');
     
-    if (!logo || !h1) return;
+    if (!logo || !h1) {
+        console.warn('Logo or H1 element not found');
+        return;
+    }
     
     // 檢查是否在工具頁面（URL 包含 /tools/）
     if (window.location.pathname.includes('/tools/')) {
@@ -218,11 +221,11 @@ function updateLogoText() {
 
 // 頁面載入完成後執行
 document.addEventListener('DOMContentLoaded', function() {
+    // 動態更新 logo 文字（工具頁面）- 優先執行
+    updateLogoText();
+    
     // 初始化漢堡選單功能
     initHamburgerMenu();
-    
-    // 動態更新 logo 文字（工具頁面）
-    updateLogoText();
     
     // 為所有工具卡片添加點擊效果
     const toolCards = document.querySelectorAll('.tool-card');
