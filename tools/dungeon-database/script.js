@@ -3,7 +3,7 @@ class DungeonDatabase {
     // 常數定義
     static CONSTANTS = {
         DEBOUNCE_DELAY: 300,
-        DATA_FILE: '/data/dungeons.json',
+        DATA_FILE: '../../data/dungeons.json',
         DISPLAY_STATES: {
             BLOCK: 'block',
             NONE: 'none',
