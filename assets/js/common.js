@@ -85,8 +85,114 @@ const FF14Utils = {
     }
 };
 
+// 初始化漢堡選單功能
+function initHamburgerMenu() {
+    // 檢查是否已有漢堡選單，避免重複創建
+    if (document.querySelector('.hamburger')) {
+        return;
+    }
+    
+    const header = document.querySelector('.header');
+    const headerContainer = header?.querySelector('.container');
+    const nav = header?.querySelector('.nav');
+    
+    if (!header || !headerContainer || !nav) {
+        return;
+    }
+    
+    // 創建漢堡選單按鈕
+    const hamburger = document.createElement('button');
+    hamburger.className = 'hamburger';
+    hamburger.setAttribute('aria-label', '選單');
+    hamburger.innerHTML = `
+        <span></span>
+        <span></span>
+        <span></span>
+    `;
+    
+    // 創建遮罩層
+    const overlay = document.createElement('div');
+    overlay.className = 'nav-overlay';
+    
+    // 插入元素
+    headerContainer.appendChild(hamburger);
+    document.body.appendChild(overlay);
+    
+    // 漢堡選單點擊事件
+    hamburger.addEventListener('click', function() {
+        const isActive = nav.classList.contains('active');
+        
+        if (isActive) {
+            // 關閉選單
+            nav.classList.remove('active');
+            hamburger.classList.remove('active');
+            overlay.classList.remove('active');
+            document.body.style.overflow = '';
+        } else {
+            // 開啟選單
+            nav.classList.add('active');
+            hamburger.classList.add('active');
+            overlay.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+    });
+    
+    // 點擊遮罩層關閉選單
+    overlay.addEventListener('click', function() {
+        nav.classList.remove('active');
+        hamburger.classList.remove('active');
+        overlay.classList.remove('active');
+        document.body.style.overflow = '';
+    });
+    
+    // 處理下拉選單在手機版的行為
+    const dropdowns = nav.querySelectorAll('.nav-dropdown');
+    dropdowns.forEach(dropdown => {
+        const dropdownLink = dropdown.querySelector('> a');
+        
+        dropdownLink.addEventListener('click', function(e) {
+            // 只在手機版阻止預設行為
+            if (window.innerWidth <= 768) {
+                e.preventDefault();
+                
+                // 關閉其他下拉選單
+                dropdowns.forEach(other => {
+                    if (other !== dropdown) {
+                        other.classList.remove('active');
+                    }
+                });
+                
+                // 切換當前下拉選單
+                dropdown.classList.toggle('active');
+            }
+        });
+    });
+    
+    // 視窗大小改變時重置選單狀態
+    let resizeTimeout;
+    window.addEventListener('resize', function() {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(function() {
+            if (window.innerWidth > 768) {
+                nav.classList.remove('active');
+                hamburger.classList.remove('active');
+                overlay.classList.remove('active');
+                document.body.style.overflow = '';
+                
+                // 重置所有下拉選單狀態
+                dropdowns.forEach(dropdown => {
+                    dropdown.classList.remove('active');
+                });
+            }
+        }, 250);
+    });
+}
+
 // 頁面載入完成後執行
 document.addEventListener('DOMContentLoaded', function() {
+    // 初始化漢堡選單功能
+    initHamburgerMenu();
+    
     // 為所有工具卡片添加點擊效果
     const toolCards = document.querySelectorAll('.tool-card');
     toolCards.forEach(card => {
