@@ -198,6 +198,23 @@ All pages must maintain consistent navigation structure (4 items with dropdown):
 - Smooth animations with hover delay to improve UX
 - Consistent across all pages and tools
 
+### Mobile Navigation (Hamburger Menu)
+For screens ≤768px width:
+- **Hamburger Button**: Three-line icon with animation to X on active
+- **Slide-out Menu**: Right-side panel with semi-transparent overlay
+- **Touch-friendly**: Dropdown menus convert to click-to-expand on mobile
+- **Body Scroll Lock**: Prevents background scrolling when menu is open
+- **Auto-close**: Menu closes on overlay click or window resize
+- **Implementation**: Dynamically created via JavaScript in common.js
+
+### Dynamic Logo for Tool Pages
+Tool pages automatically display tool name in navigation:
+- **Format**: `FF14.tw | Tool Name`
+- **Implementation**: JavaScript detects `/tools/` URL and updates logo
+- **Visual Optimization**: Original h1 title hidden to save vertical space
+- **Responsive**: Font sizes adjust for mobile displays
+- **CSS Classes**: `.logo-main`, `.logo-separator`, `.logo-tool` for styling
+
 ### Footer Structure
 All pages must use identical footer with complete copyright notice:
 ```html
@@ -295,6 +312,8 @@ function resetTool() {
 - **Search Highlighting**: Highlight search terms in results with visual markers
 - **Loading States**: Provide visual feedback during data loading with animations
 - **Focus Management**: Clear visual indicators for focused elements with proper contrast
+- **Viewport Optimization**: Dynamic sizing calculations (e.g., `max-width: min(100%, calc(100vh - 400px))`) for full-screen visibility
+- **Responsive Typography**: Use `clamp()` for fluid font sizing across devices
 
 ## Data Processing and Import Workflows
 
