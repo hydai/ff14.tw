@@ -5,7 +5,7 @@
 .game-container {
     max-width: 800px;
     margin: 0 auto;
-    padding: var(--spacing-lg);
+    padding: var(--spacing-md);
 }
 
 .game-hint {
@@ -65,12 +65,15 @@
 .game-board {
     display: grid;
     grid-template-columns: repeat(6, 1fr);
-    gap: 5px;
-    margin-bottom: var(--spacing-lg);
-    padding: var(--spacing-lg);
+    gap: 3px;
+    margin-bottom: var(--spacing-md);
+    padding: var(--spacing-md);
     background: linear-gradient(135deg, #455a64, #37474f);
     border-radius: var(--border-radius-md);
     box-shadow: var(--shadow-xl);
+    max-width: min(100%, calc(100vh - 400px));
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .board-cell {
@@ -83,7 +86,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.875rem;
+    font-size: clamp(0.7rem, 1.5vw, 0.875rem);
     font-weight: 600;
     transition: all var(--transition-normal);
 }
@@ -114,7 +117,7 @@
     color: white;
     border-color: #3498db;
     box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
-    font-size: 1.1rem;
+    font-size: clamp(0.9rem, 1.8vw, 1.1rem);
 }
 
 .board-cell.chest {
@@ -122,7 +125,7 @@
     color: white;
     border-color: #c2185b;
     box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
-    font-size: 1.1rem;
+    font-size: clamp(0.9rem, 1.8vw, 1.1rem);
 }
 
 .board-cell.fox {
@@ -130,7 +133,7 @@
     color: white;
     border-color: #8b4513;
     box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
-    font-size: 1.1rem;
+    font-size: clamp(0.9rem, 1.8vw, 1.1rem);
 }
 
 .board-cell.occupied {
@@ -158,7 +161,7 @@
     left: 50%;
     transform: translate(-50%, -50%);
     color: white;
-    font-size: 1.5rem;
+    font-size: clamp(1rem, 2.5vw, 1.5rem);
     font-weight: bold;
 }
 
@@ -166,7 +169,7 @@
     background: linear-gradient(135deg, #e8f5e8, #f0f8f0);
     border-color: #4caf50;
     color: #2e7d32;
-    font-size: 1rem;
+    font-size: clamp(0.8rem, 1.5vw, 1rem);
     font-weight: 700;
     display: flex;
     align-items: center;
@@ -195,7 +198,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.9rem;
+    font-size: clamp(0.65rem, 1.2vw, 0.9rem);
     font-weight: 700;
     line-height: 0.9;
     padding: 1px;
@@ -400,6 +403,41 @@
 }
 
 /* Responsive Design */
+@media (max-height: 900px) {
+    .game-container {
+        padding: var(--spacing-sm);
+    }
+    
+    .game-info {
+        margin-bottom: var(--spacing-md);
+        padding: var(--spacing-sm);
+    }
+    
+    .game-board {
+        max-width: min(100%, calc(100vh - 350px));
+        gap: 2px;
+        padding: var(--spacing-sm);
+        margin-bottom: var(--spacing-sm);
+    }
+    
+    .board-cell {
+        font-size: 0.7rem;
+    }
+    
+    .board-cell.empty::after {
+        font-size: 1.2rem;
+    }
+    
+    h1 {
+        font-size: 1.5rem;
+        margin-bottom: var(--spacing-sm);
+    }
+    
+    .description {
+        margin-bottom: var(--spacing-sm);
+    }
+}
+
 @media (max-width: 768px) {
     .game-container {
         padding: var(--spacing-md);
@@ -435,5 +473,24 @@
 
     .controls .btn {
         width: 100%;
+    }
+}
+
+@media (max-height: 768px) {
+    .game-hint {
+        padding: var(--spacing-sm);
+        margin-bottom: var(--spacing-sm);
+    }
+    
+    .game-hint p {
+        font-size: 0.9rem;
+    }
+    
+    .controls {
+        margin-bottom: var(--spacing-sm);
+    }
+    
+    .result-panel {
+        padding: var(--spacing-md);
     }
 }
