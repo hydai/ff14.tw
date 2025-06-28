@@ -2,6 +2,30 @@
 
 /* Faux Hollows Foxes Calculator Styles */
 
+.data-source-note {
+    width: 100%;
+    margin-top: var(--spacing-lg);
+    padding: var(--spacing-sm) 0;
+    text-align: center;
+}
+
+.data-source-note p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+.data-source-note a {
+    color: #7b1fa2;
+    text-decoration: none;
+    transition: all var(--transition-normal);
+}
+
+.data-source-note a:hover {
+    color: #8e24aa;
+    text-decoration: underline;
+}
+
 .game-container {
     max-width: 800px;
     margin: 0 auto;
@@ -240,6 +264,42 @@
     margin-bottom: var(--spacing-lg);
 }
 
+/* 重置遊戲按鈕 - 柔和的淺灰色 */
+#reset-btn {
+    background: linear-gradient(135deg, #9e9e9e, #757575);
+    border-color: #757575;
+    color: white;
+}
+
+#reset-btn:hover {
+    background: linear-gradient(135deg, #bdbdbd, #9e9e9e);
+    border-color: #9e9e9e;
+}
+
+/* 隱藏機率按鈕 - 柔和的藍灰色 */
+#toggle-probabilities {
+    background: linear-gradient(135deg, #607d8b, #455a64);
+    border-color: #455a64;
+    color: white;
+}
+
+#toggle-probabilities:hover {
+    background: linear-gradient(135deg, #78909c, #607d8b);
+    border-color: #607d8b;
+}
+
+/* 計算最佳策略按鈕 - 柔和的綠色 */
+#auto-calculate {
+    background: linear-gradient(135deg, #66bb6a, #4caf50);
+    border-color: #4caf50;
+    color: white;
+}
+
+#auto-calculate:hover {
+    background: linear-gradient(135deg, #81c784, #66bb6a);
+    border-color: #66bb6a;
+}
+
 /* Result Panel */
 .result-panel {
     background: var(--card-bg);
@@ -435,6 +495,10 @@
     
     .description {
         margin-bottom: var(--spacing-sm);
+    }
+    
+    .data-source-note {
+        margin-top: var(--spacing-md);
     }
 }
 
