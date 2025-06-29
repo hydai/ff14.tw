@@ -257,3 +257,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 3. **Mini Cactpot Calculator** (`mini-cactpot/`): 3x3 lottery probability calculator
 4. **Wondrous Tails Predictor** (`wondrous-tails/`): 4x4 bingo probability calculator
 5. **Faux Hollows Foxes** (`faux-hollows-foxes/`): 6x6 treasure hunting puzzle solver
+
+## Development Memories
+
+- 對於 CLAUDE.md 的任何修改都不需要在 changelog 中提及，因為他與玩家無關，只與開發者有關
