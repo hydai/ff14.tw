@@ -61,6 +61,7 @@
                                 <li><span class="tag tag-improved">改進</span> 支援年份和版本的快速導覽</li>
                                 <li><span class="tag tag-improved">改進</span> 自動高亮當前章節並支援平滑滾動</li>
                                 <li><span class="tag tag-improved">改進</span> 統一跨日期版本記錄格式</li>
+                                <li><span class="tag tag-improved">改進</span> TOC 以年份分類，版本顯示月日</li>
                             </ul>
                         </div>
                     </article>
@@ -402,36 +403,59 @@
             const tocNav = document.getElementById('tocNav');
             const tocItems = [];
             
-            // 收集所有年份標題
-            document.querySelectorAll('.changelog-year').forEach(year => {
-                const section = year.closest('.changelog-section');
-                const yearText = year.textContent;
-                const yearId = 'year-' + yearText.replace(/[^\d年月]/g, '');
-                section.id = yearId;
+            // 收集所有版本並按年份分組
+            const yearGroups = {};
+            
+            document.querySelectorAll('.changelog-entry').forEach(entry => {
+                const version = entry.querySelector('.changelog-version');
+                const date = entry.querySelector('.changelog-date');
                 
-                const yearItem = {
-                    text: yearText,
-                    id: yearId,
-                    level: 1,
-                    versions: []
-                };
-                
-                // 收集該年份下的所有版本
-                section.querySelectorAll('.changelog-entry').forEach(entry => {
-                    const version = entry.querySelector('.changelog-version');
-                    const date = entry.querySelector('.changelog-date');
-                    if (version && date) {
+                if (version && date) {
+                    const dateText = date.textContent;
+                    // 提取年份和月日（例如：2025年6月21日 -> 2025年, 6月21日）
+                    const yearMatch = dateText.match(/(\d+)年/);
+                    const monthDayMatch = dateText.match(/(\d+月\d+日)/);
+                    
+                    if (yearMatch && monthDayMatch) {
+                        const year = yearMatch[0];
+                        const monthDay = monthDayMatch[0];
+                        
+                        if (!yearGroups[year]) {
+                            yearGroups[year] = {
+                                text: year,
+                                id: 'year-' + year.replace(/[^\d]/g, ''),
+                                level: 1,
+                                versions: []
+                            };
+                        }
+                        
                         const versionId = 'version-' + version.textContent.replace(/[^\w\d]/g, '');
                         entry.id = versionId;
-                        yearItem.versions.push({
-                            text: version.textContent + ' - ' + date.textContent,
+                        
+                        yearGroups[year].versions.push({
+                            text: version.textContent + ' - ' + monthDay,
                             id: versionId,
                             level: 2
                         });
                     }
-                });
-                
-                tocItems.push(yearItem);
+                }
+            });
+            
+            // 轉換為陣列並排序（新到舊）
+            Object.values(yearGroups)
+                .sort((a, b) => b.text.localeCompare(a.text))
+                .forEach(group => tocItems.push(group));
+            
+            // 為年份分組設定 ID
+            document.querySelectorAll('.changelog-section').forEach(section => {
+                const year = section.querySelector('.changelog-year');
+                if (year) {
+                    const yearText = year.textContent;
+                    const yearMatch = yearText.match(/(\d+)年/);
+                    if (yearMatch) {
+                        section.id = 'year-' + yearMatch[1];
+                    }
+                }
             });
             
             // 添加關於修改紀錄
