@@ -20,98 +20,33 @@ This is a static website with **no build process**. Files can be edited directly
 
 **Local Development:**
 - Open `index.html` directly in browser, or
-- Use a local server: `python -m http.server` or `npx serve .`
-- **CORS Limitation**: Tools with JSON data files (like dungeon-database) require local server due to browser CORS restrictions
+- Use a local server: `python3 -m http.server` or `npx serve .`
+- **CORS Limitation**: Tools with JSON data files require local server due to browser CORS restrictions
 
 **No package management, linting, or testing commands** - the project uses vanilla web technologies only.
 
-**Manual Testing:**
-- Open browser developer tools to check for JavaScript errors
-- Test tool functionality manually by interacting with UI elements
-- Verify responsive design by resizing browser window or using device simulation
-
-**Security Checks:**
-- XSS Prevention: Always use `textContent` or DOM methods instead of `innerHTML` when handling user input
-- CORS: Test JSON data loading both locally and on production
-
-## Shared Architecture Patterns
-
-### Tool Structure
-Each tool follows this pattern:
-```
-tools/[tool-name]/
-├── index.html    # Tool page with header/nav structure
-├── style.css     # Tool-specific styles
-└── script.js     # Tool functionality
-```
-
-### HTML Structure
-All pages include:
-- Header with logo and navigation (`header.header > .container`)
-- Main content area (`main.main > .container`) 
-- Footer with copyright
-- Favicon link: `<link rel="icon" type="image/x-icon" href="assets/images/ff14tw.ico">` (adjust path for subdirectories)
-- Links to shared resources: `../../assets/css/common.css` and `../../assets/js/common.js`
-
-### CSS Architecture
-- Root-level CSS custom properties in `assets/css/common.css`
-- Consistent component classes: `.tool-card`, `.btn`, `.container`
-- Mobile-first responsive design with breakpoints at 768px
-- Gradient backgrounds and shadow effects for visual consistency
-
-### JavaScript Utilities
-- `FF14Utils` global object provides common functions:
-  - `formatNumber()` - add thousands separators
-  - `copyToClipboard()` - copy with toast notification
-  - `showToast()` - success/error notifications
-  - `validateNumber()` - input validation
-  - `loadData()` - async JSON loading
-- `FF14_JOBS` constant with job categories
-- Common DOM patterns: back-to-top button, tool card interactions
+## Core Patterns
 
 ### Tool JavaScript Architecture
-Each tool typically uses a class-based architecture:
-- **Main Calculator Class**: Encapsulates all tool logic and state
-- **DOM Element Caching**: Store frequently accessed elements in `this.elements`
-- **Event Handler Management**: Use named methods for event handlers to enable proper cleanup
-- **State Management**: Maintain tool state in class properties
-- **Reset Functionality**: Implement complete state and DOM cleanup for reset buttons
-- **Real-time Updates**: Prefer automatic calculation over manual trigger buttons for better UX
-- **Constants Organization**: Use static CONSTANTS object for configuration values with meaningful names
-- **Performance Optimization**: Implement debouncing for search/filter operations
-- **Data Separation**: Store data in JSON files for easy maintenance (see dungeon-database)
-- **Code Quality**: Avoid magic numbers, extract reusable methods, maintain single responsibility principle
+Each tool uses a consistent class-based pattern:
 
-Example pattern from current tools:
 ```javascript
 class ToolCalculator {
-    // Constants definition at class level - avoid magic numbers
+    // Constants definition at class level
     static CONSTANTS = {
-        BOARD_SIZE: 6,
-        TOTAL_CELLS: 36,
-        PERCENTAGE: 100,
         DEBOUNCE_DELAY: 300,
         CSS_CLASSES: {
             ACTIVE: 'active',
             FOCUSED: 'focused'
-        },
-        CELL_VALUES: {
-            EMPTY: 0,
-            OBSTACLE: 1,
-            SWORD: 2,
-            CHEST: 3,
-            FOX_OR_EMPTY: 4
         }
     };
 
     constructor() {
-        this.state = {}; // Tool-specific state
+        this.state = {};
         this.elements = {
-            // Cache frequently accessed DOM elements
             grid: document.getElementById('tool-grid'),
             result: document.getElementById('result-display')
         };
-        this.debounceTimeout = null;
         this.initializeEvents();
     }
     
@@ -120,27 +55,46 @@ class ToolCalculator {
         this.handleClick = (e) => { /* handler logic */ };
         this.elements.grid.addEventListener('click', this.handleClick);
     }
-    
-    // Extract common methods to reduce code duplication
-    getMatchingData() {
-        return this.data.filter(item => this.matchesCriteria(item));
-    }
-    
-    debouncedOperation() {
-        if (this.debounceTimeout) clearTimeout(this.debounceTimeout);
-        this.debounceTimeout = setTimeout(() => {
-            this.performOperation();
-        }, ToolCalculator.CONSTANTS.DEBOUNCE_DELAY);
-    }
-    
-    updateDisplay() {
-        // Update UI elements
-        // Trigger automatic calculations when state changes
-        if (this.hasValidState()) {
-            this.calculateResults();
-        }
-    }
 }
+```
+
+### Multi-Select Tag Filtering Pattern
+Modern tools implement multi-select filtering with tag buttons:
+
+```javascript
+// State management with Sets
+this.selectedTypes = new Set();
+this.selectedExpansions = new Set();
+
+// Toggle method pattern
+toggleTypeTag(tagElement) {
+    const type = tagElement.dataset.type;
+    if (this.selectedTypes.has(type)) {
+        this.selectedTypes.delete(type);
+        tagElement.classList.remove('active');
+    } else {
+        this.selectedTypes.add(type);
+        tagElement.classList.add('active');
+    }
+    this.applyFilters();
+}
+
+// Matching logic - empty set means show all
+matchesTypes(item) {
+    if (this.selectedTypes.size === 0) return true;
+    return this.selectedTypes.has(item.type);
+}
+```
+
+HTML Structure:
+```html
+<div class="filter-group type-filter-group">
+    <label>類型過濾：</label>
+    <div class="type-tags" id="typeTags">
+        <button class="type-tag" data-type="四人迷宮">四人迷宮</button>
+        <button class="type-tag" data-type="公會令">公會令</button>
+    </div>
+</div>
 ```
 
 ### Adding New Tools
@@ -148,33 +102,12 @@ class ToolCalculator {
 2. Copy HTML structure from existing tool, update title/descriptions
 3. Import shared CSS/JS: `../../assets/css/common.css` and `../../assets/js/common.js`
 4. Follow the class-based JavaScript architecture pattern
-5. Implement proper event handler management for reset functionality
-6. Add tool card to main `index.html` with icon, title, description
-7. Use established styling patterns and `FF14Utils` functions
-8. **Data Management**: For tools with external data, create JSON files with corresponding data-template.json and README.md
-9. **Performance**: Implement debouncing for search/filter operations
-10. **Accessibility**: Add keyboard navigation and focus management
-11. **Code Quality**: Define constants for magic numbers, extract reusable methods, break down large functions
-12. **Method Naming**: Use descriptive names like `handleTreasurePhaseClick()` instead of generic `onClick()`
-
-### CSS Best Practices
-- Use `!important` sparingly, only when overriding deeply nested styles
-- Implement animations for enhanced user experience (see Mini Cactpot for examples)
-- Use CSS custom properties for consistent theming
-- Provide clear visual feedback for interactive elements
-- Ensure proper contrast for accessibility
-- **CSS Variables System**: Use comprehensive variable system for colors, spacing, borders, and transitions
-- **Responsive Design**: Implement multi-breakpoint responsive design (1024px/768px/480px)
-- **Design Tokens**: Standardize spacing (--spacing-xs to --spacing-2xl) and border radius (--border-radius-sm to --border-radius-xl)
-
-## Development Guidelines
-
-- 總是使用繁體中文與台灣用語來撰寫文件
+5. Add tool card to main `index.html`
 
 ## UI Consistency Requirements
 
-### Navigation Bar Structure
-All pages must maintain consistent navigation structure (4 items with dropdown):
+### Navigation Structure
+All pages must maintain consistent navigation with dropdown:
 ```html
 <header class="header">
     <div class="container">
@@ -195,34 +128,7 @@ All pages must maintain consistent navigation structure (4 items with dropdown):
 </header>
 ```
 
-**Navigation Design Principles:**
-- Dropdown menu positioned at the rightmost to avoid visual disruption
-- Four main navigation items: Home → Copyright → GitHub → About Site (dropdown)
-- Dropdown integrates "About" and "Changelog" under "關於本站"
-- Smooth animations with hover delay to improve UX
-- Consistent across all pages and tools
-
-### Mobile Navigation (Hamburger Menu)
-For screens ≤768px width:
-- **Hamburger Button**: Three-line icon with animation to X on active
-- **Slide-out Menu**: Right-side panel with semi-transparent overlay
-- **Touch-friendly**: Dropdown menus convert to click-to-expand on mobile
-- **Body Scroll Lock**: Prevents background scrolling when menu is open
-- **Auto-close**: Menu closes on overlay click or window resize
-- **Implementation**: Dynamically created via JavaScript in common.js
-
-### Dynamic Logo for Tool Pages
-Tool pages automatically display tool name in navigation:
-- **Format**: `FF14.tw | Tool Name`
-- **Implementation**: JavaScript detects `/tools/` URL and updates logo
-- **Visual Optimization**: Original h1 title hidden to save vertical space
-- **Responsive**: Font sizes adjust for mobile displays (480px breakpoint for small screens)
-- **CSS Classes**: `.logo-main`, `.logo-separator`, `.logo-tool` for styling
-- **Execution Order**: Logo update runs before hamburger menu initialization
-- **Mobile Support**: Flex layout maintained across all screen sizes
-
 ### Footer Structure
-All pages must use identical footer with complete copyright notice:
 ```html
 <footer class="footer">
     <div class="container">
@@ -231,23 +137,53 @@ All pages must use identical footer with complete copyright notice:
 </footer>
 ```
 
-## Data Management Patterns
+## Advanced Patterns
 
-### JSON Data Architecture
-Tools with external data (like dungeon-database) follow this structure:
-- **Main Data File**: `[tool-name].json` containing the actual data
-- **Data Template**: `data-template.json` with format documentation and examples
-- **Developer Guide**: `README.md` explaining data structure and update procedures
-- **CORS Handling**: Implement error handling for local development vs production
-- **File Location**: Data files stored in `/data/` directory at project root
-- **Path Configuration**: Use relative paths (e.g., `../../data/dungeons.json`) for GitHub Pages compatibility
+### Animation Standards
+```css
+/* Glow effect for important elements */
+@keyframes glow {
+    0%, 100% {
+        box-shadow: 0 0 15px rgba(74, 144, 226, 0.8);
+        transform: scale(1);
+    }
+    50% {
+        box-shadow: 0 0 25px rgba(74, 144, 226, 1);
+        transform: scale(1.05);
+    }
+}
 
-### Data Loading Pattern
+.best-choice {
+    animation: glow 2s ease-in-out infinite;
+}
+```
+
+### Phase-Based Interactions
+For complex tools with multiple interaction modes:
+```javascript
+handleCellClick(e) {
+    const cell = e.target.closest('.grid-cell');
+    if (!cell) return;
+    
+    if (this.phase === 'obstacle') {
+        this.placeObstacle(cell);
+    } else if (this.phase === 'treasure') {
+        this.showTreasurePopup(cell);
+    }
+}
+```
+
+### Data Management
+Tools with external data follow this structure:
+- Main data file: `/data/[tool-name].json`
+- Data template: `data-template.json` with documentation
+- Loading pattern with error handling:
+
 ```javascript
 async loadData() {
     this.showLoading(true);
     try {
-        const response = await fetch('data.json');
+        const response = await fetch('../../data/dungeons.json');
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const data = await response.json();
         this.processData(data);
@@ -260,154 +196,52 @@ async loadData() {
 }
 ```
 
-## Common Development Patterns
+## Development Guidelines
 
-### Reset Functionality Implementation
-When implementing reset buttons, ensure complete cleanup:
-```javascript
-function resetTool() {
-    // Remove old event listeners
-    if (calculator && calculator.handleEvents) {
-        calculator.elements.container.removeEventListener('click', calculator.handleEvents);
-    }
-    
-    // Clear all DOM states
-    document.querySelectorAll('.interactive-element').forEach(el => {
-        el.classList.remove('active', 'selected', 'highlighted');
-        el.innerHTML = '';
-    });
-    
-    // Reset display counters
-    document.getElementById('status-display').textContent = 'initial-state';
-    
-    // Create new calculator instance
-    calculator = new ToolCalculator();
-}
+### Language Standards
+- 使用繁體中文與台灣用語
+- 「資料」而非「數據」
+- 「智慧」而非「智能」
+
+### Git Commit Standards
+```
+功能類別：簡短描述主要變更
+
+- 詳細變更項目1
+- 詳細變更項目2
+
+🤖 Generated with [Claude Code](https://claude.ai/code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>
 ```
 
-### Visual Enhancement Patterns
-- Use gradients and animations for important elements (best choices, results)
-- Implement pulsing/glowing effects for highlighted items
-- Add slide-in animations for result panels
-- Ensure sufficient color contrast with `!important` when necessary
+### Performance Guidelines
+- Debounce search/filter operations at 300ms
+- Use CSS transforms for animations (GPU acceleration)
+- Implement lazy loading for images
+- Early returns in filter functions
 
-## User Experience Patterns
+### Accessibility Standards
+- Keyboard navigation for interactive elements
+- Focus indicators with proper contrast
+- ARIA labels for screen readers
+- Focus trapping in modals
 
-### Real-time Calculation Preference
-- Prefer automatic calculation over manual trigger buttons
-- Update results immediately when user interacts with tool inputs
-- Avoid unnecessary toast notifications for routine operations
-- Only show toast messages for important feedback (errors, copy operations)
+## FF14-Specific Standards
 
-### Probability and Gaming Tools
-- Use percentage displays with color coding (high/medium/low probability)
-- Provide actionable recommendations based on calculated results
-- Implement combination algorithms for complex probability calculations
-- Support grid-based interactions for game mechanics (4x4, 3x3, 6x6 layouts)
-
-### Grid-Based Puzzle Tools (e.g., Faux Hollows Foxes)
-- **Direct Click Operations**: Implement phase-specific click behavior (direct obstacle placement vs popup selection)
-- **Auto-Fill Logic**: Analyze matching board patterns to auto-complete guaranteed positions
-- **Probability Calculations**: Real-time probability updates based on remaining matching board configurations
-- **State Management**: Implement multiple cell states (empty, obstacle, sword, chest, fox, empty-marked)
-- **Visual State Differentiation**: Use FF14 official colors with distinct gradients for each cell type
-- **Phase-Based UX**: Different interaction patterns for obstacle phase (direct click) vs treasure phase (popup menu)
-- **Error Tolerance**: Allow overwriting filled cells without penalty in treasure phase
-- **Smart Click Counting**: Only increment clicks for new placements, not modifications
-
-### Advanced UX Features
-- **Keyboard Navigation**: Implement arrow key navigation for card-based tools (up/down arrows, Enter to select, Escape to clear)
-- **Search Highlighting**: Highlight search terms in results with visual markers
-- **Loading States**: Provide visual feedback during data loading with animations
-- **Focus Management**: Clear visual indicators for focused elements with proper contrast
-- **Viewport Optimization**: Dynamic sizing calculations (e.g., `max-width: min(100%, calc(100vh - 400px))`) for full-screen visibility
-- **Responsive Typography**: Use `clamp()` for fluid font sizing across devices
-
-## Data Processing and Import Workflows
-
-### CSV to JSON Data Processing
-For tools requiring external data import (like dungeon-database), follow this systematic approach:
-1. **Data Splitting**: Use bash/awk to split large CSV files by logical groups (e.g., level ranges)
-2. **Progressive Processing**: Process data in chunks to manage memory and maintain quality
-3. **Translation Pipeline**: Implement consistent Traditional Chinese translation with Taiwan terminology
-4. **Data Merging**: Use Node.js scripts to combine processed chunks with validation
-5. **Metadata Generation**: Include statistics, categories, and version information in final output
-
-### Data Import Commands
-```bash
-# Split CSV by level ranges (example from dungeon-database)
-awk -F',' 'NR==1 {header=$0; next} $4>=10 && $4<=19 {print header > "ff14-level-10-19.csv"; print > "ff14-level-10-19.csv"}' source.csv
-
-# Merge processed JSON files
-node merge-data.js
-
-# Validate final output
-wc -l dungeons.json  # Check line count for completeness
-```
-
-### Data Quality Standards
-- Use Traditional Chinese with Taiwan gaming terminology consistently
-- FF14 expansion mapping: 2.x-7.x corresponding to game versions
-- Maintain consistent ID numbering across datasets
-- Include proper data source attribution (e.g., 灰機Wiki references)
-
-### FF14-Specific Classification Standards
-For dungeon-database and similar FF14 content tools, follow official game classifications:
+### Content Classifications
 - **四人迷宮**: Standard 4-person dungeons
-- **8人大型任務**: 8-person team raids (Bahamut, Alexander, Omega, Eden, Pandaemonium, Arcadion series)
-- **8人討伐殲滅戰**: 8-person battle content (primal fights,殲滅戰, 殲殛戰, 狂想作戰, 終極之戰, 博茲雅堡壘追憶戰, 詩魂戰, etc.)
+- **8人大型任務**: 8-person raids (Bahamut, Alexander, Omega, Eden, Pandaemonium, Arcadion)
+- **8人討伐殲滅戰**: 8-person trials
 - **24人大型任務**: 24-person alliance raids
-- **誅滅戰**: Primal elimination battles
-- **絕境戰**: Ultimate difficulty challenges  
-- **幻巧戰**: Special phantom battle content
-- **公會令**: Guild directive content
+- **絕境戰**: Ultimate difficulty
+- **幻巧戰**: Unreal trials
+- **公會令**: Guildhest content
 
-### Image Asset Management
-For tools with visual content:
-- Use ID-based naming: `images/{id}.jpg` format
-- Implement graceful fallback for missing images
-- Standard aspect ratio: 2:1 (width:height) recommended
-- File size optimization: <200KB per image
-- Error handling with `onerror` and `onload` attributes
-
-## Legal and Copyright Requirements
-
-### Copyright Page Integration
-- All navigation bars must include `/copyright.html` link with text "版權聲明"
-- Copyright page contains specific legal disclaimers for SQUARE ENIX content usage
-- Non-commercial fan site status declaration required for all FF14-related content
-- Data source attribution required for external sources (e.g., 灰機Wiki)
-
-### Content Guidelines
-- Always use Traditional Chinese with Taiwan gaming terminology
-- Include proper attribution for external data sources
-- Follow FF14 official terminology and classification standards
-- Maintain non-commercial educational use stance for all game content
-
-## Tool-Specific Patterns
-
-### Faux Hollows Foxes
-- 6x6 grid puzzle with 252 board configurations
-- Constants-driven design with phase-based interactions
-- Auto-fill logic for guaranteed obstacle positions
-- Triple probability display for treasure types
-
-### Dungeon Database
-- 804 dungeons with 640 visible entries (level/sync restrictions)
-- Keyboard navigation with arrow keys and Enter
-- Lazy loading pattern for images
-- Search debouncing at 300ms
-
-### Wondrous Tails
-- 4x4 bingo grid with probability calculations
-- Line combinations: 12 total (4 rows + 4 columns + 4 diagonals)
-- Real-time probability updates
-
-### Mini Cactpot
-- 3x3 grid with 8 possible lines
-- Expected value calculations for all scratching strategies
-- Visual highlighting for best choices
-
+### Asset Management
+- Job icons: `assets/images/se/FFXIVJobIcons/{category}/{type}/{JobName}.png`
+- Tool images: `images/{id}.jpg` with 2:1 aspect ratio
+- Fallback handling for missing assets
 
 ## AI Command Memories
 
@@ -416,66 +250,10 @@ For tools with visual content:
 - 所有頁面的頁尾都需與首頁風格一致
 - 當我呼叫 Update 時，請更新 README.md 與 CLAUDE.md
 
-### Language and Terminology
-- 使用台灣用語：「資料」而非「數據」
-- 使用台灣用語：「智慧」而非「智能」
-- 所有內容必須使用繁體中文與台灣慣用詞彙
-- 避免中國用語，確保在地化品質
+## Current Tools
 
-## Git Operations
-
-### Commit Message Standards
-When creating commits, use descriptive Traditional Chinese messages following this pattern:
-```
-功能類別：簡短描述主要變更
-
-- 詳細變更項目1
-- 詳細變更項目2
-- 其他重要資訊
-
-🤖 Generated with [Claude Code](https://claude.ai/code)
-
-Co-Authored-By: Claude <noreply@anthropic.com>
-```
-
-### Common Git Workflows
-- Use `git status` and `git diff` to review changes before committing
-- Stage specific files rather than using `git add .`
-- Always include meaningful commit messages in Traditional Chinese
-- Check recent commit history with `git log --oneline -5` for message style consistency
-
-## Assets and Resources
-
-### Site Favicon
-- **Location**: `assets/images/ff14tw.ico`
-- **Usage**: Include in all HTML pages with `<link rel="icon" type="image/x-icon" href="/assets/images/ff14tw.ico">`
-- **Format**: ICO file format for maximum browser compatibility
-
-### Official FF14 Assets
-The project includes Square Enix official assets in `assets/images/se/FFXIVJobIcons/`:
-- **45 job icons** organized by role (Tank/Healer/DPS/Crafter/Gatherer/Limited)
-- **Proper attribution**: All assets from Square Enix Official Fankit
-- **Usage guidelines**: Non-commercial educational use only
-- **File structure**: Organized by job categories (00_ROLE through 06_LIMITED)
-
-### Asset Management Patterns
-- Job icons follow path pattern: `assets/images/se/FFXIVJobIcons/{category}/{type}/{JobName}.png`
-- Use relative paths from tool directories: `../../assets/images/se/...`
-- Implement fallback mechanisms for missing assets
-- Optimize images for web delivery (<200KB recommended)
-
-## Changelog Management
-
-### Changelog Tags
-- `tag-new`: 新功能 (綠)
-- `tag-improved`: 改進 (藍)  
-- `tag-fixed`: 修正 (橙)
-- `tag-info`: 資訊 (紫)
-
-## Current Tools Summary
-
-1. **Character Card Generator** (`character-card/`): Customizable FF14 character cards with 45 job icons
-2. **Dungeon Database** (`dungeon-database/`): 804 dungeons (2.x-7.x) with search/filter
-3. **Mini Cactpot Calculator** (`mini-cactpot/`): 3x3 lottery game probability calculator
+1. **Character Card Generator** (`character-card/`): Customizable FF14 character cards
+2. **Dungeon Database** (`dungeon-database/`): 804 dungeons with multi-select filtering
+3. **Mini Cactpot Calculator** (`mini-cactpot/`): 3x3 lottery probability calculator
 4. **Wondrous Tails Predictor** (`wondrous-tails/`): 4x4 bingo probability calculator
 5. **Faux Hollows Foxes** (`faux-hollows-foxes/`): 6x6 treasure hunting puzzle solver
