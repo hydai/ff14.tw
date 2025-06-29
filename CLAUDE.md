@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-FF14.tw is a multi-tool website for Final Fantasy XIV players in Taiwan, providing various utilities like character card generators, leveling calculators, and other game-related tools. The project uses a vanilla web stack with a modular architecture where each tool is self-contained within the `tools/` directory.
+FF14.tw is a multi-tool website for Final Fantasy XIV players in Taiwan, providing various utilities like character card generators, dungeon database, and game calculators. The project uses a vanilla web stack with a modular architecture where each tool is self-contained within the `tools/` directory.
 
 ## Architecture
 
@@ -25,10 +25,14 @@ This is a static website with **no build process**. Files can be edited directly
 
 **No package management, linting, or testing commands** - the project uses vanilla web technologies only.
 
-**Testing Tools:**
+**Manual Testing:**
 - Open browser developer tools to check for JavaScript errors
 - Test tool functionality manually by interacting with UI elements
 - Verify responsive design by resizing browser window or using device simulation
+
+**Security Checks:**
+- XSS Prevention: Always use `textContent` or DOM methods instead of `innerHTML` when handling user input
+- CORS: Test JSON data loading both locally and on production
 
 ## Shared Architecture Patterns
 
@@ -380,10 +384,29 @@ For tools with visual content:
 - Follow FF14 official terminology and classification standards
 - Maintain non-commercial educational use stance for all game content
 
-## Faux Hollows Foxes Patterns
+## Tool-Specific Patterns
 
-6x6 grid puzzle with 252 board configurations.
-Constants-driven design, phase-based interactions.
+### Faux Hollows Foxes
+- 6x6 grid puzzle with 252 board configurations
+- Constants-driven design with phase-based interactions
+- Auto-fill logic for guaranteed obstacle positions
+- Triple probability display for treasure types
+
+### Dungeon Database
+- 804 dungeons with 640 visible entries (level/sync restrictions)
+- Keyboard navigation with arrow keys and Enter
+- Lazy loading pattern for images
+- Search debouncing at 300ms
+
+### Wondrous Tails
+- 4x4 bingo grid with probability calculations
+- Line combinations: 12 total (4 rows + 4 columns + 4 diagonals)
+- Real-time probability updates
+
+### Mini Cactpot
+- 3x3 grid with 8 possible lines
+- Expected value calculations for all scratching strategies
+- Visual highlighting for best choices
 
 
 ## AI Command Memories
@@ -448,3 +471,11 @@ The project includes Square Enix official assets in `assets/images/se/FFXIVJobIc
 - `tag-improved`: 改進 (藍)  
 - `tag-fixed`: 修正 (橙)
 - `tag-info`: 資訊 (紫)
+
+## Current Tools Summary
+
+1. **Character Card Generator** (`character-card/`): Customizable FF14 character cards with 45 job icons
+2. **Dungeon Database** (`dungeon-database/`): 804 dungeons (2.x-7.x) with search/filter
+3. **Mini Cactpot Calculator** (`mini-cactpot/`): 3x3 lottery game probability calculator
+4. **Wondrous Tails Predictor** (`wondrous-tails/`): 4x4 bingo probability calculator
+5. **Faux Hollows Foxes** (`faux-hollows-foxes/`): 6x6 treasure hunting puzzle solver
