@@ -95,7 +95,7 @@
     background: linear-gradient(135deg, #455a64, #37474f);
     border-radius: var(--border-radius-md);
     box-shadow: var(--shadow-xl);
-    max-width: min(100%, calc(100vh - 400px));
+    width: min(100%, 600px);
     margin-left: auto;
     margin-right: auto;
 }
@@ -474,7 +474,7 @@
     }
     
     .game-board {
-        max-width: min(100%, calc(100vh - 350px));
+        width: min(100%, 500px);
         gap: 2px;
         padding: var(--spacing-sm);
         margin-bottom: var(--spacing-sm);
