@@ -31,11 +31,12 @@ class DungeonDatabase {
         this.currentSearchTerm = '';
         this.focusedCardIndex = -1;
         this.selectedTypes = new Set();
+        this.selectedExpansions = new Set();
         
         this.elements = {
             searchInput: document.getElementById('searchInput'),
             typeTags: document.getElementById('typeTags'),
-            expansionFilter: document.getElementById('expansionFilter'),
+            expansionTags: document.getElementById('expansionTags'),
             levelFilter: document.getElementById('levelFilter'),
             resetFilters: document.getElementById('resetFilters'),
             dungeonList: document.getElementById('dungeonList'),
@@ -111,16 +112,16 @@ class DungeonDatabase {
             }
         });
 
+        // 版本標籤點擊事件
+        this.elements.expansionTags.addEventListener('click', (e) => {
+            if (e.target.classList.contains('expansion-tag')) {
+                this.toggleExpansionTag(e.target);
+            }
+        });
+
         // 過濾器（立即觸發）
-        const filterElements = [
-            this.elements.expansionFilter,
-            this.elements.levelFilter
-        ];
-        
-        filterElements.forEach(element => {
-            element.addEventListener('change', () => {
-                this.applyFilters();
-            });
+        this.elements.levelFilter.addEventListener('change', () => {
+            this.applyFilters();
         });
 
         // 重置過濾器
@@ -223,9 +224,22 @@ class DungeonDatabase {
         this.applyFilters();
     }
 
+    toggleExpansionTag(tagElement) {
+        const expansion = tagElement.dataset.expansion;
+        
+        if (this.selectedExpansions.has(expansion)) {
+            this.selectedExpansions.delete(expansion);
+            tagElement.classList.remove('active');
+        } else {
+            this.selectedExpansions.add(expansion);
+            tagElement.classList.add('active');
+        }
+        
+        this.applyFilters();
+    }
+
     applyFilters() {
         const searchTerm = this.elements.searchInput.value.toLowerCase().trim();
-        const expansionFilter = this.elements.expansionFilter.value;
         const levelFilter = this.elements.levelFilter.value;
 
         this.currentSearchTerm = searchTerm;
@@ -234,7 +248,7 @@ class DungeonDatabase {
         this.filteredDungeons = this.dungeons.filter(dungeon => {
             return this.matchesSearch(dungeon, searchTerm) &&
                    this.matchesTypes(dungeon) &&
-                   this.matchesExpansion(dungeon, expansionFilter) &&
+                   this.matchesExpansions(dungeon) &&
                    this.matchesLevel(dungeon, levelFilter);
         });
 
@@ -265,8 +279,13 @@ class DungeonDatabase {
         return this.selectedTypes.has(dungeon.type);
     }
 
-    matchesExpansion(dungeon, expansionFilter) {
-        return !expansionFilter || dungeon.expansion === expansionFilter;
+    matchesExpansions(dungeon) {
+        // 如果沒有選擇任何版本，顯示所有副本
+        if (this.selectedExpansions.size === 0) {
+            return true;
+        }
+        // 檢查副本版本是否在選中的版本中
+        return this.selectedExpansions.has(dungeon.expansion);
     }
 
     matchesLevel(dungeon, levelFilter) {
@@ -278,12 +297,17 @@ class DungeonDatabase {
 
     resetFilters() {
         this.elements.searchInput.value = '';
-        this.elements.expansionFilter.value = '';
         this.elements.levelFilter.value = '';
         
         // 清除所有選中的類型標籤
         this.selectedTypes.clear();
         this.elements.typeTags.querySelectorAll('.type-tag').forEach(tag => {
+            tag.classList.remove('active');
+        });
+        
+        // 清除所有選中的版本標籤
+        this.selectedExpansions.clear();
+        this.elements.expansionTags.querySelectorAll('.expansion-tag').forEach(tag => {
             tag.classList.remove('active');
         });
         

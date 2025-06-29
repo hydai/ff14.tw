@@ -367,18 +367,18 @@
 }
 
 /* 類型標籤樣式 */
-.type-filter-group {
+.type-filter-group, .expansion-filter-group {
     grid-column: 1 / -1;
 }
 
-.type-tags {
+.type-tags, .expansion-tags {
     display: flex;
     flex-wrap: wrap;
     gap: var(--spacing-sm);
     margin-top: var(--spacing-sm);
 }
 
-.type-tag {
+.type-tag, .expansion-tag {
     padding: var(--spacing-sm) var(--spacing-md);
     border: 2px solid var(--gray-300);
     background: var(--white);
@@ -391,21 +391,21 @@
     white-space: nowrap;
 }
 
-.type-tag:hover {
+.type-tag:hover, .expansion-tag:hover {
     border-color: var(--primary-color);
     color: var(--primary-color);
     background: var(--gray-50);
     transform: translateY(-1px);
 }
 
-.type-tag.active {
+.type-tag.active, .expansion-tag.active {
     background: var(--primary-color);
     color: var(--white);
     border-color: var(--primary-color);
     box-shadow: 0 2px 8px rgba(74, 144, 226, 0.3);
 }
 
-.type-tag.active:hover {
+.type-tag.active:hover, .expansion-tag.active:hover {
     background: var(--secondary-color);
     border-color: var(--secondary-color);
     transform: translateY(-2px);
