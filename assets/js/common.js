@@ -205,8 +205,26 @@ function updateLogoText() {
         // 取得工具名稱
         const toolName = h1.textContent.trim();
         
-        // 更新 logo 文字
-        logo.innerHTML = `<span class="logo-main">FF14.tw</span><span class="logo-separator"> | </span><span class="logo-tool">${toolName}</span>`;
+        // 清空 logo 內容
+        logo.textContent = '';
+        
+        // 創建元素來避免 XSS 漏洞
+        const logoMain = document.createElement('span');
+        logoMain.className = 'logo-main';
+        logoMain.textContent = 'FF14.tw';
+        
+        const logoSeparator = document.createElement('span');
+        logoSeparator.className = 'logo-separator';
+        logoSeparator.textContent = ' | ';
+        
+        const logoTool = document.createElement('span');
+        logoTool.className = 'logo-tool';
+        logoTool.textContent = toolName;
+        
+        // 依序添加元素
+        logo.appendChild(logoMain);
+        logo.appendChild(logoSeparator);
+        logo.appendChild(logoTool);
         
         // 為 h1 加上隱藏類別
         h1.classList.add('tool-page-title');
