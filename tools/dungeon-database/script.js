@@ -32,12 +32,13 @@ class DungeonDatabase {
         this.focusedCardIndex = -1;
         this.selectedTypes = new Set();
         this.selectedExpansions = new Set();
+        this.selectedLevels = new Set();
         
         this.elements = {
             searchInput: document.getElementById('searchInput'),
             typeTags: document.getElementById('typeTags'),
             expansionTags: document.getElementById('expansionTags'),
-            levelFilter: document.getElementById('levelFilter'),
+            levelTags: document.getElementById('levelTags'),
             resetFilters: document.getElementById('resetFilters'),
             dungeonList: document.getElementById('dungeonList'),
             loading: document.getElementById('loading'),
@@ -119,9 +120,11 @@ class DungeonDatabase {
             }
         });
 
-        // 過濾器（立即觸發）
-        this.elements.levelFilter.addEventListener('change', () => {
-            this.applyFilters();
+        // 等級標籤點擊事件
+        this.elements.levelTags.addEventListener('click', (e) => {
+            if (e.target.classList.contains('level-tag')) {
+                this.toggleLevelTag(e.target);
+            }
         });
 
         // 重置過濾器
@@ -238,9 +241,22 @@ class DungeonDatabase {
         this.applyFilters();
     }
 
+    toggleLevelTag(tagElement) {
+        const level = tagElement.dataset.level;
+        
+        if (this.selectedLevels.has(level)) {
+            this.selectedLevels.delete(level);
+            tagElement.classList.remove('active');
+        } else {
+            this.selectedLevels.add(level);
+            tagElement.classList.add('active');
+        }
+        
+        this.applyFilters();
+    }
+
     applyFilters() {
         const searchTerm = this.elements.searchInput.value.toLowerCase().trim();
-        const levelFilter = this.elements.levelFilter.value;
 
         this.currentSearchTerm = searchTerm;
         this.focusedCardIndex = -1; // 重置焦點
@@ -249,7 +265,7 @@ class DungeonDatabase {
             return this.matchesSearch(dungeon, searchTerm) &&
                    this.matchesTypes(dungeon) &&
                    this.matchesExpansions(dungeon) &&
-                   this.matchesLevel(dungeon, levelFilter);
+                   this.matchesLevels(dungeon);
         });
 
         this.renderDungeons();
@@ -288,16 +304,24 @@ class DungeonDatabase {
         return this.selectedExpansions.has(dungeon.expansion);
     }
 
-    matchesLevel(dungeon, levelFilter) {
-        if (!levelFilter) return true;
+    matchesLevels(dungeon) {
+        // 如果沒有選擇任何等級，顯示所有副本
+        if (this.selectedLevels.size === 0) {
+            return true;
+        }
         
-        const [minLevel, maxLevel] = levelFilter.split('-').map(Number);
-        return dungeon.level >= minLevel && dungeon.level <= maxLevel;
+        // 檢查副本等級是否在任一選中的等級範圍內
+        for (const levelRange of this.selectedLevels) {
+            const [minLevel, maxLevel] = levelRange.split('-').map(Number);
+            if (dungeon.level >= minLevel && dungeon.level <= maxLevel) {
+                return true;
+            }
+        }
+        return false;
     }
 
     resetFilters() {
         this.elements.searchInput.value = '';
-        this.elements.levelFilter.value = '';
         
         // 清除所有選中的類型標籤
         this.selectedTypes.clear();
@@ -308,6 +332,12 @@ class DungeonDatabase {
         // 清除所有選中的版本標籤
         this.selectedExpansions.clear();
         this.elements.expansionTags.querySelectorAll('.expansion-tag').forEach(tag => {
+            tag.classList.remove('active');
+        });
+        
+        // 清除所有選中的等級標籤
+        this.selectedLevels.clear();
+        this.elements.levelTags.querySelectorAll('.level-tag').forEach(tag => {
             tag.classList.remove('active');
         });
         

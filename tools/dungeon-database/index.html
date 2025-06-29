@@ -73,17 +73,16 @@
                             </div>
                         </div>
                         
-                        <div class="filter-group">
-                            <label for="levelFilter">等級過濾：</label>
-                            <select id="levelFilter">
-                                <option value="">所有等級</option>
-                                <option value="1-50">1-50</option>
-                                <option value="51-60">51-60</option>
-                                <option value="61-70">61-70</option>
-                                <option value="71-80">71-80</option>
-                                <option value="81-90">81-90</option>
-                                <option value="91-100">91-100</option>
-                            </select>
+                        <div class="filter-group level-filter-group">
+                            <label>等級過濾：</label>
+                            <div class="level-tags" id="levelTags">
+                                <button class="level-tag" data-level="1-50">1-50</button>
+                                <button class="level-tag" data-level="51-60">51-60</button>
+                                <button class="level-tag" data-level="61-70">61-70</button>
+                                <button class="level-tag" data-level="71-80">71-80</button>
+                                <button class="level-tag" data-level="81-90">81-90</button>
+                                <button class="level-tag" data-level="91-100">91-100</button>
+                            </div>
                         </div>
                         
                         <button id="resetFilters" class="btn btn-secondary">重置過濾</button>

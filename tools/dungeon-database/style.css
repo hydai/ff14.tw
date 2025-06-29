@@ -87,10 +87,9 @@
 }
 
 .filter-controls {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: var(--spacing-md);
-    align-items: end;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
 }
 
 .filter-group {
@@ -366,19 +365,19 @@
     border: 2px solid var(--primary-color) !important;
 }
 
-/* 類型標籤樣式 */
-.type-filter-group, .expansion-filter-group {
+/* 過濾標籤樣式 */
+.type-filter-group, .expansion-filter-group, .level-filter-group {
     grid-column: 1 / -1;
 }
 
-.type-tags, .expansion-tags {
+.type-tags, .expansion-tags, .level-tags {
     display: flex;
     flex-wrap: wrap;
     gap: var(--spacing-sm);
     margin-top: var(--spacing-sm);
 }
 
-.type-tag, .expansion-tag {
+.type-tag, .expansion-tag, .level-tag {
     padding: var(--spacing-sm) var(--spacing-md);
     border: 2px solid var(--gray-300);
     background: var(--white);
@@ -391,21 +390,21 @@
     white-space: nowrap;
 }
 
-.type-tag:hover, .expansion-tag:hover {
+.type-tag:hover, .expansion-tag:hover, .level-tag:hover {
     border-color: var(--primary-color);
     color: var(--primary-color);
     background: var(--gray-50);
     transform: translateY(-1px);
 }
 
-.type-tag.active, .expansion-tag.active {
+.type-tag.active, .expansion-tag.active, .level-tag.active {
     background: var(--primary-color);
     color: var(--white);
     border-color: var(--primary-color);
     box-shadow: 0 2px 8px rgba(74, 144, 226, 0.3);
 }
 
-.type-tag.active:hover, .expansion-tag.active:hover {
+.type-tag.active:hover, .expansion-tag.active:hover, .level-tag.active:hover {
     background: var(--secondary-color);
     border-color: var(--secondary-color);
     transform: translateY(-2px);
