@@ -30,10 +30,11 @@ class DungeonDatabase {
         this.searchDebounceTimeout = null;
         this.currentSearchTerm = '';
         this.focusedCardIndex = -1;
+        this.selectedTypes = new Set();
         
         this.elements = {
             searchInput: document.getElementById('searchInput'),
-            typeFilter: document.getElementById('typeFilter'),
+            typeTags: document.getElementById('typeTags'),
             expansionFilter: document.getElementById('expansionFilter'),
             levelFilter: document.getElementById('levelFilter'),
             resetFilters: document.getElementById('resetFilters'),
@@ -103,9 +104,15 @@ class DungeonDatabase {
             this.clearCardFocus();
         });
 
+        // 類型標籤點擊事件
+        this.elements.typeTags.addEventListener('click', (e) => {
+            if (e.target.classList.contains('type-tag')) {
+                this.toggleTypeTag(e.target);
+            }
+        });
+
         // 過濾器（立即觸發）
         const filterElements = [
-            this.elements.typeFilter,
             this.elements.expansionFilter,
             this.elements.levelFilter
         ];
@@ -202,9 +209,22 @@ class DungeonDatabase {
         this.focusedCardIndex = -1;
     }
 
+    toggleTypeTag(tagElement) {
+        const type = tagElement.dataset.type;
+        
+        if (this.selectedTypes.has(type)) {
+            this.selectedTypes.delete(type);
+            tagElement.classList.remove('active');
+        } else {
+            this.selectedTypes.add(type);
+            tagElement.classList.add('active');
+        }
+        
+        this.applyFilters();
+    }
+
     applyFilters() {
         const searchTerm = this.elements.searchInput.value.toLowerCase().trim();
-        const typeFilter = this.elements.typeFilter.value;
         const expansionFilter = this.elements.expansionFilter.value;
         const levelFilter = this.elements.levelFilter.value;
 
@@ -213,7 +233,7 @@ class DungeonDatabase {
 
         this.filteredDungeons = this.dungeons.filter(dungeon => {
             return this.matchesSearch(dungeon, searchTerm) &&
-                   this.matchesType(dungeon, typeFilter) &&
+                   this.matchesTypes(dungeon) &&
                    this.matchesExpansion(dungeon, expansionFilter) &&
                    this.matchesLevel(dungeon, levelFilter);
         });
@@ -236,8 +256,13 @@ class DungeonDatabase {
         );
     }
 
-    matchesType(dungeon, typeFilter) {
-        return !typeFilter || dungeon.type === typeFilter;
+    matchesTypes(dungeon) {
+        // 如果沒有選擇任何類型，顯示所有副本
+        if (this.selectedTypes.size === 0) {
+            return true;
+        }
+        // 檢查副本類型是否在選中的類型中
+        return this.selectedTypes.has(dungeon.type);
     }
 
     matchesExpansion(dungeon, expansionFilter) {
@@ -253,9 +278,14 @@ class DungeonDatabase {
 
     resetFilters() {
         this.elements.searchInput.value = '';
-        this.elements.typeFilter.value = '';
         this.elements.expansionFilter.value = '';
         this.elements.levelFilter.value = '';
+        
+        // 清除所有選中的類型標籤
+        this.selectedTypes.clear();
+        this.elements.typeTags.querySelectorAll('.type-tag').forEach(tag => {
+            tag.classList.remove('active');
+        });
         
         this.currentSearchTerm = '';
         this.focusedCardIndex = -1;

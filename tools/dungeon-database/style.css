@@ -366,6 +366,51 @@
     border: 2px solid var(--primary-color) !important;
 }
 
+/* 類型標籤樣式 */
+.type-filter-group {
+    grid-column: 1 / -1;
+}
+
+.type-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-sm);
+}
+
+.type-tag {
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: 2px solid var(--gray-300);
+    background: var(--white);
+    color: var(--gray-700);
+    border-radius: var(--border-radius-lg);
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    white-space: nowrap;
+}
+
+.type-tag:hover {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    background: var(--gray-50);
+    transform: translateY(-1px);
+}
+
+.type-tag.active {
+    background: var(--primary-color);
+    color: var(--white);
+    border-color: var(--primary-color);
+    box-shadow: 0 2px 8px rgba(74, 144, 226, 0.3);
+}
+
+.type-tag.active:hover {
+    background: var(--secondary-color);
+    border-color: var(--secondary-color);
+    transform: translateY(-2px);
+}
+
 /* 響應式設計 */
 @media (max-width: 1024px) {
     .filter-controls {
