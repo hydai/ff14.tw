@@ -7,9 +7,115 @@
     text-align: center;
 }
 
+/* Layout with TOC */
+.changelog-layout {
+    display: flex;
+    gap: 3rem;
+    align-items: flex-start;
+    position: relative;
+}
+
+.changelog-content-wrapper {
+    flex: 1;
+    min-width: 0;
+}
+
 .changelog-container {
     max-width: 800px;
     margin: 0 auto;
+}
+
+/* TOC Sidebar */
+.toc-sidebar {
+    position: sticky;
+    top: 2rem;
+    width: 250px;
+    flex-shrink: 0;
+    max-height: calc(100vh - 4rem);
+    overflow-y: auto;
+}
+
+.toc-container {
+    background: var(--card-bg, white);
+    border-radius: var(--border-radius-lg, 10px);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-md, 0 2px 10px rgba(0,0,0,0.1));
+}
+
+.toc-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--primary-color);
+    margin: 0 0 1rem 0;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--primary-color);
+}
+
+.toc-nav {
+    display: flex;
+    flex-direction: column;
+}
+
+.toc-link {
+    color: var(--text-color);
+    text-decoration: none;
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--border-radius-sm, 5px);
+    transition: all 0.2s ease;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.toc-link:hover {
+    background: var(--gray-100, #f5f5f5);
+    color: var(--primary-color);
+}
+
+.toc-link.active {
+    background: var(--primary-color);
+    color: white;
+    font-weight: 500;
+}
+
+.toc-level-1 {
+    font-weight: 500;
+}
+
+.toc-level-2 {
+    font-size: 0.85rem;
+    margin-left: 1rem;
+    color: var(--gray-600, #666);
+}
+
+.toc-level-2:hover {
+    color: var(--primary-color);
+}
+
+.toc-level-2.active {
+    color: white;
+}
+
+.toc-sublist {
+    margin-bottom: 0.5rem;
+}
+
+/* Scrollbar for TOC */
+.toc-sidebar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.toc-sidebar::-webkit-scrollbar-track {
+    background: var(--gray-100, #f1f1f1);
+    border-radius: 3px;
+}
+
+.toc-sidebar::-webkit-scrollbar-thumb {
+    background: var(--gray-400, #888);
+    border-radius: 3px;
+}
+
+.toc-sidebar::-webkit-scrollbar-thumb:hover {
+    background: var(--gray-600, #555);
 }
 
 .changelog-section {
@@ -185,7 +291,34 @@
 }
 
 /* Responsive Design */
+@media (max-width: 1024px) {
+    .toc-sidebar {
+        width: 200px;
+    }
+    
+    .changelog-layout {
+        gap: 2rem;
+    }
+}
+
 @media (max-width: 768px) {
+    .changelog-layout {
+        flex-direction: column;
+    }
+    
+    .toc-sidebar {
+        position: relative;
+        top: 0;
+        width: 100%;
+        max-height: none;
+        margin-bottom: 2rem;
+    }
+    
+    .toc-container {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    
     .changelog-header {
         flex-direction: column;
         align-items: flex-start;

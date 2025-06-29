@@ -29,14 +29,41 @@
     </header>
 
     <main class="main">
-        <div class="container">
-            <h1>修改紀錄</h1>
-            <p class="subtitle">記錄 FF14.tw 的功能更新與改進</p>
+        <div class="container changelog-layout">
+            <!-- TOC 側邊欄 -->
+            <aside class="toc-sidebar">
+                <div class="toc-container">
+                    <h2 class="toc-title">快速導覽</h2>
+                    <nav class="toc-nav" id="tocNav">
+                        <!-- TOC 內容將由 JavaScript 動態生成 -->
+                    </nav>
+                </div>
+            </aside>
 
-            <div class="changelog-container">
+            <!-- 主要內容區 -->
+            <div class="changelog-content-wrapper">
+                <h1>修改紀錄</h1>
+                <p class="subtitle">記錄 FF14.tw 的功能更新與改進</p>
+
+                <div class="changelog-container">
                 <!-- 2025年6月30日 -->
                 <section class="changelog-section">
                     <h2 class="changelog-year">2025年6月</h2>
+                    
+                    <article class="changelog-entry">
+                        <div class="changelog-header">
+                            <h3 class="changelog-version">v1.7.1</h3>
+                            <time class="changelog-date" datetime="2025-06-30">2025年6月30日</time>
+                        </div>
+                        <div class="changelog-content">
+                            <ul>
+                                <li><span class="tag tag-new">新增</span> 修改紀錄頁面側邊導覽目錄（TOC）</li>
+                                <li><span class="tag tag-improved">改進</span> 支援年份和版本的快速導覽</li>
+                                <li><span class="tag tag-improved">改進</span> 自動高亮當前章節並支援平滑滾動</li>
+                                <li><span class="tag tag-improved">改進</span> 統一跨日期版本記錄格式</li>
+                            </ul>
+                        </div>
+                    </article>
                     
                     <article class="changelog-entry">
                         <div class="changelog-header">
@@ -235,11 +262,11 @@
                         </div>
                     </article>
 
-                    <!-- 2025年6月24-25日 -->
+                    <!-- 2025年6月24日 -->
                     <article class="changelog-entry">
                         <div class="changelog-header">
                             <h3 class="changelog-version">v1.3.0</h3>
-                            <time class="changelog-date" datetime="2025-06-24">2025年6月24日 - 25日</time>
+                            <time class="changelog-date" datetime="2025-06-24">2025年6月24日</time>
                         </div>
                         <div class="changelog-content">
                             <ul>
@@ -251,11 +278,11 @@
                         </div>
                     </article>
 
-                    <!-- 2025年6月23-24日 -->
+                    <!-- 2025年6月23日 -->
                     <article class="changelog-entry">
                         <div class="changelog-header">
                             <h3 class="changelog-version">v1.2.0</h3>
-                            <time class="changelog-date" datetime="2025-06-23">2025年6月23日 - 24日</time>
+                            <time class="changelog-date" datetime="2025-06-23">2025年6月23日</time>
                         </div>
                         <div class="changelog-content">
                             <h4>角色卡產生器</h4>
@@ -272,11 +299,11 @@
                         </div>
                     </article>
 
-                    <!-- 2025年6月22-23日 -->
+                    <!-- 2025年6月22日 -->
                     <article class="changelog-entry">
                         <div class="changelog-header">
                             <h3 class="changelog-version">v1.1.0</h3>
-                            <time class="changelog-date" datetime="2025-06-22">2025年6月22日 - 23日</time>
+                            <time class="changelog-date" datetime="2025-06-22">2025年6月22日</time>
                         </div>
                         <div class="changelog-content">
                             <ul>
@@ -343,18 +370,19 @@
                 </section>
             </div>
 
-            <!-- 更新說明 -->
-            <div class="update-notice">
-                <h3>關於修改紀錄</h3>
-                <p>本頁面記錄 FF14.tw 的重要功能更新與改進。詳細的技術變更請參考 <a href="https://github.com/hydai/ff14.tw/commits/main" target="_blank" rel="noopener noreferrer">GitHub Commits</a>。</p>
-                <div class="tag-legend">
-                    <h4>標籤說明</h4>
-                    <ul>
-                        <li><span class="tag tag-new">新增</span> 新功能或新工具</li>
-                        <li><span class="tag tag-improved">改進</span> 功能優化或體驗提升</li>
-                        <li><span class="tag tag-fixed">修正</span> 錯誤修復</li>
-                        <li><span class="tag tag-info">資訊</span> 重要資訊或里程碑</li>
-                    </ul>
+                <!-- 更新說明 -->
+                <div class="update-notice" id="aboutChangelog">
+                    <h3>關於修改紀錄</h3>
+                    <p>本頁面記錄 FF14.tw 的重要功能更新與改進。詳細的技術變更請參考 <a href="https://github.com/hydai/ff14.tw/commits/main" target="_blank" rel="noopener noreferrer">GitHub Commits</a>。</p>
+                    <div class="tag-legend">
+                        <h4>標籤說明</h4>
+                        <ul>
+                            <li><span class="tag tag-new">新增</span> 新功能或新工具</li>
+                            <li><span class="tag tag-improved">改進</span> 功能優化或體驗提升</li>
+                            <li><span class="tag tag-fixed">修正</span> 錯誤修復</li>
+                            <li><span class="tag tag-info">資訊</span> 重要資訊或里程碑</li>
+                        </ul>
+                    </div>
                 </div>
             </div>
         </div>
@@ -368,5 +396,125 @@
 
     <a href="#" class="back-to-top" id="backToTop">↑</a>
     <script src="assets/js/common.js"></script>
+    <script>
+        // 生成 TOC
+        document.addEventListener('DOMContentLoaded', function() {
+            const tocNav = document.getElementById('tocNav');
+            const tocItems = [];
+            
+            // 收集所有年份標題
+            document.querySelectorAll('.changelog-year').forEach(year => {
+                const section = year.closest('.changelog-section');
+                const yearText = year.textContent;
+                const yearId = 'year-' + yearText.replace(/[^\d年月]/g, '');
+                section.id = yearId;
+                
+                const yearItem = {
+                    text: yearText,
+                    id: yearId,
+                    level: 1,
+                    versions: []
+                };
+                
+                // 收集該年份下的所有版本
+                section.querySelectorAll('.changelog-entry').forEach(entry => {
+                    const version = entry.querySelector('.changelog-version');
+                    const date = entry.querySelector('.changelog-date');
+                    if (version && date) {
+                        const versionId = 'version-' + version.textContent.replace(/[^\w\d]/g, '');
+                        entry.id = versionId;
+                        yearItem.versions.push({
+                            text: version.textContent + ' - ' + date.textContent,
+                            id: versionId,
+                            level: 2
+                        });
+                    }
+                });
+                
+                tocItems.push(yearItem);
+            });
+            
+            // 添加關於修改紀錄
+            tocItems.push({
+                text: '關於修改紀錄',
+                id: 'aboutChangelog',
+                level: 1,
+                versions: []
+            });
+            
+            // 建立 TOC HTML
+            tocItems.forEach(item => {
+                const yearLink = document.createElement('a');
+                yearLink.href = '#' + item.id;
+                yearLink.className = 'toc-link toc-level-1';
+                yearLink.textContent = item.text;
+                tocNav.appendChild(yearLink);
+                
+                if (item.versions.length > 0) {
+                    const versionList = document.createElement('div');
+                    versionList.className = 'toc-sublist';
+                    
+                    item.versions.forEach(version => {
+                        const versionLink = document.createElement('a');
+                        versionLink.href = '#' + version.id;
+                        versionLink.className = 'toc-link toc-level-2';
+                        versionLink.textContent = version.text;
+                        versionList.appendChild(versionLink);
+                    });
+                    
+                    tocNav.appendChild(versionList);
+                }
+            });
+            
+            // 平滑滾動
+            document.querySelectorAll('.toc-link').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href').substring(1);
+                    const targetElement = document.getElementById(targetId);
+                    if (targetElement) {
+                        targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                });
+            });
+            
+            // 滾動時高亮當前章節
+            let ticking = false;
+            function updateActiveLink() {
+                const scrollY = window.scrollY;
+                const viewportHeight = window.innerHeight;
+                
+                let activeId = null;
+                const sections = document.querySelectorAll('[id^="year-"], [id^="version-"], #aboutChangelog');
+                
+                sections.forEach(section => {
+                    const rect = section.getBoundingClientRect();
+                    if (rect.top <= viewportHeight / 3 && rect.bottom > 0) {
+                        activeId = section.id;
+                    }
+                });
+                
+                // 更新 active 狀態
+                document.querySelectorAll('.toc-link').forEach(link => {
+                    link.classList.remove('active');
+                    if (activeId && link.getAttribute('href') === '#' + activeId) {
+                        link.classList.add('active');
+                    }
+                });
+                
+                ticking = false;
+            }
+            
+            window.addEventListener('scroll', function() {
+                if (!ticking) {
+                    window.requestAnimationFrame(updateActiveLink);
+                    ticking = true;
+                }
+            });
+            
+            // 初始化
+            updateActiveLink();
+        });
+    </script>
 </body>
 </html>
