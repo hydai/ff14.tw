@@ -293,12 +293,14 @@ class FauxHollowsFoxes {
         this.showTreasureProbabilities = false;
         this.obstaclesConfirmed = false;
         this.showOptimalHighlight = true; // 預設開啟高亮功能
+        this.history = []; // 儲存每一步的歷史狀態
         
         this.elements = {
             board: document.getElementById('game-board'),
             remainingClicks: document.getElementById('remaining-clicks'),
             matchingBoards: document.getElementById('matching-boards'),
             resetBtn: document.getElementById('reset-btn'),
+            undoBtn: document.getElementById('undo-btn'),
             autoCalculateBtn: document.getElementById('auto-calculate'),
             toggleProbabilitiesBtn: document.getElementById('toggle-probabilities'),
             resultPanel: document.getElementById('result-panel'),
@@ -366,6 +368,11 @@ class FauxHollowsFoxes {
         // Reset button
         this.elements.resetBtn.addEventListener('click', () => {
             this.reset();
+        });
+
+        // Undo button
+        this.elements.undoBtn.addEventListener('click', () => {
+            this.undo();
         });
 
         // Auto calculate button (toggle)
@@ -757,8 +764,9 @@ class FauxHollowsFoxes {
         
         // 如果有100%機率但未填充的位置，先填充它們
         if (guaranteedObstacles.length > 0) {
+            // 自動填充時不保存狀態
             for (const pos of guaranteedObstacles) {
-                this.setObstacle(pos);
+                this.setObstacle(pos, true);
             }
             // 重新計算機率並再次檢查
             this.updateObstacleProbabilitiesBasedOnMatches();
@@ -881,9 +889,11 @@ class FauxHollowsFoxes {
 
         // 自動填充確定的障礙物
         if (confirmedObstacles.length > 0) {
+            // 自動填充時，不保存狀態（因為使用者的手動操作已經保存過了）
             let fillCount = 0;
             for (const index of confirmedObstacles) {
-                this.setObstacle(index);
+                // 全部都跳過保存狀態
+                this.setObstacle(index, true);
                 fillCount++;
             }
             
@@ -1046,7 +1056,12 @@ class FauxHollowsFoxes {
         this.updateOptimalHighlight();
     }
 
-    setObstacle(index) {
+    setObstacle(index, skipSaveState = false) {
+        // 在修改前儲存狀態（除非指定跳過）
+        if (!skipSaveState) {
+            this.saveState();
+        }
+        
         const cell = this.elements.board.children[index];
         
         // Set as obstacle directly without clearing first
@@ -1062,6 +1077,9 @@ class FauxHollowsFoxes {
         if (this.clickCount >= FauxHollowsFoxes.CONSTANTS.MAX_CLICKS && this.board[index] === null) {
             return;
         }
+        
+        // 在修改前儲存狀態
+        this.saveState();
         
         // Clear the cell
         this.board[index] = null;
@@ -1099,6 +1117,9 @@ class FauxHollowsFoxes {
                 return;
             }
         }
+
+        // 在修改前儲存狀態
+        this.saveState();
 
         // If overwriting an existing treasure cell, don't increment click count
         const isOverwriting = this.obstaclesConfirmed && 
@@ -1145,6 +1166,9 @@ class FauxHollowsFoxes {
                 return;
             }
         }
+
+        // 在修改前儲存狀態
+        this.saveState();
 
         // If overwriting an existing treasure cell, don't increment click count
         const isOverwriting = this.obstaclesConfirmed && 
@@ -1509,6 +1533,132 @@ class FauxHollowsFoxes {
         });
     }
 
+    saveState() {
+        // 儲存目前狀態到歷史記錄
+        const state = {
+            board: [...this.board],
+            clickCount: this.clickCount,
+            score: this.score,
+            obstaclesConfirmed: this.obstaclesConfirmed,
+            showTreasureProbabilities: this.showTreasureProbabilities,
+            obstacleProbabilities: [...this.obstacleProbabilities],
+            treasureProbabilities: {
+                sword: [...this.treasureProbabilities.sword],
+                chest: [...this.treasureProbabilities.chest],
+                fox: [...this.treasureProbabilities.fox]
+            }
+        };
+        this.history.push(state);
+        
+        // 限制歷史記錄長度，避免占用太多記憶體
+        if (this.history.length > 50) {
+            this.history.shift();
+        }
+        
+        // 啟用回到上一步按鈕
+        this.elements.undoBtn.disabled = false;
+    }
+
+    undo() {
+        if (this.history.length === 0) return;
+        
+        // 取出上一步的狀態
+        const previousState = this.history.pop();
+        
+        // 恢復狀態
+        this.board = [...previousState.board];
+        this.clickCount = previousState.clickCount;
+        this.score = previousState.score;
+        this.obstaclesConfirmed = previousState.obstaclesConfirmed;
+        this.showTreasureProbabilities = previousState.showTreasureProbabilities;
+        this.obstacleProbabilities = [...previousState.obstacleProbabilities];
+        this.treasureProbabilities = {
+            sword: [...previousState.treasureProbabilities.sword],
+            chest: [...previousState.treasureProbabilities.chest],
+            fox: [...previousState.treasureProbabilities.fox]
+        };
+        
+        // 重新渲染盤面
+        this.renderBoard();
+        
+        // 更新顯示
+        this.updateDisplay();
+        this.updateMatchingBoards();
+        this.updateProbabilityDisplay();
+        this.updateOptimalHighlight();
+        
+        // 如果沒有歷史記錄了，禁用回到上一步按鈕
+        if (this.history.length === 0) {
+            this.elements.undoBtn.disabled = true;
+        }
+        
+        // 檢查是否需要顯示提示
+        if (!this.obstaclesConfirmed && this.elements.gameHint) {
+            let obstacleCount = 0;
+            for (let i = 0; i < FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS; i++) {
+                if (this.board[i] === 'obstacle') {
+                    obstacleCount++;
+                }
+            }
+            if (obstacleCount < 2) {
+                this.elements.gameHint.classList.remove('hidden');
+            }
+        }
+    }
+
+    renderBoard() {
+        // 重新渲染整個盤面
+        for (let i = 0; i < FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS; i++) {
+            const cell = this.elements.board.children[i];
+            const value = this.board[i];
+            
+            // 清空內容
+            cell.className = 'board-cell';
+            cell.textContent = '';
+            
+            if (value === null) {
+                // 空格子
+                if (this.showProbabilities) {
+                    if (!this.obstaclesConfirmed && this.obstacleProbabilities[i] > 0) {
+                        cell.textContent = `${this.obstacleProbabilities[i]}%`;
+                        cell.classList.add('probability-display');
+                    } else if (this.obstaclesConfirmed && this.showTreasureProbabilities) {
+                        const swordProb = this.treasureProbabilities.sword[i];
+                        const chestProb = this.treasureProbabilities.chest[i];
+                        const foxProb = this.treasureProbabilities.fox[i];
+                        
+                        if (swordProb > 0 || chestProb > 0 || foxProb > 0) {
+                            cell.innerHTML = `
+                                <div class="treasure-prob-container">
+                                    ${swordProb > 0 ? `<div class="treasure-prob sword-prob">劍:${swordProb}%</div>` : ''}
+                                    ${chestProb > 0 ? `<div class="treasure-prob chest-prob">箱:${chestProb}%</div>` : ''}
+                                    ${foxProb > 0 ? `<div class="treasure-prob fox-prob">狐:${foxProb}%</div>` : ''}
+                                </div>
+                            `;
+                            cell.classList.add('treasure-probability-display');
+                        }
+                    }
+                }
+            } else if (value === 'obstacle') {
+                cell.className = 'board-cell obstacle';
+                cell.textContent = '✕';
+            } else if (value === 'sword') {
+                cell.className = 'board-cell sword';
+                cell.textContent = '劍';
+            } else if (value === 'chest') {
+                cell.className = 'board-cell chest';
+                cell.textContent = '箱';
+            } else if (value === 'fox') {
+                cell.className = 'board-cell fox';
+                cell.textContent = '狐';
+            } else if (value === 'empty') {
+                cell.className = 'board-cell empty';
+            } else if (value === 'clicked') {
+                cell.className = 'board-cell clicked';
+            }
+        }
+    }
+
     reset() {
         // Clear board
         this.board = Array(36).fill(null);
@@ -1524,12 +1674,16 @@ class FauxHollowsFoxes {
         this.obstaclesConfirmed = false;
         this.showTreasureProbabilities = false;
         this.showOptimalHighlight = true; // 重置時回復預設開啟
+        this.history = []; // 清空歷史記錄
         
         // 清除高亮
         this.clearHighlights();
         
         // 更新按鈕文字
         this.elements.autoCalculateBtn.textContent = '關閉最佳策略';
+        
+        // 禁用回到上一步按鈕
+        this.elements.undoBtn.disabled = true;
         
         // Reset UI
         this.initializeBoard();

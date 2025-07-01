@@ -261,3 +261,8 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 ## Development Memories
 
 - 對於 CLAUDE.md 的任何修改都不需要在 changelog 中提及，因為他與玩家無關，只與開發者有關
+- 工具對應關係：
+  - `character-card` 為角色卡產生器
+  - `dungeon-database` 為副本資料庫
+  - `faux-hollows-foxes` 為宗長計算機
+  - 請記住他們的對應關係，避免改錯工具
