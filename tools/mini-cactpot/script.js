@@ -55,11 +55,11 @@ class MiniCactpotCalculator {
         if (cell.classList.contains('selected')) {
             // 取消選擇
             this.unselectCell(position);
-        } else if (this.selectedCells.length < 3) {
+        } else if (this.selectedCells.length < 4) {
             // 選擇格子
             this.selectCell(position);
         } else {
-            FF14Utils.showToast('最多只能選擇 3 個格子', 'error');
+            FF14Utils.showToast('最多只能選擇 4 個格子', 'error');
         }
     }
 
@@ -125,8 +125,8 @@ class MiniCactpotCalculator {
         
         this.elements.selectedCount.textContent = selectedCount;
         
-        // 當輸入完成三個數字時，自動計算並顯示期望值
-        if (revealedCount === 3) {
+        // 當輸入完成四個數字時，自動計算並顯示期望值
+        if (revealedCount === 4) {
             this.calculateAndDisplayExpectations();
         } else {
             this.clearExpectations();
