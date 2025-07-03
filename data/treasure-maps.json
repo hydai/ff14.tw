@@ -1,22 +1,90 @@
 {
   "mapLevels": [
-    { "id": "g1", "name": "G1 鞣革地圖", "minLevel": 20 },
-    { "id": "g2", "name": "G2 山羊革地圖", "minLevel": 25 },
-    { "id": "g3", "name": "G3 巨蟾蜍革地圖", "minLevel": 30 },
-    { "id": "g4", "name": "G4 野豬革地圖", "minLevel": 35 },
-    { "id": "g5", "name": "G5 毒蜥蜴革地圖", "minLevel": 40 },
-    { "id": "g6", "name": "G6 古鳥革地圖", "minLevel": 45 },
-    { "id": "g7", "name": "G7 飛龍革地圖", "minLevel": 50 },
-    { "id": "g8", "name": "G8 巨龍革地圖", "minLevel": 50 },
-    { "id": "g9", "name": "G9 迦迦納怪鳥革地圖", "minLevel": 55 },
-    { "id": "g10", "name": "G10 瞪羚革地圖", "minLevel": 60 },
-    { "id": "g11", "name": "G11 綠飄龍革地圖", "minLevel": 60 },
-    { "id": "g12", "name": "G12 纏尾蛟革地圖", "minLevel": 70 },
-    { "id": "g13", "name": "G13 賽加羚羊革地圖", "minLevel": 70 },
-    { "id": "g14", "name": "G14 金毗羅鱷革地圖", "minLevel": 80 },
-    { "id": "g15", "name": "G15 蛇牛革地圖", "minLevel": 80 },
-    { "id": "g16", "name": "G16 銀狼革地圖", "minLevel": 90 },
-    { "id": "g17", "name": "G17 獰豹革地圖", "minLevel": 90 }
+    {
+      "id": "g1",
+      "name": "G1 鞣革地圖",
+      "minLevel": 20
+    },
+    {
+      "id": "g2",
+      "name": "G2 山羊革地圖",
+      "minLevel": 25
+    },
+    {
+      "id": "g3",
+      "name": "G3 巨蟾蜍革地圖",
+      "minLevel": 30
+    },
+    {
+      "id": "g4",
+      "name": "G4 野豬革地圖",
+      "minLevel": 35
+    },
+    {
+      "id": "g5",
+      "name": "G5 毒蜥蜴革地圖",
+      "minLevel": 40
+    },
+    {
+      "id": "g6",
+      "name": "G6 古鳥革地圖",
+      "minLevel": 45
+    },
+    {
+      "id": "g7",
+      "name": "G7 飛龍革地圖",
+      "minLevel": 50
+    },
+    {
+      "id": "g8",
+      "name": "G8 巨龍革地圖",
+      "minLevel": 50
+    },
+    {
+      "id": "g9",
+      "name": "G9 迦迦納怪鳥革地圖",
+      "minLevel": 55
+    },
+    {
+      "id": "g10",
+      "name": "G10 瞪羚革地圖",
+      "minLevel": 60
+    },
+    {
+      "id": "g11",
+      "name": "G11 綠飄龍革地圖",
+      "minLevel": 60
+    },
+    {
+      "id": "g12",
+      "name": "G12 纏尾蛟革地圖",
+      "minLevel": 70
+    },
+    {
+      "id": "g13",
+      "name": "G13 賽加羚羊革地圖",
+      "minLevel": 70
+    },
+    {
+      "id": "g14",
+      "name": "G14 金毗羅鱷革地圖",
+      "minLevel": 80
+    },
+    {
+      "id": "g15",
+      "name": "G15 蛇牛革地圖",
+      "minLevel": 80
+    },
+    {
+      "id": "g16",
+      "name": "G16 銀狼革地圖",
+      "minLevel": 90
+    },
+    {
+      "id": "g17",
+      "name": "G17 獰豹革地圖",
+      "minLevel": 90
+    }
   ],
   "zones": [
     {
@@ -63,7 +131,9 @@
     {
       "id": "mor_dhona",
       "name": "摩杜納",
-      "subZones": ["Mor Dhona"]
+      "subZones": [
+        "Mor Dhona"
+      ]
     },
     {
       "id": "abalathia",
@@ -122,6 +192,17 @@
         "Mare Lamentorum",
         "Elpis",
         "Ultima Thule"
+      ]
+    },
+    {
+      "id": "tural",
+      "name": "圖拉利亞",
+      "subZones": [
+        "Urqopacha",
+        "Kozama'uka",
+        "Yak T'el",
+        "Shaaloani",
+        "Heritage Found"
       ]
     }
   ],
@@ -209,6 +290,566 @@
       },
       "thumbnail": "images/treasures/g17_elpis_01_thumb.jpg",
       "fullImage": "images/treasures/g17_elpis_01.jpg"
+    },
+    {
+      "id": "tm_007",
+      "level": "g17",
+      "levelName": "獰豹革地圖",
+      "zone": "Urqopacha",
+      "zoneId": "tural",
+      "coords": {
+        "x": 13.7,
+        "y": 14.2,
+        "z": 1.7
+      },
+      "thumbnail": "images/treasures/g17_urqopacha_01_thumb.jpg",
+      "fullImage": "images/treasures/g17_urqopacha_01.jpg"
+    },
+    {
+      "id": "tm_008",
+      "level": "g17",
+      "levelName": "獰豹革地圖",
+      "zone": "Urqopacha",
+      "zoneId": "tural",
+      "coords": {
+        "x": 17.0,
+        "y": 23.3,
+        "z": 2.8
+      },
+      "thumbnail": "images/treasures/g17_urqopacha_02_thumb.jpg",
+      "fullImage": "images/treasures/g17_urqopacha_02.jpg"
+    },
+    {
+      "id": "tm_009",
+      "level": "g17",
+      "levelName": "獰豹革地圖",
+      "zone": "Urqopacha",
+      "zoneId": "tural",
+      "coords": {
+        "x": 15.8,
+        "y": 30.6,
+        "z": 2.9
+      },
+      "thumbnail": "images/treasures/g17_urqopacha_03_thumb.jpg",
+      "fullImage": "images/treasures/g17_urqopacha_03.jpg"
+    },
+    {
+      "id": "tm_010",
+      "level": "g17",
+      "levelName": "獰豹革地圖",
+      "zone": "Urqopacha",
+      "zoneId": "tural",
+      "coords": {
+        "x": 21.6,
+        "y": 23.9,
+        "z": 2.3
+      },
+      "thumbnail": "images/treasures/g17_urqopacha_04_thumb.jpg",
+      "fullImage": "images/treasures/g17_urqopacha_04.jpg"
+    },
+    {
+      "id": "tm_011",
+      "level": "g17",
+      "levelName": "獰豹革地圖",
+      "zone": "Urqopacha",
+      "zoneId": "tural",
+      "coords": {
+        "x": 21.6,
+        "y": 26.0,
+        "z": 2.4
+      },
+      "thumbnail": "images/treasures/g17_urqopacha_05_thumb.jpg",
+      "fullImage": "images/treasures/g17_urqopacha_05.jpg"
+    },
+    {
+      "id": "tm_012",
+      "level": "g17",
+      "levelName": "獰豹革地圖",
+      "zone": "Urqopacha",
+      "zoneId": "tural",
+      "coords": {
+        "x": 29.0,
+        "y": 24.0,
+        "z": 2.8
+      },
+      "thumbnail": "images/treasures/g17_urqopacha_06_thumb.jpg",
+      "fullImage": "images/treasures/g17_urqopacha_06.jpg"
+    },
+    {
+      "id": "tm_013",
+      "level": "g17",
+      "levelName": "獰豹革地圖",
+      "zone": "Urqopacha",
+      "zoneId": "tural",
+      "coords": {
+        "x": 34.1,
+        "y": 29.0,
+        "z": 3.4
+      },
+      "thumbnail": "images/treasures/g17_urqopacha_07_thumb.jpg",
+      "fullImage": "images/treasures/g17_urqopacha_07.jpg"
+    },
+    {
+      "id": "tm_014",
+      "level": "g17",
+      "levelName": "獰豹革地圖",
+      "zone": "Urqopacha",
+      "zoneId": "tural",
+      "coords": {
+        "x": 34.2,
+        "y": 32.5,
+        "z": 3.3
+      },
+      "thumbnail": "images/treasures/g17_urqopacha_08_thumb.jpg",
+      "fullImage": "images/treasures/g17_urqopacha_08.jpg"
+    },
+    {
+      "id": "tm_015",
+      "level": "g17",
+      "levelName": "獰豹革地圖",
+      "zone": "Kozama'uka",
+      "zoneId": "tural",
+      "coords": {
+        "x": 6.8,
+        "y": 19.4,
+        "z": 0.6
+      },
+      "thumbnail": "images/treasures/g17_kozamauka_01_thumb.jpg",
+      "fullImage": "images/treasures/g17_kozamauka_01.jpg"
+    },
+    {
+      "id": "tm_016",
+      "level": "g17",
+      "levelName": "獰豹革地圖",
+      "zone": "Kozama'uka",
+      "zoneId": "tural",
+      "coords": {
+        "x": 9.0,
+        "y": 33.9,
+        "z": 1.3
+      },
+      "thumbnail": "images/treasures/g17_kozamauka_02_thumb.jpg",
+      "fullImage": "images/treasures/g17_kozamauka_02.jpg"
+    },
+    {
+      "id": "tm_017",
+      "level": "g17",
+      "levelName": "獰豹革地圖",
+      "zone": "Kozama'uka",
+      "zoneId": "tural",
+      "coords": {
+        "x": 20.0,
+        "y": 6.9,
+        "z": 0.2
+      },
+      "thumbnail": "images/treasures/g17_kozamauka_03_thumb.jpg",
+      "fullImage": "images/treasures/g17_kozamauka_03.jpg"
+    },
+    {
+      "id": "tm_018",
+      "level": "g17",
+      "levelName": "獰豹革地圖",
+      "zone": "Kozama'uka",
+      "zoneId": "tural",
+      "coords": {
+        "x": 18.9,
+        "y": 22.5,
+        "z": 1.1
+      },
+      "thumbnail": "images/treasures/g17_kozamauka_04_thumb.jpg",
+      "fullImage": "images/treasures/g17_kozamauka_04.jpg"
+    },
+    {
+      "id": "tm_019",
+      "level": "g17",
+      "levelName": "獰豹革地圖",
+      "zone": "Kozama'uka",
+      "zoneId": "tural",
+      "coords": {
+        "x": 31.3,
+        "y": 14.9,
+        "z": 0.1
+      },
+      "thumbnail": "images/treasures/g17_kozamauka_05_thumb.jpg",
+      "fullImage": "images/treasures/g17_kozamauka_05.jpg"
+    },
+    {
+      "id": "tm_020",
+      "level": "g17",
+      "levelName": "獰豹革地圖",
+      "zone": "Kozama'uka",
+      "zoneId": "tural",
+      "coords": {
+        "x": 32.2,
+        "y": 36.1,
+        "z": 1.2
+      },
+      "thumbnail": "images/treasures/g17_kozamauka_06_thumb.jpg",
+      "fullImage": "images/treasures/g17_kozamauka_06.jpg"
+    },
+    {
+      "id": "tm_021",
+      "level": "g17",
+      "levelName": "獰豹革地圖",
+      "zone": "Kozama'uka",
+      "zoneId": "tural",
+      "coords": {
+        "x": 36.8,
+        "y": 6.2,
+        "z": 0.4
+      },
+      "thumbnail": "images/treasures/g17_kozamauka_07_thumb.jpg",
+      "fullImage": "images/treasures/g17_kozamauka_07.jpg"
+    },
+    {
+      "id": "tm_022",
+      "level": "g17",
+      "levelName": "獰豹革地圖",
+      "zone": "Kozama'uka",
+      "zoneId": "tural",
+      "coords": {
+        "x": 37.9,
+        "y": 21.8,
+        "z": 0.2
+      },
+      "thumbnail": "images/treasures/g17_kozamauka_08_thumb.jpg",
+      "fullImage": "images/treasures/g17_kozamauka_08.jpg"
+    },
+    {
+      "id": "tm_023",
+      "level": "g17",
+      "levelName": "獰豹革地圖",
+      "zone": "Yak T'el",
+      "zoneId": "tural",
+      "coords": {
+        "x": 5.6,
+        "y": 19.6,
+        "z": 3.3
+      },
+      "thumbnail": "images/treasures/g17_yaktel_01_thumb.jpg",
+      "fullImage": "images/treasures/g17_yaktel_01.jpg"
+    },
+    {
+      "id": "tm_024",
+      "level": "g17",
+      "levelName": "獰豹革地圖",
+      "zone": "Yak T'el",
+      "zoneId": "tural",
+      "coords": {
+        "x": 11.3,
+        "y": 33.2,
+        "z": 1.4
+      },
+      "thumbnail": "images/treasures/g17_yaktel_02_thumb.jpg",
+      "fullImage": "images/treasures/g17_yaktel_02.jpg"
+    },
+    {
+      "id": "tm_025",
+      "level": "g17",
+      "levelName": "獰豹革地圖",
+      "zone": "Yak T'el",
+      "zoneId": "tural",
+      "coords": {
+        "x": 15.5,
+        "y": 26.8,
+        "z": 1.3
+      },
+      "thumbnail": "images/treasures/g17_yaktel_03_thumb.jpg",
+      "fullImage": "images/treasures/g17_yaktel_03.jpg"
+    },
+    {
+      "id": "tm_026",
+      "level": "g17",
+      "levelName": "獰豹革地圖",
+      "zone": "Yak T'el",
+      "zoneId": "tural",
+      "coords": {
+        "x": 22.6,
+        "y": 5.7,
+        "z": 3.0
+      },
+      "thumbnail": "images/treasures/g17_yaktel_04_thumb.jpg",
+      "fullImage": "images/treasures/g17_yaktel_04.jpg"
+    },
+    {
+      "id": "tm_027",
+      "level": "g17",
+      "levelName": "獰豹革地圖",
+      "zone": "Yak T'el",
+      "zoneId": "tural",
+      "coords": {
+        "x": 24.7,
+        "y": 21.0,
+        "z": 1.4
+      },
+      "thumbnail": "images/treasures/g17_yaktel_05_thumb.jpg",
+      "fullImage": "images/treasures/g17_yaktel_05.jpg"
+    },
+    {
+      "id": "tm_028",
+      "level": "g17",
+      "levelName": "獰豹革地圖",
+      "zone": "Yak T'el",
+      "zoneId": "tural",
+      "coords": {
+        "x": 22.7,
+        "y": 35.9,
+        "z": 1.3
+      },
+      "thumbnail": "images/treasures/g17_yaktel_06_thumb.jpg",
+      "fullImage": "images/treasures/g17_yaktel_06.jpg"
+    },
+    {
+      "id": "tm_029",
+      "level": "g17",
+      "levelName": "獰豹革地圖",
+      "zone": "Yak T'el",
+      "zoneId": "tural",
+      "coords": {
+        "x": 31.2,
+        "y": 21.9,
+        "z": 3.1
+      },
+      "thumbnail": "images/treasures/g17_yaktel_07_thumb.jpg",
+      "fullImage": "images/treasures/g17_yaktel_07.jpg"
+    },
+    {
+      "id": "tm_030",
+      "level": "g17",
+      "levelName": "獰豹革地圖",
+      "zone": "Yak T'el",
+      "zoneId": "tural",
+      "coords": {
+        "x": 36.7,
+        "y": 12.5,
+        "z": 3.3
+      },
+      "thumbnail": "images/treasures/g17_yaktel_08_thumb.jpg",
+      "fullImage": "images/treasures/g17_yaktel_08.jpg"
+    },
+    {
+      "id": "tm_031",
+      "level": "g17",
+      "levelName": "獰豹革地圖",
+      "zone": "Shaaloani",
+      "zoneId": "tural",
+      "coords": {
+        "x": 12.5,
+        "y": 14.3,
+        "z": 0.5
+      },
+      "thumbnail": "images/treasures/g17_shaaloani_01_thumb.jpg",
+      "fullImage": "images/treasures/g17_shaaloani_01.jpg"
+    },
+    {
+      "id": "tm_032",
+      "level": "g17",
+      "levelName": "獰豹革地圖",
+      "zone": "Shaaloani",
+      "zoneId": "tural",
+      "coords": {
+        "x": 18.5,
+        "y": 11.5,
+        "z": 0.9
+      },
+      "thumbnail": "images/treasures/g17_shaaloani_02_thumb.jpg",
+      "fullImage": "images/treasures/g17_shaaloani_02.jpg"
+    },
+    {
+      "id": "tm_033",
+      "level": "g17",
+      "levelName": "獰豹革地圖",
+      "zone": "Shaaloani",
+      "zoneId": "tural",
+      "coords": {
+        "x": 18.2,
+        "y": 21.0,
+        "z": 0.9
+      },
+      "thumbnail": "images/treasures/g17_shaaloani_03_thumb.jpg",
+      "fullImage": "images/treasures/g17_shaaloani_03.jpg"
+    },
+    {
+      "id": "tm_034",
+      "level": "g17",
+      "levelName": "獰豹革地圖",
+      "zone": "Shaaloani",
+      "zoneId": "tural",
+      "coords": {
+        "x": 19.6,
+        "y": 34.5,
+        "z": 0.5
+      },
+      "thumbnail": "images/treasures/g17_shaaloani_04_thumb.jpg",
+      "fullImage": "images/treasures/g17_shaaloani_04.jpg"
+    },
+    {
+      "id": "tm_035",
+      "level": "g17",
+      "levelName": "獰豹革地圖",
+      "zone": "Shaaloani",
+      "zoneId": "tural",
+      "coords": {
+        "x": 25.6,
+        "y": 19.6,
+        "z": 0.7
+      },
+      "thumbnail": "images/treasures/g17_shaaloani_05_thumb.jpg",
+      "fullImage": "images/treasures/g17_shaaloani_05.jpg"
+    },
+    {
+      "id": "tm_036",
+      "level": "g17",
+      "levelName": "獰豹革地圖",
+      "zone": "Shaaloani",
+      "zoneId": "tural",
+      "coords": {
+        "x": 29.3,
+        "y": 8.3,
+        "z": 0.5
+      },
+      "thumbnail": "images/treasures/g17_shaaloani_06_thumb.jpg",
+      "fullImage": "images/treasures/g17_shaaloani_06.jpg"
+    },
+    {
+      "id": "tm_037",
+      "level": "g17",
+      "levelName": "獰豹革地圖",
+      "zone": "Shaaloani",
+      "zoneId": "tural",
+      "coords": {
+        "x": 31.8,
+        "y": 32.9,
+        "z": 0.9
+      },
+      "thumbnail": "images/treasures/g17_shaaloani_07_thumb.jpg",
+      "fullImage": "images/treasures/g17_shaaloani_07.jpg"
+    },
+    {
+      "id": "tm_038",
+      "level": "g17",
+      "levelName": "獰豹革地圖",
+      "zone": "Shaaloani",
+      "zoneId": "tural",
+      "coords": {
+        "x": 35.5,
+        "y": 16.8,
+        "z": 0.6
+      },
+      "thumbnail": "images/treasures/g17_shaaloani_08_thumb.jpg",
+      "fullImage": "images/treasures/g17_shaaloani_08.jpg"
+    },
+    {
+      "id": "tm_039",
+      "level": "g17",
+      "levelName": "獰豹革地圖",
+      "zone": "Heritage Found",
+      "zoneId": "tural",
+      "coords": {
+        "x": 9.1,
+        "y": 21.3,
+        "z": 0.3
+      },
+      "thumbnail": "images/treasures/g17_heritage_01_thumb.jpg",
+      "fullImage": "images/treasures/g17_heritage_01.jpg"
+    },
+    {
+      "id": "tm_040",
+      "level": "g17",
+      "levelName": "獰豹革地圖",
+      "zone": "Heritage Found",
+      "zoneId": "tural",
+      "coords": {
+        "x": 16.6,
+        "y": 13.1,
+        "z": 0.3
+      },
+      "thumbnail": "images/treasures/g17_heritage_02_thumb.jpg",
+      "fullImage": "images/treasures/g17_heritage_02.jpg"
+    },
+    {
+      "id": "tm_041",
+      "level": "g17",
+      "levelName": "獰豹革地圖",
+      "zone": "Heritage Found",
+      "zoneId": "tural",
+      "coords": {
+        "x": 17.2,
+        "y": 22.3,
+        "z": 0.4
+      },
+      "thumbnail": "images/treasures/g17_heritage_03_thumb.jpg",
+      "fullImage": "images/treasures/g17_heritage_03.jpg"
+    },
+    {
+      "id": "tm_042",
+      "level": "g17",
+      "levelName": "獰豹革地圖",
+      "zone": "Heritage Found",
+      "zoneId": "tural",
+      "coords": {
+        "x": 16.8,
+        "y": 35.8,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g17_heritage_04_thumb.jpg",
+      "fullImage": "images/treasures/g17_heritage_04.jpg"
+    },
+    {
+      "id": "tm_043",
+      "level": "g17",
+      "levelName": "獰豹革地圖",
+      "zone": "Heritage Found",
+      "zoneId": "tural",
+      "coords": {
+        "x": 22.0,
+        "y": 19.0,
+        "z": 1.0
+      },
+      "thumbnail": "images/treasures/g17_heritage_05_thumb.jpg",
+      "fullImage": "images/treasures/g17_heritage_05.jpg"
+    },
+    {
+      "id": "tm_044",
+      "level": "g17",
+      "levelName": "獰豹革地圖",
+      "zone": "Heritage Found",
+      "zoneId": "tural",
+      "coords": {
+        "x": 26.3,
+        "y": 30.8,
+        "z": 1.3
+      },
+      "thumbnail": "images/treasures/g17_heritage_06_thumb.jpg",
+      "fullImage": "images/treasures/g17_heritage_06.jpg"
+    },
+    {
+      "id": "tm_045",
+      "level": "g17",
+      "levelName": "獰豹革地圖",
+      "zone": "Heritage Found",
+      "zoneId": "tural",
+      "coords": {
+        "x": 31.1,
+        "y": 8.3,
+        "z": 1.4
+      },
+      "thumbnail": "images/treasures/g17_heritage_07_thumb.jpg",
+      "fullImage": "images/treasures/g17_heritage_07.jpg"
+    },
+    {
+      "id": "tm_046",
+      "level": "g17",
+      "levelName": "獰豹革地圖",
+      "zone": "Heritage Found",
+      "zoneId": "tural",
+      "coords": {
+        "x": 35.7,
+        "y": 25.5,
+        "z": 1.6
+      },
+      "thumbnail": "images/treasures/g17_heritage_08_thumb.jpg",
+      "fullImage": "images/treasures/g17_heritage_08.jpg"
     }
   ]
 }
