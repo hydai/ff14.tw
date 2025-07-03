@@ -3,6 +3,7 @@ class MiniCactpotCalculator {
     constructor() {
         this.grid = new Array(9).fill(null);
         this.selectedCells = [];
+        this.history = []; // 歷史記錄
         this.mgpTable = {
             6: 10000, 7: 36, 8: 720, 9: 360, 10: 80,
             11: 252, 12: 108, 13: 72, 14: 54, 15: 180,
@@ -25,7 +26,8 @@ class MiniCactpotCalculator {
             grid: document.getElementById('extended-grid'),
             selectedCount: document.getElementById('selected-count'),
             bestChoiceInfo: document.getElementById('best-choice-info'),
-            bestLineSummary: document.getElementById('best-line-summary')
+            bestLineSummary: document.getElementById('best-line-summary'),
+            undoBtn: document.getElementById('undo-btn')
         };
         
         this.initializeGrid();
@@ -43,6 +45,73 @@ class MiniCactpotCalculator {
         };
         
         this.elements.grid.addEventListener('click', this.handleGridClick);
+    }
+
+    saveState() {
+        // 保存當前狀態到歷史記錄
+        this.history.push({
+            grid: [...this.grid],
+            selectedCells: [...this.selectedCells],
+            timestamp: Date.now()
+        });
+        
+        // 更新撤銷按鈕狀態
+        this.updateUndoButton();
+    }
+
+    restoreState(state) {
+        // 恢復狀態
+        this.grid = [...state.grid];
+        this.selectedCells = [...state.selectedCells];
+        
+        // 重繪介面
+        this.redrawGrid();
+        this.updateUI();
+    }
+
+    redrawGrid() {
+        // 清除所有格子
+        document.querySelectorAll('.grid-cell').forEach(cell => {
+            cell.classList.remove('selected', 'revealed');
+            cell.innerHTML = '';
+        });
+        
+        // 重新繪製格子狀態
+        this.selectedCells.forEach(position => {
+            const cell = document.querySelector(`[data-position="${position}"]`);
+            cell.classList.add('selected');
+            
+            if (this.grid[position] !== null) {
+                cell.classList.add('revealed');
+                cell.innerHTML = this.grid[position];
+            } else {
+                // 重新創建輸入框
+                const input = document.createElement('input');
+                input.type = 'number';
+                input.min = '1';
+                input.max = '9';
+                input.placeholder = '?';
+                input.addEventListener('input', (e) => {
+                    this.handleNumberInput(position, parseInt(e.target.value));
+                });
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        e.target.blur();
+                    }
+                });
+                cell.innerHTML = '';
+                cell.appendChild(input);
+            }
+        });
+    }
+
+    updateUndoButton() {
+        // 顯示或隱藏撤銷按鈕
+        if (this.history.length > 0) {
+            this.elements.undoBtn.style.display = 'inline-block';
+        } else {
+            this.elements.undoBtn.style.display = 'none';
+        }
     }
 
     handleCellClick(position) {
@@ -64,6 +133,9 @@ class MiniCactpotCalculator {
     }
 
     selectCell(position) {
+        // 保存狀態
+        this.saveState();
+        
         const cell = document.querySelector(`[data-position="${position}"]`);
         cell.classList.add('selected');
         this.selectedCells.push(position);
@@ -91,6 +163,9 @@ class MiniCactpotCalculator {
     }
 
     unselectCell(position) {
+        // 保存狀態
+        this.saveState();
+        
         const cell = document.querySelector(`[data-position="${position}"]`);
         cell.classList.remove('selected', 'revealed');
         cell.innerHTML = '';
@@ -108,6 +183,9 @@ class MiniCactpotCalculator {
                 FF14Utils.showToast(`數字 ${value} 已被使用`, 'error');
                 return;
             }
+            
+            // 保存狀態
+            this.saveState();
             
             this.grid[position] = value;
             const cell = document.querySelector(`[data-position="${position}"]`);
@@ -268,6 +346,21 @@ class MiniCactpotCalculator {
         this.elements.bestChoiceInfo.scrollIntoView({ behavior: 'smooth' });
     }
 
+    undo() {
+        if (this.history.length === 0) return;
+        
+        // 取出最後的歷史記錄
+        const lastState = this.history.pop();
+        
+        // 恢復狀態
+        this.restoreState(lastState);
+        
+        // 更新撤銷按鈕狀態
+        this.updateUndoButton();
+        
+        FF14Utils.showToast('已回到上一步', 'success');
+    }
+
 }
 
 // 全域函數
@@ -295,12 +388,21 @@ function resetGrid() {
     // 隱藏最佳選擇資訊
     document.getElementById('best-choice-info').style.display = 'none';
     
+    // 隱藏撤銷按鈕
+    document.getElementById('undo-btn').style.display = 'none';
+    
     // 重置選擇計數顯示
     document.getElementById('selected-count').textContent = '0';
     
     // 重置計算器實例
     calculator = new MiniCactpotCalculator();
     FF14Utils.showToast('已重置九宮格', 'success');
+}
+
+function undoLastStep() {
+    if (calculator) {
+        calculator.undo();
+    }
 }
 
 // 初始化
