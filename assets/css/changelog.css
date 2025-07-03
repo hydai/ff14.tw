@@ -230,6 +230,11 @@
     color: white;
 }
 
+.tag-security {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: white;
+}
+
 /* Update Notice */
 .update-notice {
     background: var(--card-bg);

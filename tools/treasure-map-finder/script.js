@@ -5,6 +5,7 @@ class TreasureMapFinder {
         this.maps = [];
         this.filteredMaps = [];
         this.myList = this.loadFromStorage();
+        this.myListIds = new Set(this.myList.map(item => item.id)); // 優化查找效能
         this.filters = {
             levels: new Set(),
             zones: new Set()
@@ -167,55 +168,99 @@ class TreasureMapFinder {
         }
     }
     
+    // HTML 編碼函數
+    escapeHtml(unsafe) {
+        return unsafe
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+    
     createMapCard(map) {
         const card = document.createElement('div');
         card.className = 'treasure-card';
         card.dataset.mapId = map.id;
         
-        const isInList = this.myList.some(item => item.id === map.id);
+        const isInList = this.myListIds.has(map.id);
         
-        card.innerHTML = `
-            <div class="card-image-wrapper">
-                <img src="${map.thumbnail}" alt="${map.levelName}" loading="lazy" 
-                     onerror="this.src='/assets/images/treasure-map-placeholder.png'">
-                <span class="map-level-badge">${map.level.toUpperCase()}</span>
-            </div>
-            <div class="card-content">
-                <h4 class="map-zone">${map.zone}</h4>
-                <p class="map-coords">X: ${map.coords.x} Y: ${map.coords.y} Z: ${map.coords.z || 0}</p>
-                <div class="card-actions">
-                    <button class="btn btn-secondary btn-sm btn-copy-coords" title="複製座標指令">
-                        <span class="btn-icon">📍</span> 複製座標
-                    </button>
-                    <button class="btn ${isInList ? 'btn-success' : 'btn-primary'} btn-sm btn-add-to-list" data-state="${isInList ? 'added' : 'default'}">
-                        <span class="btn-text">${isInList ? '✓ 已加入' : '加入清單'}</span>
-                    </button>
-                </div>
-            </div>
-        `;
+        // 建立圖片容器
+        const imageWrapper = document.createElement('div');
+        imageWrapper.className = 'card-image-wrapper';
         
-        // 事件綁定
-        card.querySelector('.btn-copy-coords').addEventListener('click', (e) => {
+        const img = document.createElement('img');
+        img.src = map.thumbnail;
+        img.alt = map.levelName;
+        img.loading = 'lazy';
+        img.onerror = function() {
+            this.src = '/assets/images/treasure-map-placeholder.png';
+        };
+        imageWrapper.appendChild(img);
+        
+        const levelBadge = document.createElement('span');
+        levelBadge.className = 'map-level-badge';
+        levelBadge.textContent = map.level.toUpperCase();
+        imageWrapper.appendChild(levelBadge);
+        
+        // 建立內容區域
+        const content = document.createElement('div');
+        content.className = 'card-content';
+        
+        const zoneTitle = document.createElement('h4');
+        zoneTitle.className = 'map-zone';
+        zoneTitle.textContent = map.zone;
+        content.appendChild(zoneTitle);
+        
+        const coords = document.createElement('p');
+        coords.className = 'map-coords';
+        coords.textContent = `X: ${map.coords.x} Y: ${map.coords.y} Z: ${map.coords.z || 0}`;
+        content.appendChild(coords);
+        
+        // 建立按鈕區域
+        const actions = document.createElement('div');
+        actions.className = 'card-actions';
+        
+        // 複製座標按鈕
+        const copyBtn = document.createElement('button');
+        copyBtn.className = 'btn btn-secondary btn-sm btn-copy-coords';
+        copyBtn.title = '複製座標指令';
+        copyBtn.innerHTML = '<span class="btn-icon">📍</span> 複製座標';
+        copyBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             this.copyCoordinates(map);
         });
+        actions.appendChild(copyBtn);
         
-        card.querySelector('.btn-add-to-list').addEventListener('click', (e) => {
+        // 加入清單按鈕
+        const addBtn = document.createElement('button');
+        addBtn.className = `btn ${isInList ? 'btn-success' : 'btn-primary'} btn-sm btn-add-to-list`;
+        addBtn.dataset.state = isInList ? 'added' : 'default';
+        addBtn.innerHTML = `<span class="btn-text">${isInList ? '✓ 已加入' : '加入清單'}</span>`;
+        addBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             this.toggleMapInList(map);
         });
+        actions.appendChild(addBtn);
+        
+        content.appendChild(actions);
+        
+        // 組合卡片
+        card.appendChild(imageWrapper);
+        card.appendChild(content);
         
         return card;
     }
     
     toggleMapInList(map) {
-        const index = this.myList.findIndex(item => item.id === map.id);
-        
-        if (index !== -1) {
-            this.myList.splice(index, 1);
+        if (this.myListIds.has(map.id)) {
+            // 從清單移除
+            this.myList = this.myList.filter(item => item.id !== map.id);
+            this.myListIds.delete(map.id);
             FF14Utils.showToast('已從清單移除', 'info');
         } else {
-            this.myList.push({
+            // 加入清單
+            const mapData = {
                 id: map.id,
                 level: map.level,
                 levelName: map.levelName,
@@ -223,7 +268,9 @@ class TreasureMapFinder {
                 coords: map.coords,
                 thumbnail: map.thumbnail,
                 addedAt: new Date().toISOString()
-            });
+            };
+            this.myList.push(mapData);
+            this.myListIds.add(map.id);
             FF14Utils.showToast('已加入清單', 'success');
         }
         
@@ -237,7 +284,7 @@ class TreasureMapFinder {
         document.querySelectorAll('.treasure-card').forEach(card => {
             const mapId = card.dataset.mapId;
             const button = card.querySelector('.btn-add-to-list');
-            const isInList = this.myList.some(item => item.id === mapId);
+            const isInList = this.myListIds.has(mapId);
             
             button.dataset.state = isInList ? 'added' : 'default';
             button.className = `btn ${isInList ? 'btn-success' : 'btn-primary'} btn-sm btn-add-to-list`;
@@ -276,41 +323,80 @@ class TreasureMapFinder {
     }
     
     renderMyList() {
+        // 清空內容
+        this.elements.listContent.innerHTML = '';
+        
         if (this.myList.length === 0) {
-            this.elements.listContent.innerHTML = `
-                <div class="empty-state">
-                    <p>清單是空的</p>
-                    <p class="text-secondary">點擊寶圖卡片上的「加入清單」開始建立</p>
-                </div>
-            `;
+            const emptyState = document.createElement('div');
+            emptyState.className = 'empty-state';
+            
+            const emptyText = document.createElement('p');
+            emptyText.textContent = '清單是空的';
+            emptyState.appendChild(emptyText);
+            
+            const hintText = document.createElement('p');
+            hintText.className = 'text-secondary';
+            hintText.textContent = '點擊寶圖卡片上的「加入清單」開始建立';
+            emptyState.appendChild(hintText);
+            
+            this.elements.listContent.appendChild(emptyState);
             return;
         }
         
-        this.elements.listContent.innerHTML = this.myList.map(item => `
-            <div class="list-item" data-map-id="${item.id}">
-                <img src="${item.thumbnail}" alt="${item.levelName}" 
-                     onerror="this.src='/assets/images/treasure-map-placeholder.png'">
-                <div class="item-info">
-                    <span class="item-level">${item.level.toUpperCase()}</span>
-                    <span class="item-zone">${item.zone}</span>
-                    <span class="item-coords">(${item.coords.x}, ${item.coords.y}, ${item.coords.z || 0})</span>
-                </div>
-                <button class="btn-remove" data-map-id="${item.id}">×</button>
-            </div>
-        `).join('');
-        
-        // 綁定移除按鈕事件
-        this.elements.listContent.querySelectorAll('.btn-remove').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const mapId = e.target.dataset.mapId;
-                this.removeFromList(mapId);
+        // 建立清單項目
+        this.myList.forEach(item => {
+            const listItem = document.createElement('div');
+            listItem.className = 'list-item';
+            listItem.dataset.mapId = item.id;
+            
+            // 圖片
+            const img = document.createElement('img');
+            img.src = item.thumbnail;
+            img.alt = item.levelName;
+            img.onerror = function() {
+                this.src = '/assets/images/treasure-map-placeholder.png';
+            };
+            listItem.appendChild(img);
+            
+            // 資訊區域
+            const itemInfo = document.createElement('div');
+            itemInfo.className = 'item-info';
+            
+            const levelSpan = document.createElement('span');
+            levelSpan.className = 'item-level';
+            levelSpan.textContent = item.level.toUpperCase();
+            itemInfo.appendChild(levelSpan);
+            
+            const zoneSpan = document.createElement('span');
+            zoneSpan.className = 'item-zone';
+            zoneSpan.textContent = item.zone;
+            itemInfo.appendChild(zoneSpan);
+            
+            const coordsSpan = document.createElement('span');
+            coordsSpan.className = 'item-coords';
+            coordsSpan.textContent = `(${item.coords.x}, ${item.coords.y}, ${item.coords.z || 0})`;
+            itemInfo.appendChild(coordsSpan);
+            
+            listItem.appendChild(itemInfo);
+            
+            // 移除按鈕
+            const removeBtn = document.createElement('button');
+            removeBtn.className = 'btn-remove';
+            removeBtn.dataset.mapId = item.id;
+            removeBtn.textContent = '×';
+            removeBtn.addEventListener('click', (e) => {
+                this.removeFromList(item.id);
             });
+            listItem.appendChild(removeBtn);
+            
+            this.elements.listContent.appendChild(listItem);
         });
     }
     
     removeFromList(mapId) {
         if (confirm('確定要移除這張寶圖嗎？')) {
             this.myList = this.myList.filter(item => item.id !== mapId);
+            this.myListIds.delete(mapId);
             this.saveToStorage();
             this.updateListCount();
             this.updateCardButtons();
@@ -327,6 +413,7 @@ class TreasureMapFinder {
         
         if (confirm(`確定要清空所有寶圖嗎？共 ${this.myList.length} 張`)) {
             this.myList = [];
+            this.myListIds.clear();
             this.saveToStorage();
             this.updateListCount();
             this.updateCardButtons();
@@ -375,17 +462,63 @@ class TreasureMapFinder {
     
     showLoading(show) {
         if (show) {
-            this.elements.treasureGrid.innerHTML = '<div class="loading">載入中...</div>';
+            this.elements.treasureGrid.innerHTML = '';
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'loading';
+            loadingDiv.textContent = '載入中...';
+            this.elements.treasureGrid.appendChild(loadingDiv);
         }
     }
     
     showError(message) {
-        this.elements.treasureGrid.innerHTML = `
-            <div class="error-message">
-                ${message}
-                <button class="btn btn-primary" onclick="location.reload()">重新載入</button>
-            </div>
-        `;
+        this.elements.treasureGrid.innerHTML = '';
+        
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'error-message';
+        errorDiv.textContent = message;
+        
+        const reloadBtn = document.createElement('button');
+        reloadBtn.className = 'btn btn-primary';
+        reloadBtn.textContent = '重新載入';
+        reloadBtn.addEventListener('click', () => location.reload());
+        
+        errorDiv.appendChild(document.createElement('br'));
+        errorDiv.appendChild(reloadBtn);
+        this.elements.treasureGrid.appendChild(errorDiv);
+    }
+    
+    // 驗證地圖資料
+    validateMapData(map) {
+        if (!map || typeof map !== 'object') return false;
+        
+        // 必要欄位
+        if (!map.id || typeof map.id !== 'string') return false;
+        if (!map.level || typeof map.level !== 'string') return false;
+        if (!map.zone || typeof map.zone !== 'string') return false;
+        if (!map.coords || typeof map.coords !== 'object') return false;
+        
+        // 座標驗證
+        if (typeof map.coords.x !== 'number' || typeof map.coords.y !== 'number') return false;
+        if (map.coords.x < 0 || map.coords.x > 50 || map.coords.y < 0 || map.coords.y > 50) return false;
+        
+        return true;
+    }
+    
+    // 清理地圖資料
+    sanitizeMapData(map) {
+        return {
+            id: String(map.id).substring(0, 50),
+            level: String(map.level).substring(0, 10),
+            levelName: map.levelName ? String(map.levelName).substring(0, 50) : '',
+            zone: String(map.zone).substring(0, 50),
+            coords: {
+                x: Number(map.coords.x),
+                y: Number(map.coords.y),
+                z: map.coords.z ? Number(map.coords.z) : 0
+            },
+            thumbnail: map.thumbnail || '/assets/images/treasure-map-placeholder.png',
+            addedAt: map.addedAt || new Date().toISOString()
+        };
     }
     
     // 匯出清單功能（複製到剪貼簿）
@@ -427,46 +560,82 @@ class TreasureMapFinder {
         const dialog = document.createElement('div');
         dialog.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); z-index: 10000; max-width: 500px; width: 90%;';
         
-        dialog.innerHTML = `
-            <h3 style="margin: 0 0 10px 0;">匯出清單</h3>
-            <p style="margin-bottom: 10px;">請複製以下內容：</p>
-            <textarea style="width: 100%; height: 200px; margin-bottom: 10px; font-family: monospace; font-size: 12px;" readonly>${jsonString}</textarea>
-            <div style="text-align: right;">
-                <button class="btn btn-primary" onclick="this.parentElement.parentElement.remove()">關閉</button>
-            </div>
-        `;
+        const title = document.createElement('h3');
+        title.style.margin = '0 0 10px 0';
+        title.textContent = '匯出清單';
+        dialog.appendChild(title);
         
+        const instruction = document.createElement('p');
+        instruction.style.marginBottom = '10px';
+        instruction.textContent = '請複製以下內容：';
+        dialog.appendChild(instruction);
+        
+        const textarea = document.createElement('textarea');
+        textarea.style.cssText = 'width: 100%; height: 200px; margin-bottom: 10px; font-family: monospace; font-size: 12px;';
+        textarea.readOnly = true;
+        textarea.value = jsonString;
+        dialog.appendChild(textarea);
+        
+        const buttonDiv = document.createElement('div');
+        buttonDiv.style.textAlign = 'right';
+        
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'btn btn-primary';
+        closeBtn.textContent = '關閉';
+        closeBtn.addEventListener('click', () => dialog.remove());
+        buttonDiv.appendChild(closeBtn);
+        
+        dialog.appendChild(buttonDiv);
         document.body.appendChild(dialog);
-        dialog.querySelector('textarea').select();
+        
+        textarea.select();
     }
     
     // 顯示匯入對話框
     showImportDialog() {
-        // 建立匯入對話框
         const dialog = document.createElement('div');
         dialog.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); z-index: 10000; max-width: 500px; width: 90%;';
         
-        dialog.innerHTML = `
-            <h3 style="margin: 0 0 10px 0;">匯入清單</h3>
-            <p style="margin-bottom: 10px;">請貼上匯出的清單內容：</p>
-            <textarea id="importTextarea" style="width: 100%; height: 200px; margin-bottom: 10px; font-family: monospace; font-size: 12px;" placeholder="在此貼上清單資料..."></textarea>
-            <div style="text-align: right; display: flex; gap: 10px; justify-content: flex-end;">
-                <button class="btn btn-secondary" onclick="this.parentElement.parentElement.remove()">取消</button>
-                <button class="btn btn-primary" id="confirmImportBtn">匯入</button>
-            </div>
-        `;
+        const title = document.createElement('h3');
+        title.style.margin = '0 0 10px 0';
+        title.textContent = '匯入清單';
+        dialog.appendChild(title);
         
-        document.body.appendChild(dialog);
+        const instruction = document.createElement('p');
+        instruction.style.marginBottom = '10px';
+        instruction.textContent = '請貼上匯出的清單內容：';
+        dialog.appendChild(instruction);
         
-        // 綁定匯入按鈕事件
-        dialog.querySelector('#confirmImportBtn').addEventListener('click', () => {
-            const text = dialog.querySelector('#importTextarea').value;
+        const textarea = document.createElement('textarea');
+        textarea.id = 'importTextarea';
+        textarea.style.cssText = 'width: 100%; height: 200px; margin-bottom: 10px; font-family: monospace; font-size: 12px;';
+        textarea.placeholder = '在此貼上清單資料...';
+        dialog.appendChild(textarea);
+        
+        const buttonDiv = document.createElement('div');
+        buttonDiv.style.cssText = 'text-align: right; display: flex; gap: 10px; justify-content: flex-end;';
+        
+        const cancelBtn = document.createElement('button');
+        cancelBtn.className = 'btn btn-secondary';
+        cancelBtn.textContent = '取消';
+        cancelBtn.addEventListener('click', () => dialog.remove());
+        buttonDiv.appendChild(cancelBtn);
+        
+        const confirmBtn = document.createElement('button');
+        confirmBtn.className = 'btn btn-primary';
+        confirmBtn.textContent = '匯入';
+        confirmBtn.addEventListener('click', () => {
+            const text = textarea.value;
             this.importFromText(text);
             dialog.remove();
         });
+        buttonDiv.appendChild(confirmBtn);
+        
+        dialog.appendChild(buttonDiv);
+        document.body.appendChild(dialog);
         
         // 自動聚焦到文字框
-        dialog.querySelector('#importTextarea').focus();
+        textarea.focus();
     }
     
     // 從文字匯入清單
@@ -484,13 +653,31 @@ class TreasureMapFinder {
                 throw new Error('無效的清單格式');
             }
             
+            // 驗證版本
+            if (data.version !== '1.0') {
+                throw new Error('不支援的清單版本');
+            }
+            
+            // 驗證每個地圖項目
+            const validatedMaps = [];
+            for (const map of data.maps) {
+                if (!this.validateMapData(map)) {
+                    console.warn('跳過無效的地圖資料:', map);
+                    continue;
+                }
+                validatedMaps.push(this.sanitizeMapData(map));
+            }
+            
+            if (validatedMaps.length === 0) {
+                throw new Error('沒有有效的地圖資料');
+            }
+            
             // 確認是否要合併或取代
-            let importedMaps = data.maps;
             let action = 'replace';
             
             if (this.myList.length > 0) {
                 const confirmMessage = `目前清單有 ${this.myList.length} 張寶圖。\n` +
-                    `要匯入的清單包含 ${importedMaps.length} 張寶圖。\n\n` +
+                    `要匯入的清單包含 ${validatedMaps.length} 張寶圖。\n\n` +
                     `選擇「確定」將合併清單（避免重複）\n` +
                     `選擇「取消」將取代現有清單`;
                 
@@ -499,26 +686,16 @@ class TreasureMapFinder {
             
             if (action === 'merge') {
                 // 合併清單，避免重複
-                const existingIds = new Set(this.myList.map(m => m.id));
-                const newMaps = importedMaps.filter(map => !existingIds.has(map.id));
-                
-                // 補充完整資料（如果原本的匯出資料缺少某些欄位）
-                newMaps.forEach(map => {
-                    if (!map.thumbnail) map.thumbnail = `/assets/images/treasure-map-placeholder.png`;
-                    if (!map.addedAt) map.addedAt = new Date().toISOString();
-                });
+                const newMaps = validatedMaps.filter(map => !this.myListIds.has(map.id));
                 
                 this.myList = [...this.myList, ...newMaps];
+                newMaps.forEach(map => this.myListIds.add(map.id));
                 FF14Utils.showToast(`已合併匯入 ${newMaps.length} 張新寶圖`, 'success');
             } else {
                 // 取代清單
-                importedMaps.forEach(map => {
-                    if (!map.thumbnail) map.thumbnail = `/assets/images/treasure-map-placeholder.png`;
-                    if (!map.addedAt) map.addedAt = new Date().toISOString();
-                });
-                
-                this.myList = importedMaps;
-                FF14Utils.showToast(`已匯入 ${importedMaps.length} 張寶圖`, 'success');
+                this.myList = validatedMaps;
+                this.myListIds = new Set(validatedMaps.map(m => m.id));
+                FF14Utils.showToast(`已匯入 ${validatedMaps.length} 張寶圖`, 'success');
             }
             
             // 更新儲存和UI
