@@ -850,6 +850,118 @@
       },
       "thumbnail": "images/treasures/g17_heritage_08_thumb.jpg",
       "fullImage": "images/treasures/g17_heritage_08.jpg"
+    },
+    {
+      "id": "tm_047",
+      "level": "g15",
+      "levelName": "蛇牛革地圖",
+      "zone": "Elpis",
+      "zoneId": "ilsabard",
+      "coords": {
+        "x": 11.8,
+        "y": 33.1,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g15_elpis_01_thumb.jpg",
+      "fullImage": "images/treasures/g15_elpis_01.jpg"
+    },
+    {
+      "id": "tm_048",
+      "level": "g15",
+      "levelName": "蛇牛革地圖",
+      "zone": "Elpis",
+      "zoneId": "ilsabard",
+      "coords": {
+        "x": 13.0,
+        "y": 8.7,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g15_elpis_02_thumb.jpg",
+      "fullImage": "images/treasures/g15_elpis_02.jpg"
+    },
+    {
+      "id": "tm_049",
+      "level": "g15",
+      "levelName": "蛇牛革地圖",
+      "zone": "Elpis",
+      "zoneId": "ilsabard",
+      "coords": {
+        "x": 16.8,
+        "y": 31.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g15_elpis_03_thumb.jpg",
+      "fullImage": "images/treasures/g15_elpis_03.jpg"
+    },
+    {
+      "id": "tm_050",
+      "level": "g15",
+      "levelName": "蛇牛革地圖",
+      "zone": "Elpis",
+      "zoneId": "ilsabard",
+      "coords": {
+        "x": 22.5,
+        "y": 24.6,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g15_elpis_04_thumb.jpg",
+      "fullImage": "images/treasures/g15_elpis_04.jpg"
+    },
+    {
+      "id": "tm_051",
+      "level": "g15",
+      "levelName": "蛇牛革地圖",
+      "zone": "Elpis",
+      "zoneId": "ilsabard",
+      "coords": {
+        "x": 27.2,
+        "y": 24.3,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g15_elpis_05_thumb.jpg",
+      "fullImage": "images/treasures/g15_elpis_05.jpg"
+    },
+    {
+      "id": "tm_052",
+      "level": "g15",
+      "levelName": "蛇牛革地圖",
+      "zone": "Elpis",
+      "zoneId": "ilsabard",
+      "coords": {
+        "x": 29.0,
+        "y": 17.5,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g15_elpis_06_thumb.jpg",
+      "fullImage": "images/treasures/g15_elpis_06.jpg"
+    },
+    {
+      "id": "tm_053",
+      "level": "g15",
+      "levelName": "蛇牛革地圖",
+      "zone": "Elpis",
+      "zoneId": "ilsabard",
+      "coords": {
+        "x": 29.9,
+        "y": 9.5,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g15_elpis_07_thumb.jpg",
+      "fullImage": "images/treasures/g15_elpis_07.jpg"
+    },
+    {
+      "id": "tm_054",
+      "level": "g15",
+      "levelName": "蛇牛革地圖",
+      "zone": "Elpis",
+      "zoneId": "ilsabard",
+      "coords": {
+        "x": 37.1,
+        "y": 18.5,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g15_elpis_08_thumb.jpg",
+      "fullImage": "images/treasures/g15_elpis_08.jpg"
     }
   ]
 }
