@@ -35,21 +35,29 @@
             </div>
 
             <div class="tool-content">
-                <!-- 操作區 -->
-                <div class="control-section">
-                    <button class="btn btn-primary my-list-toggle" id="myListToggle">
-                        我的清單 <span class="list-count" id="listCount">(0)</span>
-                    </button>
+                <!-- 控制列 -->
+                <div class="control-bar">
+                    <div class="control-bar-left">
+                        <h2 class="section-title">篩選條件</h2>
+                    </div>
+                    <div class="control-bar-right">
+                        <button class="btn btn-secondary" id="resetFilters">
+                            <span class="btn-icon">↻</span> 重置篩選
+                        </button>
+                        <button class="btn btn-primary my-list-toggle" id="myListToggle">
+                            <span class="btn-icon">📋</span> 我的清單 <span class="list-count" id="listCount">(0)</span>
+                        </button>
+                    </div>
                 </div>
 
                 <!-- 篩選區 -->
                 <div class="filter-section">
-                    <div class="filter-header">
-                        <button class="btn btn-secondary btn-sm" id="resetFilters">重置篩選</button>
-                    </div>
                     <!-- 等級篩選 -->
                     <div class="filter-group level-filter-group">
-                        <label>寶圖等級：</label>
+                        <div class="filter-group-header">
+                            <label><span class="filter-icon">🏷️</span> 寶圖等級</label>
+                            <span class="filter-hint">可多選</span>
+                        </div>
                         <div class="filter-tags" id="levelTags">
                             <button class="filter-tag" data-level="g1">G1 鞣革</button>
                             <button class="filter-tag" data-level="g2">G2 山羊革</button>
@@ -73,7 +81,10 @@
 
                     <!-- 地區篩選 -->
                     <div class="filter-group zone-filter-group">
-                        <label>地區：</label>
+                        <div class="filter-group-header">
+                            <label><span class="filter-icon">🗺️</span> 地區</label>
+                            <span class="filter-hint">可多選</span>
+                        </div>
                         <div class="filter-tags" id="zoneTags">
                             <button class="filter-tag" data-zone="la_noscea">拉諾西亞</button>
                             <button class="filter-tag" data-zone="the_black_shroud">黑衣森林</button>
