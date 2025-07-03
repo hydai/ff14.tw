@@ -137,6 +137,20 @@
             font-weight: 600;
         }
         
+        .tool-card.under-construction::after {
+            content: '🚧 施工中';
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: #ff9800;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3);
+        }
+        
         .tool-icon {
             font-size: 3.5rem;
             margin-bottom: 1.5rem;
@@ -306,13 +320,13 @@
                         <p class="tool-description">分析天書奇談盤面，計算連線成功機率，協助決策是否重置</p>
                     </a>
 
-                    <a href="tools/dungeon-database/index.html" class="tool-card available">
+                    <a href="tools/dungeon-database/index.html" class="tool-card available under-construction">
                         <div class="tool-icon">🏰</div>
                         <h3 class="tool-title">副本資料庫</h3>
                         <p class="tool-description">完整的FF14副本資訊查詢，包含獎勵、機制說明和攻略指南</p>
                     </a>
 
-                    <a href="tools/character-card/index.html" class="tool-card available">
+                    <a href="tools/character-card/index.html" class="tool-card available under-construction">
                         <div class="tool-icon">🎴</div>
                         <h3 class="tool-title">角色卡產生器</h3>
                         <p class="tool-description">創造專屬的FF14角色卡片，支援圖片上傳、多版型和自訂背景</p>
@@ -324,7 +338,7 @@
                         <p class="tool-description">計算 FF14 Faux Hollows Foxes 活動的最佳點擊策略</p>
                     </a>
 
-                    <a href="tools/treasure-map-finder/index.html" class="tool-card available">
+                    <a href="tools/treasure-map-finder/index.html" class="tool-card available under-construction">
                         <div class="tool-icon">🗺️</div>
                         <h3 class="tool-title">寶圖搜尋器</h3>
                         <p class="tool-description">快速查詢寶圖位置，支援多條件篩選與個人清單管理</p>
