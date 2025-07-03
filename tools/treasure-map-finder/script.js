@@ -12,6 +12,7 @@ class TreasureMapFinder {
         };
         this.displayCount = 24;
         this.currentDisplayCount = 0;
+        this.zoneTranslations = null; // 地區翻譯資料
         
         // DOM 元素快取
         this.elements = {
@@ -31,13 +32,29 @@ class TreasureMapFinder {
     
     async init() {
         try {
-            await this.loadData();
+            await Promise.all([
+                this.loadData(),
+                this.loadTranslations()
+            ]);
             this.setupEventListeners();
             this.updateListCount();
             this.applyFilters();
         } catch (error) {
             console.error('初始化失敗:', error);
             this.showError('載入寶圖資料失敗，請重新整理頁面再試。');
+        }
+    }
+    
+    async loadTranslations() {
+        try {
+            const response = await fetch('../../data/zone-translations.json');
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            this.zoneTranslations = await response.json();
+        } catch (error) {
+            console.error('載入翻譯資料失敗:', error);
+            this.zoneTranslations = {}; // 失敗時使用空物件
         }
     }
     
@@ -207,9 +224,33 @@ class TreasureMapFinder {
         const content = document.createElement('div');
         content.className = 'card-content';
         
-        const zoneTitle = document.createElement('h4');
+        const zoneTitle = document.createElement('div');
         zoneTitle.className = 'map-zone';
-        zoneTitle.textContent = map.zone;
+        
+        // 取得翻譯資料
+        const translations = this.zoneTranslations[map.zone] || {};
+        
+        // 建立多語言顯示
+        if (translations.zh || translations.en || translations.ja) {
+            const zhSpan = document.createElement('div');
+            zhSpan.className = 'zone-zh';
+            zhSpan.textContent = translations.zh || map.zone;
+            zoneTitle.appendChild(zhSpan);
+            
+            const enSpan = document.createElement('div');
+            enSpan.className = 'zone-en';
+            enSpan.textContent = translations.en || map.zone;
+            zoneTitle.appendChild(enSpan);
+            
+            const jaSpan = document.createElement('div');
+            jaSpan.className = 'zone-ja';
+            jaSpan.textContent = translations.ja || '';
+            zoneTitle.appendChild(jaSpan);
+        } else {
+            // 沒有翻譯資料時使用原始名稱
+            zoneTitle.textContent = map.zone;
+        }
+        
         content.appendChild(zoneTitle);
         
         const coords = document.createElement('p');
@@ -369,7 +410,16 @@ class TreasureMapFinder {
             
             const zoneSpan = document.createElement('span');
             zoneSpan.className = 'item-zone';
-            zoneSpan.textContent = item.zone;
+            
+            // 使用多語言顯示
+            const translations = this.zoneTranslations[item.zone] || {};
+            if (translations.zh) {
+                zoneSpan.textContent = translations.zh;
+                zoneSpan.title = `${translations.en || item.zone} / ${translations.ja || ''}`;
+            } else {
+                zoneSpan.textContent = item.zone;
+            }
+            
             itemInfo.appendChild(zoneSpan);
             
             const coordsSpan = document.createElement('span');
