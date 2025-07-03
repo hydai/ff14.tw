@@ -117,11 +117,17 @@
         </div>
     </main>
 
+    <!-- 面板遮罩 -->
+    <div class="panel-overlay" id="panelOverlay"></div>
+    
     <!-- 我的清單面板 -->
-    <div class="my-list-panel" id="myListPanel" style="display: none;">
+    <div class="my-list-panel" id="myListPanel">
         <div class="panel-header">
             <h3>我的寶圖清單</h3>
-            <button class="btn btn-secondary btn-sm" id="clearAllBtn">清空全部</button>
+            <div class="panel-header-actions">
+                <button class="btn btn-secondary btn-sm" id="clearAllBtn">清空全部</button>
+                <button class="btn-close" id="closePanelBtn" title="關閉">×</button>
+            </div>
         </div>
         <div class="list-content" id="listContent">
             <!-- 清單項目將由 JavaScript 動態生成 -->

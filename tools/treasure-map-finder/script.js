@@ -70,6 +70,12 @@ class TreasureMapFinder {
         this.elements.myListToggle.addEventListener('click', () => this.toggleListPanel());
         this.elements.clearAllBtn.addEventListener('click', () => this.clearAllMaps());
         
+        // 關閉面板按鈕
+        const closePanelBtn = document.getElementById('closePanelBtn');
+        if (closePanelBtn) {
+            closePanelBtn.addEventListener('click', () => this.toggleListPanel());
+        }
+        
         // 載入更多
         this.elements.loadMore.querySelector('button').addEventListener('click', () => this.loadMoreMaps());
         
@@ -79,6 +85,12 @@ class TreasureMapFinder {
                 this.toggleListPanel();
             }
         });
+        
+        // 點擊遮罩關閉
+        const overlay = document.getElementById('panelOverlay');
+        if (overlay) {
+            overlay.addEventListener('click', () => this.toggleListPanel());
+        }
     }
     
     handleFilterClick(e) {
@@ -241,9 +253,20 @@ class TreasureMapFinder {
     }
     
     toggleListPanel() {
-        this.elements.myListPanel.classList.toggle('active');
-        if (this.elements.myListPanel.classList.contains('active')) {
+        const isActive = this.elements.myListPanel.classList.contains('active');
+        const overlay = document.getElementById('panelOverlay');
+        
+        if (!isActive) {
+            // 開啟面板
+            this.elements.myListPanel.classList.add('active');
+            overlay.classList.add('active');
             this.renderMyList();
+            document.body.style.overflow = 'hidden';
+        } else {
+            // 關閉面板
+            this.elements.myListPanel.classList.remove('active');
+            overlay.classList.remove('active');
+            document.body.style.overflow = '';
         }
     }
     
