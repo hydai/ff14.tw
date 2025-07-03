@@ -11,6 +11,7 @@ FF14.tw is a multi-tool website for Final Fantasy XIV players in Taiwan, providi
 - **Static Website**: Pure HTML/CSS/JavaScript with no build tools, bundlers, or frameworks
 - **Multi-Tool Structure**: Each tool is completely self-contained in its own directory under `tools/`
 - **Shared Resources**: Common utilities in `assets/` (CSS variables, utility functions, constants)
+- **Data Management**: JSON files in `/data/` directory for large datasets (dungeons, treasure maps, translations)
 - **Language**: Traditional Chinese (zh-Hant) - all UI text and content
 - **Deployment**: GitHub Pages with custom domain (ff14.tw via CNAME)
 
@@ -19,9 +20,27 @@ FF14.tw is a multi-tool website for Final Fantasy XIV players in Taiwan, providi
 This is a static website with **no build process**. Files can be edited directly and changes are reflected immediately.
 
 **Local Development:**
-- Open `index.html` directly in browser, or
-- Use a local server: `python3 -m http.server` or `npx serve .`
-- **CORS Limitation**: Tools with JSON data files require local server due to browser CORS restrictions
+```bash
+# Recommended: Use local server (required for tools with JSON data)
+python3 -m http.server
+# Access at: http://localhost:8000
+
+# Alternative servers:
+npx serve .
+# or
+php -S localhost:8000
+```
+
+**CORS Requirements:**
+Tools that fetch JSON data require a local server:
+- 副本資料庫 (`dungeon-database/`) - loads `/data/dungeons.json`
+- 寶圖搜尋器 (`treasure-map-finder/`) - loads `/data/treasure-maps.json` and `/data/zone-translations.json`
+
+Tools that work without server (can open HTML directly):
+- Mini Cactpot 計算機
+- Wondrous Tails 預測器
+- 角色卡產生器
+- Faux Hollows Foxes 計算機
 
 **No package management, linting, or testing commands** - the project uses vanilla web technologies only.
 
@@ -62,7 +81,7 @@ class ToolCalculator {
 Modern tools implement multi-select filtering with tag buttons:
 
 ```javascript
-// State management with Sets
+// State management with Sets for O(1) lookup performance
 this.selectedTypes = new Set();
 this.selectedExpansions = new Set();
 
@@ -103,6 +122,7 @@ HTML Structure:
 3. Import shared CSS/JS: `../../assets/css/common.css` and `../../assets/js/common.js`
 4. Follow the class-based JavaScript architecture pattern
 5. Add tool card to main `index.html`
+6. Update changelog.html with new version entry
 
 ## UI Consistency Requirements
 
@@ -176,7 +196,7 @@ handleCellClick(e) {
 ### Data Management
 Tools with external data follow this structure:
 - Main data file: `/data/[tool-name].json`
-- Data template: `data-template.json` with documentation
+- Supporting data: Zone translations, metadata, etc.
 - Loading pattern with error handling:
 
 ```javascript
@@ -217,9 +237,10 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 
 ### Performance Guidelines
 - Debounce search/filter operations at 300ms
-- Use CSS transforms for animations (GPU acceleration)
+- Use CSS transforms for animations (GPU acceleration)  
 - Implement lazy loading for images
 - Early returns in filter functions
+- Use Set for O(1) lookup performance in filtering
 
 ### Accessibility Standards
 - Keyboard navigation for interactive elements
@@ -257,6 +278,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 3. **Mini Cactpot Calculator** (`mini-cactpot/`): 3x3 lottery probability calculator
 4. **Wondrous Tails Predictor** (`wondrous-tails/`): 4x4 bingo probability calculator
 5. **Faux Hollows Foxes** (`faux-hollows-foxes/`): 6x6 treasure hunting puzzle solver
+6. **Treasure Map Finder** (`treasure-map-finder/`): Search and manage treasure map locations with personal list feature
 
 ## Development Memories
 
@@ -265,4 +287,12 @@ Co-Authored-By: Claude <noreply@anthropic.com>
   - `character-card` 為角色卡產生器
   - `dungeon-database` 為副本資料庫
   - `faux-hollows-foxes` 為宗長計算機
+  - `treasure-map-finder` 為寶圖搜尋器
   - 請記住他們的對應關係，避免改錯工具
+
+## Data Sources and Attribution
+
+When adding external data sources, always:
+1. Add attribution in the tool's UI (see treasure-map-finder for example)
+2. Include source links with proper rel="noopener noreferrer"
+3. Respect original data licensing terms
