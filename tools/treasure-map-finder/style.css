@@ -647,3 +647,50 @@
     font-weight: 600;
     box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3);
 }
+
+/* 資料來源說明區塊 */
+.source-section {
+    margin-top: 3rem;
+    padding: 2rem;
+    background: var(--card-bg);
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border-color);
+}
+
+.source-section h3 {
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+    font-size: 1.25rem;
+}
+
+.source-section p {
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+}
+
+.source-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.source-list li {
+    padding: 0.5rem 0;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.source-list li:last-child {
+    border-bottom: none;
+}
+
+.source-list a {
+    color: var(--primary-color);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.source-list a:hover {
+    color: var(--primary-hover);
+    text-decoration: underline;
+}
