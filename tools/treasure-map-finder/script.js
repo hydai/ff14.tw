@@ -22,14 +22,7 @@ class TreasureMapFinder {
             myListPanel: document.getElementById('myListPanel'),
             listContent: document.getElementById('listContent'),
             clearAllBtn: document.getElementById('clearAllBtn'),
-            loadMore: document.getElementById('loadMore'),
-            modalOverlay: document.getElementById('modalOverlay'),
-            modalImage: document.getElementById('modalImage'),
-            modalTitle: document.getElementById('modalTitle'),
-            modalCoords: document.getElementById('modalCoords'),
-            modalAddBtn: document.getElementById('modalAddBtn'),
-            copyCoords: document.getElementById('copyCoords'),
-            modalClose: document.getElementById('modalClose')
+            loadMore: document.getElementById('loadMore')
         };
         
         this.init();
@@ -77,27 +70,13 @@ class TreasureMapFinder {
         this.elements.myListToggle.addEventListener('click', () => this.toggleListPanel());
         this.elements.clearAllBtn.addEventListener('click', () => this.clearAllMaps());
         
-        // Modal
-        this.elements.modalClose.addEventListener('click', () => this.closeModal());
-        this.elements.modalOverlay.addEventListener('click', (e) => {
-            if (e.target === this.elements.modalOverlay) {
-                this.closeModal();
-            }
-        });
-        this.elements.copyCoords.addEventListener('click', () => this.copyCoordinates());
-        this.elements.modalAddBtn.addEventListener('click', () => this.addFromModal());
-        
         // 載入更多
         this.elements.loadMore.querySelector('button').addEventListener('click', () => this.loadMoreMaps());
         
-        // ESC 鍵關閉
+        // ESC 鍵關閉清單面板
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                if (this.elements.modalOverlay.style.display !== 'none') {
-                    this.closeModal();
-                } else if (this.elements.myListPanel.classList.contains('active')) {
-                    this.toggleListPanel();
-                }
+            if (e.key === 'Escape' && this.elements.myListPanel.classList.contains('active')) {
+                this.toggleListPanel();
             }
         });
     }
@@ -187,15 +166,21 @@ class TreasureMapFinder {
             <div class="card-content">
                 <h4 class="map-zone">${map.zone}</h4>
                 <p class="map-coords">X: ${map.coords.x} Y: ${map.coords.y} Z: ${map.coords.z || 0}</p>
-                <button class="btn-add-to-list" data-state="${isInList ? 'added' : 'default'}">
-                    <span class="btn-text">${isInList ? '已加入' : '加入清單'}</span>
-                </button>
+                <div class="card-actions">
+                    <button class="btn btn-secondary btn-sm btn-copy-coords" title="複製座標指令">
+                        <span class="btn-icon">📍</span> 複製座標
+                    </button>
+                    <button class="btn ${isInList ? 'btn-success' : 'btn-primary'} btn-sm btn-add-to-list" data-state="${isInList ? 'added' : 'default'}">
+                        <span class="btn-text">${isInList ? '✓ 已加入' : '加入清單'}</span>
+                    </button>
+                </div>
             </div>
         `;
         
         // 事件綁定
-        card.querySelector('.card-image-wrapper').addEventListener('click', () => {
-            this.showModal(map);
+        card.querySelector('.btn-copy-coords').addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.copyCoordinates(map);
         });
         
         card.querySelector('.btn-add-to-list').addEventListener('click', (e) => {
@@ -238,35 +223,13 @@ class TreasureMapFinder {
             const isInList = this.myList.some(item => item.id === mapId);
             
             button.dataset.state = isInList ? 'added' : 'default';
-            button.querySelector('.btn-text').textContent = isInList ? '已加入' : '加入清單';
+            button.className = `btn ${isInList ? 'btn-success' : 'btn-primary'} btn-sm btn-add-to-list`;
+            button.querySelector('.btn-text').textContent = isInList ? '✓ 已加入' : '加入清單';
         });
     }
     
-    showModal(map) {
-        this.currentModalMap = map;
-        
-        this.elements.modalImage.src = map.fullImage;
-        this.elements.modalTitle.textContent = `${map.levelName} - ${map.zone}`;
-        this.elements.modalCoords.textContent = `座標：X: ${map.coords.x} Y: ${map.coords.y} Z: ${map.coords.z || 0}`;
-        
-        const isInList = this.myList.some(item => item.id === map.id);
-        this.elements.modalAddBtn.textContent = isInList ? '✓ 已加入' : '加入清單';
-        this.elements.modalAddBtn.dataset.state = isInList ? 'added' : 'default';
-        
-        this.elements.modalOverlay.style.display = 'flex';
-        document.body.style.overflow = 'hidden';
-    }
-    
-    closeModal() {
-        this.elements.modalOverlay.style.display = 'none';
-        document.body.style.overflow = '';
-        this.currentModalMap = null;
-    }
-    
-    copyCoordinates() {
-        if (!this.currentModalMap) return;
-        
-        const coords = this.currentModalMap.coords;
+    copyCoordinates(map) {
+        const coords = map.coords;
         const command = `/pos ${coords.x} ${coords.y} ${coords.z || 0}`;
         
         navigator.clipboard.writeText(command).then(() => {
@@ -275,16 +238,6 @@ class TreasureMapFinder {
             console.error('複製失敗:', err);
             FF14Utils.showToast('複製失敗', 'error');
         });
-    }
-    
-    addFromModal() {
-        if (!this.currentModalMap) return;
-        
-        this.toggleMapInList(this.currentModalMap);
-        
-        const isInList = this.myList.some(item => item.id === this.currentModalMap.id);
-        this.elements.modalAddBtn.textContent = isInList ? '✓ 已加入' : '加入清單';
-        this.elements.modalAddBtn.dataset.state = isInList ? 'added' : 'default';
     }
     
     toggleListPanel() {
