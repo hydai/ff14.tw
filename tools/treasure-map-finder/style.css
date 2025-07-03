@@ -554,9 +554,20 @@
 }
 
 /* 額外的按鈕樣式強化 */
+.btn-add-to-list {
+    transition: all 0.3s ease;
+}
+
+.btn-add-to-list[data-state="added"] {
+    background: #28a745 !important;
+    border-color: #28a745 !important;
+    color: white !important;
+}
+
 .btn-add-to-list[data-state="added"]:hover {
-    background: #218838;
-    color: white;
+    background: #218838 !important;
+    border-color: #1e7e34 !important;
+    color: white !important;
 }
 
 /* 確保已加入狀態的圖示顯示正確 */
@@ -585,4 +596,20 @@
 .btn-sm {
     padding: 0.375rem 0.75rem;
     font-size: 0.875rem;
+}
+
+/* 確保按鈕文字總是清晰可見 */
+.btn-success, .btn-primary, .btn-secondary, .btn-danger {
+    color: white !important;
+}
+
+/* 加入動畫效果讓狀態變化更明顯 */
+.btn-add-to-list .btn-text {
+    transition: all 0.3s ease;
+}
+
+/* 已加入狀態的強化視覺效果 */
+.treasure-card .btn-success {
+    font-weight: 600;
+    box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3);
 }
