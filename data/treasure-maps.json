@@ -1,0 +1,214 @@
+{
+  "mapLevels": [
+    { "id": "g1", "name": "G1 鞣革地圖", "minLevel": 20 },
+    { "id": "g2", "name": "G2 山羊革地圖", "minLevel": 25 },
+    { "id": "g3", "name": "G3 巨蟾蜍革地圖", "minLevel": 30 },
+    { "id": "g4", "name": "G4 野豬革地圖", "minLevel": 35 },
+    { "id": "g5", "name": "G5 毒蜥蜴革地圖", "minLevel": 40 },
+    { "id": "g6", "name": "G6 古鳥革地圖", "minLevel": 45 },
+    { "id": "g7", "name": "G7 飛龍革地圖", "minLevel": 50 },
+    { "id": "g8", "name": "G8 巨龍革地圖", "minLevel": 50 },
+    { "id": "g9", "name": "G9 迦迦納怪鳥革地圖", "minLevel": 55 },
+    { "id": "g10", "name": "G10 瞪羚革地圖", "minLevel": 60 },
+    { "id": "g11", "name": "G11 綠飄龍革地圖", "minLevel": 60 },
+    { "id": "g12", "name": "G12 纏尾蛟革地圖", "minLevel": 70 },
+    { "id": "g13", "name": "G13 賽加羚羊革地圖", "minLevel": 70 },
+    { "id": "g14", "name": "G14 金毗羅鱷革地圖", "minLevel": 80 },
+    { "id": "g15", "name": "G15 蛇牛革地圖", "minLevel": 80 },
+    { "id": "g16", "name": "G16 銀狼革地圖", "minLevel": 90 },
+    { "id": "g17", "name": "G17 獰豹革地圖", "minLevel": 90 }
+  ],
+  "zones": [
+    {
+      "id": "la_noscea",
+      "name": "拉諾西亞",
+      "subZones": [
+        "Middle La Noscea",
+        "Lower La Noscea",
+        "Eastern La Noscea",
+        "Western La Noscea",
+        "Upper La Noscea",
+        "Outer La Noscea"
+      ]
+    },
+    {
+      "id": "the_black_shroud",
+      "name": "黑衣森林",
+      "subZones": [
+        "Central Shroud",
+        "East Shroud",
+        "South Shroud",
+        "North Shroud"
+      ]
+    },
+    {
+      "id": "thanalan",
+      "name": "薩納蘭",
+      "subZones": [
+        "Central Thanalan",
+        "Western Thanalan",
+        "Eastern Thanalan",
+        "Southern Thanalan",
+        "Northern Thanalan"
+      ]
+    },
+    {
+      "id": "coerthas",
+      "name": "庫爾札斯",
+      "subZones": [
+        "Coerthas Central Highlands",
+        "Coerthas Western Highlands"
+      ]
+    },
+    {
+      "id": "mor_dhona",
+      "name": "摩杜納",
+      "subZones": ["Mor Dhona"]
+    },
+    {
+      "id": "abalathia",
+      "name": "阿巴拉提亞",
+      "subZones": [
+        "The Sea of Clouds",
+        "Azys Lla"
+      ]
+    },
+    {
+      "id": "dravania",
+      "name": "龍堡",
+      "subZones": [
+        "The Dravanian Forelands",
+        "The Dravanian Hinterlands",
+        "The Churning Mists"
+      ]
+    },
+    {
+      "id": "gyr_abania",
+      "name": "基拉巴尼亞",
+      "subZones": [
+        "The Fringes",
+        "The Peaks",
+        "The Lochs"
+      ]
+    },
+    {
+      "id": "othard",
+      "name": "東方地區",
+      "subZones": [
+        "The Ruby Sea",
+        "Yanxia",
+        "The Azim Steppe"
+      ]
+    },
+    {
+      "id": "norvrandt",
+      "name": "諾弗蘭特",
+      "subZones": [
+        "Lakeland",
+        "Kholusia",
+        "Amh Araeng",
+        "Il Mheg",
+        "The Rak'tika Greatwood",
+        "The Tempest"
+      ]
+    },
+    {
+      "id": "ilsabard",
+      "name": "伊爾薩巴德",
+      "subZones": [
+        "Labyrinthos",
+        "Thavnair",
+        "Garlemald",
+        "Mare Lamentorum",
+        "Elpis",
+        "Ultima Thule"
+      ]
+    }
+  ],
+  "maps": [
+    {
+      "id": "tm_001",
+      "level": "g12",
+      "levelName": "纏尾蛟革地圖",
+      "zone": "Eastern Thanalan",
+      "zoneId": "thanalan",
+      "coords": {
+        "x": 24.5,
+        "y": 26.3,
+        "z": 0.1
+      },
+      "thumbnail": "images/treasures/g12_e_thanalan_01_thumb.jpg",
+      "fullImage": "images/treasures/g12_e_thanalan_01.jpg"
+    },
+    {
+      "id": "tm_002",
+      "level": "g12",
+      "levelName": "纏尾蛟革地圖",
+      "zone": "The Dravanian Forelands",
+      "zoneId": "dravania",
+      "coords": {
+        "x": 31.2,
+        "y": 15.8,
+        "z": 0.1
+      },
+      "thumbnail": "images/treasures/g12_dravanian_forelands_01_thumb.jpg",
+      "fullImage": "images/treasures/g12_dravanian_forelands_01.jpg"
+    },
+    {
+      "id": "tm_003",
+      "level": "g10",
+      "levelName": "瞪羚革地圖",
+      "zone": "Western La Noscea",
+      "zoneId": "la_noscea",
+      "coords": {
+        "x": 16.7,
+        "y": 36.4,
+        "z": 0.1
+      },
+      "thumbnail": "images/treasures/g10_w_la_noscea_01_thumb.jpg",
+      "fullImage": "images/treasures/g10_w_la_noscea_01.jpg"
+    },
+    {
+      "id": "tm_004",
+      "level": "g14",
+      "levelName": "金毗羅鱷革地圖",
+      "zone": "Kholusia",
+      "zoneId": "norvrandt",
+      "coords": {
+        "x": 28.9,
+        "y": 31.5,
+        "z": 0.1
+      },
+      "thumbnail": "images/treasures/g14_kholusia_01_thumb.jpg",
+      "fullImage": "images/treasures/g14_kholusia_01.jpg"
+    },
+    {
+      "id": "tm_005",
+      "level": "g16",
+      "levelName": "銀狼革地圖",
+      "zone": "Labyrinthos",
+      "zoneId": "ilsabard",
+      "coords": {
+        "x": 19.3,
+        "y": 12.7,
+        "z": 0.1
+      },
+      "thumbnail": "images/treasures/g16_labyrinthos_01_thumb.jpg",
+      "fullImage": "images/treasures/g16_labyrinthos_01.jpg"
+    },
+    {
+      "id": "tm_006",
+      "level": "g17",
+      "levelName": "獰豹革地圖",
+      "zone": "Elpis",
+      "zoneId": "ilsabard",
+      "coords": {
+        "x": 33.1,
+        "y": 24.6,
+        "z": 0.1
+      },
+      "thumbnail": "images/treasures/g17_elpis_01_thumb.jpg",
+      "fullImage": "images/treasures/g17_elpis_01.jpg"
+    }
+  ]
+}

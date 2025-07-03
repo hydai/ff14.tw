@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>寶圖搜尋器 - FF14.tw</title>
+    <meta name="description" content="FF14 寶圖位置快速查詢工具，支援多條件篩選與個人清單管理">
+    <link rel="icon" type="image/x-icon" href="../../assets/images/ff14tw.ico">
+    <link rel="stylesheet" href="../../assets/css/common.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <a href="/" class="logo">FF14.tw</a>
+            <nav class="nav">
+                <a href="/">首頁</a>
+                <a href="/copyright.html">版權聲明</a>
+                <a href="https://github.com/hydai/ff14.tw" target="_blank">GitHub</a>
+                <div class="nav-dropdown">
+                    <a href="#">關於本站</a>
+                    <div class="nav-dropdown-content">
+                        <a href="/about.html">關於</a>
+                        <a href="/changelog.html">修改紀錄</a>
+                    </div>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container">
+            <div class="page-header">
+                <h1>寶圖搜尋器</h1>
+            </div>
+
+            <div class="tool-content">
+                <!-- 操作區 -->
+                <div class="control-section">
+                    <button class="btn btn-primary my-list-toggle" id="myListToggle">
+                        我的清單 <span class="list-count" id="listCount">(0)</span>
+                    </button>
+                </div>
+
+                <!-- 篩選區 -->
+                <div class="filter-section">
+                    <div class="filter-header">
+                        <button class="btn btn-secondary btn-sm" id="resetFilters">重置篩選</button>
+                    </div>
+                    <!-- 等級篩選 -->
+                    <div class="filter-group level-filter-group">
+                        <label>寶圖等級：</label>
+                        <div class="filter-tags" id="levelTags">
+                            <button class="filter-tag" data-level="g1">G1 鞣革</button>
+                            <button class="filter-tag" data-level="g2">G2 山羊革</button>
+                            <button class="filter-tag" data-level="g3">G3 巨蟾蜍革</button>
+                            <button class="filter-tag" data-level="g4">G4 野豬革</button>
+                            <button class="filter-tag" data-level="g5">G5 毒蜥蜴革</button>
+                            <button class="filter-tag" data-level="g6">G6 古鳥革</button>
+                            <button class="filter-tag" data-level="g7">G7 飛龍革</button>
+                            <button class="filter-tag" data-level="g8">G8 巨龍革</button>
+                            <button class="filter-tag" data-level="g9">G9 迦迦納怪鳥革</button>
+                            <button class="filter-tag" data-level="g10">G10 瞪羚革</button>
+                            <button class="filter-tag" data-level="g11">G11 綠飄龍革</button>
+                            <button class="filter-tag" data-level="g12">G12 纏尾蛟革</button>
+                            <button class="filter-tag" data-level="g13">G13 賽加羚羊革</button>
+                            <button class="filter-tag" data-level="g14">G14 金毗羅鱷革</button>
+                            <button class="filter-tag" data-level="g15">G15 蛇牛革</button>
+                            <button class="filter-tag" data-level="g16">G16 銀狼革</button>
+                            <button class="filter-tag" data-level="g17">G17 獰豹革</button>
+                        </div>
+                    </div>
+
+                    <!-- 地區篩選 -->
+                    <div class="filter-group zone-filter-group">
+                        <label>地區：</label>
+                        <div class="filter-tags" id="zoneTags">
+                            <button class="filter-tag" data-zone="la_noscea">拉諾西亞</button>
+                            <button class="filter-tag" data-zone="the_black_shroud">黑衣森林</button>
+                            <button class="filter-tag" data-zone="thanalan">薩納蘭</button>
+                            <button class="filter-tag" data-zone="coerthas">庫爾札斯</button>
+                            <button class="filter-tag" data-zone="mor_dhona">摩杜納</button>
+                            <button class="filter-tag" data-zone="abalathia">阿巴拉提亞</button>
+                            <button class="filter-tag" data-zone="dravania">龍堡</button>
+                            <button class="filter-tag" data-zone="gyr_abania">基拉巴尼亞</button>
+                            <button class="filter-tag" data-zone="othard">東方地區</button>
+                            <button class="filter-tag" data-zone="norvrandt">諾弗蘭特</button>
+                            <button class="filter-tag" data-zone="ilsabard">伊爾薩巴德</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 搜尋結果 -->
+                <div class="results-section">
+                    <div class="results-header">
+                        <span id="resultCount">顯示 0 個結果</span>
+                    </div>
+                    <div class="treasure-grid" id="treasureGrid">
+                        <!-- 寶圖卡片將由 JavaScript 動態生成 -->
+                    </div>
+                    <div class="load-more" id="loadMore" style="display: none;">
+                        <button class="btn btn-secondary">載入更多</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 我的清單面板 -->
+    <div class="my-list-panel" id="myListPanel" style="display: none;">
+        <div class="panel-header">
+            <h3>我的寶圖清單</h3>
+            <button class="btn btn-secondary btn-sm" id="clearAllBtn">清空全部</button>
+        </div>
+        <div class="list-content" id="listContent">
+            <!-- 清單項目將由 JavaScript 動態生成 -->
+        </div>
+        <div class="panel-footer">
+            <p>總計：<span id="totalCount">0</span> 張寶圖</p>
+        </div>
+    </div>
+
+    <!-- 圖片彈出視窗 -->
+    <div class="modal-overlay" id="modalOverlay" style="display: none;">
+        <div class="modal-content">
+            <button class="modal-close" id="modalClose">×</button>
+            <img id="modalImage" src="" alt="寶圖詳細">
+            <div class="modal-info">
+                <h3 id="modalTitle"></h3>
+                <p class="coords-display" id="modalCoords"></p>
+                <div class="modal-actions">
+                    <button class="btn btn-primary" id="copyCoords">複製座標指令</button>
+                    <button class="btn btn-secondary" id="modalAddBtn">加入清單</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024-2025 FF14.tw | 本站非官方網站，與 Square Enix 無關 | Made with ❤️ by hydai</p>
+        </div>
+    </footer>
+
+    <script src="/assets/js/common.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
