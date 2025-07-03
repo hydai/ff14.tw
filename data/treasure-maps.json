@@ -2110,6 +2110,496 @@
       },
       "thumbnail": "images/treasures/g10_azim_steppe_08_thumb.jpg",
       "fullImage": "images/treasures/g10_azim_steppe_08.jpg"
+    },
+    {
+      "id": "tm_143",
+      "level": "g8",
+      "levelName": "巨龍革地圖",
+      "zone": "Coerthas Western Highlands",
+      "zoneId": "coerthas",
+      "coords": {
+        "x": 20.0,
+        "y": 30.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g8_coerthas_western_01_thumb.jpg",
+      "fullImage": "images/treasures/g8_coerthas_western_01.jpg"
+    },
+    {
+      "id": "tm_144",
+      "level": "g8",
+      "levelName": "巨龍革地圖",
+      "zone": "Coerthas Western Highlands",
+      "zoneId": "coerthas",
+      "coords": {
+        "x": 12.0,
+        "y": 24.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g8_coerthas_western_02_thumb.jpg",
+      "fullImage": "images/treasures/g8_coerthas_western_02.jpg"
+    },
+    {
+      "id": "tm_145",
+      "level": "g8",
+      "levelName": "巨龍革地圖",
+      "zone": "Coerthas Western Highlands",
+      "zoneId": "coerthas",
+      "coords": {
+        "x": 7.0,
+        "y": 12.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g8_coerthas_western_03_thumb.jpg",
+      "fullImage": "images/treasures/g8_coerthas_western_03.jpg"
+    },
+    {
+      "id": "tm_146",
+      "level": "g8",
+      "levelName": "巨龍革地圖",
+      "zone": "Coerthas Western Highlands",
+      "zoneId": "coerthas",
+      "coords": {
+        "x": 21.0,
+        "y": 12.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g8_coerthas_western_04_thumb.jpg",
+      "fullImage": "images/treasures/g8_coerthas_western_04.jpg"
+    },
+    {
+      "id": "tm_147",
+      "level": "g8",
+      "levelName": "巨龍革地圖",
+      "zone": "Coerthas Western Highlands",
+      "zoneId": "coerthas",
+      "coords": {
+        "x": 28.0,
+        "y": 15.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g8_coerthas_western_05_thumb.jpg",
+      "fullImage": "images/treasures/g8_coerthas_western_05.jpg"
+    },
+    {
+      "id": "tm_148",
+      "level": "g8",
+      "levelName": "巨龍革地圖",
+      "zone": "Coerthas Western Highlands",
+      "zoneId": "coerthas",
+      "coords": {
+        "x": 34.0,
+        "y": 7.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g8_coerthas_western_06_thumb.jpg",
+      "fullImage": "images/treasures/g8_coerthas_western_06.jpg"
+    },
+    {
+      "id": "tm_149",
+      "level": "g8",
+      "levelName": "巨龍革地圖",
+      "zone": "Coerthas Western Highlands",
+      "zoneId": "coerthas",
+      "coords": {
+        "x": 36.0,
+        "y": 26.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g8_coerthas_western_07_thumb.jpg",
+      "fullImage": "images/treasures/g8_coerthas_western_07.jpg"
+    },
+    {
+      "id": "tm_150",
+      "level": "g8",
+      "levelName": "巨龍革地圖",
+      "zone": "The Dravanian Forelands",
+      "zoneId": "dravania",
+      "coords": {
+        "x": 28.0,
+        "y": 24.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g8_dravanian_forelands_01_thumb.jpg",
+      "fullImage": "images/treasures/g8_dravanian_forelands_01.jpg"
+    },
+    {
+      "id": "tm_151",
+      "level": "g8",
+      "levelName": "巨龍革地圖",
+      "zone": "The Dravanian Forelands",
+      "zoneId": "dravania",
+      "coords": {
+        "x": 23.0,
+        "y": 25.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g8_dravanian_forelands_02_thumb.jpg",
+      "fullImage": "images/treasures/g8_dravanian_forelands_02.jpg"
+    },
+    {
+      "id": "tm_152",
+      "level": "g8",
+      "levelName": "巨龍革地圖",
+      "zone": "The Dravanian Forelands",
+      "zoneId": "dravania",
+      "coords": {
+        "x": 27.0,
+        "y": 30.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g8_dravanian_forelands_03_thumb.jpg",
+      "fullImage": "images/treasures/g8_dravanian_forelands_03.jpg"
+    },
+    {
+      "id": "tm_153",
+      "level": "g8",
+      "levelName": "巨龍革地圖",
+      "zone": "The Dravanian Forelands",
+      "zoneId": "dravania",
+      "coords": {
+        "x": 24.0,
+        "y": 32.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g8_dravanian_forelands_04_thumb.jpg",
+      "fullImage": "images/treasures/g8_dravanian_forelands_04.jpg"
+    },
+    {
+      "id": "tm_154",
+      "level": "g8",
+      "levelName": "巨龍革地圖",
+      "zone": "The Dravanian Forelands",
+      "zoneId": "dravania",
+      "coords": {
+        "x": 18.0,
+        "y": 34.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g8_dravanian_forelands_05_thumb.jpg",
+      "fullImage": "images/treasures/g8_dravanian_forelands_05.jpg"
+    },
+    {
+      "id": "tm_155",
+      "level": "g8",
+      "levelName": "巨龍革地圖",
+      "zone": "The Dravanian Forelands",
+      "zoneId": "dravania",
+      "coords": {
+        "x": 14.0,
+        "y": 34.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g8_dravanian_forelands_06_thumb.jpg",
+      "fullImage": "images/treasures/g8_dravanian_forelands_06.jpg"
+    },
+    {
+      "id": "tm_156",
+      "level": "g8",
+      "levelName": "巨龍革地圖",
+      "zone": "The Dravanian Forelands",
+      "zoneId": "dravania",
+      "coords": {
+        "x": 13.0,
+        "y": 34.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g8_dravanian_forelands_07_thumb.jpg",
+      "fullImage": "images/treasures/g8_dravanian_forelands_07.jpg"
+    },
+    {
+      "id": "tm_157",
+      "level": "g8",
+      "levelName": "巨龍革地圖",
+      "zone": "The Dravanian Forelands",
+      "zoneId": "dravania",
+      "coords": {
+        "x": 12.0,
+        "y": 34.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g8_dravanian_forelands_08_thumb.jpg",
+      "fullImage": "images/treasures/g8_dravanian_forelands_08.jpg"
+    },
+    {
+      "id": "tm_158",
+      "level": "g8",
+      "levelName": "巨龍革地圖",
+      "zone": "The Dravanian Forelands",
+      "zoneId": "dravania",
+      "coords": {
+        "x": 10.0,
+        "y": 30.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g8_dravanian_forelands_09_thumb.jpg",
+      "fullImage": "images/treasures/g8_dravanian_forelands_09.jpg"
+    },
+    {
+      "id": "tm_159",
+      "level": "g8",
+      "levelName": "巨龍革地圖",
+      "zone": "The Churning Mists",
+      "zoneId": "dravania",
+      "coords": {
+        "x": 29.0,
+        "y": 37.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g8_churning_mists_01_thumb.jpg",
+      "fullImage": "images/treasures/g8_churning_mists_01.jpg"
+    },
+    {
+      "id": "tm_160",
+      "level": "g8",
+      "levelName": "巨龍革地圖",
+      "zone": "The Churning Mists",
+      "zoneId": "dravania",
+      "coords": {
+        "x": 21.0,
+        "y": 38.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g8_churning_mists_02_thumb.jpg",
+      "fullImage": "images/treasures/g8_churning_mists_02.jpg"
+    },
+    {
+      "id": "tm_161",
+      "level": "g8",
+      "levelName": "巨龍革地圖",
+      "zone": "The Churning Mists",
+      "zoneId": "dravania",
+      "coords": {
+        "x": 17.0,
+        "y": 33.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g8_churning_mists_03_thumb.jpg",
+      "fullImage": "images/treasures/g8_churning_mists_03.jpg"
+    },
+    {
+      "id": "tm_162",
+      "level": "g8",
+      "levelName": "巨龍革地圖",
+      "zone": "The Churning Mists",
+      "zoneId": "dravania",
+      "coords": {
+        "x": 32.0,
+        "y": 25.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g8_churning_mists_04_thumb.jpg",
+      "fullImage": "images/treasures/g8_churning_mists_04.jpg"
+    },
+    {
+      "id": "tm_163",
+      "level": "g8",
+      "levelName": "巨龍革地圖",
+      "zone": "The Churning Mists",
+      "zoneId": "dravania",
+      "coords": {
+        "x": 23.0,
+        "y": 18.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g8_churning_mists_05_thumb.jpg",
+      "fullImage": "images/treasures/g8_churning_mists_05.jpg"
+    },
+    {
+      "id": "tm_164",
+      "level": "g8",
+      "levelName": "巨龍革地圖",
+      "zone": "The Churning Mists",
+      "zoneId": "dravania",
+      "coords": {
+        "x": 11.0,
+        "y": 20.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g8_churning_mists_06_thumb.jpg",
+      "fullImage": "images/treasures/g8_churning_mists_06.jpg"
+    },
+    {
+      "id": "tm_165",
+      "level": "g8",
+      "levelName": "巨龍革地圖",
+      "zone": "The Churning Mists",
+      "zoneId": "dravania",
+      "coords": {
+        "x": 8.0,
+        "y": 17.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g8_churning_mists_07_thumb.jpg",
+      "fullImage": "images/treasures/g8_churning_mists_07.jpg"
+    },
+    {
+      "id": "tm_166",
+      "level": "g8",
+      "levelName": "巨龍革地圖",
+      "zone": "The Churning Mists",
+      "zoneId": "dravania",
+      "coords": {
+        "x": 13.0,
+        "y": 13.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g8_churning_mists_08_thumb.jpg",
+      "fullImage": "images/treasures/g8_churning_mists_08.jpg"
+    },
+    {
+      "id": "tm_167",
+      "level": "g8",
+      "levelName": "巨龍革地圖",
+      "zone": "The Churning Mists",
+      "zoneId": "dravania",
+      "coords": {
+        "x": 10.0,
+        "y": 9.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g8_churning_mists_09_thumb.jpg",
+      "fullImage": "images/treasures/g8_churning_mists_09.jpg"
+    },
+    {
+      "id": "tm_168",
+      "level": "g8",
+      "levelName": "巨龍革地圖",
+      "zone": "The Sea of Clouds",
+      "zoneId": "abalathia",
+      "coords": {
+        "x": 6.0,
+        "y": 7.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g8_sea_of_clouds_01_thumb.jpg",
+      "fullImage": "images/treasures/g8_sea_of_clouds_01.jpg"
+    },
+    {
+      "id": "tm_169",
+      "level": "g8",
+      "levelName": "巨龍革地圖",
+      "zone": "The Sea of Clouds",
+      "zoneId": "abalathia",
+      "coords": {
+        "x": 20.0,
+        "y": 5.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g8_sea_of_clouds_02_thumb.jpg",
+      "fullImage": "images/treasures/g8_sea_of_clouds_02.jpg"
+    },
+    {
+      "id": "tm_170",
+      "level": "g8",
+      "levelName": "巨龍革地圖",
+      "zone": "The Sea of Clouds",
+      "zoneId": "abalathia",
+      "coords": {
+        "x": 22.0,
+        "y": 10.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g8_sea_of_clouds_03_thumb.jpg",
+      "fullImage": "images/treasures/g8_sea_of_clouds_03.jpg"
+    },
+    {
+      "id": "tm_171",
+      "level": "g8",
+      "levelName": "巨龍革地圖",
+      "zone": "The Sea of Clouds",
+      "zoneId": "abalathia",
+      "coords": {
+        "x": 17.0,
+        "y": 17.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g8_sea_of_clouds_04_thumb.jpg",
+      "fullImage": "images/treasures/g8_sea_of_clouds_04.jpg"
+    },
+    {
+      "id": "tm_172",
+      "level": "g8",
+      "levelName": "巨龍革地圖",
+      "zone": "The Sea of Clouds",
+      "zoneId": "abalathia",
+      "coords": {
+        "x": 31.0,
+        "y": 18.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g8_sea_of_clouds_05_thumb.jpg",
+      "fullImage": "images/treasures/g8_sea_of_clouds_05.jpg"
+    },
+    {
+      "id": "tm_173",
+      "level": "g8",
+      "levelName": "巨龍革地圖",
+      "zone": "The Sea of Clouds",
+      "zoneId": "abalathia",
+      "coords": {
+        "x": 29.0,
+        "y": 24.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g8_sea_of_clouds_06_thumb.jpg",
+      "fullImage": "images/treasures/g8_sea_of_clouds_06.jpg"
+    },
+    {
+      "id": "tm_174",
+      "level": "g8",
+      "levelName": "巨龍革地圖",
+      "zone": "The Sea of Clouds",
+      "zoneId": "abalathia",
+      "coords": {
+        "x": 14.0,
+        "y": 27.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g8_sea_of_clouds_07_thumb.jpg",
+      "fullImage": "images/treasures/g8_sea_of_clouds_07.jpg"
+    },
+    {
+      "id": "tm_175",
+      "level": "g8",
+      "levelName": "巨龍革地圖",
+      "zone": "The Sea of Clouds",
+      "zoneId": "abalathia",
+      "coords": {
+        "x": 21.0,
+        "y": 31.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g8_sea_of_clouds_08_thumb.jpg",
+      "fullImage": "images/treasures/g8_sea_of_clouds_08.jpg"
+    },
+    {
+      "id": "tm_176",
+      "level": "g8",
+      "levelName": "巨龍革地圖",
+      "zone": "The Sea of Clouds",
+      "zoneId": "abalathia",
+      "coords": {
+        "x": 19.0,
+        "y": 35.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g8_sea_of_clouds_09_thumb.jpg",
+      "fullImage": "images/treasures/g8_sea_of_clouds_09.jpg"
+    },
+    {
+      "id": "tm_177",
+      "level": "g8",
+      "levelName": "巨龍革地圖",
+      "zone": "The Sea of Clouds",
+      "zoneId": "abalathia",
+      "coords": {
+        "x": 10.0,
+        "y": 38.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g8_sea_of_clouds_10_thumb.jpg",
+      "fullImage": "images/treasures/g8_sea_of_clouds_10.jpg"
     }
   ]
 }
