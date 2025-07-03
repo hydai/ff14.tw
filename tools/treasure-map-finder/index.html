@@ -125,7 +125,14 @@
         <div class="panel-header">
             <h3>我的寶圖清單</h3>
             <div class="panel-header-actions">
-                <button class="btn btn-secondary btn-sm" id="clearAllBtn">清空全部</button>
+                <button class="btn btn-secondary btn-sm" id="exportListBtn" title="匯出清單">
+                    <span class="btn-icon">📤</span> 匯出
+                </button>
+                <button class="btn btn-secondary btn-sm" id="importListBtn" title="匯入清單">
+                    <span class="btn-icon">📥</span> 匯入
+                </button>
+                <input type="file" id="importFileInput" accept=".json,.txt" style="display: none;">
+                <button class="btn btn-danger btn-sm" id="clearAllBtn">清空全部</button>
                 <button class="btn-close" id="closePanelBtn" title="關閉">×</button>
             </div>
         </div>

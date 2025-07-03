@@ -271,19 +271,238 @@ showError('載入寶圖資料失敗，請重新整理頁面再試。');
 - 新功能：`新增功能：寶圖搜尋器基礎架構`
 - 修正：`修正：寶圖清單計數錯誤問題`
 
-## 9. 未來擴充規劃
+## 9. 開發階段規劃
 
-### Phase 2：路線規劃
-- 最短路徑計算
-- 傳送點整合
-- 預估時間顯示
+### Phase 1：基礎搜尋與清單管理（已完成）
+**實作成果：**
+- ✅ G1-G17 寶圖等級篩選
+- ✅ 11個主要地區篩選
+- ✅ 卡片式寶圖展示（縮圖、等級、座標）
+- ✅ 個人清單管理（新增、移除、清空）
+- ✅ 座標複製功能（/pos X Y Z 指令）
+- ✅ 響應式設計
+- ✅ LocalStorage 資料持久化
+- ✅ 載入更多功能（初始24個）
 
-### Phase 3：進階功能
-- 團隊分享連結
-- 寶圖掉落物查詢
-- 歷史記錄追蹤
+### Phase 2：路線規劃功能（規劃中）
+**核心功能：**
+1. **路線生成器**
+   - 從「我的清單」生成最佳尋寶路線
+   - 支援多種優化策略（最短距離、最少傳送、區域集中）
+   - 顯示預估時間和傳送費用
 
-## 10. 測試檢查清單
+2. **地圖整合**
+   - 各地區傳送點資料
+   - 計算傳送點到寶圖的步行距離
+   - 考慮飛行解鎖狀態
+
+3. **路線展示**
+   - 分步驟導航介面
+   - 可拖曳調整順序
+   - 一鍵複製路線指令
+
+**技術需求：**
+- 傳送點座標資料庫
+- 路徑演算法（TSP變體）
+- 地圖距離計算
+
+### Phase 3：進階功能（未來規劃）
+1. **團隊協作**
+   - 分享清單連結
+   - 多人同步編輯
+   - 分配寶圖給隊員
+
+2. **資料擴充**
+   - 寶圖掉落物資訊
+   - 入場門檻提醒
+   - 寶物庫出現機率
+
+3. **使用分析**
+   - 歷史記錄追蹤
+   - 熱門寶圖統計
+   - 個人尋寶數據
+
+### Phase 4：社群功能（遠期規劃）
+1. **寶圖回報系統**
+   - 使用者上傳新位置
+   - 社群驗證機制
+   - 自動更新資料庫
+
+2. **整合功能**
+   - 匯入/匯出功能
+   - 與其他工具串接
+   - API 開放
+
+## 10. Phase 2 詳細設計規格
+
+### 10.1 路線規劃功能詳細設計
+
+#### 10.1.1 使用者介面設計
+```
+[我的清單] → [生成路線] → [路線檢視] → [開始導航]
+```
+
+**新增UI元素：**
+1. **生成路線按鈕**
+   - 位置：我的清單面板底部
+   - 條件：清單內有2個以上寶圖時啟用
+   - 樣式：主要按鈕，藍色背景
+
+2. **路線設定面板**
+   ```html
+   <div class="route-settings">
+     <h4>路線優化選項</h4>
+     <label>
+       <input type="radio" name="optimize" value="distance" checked>
+       最短總距離
+     </label>
+     <label>
+       <input type="radio" name="optimize" value="teleports">
+       最少傳送次數
+     </label>
+     <label>
+       <input type="radio" name="optimize" value="zones">
+       區域集中（推薦）
+     </label>
+   </div>
+   ```
+
+3. **路線結果顯示**
+   ```html
+   <div class="route-result">
+     <div class="route-summary">
+       <h3>最佳路線</h3>
+       <p>總計：5個寶圖 | 預估時間：25分鐘 | 傳送費：1,847 Gil</p>
+     </div>
+     <div class="route-steps">
+       <!-- 路線步驟 -->
+     </div>
+   </div>
+   ```
+
+#### 10.1.2 資料結構設計
+
+**傳送點資料：**
+```javascript
+{
+  "aetherytes": [
+    {
+      "id": "limsa_lominsa",
+      "name": "海都",
+      "nameEn": "Limsa Lominsa",
+      "zone": "la_noscea",
+      "coords": { "x": 11.0, "y": 11.0 },
+      "type": "major_city",
+      "unlockLevel": 1
+    },
+    {
+      "id": "costa_del_sol",
+      "name": "太陽海岸",
+      "nameEn": "Costa del Sol",
+      "zone": "eastern_la_noscea",
+      "coords": { "x": 33.8, "y": 30.5 },
+      "type": "aetheryte",
+      "unlockLevel": 30
+    }
+  ]
+}
+```
+
+**路線資料結構：**
+```javascript
+{
+  "route": {
+    "totalMaps": 5,
+    "estimatedTime": 1500, // 秒
+    "totalCost": 1847,
+    "steps": [
+      {
+        "type": "teleport",
+        "to": "costa_del_sol",
+        "cost": 456,
+        "time": 10
+      },
+      {
+        "type": "travel",
+        "to": "tm_001",
+        "distance": 234.5,
+        "time": 120,
+        "method": "mount"
+      },
+      {
+        "type": "treasure",
+        "mapId": "tm_001",
+        "coords": { "x": 24.5, "y": 26.3, "z": 0.1 }
+      }
+    ]
+  }
+}
+```
+
+#### 10.1.3 演算法設計
+
+**基礎路徑計算：**
+```javascript
+class RouteCalculator {
+  calculateRoute(maps, strategy = 'zones') {
+    switch(strategy) {
+      case 'distance':
+        return this.shortestPath(maps);
+      case 'teleports':
+        return this.fewestTeleports(maps);
+      case 'zones':
+        return this.zoneGrouping(maps);
+    }
+  }
+  
+  // 區域分組策略（推薦）
+  zoneGrouping(maps) {
+    // 1. 按區域分組
+    const groups = this.groupByZone(maps);
+    
+    // 2. 決定區域訪問順序
+    const zoneOrder = this.optimizeZoneOrder(groups);
+    
+    // 3. 每個區域內部優化
+    return this.optimizeWithinZones(zoneOrder);
+  }
+  
+  // 計算兩點間距離
+  calculateDistance(point1, point2) {
+    const dx = point1.x - point2.x;
+    const dy = point1.y - point2.y;
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+  
+  // 估算移動時間（考慮坐騎速度）
+  estimateTravelTime(distance, hasFlying = true) {
+    const speed = hasFlying ? 6.0 : 4.2; // 單位/秒
+    return Math.ceil(distance / speed);
+  }
+}
+```
+
+#### 10.1.4 傳送費計算
+```javascript
+// 基於 FF14 實際傳送費公式
+function calculateTeleportCost(fromZone, toZone, level) {
+  const baseCost = 100;
+  const levelMultiplier = Math.floor(level / 10) * 50;
+  const distanceMultiplier = this.getZoneDistance(fromZone, toZone) * 20;
+  
+  return Math.min(baseCost + levelMultiplier + distanceMultiplier, 999);
+}
+```
+
+### 10.2 實作順序
+1. 建立傳送點資料庫
+2. 實作基礎距離計算
+3. 開發區域分組演算法
+4. 建立路線顯示介面
+5. 加入拖曳調整功能
+6. 實作路線匯出功能
+
+## 11. 測試檢查清單
 
 - [ ] 篩選功能正常運作
 - [ ] 清單新增/移除/清空功能

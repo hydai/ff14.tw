@@ -76,6 +76,11 @@ class TreasureMapFinder {
             closePanelBtn.addEventListener('click', () => this.toggleListPanel());
         }
         
+        // 匯出/匯入功能
+        document.getElementById('exportListBtn').addEventListener('click', () => this.exportList());
+        document.getElementById('importListBtn').addEventListener('click', () => this.showImportDialog());
+        document.getElementById('importFileInput').addEventListener('change', (e) => this.importList(e));
+        
         // 載入更多
         this.elements.loadMore.querySelector('button').addEventListener('click', () => this.loadMoreMaps());
         
@@ -381,6 +386,168 @@ class TreasureMapFinder {
                 <button class="btn btn-primary" onclick="location.reload()">重新載入</button>
             </div>
         `;
+    }
+    
+    // 匯出清單功能（複製到剪貼簿）
+    exportList() {
+        if (this.myList.length === 0) {
+            FF14Utils.showToast('清單是空的，無法匯出', 'warning');
+            return;
+        }
+        
+        const exportData = {
+            version: '1.0',
+            exportDate: new Date().toISOString(),
+            appName: 'FF14.tw 寶圖搜尋器',
+            totalMaps: this.myList.length,
+            maps: this.myList.map(map => ({
+                id: map.id,
+                level: map.level,
+                levelName: map.levelName,
+                zone: map.zone,
+                coords: map.coords
+            }))
+        };
+        
+        // 轉換為 JSON 字串
+        const jsonString = JSON.stringify(exportData);
+        
+        // 複製到剪貼簿
+        navigator.clipboard.writeText(jsonString).then(() => {
+            FF14Utils.showToast(`已複製 ${this.myList.length} 張寶圖清單到剪貼簿`, 'success');
+        }).catch(err => {
+            console.error('複製失敗:', err);
+            // 備用方案：顯示可複製的文字框
+            this.showExportDialog(jsonString);
+        });
+    }
+    
+    // 顯示匯出對話框（備用方案）
+    showExportDialog(jsonString) {
+        const dialog = document.createElement('div');
+        dialog.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); z-index: 10000; max-width: 500px; width: 90%;';
+        
+        dialog.innerHTML = `
+            <h3 style="margin: 0 0 10px 0;">匯出清單</h3>
+            <p style="margin-bottom: 10px;">請複製以下內容：</p>
+            <textarea style="width: 100%; height: 200px; margin-bottom: 10px; font-family: monospace; font-size: 12px;" readonly>${jsonString}</textarea>
+            <div style="text-align: right;">
+                <button class="btn btn-primary" onclick="this.parentElement.parentElement.remove()">關閉</button>
+            </div>
+        `;
+        
+        document.body.appendChild(dialog);
+        dialog.querySelector('textarea').select();
+    }
+    
+    // 顯示匯入對話框
+    showImportDialog() {
+        // 建立匯入對話框
+        const dialog = document.createElement('div');
+        dialog.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); z-index: 10000; max-width: 500px; width: 90%;';
+        
+        dialog.innerHTML = `
+            <h3 style="margin: 0 0 10px 0;">匯入清單</h3>
+            <p style="margin-bottom: 10px;">請貼上匯出的清單內容：</p>
+            <textarea id="importTextarea" style="width: 100%; height: 200px; margin-bottom: 10px; font-family: monospace; font-size: 12px;" placeholder="在此貼上清單資料..."></textarea>
+            <div style="text-align: right; display: flex; gap: 10px; justify-content: flex-end;">
+                <button class="btn btn-secondary" onclick="this.parentElement.parentElement.remove()">取消</button>
+                <button class="btn btn-primary" id="confirmImportBtn">匯入</button>
+            </div>
+        `;
+        
+        document.body.appendChild(dialog);
+        
+        // 綁定匯入按鈕事件
+        dialog.querySelector('#confirmImportBtn').addEventListener('click', () => {
+            const text = dialog.querySelector('#importTextarea').value;
+            this.importFromText(text);
+            dialog.remove();
+        });
+        
+        // 自動聚焦到文字框
+        dialog.querySelector('#importTextarea').focus();
+    }
+    
+    // 從文字匯入清單
+    async importFromText(text) {
+        if (!text.trim()) {
+            FF14Utils.showToast('請貼上清單內容', 'warning');
+            return;
+        }
+        
+        try {
+            const data = JSON.parse(text);
+            
+            // 驗證資料格式
+            if (!data.version || !data.maps || !Array.isArray(data.maps)) {
+                throw new Error('無效的清單格式');
+            }
+            
+            // 確認是否要合併或取代
+            let importedMaps = data.maps;
+            let action = 'replace';
+            
+            if (this.myList.length > 0) {
+                const confirmMessage = `目前清單有 ${this.myList.length} 張寶圖。\n` +
+                    `要匯入的清單包含 ${importedMaps.length} 張寶圖。\n\n` +
+                    `選擇「確定」將合併清單（避免重複）\n` +
+                    `選擇「取消」將取代現有清單`;
+                
+                action = confirm(confirmMessage) ? 'merge' : 'replace';
+            }
+            
+            if (action === 'merge') {
+                // 合併清單，避免重複
+                const existingIds = new Set(this.myList.map(m => m.id));
+                const newMaps = importedMaps.filter(map => !existingIds.has(map.id));
+                
+                // 補充完整資料（如果原本的匯出資料缺少某些欄位）
+                newMaps.forEach(map => {
+                    if (!map.thumbnail) map.thumbnail = `/assets/images/treasure-map-placeholder.png`;
+                    if (!map.addedAt) map.addedAt = new Date().toISOString();
+                });
+                
+                this.myList = [...this.myList, ...newMaps];
+                FF14Utils.showToast(`已合併匯入 ${newMaps.length} 張新寶圖`, 'success');
+            } else {
+                // 取代清單
+                importedMaps.forEach(map => {
+                    if (!map.thumbnail) map.thumbnail = `/assets/images/treasure-map-placeholder.png`;
+                    if (!map.addedAt) map.addedAt = new Date().toISOString();
+                });
+                
+                this.myList = importedMaps;
+                FF14Utils.showToast(`已匯入 ${importedMaps.length} 張寶圖`, 'success');
+            }
+            
+            // 更新儲存和UI
+            this.saveToStorage();
+            this.updateListCount();
+            this.updateCardButtons();
+            this.renderMyList();
+            
+        } catch (error) {
+            console.error('匯入失敗:', error);
+            FF14Utils.showToast('匯入失敗：' + error.message, 'error');
+        }
+    }
+    
+    // 匯入清單功能（從檔案）
+    async importList(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        
+        try {
+            const text = await file.text();
+            this.importFromText(text);
+        } catch (error) {
+            console.error('讀取檔案失敗:', error);
+            FF14Utils.showToast('讀取檔案失敗', 'error');
+        }
+        
+        // 清空檔案輸入
+        event.target.value = '';
     }
 }
 
