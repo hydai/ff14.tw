@@ -73,6 +73,33 @@
     margin-bottom: 1rem;
 }
 
+/* 摺疊功能 */
+.collapsible-header {
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.collapsible-header:hover {
+    background: var(--hover-bg);
+    padding: 0.5rem;
+    border-radius: var(--border-radius);
+    margin: -0.5rem -0.5rem 1rem -0.5rem;
+}
+
+.collapse-indicator {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    transition: transform 0.3s ease;
+}
+
+.collapsed {
+    display: none !important;
+}
+
+.collapsible-header[data-expanded="true"] .collapse-indicator {
+    transform: rotate(180deg);
+}
+
 .filter-group label {
     display: flex;
     align-items: center;

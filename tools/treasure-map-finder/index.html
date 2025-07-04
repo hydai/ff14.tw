@@ -81,11 +81,12 @@
 
                     <!-- 地圖篩選 -->
                     <div class="filter-group map-filter-group">
-                        <div class="filter-group-header">
+                        <div class="filter-group-header collapsible-header" data-collapse="mapTags" data-expanded="false">
                             <label><span class="filter-icon">🗺️</span> 地圖</label>
                             <span class="filter-hint">可多選</span>
+                            <span class="collapse-indicator">▼</span>
                         </div>
-                        <div class="filter-tags map-tags-grid" id="mapTags">
+                        <div class="filter-tags map-tags-grid collapsed" id="mapTags">
                             <!-- G8 蒼天地圖 -->
                             <button class="filter-tag map-tag" data-map="Coerthas Western Highlands">
                                 <span class="map-name-zh">庫爾札斯西部高地</span>

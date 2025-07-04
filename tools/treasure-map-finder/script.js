@@ -172,6 +172,16 @@ class TreasureMapFinder {
         if (langEnBtn) langEnBtn.addEventListener('click', () => this.switchLanguageTemplate('en'));
         if (langJaBtn) langJaBtn.addEventListener('click', () => this.switchLanguageTemplate('ja'));
         
+        // 摺疊功能
+        const collapsibleHeaders = document.querySelectorAll('.collapsible-header');
+        collapsibleHeaders.forEach(header => {
+            header.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.toggleCollapse(header);
+            });
+        });
+        
         // 載入自訂格式設定
         this.loadFormatSettings();
     }
@@ -945,6 +955,27 @@ class TreasureMapFinder {
         
         // 顯示面板
         routePanel.classList.add('active');
+    }
+    
+    // 摺疊功能
+    toggleCollapse(header) {
+        const targetId = header.dataset.collapse;
+        const targetElement = document.getElementById(targetId);
+        
+        if (!targetElement) {
+            console.error('Target element not found:', targetId);
+            return;
+        }
+        
+        if (targetElement.classList.contains('collapsed')) {
+            targetElement.classList.remove('collapsed');
+            header.setAttribute('data-expanded', 'true');
+            console.log('Expanded:', targetId);
+        } else {
+            targetElement.classList.add('collapsed');
+            header.setAttribute('data-expanded', 'false');
+            console.log('Collapsed:', targetId);
+        }
     }
     
     // 複製整個路線
