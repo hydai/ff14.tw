@@ -163,6 +163,14 @@ class TreasureMapFinder {
             mapFormat.addEventListener('input', () => this.updateFormatPreview());
         }
         
+        // 語言快速切換按鈕
+        const langZhBtn = document.getElementById('langZhBtn');
+        const langEnBtn = document.getElementById('langEnBtn');
+        const langJaBtn = document.getElementById('langJaBtn');
+        if (langZhBtn) langZhBtn.addEventListener('click', () => this.switchLanguageTemplate('zh'));
+        if (langEnBtn) langEnBtn.addEventListener('click', () => this.switchLanguageTemplate('en'));
+        if (langJaBtn) langJaBtn.addEventListener('click', () => this.switchLanguageTemplate('ja'));
+        
         // 載入自訂格式設定
         this.loadFormatSettings();
     }
@@ -1083,6 +1091,43 @@ class TreasureMapFinder {
             .replace('<總數>', '5');
             
         preview.textContent = `傳送點範例：\n${teleportExample}\n\n寶圖範例：\n${mapExample}`;
+    }
+    
+    // 切換語言模板
+    switchLanguageTemplate(lang) {
+        const templates = {
+            zh: {
+                teleport: '/p 傳送至 <傳送點> <座標>',
+                map: '/p 下一個 <寶圖等級> - <地區> <座標>'
+            },
+            en: {
+                teleport: '/p Teleport to <傳送點_en> <座標>',
+                map: '/p Next <寶圖等級> - <地區_en> <座標>'
+            },
+            ja: {
+                teleport: '/p <傳送點_ja>にテレポート <座標>',
+                map: '/p 次 <寶圖等級> - <地區_ja> <座標>'
+            }
+        };
+        
+        const template = templates[lang];
+        if (!template) return;
+        
+        const teleportFormat = document.getElementById('teleportFormat');
+        const mapFormat = document.getElementById('mapFormat');
+        
+        if (teleportFormat) teleportFormat.value = template.teleport;
+        if (mapFormat) mapFormat.value = template.map;
+        
+        this.updateFormatPreview();
+        
+        // 顯示語言切換成功訊息
+        const langNames = {
+            zh: '中文',
+            en: '英文',
+            ja: '日文'
+        };
+        FF14Utils.showToast(`已切換至${langNames[lang]}模板`, 'info');
     }
     
     // 關閉路線面板
