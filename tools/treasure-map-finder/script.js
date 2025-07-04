@@ -132,6 +132,39 @@ class TreasureMapFinder {
         if (copyRouteBtn) {
             copyRouteBtn.addEventListener('click', () => this.copyEntireRoute());
         }
+        
+        // 自訂格式按鈕
+        const customFormatBtn = document.getElementById('customFormatBtn');
+        if (customFormatBtn) {
+            customFormatBtn.addEventListener('click', () => this.openFormatPanel());
+        }
+        
+        // 格式設定面板事件
+        const closeFormatPanelBtn = document.getElementById('closeFormatPanelBtn');
+        if (closeFormatPanelBtn) {
+            closeFormatPanelBtn.addEventListener('click', () => this.closeFormatPanel());
+        }
+        
+        const saveFormatBtn = document.getElementById('saveFormatBtn');
+        if (saveFormatBtn) {
+            saveFormatBtn.addEventListener('click', () => this.saveFormatSettings());
+        }
+        
+        const resetFormatBtn = document.getElementById('resetFormatBtn');
+        if (resetFormatBtn) {
+            resetFormatBtn.addEventListener('click', () => this.resetFormatSettings());
+        }
+        
+        // 格式輸入框變更時更新預覽
+        const teleportFormat = document.getElementById('teleportFormat');
+        const mapFormat = document.getElementById('mapFormat');
+        if (teleportFormat && mapFormat) {
+            teleportFormat.addEventListener('input', () => this.updateFormatPreview());
+            mapFormat.addEventListener('input', () => this.updateFormatPreview());
+        }
+        
+        // 載入自訂格式設定
+        this.loadFormatSettings();
     }
     
     handleFilterClick(e) {
@@ -873,11 +906,11 @@ class TreasureMapFinder {
                 `;
             }
             
-            // 點擊複製座標
+            // 點擊複製座標（使用自訂格式）
             stepDiv.addEventListener('click', () => {
-                const command = `/pos ${step.coords.x} ${step.coords.y} ${step.coords.z || 0}`;
-                navigator.clipboard.writeText(command).then(() => {
-                    FF14Utils.showToast('座標指令已複製', 'success');
+                const formattedText = this.formatStepForCopy(step, index + 1, result.route.length);
+                navigator.clipboard.writeText(formattedText).then(() => {
+                    FF14Utils.showToast('已複製', 'success');
                 });
             });
             
@@ -895,19 +928,9 @@ class TreasureMapFinder {
             return;
         }
         
-        // 建構路線文字
+        // 使用自訂格式建構路線文字
         const routeText = this.currentRoute.map((step, index) => {
-            const coords = `/pos ${step.coords.x} ${step.coords.y} ${step.coords.z || 0}`;
-            
-            if (step.type === 'teleport') {
-                const aetheryteNames = this.getAetheryteName(step.to);
-                const name = aetheryteNames.zh || step.to.zh || step.to;
-                return `【傳送】${name} - ${coords}`;
-            } else {
-                const zoneName = this.getZoneName(step.zone);
-                const levelName = step.mapLevel || '寶圖';
-                return `【${levelName}】${zoneName} - ${coords}`;
-            }
+            return this.formatStepForCopy(step, index + 1, this.currentRoute.length);
         }).join('\n');
         
         // 複製到剪貼簿
@@ -916,6 +939,150 @@ class TreasureMapFinder {
         }).catch(() => {
             FF14Utils.showToast('複製失敗，請再試一次', 'error');
         });
+    }
+    
+    // 格式化單一步驟供複製
+    formatStepForCopy(step, index, total) {
+        const format = step.type === 'teleport' ? this.formatSettings.teleport : this.formatSettings.map;
+        const coords = `/pos ${step.coords.x} ${step.coords.y} ${step.coords.z || 0}`;
+        
+        let result = format;
+        
+        if (step.type === 'teleport') {
+            const aetheryteNames = this.getAetheryteName(step.to);
+            result = result.replace('<傳送點>', aetheryteNames.zh || step.to.zh || step.to);
+            result = result.replace('<傳送點_en>', aetheryteNames.en || step.to.en || '');
+            result = result.replace('<傳送點_ja>', aetheryteNames.ja || step.to.ja || '');
+        } else {
+            result = result.replace('<寶圖等級>', step.mapLevel || '');
+            const zoneNames = this.getZoneAllNames(step.zone);
+            result = result.replace('<地區>', zoneNames.zh);
+            result = result.replace('<地區_en>', zoneNames.en);
+            result = result.replace('<地區_ja>', zoneNames.ja);
+        }
+        
+        result = result.replace('<座標>', coords);
+        result = result.replace('<序號>', index.toString());
+        result = result.replace('<總數>', total.toString());
+        
+        return result;
+    }
+    
+    // 取得地區的所有語言名稱
+    getZoneAllNames(zone) {
+        // 從 zone translations 取得
+        if (this.zoneTranslations && this.zoneTranslations[zone]) {
+            return this.zoneTranslations[zone];
+        }
+        
+        // 備用：返回原始名稱
+        return {
+            zh: zone,
+            en: zone,
+            ja: zone
+        };
+    }
+    
+    // 載入格式設定
+    loadFormatSettings() {
+        const saved = localStorage.getItem('treasureMapFormatSettings');
+        if (saved) {
+            try {
+                this.formatSettings = JSON.parse(saved);
+            } catch (e) {
+                this.formatSettings = this.getDefaultFormats();
+            }
+        } else {
+            this.formatSettings = this.getDefaultFormats();
+        }
+        
+        // 更新 UI
+        const teleportFormat = document.getElementById('teleportFormat');
+        const mapFormat = document.getElementById('mapFormat');
+        if (teleportFormat) teleportFormat.value = this.formatSettings.teleport;
+        if (mapFormat) mapFormat.value = this.formatSettings.map;
+    }
+    
+    // 取得預設格式
+    getDefaultFormats() {
+        return {
+            teleport: '/p 傳送至 <傳送點> <座標>',
+            map: '/p 下一個 <寶圖等級> - <地區> <座標>'
+        };
+    }
+    
+    // 開啟格式設定面板
+    openFormatPanel() {
+        const formatPanel = document.getElementById('formatPanel');
+        if (formatPanel) {
+            formatPanel.classList.add('active');
+            this.updateFormatPreview();
+        }
+    }
+    
+    // 關閉格式設定面板
+    closeFormatPanel() {
+        const formatPanel = document.getElementById('formatPanel');
+        if (formatPanel) {
+            formatPanel.classList.remove('active');
+        }
+    }
+    
+    // 儲存格式設定
+    saveFormatSettings() {
+        const teleportFormat = document.getElementById('teleportFormat').value;
+        const mapFormat = document.getElementById('mapFormat').value;
+        
+        this.formatSettings = {
+            teleport: teleportFormat,
+            map: mapFormat
+        };
+        
+        localStorage.setItem('treasureMapFormatSettings', JSON.stringify(this.formatSettings));
+        FF14Utils.showToast('格式設定已儲存', 'success');
+        this.closeFormatPanel();
+    }
+    
+    // 重置格式設定
+    resetFormatSettings() {
+        this.formatSettings = this.getDefaultFormats();
+        
+        const teleportFormat = document.getElementById('teleportFormat');
+        const mapFormat = document.getElementById('mapFormat');
+        if (teleportFormat) teleportFormat.value = this.formatSettings.teleport;
+        if (mapFormat) mapFormat.value = this.formatSettings.map;
+        
+        this.updateFormatPreview();
+        FF14Utils.showToast('已重置為預設格式', 'info');
+    }
+    
+    // 更新格式預覽
+    updateFormatPreview() {
+        const preview = document.getElementById('formatPreview');
+        if (!preview) return;
+        
+        const teleportFormat = document.getElementById('teleportFormat').value;
+        const mapFormat = document.getElementById('mapFormat').value;
+        
+        // 建立範例預覽
+        const teleportExample = teleportFormat
+            .replace('<傳送點>', '十二節之園')
+            .replace('<傳送點_en>', 'The Twelve Wonders')
+            .replace('<傳送點_ja>', '十二節の園')
+            .replace('<座標>', '/pos 9 32 0')
+            .replace('<序號>', '1')
+            .replace('<總數>', '5');
+            
+        const mapExample = mapFormat
+            .replace('<寶圖等級>', 'g15')
+            .replace('<地區>', '厄爾庇斯')
+            .replace('<地區_en>', 'Elpis')
+            .replace('<地區_ja>', 'エルピス')
+            .replace('<座標>', '/pos 11.8 33.1 0')
+            .replace('<序號>', '2')
+            .replace('<總數>', '5');
+            
+        preview.textContent = `傳送點範例：\n${teleportExample}\n\n寶圖範例：\n${mapExample}`;
     }
     
     // 關閉路線面板

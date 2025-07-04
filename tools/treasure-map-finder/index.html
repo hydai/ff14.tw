@@ -176,9 +176,62 @@
             <button class="btn btn-primary" id="copyRouteBtn">
                 <span class="btn-icon">📋</span> 複製路線
             </button>
+            <button class="btn btn-secondary" id="customFormatBtn">
+                <span class="btn-icon">⚙️</span> 自訂格式
+            </button>
         </div>
         <div class="route-steps" id="routeSteps">
             <!-- 路線步驟將由 JavaScript 動態生成 -->
+        </div>
+    </div>
+    
+    <!-- 自訂格式設定面板 -->
+    <div class="format-panel" id="formatPanel">
+        <div class="panel-header">
+            <h3>自訂輸出格式</h3>
+            <button class="btn-close" id="closeFormatPanelBtn" title="關閉">×</button>
+        </div>
+        <div class="format-content">
+            <div class="format-section">
+                <h4>傳送點格式</h4>
+                <textarea id="teleportFormat" class="format-input" rows="3">/p 傳送至 &lt;傳送點&gt; &lt;座標&gt;</textarea>
+                <div class="format-help">
+                    可用變數：
+                    <span class="format-var">&lt;傳送點&gt;</span>
+                    <span class="format-var">&lt;傳送點_en&gt;</span>
+                    <span class="format-var">&lt;傳送點_ja&gt;</span>
+                    <span class="format-var">&lt;座標&gt;</span>
+                    <span class="format-var">&lt;序號&gt;</span>
+                    <span class="format-var">&lt;總數&gt;</span>
+                </div>
+            </div>
+            
+            <div class="format-section">
+                <h4>寶圖格式</h4>
+                <textarea id="mapFormat" class="format-input" rows="3">/p 下一個 &lt;寶圖等級&gt; - &lt;地區&gt; &lt;座標&gt;</textarea>
+                <div class="format-help">
+                    可用變數：
+                    <span class="format-var">&lt;寶圖等級&gt;</span>
+                    <span class="format-var">&lt;地區&gt;</span>
+                    <span class="format-var">&lt;地區_en&gt;</span>
+                    <span class="format-var">&lt;地區_ja&gt;</span>
+                    <span class="format-var">&lt;座標&gt;</span>
+                    <span class="format-var">&lt;序號&gt;</span>
+                    <span class="format-var">&lt;總數&gt;</span>
+                </div>
+            </div>
+            
+            <div class="format-preview">
+                <h4>預覽</h4>
+                <div id="formatPreview" class="preview-box">
+                    <!-- 預覽內容將由 JavaScript 動態生成 -->
+                </div>
+            </div>
+            
+            <div class="format-actions">
+                <button class="btn btn-secondary" id="resetFormatBtn">重置為預設值</button>
+                <button class="btn btn-primary" id="saveFormatBtn">儲存設定</button>
+            </div>
         </div>
     </div>
 
