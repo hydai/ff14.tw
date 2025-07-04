@@ -9,8 +9,8 @@
 - **核心價值**：減少玩家在遊戲內外切換對照的時間
 
 ### 1.2 功能範圍
-- ✅ 包含：寶圖位置查詢、篩選、個人清單管理
-- ❌ 不包含：路線規劃、團隊分享、圖片上傳識別
+- ✅ 包含：寶圖位置查詢、篩選、個人清單管理、路線規劃、自訂輸出格式
+- ❌ 不包含：團隊分享、圖片上傳識別
 
 ## 2. 詳細功能規格
 
@@ -30,13 +30,15 @@
 #### 2.2.1 寶圖等級篩選
 ```javascript
 const mapLevels = [
-  { id: 'g8', name: 'G8 皮革寶圖', minLevel: 40 },
-  { id: 'g10', name: 'G10 山羊革寶圖', minLevel: 50 },
-  { id: 'g12', name: 'G12 瞪羚革寶圖', minLevel: 60 },
-  { id: 'g14', name: 'G14 蓋澤爾革寶圖', minLevel: 70 },
-  { id: 'g16', name: 'G16 薩維奈革寶圖', minLevel: 80 },
-  { id: 'g18', name: 'G18 麒麟革寶圖', minLevel: 90 }
+  { id: 'g8', name: 'G8 巨龍革地圖', count: 35 },
+  { id: 'g10', name: 'G10 瞪羚革地圖', count: 48 },
+  { id: 'g12', name: 'G12 纏尾蛟革地圖', count: 0 },  // 已整合至傳送點，未加入寶圖資料
+  { id: 'g14', name: 'G14 金毗羅鱷革地圖', count: 40 },
+  { id: 'g15', name: 'G15 蛇牛革地圖', count: 8 },
+  { id: 'g16', name: 'G16 銀狼革地圖', count: 0 },  // 尚未加入資料
+  { id: 'g17', name: 'G17 獰豹革地圖', count: 40 }
 ];
+// 總計：171 筆真實寶圖座標
 ```
 
 **互動行為**：
@@ -275,41 +277,54 @@ showError('載入寶圖資料失敗，請重新整理頁面再試。');
 
 ### Phase 1：基礎搜尋與清單管理（已完成）
 **實作成果：**
-- ✅ G1-G17 寶圖等級篩選
-- ✅ 11個主要地區篩選
+- ✅ G8、G10、G14、G15、G17 寶圖等級篩選（G12、G16 尚無資料）
+- ✅ 12個主要地區篩選
 - ✅ 卡片式寶圖展示（縮圖、等級、座標）
 - ✅ 個人清單管理（新增、移除、清空）
 - ✅ 座標複製功能（/pos X Y Z 指令）
 - ✅ 響應式設計
 - ✅ LocalStorage 資料持久化
 - ✅ 載入更多功能（初始24個）
+- ✅ 匯出/匯入清單功能（JSON格式）
 
-### Phase 2：路線規劃功能（規劃中）
-**核心功能：**
+### Phase 2：路線規劃功能（已完成）
+**實作成果：**
 1. **路線生成器**
-   - 從「我的清單」生成最佳尋寶路線
-   - 支援多種優化策略（最短距離、最少傳送、區域集中）
-   - 顯示預估傳送次數
+   - ✅ 從「我的清單」生成最佳尋寶路線（需至少2張寶圖）
+   - ✅ 傳送點分組策略優化（相同傳送點附近的寶圖一起收集）
+   - ✅ 顯示傳送次數、訪問地區統計
 
 2. **地圖整合**
-   - 各地區傳送點資料（暫定每地區 3 個：0,0,0、10,10,10、20,20,20）
-   - 計算傳送點到寶圖的 3D 距離
-   - 假設所有玩家可飛行
+   - ✅ 64個真實傳送點資料（G8、G10、G12、G14、G15、G17 地區）
+   - ✅ 3D 歐幾里得距離計算
+   - ✅ 支援多語言傳送點名稱（中文、英文、日文）
 
 3. **路線展示**
-   - 分步驟導航介面
-   - 顯示傳送/移動資訊
-   - 一鍵複製路線指令
+   - ✅ 分步驟導航介面（傳送點、寶圖位置）
+   - ✅ 單步驟點擊複製功能
+   - ✅ 一鍵複製完整路線
+   - ✅ 自訂輸出格式功能
+   - ✅ 語言模板快速切換（中文、英文、日文）
 
-**技術需求：**
-- 傳送點座標資料庫
-- 路徑演算法（TSP變體）
-- 3D 距離計算
+**技術實作：**
+- ✅ 傳送點座標資料庫（aetherytes.json）
+- ✅ 傳送點分組演算法（取代原本的改良式最近鄰居法）
+- ✅ 非對稱距離矩陣（任意點→傳送點 = 0）
+- ✅ LocalStorage 儲存自訂格式
 
-**簡化假設：**
-- 所有玩家可飛行（距離 = 直線距離）
-- 傳送費用暫設為 0
-- 任意點到傳送點的距離為 0（免費傳送）
+### Phase 2.1：自訂輸出格式（已完成）
+**實作成果：**
+1. **格式自訂功能**
+   - ✅ 傳送點與寶圖分別設定格式
+   - ✅ 支援多語言變數（<傳送點>、<傳送點_en>、<傳送點_ja>等）
+   - ✅ 支援序號與總數變數
+   - ✅ 即時預覽功能
+
+2. **語言模板**
+   - ✅ 中文：/p 傳送至 <傳送點> <座標>
+   - ✅ 英文：/p Teleport to <傳送點_en> <座標>
+   - ✅ 日文：/p <傳送點_ja>にテレポート <座標>
+   - ✅ 一鍵切換語言模板
 
 ### Phase 3：進階功能（未來規劃）
 1. **團隊協作**
@@ -1028,60 +1043,94 @@ showError('載入寶圖資料失敗，請重新整理頁面再試。');
 }
 ```
 
-#### 10.1.3 演算法設計
+#### 10.1.3 演算法設計（已實作）
 
-**移動成本規則（基於 FF14 傳送機制）：**
-1. **普通點到普通點（同地圖）**: 3D 歐幾里得距離
-2. **普通點到傳送點（任何地圖）**: 0 (瞬間傳送)
-3. **傳送點到普通點（同地圖）**: 3D 歐幾里得距離
-4. **傳送點到傳送點（任何地圖）**: 0 (傳送點間瞬移)
-5. **跨地圖移動**: 必須透過傳送點，成本為 0
+**已實作的傳送點分組演算法：**
+傳送點分組策略取代了原本的改良式最近鄰居法，核心概念是將相同傳送點附近的寶圖分組，一次性收集完畢再移動到下一個傳送點。
 
-**核心演算法流程：**
+**演算法流程：**
+1. 將所有寶圖按所屬地區分組
+2. 對每個地區：
+   - 找出每個寶圖最近的傳送點
+   - 將使用相同傳送點的寶圖分為一組
+   - 在每個傳送點群組內使用貪婪最近鄰居法規劃路線
+3. 連接各傳送點群組，生成完整路線
+
+**實際實作的核心方法：**
 ```javascript
-class RouteCalculator {
-  // 3D 距離計算（修正版）
-  calculateDistance(from, to) {
-    // 跨地圖移動
-    if (from.zoneId !== to.zoneId) {
-      return 0;
-    }
+solveWithTeleportGrouping(maps) {
+    // 將寶圖按地區分組
+    const mapsByZone = {};
+    maps.forEach(map => {
+        const zoneId = this.getZoneId(map.zone);
+        if (!mapsByZone[zoneId]) {
+            mapsByZone[zoneId] = [];
+        }
+        mapsByZone[zoneId].push(map);
+    });
     
-    // 任何點到傳送點：零成本
-    if (to.isTeleport) {
-      return 0;
-    }
-    
-    // 傳送點到普通點或普通點到普通點：3D 歐幾里得距離
-    const dx = from.coords.x - to.coords.x;
-    const dy = from.coords.y - to.coords.y;
-    const dz = from.coords.z - to.coords.z;
-    return Math.sqrt(dx * dx + dy * dy + dz * dz);
-  }
-  
-  // 主要路線計算
-  calculateRoute(maps) {
-    // 1. 找出起始地區（全域最近的寶圖-傳送點配對）
-    const { startRegion, startMap } = this.findStartingRegion(maps);
-    
-    // 2. 按地區分組
-    const mapsByRegion = this.groupByZone(maps);
-    
-    // 3. 決定地區訪問順序（第一個已決定，其餘按數量）
-    const regionOrder = this.getRegionOrder(mapsByRegion, startRegion);
-    
-    // 4. 為每個地區規劃路線
+    // 對每個地區生成路線
     const route = [];
-    for (const region of regionOrder) {
-      const regionRoute = this.planRegionRoute(
-        mapsByRegion[region], 
-        region === startRegion
-      );
-      route.push(...regionRoute);
+    for (const [zoneId, zoneMaps] of Object.entries(mapsByZone)) {
+        const teleportGroups = this.groupByNearestTeleport(zoneMaps, zoneId);
+        
+        for (const group of teleportGroups) {
+            // 傳送到該傳送點
+            route.push({
+                type: 'teleport',
+                to: group.teleport,
+                zone: zoneId,
+                coords: group.teleport.coords
+            });
+            
+            // 收集該傳送點附近的所有寶圖
+            const orderedMaps = this.orderMapsNearTeleport(group.maps, group.teleport);
+            orderedMaps.forEach(map => {
+                route.push({
+                    type: 'move',
+                    mapId: map.id,
+                    mapLevel: map.level,
+                    zone: zoneId,
+                    coords: map.coords
+                });
+            });
+        }
     }
     
     return route;
-  }
+}
+  
+// 將寶圖按最近的傳送點分組
+groupByNearestTeleport(maps, zoneId) {
+    const aetherytes = this.aetherytesData[zoneId] || [];
+    const groups = new Map();
+    
+    maps.forEach(map => {
+        let nearestAetheryte = null;
+        let minDistance = Infinity;
+        
+        aetherytes.forEach(aetheryte => {
+            const distance = this.calculateDistance3D(map.coords, aetheryte.coords);
+            if (distance < minDistance) {
+                minDistance = distance;
+                nearestAetheryte = aetheryte;
+            }
+        });
+        
+        if (nearestAetheryte) {
+            const key = nearestAetheryte.id;
+            if (!groups.has(key)) {
+                groups.set(key, {
+                    teleport: nearestAetheryte,
+                    maps: []
+                });
+            }
+            groups.get(key).maps.push(map);
+        }
+    });
+    
+    return Array.from(groups.values());
+}
   
   // 找出全域最近的寶圖-傳送點配對
   findStartingRegion(maps) {
@@ -1283,44 +1332,42 @@ findNearestAetheryte(maps) {
 }
 ```
 
-### 10.2 實作順序
-1. 建立暫定傳送點資料（每地區 3 個點）
-2. 實作 3D 距離計算函式（考慮非對稱性）
-3. 開發路線演算法核心邏輯（基於啟發式TSP）
-4. 建立路線顯示 UI
-5. 加入「生成路線」按鈕功能
-6. 測試各種邊界情況
+### 10.2 實作成果總結
+1. ✅ 建立完整傳送點資料（64個真實傳送點，涵蓋所有支援地區）
+2. ✅ 實作 3D 歐幾里得距離計算函式
+3. ✅ 開發傳送點分組演算法（優於原規劃的啟發式TSP）
+4. ✅ 建立路線顯示 UI（含單步驟複製、完整路線複製）
+5. ✅ 加入「生成路線」按鈕功能（至少需要2張寶圖）
+6. ✅ 測試各種邊界情況（跨地區、單地區、相同傳送點等）
+7. ✅ 實作自訂輸出格式功能
+8. ✅ 加入語言模板快速切換
 
-### 10.3 演算法特性說明
+### 10.3 演算法優勢
 
-**非對稱距離矩陣示例：**
-```
-設地圖內有：
-- 寶圖 A(1,1,0), B(5,1,0)
-- 傳送點 T1(3,3,0), T2(7,3,0)
+**傳送點分組策略的優點：**
+1. **直觀性**：符合玩家實際遊玩習慣（傳送到一個點，收集附近所有寶圖）
+2. **效率**：減少不必要的傳送次數
+3. **簡單性**：易於理解和實作
+4. **實用性**：生成的路線符合實際遊戲體驗
 
-距離矩陣:
-      A      B      T1     T2
-A     0    4.00     0      0     // A到任何傳送點都是0
-B   4.00     0      0      0     // B到任何傳送點都是0
-T1  2.83   2.83     0      0     // T1到寶圖有距離，到T2為0
-T2  6.32   2.83     0      0     // T2到寶圖有距離，到T1為0
-
-最佳路徑: A → T1 → B → T2，總距離 ≈ 2.83
-```
-
-**關鍵洞察：**
-1. 傳送點形成零成本的完全連通子圖
-2. 最佳策略通常是訪問所有寶圖後，以傳送點結束
-3. 充分利用「任意點到傳送點成本為0」的特性
+**實作細節：**
+- 使用 3D 歐幾里得距離計算
+- 支援跨地區路線規劃
+- 自動處理地區名稱到 zoneId 的轉換
+- 在每個傳送點群組內使用貪婪最近鄰居法優化順序
 
 ## 11. 測試檢查清單
 
-- [ ] 篩選功能正常運作
-- [ ] 清單新增/移除/清空功能
-- [ ] LocalStorage 資料持久化
-- [ ] 響應式設計各裝置正常
-- [ ] 圖片載入與錯誤處理
-- [ ] 鍵盤導航與無障礙
-- [ ] 複製座標功能
-- [ ] Modal 開關與焦點管理
+- [x] 篩選功能正常運作
+- [x] 清單新增/移除/清空功能
+- [x] LocalStorage 資料持久化
+- [x] 響應式設計各裝置正常
+- [x] 圖片載入與錯誤處理
+- [x] 鍵盤導航與無障礙
+- [x] 複製座標功能
+- [x] Modal 開關與焦點管理
+- [x] 路線生成與顯示功能
+- [x] 自訂格式設定與儲存
+- [x] 語言模板切換功能
+- [x] 跨地區路線規劃
+- [x] 匯出/匯入清單功能
