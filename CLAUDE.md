@@ -278,7 +278,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 3. **Mini Cactpot Calculator** (`mini-cactpot/`): 3x3 lottery probability calculator
 4. **Wondrous Tails Predictor** (`wondrous-tails/`): 4x4 bingo probability calculator
 5. **Faux Hollows Foxes** (`faux-hollows-foxes/`): 6x6 treasure hunting puzzle solver
-6. **Treasure Map Finder** (`treasure-map-finder/`): Search and manage treasure map locations with personal list feature
+6. **Treasure Map Finder** (`treasure-map-finder/`): 219 treasure map coordinates with route planning (G8/G10/G12/G14/G15/G17)
 
 ## Development Memories
 

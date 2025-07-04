@@ -2600,6 +2600,678 @@
       },
       "thumbnail": "images/treasures/g8_sea_of_clouds_10_thumb.jpg",
       "fullImage": "images/treasures/g8_sea_of_clouds_10.jpg"
+    },
+    {
+      "id": "tm_178",
+      "level": "g12",
+      "levelName": "纏尾蛟革地圖",
+      "zone": "Lakeland",
+      "zoneId": "norvrandt",
+      "coords": {
+        "x": 8.0,
+        "y": 21.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g12_lakeland_01_thumb.jpg",
+      "fullImage": "images/treasures/g12_lakeland_01.jpg"
+    },
+    {
+      "id": "tm_179",
+      "level": "g12",
+      "levelName": "纏尾蛟革地圖",
+      "zone": "Lakeland",
+      "zoneId": "norvrandt",
+      "coords": {
+        "x": 10.0,
+        "y": 25.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g12_lakeland_02_thumb.jpg",
+      "fullImage": "images/treasures/g12_lakeland_02.jpg"
+    },
+    {
+      "id": "tm_180",
+      "level": "g12",
+      "levelName": "纏尾蛟革地圖",
+      "zone": "Lakeland",
+      "zoneId": "norvrandt",
+      "coords": {
+        "x": 10.0,
+        "y": 11.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g12_lakeland_03_thumb.jpg",
+      "fullImage": "images/treasures/g12_lakeland_03.jpg"
+    },
+    {
+      "id": "tm_181",
+      "level": "g12",
+      "levelName": "纏尾蛟革地圖",
+      "zone": "Lakeland",
+      "zoneId": "norvrandt",
+      "coords": {
+        "x": 13.0,
+        "y": 12.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g12_lakeland_04_thumb.jpg",
+      "fullImage": "images/treasures/g12_lakeland_04.jpg"
+    },
+    {
+      "id": "tm_182",
+      "level": "g12",
+      "levelName": "纏尾蛟革地圖",
+      "zone": "Lakeland",
+      "zoneId": "norvrandt",
+      "coords": {
+        "x": 17.0,
+        "y": 17.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g12_lakeland_05_thumb.jpg",
+      "fullImage": "images/treasures/g12_lakeland_05.jpg"
+    },
+    {
+      "id": "tm_183",
+      "level": "g12",
+      "levelName": "纏尾蛟革地圖",
+      "zone": "Lakeland",
+      "zoneId": "norvrandt",
+      "coords": {
+        "x": 18.0,
+        "y": 7.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g12_lakeland_06_thumb.jpg",
+      "fullImage": "images/treasures/g12_lakeland_06.jpg"
+    },
+    {
+      "id": "tm_184",
+      "level": "g12",
+      "levelName": "纏尾蛟革地圖",
+      "zone": "Lakeland",
+      "zoneId": "norvrandt",
+      "coords": {
+        "x": 34.0,
+        "y": 25.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g12_lakeland_07_thumb.jpg",
+      "fullImage": "images/treasures/g12_lakeland_07.jpg"
+    },
+    {
+      "id": "tm_185",
+      "level": "g12",
+      "levelName": "纏尾蛟革地圖",
+      "zone": "Lakeland",
+      "zoneId": "norvrandt",
+      "coords": {
+        "x": 38.0,
+        "y": 13.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g12_lakeland_08_thumb.jpg",
+      "fullImage": "images/treasures/g12_lakeland_08.jpg"
+    },
+    {
+      "id": "tm_186",
+      "level": "g12",
+      "levelName": "纏尾蛟革地圖",
+      "zone": "Kholusia",
+      "zoneId": "norvrandt",
+      "coords": {
+        "x": 7.0,
+        "y": 18.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g12_kholusia_01_thumb.jpg",
+      "fullImage": "images/treasures/g12_kholusia_01.jpg"
+    },
+    {
+      "id": "tm_187",
+      "level": "g12",
+      "levelName": "纏尾蛟革地圖",
+      "zone": "Kholusia",
+      "zoneId": "norvrandt",
+      "coords": {
+        "x": 11.0,
+        "y": 13.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g12_kholusia_02_thumb.jpg",
+      "fullImage": "images/treasures/g12_kholusia_02.jpg"
+    },
+    {
+      "id": "tm_188",
+      "level": "g12",
+      "levelName": "纏尾蛟革地圖",
+      "zone": "Kholusia",
+      "zoneId": "norvrandt",
+      "coords": {
+        "x": 13.0,
+        "y": 16.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g12_kholusia_03_thumb.jpg",
+      "fullImage": "images/treasures/g12_kholusia_03.jpg"
+    },
+    {
+      "id": "tm_189",
+      "level": "g12",
+      "levelName": "纏尾蛟革地圖",
+      "zone": "Kholusia",
+      "zoneId": "norvrandt",
+      "coords": {
+        "x": 20.0,
+        "y": 17.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g12_kholusia_04_thumb.jpg",
+      "fullImage": "images/treasures/g12_kholusia_04.jpg"
+    },
+    {
+      "id": "tm_190",
+      "level": "g12",
+      "levelName": "纏尾蛟革地圖",
+      "zone": "Kholusia",
+      "zoneId": "norvrandt",
+      "coords": {
+        "x": 21.0,
+        "y": 9.5,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g12_kholusia_05_thumb.jpg",
+      "fullImage": "images/treasures/g12_kholusia_05.jpg"
+    },
+    {
+      "id": "tm_191",
+      "level": "g12",
+      "levelName": "纏尾蛟革地圖",
+      "zone": "Kholusia",
+      "zoneId": "norvrandt",
+      "coords": {
+        "x": 30.0,
+        "y": 17.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g12_kholusia_06_thumb.jpg",
+      "fullImage": "images/treasures/g12_kholusia_06.jpg"
+    },
+    {
+      "id": "tm_192",
+      "level": "g12",
+      "levelName": "纏尾蛟革地圖",
+      "zone": "Kholusia",
+      "zoneId": "norvrandt",
+      "coords": {
+        "x": 34.0,
+        "y": 10.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g12_kholusia_07_thumb.jpg",
+      "fullImage": "images/treasures/g12_kholusia_07.jpg"
+    },
+    {
+      "id": "tm_193",
+      "level": "g12",
+      "levelName": "纏尾蛟革地圖",
+      "zone": "Kholusia",
+      "zoneId": "norvrandt",
+      "coords": {
+        "x": 33.0,
+        "y": 31.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g12_kholusia_08_thumb.jpg",
+      "fullImage": "images/treasures/g12_kholusia_08.jpg"
+    },
+    {
+      "id": "tm_194",
+      "level": "g12",
+      "levelName": "纏尾蛟革地圖",
+      "zone": "Amh Araeng",
+      "zoneId": "norvrandt",
+      "coords": {
+        "x": 12.0,
+        "y": 14.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g12_amh_araeng_01_thumb.jpg",
+      "fullImage": "images/treasures/g12_amh_araeng_01.jpg"
+    },
+    {
+      "id": "tm_195",
+      "level": "g12",
+      "levelName": "纏尾蛟革地圖",
+      "zone": "Amh Araeng",
+      "zoneId": "norvrandt",
+      "coords": {
+        "x": 13.0,
+        "y": 30.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g12_amh_araeng_02_thumb.jpg",
+      "fullImage": "images/treasures/g12_amh_araeng_02.jpg"
+    },
+    {
+      "id": "tm_196",
+      "level": "g12",
+      "levelName": "纏尾蛟革地圖",
+      "zone": "Amh Araeng",
+      "zoneId": "norvrandt",
+      "coords": {
+        "x": 27.0,
+        "y": 13.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g12_amh_araeng_03_thumb.jpg",
+      "fullImage": "images/treasures/g12_amh_araeng_03.jpg"
+    },
+    {
+      "id": "tm_197",
+      "level": "g12",
+      "levelName": "纏尾蛟革地圖",
+      "zone": "Amh Araeng",
+      "zoneId": "norvrandt",
+      "coords": {
+        "x": 26.0,
+        "y": 23.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g12_amh_araeng_04_thumb.jpg",
+      "fullImage": "images/treasures/g12_amh_araeng_04.jpg"
+    },
+    {
+      "id": "tm_198",
+      "level": "g12",
+      "levelName": "纏尾蛟革地圖",
+      "zone": "Amh Araeng",
+      "zoneId": "norvrandt",
+      "coords": {
+        "x": 30.0,
+        "y": 30.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g12_amh_araeng_05_thumb.jpg",
+      "fullImage": "images/treasures/g12_amh_araeng_05.jpg"
+    },
+    {
+      "id": "tm_199",
+      "level": "g12",
+      "levelName": "纏尾蛟革地圖",
+      "zone": "Amh Araeng",
+      "zoneId": "norvrandt",
+      "coords": {
+        "x": 32.0,
+        "y": 8.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g12_amh_araeng_06_thumb.jpg",
+      "fullImage": "images/treasures/g12_amh_araeng_06.jpg"
+    },
+    {
+      "id": "tm_200",
+      "level": "g12",
+      "levelName": "纏尾蛟革地圖",
+      "zone": "Amh Araeng",
+      "zoneId": "norvrandt",
+      "coords": {
+        "x": 36.0,
+        "y": 11.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g12_amh_araeng_07_thumb.jpg",
+      "fullImage": "images/treasures/g12_amh_araeng_07.jpg"
+    },
+    {
+      "id": "tm_201",
+      "level": "g12",
+      "levelName": "纏尾蛟革地圖",
+      "zone": "Amh Araeng",
+      "zoneId": "norvrandt",
+      "coords": {
+        "x": 34.0,
+        "y": 17.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g12_amh_araeng_08_thumb.jpg",
+      "fullImage": "images/treasures/g12_amh_araeng_08.jpg"
+    },
+    {
+      "id": "tm_202",
+      "level": "g12",
+      "levelName": "纏尾蛟革地圖",
+      "zone": "Il Mheg",
+      "zoneId": "norvrandt",
+      "coords": {
+        "x": 7.0,
+        "y": 17.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g12_il_mheg_01_thumb.jpg",
+      "fullImage": "images/treasures/g12_il_mheg_01.jpg"
+    },
+    {
+      "id": "tm_203",
+      "level": "g12",
+      "levelName": "纏尾蛟革地圖",
+      "zone": "Il Mheg",
+      "zoneId": "norvrandt",
+      "coords": {
+        "x": 10.0,
+        "y": 13.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g12_il_mheg_02_thumb.jpg",
+      "fullImage": "images/treasures/g12_il_mheg_02.jpg"
+    },
+    {
+      "id": "tm_204",
+      "level": "g12",
+      "levelName": "纏尾蛟革地圖",
+      "zone": "Il Mheg",
+      "zoneId": "norvrandt",
+      "coords": {
+        "x": 12.0,
+        "y": 20.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g12_il_mheg_03_thumb.jpg",
+      "fullImage": "images/treasures/g12_il_mheg_03.jpg"
+    },
+    {
+      "id": "tm_205",
+      "level": "g12",
+      "levelName": "纏尾蛟革地圖",
+      "zone": "Il Mheg",
+      "zoneId": "norvrandt",
+      "coords": {
+        "x": 14.0,
+        "y": 27.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g12_il_mheg_04_thumb.jpg",
+      "fullImage": "images/treasures/g12_il_mheg_04.jpg"
+    },
+    {
+      "id": "tm_206",
+      "level": "g12",
+      "levelName": "纏尾蛟革地圖",
+      "zone": "Il Mheg",
+      "zoneId": "norvrandt",
+      "coords": {
+        "x": 21.0,
+        "y": 7.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g12_il_mheg_05_thumb.jpg",
+      "fullImage": "images/treasures/g12_il_mheg_05.jpg"
+    },
+    {
+      "id": "tm_207",
+      "level": "g12",
+      "levelName": "纏尾蛟革地圖",
+      "zone": "Il Mheg",
+      "zoneId": "norvrandt",
+      "coords": {
+        "x": 25.0,
+        "y": 12.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g12_il_mheg_06_thumb.jpg",
+      "fullImage": "images/treasures/g12_il_mheg_06.jpg"
+    },
+    {
+      "id": "tm_208",
+      "level": "g12",
+      "levelName": "纏尾蛟革地圖",
+      "zone": "Il Mheg",
+      "zoneId": "norvrandt",
+      "coords": {
+        "x": 31.0,
+        "y": 4.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g12_il_mheg_07_thumb.jpg",
+      "fullImage": "images/treasures/g12_il_mheg_07.jpg"
+    },
+    {
+      "id": "tm_209",
+      "level": "g12",
+      "levelName": "纏尾蛟革地圖",
+      "zone": "Il Mheg",
+      "zoneId": "norvrandt",
+      "coords": {
+        "x": 33.0,
+        "y": 10.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g12_il_mheg_08_thumb.jpg",
+      "fullImage": "images/treasures/g12_il_mheg_08.jpg"
+    },
+    {
+      "id": "tm_210",
+      "level": "g12",
+      "levelName": "纏尾蛟革地圖",
+      "zone": "The Rak'tika Greatwood",
+      "zoneId": "norvrandt",
+      "coords": {
+        "x": 11.0,
+        "y": 19.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g12_raktika_01_thumb.jpg",
+      "fullImage": "images/treasures/g12_raktika_01.jpg"
+    },
+    {
+      "id": "tm_211",
+      "level": "g12",
+      "levelName": "纏尾蛟革地圖",
+      "zone": "The Rak'tika Greatwood",
+      "zoneId": "norvrandt",
+      "coords": {
+        "x": 13.0,
+        "y": 24.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g12_raktika_02_thumb.jpg",
+      "fullImage": "images/treasures/g12_raktika_02.jpg"
+    },
+    {
+      "id": "tm_212",
+      "level": "g12",
+      "levelName": "纏尾蛟革地圖",
+      "zone": "The Rak'tika Greatwood",
+      "zoneId": "norvrandt",
+      "coords": {
+        "x": 22.0,
+        "y": 32.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g12_raktika_03_thumb.jpg",
+      "fullImage": "images/treasures/g12_raktika_03.jpg"
+    },
+    {
+      "id": "tm_213",
+      "level": "g12",
+      "levelName": "纏尾蛟革地圖",
+      "zone": "The Rak'tika Greatwood",
+      "zoneId": "norvrandt",
+      "coords": {
+        "x": 24.0,
+        "y": 15.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g12_raktika_04_thumb.jpg",
+      "fullImage": "images/treasures/g12_raktika_04.jpg"
+    },
+    {
+      "id": "tm_214",
+      "level": "g12",
+      "levelName": "纏尾蛟革地圖",
+      "zone": "The Rak'tika Greatwood",
+      "zoneId": "norvrandt",
+      "coords": {
+        "x": 24.0,
+        "y": 27.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g12_raktika_05_thumb.jpg",
+      "fullImage": "images/treasures/g12_raktika_05.jpg"
+    },
+    {
+      "id": "tm_215",
+      "level": "g12",
+      "levelName": "纏尾蛟革地圖",
+      "zone": "The Rak'tika Greatwood",
+      "zoneId": "norvrandt",
+      "coords": {
+        "x": 26.0,
+        "y": 34.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g12_raktika_06_thumb.jpg",
+      "fullImage": "images/treasures/g12_raktika_06.jpg"
+    },
+    {
+      "id": "tm_216",
+      "level": "g12",
+      "levelName": "纏尾蛟革地圖",
+      "zone": "The Rak'tika Greatwood",
+      "zoneId": "norvrandt",
+      "coords": {
+        "x": 34.0,
+        "y": 17.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g12_raktika_07_thumb.jpg",
+      "fullImage": "images/treasures/g12_raktika_07.jpg"
+    },
+    {
+      "id": "tm_217",
+      "level": "g12",
+      "levelName": "纏尾蛟革地圖",
+      "zone": "The Rak'tika Greatwood",
+      "zoneId": "norvrandt",
+      "coords": {
+        "x": 35.0,
+        "y": 22.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g12_raktika_08_thumb.jpg",
+      "fullImage": "images/treasures/g12_raktika_08.jpg"
+    },
+    {
+      "id": "tm_218",
+      "level": "g12",
+      "levelName": "纏尾蛟革地圖",
+      "zone": "The Tempest",
+      "zoneId": "norvrandt",
+      "coords": {
+        "x": 12.0,
+        "y": 11.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g12_tempest_01_thumb.jpg",
+      "fullImage": "images/treasures/g12_tempest_01.jpg"
+    },
+    {
+      "id": "tm_219",
+      "level": "g12",
+      "levelName": "纏尾蛟革地圖",
+      "zone": "The Tempest",
+      "zoneId": "norvrandt",
+      "coords": {
+        "x": 13.0,
+        "y": 14.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g12_tempest_02_thumb.jpg",
+      "fullImage": "images/treasures/g12_tempest_02.jpg"
+    },
+    {
+      "id": "tm_220",
+      "level": "g12",
+      "levelName": "纏尾蛟革地圖",
+      "zone": "The Tempest",
+      "zoneId": "norvrandt",
+      "coords": {
+        "x": 16.0,
+        "y": 18.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g12_tempest_03_thumb.jpg",
+      "fullImage": "images/treasures/g12_tempest_03.jpg"
+    },
+    {
+      "id": "tm_221",
+      "level": "g12",
+      "levelName": "纏尾蛟革地圖",
+      "zone": "The Tempest",
+      "zoneId": "norvrandt",
+      "coords": {
+        "x": 19.0,
+        "y": 8.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g12_tempest_04_thumb.jpg",
+      "fullImage": "images/treasures/g12_tempest_04.jpg"
+    },
+    {
+      "id": "tm_222",
+      "level": "g12",
+      "levelName": "纏尾蛟革地圖",
+      "zone": "The Tempest",
+      "zoneId": "norvrandt",
+      "coords": {
+        "x": 25.0,
+        "y": 11.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g12_tempest_05_thumb.jpg",
+      "fullImage": "images/treasures/g12_tempest_05.jpg"
+    },
+    {
+      "id": "tm_223",
+      "level": "g12",
+      "levelName": "纏尾蛟革地圖",
+      "zone": "The Tempest",
+      "zoneId": "norvrandt",
+      "coords": {
+        "x": 32.0,
+        "y": 5.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g12_tempest_06_thumb.jpg",
+      "fullImage": "images/treasures/g12_tempest_06.jpg"
+    },
+    {
+      "id": "tm_224",
+      "level": "g12",
+      "levelName": "纏尾蛟革地圖",
+      "zone": "The Tempest",
+      "zoneId": "norvrandt",
+      "coords": {
+        "x": 30.0,
+        "y": 20.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g12_tempest_07_thumb.jpg",
+      "fullImage": "images/treasures/g12_tempest_07.jpg"
+    },
+    {
+      "id": "tm_225",
+      "level": "g12",
+      "levelName": "纏尾蛟革地圖",
+      "zone": "The Tempest",
+      "zoneId": "norvrandt",
+      "coords": {
+        "x": 37.0,
+        "y": 17.0,
+        "z": 0.0
+      },
+      "thumbnail": "images/treasures/g12_tempest_08_thumb.jpg",
+      "fullImage": "images/treasures/g12_tempest_08.jpg"
     }
   ]
 }
