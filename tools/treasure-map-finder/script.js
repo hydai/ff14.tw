@@ -1168,7 +1168,7 @@ class RouteCalculator {
         return aetherytes;
     }
     
-    // 地區內路線規劃（基於非對稱距離矩陣）
+    // 地區內路線規劃（基於傳送點分組策略）
     planRegionRoute(regionMaps) {
         console.log('planRegionRoute 開始，地圖數量:', regionMaps.length);
         console.log('第一張地圖資料:', regionMaps[0]);
@@ -1184,10 +1184,10 @@ class RouteCalculator {
         console.log('地區名稱 (zone):', zoneName);
         console.log('地區ID (zoneId):', regionMaps[0].zoneId);
         
-        // 使用啟發式策略：先解決普通點TSP，再以最佳傳送點結束
-        const result = this.solveWithHeuristic(normalMaps, teleports);
-        console.log('啟發式求解結果路徑長度:', result.path.length);
-        console.log('啟發式求解結果路徑:', JSON.stringify(result.path, null, 2));
+        // 使用新的分組策略：根據最近傳送點將寶圖分組
+        const result = this.solveWithTeleportGrouping(normalMaps, teleports);
+        console.log('分組求解結果路徑長度:', result.path.length);
+        console.log('分組求解結果路徑:', JSON.stringify(result.path, null, 2));
         
         // 轉換為路線步驟格式
         const route = [];
@@ -1227,6 +1227,176 @@ class RouteCalculator {
         
         console.log('planRegionRoute 完成，路線步驟數:', route.length);
         return route;
+    }
+    
+    // 基於傳送點分組的求解策略
+    solveWithTeleportGrouping(normalPoints, teleportPoints) {
+        console.log('solveWithTeleportGrouping 開始');
+        console.log('寶圖數量:', normalPoints.length);
+        console.log('傳送點數量:', teleportPoints.length);
+        
+        if (normalPoints.length === 0) {
+            console.log('無寶圖，返回空路徑');
+            return { path: [], distance: 0 };
+        }
+        
+        if (teleportPoints.length === 0) {
+            console.log('無傳送點，使用純TSP');
+            return this.solvePureTSP(normalPoints);
+        }
+        
+        // 1. 為每個寶圖分配最近的傳送點
+        const mapGroups = new Map(); // teleportId -> maps[]
+        
+        for (const map of normalPoints) {
+            let closestTeleport = null;
+            let minDistance = Infinity;
+            
+            for (const teleport of teleportPoints) {
+                const dist = this.calculateDistance(
+                    teleport,
+                    { coords: map.coords, zoneId: map.zoneId }
+                );
+                
+                if (dist < minDistance) {
+                    minDistance = dist;
+                    closestTeleport = teleport;
+                }
+            }
+            
+            const teleportId = closestTeleport.id;
+            if (!mapGroups.has(teleportId)) {
+                mapGroups.set(teleportId, {
+                    teleport: closestTeleport,
+                    maps: []
+                });
+            }
+            mapGroups.get(teleportId).maps.push(map);
+            
+            console.log(`寶圖 ${map.id} 分配到傳送點 ${closestTeleport.name?.zh || closestTeleport.id}, 距離: ${minDistance}`);
+        }
+        
+        console.log('分組結果:', Array.from(mapGroups.entries()).map(([id, group]) => 
+            `${group.teleport.name?.zh || id}: ${group.maps.length}張`
+        ));
+        
+        // 2. 對每個傳送點組內的寶圖進行TSP求解
+        const groupRoutes = [];
+        for (const [teleportId, group] of mapGroups) {
+            if (group.maps.length === 1) {
+                // 只有一張寶圖，直接加入
+                groupRoutes.push({
+                    teleport: group.teleport,
+                    maps: group.maps,
+                    distance: this.calculateDistance(
+                        group.teleport,
+                        { coords: group.maps[0].coords, zoneId: group.maps[0].zoneId }
+                    )
+                });
+            } else {
+                // 多張寶圖，進行局部TSP
+                const localTSP = this.solveTSPFromTeleport(group.teleport, group.maps);
+                groupRoutes.push({
+                    teleport: group.teleport,
+                    maps: localTSP.path,
+                    distance: localTSP.distance
+                });
+            }
+        }
+        
+        // 3. 決定傳送點組的訪問順序（按寶圖數量降序）
+        groupRoutes.sort((a, b) => b.maps.length - a.maps.length);
+        console.log('傳送點訪問順序:', groupRoutes.map(g => 
+            `${g.teleport.name?.zh || g.teleport.id} (${g.maps.length}張)`
+        ));
+        
+        // 4. 構建最終路徑
+        const finalPath = [];
+        let totalDistance = 0;
+        
+        for (const group of groupRoutes) {
+            // 加入傳送點
+            finalPath.push(group.teleport);
+            // 加入該組的所有寶圖
+            finalPath.push(...group.maps);
+            totalDistance += group.distance;
+        }
+        
+        console.log('最終路徑構建完成，總長度:', finalPath.length);
+        console.log('路徑中傳送點數:', finalPath.filter(p => p.isTeleport).length);
+        console.log('路徑中寶圖數:', finalPath.filter(p => !p.isTeleport).length);
+        
+        return {
+            path: finalPath,
+            distance: totalDistance
+        };
+    }
+    
+    // 從傳送點開始的TSP求解
+    solveTSPFromTeleport(teleport, maps) {
+        if (maps.length === 1) {
+            return {
+                path: maps,
+                distance: this.calculateDistance(
+                    teleport,
+                    { coords: maps[0].coords, zoneId: maps[0].zoneId }
+                )
+            };
+        }
+        
+        // 使用最近鄰居法，從傳送點開始
+        const visited = new Array(maps.length).fill(false);
+        const path = [];
+        let totalDistance = 0;
+        
+        // 找到離傳送點最近的寶圖作為起點
+        let nearestIdx = -1;
+        let nearestDistance = Infinity;
+        
+        for (let i = 0; i < maps.length; i++) {
+            const dist = this.calculateDistance(
+                teleport,
+                { coords: maps[i].coords, zoneId: maps[i].zoneId }
+            );
+            if (dist < nearestDistance) {
+                nearestDistance = dist;
+                nearestIdx = i;
+            }
+        }
+        
+        // 從最近的寶圖開始
+        visited[nearestIdx] = true;
+        path.push(maps[nearestIdx]);
+        totalDistance += nearestDistance;
+        let currentIdx = nearestIdx;
+        
+        // 繼續訪問剩餘的寶圖
+        for (let i = 1; i < maps.length; i++) {
+            nearestIdx = -1;
+            nearestDistance = Infinity;
+            
+            for (let j = 0; j < maps.length; j++) {
+                if (!visited[j]) {
+                    const dist = this.calculateDistance(
+                        { coords: maps[currentIdx].coords, zoneId: maps[currentIdx].zoneId },
+                        { coords: maps[j].coords, zoneId: maps[j].zoneId }
+                    );
+                    if (dist < nearestDistance) {
+                        nearestDistance = dist;
+                        nearestIdx = j;
+                    }
+                }
+            }
+            
+            if (nearestIdx !== -1) {
+                visited[nearestIdx] = true;
+                path.push(maps[nearestIdx]);
+                totalDistance += nearestDistance;
+                currentIdx = nearestIdx;
+            }
+        }
+        
+        return { path, distance: totalDistance };
     }
     
     // 啟發式求解（改編自演算法文件）
