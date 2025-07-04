@@ -111,6 +111,74 @@
     font-weight: 500;
 }
 
+/* 地圖標籤特殊樣式 */
+.map-tag {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.75rem 1.25rem;
+    border-radius: 0.5rem;
+    white-space: normal;
+    text-align: center;
+    min-width: 150px;
+}
+
+.map-tag span {
+    display: block;
+    line-height: 1.4;
+}
+
+.map-name-zh {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+}
+
+.map-name-ja {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.125rem;
+}
+
+.map-name-en {
+    font-size: 0.625rem;
+    color: var(--text-secondary);
+    opacity: 0.8;
+}
+
+/* 地圖標籤網格布局 */
+.map-tags-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 0.75rem;
+}
+
+.map-tag:hover {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
+}
+
+.map-tag:hover .map-name-zh,
+.map-tag:hover .map-name-ja,
+.map-tag:hover .map-name-en {
+    color: white;
+}
+
+.map-tag.active {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
+}
+
+.map-tag.active .map-name-zh,
+.map-tag.active .map-name-ja,
+.map-tag.active .map-name-en {
+    color: white;
+}
+
 .filter-tag:hover {
     background: var(--primary-color);
     color: white;
@@ -738,6 +806,30 @@
     .filter-tag {
         font-size: 0.75rem;
         padding: 0.375rem 0.75rem;
+    }
+    
+    /* 地圖標籤在手機版的調整 */
+    .map-tags-grid {
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 0.5rem;
+    }
+    
+    .map-tag {
+        min-width: unset;
+        padding: 0.5rem 0.75rem;
+    }
+    
+    .map-name-zh {
+        font-size: 0.75rem;
+        margin-bottom: 0.125rem;
+    }
+    
+    .map-name-ja {
+        font-size: 0.625rem;
+    }
+    
+    .map-name-en {
+        font-size: 0.5rem;
     }
     
     .section-title {

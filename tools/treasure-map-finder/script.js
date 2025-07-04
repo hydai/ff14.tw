@@ -8,7 +8,8 @@ class TreasureMapFinder {
         this.myListIds = new Set(this.myList.map(item => item.id)); // 優化查找效能
         this.filters = {
             levels: new Set(),
-            zones: new Set()
+            zones: new Set(),
+            maps: new Set()
         };
         this.displayCount = 24;
         this.currentDisplayCount = 0;
@@ -176,20 +177,34 @@ class TreasureMapFinder {
     }
     
     handleFilterClick(e) {
-        const tag = e.target;
-        const isLevel = tag.hasAttribute('data-level');
-        const value = isLevel ? tag.dataset.level : tag.dataset.zone;
-        const filterSet = isLevel ? this.filters.levels : this.filters.zones;
+        const tag = e.target.closest('.filter-tag');
+        if (!tag) return;
         
-        if (filterSet.has(value)) {
-            filterSet.delete(value);
-            tag.classList.remove('active');
-        } else {
-            filterSet.add(value);
-            tag.classList.add('active');
+        let filterSet;
+        let value;
+        
+        if (tag.hasAttribute('data-level')) {
+            value = tag.dataset.level;
+            filterSet = this.filters.levels;
+        } else if (tag.hasAttribute('data-zone')) {
+            value = tag.dataset.zone;
+            filterSet = this.filters.zones;
+        } else if (tag.hasAttribute('data-map')) {
+            value = tag.dataset.map;
+            filterSet = this.filters.maps;
         }
         
-        this.applyFilters();
+        if (filterSet && value) {
+            if (filterSet.has(value)) {
+                filterSet.delete(value);
+                tag.classList.remove('active');
+            } else {
+                filterSet.add(value);
+                tag.classList.add('active');
+            }
+            
+            this.applyFilters();
+        }
     }
     
     applyFilters() {
@@ -198,7 +213,9 @@ class TreasureMapFinder {
                              this.filters.levels.has(map.level);
             const zoneMatch = this.filters.zones.size === 0 || 
                             this.filters.zones.has(map.zoneId);
-            return levelMatch && zoneMatch;
+            const mapMatch = this.filters.maps.size === 0 || 
+                           this.filters.maps.has(map.zone);
+            return levelMatch && zoneMatch && mapMatch;
         });
         
         this.currentDisplayCount = 0;
@@ -209,6 +226,7 @@ class TreasureMapFinder {
         // 清除所有篩選
         this.filters.levels.clear();
         this.filters.zones.clear();
+        this.filters.maps.clear();
         
         // 移除所有 active 類別
         document.querySelectorAll('.filter-tag.active').forEach(tag => {
