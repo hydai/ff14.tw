@@ -815,7 +815,7 @@ class TreasureMapFinder {
         }
         
         // 計算路線
-        const result = routeCalculator.calculateRoute(this.myList);
+        const result = routeCalculator.calculateRoute(this.myList, this.zoneTranslations);
         
         if (!result || !result.route || result.route.length === 0) {
             FF14Utils.showToast('無法生成路線', 'error');
@@ -859,8 +859,8 @@ class TreasureMapFinder {
             } else {
                 stepDiv.innerHTML = `
                     <span class="step-icon">📍</span>
-                    <span class="step-text">${step.mapLevel} - ${this.getZoneName(step.zone)}</span>
-                    <span class="step-coords">(${step.coords.x}, ${step.coords.y}, ${step.coords.z})</span>
+                    <span class="step-text">${step.mapLevel || ''} - ${this.getZoneName(step.zone)}</span>
+                    <span class="step-coords">(${step.coords.x}, ${step.coords.y}, ${step.coords.z || 0})</span>
                 `;
             }
             
@@ -941,12 +941,15 @@ class RouteCalculator {
     }
     
     // 主要路線計算
-    calculateRoute(maps) {
+    calculateRoute(maps, zoneTranslations = {}) {
         if (!maps || maps.length === 0) return { summary: {}, route: [] };
         if (!this.aetherytes) {
             console.error('傳送點資料尚未載入');
             return { summary: {}, route: [] };
         }
+        
+        // 儲存 zone translations 供後續使用
+        this.zoneTranslations = zoneTranslations;
         
         // 1. 找出起始地區（全域最近的寶圖-傳送點配對）
         const { startRegion, startMap } = this.findStartingRegion(maps);
@@ -971,11 +974,23 @@ class RouteCalculator {
             }
         }
         
+        // 獲取實際的地區名稱列表
+        const regionsVisited = [];
+        for (const regionId of regionOrder) {
+            if (mapsByRegion[regionId] && mapsByRegion[regionId].length > 0) {
+                // 使用第一個地圖的 zone 名稱
+                const zoneName = mapsByRegion[regionId][0].zone;
+                if (zoneName && !regionsVisited.includes(zoneName)) {
+                    regionsVisited.push(zoneName);
+                }
+            }
+        }
+        
         return {
             summary: {
                 totalMaps: maps.length,
                 totalTeleports: totalTeleports,
-                regionsVisited: regionOrder.filter(r => mapsByRegion[r] && mapsByRegion[r].length > 0)
+                regionsVisited: regionsVisited
             },
             route: route
         };
@@ -1048,6 +1063,9 @@ class RouteCalculator {
         const normalMaps = regionMaps; // 所有寶圖都是普通點
         const teleports = this.getRegionAetherytes(regionMaps[0].zoneId);
         
+        // 取得第一個地圖的 zone 名稱（實際地區名稱）
+        const zoneName = regionMaps[0].zone;
+        
         // 使用啟發式策略：先解決普通點TSP，再以最佳傳送點結束
         const result = this.solveWithHeuristic(normalMaps, teleports);
         
@@ -1063,7 +1081,8 @@ class RouteCalculator {
                     route.push({
                         type: 'teleport',
                         to: point.name,
-                        zone: point.zoneId,
+                        zone: zoneName,  // 使用實際的 zone 名稱
+                        zoneId: point.zoneId,
                         coords: point.coords
                     });
                 }
@@ -1072,8 +1091,9 @@ class RouteCalculator {
                 route.push({
                     type: 'move',
                     mapId: point.id,
-                    mapLevel: point.levelName,
-                    zone: point.zoneId,
+                    mapLevel: point.level || point.levelName,  // 確保有 level 資料
+                    zone: point.zone,  // 使用實際的 zone 名稱
+                    zoneId: point.zoneId,
                     coords: point.coords
                 });
                 lastWasTeleport = false;
