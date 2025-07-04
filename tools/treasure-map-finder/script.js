@@ -942,23 +942,32 @@ class RouteCalculator {
     
     // 主要路線計算
     calculateRoute(maps, zoneTranslations = {}) {
+        console.log('=== 開始路線計算 ===');
+        console.log('輸入地圖數量:', maps.length);
+        console.log('輸入地圖資料:', JSON.stringify(maps, null, 2));
+        
         if (!maps || maps.length === 0) return { summary: {}, route: [] };
         if (!this.aetherytes) {
             console.error('傳送點資料尚未載入');
             return { summary: {}, route: [] };
         }
         
+        console.log('傳送點資料已載入:', Object.keys(this.aetherytes));
+        
         // 儲存 zone translations 供後續使用
         this.zoneTranslations = zoneTranslations;
         
         // 1. 找出起始地區（全域最近的寶圖-傳送點配對）
         const { startRegion, startMap } = this.findStartingRegion(maps);
+        console.log('起始地區:', startRegion, '起始地圖:', startMap);
         
         // 2. 按地區分組
         const mapsByRegion = this.groupByZone(maps);
+        console.log('地區分組結果:', Object.keys(mapsByRegion).map(k => `${k}: ${mapsByRegion[k].length}張`));
         
         // 3. 決定地區訪問順序（第一個已決定，其餘按數量）
         const regionOrder = this.getRegionOrder(mapsByRegion, startRegion);
+        console.log('地區訪問順序:', regionOrder);
         
         // 4. 為每個地區規劃路線
         const route = [];
@@ -966,11 +975,16 @@ class RouteCalculator {
         
         for (const region of regionOrder) {
             if (mapsByRegion[region]) {
+                console.log(`\n--- 規劃 ${region} 地區路線 ---`);
                 const regionRoute = this.planRegionRoute(mapsByRegion[region]);
+                console.log(`${region} 地區路線步驟數:`, regionRoute.length);
+                console.log(`${region} 地區路線詳情:`, JSON.stringify(regionRoute, null, 2));
                 route.push(...regionRoute);
                 
                 // 計算傳送次數
-                totalTeleports += regionRoute.filter(step => step.type === 'teleport').length;
+                const regionTeleports = regionRoute.filter(step => step.type === 'teleport').length;
+                console.log(`${region} 地區傳送次數:`, regionTeleports);
+                totalTeleports += regionTeleports;
             }
         }
         
@@ -986,6 +1000,11 @@ class RouteCalculator {
             }
         }
         
+        console.log('\n=== 路線計算完成 ===');
+        console.log('總傳送次數:', totalTeleports);
+        console.log('訪問地區:', regionsVisited);
+        console.log('完整路線:', JSON.stringify(route, null, 2));
+        
         return {
             summary: {
                 totalMaps: maps.length,
@@ -998,24 +1017,37 @@ class RouteCalculator {
     
     // 找出全域最近的寶圖-傳送點配對
     findStartingRegion(maps) {
+        console.log('findStartingRegion 開始');
         let minDistance = Infinity;
         let startRegion = null;
         let startMap = null;
         
         for (const map of maps) {
-            const aetherytes = this.getRegionAetherytes(map.zoneId);
+            // 確保 map 有 zoneId
+            const zoneId = this.getZoneId(map.zone) || map.zoneId;
+            if (!zoneId) {
+                console.log(`警告: 無法找到 ${map.zone} 的 zoneId`);
+                continue;
+            }
+            
+            const aetherytes = this.getRegionAetherytes(zoneId);
+            console.log(`地圖 ${map.id} (${map.zone}) 的 zoneId: ${zoneId}, 傳送點數量: ${aetherytes.length}`);
+            
             for (const aetheryte of aetherytes) {
                 const dist = this.calculateDistance(
-                    { coords: map.coords, zoneId: map.zoneId },
-                    { coords: aetheryte.coords, zoneId: map.zoneId, isTeleport: true }
+                    { coords: map.coords, zoneId: zoneId },
+                    { coords: aetheryte.coords, zoneId: zoneId, isTeleport: true }
                 );
+                console.log(`  - 傳送點 ${aetheryte.name?.zh || aetheryte.id} 距離: ${dist}`);
                 if (dist < minDistance) {
                     minDistance = dist;
-                    startRegion = map.zoneId;
-                    startMap = map;
+                    startRegion = zoneId;
+                    startMap = { ...map, zoneId: zoneId };
                 }
             }
         }
+        
+        console.log(`起始地區選擇: ${startRegion}, 最短距離: ${minDistance}`);
         return { startRegion, startMap };
     }
     
@@ -1023,12 +1055,78 @@ class RouteCalculator {
     groupByZone(maps) {
         const groups = {};
         for (const map of maps) {
-            if (!groups[map.zoneId]) {
-                groups[map.zoneId] = [];
+            // 將 zone 名稱轉換為 zoneId
+            const zoneId = this.getZoneId(map.zone) || map.zoneId || 'unknown';
+            if (!groups[zoneId]) {
+                groups[zoneId] = [];
             }
-            groups[map.zoneId].push(map);
+            // 確保每個 map 都有 zoneId
+            groups[zoneId].push({
+                ...map,
+                zoneId: zoneId
+            });
         }
         return groups;
+    }
+    
+    // 將 zone 名稱轉換為 zoneId
+    getZoneId(zoneName) {
+        // 建立 zone 名稱到 zoneId 的映射
+        const zoneMapping = {
+            // 2.0 地區
+            'La Noscea': 'la_noscea',
+            'The Black Shroud': 'the_black_shroud',
+            'Thanalan': 'thanalan',
+            'Coerthas': 'coerthas',
+            'Mor Dhona': 'mor_dhona',
+            
+            // 3.0 蒼天地區
+            'Coerthas Western Highlands': 'coerthas',
+            'The Dravanian Forelands': 'dravania',
+            'The Churning Mists': 'dravania',
+            'The Sea of Clouds': 'abalathia',
+            'Abalathia': 'abalathia',
+            'Dravania': 'dravania',
+            
+            // 4.0 紅蓮地區
+            'The Fringes': 'gyr_abania',
+            'The Peaks': 'gyr_abania',
+            'The Lochs': 'gyr_abania',
+            'The Ruby Sea': 'othard',
+            'Yanxia': 'othard',
+            'The Azim Steppe': 'othard',
+            'Gyr Abania': 'gyr_abania',
+            'Othard': 'othard',
+            
+            // 5.0 漆黑地區
+            'Lakeland': 'norvrandt',
+            'Kholusia': 'norvrandt',
+            'Amh Araeng': 'norvrandt',
+            'Il Mheg': 'norvrandt',
+            'The Rak\'tika Greatwood': 'norvrandt',
+            'The Tempest': 'norvrandt',
+            'Norvrandt': 'norvrandt',
+            
+            // 6.0 曉月地區
+            'Labyrinthos': 'ilsabard',
+            'Thavnair': 'ilsabard',
+            'Garlemald': 'ilsabard',
+            'Mare Lamentorum': 'ilsabard',
+            'Elpis': 'elpis',
+            'Ultima Thule': 'ilsabard',
+            'Ilsabard': 'ilsabard',
+            
+            // 7.0 黃金地區
+            'Urqopacha': 'tural',
+            'Kozama\'uka': 'tural',
+            'Yak T\'el': 'tural',
+            'Shaaloani': 'tural',
+            'Heritage Found': 'tural',
+            'Living Memory': 'tural',
+            'Tural': 'tural'
+        };
+        
+        return zoneMapping[zoneName] || null;
     }
     
     // 決定地區訪問順序
@@ -1046,28 +1144,50 @@ class RouteCalculator {
     
     // 取得地區的傳送點
     getRegionAetherytes(zoneId) {
-        if (!this.aetherytes || !this.aetherytes[zoneId]) {
+        console.log(`getRegionAetherytes 查詢 zoneId: ${zoneId}`);
+        console.log('可用的 zoneIds:', this.aetherytes ? Object.keys(this.aetherytes) : 'aetherytes 未載入');
+        
+        if (!this.aetherytes) {
+            console.log('傳送點資料尚未載入');
+            return [];
+        }
+        
+        if (!this.aetherytes[zoneId]) {
+            console.log(`找不到 ${zoneId} 的傳送點資料`);
             return [];
         }
         
         // 將傳送點資料加上必要的屬性
-        return this.aetherytes[zoneId].map(a => ({
+        const aetherytes = this.aetherytes[zoneId].map(a => ({
             ...a,
             zoneId: zoneId,
             isTeleport: true
         }));
+        
+        console.log(`找到 ${aetherytes.length} 個傳送點:`, aetherytes.map(a => a.name?.zh || a.id));
+        return aetherytes;
     }
     
     // 地區內路線規劃（基於非對稱距離矩陣）
     planRegionRoute(regionMaps) {
+        console.log('planRegionRoute 開始，地圖數量:', regionMaps.length);
+        console.log('第一張地圖資料:', regionMaps[0]);
+        
         const normalMaps = regionMaps; // 所有寶圖都是普通點
         const teleports = this.getRegionAetherytes(regionMaps[0].zoneId);
         
+        console.log('取得的傳送點數量:', teleports.length);
+        console.log('傳送點資料:', JSON.stringify(teleports, null, 2));
+        
         // 取得第一個地圖的 zone 名稱（實際地區名稱）
         const zoneName = regionMaps[0].zone;
+        console.log('地區名稱 (zone):', zoneName);
+        console.log('地區ID (zoneId):', regionMaps[0].zoneId);
         
         // 使用啟發式策略：先解決普通點TSP，再以最佳傳送點結束
         const result = this.solveWithHeuristic(normalMaps, teleports);
+        console.log('啟發式求解結果路徑長度:', result.path.length);
+        console.log('啟發式求解結果路徑:', JSON.stringify(result.path, null, 2));
         
         // 轉換為路線步驟格式
         const route = [];
@@ -1075,84 +1195,156 @@ class RouteCalculator {
         
         for (let i = 0; i < result.path.length; i++) {
             const point = result.path[i];
+            console.log(`處理路徑點 ${i}:`, point);
             
             if (point.isTeleport) {
                 if (i === 0 || !lastWasTeleport) {
-                    route.push({
+                    const routeStep = {
                         type: 'teleport',
                         to: point.name,
                         zone: zoneName,  // 使用實際的 zone 名稱
                         zoneId: point.zoneId,
                         coords: point.coords
-                    });
+                    };
+                    console.log('新增傳送步驟:', routeStep);
+                    route.push(routeStep);
                 }
                 lastWasTeleport = true;
             } else {
-                route.push({
+                const routeStep = {
                     type: 'move',
                     mapId: point.id,
                     mapLevel: point.level || point.levelName,  // 確保有 level 資料
                     zone: point.zone,  // 使用實際的 zone 名稱
                     zoneId: point.zoneId,
                     coords: point.coords
-                });
+                };
+                console.log('新增移動步驟:', routeStep);
+                route.push(routeStep);
                 lastWasTeleport = false;
             }
         }
         
+        console.log('planRegionRoute 完成，路線步驟數:', route.length);
         return route;
     }
     
     // 啟發式求解（改編自演算法文件）
     solveWithHeuristic(normalPoints, teleportPoints) {
+        console.log('solveWithHeuristic 開始');
+        console.log('普通點數量:', normalPoints.length);
+        console.log('傳送點數量:', teleportPoints.length);
+        
         // 特殊情況
         if (normalPoints.length === 0) {
+            console.log('無普通點，返回所有傳送點');
             return { path: teleportPoints, distance: 0 };
         }
         
-        if (normalPoints.length === 1) {
-            return { 
-                path: [...normalPoints, ...teleportPoints], 
-                distance: 0 
-            };
-        }
-        
-        // 一般情況：先解決普通點的TSP
-        const normalTSP = this.solvePureTSP(normalPoints);
-        
         if (teleportPoints.length === 0) {
+            console.log('無傳送點，返回純TSP結果');
+            const normalTSP = this.solvePureTSP(normalPoints);
             return normalTSP;
         }
         
-        // 找到距離最後一個普通點最近的傳送點
-        const lastNormalPoint = normalTSP.path[normalTSP.path.length - 1];
-        let bestTeleport = teleportPoints[0];
-        let minDistance = this.calculateDistance(
-            { coords: lastNormalPoint.coords, zoneId: lastNormalPoint.zoneId },
-            bestTeleport
+        // 一般情況：需要先找到最佳起始傳送點
+        console.log('尋找最佳起始傳送點');
+        
+        // 先解決普通點的TSP以確定最佳路徑
+        const normalTSP = this.solvePureTSP(normalPoints);
+        console.log('普通點TSP解決，路徑長度:', normalTSP.path.length);
+        
+        // 找到距離第一個普通點最近的傳送點作為起始點
+        const firstNormalPoint = normalTSP.path[0];
+        console.log('第一個普通點:', firstNormalPoint);
+        
+        let bestStartTeleport = teleportPoints[0];
+        let minStartDistance = this.calculateDistance(
+            bestStartTeleport,
+            { coords: firstNormalPoint.coords, zoneId: firstNormalPoint.zoneId }
         );
         
+        console.log('初始起始傳送點:', bestStartTeleport);
+        console.log('初始起始距離:', minStartDistance);
+        
         for (const teleport of teleportPoints.slice(1)) {
+            const distance = this.calculateDistance(
+                teleport,
+                { coords: firstNormalPoint.coords, zoneId: firstNormalPoint.zoneId }
+            );
+            console.log(`測試起始傳送點 ${teleport.name?.zh || teleport.id}, 距離: ${distance}`);
+            if (distance < minStartDistance) {
+                minStartDistance = distance;
+                bestStartTeleport = teleport;
+                console.log('找到更近的起始傳送點!');
+            }
+        }
+        
+        console.log('最終選擇的起始傳送點:', bestStartTeleport);
+        
+        // 如果只有一個普通點，路徑就是：起始傳送點 → 普通點 → 其他傳送點
+        if (normalPoints.length === 1) {
+            console.log('只有一個普通點的特殊情況');
+            return { 
+                path: [bestStartTeleport, ...normalPoints, ...teleportPoints.filter(t => t !== bestStartTeleport)], 
+                distance: minStartDistance 
+            };
+        }
+        
+        // 找到距離最後一個普通點最近的傳送點作為結束點
+        const lastNormalPoint = normalTSP.path[normalTSP.path.length - 1];
+        console.log('最後一個普通點:', lastNormalPoint);
+        
+        let bestEndTeleport = teleportPoints[0];
+        let minEndDistance = this.calculateDistance(
+            { coords: lastNormalPoint.coords, zoneId: lastNormalPoint.zoneId },
+            bestEndTeleport
+        );
+        
+        // 避免選擇相同的起始和結束傳送點
+        if (bestEndTeleport === bestStartTeleport && teleportPoints.length > 1) {
+            bestEndTeleport = teleportPoints[1];
+            minEndDistance = this.calculateDistance(
+                { coords: lastNormalPoint.coords, zoneId: lastNormalPoint.zoneId },
+                bestEndTeleport
+            );
+        }
+        
+        console.log('初始結束傳送點:', bestEndTeleport);
+        console.log('初始結束距離:', minEndDistance);
+        
+        for (const teleport of teleportPoints) {
+            if (teleport === bestStartTeleport) continue; // 跳過起始傳送點
+            
             const distance = this.calculateDistance(
                 { coords: lastNormalPoint.coords, zoneId: lastNormalPoint.zoneId },
                 teleport
             );
-            if (distance < minDistance) {
-                minDistance = distance;
-                bestTeleport = teleport;
+            console.log(`測試結束傳送點 ${teleport.name?.zh || teleport.id}, 距離: ${distance}`);
+            if (distance < minEndDistance) {
+                minEndDistance = distance;
+                bestEndTeleport = teleport;
+                console.log('找到更近的結束傳送點!');
             }
         }
         
-        // 構建最終路徑：普通點 → 最佳傳送點 → 其他傳送點
+        console.log('最終選擇的結束傳送點:', bestEndTeleport);
+        
+        // 構建最終路徑：起始傳送點 → 普通點們 → 結束傳送點 → 其他傳送點
+        const otherTeleports = teleportPoints.filter(t => t !== bestStartTeleport && t !== bestEndTeleport);
         const finalPath = [
+            bestStartTeleport,
             ...normalTSP.path,
-            bestTeleport,
-            ...teleportPoints.filter(t => t !== bestTeleport)
+            bestEndTeleport,
+            ...otherTeleports
         ];
+        
+        console.log('最終路徑長度:', finalPath.length);
+        console.log('最終路徑包含傳送點數:', finalPath.filter(p => p.isTeleport).length);
         
         return {
             path: finalPath,
-            distance: normalTSP.distance + minDistance
+            distance: minStartDistance + normalTSP.distance + minEndDistance
         };
     }
     
