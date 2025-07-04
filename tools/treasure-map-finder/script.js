@@ -114,6 +114,18 @@ class TreasureMapFinder {
         if (overlay) {
             overlay.addEventListener('click', () => this.toggleListPanel());
         }
+        
+        // 路線生成按鈕
+        const generateRouteBtn = document.getElementById('generateRouteBtn');
+        if (generateRouteBtn) {
+            generateRouteBtn.addEventListener('click', () => this.generateRoute());
+        }
+        
+        // 關閉路線面板
+        const closeRoutePanelBtn = document.getElementById('closeRoutePanelBtn');
+        if (closeRoutePanelBtn) {
+            closeRoutePanelBtn.addEventListener('click', () => this.closeRoutePanel());
+        }
     }
     
     handleFilterClick(e) {
@@ -484,6 +496,12 @@ class TreasureMapFinder {
     updateListCount() {
         this.elements.listCount.textContent = `(${this.myList.length})`;
         this.elements.totalCount.textContent = this.myList.length;
+        
+        // 更新生成路線按鈕狀態
+        const generateRouteBtn = document.getElementById('generateRouteBtn');
+        if (generateRouteBtn) {
+            generateRouteBtn.disabled = this.myList.length < 2;
+        }
     }
     
     saveToStorage() {
@@ -776,10 +794,405 @@ class TreasureMapFinder {
         // 清空檔案輸入
         event.target.value = '';
     }
+    
+    // 生成路線
+    async generateRoute() {
+        if (this.myList.length < 2) {
+            FF14Utils.showToast('至少需要 2 張寶圖才能生成路線', 'error');
+            return;
+        }
+        
+        // 等待 routeCalculator 載入完成
+        if (!routeCalculator || !routeCalculator.aetherytes) {
+            FF14Utils.showToast('正在載入傳送點資料，請稍後再試', 'info');
+            // 等待一下再試
+            setTimeout(() => {
+                if (routeCalculator && routeCalculator.aetherytes) {
+                    this.generateRoute();
+                }
+            }, 1000);
+            return;
+        }
+        
+        // 計算路線
+        const result = routeCalculator.calculateRoute(this.myList);
+        
+        if (!result || !result.route || result.route.length === 0) {
+            FF14Utils.showToast('無法生成路線', 'error');
+            return;
+        }
+        
+        // 顯示路線結果
+        this.showRouteResult(result);
+    }
+    
+    // 顯示路線結果
+    showRouteResult(result) {
+        const routePanel = document.getElementById('routePanel');
+        const routeSummary = document.getElementById('routeSummary');
+        const routeSteps = document.getElementById('routeSteps');
+        
+        // 生成摘要
+        const regionsText = result.summary.regionsVisited
+            .map(zone => this.getZoneName(zone))
+            .join('、');
+        
+        routeSummary.innerHTML = `
+            <p>總計：${result.summary.totalMaps} 張寶圖 | 
+               傳送次數：${result.summary.totalTeleports} 次 | 
+               訪問地區：${regionsText}</p>
+        `;
+        
+        // 生成步驟
+        routeSteps.innerHTML = '';
+        result.route.forEach((step, index) => {
+            const stepDiv = document.createElement('div');
+            stepDiv.className = 'route-step';
+            
+            if (step.type === 'teleport') {
+                const aetheryteNames = this.getAetheryteName(step.to);
+                stepDiv.innerHTML = `
+                    <span class="step-icon">🔄</span>
+                    <span class="step-text">傳送至 ${aetheryteNames.zh || step.to.zh || step.to}</span>
+                    <span class="step-coords">(${step.coords.x}, ${step.coords.y})</span>
+                `;
+            } else {
+                stepDiv.innerHTML = `
+                    <span class="step-icon">📍</span>
+                    <span class="step-text">${step.mapLevel} - ${this.getZoneName(step.zone)}</span>
+                    <span class="step-coords">(${step.coords.x}, ${step.coords.y}, ${step.coords.z})</span>
+                `;
+            }
+            
+            // 點擊複製座標
+            stepDiv.addEventListener('click', () => {
+                const command = `/pos ${step.coords.x} ${step.coords.y} ${step.coords.z || 0}`;
+                navigator.clipboard.writeText(command).then(() => {
+                    FF14Utils.showToast('座標指令已複製', 'success');
+                });
+            });
+            
+            routeSteps.appendChild(stepDiv);
+        });
+        
+        // 顯示面板
+        routePanel.classList.add('active');
+    }
+    
+    // 關閉路線面板
+    closeRoutePanel() {
+        const routePanel = document.getElementById('routePanel');
+        routePanel.classList.remove('active');
+    }
+    
+    // 取得地區名稱
+    getZoneName(zoneId) {
+        if (!this.zoneTranslations || !this.zoneTranslations[zoneId]) {
+            return zoneId;
+        }
+        return this.zoneTranslations[zoneId].zh || zoneId;
+    }
+    
+    // 取得傳送點名稱
+    getAetheryteName(aetheryteData) {
+        // 如果是物件格式（包含多語言）
+        if (typeof aetheryteData === 'object' && aetheryteData !== null) {
+            return aetheryteData;
+        }
+        // 如果是字串，返回包裝成物件
+        return { zh: aetheryteData };
+    }
+}
+
+// 路線計算器類別
+class RouteCalculator {
+    constructor() {
+        this.aetherytes = null;
+        this.loadAetherytes();
+    }
+    
+    async loadAetherytes() {
+        try {
+            const response = await fetch('../../data/aetherytes.json');
+            const data = await response.json();
+            this.aetherytes = data.aetherytes;
+        } catch (error) {
+            console.error('載入傳送點資料失敗:', error);
+        }
+    }
+    
+    // 3D 距離計算（修正版）
+    calculateDistance(from, to) {
+        // 跨地圖移動
+        if (from.zoneId !== to.zoneId) {
+            return 0;
+        }
+        
+        // 任何點到傳送點：零成本
+        if (to.isTeleport) {
+            return 0;
+        }
+        
+        // 傳送點到普通點或普通點到普通點：3D 歐幾里得距離
+        const dx = from.coords.x - to.coords.x;
+        const dy = from.coords.y - to.coords.y;
+        const dz = from.coords.z - to.coords.z;
+        return Math.sqrt(dx * dx + dy * dy + dz * dz);
+    }
+    
+    // 主要路線計算
+    calculateRoute(maps) {
+        if (!maps || maps.length === 0) return { summary: {}, route: [] };
+        if (!this.aetherytes) {
+            console.error('傳送點資料尚未載入');
+            return { summary: {}, route: [] };
+        }
+        
+        // 1. 找出起始地區（全域最近的寶圖-傳送點配對）
+        const { startRegion, startMap } = this.findStartingRegion(maps);
+        
+        // 2. 按地區分組
+        const mapsByRegion = this.groupByZone(maps);
+        
+        // 3. 決定地區訪問順序（第一個已決定，其餘按數量）
+        const regionOrder = this.getRegionOrder(mapsByRegion, startRegion);
+        
+        // 4. 為每個地區規劃路線
+        const route = [];
+        let totalTeleports = 0;
+        
+        for (const region of regionOrder) {
+            if (mapsByRegion[region]) {
+                const regionRoute = this.planRegionRoute(mapsByRegion[region]);
+                route.push(...regionRoute);
+                
+                // 計算傳送次數
+                totalTeleports += regionRoute.filter(step => step.type === 'teleport').length;
+            }
+        }
+        
+        return {
+            summary: {
+                totalMaps: maps.length,
+                totalTeleports: totalTeleports,
+                regionsVisited: regionOrder.filter(r => mapsByRegion[r] && mapsByRegion[r].length > 0)
+            },
+            route: route
+        };
+    }
+    
+    // 找出全域最近的寶圖-傳送點配對
+    findStartingRegion(maps) {
+        let minDistance = Infinity;
+        let startRegion = null;
+        let startMap = null;
+        
+        for (const map of maps) {
+            const aetherytes = this.getRegionAetherytes(map.zoneId);
+            for (const aetheryte of aetherytes) {
+                const dist = this.calculateDistance(
+                    { coords: map.coords, zoneId: map.zoneId },
+                    { coords: aetheryte.coords, zoneId: map.zoneId, isTeleport: true }
+                );
+                if (dist < minDistance) {
+                    minDistance = dist;
+                    startRegion = map.zoneId;
+                    startMap = map;
+                }
+            }
+        }
+        return { startRegion, startMap };
+    }
+    
+    // 按地區分組
+    groupByZone(maps) {
+        const groups = {};
+        for (const map of maps) {
+            if (!groups[map.zoneId]) {
+                groups[map.zoneId] = [];
+            }
+            groups[map.zoneId].push(map);
+        }
+        return groups;
+    }
+    
+    // 決定地區訪問順序
+    getRegionOrder(mapsByRegion, startRegion) {
+        const regions = Object.keys(mapsByRegion);
+        const otherRegions = regions.filter(r => r !== startRegion);
+        
+        // 其餘地區按寶圖數量排序（多的優先）
+        otherRegions.sort((a, b) => 
+            mapsByRegion[b].length - mapsByRegion[a].length
+        );
+        
+        return [startRegion, ...otherRegions];
+    }
+    
+    // 取得地區的傳送點
+    getRegionAetherytes(zoneId) {
+        if (!this.aetherytes || !this.aetherytes[zoneId]) {
+            return [];
+        }
+        
+        // 將傳送點資料加上必要的屬性
+        return this.aetherytes[zoneId].map(a => ({
+            ...a,
+            zoneId: zoneId,
+            isTeleport: true
+        }));
+    }
+    
+    // 地區內路線規劃（基於非對稱距離矩陣）
+    planRegionRoute(regionMaps) {
+        const normalMaps = regionMaps; // 所有寶圖都是普通點
+        const teleports = this.getRegionAetherytes(regionMaps[0].zoneId);
+        
+        // 使用啟發式策略：先解決普通點TSP，再以最佳傳送點結束
+        const result = this.solveWithHeuristic(normalMaps, teleports);
+        
+        // 轉換為路線步驟格式
+        const route = [];
+        let lastWasTeleport = false;
+        
+        for (let i = 0; i < result.path.length; i++) {
+            const point = result.path[i];
+            
+            if (point.isTeleport) {
+                if (i === 0 || !lastWasTeleport) {
+                    route.push({
+                        type: 'teleport',
+                        to: point.name,
+                        zone: point.zoneId,
+                        coords: point.coords
+                    });
+                }
+                lastWasTeleport = true;
+            } else {
+                route.push({
+                    type: 'move',
+                    mapId: point.id,
+                    mapLevel: point.levelName,
+                    zone: point.zoneId,
+                    coords: point.coords
+                });
+                lastWasTeleport = false;
+            }
+        }
+        
+        return route;
+    }
+    
+    // 啟發式求解（改編自演算法文件）
+    solveWithHeuristic(normalPoints, teleportPoints) {
+        // 特殊情況
+        if (normalPoints.length === 0) {
+            return { path: teleportPoints, distance: 0 };
+        }
+        
+        if (normalPoints.length === 1) {
+            return { 
+                path: [...normalPoints, ...teleportPoints], 
+                distance: 0 
+            };
+        }
+        
+        // 一般情況：先解決普通點的TSP
+        const normalTSP = this.solvePureTSP(normalPoints);
+        
+        if (teleportPoints.length === 0) {
+            return normalTSP;
+        }
+        
+        // 找到距離最後一個普通點最近的傳送點
+        const lastNormalPoint = normalTSP.path[normalTSP.path.length - 1];
+        let bestTeleport = teleportPoints[0];
+        let minDistance = this.calculateDistance(
+            { coords: lastNormalPoint.coords, zoneId: lastNormalPoint.zoneId },
+            bestTeleport
+        );
+        
+        for (const teleport of teleportPoints.slice(1)) {
+            const distance = this.calculateDistance(
+                { coords: lastNormalPoint.coords, zoneId: lastNormalPoint.zoneId },
+                teleport
+            );
+            if (distance < minDistance) {
+                minDistance = distance;
+                bestTeleport = teleport;
+            }
+        }
+        
+        // 構建最終路徑：普通點 → 最佳傳送點 → 其他傳送點
+        const finalPath = [
+            ...normalTSP.path,
+            bestTeleport,
+            ...teleportPoints.filter(t => t !== bestTeleport)
+        ];
+        
+        return {
+            path: finalPath,
+            distance: normalTSP.distance + minDistance
+        };
+    }
+    
+    // 純TSP求解（貪婪最近鄰居法）
+    solvePureTSP(points) {
+        if (points.length <= 1) {
+            return { path: points, distance: 0 };
+        }
+        
+        let bestDistance = Infinity;
+        let bestPath = [];
+        
+        // 嘗試每個起點
+        for (let start = 0; start < points.length; start++) {
+            const visited = new Array(points.length).fill(false);
+            const path = [points[start]];
+            visited[start] = true;
+            let totalDistance = 0;
+            let currentIdx = start;
+            
+            // 貪婪選擇最近的未訪問點
+            for (let i = 1; i < points.length; i++) {
+                let nearestIdx = -1;
+                let nearestDistance = Infinity;
+                
+                for (let j = 0; j < points.length; j++) {
+                    if (!visited[j]) {
+                        const distance = this.calculateDistance(
+                            { coords: points[currentIdx].coords, zoneId: points[currentIdx].zoneId },
+                            { coords: points[j].coords, zoneId: points[j].zoneId }
+                        );
+                        if (distance < nearestDistance) {
+                            nearestDistance = distance;
+                            nearestIdx = j;
+                        }
+                    }
+                }
+                
+                if (nearestIdx !== -1) {
+                    visited[nearestIdx] = true;
+                    path.push(points[nearestIdx]);
+                    totalDistance += nearestDistance;
+                    currentIdx = nearestIdx;
+                }
+            }
+            
+            if (totalDistance < bestDistance) {
+                bestDistance = totalDistance;
+                bestPath = path;
+            }
+        }
+        
+        return { path: bestPath, distance: bestDistance };
+    }
 }
 
 // 初始化
 let treasureMapFinder;
+let routeCalculator;
 document.addEventListener('DOMContentLoaded', () => {
     treasureMapFinder = new TreasureMapFinder();
+    routeCalculator = new RouteCalculator();
 });

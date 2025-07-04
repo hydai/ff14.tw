@@ -289,22 +289,27 @@ showError('載入寶圖資料失敗，請重新整理頁面再試。');
 1. **路線生成器**
    - 從「我的清單」生成最佳尋寶路線
    - 支援多種優化策略（最短距離、最少傳送、區域集中）
-   - 顯示預估時間和傳送費用
+   - 顯示預估傳送次數
 
 2. **地圖整合**
-   - 各地區傳送點資料
-   - 計算傳送點到寶圖的步行距離
-   - 考慮飛行解鎖狀態
+   - 各地區傳送點資料（暫定每地區 3 個：0,0,0、10,10,10、20,20,20）
+   - 計算傳送點到寶圖的 3D 距離
+   - 假設所有玩家可飛行
 
 3. **路線展示**
    - 分步驟導航介面
-   - 可拖曳調整順序
+   - 顯示傳送/移動資訊
    - 一鍵複製路線指令
 
 **技術需求：**
 - 傳送點座標資料庫
 - 路徑演算法（TSP變體）
-- 地圖距離計算
+- 3D 距離計算
+
+**簡化假設：**
+- 所有玩家可飛行（距離 = 直線距離）
+- 傳送費用暫設為 0
+- 任意點到傳送點的距離為 0（免費傳送）
 
 ### Phase 3：進階功能（未來規劃）
 1. **團隊協作**
@@ -348,159 +353,966 @@ showError('載入寶圖資料失敗，請重新整理頁面再試。');
    - 條件：清單內有2個以上寶圖時啟用
    - 樣式：主要按鈕，藍色背景
 
-2. **路線設定面板**
-   ```html
-   <div class="route-settings">
-     <h4>路線優化選項</h4>
-     <label>
-       <input type="radio" name="optimize" value="distance" checked>
-       最短總距離
-     </label>
-     <label>
-       <input type="radio" name="optimize" value="teleports">
-       最少傳送次數
-     </label>
-     <label>
-       <input type="radio" name="optimize" value="zones">
-       區域集中（推薦）
-     </label>
-   </div>
-   ```
-
-3. **路線結果顯示**
+2. **路線結果顯示**
    ```html
    <div class="route-result">
      <div class="route-summary">
        <h3>最佳路線</h3>
-       <p>總計：5個寶圖 | 預估時間：25分鐘 | 傳送費：1,847 Gil</p>
+       <p>總計：5個寶圖 | 傳送次數：3次</p>
      </div>
      <div class="route-steps">
-       <!-- 路線步驟 -->
+       <div class="route-step">
+         <span class="step-icon">🔄</span>
+         <span class="step-text">傳送至 Labyrinthos - 傳送點1</span>
+       </div>
+       <div class="route-step">
+         <span class="step-icon">📍</span>
+         <span class="step-text">前往寶圖 (6.8, 20.9, 2.2)</span>
+       </div>
+       <!-- 更多步驟 -->
      </div>
    </div>
    ```
 
 #### 10.1.2 資料結構設計
 
-**傳送點資料：**
+**傳送點資料（G8 實際資料）：**
 ```javascript
 {
-  "aetherytes": [
-    {
-      "id": "limsa_lominsa",
-      "name": "海都",
-      "nameEn": "Limsa Lominsa",
-      "zone": "la_noscea",
-      "coords": { "x": 11.0, "y": 11.0 },
-      "type": "major_city",
-      "unlockLevel": 1
-    },
-    {
-      "id": "costa_del_sol",
-      "name": "太陽海岸",
-      "nameEn": "Costa del Sol",
-      "zone": "eastern_la_noscea",
-      "coords": { "x": 33.8, "y": 30.5 },
-      "type": "aetheryte",
-      "unlockLevel": 30
-    }
-  ]
-}
-```
-
-**路線資料結構：**
-```javascript
-{
-  "route": {
-    "totalMaps": 5,
-    "estimatedTime": 1500, // 秒
-    "totalCost": 1847,
-    "steps": [
+  "aetherytes": {
+    // G8 蒼天地區傳送點
+    "coerthas": [
+      { 
+        "id": "falcons_nest", 
+        "name": {
+          "zh": "隼巢",
+          "ja": "ファルコンネスト",
+          "en": "Falcon's Nest"
+        },
+        "coords": { "x": 32, "y": 36, "z": 0 } 
+      }
+    ],
+    "abalathia": [
+      { 
+        "id": "camp_cloudtop", 
+        "name": {
+          "zh": "雲頂營地",
+          "ja": "キャンプ・クラウドトップ",
+          "en": "Camp Cloudtop"
+        },
+        "coords": { "x": 10, "y": 34, "z": 0 } 
+      },
+      { 
+        "id": "ok_zundu", 
+        "name": {
+          "zh": "奧克·茲恩德",
+          "ja": "オク・ズンド",
+          "en": "Ok' Zundu"
+        },
+        "coords": { "x": 10, "y": 14, "z": 0 } 
+      }
+    ],
+    "dravania": [
+      { 
+        "id": "tailfeather", 
+        "name": {
+          "zh": "尾羽集落",
+          "ja": "テイルフェザー",
+          "en": "Tailfeather"
+        },
+        "coords": { "x": 33, "y": 23, "z": 0 } 
+      },
+      { 
+        "id": "anyx_trine", 
+        "name": {
+          "zh": "不潔三塔",
+          "ja": "不浄の三塔",
+          "en": "Anyx Trine"
+        },
+        "coords": { "x": 16, "y": 23, "z": 0 } 
+      },
+      { 
+        "id": "moghome", 
+        "name": {
+          "zh": "莫古力之家",
+          "ja": "モグモグホーム",
+          "en": "Moghome"
+        },
+        "coords": { "x": 28, "y": 34, "z": 0 } 
+      },
+      { 
+        "id": "zenith", 
+        "name": {
+          "zh": "白堊宮殿",
+          "ja": "白亜の宮殿",
+          "en": "Zenith"
+        },
+        "coords": { "x": 11, "y": 29, "z": 0 } 
+      }
+    ],
+    
+    // G10 紅蓮地區傳送點
+    "gyr_abania": [
       {
-        "type": "teleport",
-        "to": "costa_del_sol",
-        "cost": 456,
-        "time": 10
+        "id": "castrum_oriens",
+        "name": {
+          "zh": "東方堡",
+          "ja": "カストルム・オリエンス",
+          "en": "Castrum Oriens"
+        },
+        "coords": { "x": 9, "y": 11, "z": 0 }
       },
       {
-        "type": "travel",
-        "to": "tm_001",
-        "distance": 234.5,
-        "time": 120,
-        "method": "mount"
+        "id": "peering_stones",
+        "name": {
+          "zh": "窺石塔",
+          "ja": "ピーリングストーンズ",
+          "en": "The Peering Stones"
+        },
+        "coords": { "x": 30, "y": 26, "z": 0 }
       },
       {
-        "type": "treasure",
-        "mapId": "tm_001",
-        "coords": { "x": 24.5, "y": 26.3, "z": 0.1 }
+        "id": "ala_gannha",
+        "name": {
+          "zh": "阿拉加納",
+          "ja": "アラガーナ",
+          "en": "Ala Gannha"
+        },
+        "coords": { "x": 24, "y": 7, "z": 0 }
+      },
+      {
+        "id": "ala_ghiri",
+        "name": {
+          "zh": "阿拉基利",
+          "ja": "アラギリ",
+          "en": "Ala Ghiri"
+        },
+        "coords": { "x": 16, "y": 36, "z": 0 }
+      },
+      {
+        "id": "porta_praetoria",
+        "name": {
+          "zh": "帝國東方堡",
+          "ja": "ポルタ・プレトリア",
+          "en": "Porta Praetoria"
+        },
+        "coords": { "x": 8, "y": 21, "z": 0 }
+      },
+      {
+        "id": "ala_mhigan_quarter",
+        "name": {
+          "zh": "阿拉米格居住區",
+          "ja": "アラミガン・クォーター",
+          "en": "The Ala Mhigan Quarter"
+        },
+        "coords": { "x": 34, "y": 34, "z": 0 }
+      }
+    ],
+    "othard": [
+      {
+        "id": "tamamizu",
+        "name": {
+          "zh": "碧玉水",
+          "ja": "碧のタマミズ",
+          "en": "Tamamizu"
+        },
+        "coords": { "x": 29, "y": 16, "z": 0 }
+      },
+      {
+        "id": "onokoro",
+        "name": {
+          "zh": "奧諾可洛島",
+          "ja": "オノコロ島",
+          "en": "Onokoro"
+        },
+        "coords": { "x": 23, "y": 10, "z": 0 }
+      },
+      {
+        "id": "house_of_the_fierce",
+        "name": {
+          "zh": "烈士庵",
+          "ja": "烈士庵",
+          "en": "The House of the Fierce"
+        },
+        "coords": { "x": 26, "y": 13, "z": 0 }
+      },
+      {
+        "id": "namai",
+        "name": {
+          "zh": "納米村",
+          "ja": "ナマイ村",
+          "en": "Namai"
+        },
+        "coords": { "x": 30, "y": 20, "z": 0 }
+      },
+      {
+        "id": "dhoro_iloh",
+        "name": {
+          "zh": "多羅·伊洛",
+          "ja": "ドーロ・イロー",
+          "en": "Dhoro Iloh"
+        },
+        "coords": { "x": 6, "y": 24, "z": 0 }
+      },
+      {
+        "id": "dawn_throne",
+        "name": {
+          "zh": "明晨王座",
+          "ja": "明けの玉座",
+          "en": "The Dawn Throne"
+        },
+        "coords": { "x": 23, "y": 22, "z": 0 }
+      },
+      {
+        "id": "reunion",
+        "name": {
+          "zh": "重逢集市",
+          "ja": "再会の市",
+          "en": "Reunion"
+        },
+        "coords": { "x": 33, "y": 28, "z": 0 }
+      }
+    ],
+    
+    // G12 漆黑地區傳送點
+    "norvrandt": [
+      {
+        "id": "the_ostall_imperative",
+        "name": {
+          "zh": "奧斯塔爾嚴命城",
+          "ja": "オスタル厳命城",
+          "en": "The Ostall Imperative"
+        },
+        "coords": { "x": 7, "y": 17, "z": 0 }
+      },
+      {
+        "id": "fort_jobb",
+        "name": {
+          "zh": "約布砦",
+          "ja": "ジョッブ砦",
+          "en": "Fort Jobb"
+        },
+        "coords": { "x": 37, "y": 21, "z": 0 }
+      },
+      {
+        "id": "tomra",
+        "name": {
+          "zh": "托梅拉村",
+          "ja": "トメラの村",
+          "en": "Tomra"
+        },
+        "coords": { "x": 13, "y": 9, "z": 0 }
+      },
+      {
+        "id": "stilltide",
+        "name": {
+          "zh": "寂靜潮",
+          "ja": "スティルタイド",
+          "en": "Stilltide"
+        },
+        "coords": { "x": 35, "y": 27, "z": 0 }
+      },
+      {
+        "id": "twine",
+        "name": {
+          "zh": "特懷因",
+          "ja": "トゥワイン",
+          "en": "Twine"
+        },
+        "coords": { "x": 11, "y": 17, "z": 0 }
+      },
+      {
+        "id": "mord_souq",
+        "name": {
+          "zh": "莫爾德集市",
+          "ja": "モルド・スーク",
+          "en": "Mord Souq"
+        },
+        "coords": { "x": 26, "y": 17, "z": 0 }
+      },
+      {
+        "id": "inn_at_journeys_head",
+        "name": {
+          "zh": "旅立之宿",
+          "ja": "旅立ちの宿",
+          "en": "The Inn at Journey's Head"
+        },
+        "coords": { "x": 30, "y": 28, "z": 0 }
+      },
+      {
+        "id": "lydha_lran",
+        "name": {
+          "zh": "麗達拉恩",
+          "ja": "リダ・ラーン",
+          "en": "Lydha Lran"
+        },
+        "coords": { "x": 15, "y": 32, "z": 0 }
+      },
+      {
+        "id": "pla_enni",
+        "name": {
+          "zh": "普拉恩尼蘑菇洞",
+          "ja": "プラ・エンニ茸窟",
+          "en": "Pla Enni"
+        },
+        "coords": { "x": 20, "y": 4, "z": 0 }
+      },
+      {
+        "id": "wolekdorf",
+        "name": {
+          "zh": "沃雷克多夫",
+          "ja": "ヴォレクドルフ",
+          "en": "Wolekdorf"
+        },
+        "coords": { "x": 29, "y": 8, "z": 0 }
+      },
+      {
+        "id": "slitherbough",
+        "name": {
+          "zh": "蛇行枝",
+          "ja": "スリザーバウ",
+          "en": "Slitherbough"
+        },
+        "coords": { "x": 20, "y": 27, "z": 0 }
+      },
+      {
+        "id": "fanow",
+        "name": {
+          "zh": "法諾之里",
+          "ja": "ファノヴの里",
+          "en": "Fanow"
+        },
+        "coords": { "x": 29, "y": 18, "z": 0 }
+      },
+      {
+        "id": "the_ondo_cups",
+        "name": {
+          "zh": "翁德族潮池",
+          "ja": "オンドの潮溜まり",
+          "en": "The Ondo Cups"
+        },
+        "coords": { "x": 33, "y": 18, "z": 0 }
+      },
+      {
+        "id": "the_macarenses_angle",
+        "name": {
+          "zh": "馬卡雷薩斯廣場",
+          "ja": "マカレンサス広場",
+          "en": "The Macarenses Angle"
+        },
+        "coords": { "x": 19, "y": 26, "z": 0 }
+      }
+    ],
+    
+    // G14 曉月地區傳送點
+    "ilsabard": [
+      {
+        "id": "the_archeion",
+        "name": {
+          "zh": "阿爾凱昂保管院",
+          "ja": "アルケイオン保管院",
+          "en": "The Archeion"
+        },
+        "coords": { "x": 30, "y": 12, "z": 0 }
+      },
+      {
+        "id": "sharlayan_hamlet",
+        "name": {
+          "zh": "小薩雷安",
+          "ja": "リトルシャーレアン",
+          "en": "Sharlayan Hamlet"
+        },
+        "coords": { "x": 22, "y": 21, "z": 0 }
+      },
+      {
+        "id": "aporia",
+        "name": {
+          "zh": "阿波利亞總部",
+          "ja": "アポリア本部",
+          "en": "Aporia"
+        },
+        "coords": { "x": 7, "y": 28, "z": 0 }
+      },
+      {
+        "id": "yedlihmad",
+        "name": {
+          "zh": "葉德利曼",
+          "ja": "イェドリマン",
+          "en": "Yedlihmad"
+        },
+        "coords": { "x": 25, "y": 34, "z": 0 }
+      },
+      {
+        "id": "great_work",
+        "name": {
+          "zh": "德米爾遺烈鄉",
+          "ja": "デミールの遺烈郷",
+          "en": "The Great Work"
+        },
+        "coords": { "x": 11, "y": 22, "z": 0 }
+      },
+      {
+        "id": "palaka_stand",
+        "name": {
+          "zh": "帕拉卡之里",
+          "ja": "パーラカの里",
+          "en": "Palaka's Stand"
+        },
+        "coords": { "x": 30, "y": 16, "z": 0 }
+      },
+      {
+        "id": "camp_broken_glass",
+        "name": {
+          "zh": "碎玻璃營地",
+          "ja": "キャンプ・ブロークングラス",
+          "en": "Camp Broken Glass"
+        },
+        "coords": { "x": 13, "y": 31, "z": 0 }
+      },
+      {
+        "id": "tertium",
+        "name": {
+          "zh": "第三站",
+          "ja": "テルティウム駅",
+          "en": "Tertium"
+        },
+        "coords": { "x": 32, "y": 18, "z": 0 }
+      },
+      {
+        "id": "sinus_lacrimarum",
+        "name": {
+          "zh": "淚之灣",
+          "ja": "涙の入江",
+          "en": "Sinus Lacrimarum"
+        },
+        "coords": { "x": 10, "y": 34, "z": 0 }
+      },
+      {
+        "id": "bestways_burrow",
+        "name": {
+          "zh": "貝斯特威巴羅",
+          "ja": "ベストウェイ・バロー",
+          "en": "Bestways Burrow"
+        },
+        "coords": { "x": 21, "y": 11, "z": 0 }
+      },
+      {
+        "id": "reahs_tahra",
+        "name": {
+          "zh": "黎亞塔拉",
+          "ja": "リア・ターラ",
+          "en": "Reah Tahra"
+        },
+        "coords": { "x": 11, "y": 27, "z": 0 }
+      },
+      {
+        "id": "base_omicron",
+        "name": {
+          "zh": "奧米克戎基地",
+          "ja": "オミクロンベース",
+          "en": "Base Omicron"
+        },
+        "coords": { "x": 31, "y": 28, "z": 0 }
+      },
+      {
+        "id": "ostrakon_deka_hexi",
+        "name": {
+          "zh": "伊亞之里",
+          "ja": "イーアの里",
+          "en": "Ostrakon Deka-hexi"
+        },
+        "coords": { "x": 23, "y": 8, "z": 0 }
+      }
+    ],
+    
+    // G15 特殊地區傳送點
+    "elpis": [
+      {
+        "id": "the_twelve_wonders",
+        "name": {
+          "zh": "十二節之園",
+          "ja": "十二節の園",
+          "en": "The Twelve Wonders"
+        },
+        "coords": { "x": 9, "y": 32, "z": 0 }
+      },
+      {
+        "id": "anagnorisis",
+        "name": {
+          "zh": "阿納格諾里西斯天測園",
+          "ja": "アナグノリシス天測園",
+          "en": "Anagnorisis"
+        },
+        "coords": { "x": 25, "y": 24, "z": 0 }
+      },
+      {
+        "id": "poieten_oikos",
+        "name": {
+          "zh": "波伊艾騰·奧伊科斯",
+          "ja": "ポイエテーン・オイコス",
+          "en": "Poieten Oikos"
+        },
+        "coords": { "x": 11, "y": 17, "z": 0 }
+      }
+    ],
+    
+    // G17 黃金地區傳送點
+    "tural": [
+      {
+        "id": "wachunpelo",
+        "name": {
+          "zh": "瓦春佩洛",
+          "ja": "ワチュン・ペロ",
+          "en": "Wachunpelo"
+        },
+        "coords": { "x": 28, "y": 13, "z": 0 }
+      },
+      {
+        "id": "worqor_zormor",
+        "name": {
+          "zh": "沃拉的殘響",
+          "ja": "ウォーラーの残響",
+          "en": "Worqor Zormor"
+        },
+        "coords": { "x": 31, "y": 34, "z": 0 }
+      },
+      {
+        "id": "ok_hanu",
+        "name": {
+          "zh": "奧克哈努",
+          "ja": "オック・ハヌ",
+          "en": "Ok' Hanu"
+        },
+        "coords": { "x": 18, "y": 12, "z": 0 }
+      },
+      {
+        "id": "earthenshire",
+        "name": {
+          "zh": "土陶郡",
+          "ja": "アースンシャイア",
+          "en": "Earthenshire"
+        },
+        "coords": { "x": 12, "y": 28, "z": 0 }
+      },
+      {
+        "id": "many_fires",
+        "name": {
+          "zh": "朋友之燈火",
+          "ja": "朋友の灯火",
+          "en": "Many Fires"
+        },
+        "coords": { "x": 32, "y": 26, "z": 0 }
+      },
+      {
+        "id": "dock_poga",
+        "name": {
+          "zh": "波加停船所",
+          "ja": "ポガ停船所",
+          "en": "Dock Poga"
+        },
+        "coords": { "x": 37, "y": 17, "z": 0 }
+      },
+      {
+        "id": "iq_br_aak",
+        "name": {
+          "zh": "伊克布拉賈",
+          "ja": "イクブラージャ",
+          "en": "Iq Br'aak"
+        },
+        "coords": { "x": 14, "y": 13, "z": 0 }
+      },
+      {
+        "id": "mamook",
+        "name": {
+          "zh": "馬穆克",
+          "ja": "マムーク",
+          "en": "Mamook"
+        },
+        "coords": { "x": 36, "y": 32, "z": 0 }
+      },
+      {
+        "id": "meyhane",
+        "name": {
+          "zh": "梅瓦海索恩",
+          "ja": "メワヘイゾーン",
+          "en": "Meyhane"
+        },
+        "coords": { "x": 28, "y": 10, "z": 0 }
+      },
+      {
+        "id": "sheshenewezi_springs",
+        "name": {
+          "zh": "謝謝內青燐泉",
+          "ja": "シェシェネ青燐泉",
+          "en": "Sheshenewezi Springs"
+        },
+        "coords": { "x": 16, "y": 19, "z": 0 }
+      },
+      {
+        "id": "hhusatahwi",
+        "name": {
+          "zh": "胡薩塔維宿場町",
+          "ja": "フーサタイ宿場町",
+          "en": "Hhusatahwi"
+        },
+        "coords": { "x": 29, "y": 31, "z": 0 }
+      },
+      {
+        "id": "the_outskirts",
+        "name": {
+          "zh": "郊外",
+          "ja": "アウトスカーツ",
+          "en": "The Outskirts"
+        },
+        "coords": { "x": 17, "y": 10, "z": 0 }
+      },
+      {
+        "id": "electrope_strike",
+        "name": {
+          "zh": "電氣石採石場",
+          "ja": "エレクトロープ採石場",
+          "en": "Electrope Strike"
+        },
+        "coords": { "x": 17, "y": 24, "z": 0 }
+      },
+      {
+        "id": "yyasulani_station",
+        "name": {
+          "zh": "雅斯拉尼站",
+          "ja": "ヤースラニ駅",
+          "en": "Yyasulani Station"
+        },
+        "coords": { "x": 32, "y": 26, "z": 0 }
       }
     ]
   }
 }
 ```
 
+**路線資料結構：**
+```javascript
+{
+  "summary": {
+    "totalMaps": 5,
+    "totalTeleports": 3,
+    "regionsVisited": ["ilsabard", "othard"]
+  },
+  "route": [
+    {
+      "type": "teleport",
+      "to": "Labyrinthos - 傳送點1",
+      "zone": "ilsabard",
+      "coords": { "x": 0, "y": 0, "z": 0 }
+    },
+    {
+      "type": "move",
+      "mapId": "tm_055",
+      "mapLevel": "G14",
+      "zone": "ilsabard",
+      "coords": { "x": 6.8, "y": 20.9, "z": 2.2 }
+    },
+    {
+      "type": "teleport",
+      "to": "Labyrinthos - 傳送點3",
+      "zone": "ilsabard",
+      "coords": { "x": 20, "y": 20, "z": 20 }
+    },
+    {
+      "type": "move",
+      "mapId": "tm_056",
+      "mapLevel": "G14",
+      "zone": "ilsabard",
+      "coords": { "x": 25.1, "y": 18.3, "z": 15.2 }
+    }
+  ]
+}
+```
+
 #### 10.1.3 演算法設計
 
-**基礎路徑計算：**
+**移動成本規則（基於 FF14 傳送機制）：**
+1. **普通點到普通點（同地圖）**: 3D 歐幾里得距離
+2. **普通點到傳送點（任何地圖）**: 0 (瞬間傳送)
+3. **傳送點到普通點（同地圖）**: 3D 歐幾里得距離
+4. **傳送點到傳送點（任何地圖）**: 0 (傳送點間瞬移)
+5. **跨地圖移動**: 必須透過傳送點，成本為 0
+
+**核心演算法流程：**
 ```javascript
 class RouteCalculator {
-  calculateRoute(maps, strategy = 'zones') {
-    switch(strategy) {
-      case 'distance':
-        return this.shortestPath(maps);
-      case 'teleports':
-        return this.fewestTeleports(maps);
-      case 'zones':
-        return this.zoneGrouping(maps);
+  // 3D 距離計算（修正版）
+  calculateDistance(from, to) {
+    // 跨地圖移動
+    if (from.zoneId !== to.zoneId) {
+      return 0;
     }
-  }
-  
-  // 區域分組策略（推薦）
-  zoneGrouping(maps) {
-    // 1. 按區域分組
-    const groups = this.groupByZone(maps);
     
-    // 2. 決定區域訪問順序
-    const zoneOrder = this.optimizeZoneOrder(groups);
+    // 任何點到傳送點：零成本
+    if (to.isTeleport) {
+      return 0;
+    }
     
-    // 3. 每個區域內部優化
-    return this.optimizeWithinZones(zoneOrder);
+    // 傳送點到普通點或普通點到普通點：3D 歐幾里得距離
+    const dx = from.coords.x - to.coords.x;
+    const dy = from.coords.y - to.coords.y;
+    const dz = from.coords.z - to.coords.z;
+    return Math.sqrt(dx * dx + dy * dy + dz * dz);
   }
   
-  // 計算兩點間距離
-  calculateDistance(point1, point2) {
-    const dx = point1.x - point2.x;
-    const dy = point1.y - point2.y;
-    return Math.sqrt(dx * dx + dy * dy);
+  // 主要路線計算
+  calculateRoute(maps) {
+    // 1. 找出起始地區（全域最近的寶圖-傳送點配對）
+    const { startRegion, startMap } = this.findStartingRegion(maps);
+    
+    // 2. 按地區分組
+    const mapsByRegion = this.groupByZone(maps);
+    
+    // 3. 決定地區訪問順序（第一個已決定，其餘按數量）
+    const regionOrder = this.getRegionOrder(mapsByRegion, startRegion);
+    
+    // 4. 為每個地區規劃路線
+    const route = [];
+    for (const region of regionOrder) {
+      const regionRoute = this.planRegionRoute(
+        mapsByRegion[region], 
+        region === startRegion
+      );
+      route.push(...regionRoute);
+    }
+    
+    return route;
   }
   
-  // 估算移動時間（考慮坐騎速度）
-  estimateTravelTime(distance, hasFlying = true) {
-    const speed = hasFlying ? 6.0 : 4.2; // 單位/秒
-    return Math.ceil(distance / speed);
+  // 找出全域最近的寶圖-傳送點配對
+  findStartingRegion(maps) {
+    let minDistance = Infinity;
+    let startRegion = null;
+    let startMap = null;
+    
+    for (const map of maps) {
+      const aetherytes = this.getRegionAetherytes(map.zoneId);
+      for (const aetheryte of aetherytes) {
+        const dist = this.calculateDistance3D(map.coords, aetheryte.coords);
+        if (dist < minDistance) {
+          minDistance = dist;
+          startRegion = map.zoneId;
+          startMap = map;
+        }
+      }
+    }
+    return { startRegion, startMap };
+  }
+  
+  // 地區內路線規劃（基於非對稱距離矩陣）
+  planRegionRoute(regionMaps) {
+    const normalMaps = regionMaps; // 所有寶圖都是普通點
+    const teleports = this.getRegionAetherytes(regionMaps[0].zoneId);
+    
+    // 使用啟發式策略：先解決普通點TSP，再以最佳傳送點結束
+    const result = this.solveWithHeuristic(normalMaps, teleports);
+    
+    // 轉換為路線步驟格式
+    const route = [];
+    let lastWasTeleport = false;
+    
+    for (let i = 0; i < result.path.length; i++) {
+      const point = result.path[i];
+      
+      if (point.isTeleport) {
+        if (i === 0 || !lastWasTeleport) {
+          route.push({
+            type: 'teleport',
+            to: point.name,
+            zone: point.zoneId || regionMaps[0].zoneId,
+            coords: point.coords
+          });
+        }
+        lastWasTeleport = true;
+      } else {
+        route.push({
+          type: 'move',
+          mapId: point.id,
+          mapLevel: point.levelName,
+          zone: point.zoneId,
+          coords: point.coords
+        });
+        lastWasTeleport = false;
+      }
+    }
+    
+    return route;
+  }
+  
+  // 啟發式求解（改編自演算法文件）
+  solveWithHeuristic(normalPoints, teleportPoints) {
+    // 特殊情況
+    if (normalPoints.length === 0) {
+      return { path: teleportPoints, distance: 0 };
+    }
+    
+    if (normalPoints.length === 1) {
+      return { 
+        path: [...normalPoints, ...teleportPoints], 
+        distance: 0 
+      };
+    }
+    
+    // 一般情況：先解決普通點的TSP
+    const normalTSP = this.solvePureTSP(normalPoints);
+    
+    if (teleportPoints.length === 0) {
+      return normalTSP;
+    }
+    
+    // 找到距離最後一個普通點最近的傳送點
+    const lastNormalPoint = normalTSP.path[normalTSP.path.length - 1];
+    let bestTeleport = teleportPoints[0];
+    let minDistance = this.calculateDistance(lastNormalPoint, bestTeleport);
+    
+    for (const teleport of teleportPoints.slice(1)) {
+      const distance = this.calculateDistance(lastNormalPoint, teleport);
+      if (distance < minDistance) {
+        minDistance = distance;
+        bestTeleport = teleport;
+      }
+    }
+    
+    // 構建最終路徑：普通點 → 最佳傳送點 → 其他傳送點
+    const finalPath = [
+      ...normalTSP.path,
+      bestTeleport,
+      ...teleportPoints.filter(t => t !== bestTeleport)
+    ];
+    
+    return {
+      path: finalPath,
+      distance: normalTSP.distance + minDistance
+    };
+  }
+  
+  // 純TSP求解（貪婪最近鄰居法）
+  solvePureTSP(points) {
+    if (points.length <= 1) {
+      return { path: points, distance: 0 };
+    }
+    
+    let bestDistance = Infinity;
+    let bestPath = [];
+    
+    // 嘗試每個起點
+    for (let start = 0; start < points.length; start++) {
+      const visited = new Array(points.length).fill(false);
+      const path = [points[start]];
+      visited[start] = true;
+      let totalDistance = 0;
+      let currentIdx = start;
+      
+      // 貪婪選擇最近的未訪問點
+      for (let i = 1; i < points.length; i++) {
+        let nearestIdx = -1;
+        let nearestDistance = Infinity;
+        
+        for (let j = 0; j < points.length; j++) {
+          if (!visited[j]) {
+            const distance = this.calculateDistance(points[currentIdx], points[j]);
+            if (distance < nearestDistance) {
+              nearestDistance = distance;
+              nearestIdx = j;
+            }
+          }
+        }
+        
+        if (nearestIdx !== -1) {
+          visited[nearestIdx] = true;
+          path.push(points[nearestIdx]);
+          totalDistance += nearestDistance;
+          currentIdx = nearestIdx;
+        }
+      }
+      
+      if (totalDistance < bestDistance) {
+        bestDistance = totalDistance;
+        bestPath = path;
+      }
+    }
+    
+    return { path: bestPath, distance: bestDistance };
   }
 }
 ```
 
-#### 10.1.4 傳送費計算
+#### 10.1.4 地區訪問順序決定
+
 ```javascript
-// 基於 FF14 實際傳送費公式
-function calculateTeleportCost(fromZone, toZone, level) {
-  const baseCost = 100;
-  const levelMultiplier = Math.floor(level / 10) * 50;
-  const distanceMultiplier = this.getZoneDistance(fromZone, toZone) * 20;
+// 決定地區訪問順序
+getRegionOrder(mapsByRegion, startRegion) {
+  // 第一個地區已經由 findStartingRegion 決定
+  const regions = Object.keys(mapsByRegion);
+  const otherRegions = regions.filter(r => r !== startRegion);
   
-  return Math.min(baseCost + levelMultiplier + distanceMultiplier, 999);
+  // 其餘地區按寶圖數量排序（多的優先）
+  otherRegions.sort((a, b) => 
+    mapsByRegion[b].length - mapsByRegion[a].length
+  );
+  
+  return [startRegion, ...otherRegions];
+}
+
+// 找最近的傳送點
+findNearestAetheryte(maps) {
+  const zone = maps[0].zoneId;
+  const aetherytes = this.getRegionAetherytes(zone);
+  
+  let minTotalDistance = Infinity;
+  let bestAetheryte = null;
+  
+  // 找出離所有寶圖總距離最短的傳送點
+  for (const aetheryte of aetherytes) {
+    let totalDistance = 0;
+    for (const map of maps) {
+      totalDistance += this.calculateDistance3D(aetheryte.coords, map.coords);
+    }
+    
+    if (totalDistance < minTotalDistance) {
+      minTotalDistance = totalDistance;
+      bestAetheryte = aetheryte;
+    }
+  }
+  
+  return bestAetheryte;
 }
 ```
 
 ### 10.2 實作順序
-1. 建立傳送點資料庫
-2. 實作基礎距離計算
-3. 開發區域分組演算法
-4. 建立路線顯示介面
-5. 加入拖曳調整功能
-6. 實作路線匯出功能
+1. 建立暫定傳送點資料（每地區 3 個點）
+2. 實作 3D 距離計算函式（考慮非對稱性）
+3. 開發路線演算法核心邏輯（基於啟發式TSP）
+4. 建立路線顯示 UI
+5. 加入「生成路線」按鈕功能
+6. 測試各種邊界情況
+
+### 10.3 演算法特性說明
+
+**非對稱距離矩陣示例：**
+```
+設地圖內有：
+- 寶圖 A(1,1,0), B(5,1,0)
+- 傳送點 T1(3,3,0), T2(7,3,0)
+
+距離矩陣:
+      A      B      T1     T2
+A     0    4.00     0      0     // A到任何傳送點都是0
+B   4.00     0      0      0     // B到任何傳送點都是0
+T1  2.83   2.83     0      0     // T1到寶圖有距離，到T2為0
+T2  6.32   2.83     0      0     // T2到寶圖有距離，到T1為0
+
+最佳路徑: A → T1 → B → T2，總距離 ≈ 2.83
+```
+
+**關鍵洞察：**
+1. 傳送點形成零成本的完全連通子圖
+2. 最佳策略通常是訪問所有寶圖後，以傳送點結束
+3. 充分利用「任意點到傳送點成本為0」的特性
 
 ## 11. 測試檢查清單
 

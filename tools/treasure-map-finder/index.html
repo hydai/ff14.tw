@@ -157,6 +157,23 @@
         </div>
         <div class="panel-footer">
             <p>總計：<span id="totalCount">0</span> 張寶圖</p>
+            <button class="btn btn-primary" id="generateRouteBtn" disabled>
+                <span class="btn-icon">🗺️</span> 生成路線
+            </button>
+        </div>
+    </div>
+    
+    <!-- 路線結果面板 -->
+    <div class="route-panel" id="routePanel">
+        <div class="panel-header">
+            <h3>最佳路線</h3>
+            <button class="btn-close" id="closeRoutePanelBtn" title="關閉">×</button>
+        </div>
+        <div class="route-summary" id="routeSummary">
+            <!-- 路線摘要將由 JavaScript 動態生成 -->
+        </div>
+        <div class="route-steps" id="routeSteps">
+            <!-- 路線步驟將由 JavaScript 動態生成 -->
         </div>
     </div>
 
