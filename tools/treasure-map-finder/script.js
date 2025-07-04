@@ -863,7 +863,7 @@ class TreasureMapFinder {
                 stepDiv.innerHTML = `
                     <span class="step-icon">🔄</span>
                     <span class="step-text">傳送至 ${aetheryteNames.zh || step.to.zh || step.to}</span>
-                    <span class="step-coords">(${step.coords.x}, ${step.coords.y})</span>
+                    <span class="step-coords">(${step.coords.x}, ${step.coords.y}, ${step.coords.z || 0})</span>
                 `;
             } else {
                 stepDiv.innerHTML = `
