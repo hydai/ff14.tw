@@ -78,5 +78,70 @@
     "zh": "黑風海",
     "en": "The Tempest",
     "ja": "テンペスト"
+  },
+  "Coerthas Western Highlands": {
+    "zh": "庫爾札斯西部高地",
+    "en": "Coerthas Western Highlands",
+    "ja": "クルザス西部高地"
+  },
+  "Garlemald": {
+    "zh": "加雷馬",
+    "en": "Garlemald",
+    "ja": "ガレマルド"
+  },
+  "Mare Lamentorum": {
+    "zh": "嘆息海",
+    "en": "Mare Lamentorum",
+    "ja": "嘆きの海"
+  },
+  "Thavnair": {
+    "zh": "薩維奈島",
+    "en": "Thavnair",
+    "ja": "サベネア島"
+  },
+  "The Azim Steppe": {
+    "zh": "阿吉姆草原",
+    "en": "The Azim Steppe",
+    "ja": "アジムステップ"
+  },
+  "The Churning Mists": {
+    "zh": "翻雲霧海",
+    "en": "The Churning Mists",
+    "ja": "雲海"
+  },
+  "The Fringes": {
+    "zh": "邊域",
+    "en": "The Fringes",
+    "ja": "ギラバニア辺境地帯"
+  },
+  "The Lochs": {
+    "zh": "基拉巴尼亞湖區",
+    "en": "The Lochs",
+    "ja": "ギラバニア湖畔地帯"
+  },
+  "The Peaks": {
+    "zh": "基拉巴尼亞山區",
+    "en": "The Peaks",
+    "ja": "ギラバニア山岳地帯"
+  },
+  "The Ruby Sea": {
+    "zh": "紅玉海",
+    "en": "The Ruby Sea",
+    "ja": "紅玉海"
+  },
+  "The Sea of Clouds": {
+    "zh": "雲海",
+    "en": "The Sea of Clouds",
+    "ja": "アバラシア雲海"
+  },
+  "Ultima Thule": {
+    "zh": "天外天垓",
+    "en": "Ultima Thule",
+    "ja": "ウルティマ・トゥーレ"
+  },
+  "Yanxia": {
+    "zh": "延夏",
+    "en": "Yanxia",
+    "ja": "ヤンサ"
   }
 }
