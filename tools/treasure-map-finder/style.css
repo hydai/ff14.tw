@@ -508,6 +508,18 @@
     font-weight: 500;
 }
 
+.route-actions {
+    padding: 1rem 1.5rem;
+    background: #f8f9fa;
+    border-bottom: 1px solid #e9ecef;
+    text-align: center;
+}
+
+.route-actions .btn {
+    width: auto;
+    min-width: 150px;
+}
+
 .route-steps {
     flex: 1;
     overflow-y: auto;

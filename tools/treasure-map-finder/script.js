@@ -126,6 +126,12 @@ class TreasureMapFinder {
         if (closeRoutePanelBtn) {
             closeRoutePanelBtn.addEventListener('click', () => this.closeRoutePanel());
         }
+        
+        // 複製路線按鈕
+        const copyRouteBtn = document.getElementById('copyRouteBtn');
+        if (copyRouteBtn) {
+            copyRouteBtn.addEventListener('click', () => this.copyEntireRoute());
+        }
     }
     
     handleFilterClick(e) {
@@ -832,6 +838,9 @@ class TreasureMapFinder {
         const routeSummary = document.getElementById('routeSummary');
         const routeSteps = document.getElementById('routeSteps');
         
+        // 儲存路線資料供複製使用
+        this.currentRoute = result.route;
+        
         // 生成摘要
         const regionsText = result.summary.regionsVisited
             .map(zone => this.getZoneName(zone))
@@ -877,6 +886,36 @@ class TreasureMapFinder {
         
         // 顯示面板
         routePanel.classList.add('active');
+    }
+    
+    // 複製整個路線
+    copyEntireRoute() {
+        if (!this.currentRoute || this.currentRoute.length === 0) {
+            FF14Utils.showToast('沒有可複製的路線', 'error');
+            return;
+        }
+        
+        // 建構路線文字
+        const routeText = this.currentRoute.map((step, index) => {
+            const coords = `/pos ${step.coords.x} ${step.coords.y} ${step.coords.z || 0}`;
+            
+            if (step.type === 'teleport') {
+                const aetheryteNames = this.getAetheryteName(step.to);
+                const name = aetheryteNames.zh || step.to.zh || step.to;
+                return `【傳送】${name} - ${coords}`;
+            } else {
+                const zoneName = this.getZoneName(step.zone);
+                const levelName = step.mapLevel || '寶圖';
+                return `【${levelName}】${zoneName} - ${coords}`;
+            }
+        }).join('\n');
+        
+        // 複製到剪貼簿
+        navigator.clipboard.writeText(routeText).then(() => {
+            FF14Utils.showToast(`已複製 ${this.currentRoute.length} 個地點`, 'success');
+        }).catch(() => {
+            FF14Utils.showToast('複製失敗，請再試一次', 'error');
+        });
     }
     
     // 關閉路線面板
