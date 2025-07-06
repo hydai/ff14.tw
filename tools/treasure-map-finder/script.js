@@ -14,6 +14,7 @@ class TreasureMapFinder {
         this.displayCount = 24;
         this.currentDisplayCount = 0;
         this.zoneTranslations = null; // 地區翻譯資料
+        this.roomCollaboration = null; // 協作功能實例
         
         // DOM 元素快取
         this.elements = {
@@ -387,6 +388,13 @@ class TreasureMapFinder {
             this.myListIds.delete(map.id);
             FF14Utils.showToast('已從清單移除', 'info');
         } else {
+            // 檢查房間寶圖上限
+            if (this.roomCollaboration?.currentRoom && 
+                this.myList.length >= RoomCollaboration.CONSTANTS.MAX_MAPS) {
+                FF14Utils.showToast(`清單已滿（${RoomCollaboration.CONSTANTS.MAX_MAPS}/${RoomCollaboration.CONSTANTS.MAX_MAPS}）`, 'error');
+                return;
+            }
+            
             // 加入清單
             const mapData = {
                 id: map.id,
@@ -395,17 +403,28 @@ class TreasureMapFinder {
                 zone: map.zone,
                 coords: map.coords,
                 thumbnail: map.thumbnail,
-                addedAt: new Date().toISOString()
+                addedAt: new Date().toISOString(),
+                addedBy: this.roomCollaboration?.currentUser?.id || null
             };
             this.myList.push(mapData);
             this.myListIds.add(map.id);
             FF14Utils.showToast('已加入清單', 'success');
+            
+            // 記錄操作歷史
+            if (this.roomCollaboration?.currentRoom) {
+                this.roomCollaboration.recordMapOperation('add', map, this.roomCollaboration.currentUser);
+            }
         }
         
         this.saveToStorage();
         this.updateListCount();
         this.updateCardButtons();
         this.renderMyList();
+        
+        // 同步到房間
+        if (this.roomCollaboration?.currentRoom) {
+            this.syncToRoom();
+        }
     }
     
     updateCardButtons() {
@@ -532,6 +551,9 @@ class TreasureMapFinder {
     
     removeFromList(mapId) {
         if (confirm('確定要移除這張寶圖嗎？')) {
+            // 找到要移除的地圖資料（用於記錄）
+            const mapToRemove = this.myList.find(item => item.id === mapId);
+            
             this.myList = this.myList.filter(item => item.id !== mapId);
             this.myListIds.delete(mapId);
             this.saveToStorage();
@@ -539,6 +561,16 @@ class TreasureMapFinder {
             this.updateCardButtons();
             this.renderMyList();
             FF14Utils.showToast('已從清單移除', 'info');
+            
+            // 記錄操作歷史
+            if (this.roomCollaboration?.currentRoom && mapToRemove) {
+                this.roomCollaboration.recordMapOperation('remove', mapToRemove, this.roomCollaboration.currentUser);
+            }
+            
+            // 同步到房間
+            if (this.roomCollaboration?.currentRoom) {
+                this.syncToRoom();
+            }
         }
     }
     
@@ -1201,6 +1233,91 @@ class TreasureMapFinder {
         }
         // 如果是字串，返回包裝成物件
         return { zh: aetheryteData };
+    }
+    
+    // 設定協作實例
+    setRoomCollaboration(roomCollaboration) {
+        this.roomCollaboration = roomCollaboration;
+    }
+    
+    // 同步寶圖到房間
+    async syncToRoom() {
+        if (!this.roomCollaboration?.currentRoom) return;
+        
+        try {
+            const treasureMaps = this.myList.map(item => ({
+                id: item.id,
+                type: item.level,
+                x: item.coords.x,
+                y: item.coords.y,
+                zone: item.zone,
+                addedBy: item.addedBy || this.roomCollaboration.currentUser.id,
+                addedAt: item.addedAt || new Date().toISOString()
+            }));
+            
+            const response = await fetch(
+                `${RoomCollaboration.CONSTANTS.API_BASE_URL}/rooms/${this.roomCollaboration.currentRoom.roomCode}`,
+                {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        treasureMaps
+                    })
+                }
+            );
+            
+            if (!response.ok) {
+                throw new Error('同步失敗');
+            }
+            
+            // 更新房間資料
+            const updatedRoom = await response.json();
+            this.roomCollaboration.currentRoom = updatedRoom;
+            
+        } catch (error) {
+            console.error('同步到房間失敗:', error);
+            FF14Utils.showToast('同步失敗，請稍後再試', 'error');
+        }
+    }
+    
+    // 從房間同步寶圖
+    syncFromRoom() {
+        if (!this.roomCollaboration?.currentRoom) return;
+        
+        const roomMaps = this.roomCollaboration.currentRoom.treasureMaps || [];
+        
+        // 清空現有清單
+        this.myList = [];
+        this.myListIds.clear();
+        
+        // 從房間資料重建清單
+        roomMaps.forEach(roomMap => {
+            // 找到對應的完整地圖資料
+            const fullMap = this.maps.find(m => m.id === roomMap.id);
+            if (fullMap) {
+                const mapData = {
+                    id: fullMap.id,
+                    level: fullMap.level,
+                    levelName: fullMap.levelName,
+                    zone: fullMap.zone,
+                    coords: fullMap.coords,
+                    thumbnail: fullMap.thumbnail,
+                    addedAt: roomMap.addedAt,
+                    addedBy: roomMap.addedBy
+                };
+                
+                this.myList.push(mapData);
+                this.myListIds.add(fullMap.id);
+            }
+        });
+        
+        // 更新 UI
+        this.saveToStorage();
+        this.updateListCount();
+        this.updateCardButtons();
+        this.renderMyList();
     }
 }
 
@@ -1874,7 +1991,12 @@ class RouteCalculator {
 // 初始化
 let treasureMapFinder;
 let routeCalculator;
+let roomCollaboration;
 document.addEventListener('DOMContentLoaded', () => {
     treasureMapFinder = new TreasureMapFinder();
     routeCalculator = new RouteCalculator();
+    roomCollaboration = new RoomCollaboration(treasureMapFinder);
+    
+    // 連接協作功能
+    treasureMapFinder.setRoomCollaboration(roomCollaboration);
 });

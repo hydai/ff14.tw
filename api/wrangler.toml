@@ -1,0 +1,25 @@
+name = "ff14tw-treasure-room-api"
+main = "treasure-room-worker.js"
+compatibility_date = "2024-01-01"
+
+# 本地開發用的 KV namespace
+[[kv_namespaces]]
+binding = "TREASURE_ROOMS"
+id = "YOUR_KV_NAMESPACE_ID"  # 需要建立 KV namespace 後替換
+preview_id = "LOCAL_KV_NAMESPACE"  # 本地開發用
+
+# 本地開發設定
+[dev]
+port = 8787
+local_protocol = "http"
+
+[env.production]
+name = "ff14tw-treasure-room-api"
+route = { pattern = "api.ff14.tw/*", zone_name = "ff14.tw" }
+
+[[env.production.kv_namespaces]]
+binding = "TREASURE_ROOMS"
+id = "YOUR_PRODUCTION_KV_NAMESPACE_ID"  # 生產環境的 KV namespace ID
+
+[env.development]
+name = "ff14tw-treasure-room-api-dev"
