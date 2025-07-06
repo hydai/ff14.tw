@@ -273,8 +273,15 @@ async function handleRemoveMember(roomCode, request, env, headers) {
   }
   const { requesterId, targetMemberId } = await request.json();
   
-  // Check if room has new creator format (creatorId field)
-  const creatorId = room.creatorId || 1;  // Fallback to 1 for old rooms
+  // All rooms must have creatorId - reject old format rooms
+  if (!room.creatorId) {
+    return new Response(JSON.stringify({ error: 'Invalid room format' }), {
+      status: 400,
+      headers,
+    });
+  }
+  
+  const creatorId = room.creatorId;
   
   // Only allow room creator to remove members
   // This prevents impersonation attacks since we don't have authentication
