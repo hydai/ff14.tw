@@ -987,11 +987,18 @@ class RoomCollaboration {
         
         membersList.innerHTML = '';
         
-        // 排序成員（當前使用者優先）
+        // 排序成員（房主優先，其次當前使用者，其他按加入時間）
         const sortedMembers = [...this.currentRoom.members].sort((a, b) => {
+            // 房主永遠排第一
+            if (a.id === this.currentRoom.creatorId) return -1;
+            if (b.id === this.currentRoom.creatorId) return 1;
+            
+            // 當前使用者排第二（除非已經是房主）
             if (a.id === this.currentUser.id) return -1;
             if (b.id === this.currentUser.id) return 1;
-            return a.id - b.id;
+            
+            // 其他按加入時間排序
+            return new Date(a.joinedAt).getTime() - new Date(b.joinedAt).getTime();
         });
         
         sortedMembers.forEach(member => {
