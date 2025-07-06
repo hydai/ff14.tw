@@ -63,7 +63,7 @@
                     </div>
                     
                     <!-- 已加入房間時顯示 -->
-                    <div class="room-status" id="roomStatus" style="display: none;">
+                    <div class="room-status hidden" id="roomStatus">
                         <div class="room-info">
                             <span class="room-label">房間：</span>
                             <span class="room-code" id="roomCode">A3B7K9</span>
@@ -113,22 +113,22 @@
                             <span class="filter-hint">可多選</span>
                         </div>
                         <div class="filter-tags" id="levelTags">
-                            <button class="filter-tag" data-level="g1" style="display: none;">G1 鞣革</button>
-                            <button class="filter-tag" data-level="g2" style="display: none;">G2 山羊革</button>
-                            <button class="filter-tag" data-level="g3" style="display: none;">G3 巨蟾蜍革</button>
-                            <button class="filter-tag" data-level="g4" style="display: none;">G4 野豬革</button>
-                            <button class="filter-tag" data-level="g5" style="display: none;">G5 毒蜥蜴革</button>
-                            <button class="filter-tag" data-level="g6" style="display: none;">G6 古鳥革</button>
-                            <button class="filter-tag" data-level="g7" style="display: none;">G7 飛龍革</button>
+                            <button class="filter-tag hidden" data-level="g1">G1 鞣革</button>
+                            <button class="filter-tag hidden" data-level="g2">G2 山羊革</button>
+                            <button class="filter-tag hidden" data-level="g3">G3 巨蟾蜍革</button>
+                            <button class="filter-tag hidden" data-level="g4">G4 野豬革</button>
+                            <button class="filter-tag hidden" data-level="g5">G5 毒蜥蜴革</button>
+                            <button class="filter-tag hidden" data-level="g6">G6 古鳥革</button>
+                            <button class="filter-tag hidden" data-level="g7">G7 飛龍革</button>
                             <button class="filter-tag" data-level="g8">G8 巨龍革</button>
-                            <button class="filter-tag" data-level="g9" style="display: none;">G9 迦迦納怪鳥革</button>
+                            <button class="filter-tag hidden" data-level="g9">G9 迦迦納怪鳥革</button>
                             <button class="filter-tag" data-level="g10">G10 瞪羚革</button>
-                            <button class="filter-tag" data-level="g11" style="display: none;">G11 綠飄龍革</button>
+                            <button class="filter-tag hidden" data-level="g11">G11 綠飄龍革</button>
                             <button class="filter-tag" data-level="g12">G12 纏尾蛟革</button>
-                            <button class="filter-tag" data-level="g13" style="display: none;">G13 賽加羚羊革</button>
+                            <button class="filter-tag hidden" data-level="g13">G13 賽加羚羊革</button>
                             <button class="filter-tag" data-level="g14">G14 金毗羅鱷革</button>
                             <button class="filter-tag" data-level="g15">G15 蛇牛革</button>
-                            <button class="filter-tag" data-level="g16" style="display: none;">G16 銀狼革</button>
+                            <button class="filter-tag hidden" data-level="g16">G16 銀狼革</button>
                             <button class="filter-tag" data-level="g17">G17 獰豹革</button>
                         </div>
                     </div>
@@ -299,7 +299,7 @@
                     <div class="treasure-grid" id="treasureGrid">
                         <!-- 寶圖卡片將由 JavaScript 動態生成 -->
                     </div>
-                    <div class="load-more" id="loadMore" style="display: none;">
+                    <div class="load-more hidden" id="loadMore">
                         <button class="btn btn-secondary">載入更多</button>
                     </div>
                 </div>
@@ -334,21 +334,21 @@
                 <button class="btn btn-secondary btn-sm" id="importListBtn" title="匯入清單">
                     <span class="btn-icon">📥</span> 匯入
                 </button>
-                <input type="file" id="importFileInput" accept=".json,.txt" style="display: none;">
+                <input type="file" id="importFileInput" accept=".json,.txt" class="hidden">
                 <button class="btn btn-danger btn-sm" id="clearAllBtn" title="清空全部">
                     <span class="btn-icon">🗑️</span> 清空
                 </button>
                 <button class="btn btn-close" id="closePanelBtn" title="關閉">×</button>
             </div>
         </div>
-        <div class="panel-tabs" id="panelTabs" style="display: none;">
+        <div class="panel-tabs hidden" id="panelTabs">
             <button class="tab-btn active" data-tab="list">清單</button>
             <button class="tab-btn" data-tab="history">歷史</button>
         </div>
         <div class="list-content" id="listContent">
             <!-- 清單項目將由 JavaScript 動態生成 -->
         </div>
-        <div class="history-content" id="historyContent" style="display: none;">
+        <div class="history-content hidden" id="historyContent">
             <!-- 操作歷史將由 JavaScript 動態生成 -->
         </div>
         <div class="panel-footer">
@@ -441,7 +441,7 @@
     </div>
 
     <!-- 加入房間對話框 -->
-    <div class="modal" id="joinRoomModal" style="display: none;">
+    <div class="modal hidden" id="joinRoomModal">
         <div class="modal-content">
             <div class="modal-header">
                 <h3>加入房間</h3>
@@ -460,7 +460,7 @@
     </div>
 
     <!-- 編輯暱稱對話框 -->
-    <div class="modal" id="editNicknameModal" style="display: none;">
+    <div class="modal hidden" id="editNicknameModal">
         <div class="modal-content">
             <div class="modal-header">
                 <h3>編輯暱稱</h3>
@@ -479,7 +479,7 @@
     </div>
 
     <!-- 離開房間確認對話框 -->
-    <div class="modal" id="leaveRoomModal" style="display: none;">
+    <div class="modal hidden" id="leaveRoomModal">
         <div class="modal-content">
             <div class="modal-header">
                 <h3>離開房間</h3>

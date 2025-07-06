@@ -267,9 +267,9 @@ class TreasureMapFinder {
         
         // 顯示或隱藏載入更多按鈕
         if (this.currentDisplayCount < this.filteredMaps.length) {
-            this.elements.loadMore.style.display = 'block';
+            this.elements.loadMore.classList.remove('hidden');
         } else {
-            this.elements.loadMore.style.display = 'none';
+            this.elements.loadMore.classList.add('hidden');
         }
     }
     
