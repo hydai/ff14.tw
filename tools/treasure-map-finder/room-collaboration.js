@@ -750,14 +750,16 @@ class RoomCollaboration {
     // 顯示對話框
     showModal(modalName) {
         if (this.modals[modalName]) {
-            this.modals[modalName].style.display = 'flex';
+            this.modals[modalName].classList.remove('hidden');
+            this.modals[modalName].style.display = 'flex';  // 保留 flex 顯示
         }
     }
     
     // 隱藏對話框
     hideModal(modalName) {
         if (this.modals[modalName]) {
-            this.modals[modalName].style.display = 'none';
+            this.modals[modalName].classList.add('hidden');
+            this.modals[modalName].style.display = '';  // 清除內聯樣式
         }
     }
     
@@ -896,11 +898,11 @@ class RoomCollaboration {
             // 切換內容
             const tab = tabBtn.dataset.tab;
             if (tab === 'list') {
-                listContent.style.display = 'block';
-                historyContent.style.display = 'none';
+                listContent.classList.remove('hidden');
+                historyContent.classList.add('hidden');
             } else if (tab === 'history') {
-                listContent.style.display = 'none';
-                historyContent.style.display = 'block';
+                listContent.classList.add('hidden');
+                historyContent.classList.remove('hidden');
                 this.renderHistory();
             }
         });
@@ -940,12 +942,12 @@ class RoomCollaboration {
         
         if (this.currentRoom) {
             // 顯示房間狀態
-            this.elements.roomActions.style.display = 'none';
-            this.elements.roomStatus.style.display = 'flex';
+            this.elements.roomActions.classList.add('hidden');
+            this.elements.roomStatus.classList.remove('hidden');
             
             // 顯示標籤頁
             if (panelTabs) {
-                panelTabs.style.display = 'flex';
+                panelTabs.classList.remove('hidden');
             }
             
             // 更新房間資訊
@@ -960,12 +962,12 @@ class RoomCollaboration {
             this.updateRoomTTL();
         } else {
             // 顯示房間操作按鈕
-            this.elements.roomActions.style.display = 'flex';
-            this.elements.roomStatus.style.display = 'none';
+            this.elements.roomActions.classList.remove('hidden');
+            this.elements.roomStatus.classList.add('hidden');
             
             // 隱藏標籤頁
             if (panelTabs) {
-                panelTabs.style.display = 'none';
+                panelTabs.classList.add('hidden');
             }
         }
     }

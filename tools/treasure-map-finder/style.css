@@ -1,5 +1,10 @@
 /* 寶圖搜尋器樣式 */
 
+/* 通用工具類 */
+.hidden {
+    display: none !important;
+}
+
 /* 控制列 */
 .control-bar {
     display: flex;
