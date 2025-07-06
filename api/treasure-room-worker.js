@@ -19,8 +19,8 @@ export default {
       'http://127.0.0.1:8080'
     ];
     
-    // Check if origin is allowed
-    const isAllowedOrigin = allowedOrigins.some(allowed => origin === allowed || origin.startsWith(allowed));
+    // Check if origin is allowed (exact match only for security)
+    const isAllowedOrigin = allowedOrigins.includes(origin);
     
     // Set CORS headers based on origin
     const headers = {
