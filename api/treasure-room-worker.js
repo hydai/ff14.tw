@@ -99,6 +99,28 @@ export default {
   },
 };
 
+// Helper functions to reduce code duplication
+async function getRoomFromKV(roomCode, env) {
+  const roomData = await env.TREASURE_ROOMS.get(`room:${roomCode}`);
+  return roomData ? JSON.parse(roomData) : null;
+}
+
+async function saveRoomToKV(room, env) {
+  const ttl = 24 * 60 * 60; // 24 hours
+  await env.TREASURE_ROOMS.put(
+    `room:${room.roomCode}`, 
+    JSON.stringify(room), 
+    { expirationTtl: ttl }
+  );
+}
+
+function createNotFoundResponse(headers) {
+  return new Response(JSON.stringify({ error: 'Room not found' }), {
+    status: 404,
+    headers,
+  });
+}
+
 // Create a new room
 async function handleCreateRoom(request, env, headers) {
   const body = await request.json();
@@ -128,40 +150,30 @@ async function handleCreateRoom(request, env, headers) {
   };
   
   // Save to KV with 24 hour expiration
-  const ttl = 24 * 60 * 60; // 24 hours in seconds
-  await env.TREASURE_ROOMS.put(`room:${roomCode}`, JSON.stringify(room), {
-    expirationTtl: ttl,
-  });
+  await saveRoomToKV(room, env);
   
   return new Response(JSON.stringify(room), { headers });
 }
 
 // Get room data
 async function handleGetRoom(roomCode, env, headers) {
-  const roomData = await env.TREASURE_ROOMS.get(`room:${roomCode}`);
+  const room = await getRoomFromKV(roomCode, env);
   
-  if (!roomData) {
-    return new Response(JSON.stringify({ error: 'Room not found' }), {
-      status: 404,
-      headers,
-    });
+  if (!room) {
+    return createNotFoundResponse(headers);
   }
   
-  return new Response(roomData, { headers });
+  return new Response(JSON.stringify(room), { headers });
 }
 
 // Update room (for syncing treasure maps)
 async function handleUpdateRoom(roomCode, request, env, headers) {
-  const roomData = await env.TREASURE_ROOMS.get(`room:${roomCode}`);
+  const room = await getRoomFromKV(roomCode, env);
   
-  if (!roomData) {
-    return new Response(JSON.stringify({ error: 'Room not found' }), {
-      status: 404,
-      headers,
-    });
+  if (!room) {
+    return createNotFoundResponse(headers);
   }
   
-  const room = JSON.parse(roomData);
   const updates = await request.json();
   
   // Update room data
@@ -181,26 +193,18 @@ async function handleUpdateRoom(roomCode, request, env, headers) {
   room.lastActivityAt = new Date().toISOString();
   
   // Save back to KV with renewed TTL
-  const ttl = 24 * 60 * 60;
-  await env.TREASURE_ROOMS.put(`room:${roomCode}`, JSON.stringify(room), {
-    expirationTtl: ttl,
-  });
+  await saveRoomToKV(room, env);
   
   return new Response(JSON.stringify(room), { headers });
 }
 
 // Join existing room
 async function handleJoinRoom(roomCode, request, env, headers) {
-  const roomData = await env.TREASURE_ROOMS.get(`room:${roomCode}`);
+  const room = await getRoomFromKV(roomCode, env);
   
-  if (!roomData) {
-    return new Response(JSON.stringify({ error: 'Room not found' }), {
-      status: 404,
-      headers,
-    });
+  if (!room) {
+    return createNotFoundResponse(headers);
   }
-  
-  const room = JSON.parse(roomData);
   const { memberNickname } = await request.json();
   
   // Check if room is full
@@ -225,26 +229,18 @@ async function handleJoinRoom(roomCode, request, env, headers) {
   room.lastActivityAt = new Date().toISOString();
   
   // Save back to KV
-  const ttl = 24 * 60 * 60;
-  await env.TREASURE_ROOMS.put(`room:${roomCode}`, JSON.stringify(room), {
-    expirationTtl: ttl,
-  });
+  await saveRoomToKV(room, env);
   
   return new Response(JSON.stringify({ room, newMember }), { headers });
 }
 
 // Leave room
 async function handleLeaveRoom(roomCode, request, env, headers) {
-  const roomData = await env.TREASURE_ROOMS.get(`room:${roomCode}`);
+  const room = await getRoomFromKV(roomCode, env);
   
-  if (!roomData) {
-    return new Response(JSON.stringify({ error: 'Room not found' }), {
-      status: 404,
-      headers,
-    });
+  if (!room) {
+    return createNotFoundResponse(headers);
   }
-  
-  const room = JSON.parse(roomData);
   const { memberId } = await request.json();
   
   // Remove member
@@ -259,26 +255,18 @@ async function handleLeaveRoom(roomCode, request, env, headers) {
   // Otherwise update room
   room.lastActivityAt = new Date().toISOString();
   
-  const ttl = 24 * 60 * 60;
-  await env.TREASURE_ROOMS.put(`room:${roomCode}`, JSON.stringify(room), {
-    expirationTtl: ttl,
-  });
+  await saveRoomToKV(room, env);
   
   return new Response(JSON.stringify(room), { headers });
 }
 
 // Remove member from room
 async function handleRemoveMember(roomCode, request, env, headers) {
-  const roomData = await env.TREASURE_ROOMS.get(`room:${roomCode}`);
+  const room = await getRoomFromKV(roomCode, env);
   
-  if (!roomData) {
-    return new Response(JSON.stringify({ error: 'Room not found' }), {
-      status: 404,
-      headers,
-    });
+  if (!room) {
+    return createNotFoundResponse(headers);
   }
-  
-  const room = JSON.parse(roomData);
   const { requesterId, targetMemberId } = await request.json();
   
   // Only allow room creator (member with id: 1) to remove members
@@ -313,10 +301,7 @@ async function handleRemoveMember(roomCode, request, env, headers) {
   // Update room
   room.lastActivityAt = new Date().toISOString();
   
-  const ttl = 24 * 60 * 60;
-  await env.TREASURE_ROOMS.put(`room:${roomCode}`, JSON.stringify(room), {
-    expirationTtl: ttl,
-  });
+  await saveRoomToKV(room, env);
   
   return new Response(JSON.stringify(room), { headers });
 }
