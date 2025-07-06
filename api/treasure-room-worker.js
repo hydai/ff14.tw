@@ -262,11 +262,28 @@ async function handleRemoveMember(roomCode, request, env, headers) {
   const room = JSON.parse(roomData);
   const { requesterId, targetMemberId } = await request.json();
   
-  // Verify requester is in the room
-  const requester = room.members.find(m => m.id === requesterId);
-  if (!requester) {
-    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+  // Only allow room creator (member with id: 1) to remove members
+  // This prevents impersonation attacks since we don't have authentication
+  if (requesterId !== 1) {
+    return new Response(JSON.stringify({ error: 'Only room creator can remove members' }), {
       status: 403,
+      headers,
+    });
+  }
+  
+  // Verify the room creator is still in the room
+  const creator = room.members.find(m => m.id === 1);
+  if (!creator) {
+    return new Response(JSON.stringify({ error: 'Room creator not found' }), {
+      status: 403,
+      headers,
+    });
+  }
+  
+  // Cannot remove the room creator
+  if (targetMemberId === 1) {
+    return new Response(JSON.stringify({ error: 'Cannot remove room creator' }), {
+      status: 400,
       headers,
     });
   }

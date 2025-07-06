@@ -974,10 +974,19 @@ class RoomCollaboration {
             // 成員名稱
             const nameSpan = document.createElement('span');
             nameSpan.textContent = member.nickname;
+            
+            // 標示房主
+            if (member.id === 1) {
+                const crownIcon = document.createElement('span');
+                crownIcon.textContent = ' 👑';
+                crownIcon.title = '房主';
+                nameSpan.appendChild(crownIcon);
+            }
+            
             memberTag.appendChild(nameSpan);
             
-            // 移除按鈕（不能移除自己）
-            if (member.id !== this.currentUser.id) {
+            // 移除按鈕（只有房主可以移除其他成員）
+            if (this.currentUser.id === 1 && member.id !== 1) {
                 const removeBtn = document.createElement('button');
                 removeBtn.className = 'member-remove-btn';
                 removeBtn.innerHTML = '×';
