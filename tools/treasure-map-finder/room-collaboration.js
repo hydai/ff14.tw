@@ -196,6 +196,25 @@ class RoomCollaboration {
             return;
         }
         
+        // 檢查是否有本地寶圖
+        if (this.finder.myList.length > 0) {
+            const clearLocal = confirm(
+                `您目前有 ${this.finder.myList.length} 張本地寶圖。\n\n` +
+                `建立房間後，這些寶圖會被歸屬為您新增的，但實際新增時間可能不正確。\n\n` +
+                `建議清空本地清單以確保協作資料的準確性。\n\n` +
+                `要清空本地清單嗎？`
+            );
+            
+            if (clearLocal) {
+                this.finder.myList = [];
+                this.finder.myListIds.clear();
+                this.finder.saveToStorage();
+                this.finder.updateListCount();
+                this.finder.updateCardButtons();
+                this.finder.renderMyList();
+            }
+        }
+        
         const roomCode = this.generateRoomCode();
         const memberNickname = `光之戰士1`;
         
@@ -281,6 +300,25 @@ class RoomCollaboration {
     // 加入房間
     async joinRoom(roomCode) {
         try {
+            // 檢查是否有本地寶圖
+            if (this.finder.myList.length > 0) {
+                const clearLocal = confirm(
+                    `您目前有 ${this.finder.myList.length} 張本地寶圖。\n\n` +
+                    `加入房間後，這些寶圖會被歸屬為您新增的，但實際新增時間可能不正確。\n\n` +
+                    `建議清空本地清單以確保協作資料的準確性。\n\n` +
+                    `要清空本地清單嗎？`
+                );
+                
+                if (clearLocal) {
+                    this.finder.myList = [];
+                    this.finder.myListIds.clear();
+                    this.finder.saveToStorage();
+                    this.finder.updateListCount();
+                    this.finder.updateCardButtons();
+                    this.finder.renderMyList();
+                }
+            }
+            
             // 生成暱稱
             const existingNickname = localStorage.getItem('ff14tw_user_nickname');
             const memberNickname = existingNickname || `光之戰士`;
