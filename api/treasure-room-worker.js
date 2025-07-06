@@ -137,7 +137,7 @@ async function handleCreateRoom(request, env, headers) {
   
   // Create new room
   const now = new Date().toISOString();
-  const creatorId = Date.now() + Math.floor(Math.random() * 1000);
+  const creatorId = crypto.randomUUID();
   const room = {
     roomCode,
     createdAt: now,
@@ -218,9 +218,8 @@ async function handleJoinRoom(roomCode, request, env, headers) {
     });
   }
   
-  // Add new member with timestamp-based ID to prevent race conditions
-  // Use timestamp + random number for uniqueness
-  const newMemberId = Date.now() + Math.floor(Math.random() * 1000);
+  // Add new member with cryptographically secure unique ID
+  const newMemberId = crypto.randomUUID();
   const memberCount = room.members.length + 1;
   const newMember = {
     id: newMemberId,
