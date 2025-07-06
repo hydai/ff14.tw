@@ -976,7 +976,8 @@ class RoomCollaboration {
             nameSpan.textContent = member.nickname;
             
             // 標示房主
-            if (member.id === 1) {
+            const isCreator = member.isCreator || (this.currentRoom.creatorId ? member.id === this.currentRoom.creatorId : member.id === 1);
+            if (isCreator) {
                 const crownIcon = document.createElement('span');
                 crownIcon.textContent = ' 👑';
                 crownIcon.title = '房主';
@@ -986,7 +987,9 @@ class RoomCollaboration {
             memberTag.appendChild(nameSpan);
             
             // 移除按鈕（只有房主可以移除其他成員）
-            if (this.currentUser.id === 1 && member.id !== 1) {
+            const currentUserIsCreator = this.currentUser.isCreator || 
+                (this.currentRoom.creatorId ? this.currentUser.id === this.currentRoom.creatorId : this.currentUser.id === 1);
+            if (currentUserIsCreator && !isCreator) {
                 const removeBtn = document.createElement('button');
                 removeBtn.className = 'member-remove-btn';
                 removeBtn.innerHTML = '×';
