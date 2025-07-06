@@ -6,9 +6,25 @@ export default {
     const url = new URL(request.url);
     const path = url.pathname;
     
-    // Enable CORS
+    // Get request origin
+    const origin = request.headers.get('Origin') || '';
+    
+    // Define allowed origins
+    const allowedOrigins = [
+      'https://ff14.tw',
+      'https://www.ff14.tw',
+      'http://localhost:8000',
+      'http://localhost:8080',
+      'http://127.0.0.1:8000',
+      'http://127.0.0.1:8080'
+    ];
+    
+    // Check if origin is allowed
+    const isAllowedOrigin = allowedOrigins.some(allowed => origin === allowed || origin.startsWith(allowed));
+    
+    // Set CORS headers based on origin
     const headers = {
-      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Origin': isAllowedOrigin ? origin : 'https://ff14.tw',
       'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type',
       'Content-Type': 'application/json',
@@ -17,6 +33,14 @@ export default {
     // Handle preflight requests
     if (request.method === 'OPTIONS') {
       return new Response(null, { headers });
+    }
+    
+    // Reject requests from non-allowed origins
+    if (!isAllowedOrigin && origin) {
+      return new Response(JSON.stringify({ error: 'Forbidden: Invalid origin' }), {
+        status: 403,
+        headers,
+      });
     }
     
     try {
