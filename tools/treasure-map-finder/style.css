@@ -1078,43 +1078,55 @@
     margin: 0.5rem 0;
 }
 
-/* Toast 提示樣式 */
-.toast {
+/* Toast 提示樣式 - 使用高特異性選擇器和屬性選擇器來覆蓋內聯樣式 */
+body > div.toast {
     position: fixed;
-    top: 20px !important;
-    right: 20px !important;
-    left: auto !important;
-    transform: translateY(-20px) !important;
-    background: #27ae60 !important; /* 綠色成功背景 */
-    color: white !important;
-    padding: 12px 24px !important;
+    top: 20px;
+    right: 20px;
+    left: auto;
+    transform: translateY(-20px);
+    background: #27ae60; /* 綠色成功背景 */
+    color: white;
+    padding: 12px 24px;
     border-radius: var(--border-radius);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     opacity: 0;
     transition: all 0.3s ease;
-    z-index: 9999 !important;
+    z-index: 9999;
     font-size: 0.875rem;
     font-weight: 500;
-    max-width: 300px !important;
+    max-width: 300px;
     text-align: center;
-    width: auto !important;
+    width: auto;
 }
 
-.toast.show {
-    transform: translateY(0) !important;
-    opacity: 1 !important;
+/* 屬性選擇器優先級更高，能覆蓋內聯樣式 */
+body > div[class*="toast"][style*="position"] {
+    top: 20px;
+    right: 20px;
+    padding: 12px 24px;
+    max-width: 300px;
+    width: auto;
 }
 
-.toast-error {
-    background: #e74c3c !important; /* 紅色錯誤背景 */
+body > div.toast.show {
+    transform: translateY(0);
+    opacity: 1;
 }
 
-.toast-info {
-    background: #4a90e2 !important; /* 藍色資訊背景 */
+body > div.toast.toast-error,
+body > div[class~="toast-error"] {
+    background: #e74c3c; /* 紅色錯誤背景 */
 }
 
-.toast-warning {
-    background: #f0ad4e !important; /* 橘色警告背景 */
+body > div.toast.toast-info,
+body > div[class~="toast-info"] {
+    background: #4a90e2; /* 藍色資訊背景 */
+}
+
+body > div.toast.toast-warning,
+body > div[class~="toast-warning"] {
+    background: #f0ad4e; /* 橘色警告背景 */
 }
 
 /* 響應式設計 */
