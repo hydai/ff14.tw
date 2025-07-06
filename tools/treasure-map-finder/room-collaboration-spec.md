@@ -310,9 +310,20 @@ Feature: 成員管理
   "roomCode": "A3B7K9",
   "createdAt": "2024-01-01T10:00:00Z",
   "lastActivityAt": "2024-01-01T15:30:00Z",
+  "creatorId": "550e8400-e29b-41d4-a716-446655440000",  // UUID 格式
   "members": [
-    { "id": 1, "nickname": "光之戰士1", "joinedAt": "2024-01-01T10:00:00Z" },
-    { "id": 2, "nickname": "拉拉肥", "joinedAt": "2024-01-01T10:05:00Z" }
+    { 
+      "id": "550e8400-e29b-41d4-a716-446655440000",  // 使用 crypto.randomUUID() 生成
+      "nickname": "光之戰士1", 
+      "joinedAt": "2024-01-01T10:00:00Z",
+      "isCreator": true
+    },
+    { 
+      "id": "6ba7b810-9dad-11d1-80b4-00c04fd430c8",  // UUID 格式
+      "nickname": "拉拉肥", 
+      "joinedAt": "2024-01-01T10:05:00Z",
+      "isCreator": false
+    }
   ],
   "treasureMaps": [
     {
@@ -321,7 +332,7 @@ Feature: 成員管理
       "x": 15.2,
       "y": 23.1,
       "zone": "厄爾庇斯",
-      "addedBy": 2,
+      "addedBy": "6ba7b810-9dad-11d1-80b4-00c04fd430c8",  // 成員 UUID
       "addedAt": "2024-01-01T10:30:00Z"
     }
   ]
