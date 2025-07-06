@@ -44,32 +44,51 @@ export default {
     }
     
     try {
-      // Route handlers
+      // Route handlers with regex-based routing for better maintainability
+      
+      // POST /api/rooms - Create new room
       if (path === '/api/rooms' && request.method === 'POST') {
         return await handleCreateRoom(request, env, headers);
-      } else if (path.startsWith('/api/rooms/') && request.method === 'GET') {
-        const roomCode = path.split('/')[3];
-        return await handleGetRoom(roomCode, env, headers);
-      } else if (path.startsWith('/api/rooms/') && request.method === 'PUT') {
-        const roomCode = path.split('/')[3];
-        return await handleUpdateRoom(roomCode, request, env, headers);
-      } else if (path.startsWith('/api/rooms/') && path.endsWith('/join') && request.method === 'POST') {
-        const roomCode = path.split('/')[3];
-        return await handleJoinRoom(roomCode, request, env, headers);
-      } else if (path.startsWith('/api/rooms/') && path.endsWith('/leave') && request.method === 'POST') {
-        const roomCode = path.split('/')[3];
-        return await handleLeaveRoom(roomCode, request, env, headers);
-      } else if (path.startsWith('/api/rooms/') && path.endsWith('/remove-member') && request.method === 'POST') {
-        const roomCode = path.split('/')[3];
-        return await handleRemoveMember(roomCode, request, env, headers);
-      } else if (path === '/api/cleanup' && request.method === 'POST') {
-        return await handleCleanup(env, headers);
-      } else {
-        return new Response(JSON.stringify({ error: 'Not found' }), {
-          status: 404,
-          headers,
-        });
       }
+      
+      // Extract room code from path using regex
+      const roomMatch = path.match(/^\/api\/rooms\/([A-Z0-9]{6})(\/.*)?$/);
+      const roomCode = roomMatch ? roomMatch[1] : null;
+      const roomAction = roomMatch ? roomMatch[2] : null;
+      
+      if (roomCode) {
+        // GET /api/rooms/{roomCode} - Get room details
+        if (request.method === 'GET' && !roomAction) {
+          return await handleGetRoom(roomCode, env, headers);
+        }
+        // PUT /api/rooms/{roomCode} - Update room
+        else if (request.method === 'PUT' && !roomAction) {
+          return await handleUpdateRoom(roomCode, request, env, headers);
+        }
+        // POST /api/rooms/{roomCode}/join - Join room
+        else if (request.method === 'POST' && roomAction === '/join') {
+          return await handleJoinRoom(roomCode, request, env, headers);
+        }
+        // POST /api/rooms/{roomCode}/leave - Leave room
+        else if (request.method === 'POST' && roomAction === '/leave') {
+          return await handleLeaveRoom(roomCode, request, env, headers);
+        }
+        // POST /api/rooms/{roomCode}/remove-member - Remove member
+        else if (request.method === 'POST' && roomAction === '/remove-member') {
+          return await handleRemoveMember(roomCode, request, env, headers);
+        }
+      }
+      
+      // POST /api/cleanup - Cleanup expired rooms
+      if (path === '/api/cleanup' && request.method === 'POST') {
+        return await handleCleanup(env, headers);
+      }
+      
+      // No matching route found
+      return new Response(JSON.stringify({ error: 'Not found' }), {
+        status: 404,
+        headers,
+      });
     } catch (error) {
       console.error('Worker error:', error);
       return new Response(JSON.stringify({ error: 'Internal server error' }), {
