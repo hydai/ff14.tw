@@ -114,6 +114,24 @@ class RoomCollaboration {
         const roomCode = urlParams.get('room');
         
         if (roomCode) {
+            // 先檢查 localStorage 是否已有相同房間的資料
+            const savedRoom = localStorage.getItem('ff14tw_current_room');
+            if (savedRoom) {
+                try {
+                    const roomData = JSON.parse(savedRoom);
+                    // 如果已在相同房間且資料有效，直接恢復會話
+                    if (roomData.roomCode === roomCode && this.isRoomValid(roomData)) {
+                        this.currentRoom = roomData;
+                        this.currentUser = roomData.currentUser;
+                        this.updateRoomUI();
+                        this.startPolling();
+                        return; // 避免重複加入
+                    }
+                } catch (error) {
+                    console.error('載入房間資料失敗:', error);
+                }
+            }
+            // 如果不在房間或在不同房間，才執行加入
             this.joinRoom(roomCode);
         } else {
             const savedRoom = localStorage.getItem('ff14tw_current_room');
@@ -859,6 +877,9 @@ class RoomCollaboration {
             this.elements.roomMembers.textContent = `${this.currentRoom.members.length}/${RoomCollaboration.CONSTANTS.MAX_MEMBERS}人`;
             this.elements.userNickname.textContent = this.currentUser.nickname;
             
+            // 更新成員列表
+            this.updateMembersList();
+            
             this.updateActivityTime();
             this.updateRoomTTL();
         } else {
@@ -871,6 +892,31 @@ class RoomCollaboration {
                 panelTabs.style.display = 'none';
             }
         }
+    }
+    
+    // 更新成員列表
+    updateMembersList() {
+        const membersList = document.getElementById('membersList');
+        if (!membersList || !this.currentRoom) return;
+        
+        membersList.innerHTML = '';
+        
+        // 排序成員（當前使用者優先）
+        const sortedMembers = [...this.currentRoom.members].sort((a, b) => {
+            if (a.id === this.currentUser.id) return -1;
+            if (b.id === this.currentUser.id) return 1;
+            return a.id - b.id;
+        });
+        
+        sortedMembers.forEach(member => {
+            const memberTag = document.createElement('div');
+            memberTag.className = 'member-tag';
+            if (member.id === this.currentUser.id) {
+                memberTag.classList.add('current-user');
+            }
+            memberTag.textContent = member.nickname;
+            membersList.appendChild(memberTag);
+        });
     }
 }
 
