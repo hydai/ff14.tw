@@ -185,14 +185,14 @@ class RoomCollaboration {
     async createRoom() {
         // 檢查是否已有房間
         if (this.currentRoom) {
-            alert('您已在房間中，請先離開現有房間');
+            this.showToast('您已在房間中，請先離開現有房間', 'warning');
             return;
         }
         
         // 檢查瀏覽器限制
         const browserLimit = localStorage.getItem('ff14tw_room_created');
         if (browserLimit) {
-            alert('此瀏覽器已有房間記錄，請先清除或使用其他瀏覽器');
+            this.showToast('此瀏覽器已有房間記錄，請先清除或使用其他瀏覽器', 'warning');
             return;
         }
         
@@ -249,14 +249,14 @@ class RoomCollaboration {
             
         } catch (error) {
             console.error('建立房間失敗:', error);
-            alert(error.message || '建立房間失敗，請稍後再試');
+            this.showToast(error.message || '建立房間失敗，請稍後再試', 'error');
         }
     }
     
     // 顯示加入房間對話框
     showJoinRoomDialog() {
         if (this.currentRoom) {
-            alert('您已在房間中，請先離開現有房間');
+            this.showToast('您已在房間中，請先離開現有房間', 'warning');
             return;
         }
         
@@ -270,7 +270,7 @@ class RoomCollaboration {
         const roomCode = document.getElementById('roomCodeInput').value.trim().toUpperCase();
         
         if (!roomCode || roomCode.length !== RoomCollaboration.CONSTANTS.ROOM_CODE_LENGTH) {
-            alert('請輸入有效的 6 位房間代號');
+            this.showToast('請輸入有效的 6 位房間代號', 'warning');
             return;
         }
         
@@ -354,7 +354,7 @@ class RoomCollaboration {
             
         } catch (error) {
             console.error('加入房間失敗:', error);
-            alert(error.message || '加入房間失敗，請確認房間代號是否正確');
+            this.showToast(error.message || '加入房間失敗，請確認房間代號是否正確', 'error');
         }
     }
     
@@ -372,12 +372,12 @@ class RoomCollaboration {
         const newNickname = document.getElementById('nicknameInput').value.trim();
         
         if (!newNickname) {
-            alert('請輸入暱稱');
+            this.showToast('請輸入暱稱', 'warning');
             return;
         }
         
         if (newNickname.length > 20) {
-            alert('暱稱不能超過 20 個字元');
+            this.showToast('暱稱不能超過 20 個字元', 'warning');
             return;
         }
         
@@ -432,7 +432,7 @@ class RoomCollaboration {
             
         } catch (error) {
             console.error('更新暱稱失敗:', error);
-            alert('更新暱稱失敗，請稍後再試');
+            this.showToast('更新暱稱失敗，請稍後再試', 'error');
         }
     }
     
@@ -496,7 +496,7 @@ class RoomCollaboration {
             
         } catch (error) {
             console.error('離開房間失敗:', error);
-            alert('離開房間失敗，請稍後再試');
+            this.showToast('離開房間失敗，請稍後再試', 'error');
         }
     }
     
@@ -1033,7 +1033,7 @@ class RoomCollaboration {
             
         } catch (error) {
             console.error('移除成員失敗:', error);
-            alert('移除成員失敗，請稍後再試');
+            this.showToast('移除成員失敗，請稍後再試', 'error');
         }
     }
 }
