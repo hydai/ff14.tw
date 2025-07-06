@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API 測試</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        .section {
+            margin-bottom: 2rem;
+            padding: 1rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        button {
+            margin: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: #4a90e2;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #357abd;
+        }
+        #output {
+            background: #f5f5f5;
+            padding: 1rem;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        input {
+            padding: 0.5rem;
+            margin: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>寶圖房間 API 測試</h1>
+    
+    <div class="section">
+        <h2>建立房間</h2>
+        <input type="text" id="roomCode" placeholder="房間代號 (6位英數字)" value="TEST01">
+        <input type="text" id="nickname" placeholder="暱稱" value="測試玩家">
+        <button onclick="createRoom()">建立房間</button>
+    </div>
+    
+    <div class="section">
+        <h2>查詢房間</h2>
+        <input type="text" id="getRoomCode" placeholder="房間代號" value="TEST01">
+        <button onclick="getRoom()">查詢房間</button>
+    </div>
+    
+    <div class="section">
+        <h2>加入房間</h2>
+        <input type="text" id="joinRoomCode" placeholder="房間代號" value="TEST01">
+        <input type="text" id="joinNickname" placeholder="暱稱" value="新玩家">
+        <button onclick="joinRoom()">加入房間</button>
+    </div>
+    
+    <div class="section">
+        <h2>更新寶圖</h2>
+        <input type="text" id="updateRoomCode" placeholder="房間代號" value="TEST01">
+        <button onclick="updateMaps()">更新寶圖清單</button>
+    </div>
+    
+    <div class="section">
+        <h2>輸出結果</h2>
+        <div id="output">等待操作...</div>
+    </div>
+    
+    <script>
+        const API_URL = 'http://localhost:8787/api';
+        const output = document.getElementById('output');
+        
+        function log(message) {
+            output.textContent = typeof message === 'object' 
+                ? JSON.stringify(message, null, 2) 
+                : message;
+        }
+        
+        async function createRoom() {
+            try {
+                const response = await fetch(`${API_URL}/rooms`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        roomCode: document.getElementById('roomCode').value,
+                        memberNickname: document.getElementById('nickname').value
+                    })
+                });
+                const data = await response.json();
+                log(data);
+            } catch (error) {
+                log(`錯誤: ${error.message}`);
+            }
+        }
+        
+        async function getRoom() {
+            try {
+                const roomCode = document.getElementById('getRoomCode').value;
+                const response = await fetch(`${API_URL}/rooms/${roomCode}`);
+                const data = await response.json();
+                log(data);
+            } catch (error) {
+                log(`錯誤: ${error.message}`);
+            }
+        }
+        
+        async function joinRoom() {
+            try {
+                const roomCode = document.getElementById('joinRoomCode').value;
+                const response = await fetch(`${API_URL}/rooms/${roomCode}/join`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        memberNickname: document.getElementById('joinNickname').value
+                    })
+                });
+                const data = await response.json();
+                log(data);
+            } catch (error) {
+                log(`錯誤: ${error.message}`);
+            }
+        }
+        
+        async function updateMaps() {
+            try {
+                const roomCode = document.getElementById('updateRoomCode').value;
+                const response = await fetch(`${API_URL}/rooms/${roomCode}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        treasureMaps: [
+                            {
+                                id: 'g12_1',
+                                type: 'g12',
+                                x: 15.2,
+                                y: 23.1,
+                                zone: '厄爾庇斯',
+                                addedBy: 1,
+                                addedAt: new Date().toISOString()
+                            },
+                            {
+                                id: 'g14_1',
+                                type: 'g14',
+                                x: 12.5,
+                                y: 18.3,
+                                zone: '嘆息海',
+                                addedBy: 2,
+                                addedAt: new Date().toISOString()
+                            }
+                        ]
+                    })
+                });
+                const data = await response.json();
+                log(data);
+            } catch (error) {
+                log(`錯誤: ${error.message}`);
+            }
+        }
+    </script>
+</body>
+</html>

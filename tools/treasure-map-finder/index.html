@@ -50,6 +50,54 @@
                     </div>
                 </div>
 
+                <!-- 房間協作區域 -->
+                <div class="room-section" id="roomSection">
+                    <!-- 未加入房間時顯示 -->
+                    <div class="room-actions" id="roomActions">
+                        <button class="btn btn-primary" id="createRoomBtn">
+                            <span class="btn-icon">🏠</span> 建立新房間
+                        </button>
+                        <button class="btn btn-secondary" id="joinRoomBtn">
+                            <span class="btn-icon">🚪</span> 加入房間
+                        </button>
+                    </div>
+                    
+                    <!-- 已加入房間時顯示 -->
+                    <div class="room-status" id="roomStatus" style="display: none;">
+                        <div class="room-info">
+                            <span class="room-label">房間：</span>
+                            <span class="room-code" id="roomCode">A3B7K9</span>
+                            <button class="btn btn-sm" id="copyRoomCodeBtn" title="複製房間代號">
+                                <span class="btn-icon">📋</span>
+                            </button>
+                        </div>
+                        <div class="room-stats">
+                            <span class="room-stat">
+                                <span class="stat-icon">👥</span>
+                                <span id="roomMembers">1/8人</span>
+                            </span>
+                            <span class="room-stat">
+                                <span class="stat-icon">🕐</span>
+                                最後更新：<span id="lastActivity">剛剛</span>
+                            </span>
+                            <span class="room-stat">
+                                <span class="stat-icon">⏱️</span>
+                                剩餘：<span id="roomTTL">23小時59分</span>
+                            </span>
+                        </div>
+                        <div class="room-user">
+                            <span class="user-label">您的暱稱：</span>
+                            <span class="user-nickname" id="userNickname">光之戰士1</span>
+                            <button class="btn btn-sm" id="editNicknameBtn" title="編輯暱稱">
+                                <span class="btn-icon">✏️</span>
+                            </button>
+                            <button class="btn btn-danger btn-sm" id="leaveRoomBtn">
+                                <span class="btn-icon">🚪</span> 離開房間
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- 篩選區 -->
                 <div class="filter-section">
                     <!-- 等級篩選 -->
@@ -284,11 +332,18 @@
                 <button class="btn btn-danger btn-sm" id="clearAllBtn" title="清空全部">
                     <span class="btn-icon">🗑️</span> 清空
                 </button>
-                <button class="btn-close" id="closePanelBtn" title="關閉">×</button>
+                <button class="btn btn-close" id="closePanelBtn" title="關閉">×</button>
             </div>
+        </div>
+        <div class="panel-tabs" id="panelTabs" style="display: none;">
+            <button class="tab-btn active" data-tab="list">清單</button>
+            <button class="tab-btn" data-tab="history">歷史</button>
         </div>
         <div class="list-content" id="listContent">
             <!-- 清單項目將由 JavaScript 動態生成 -->
+        </div>
+        <div class="history-content" id="historyContent" style="display: none;">
+            <!-- 操作歷史將由 JavaScript 動態生成 -->
         </div>
         <div class="panel-footer">
             <p>總計：<span id="totalCount">0</span> 張寶圖</p>
@@ -379,6 +434,63 @@
         </div>
     </div>
 
+    <!-- 加入房間對話框 -->
+    <div class="modal" id="joinRoomModal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>加入房間</h3>
+                <button class="btn-close" id="closeJoinModalBtn">×</button>
+            </div>
+            <div class="modal-body">
+                <label for="roomCodeInput">請輸入房間代號：</label>
+                <input type="text" id="roomCodeInput" class="input-field" placeholder="例如：A3B7K9" maxlength="6" style="text-transform: uppercase;">
+                <div class="modal-hint">請向房間建立者取得 6 位英數字代號</div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelJoinBtn">取消</button>
+                <button class="btn btn-primary" id="confirmJoinBtn">加入</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 編輯暱稱對話框 -->
+    <div class="modal" id="editNicknameModal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>編輯暱稱</h3>
+                <button class="btn-close" id="closeNicknameModalBtn">×</button>
+            </div>
+            <div class="modal-body">
+                <label for="nicknameInput">您的暱稱：</label>
+                <input type="text" id="nicknameInput" class="input-field" placeholder="請輸入暱稱" maxlength="20">
+                <div class="modal-hint">其他成員將看到您的暱稱</div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelNicknameBtn">取消</button>
+                <button class="btn btn-primary" id="confirmNicknameBtn">確認</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 離開房間確認對話框 -->
+    <div class="modal" id="leaveRoomModal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>離開房間</h3>
+                <button class="btn-close" id="closeLeaveModalBtn">×</button>
+            </div>
+            <div class="modal-body">
+                <p>您確定要離開房間嗎？</p>
+                <p>是否保留本地寶圖清單？</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="leaveKeepListBtn">保留清單並離開</button>
+                <button class="btn btn-danger" id="leaveClearListBtn">清空清單並離開</button>
+                <button class="btn btn-primary" id="cancelLeaveBtn">取消</button>
+            </div>
+        </div>
+    </div>
+
 
     <footer class="footer">
         <div class="container">
@@ -387,6 +499,7 @@
     </footer>
 
     <script src="/assets/js/common.js"></script>
+    <script src="room-collaboration.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

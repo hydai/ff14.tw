@@ -67,3 +67,7 @@ dungeons_original.json
 TODO.md
 NOTES.md
 notes/
+
+# Cloudflare Workers
+.wrangler/
+.dev.vars
