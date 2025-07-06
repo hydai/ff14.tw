@@ -12,12 +12,19 @@ export default {
     // Define allowed origins
     const allowedOrigins = [
       'https://ff14.tw',
-      'https://www.ff14.tw',
-      'http://localhost:8000',
-      'http://localhost:8080',
-      'http://127.0.0.1:8000',
-      'http://127.0.0.1:8080'
+      'https://www.ff14.tw'
     ];
+    
+    // Add localhost origins only in development mode
+    // You can control this with an environment variable in wrangler.toml
+    if (env.ENVIRONMENT === 'development') {
+      allowedOrigins.push(
+        'http://localhost:8000',
+        'http://localhost:8080',
+        'http://127.0.0.1:8000',
+        'http://127.0.0.1:8080'
+      );
+    }
     
     // Check if origin is allowed (exact match only for security)
     const isAllowedOrigin = allowedOrigins.includes(origin);

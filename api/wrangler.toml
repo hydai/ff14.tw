@@ -20,6 +20,8 @@ local_protocol = "http"
 [env.production]
 name = "ff14tw-treasure"
 #route = { pattern = "api.ff14.tw/*", zone_name = "ff14.tw", custom_domain = true }
+vars = { ENVIRONMENT = "production" }
 
 [env.development]
 name = "ff14tw-treasure-room-api-dev"
+vars = { ENVIRONMENT = "development" }
