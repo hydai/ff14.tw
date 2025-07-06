@@ -16,9 +16,28 @@ class LodestoneCharacterLookup {
             characterCity: document.getElementById('characterCity'),
             characterFC: document.getElementById('characterFC'),
             jobLevels: document.getElementById('jobLevels'),
-            collectibles: document.getElementById('collectibles'),
-            achievementPoints: document.getElementById('achievementPoints'),
-            lodestoneLink: document.getElementById('lodestoneLink')
+            lodestoneLink: document.getElementById('lodestoneLink'),
+            // Stats
+            hp: document.getElementById('hp'),
+            mp: document.getElementById('mp'),
+            attackPower: document.getElementById('attackPower'),
+            defense: document.getElementById('defense'),
+            attackMagicPotency: document.getElementById('attackMagicPotency'),
+            magicDefense: document.getElementById('magicDefense'),
+            // Sub stats
+            strength: document.getElementById('strength'),
+            dexterity: document.getElementById('dexterity'),
+            vitality: document.getElementById('vitality'),
+            intelligence: document.getElementById('intelligence'),
+            mind: document.getElementById('mind'),
+            criticalHit: document.getElementById('criticalHit'),
+            determination: document.getElementById('determination'),
+            directHit: document.getElementById('directHit'),
+            // Other info
+            grandCompany: document.getElementById('grandCompany'),
+            nameday: document.getElementById('nameday'),
+            bio: document.getElementById('bio'),
+            equipmentInfo: document.getElementById('equipmentInfo')
         };
 
         this.initializeEvents();
@@ -138,11 +157,8 @@ class LodestoneCharacterLookup {
         }
         
         // Additional character info
-        if (character.Race && character.Tribe) {
-            this.elements.characterRace.textContent = `${character.Race} / ${character.Tribe}`;
-        } else {
-            this.elements.characterRace.textContent = '未知';
-        }
+        // Note: Race and Tribe are not provided in the current API response
+        this.elements.characterRace.textContent = '資料未提供';
         
         if (character.GuardianDeity && character.GuardianDeity.Name) {
             this.elements.characterDeity.textContent = character.GuardianDeity.Name;
@@ -216,18 +232,36 @@ class LodestoneCharacterLookup {
             this.elements.jobLevels.appendChild(noData);
         }
         
-        // Stats info
-        if (character.Hp) {
-            this.elements.collectibles.textContent = `HP: ${character.Hp}`;
+        // Primary Stats
+        this.elements.hp.textContent = character.Hp || '0';
+        this.elements.mp.textContent = `${character.MpGpCp || '0'} ${character.MpGpCpParameterName || ''}`;
+        this.elements.attackPower.textContent = character.AttackPower || '0';
+        this.elements.defense.textContent = character.Defense || '0';
+        this.elements.attackMagicPotency.textContent = character.AttackMagicPotency || '0';
+        this.elements.magicDefense.textContent = character.MagicDefense || '0';
+        
+        // Sub Stats
+        this.elements.strength.textContent = character.Strength || '0';
+        this.elements.dexterity.textContent = character.Dexterity || '0';
+        this.elements.vitality.textContent = character.Vitality || '0';
+        this.elements.intelligence.textContent = character.Intelligence || '0';
+        this.elements.mind.textContent = character.Mind || '0';
+        this.elements.criticalHit.textContent = character.CriticalHitRate || '0';
+        this.elements.determination.textContent = character.Determination || '0';
+        this.elements.directHit.textContent = character.DirectHitRate || '0';
+        
+        // Other Info
+        if (character.GrandCompany && character.GrandCompany.Name) {
+            this.elements.grandCompany.textContent = `${character.GrandCompany.Name}${character.GrandCompany.Rank ? ' - ' + character.GrandCompany.Rank : ''}`;
         } else {
-            this.elements.collectibles.textContent = '暫無資料';
+            this.elements.grandCompany.textContent = '無';
         }
         
-        if (character.AttackPower) {
-            this.elements.achievementPoints.textContent = `攻擊力: ${character.AttackPower}`;
-        } else {
-            this.elements.achievementPoints.textContent = '暫無資料';
-        }
+        this.elements.nameday.textContent = character.Nameday || '未知';
+        this.elements.bio.textContent = character.Bio || '無';
+        
+        // Equipment Info
+        this.displayEquipment(character);
 
         // Lodestone link
         const lodestoneUrl = `https://na.finalfantasyxiv.com/lodestone/character/${character.ID}/`;
@@ -237,6 +271,57 @@ class LodestoneCharacterLookup {
         console.log('顯示角色資訊區塊');
         this.showCharacterInfo();
         console.log('=== 顯示完成 ===');
+    }
+
+    displayEquipment(character) {
+        // Clear existing content
+        this.elements.equipmentInfo.textContent = '';
+        
+        const equipmentSlots = [
+            { key: 'Mainhand', label: '主手' },
+            { key: 'Head', label: '頭部' },
+            { key: 'Body', label: '身體' },
+            { key: 'Hands', label: '手部' },
+            { key: 'Legs', label: '腿部' },
+            { key: 'Feet', label: '腳部' },
+            { key: 'Earrings', label: '耳環' },
+            { key: 'Necklace', label: '項鍊' },
+            { key: 'Bracelets', label: '手鐲' },
+            { key: 'Ring1', label: '戒指1' },
+            { key: 'Ring2', label: '戒指2' },
+            { key: 'Soulcrystal', label: '靈魂水晶' }
+        ];
+        
+        equipmentSlots.forEach(slot => {
+            const equipment = character[slot.key];
+            if (equipment && equipment.Name) {
+                const equipItem = document.createElement('div');
+                equipItem.className = 'equipment-item';
+                
+                const label = document.createElement('strong');
+                label.textContent = `${slot.label}：`;
+                
+                const name = document.createElement('span');
+                name.textContent = equipment.Name;
+                
+                if (equipment.MirageName && equipment.MirageName !== equipment.Name) {
+                    const mirage = document.createElement('span');
+                    mirage.className = 'mirage-name';
+                    mirage.textContent = ` (幻化: ${equipment.MirageName})`;
+                    name.appendChild(mirage);
+                }
+                
+                equipItem.appendChild(label);
+                equipItem.appendChild(name);
+                this.elements.equipmentInfo.appendChild(equipItem);
+            }
+        });
+        
+        if (this.elements.equipmentInfo.children.length === 0) {
+            const noData = document.createElement('p');
+            noData.textContent = '無裝備資料';
+            this.elements.equipmentInfo.appendChild(noData);
+        }
     }
 
     displayJobLevels(classJobs) {

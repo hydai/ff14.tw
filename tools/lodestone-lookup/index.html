@@ -102,8 +102,13 @@
                     </section>
 
                     <section class="info-section">
-                        <h3>職業等級</h3>
+                        <h3>當前職業</h3>
                         <div id="jobLevels" class="job-levels-grid"></div>
+                    </section>
+                    
+                    <section class="info-section">
+                        <h3>裝備資訊</h3>
+                        <div id="equipmentInfo" class="equipment-grid"></div>
                     </section>
 
                     <section class="info-section">
@@ -111,11 +116,83 @@
                         <div class="info-grid">
                             <div class="info-item">
                                 <label>生命值：</label>
-                                <span id="collectibles"></span>
+                                <span id="hp"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>MP/GP/CP：</label>
+                                <span id="mp"></span>
                             </div>
                             <div class="info-item">
                                 <label>物理攻擊力：</label>
-                                <span id="achievementPoints"></span>
+                                <span id="attackPower"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>物理防禦力：</label>
+                                <span id="defense"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>魔法攻擊力：</label>
+                                <span id="attackMagicPotency"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>魔法防禦力：</label>
+                                <span id="magicDefense"></span>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="info-section">
+                        <h3>副屬性</h3>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <label>力量：</label>
+                                <span id="strength"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>靈巧：</label>
+                                <span id="dexterity"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>耐力：</label>
+                                <span id="vitality"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>智力：</label>
+                                <span id="intelligence"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>精神：</label>
+                                <span id="mind"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>爆擊：</label>
+                                <span id="criticalHit"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>意志：</label>
+                                <span id="determination"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>直擊：</label>
+                                <span id="directHit"></span>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="info-section">
+                        <h3>其他資訊</h3>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <label>大國防軍：</label>
+                                <span id="grandCompany"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>生日：</label>
+                                <span id="nameday"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>個人簡介：</label>
+                                <span id="bio"></span>
                             </div>
                         </div>
                     </section>

@@ -286,6 +286,33 @@
     display: none !important;
 }
 
+/* Equipment Grid */
+.equipment-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 0.75rem;
+}
+
+.equipment-item {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    background: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 0.9rem;
+}
+
+.equipment-item strong {
+    color: var(--text-color-secondary);
+    min-width: 80px;
+}
+
+.mirage-name {
+    color: var(--primary-color);
+    font-style: italic;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .search-box {
