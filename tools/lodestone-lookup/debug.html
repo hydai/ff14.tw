@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodestone API 除錯測試</title>
+    <style>
+        body {
+            font-family: monospace;
+            margin: 20px;
+            background: #1a1a1a;
+            color: #0f0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #0ff;
+        }
+        .input-group {
+            margin: 20px 0;
+        }
+        input {
+            padding: 10px;
+            font-size: 16px;
+            background: #333;
+            color: #0f0;
+            border: 1px solid #0f0;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background: #0f0;
+            color: #000;
+            border: none;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        button:hover {
+            background: #0ff;
+        }
+        .output {
+            background: #000;
+            border: 1px solid #0f0;
+            padding: 20px;
+            margin: 20px 0;
+            white-space: pre-wrap;
+            overflow-x: auto;
+            min-height: 400px;
+        }
+        .error {
+            color: #f00;
+        }
+        .success {
+            color: #0f0;
+        }
+        .info {
+            color: #ff0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Lodestone API 除錯測試工具</h1>
+        
+        <div class="input-group">
+            <input type="text" id="characterId" placeholder="輸入角色 ID (例如: 12345678)" value="12345678">
+            <button onclick="testAPI()">測試 API</button>
+            <button onclick="clearOutput()">清除輸出</button>
+        </div>
+        
+        <div class="output" id="output">
+等待測試...
+        </div>
+    </div>
+
+    <script>
+        const output = document.getElementById('output');
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type;
+            output.innerHTML += `<span class="${className}">[${timestamp}] ${message}</span>\n`;
+            output.scrollTop = output.scrollHeight;
+        }
+        
+        function clearOutput() {
+            output.innerHTML = '輸出已清除，等待新的測試...\n';
+        }
+        
+        async function testAPI() {
+            const characterId = document.getElementById('characterId').value.trim();
+            
+            log('========== 開始測試 ==========', 'info');
+            log(`測試角色 ID: ${characterId}`, 'info');
+            
+            if (!characterId) {
+                log('錯誤：請輸入角色 ID', 'error');
+                return;
+            }
+            
+            const apiUrl = `https://logstone.z54981220.workers.dev/character/${characterId}`;
+            log(`API URL: ${apiUrl}`, 'info');
+            
+            try {
+                log('發送 HTTP 請求...', 'info');
+                const startTime = performance.now();
+                
+                const response = await fetch(apiUrl);
+                
+                const endTime = performance.now();
+                const responseTime = (endTime - startTime).toFixed(2);
+                
+                log(`回應時間: ${responseTime}ms`, 'success');
+                log(`HTTP 狀態碼: ${response.status} ${response.statusText}`, response.ok ? 'success' : 'error');
+                
+                // 顯示所有 headers
+                log('\n=== Response Headers ===', 'info');
+                for (const [key, value] of response.headers.entries()) {
+                    log(`${key}: ${value}`, 'info');
+                }
+                
+                // 取得回應內容
+                const responseText = await response.text();
+                log(`\n=== 原始回應內容 (長度: ${responseText.length} 字元) ===`, 'info');
+                log(responseText, 'success');
+                
+                // 嘗試解析 JSON
+                try {
+                    const data = JSON.parse(responseText);
+                    log('\n=== JSON 解析成功 ===', 'success');
+                    log(JSON.stringify(data, null, 2), 'success');
+                    
+                    // 顯示資料結構分析
+                    log('\n=== 資料結構分析 ===', 'info');
+                    log(`資料類型: ${typeof data}`, 'info');
+                    log(`頂層屬性: ${Object.keys(data).join(', ')}`, 'info');
+                    
+                    // 顯示各個欄位
+                    for (const [key, value] of Object.entries(data)) {
+                        log(`${key}: ${typeof value === 'object' ? JSON.stringify(value) : value}`, 'info');
+                    }
+                    
+                } catch (parseError) {
+                    log('\n=== JSON 解析失敗 ===', 'error');
+                    log(`錯誤訊息: ${parseError.message}`, 'error');
+                    log('回應內容不是有效的 JSON 格式', 'error');
+                }
+                
+            } catch (error) {
+                log('\n=== 請求失敗 ===', 'error');
+                log(`錯誤類型: ${error.name}`, 'error');
+                log(`錯誤訊息: ${error.message}`, 'error');
+                log(`錯誤堆疊:\n${error.stack}`, 'error');
+                
+                // CORS 錯誤檢查
+                if (error.message.includes('Failed to fetch')) {
+                    log('\n可能是 CORS 錯誤，請檢查：', 'info');
+                    log('1. API 是否允許來自此網域的請求', 'info');
+                    log('2. 是否需要特定的 headers', 'info');
+                    log('3. 網路連線是否正常', 'info');
+                }
+            }
+            
+            log('\n========== 測試結束 ==========', 'info');
+        }
+        
+        // 按 Enter 鍵也可以測試
+        document.getElementById('characterId').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                testAPI();
+            }
+        });
+    </script>
+</body>
+</html>
