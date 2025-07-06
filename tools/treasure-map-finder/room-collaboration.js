@@ -413,13 +413,14 @@ class RoomCollaboration {
         
         try {
             // 呼叫 API 更新暱稱
+            // 注意：目前系統基於信任，只應更新自己的暱稱
             const response = await fetch(`${RoomCollaboration.CONSTANTS.API_BASE_URL}/rooms/${this.currentRoom.roomCode}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    memberId: this.currentUser.id,
+                    memberId: this.currentUser.id,  // 只能更新自己的暱稱
                     nickname: newNickname
                 })
             });
