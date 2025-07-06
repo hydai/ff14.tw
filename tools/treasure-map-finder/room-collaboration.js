@@ -163,9 +163,11 @@ class RoomCollaboration {
         }
     }
     
-    // 檢查房間是否有效（未過期）
+    // 檢查房間是否有效（未過期且格式正確）
     isRoomValid(roomData) {
         if (!roomData || !roomData.lastSyncAt) return false;
+        // 檢查是否為新格式（必須有 creatorId）
+        if (!roomData.creatorId) return false;
         const now = Date.now();
         const lastSync = new Date(roomData.lastSyncAt).getTime();
         return (now - lastSync) < RoomCollaboration.CONSTANTS.ROOM_TTL;
@@ -1004,7 +1006,7 @@ class RoomCollaboration {
             nameSpan.textContent = member.nickname;
             
             // 標示房主
-            const isCreator = member.isCreator || (this.currentRoom.creatorId ? member.id === this.currentRoom.creatorId : member.id === 1);
+            const isCreator = member.id === this.currentRoom.creatorId;
             if (isCreator) {
                 const crownIcon = document.createElement('span');
                 crownIcon.textContent = ' 👑';
@@ -1015,8 +1017,7 @@ class RoomCollaboration {
             memberTag.appendChild(nameSpan);
             
             // 移除按鈕（只有房主可以移除其他成員）
-            const currentUserIsCreator = this.currentUser.isCreator || 
-                (this.currentRoom.creatorId ? this.currentUser.id === this.currentRoom.creatorId : this.currentUser.id === 1);
+            const currentUserIsCreator = this.currentUser.id === this.currentRoom.creatorId;
             if (currentUserIsCreator && !isCreator) {
                 const removeBtn = document.createElement('button');
                 removeBtn.className = 'member-remove-btn';
