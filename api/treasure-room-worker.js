@@ -123,6 +123,14 @@ async function handleUpdateRoom(roomCode, request, env, headers) {
     room.treasureMaps = updates.treasureMaps;
   }
   
+  // Update member nickname
+  if (updates.memberId && updates.nickname) {
+    const member = room.members.find(m => m.id === updates.memberId);
+    if (member) {
+      member.nickname = updates.nickname;
+    }
+  }
+  
   // Update last activity
   room.lastActivityAt = new Date().toISOString();
   
