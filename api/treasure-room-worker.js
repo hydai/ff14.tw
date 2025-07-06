@@ -237,7 +237,10 @@ async function handleJoinRoom(roomCode, request, env, headers) {
   return new Response(JSON.stringify({ room, newMember }), { headers });
 }
 
-// Leave room
+// Leave room - allows a member to leave the room voluntarily
+// SECURITY NOTE: Without authentication, we cannot prevent malicious users from
+// removing others. This endpoint should only be used by members to remove themselves.
+// For forced removal, use the remove-member endpoint which requires creator privileges.
 async function handleLeaveRoom(roomCode, request, env, headers) {
   const room = await getRoomFromKV(roomCode, env);
   
@@ -245,6 +248,18 @@ async function handleLeaveRoom(roomCode, request, env, headers) {
     return createNotFoundResponse(headers);
   }
   const { memberId } = await request.json();
+  
+  // TODO: In a production system with authentication, verify that
+  // memberId matches the authenticated user's ID
+  
+  // Validate member exists
+  const memberExists = room.members.some(m => m.id === memberId);
+  if (!memberExists) {
+    return new Response(JSON.stringify({ error: 'Member not found' }), {
+      status: 404,
+      headers,
+    });
+  }
   
   // Remove member
   room.members = room.members.filter(m => m.id !== memberId);

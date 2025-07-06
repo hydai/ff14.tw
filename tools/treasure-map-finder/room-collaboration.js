@@ -479,13 +479,14 @@ class RoomCollaboration {
             const nickname = this.currentUser.nickname;
             
             // 呼叫 API 離開房間
+            // 注意：目前系統基於信任，只應傳送自己的 memberId
             const response = await fetch(`${RoomCollaboration.CONSTANTS.API_BASE_URL}/rooms/${roomCode}/leave`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    memberId: this.currentUser.id
+                    memberId: this.currentUser.id  // 只能移除自己
                 })
             });
             
