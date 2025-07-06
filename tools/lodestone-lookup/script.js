@@ -89,11 +89,12 @@ class LodestoneCharacterLookup {
                 throw new Error('伺服器回應格式錯誤');
             }
             
-            if (data) {
+            if (data && data.Character) {
                 console.log('準備顯示角色資料...');
-                this.displayCharacterInfo(data);
+                this.displayCharacterInfo(data.Character);
             } else {
-                console.error('資料為空');
+                console.error('資料格式錯誤或資料為空');
+                console.error('預期格式: {Character: {...}}');
                 throw new Error('無法取得角色資料');
             }
         } catch (error) {
@@ -110,41 +111,89 @@ class LodestoneCharacterLookup {
         }
     }
 
-    displayCharacterInfo(data) {
+    displayCharacterInfo(character) {
         console.log('=== 顯示角色資料 ===');
-        console.log('接收到的資料結構:', data);
-        console.log('資料類型:', typeof data);
-        console.log('資料的所有屬性:', Object.keys(data));
+        console.log('接收到的資料結構:', character);
+        console.log('資料類型:', typeof character);
+        console.log('資料的所有屬性:', Object.keys(character));
         
-        // Basic info from logstone API
-        console.log('設定頭像:', data.avatar);
-        this.elements.characterAvatar.src = data.avatar || '';
-        this.elements.characterAvatar.alt = data.name || '';
+        // Basic info from Character object
+        console.log('設定頭像:', character.Avatar);
+        this.elements.characterAvatar.src = character.Avatar || '';
+        this.elements.characterAvatar.alt = character.Name || '';
         
-        console.log('設定名稱:', data.name);
-        this.elements.characterName.textContent = data.name || '未知';
+        console.log('設定名稱:', character.Name);
+        this.elements.characterName.textContent = character.Name || '未知';
         
-        console.log('設定稱號:', data.title);
-        this.elements.characterTitle.textContent = data.title || '無稱號';
+        console.log('設定稱號:', character.Title);
+        this.elements.characterTitle.textContent = character.Title || '無稱號';
         
-        console.log('設定伺服器:', data.server);
-        this.elements.characterServer.textContent = `${data.server || '未知'}`;
+        // Server info
+        const serverInfo = character.Server;
+        console.log('伺服器資訊:', serverInfo);
+        if (serverInfo && serverInfo.World) {
+            this.elements.characterServer.textContent = `${serverInfo.World} (${serverInfo.DC || '未知'})`;
+        } else {
+            this.elements.characterServer.textContent = '未知';
+        }
         
-        // For now, these fields are not available in the basic logstone API
-        this.elements.characterRace.textContent = '資料載入中...';
-        this.elements.characterDeity.textContent = '資料載入中...';
-        this.elements.characterCity.textContent = '資料載入中...';
-        this.elements.characterFC.textContent = '資料載入中...';
+        // Additional character info
+        if (character.Race && character.Tribe) {
+            this.elements.characterRace.textContent = `${character.Race} / ${character.Tribe}`;
+        } else {
+            this.elements.characterRace.textContent = '未知';
+        }
         
-        // Job levels - not available in basic API
-        this.elements.jobLevels.innerHTML = '<p>職業等級資料暫不可用</p>';
+        if (character.GuardianDeity && character.GuardianDeity.Name) {
+            this.elements.characterDeity.textContent = character.GuardianDeity.Name;
+        } else {
+            this.elements.characterDeity.textContent = '未知';
+        }
         
-        // Collectibles and achievements
-        this.elements.collectibles.textContent = '暫無資料';
-        this.elements.achievementPoints.textContent = '暫無資料';
+        if (character.Town && character.Town.Name) {
+            this.elements.characterCity.textContent = character.Town.Name;
+        } else {
+            this.elements.characterCity.textContent = '未知';
+        }
+        
+        // Free Company
+        if (character.FreeCompany && character.FreeCompany.Name && character.FreeCompany.Name.ID) {
+            this.elements.characterFC.textContent = '有公會（名稱需額外查詢）';
+        } else {
+            this.elements.characterFC.textContent = '無';
+        }
+        
+        // Active job info
+        if (character.ActiveClassjobLevel && character.ActiveClassjobLevel.Level) {
+            this.elements.jobLevels.innerHTML = `
+                <div class="job-item">
+                    <img src="${character.ActiveClassjob}" alt="當前職業" class="job-icon">
+                    <div class="job-details">
+                        <p class="job-name">當前職業</p>
+                        <p class="job-level ${character.ActiveClassjobLevel.Level === '100' ? 'max-level' : ''}">Lv. ${character.ActiveClassjobLevel.Level}</p>
+                    </div>
+                </div>
+                <p style="margin-top: 1rem; color: var(--text-color-secondary);">詳細職業列表請前往官方 Lodestone 查看</p>
+            `;
+        } else {
+            this.elements.jobLevels.innerHTML = '<p>職業等級資料暫不可用</p>';
+        }
+        
+        // Stats info
+        if (character.Hp) {
+            this.elements.collectibles.textContent = `HP: ${character.Hp}`;
+        } else {
+            this.elements.collectibles.textContent = '暫無資料';
+        }
+        
+        if (character.AttackPower) {
+            this.elements.achievementPoints.textContent = `攻擊力: ${character.AttackPower}`;
+        } else {
+            this.elements.achievementPoints.textContent = '暫無資料';
+        }
 
         // Lodestone link
-        const lodestoneUrl = `https://na.finalfantasyxiv.com/lodestone/character/${data.id || data.characterId || data.character_id}/`;
+        const lodestoneUrl = `https://na.finalfantasyxiv.com/lodestone/character/${character.ID}/`;
         console.log('Lodestone 連結:', lodestoneUrl);
         this.elements.lodestoneLink.href = lodestoneUrl;
 
