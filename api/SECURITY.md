@@ -26,9 +26,10 @@ if (env.ENVIRONMENT === 'development') {
 
 ### 2. 嚴格的 Origin 檢查
 
-- 所有請求都會檢查 `Origin` header
+- 所有請求都必須有 `Origin` header
 - 只有在白名單中的來源才會收到 CORS headers
 - 非授權來源會收到 403 Forbidden 且沒有 CORS headers
+- **沒有 Origin header 的請求（curl、Postman 等）也會被拒絕**
 
 ### 3. 部署指令
 
@@ -43,11 +44,19 @@ wrangler dev
 ### 4. 測試 CORS 保護
 
 ```bash
-# 應該被拒絕（403）
+# 沒有 Origin header - 應該被拒絕（403）
+curl -X GET https://ff14-tw-treasure.z54981220.workers.dev/api/rooms/ABCDEF -v
+
+# Postman 等工具 - 應該被拒絕（403）
+curl -X POST https://ff14-tw-treasure.z54981220.workers.dev/api/rooms \
+  -H "Content-Type: application/json" \
+  -d '{"memberNickname": "Test"}' -v
+
+# 惡意網站 - 應該被拒絕（403）
 curl -X GET https://ff14-tw-treasure.z54981220.workers.dev/api/rooms/ABCDEF \
   -H "Origin: https://malicious-site.com" -v
 
-# 應該成功
+# 只有 ff14.tw - 應該成功
 curl -X GET https://ff14-tw-treasure.z54981220.workers.dev/api/rooms/ABCDEF \
   -H "Origin: https://ff14.tw" -v
 ```

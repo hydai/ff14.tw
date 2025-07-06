@@ -52,10 +52,11 @@ export default {
       }
     }
     
-    // Reject requests from non-allowed origins
-    if (!isAllowedOrigin && origin) {
+    // Reject requests from non-allowed origins or missing origin
+    // This blocks direct API access from curl, Postman, etc.
+    if (!isAllowedOrigin) {
       // Don't include CORS headers when rejecting
-      return new Response(JSON.stringify({ error: 'Forbidden: Invalid origin' }), {
+      return new Response(JSON.stringify({ error: 'Forbidden: Access denied' }), {
         status: 403,
         headers: { 'Content-Type': 'application/json' },
       });
