@@ -1,5 +1,5 @@
 {
-  "name": "ff14tw-treasure-room-api",
+  "name": "ff14-tw-treasure",
   "version": "1.0.0",
   "description": "Cloudflare Workers API for FF14.tw Treasure Map Room Collaboration",
   "main": "treasure-room-worker.js",

@@ -1,11 +1,11 @@
-name = "ff14tw-treasure-room-api"
+name = "ff14-tw-treasure"
 main = "treasure-room-worker.js"
 compatibility_date = "2024-01-01"
 
 # KV namespace 設定（預設環境：用於 wrangler dev 和預覽環境）
 [[kv_namespaces]]
 binding = "TREASURE_ROOMS"
-id = "YOUR_PREVIEW_KV_NAMESPACE_ID"  # 用於 `wrangler dev`（非 --local）和預覽環境
+id = "YOUR_PREVIEW_KV_NAMESPACE_ID"
 preview_id = "LOCAL_KV_NAMESPACE"  # 用於 `wrangler dev --local` 本地開發
 
 # 本地開發設定
