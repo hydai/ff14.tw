@@ -90,4 +90,4 @@ npm run deploy
 
 - 本地開發時，KV 資料儲存在 `.wrangler/state` 目錄
 - 使用 `--local` 參數確保在本地執行，不連接 Cloudflare
-- CORS 已設定為允許所有來源（`*`），生產環境可能需要調整
+- CORS 已設定為僅允許特定來源（如 `ff14.tw` 及本地開發環境），詳見程式碼中的 `allowedOrigins` 清單
