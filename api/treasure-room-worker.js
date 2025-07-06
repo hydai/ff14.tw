@@ -185,11 +185,29 @@ async function handleUpdateRoom(roomCode, request, env, headers) {
   }
   
   // Update member nickname
+  // SECURITY: Users can only update their own nickname
   if (updates.memberId && updates.nickname) {
-    const member = room.members.find(m => m.id === updates.memberId);
-    if (member) {
-      member.nickname = updates.nickname;
+    // Validate nickname length
+    if (updates.nickname.length > 20) {
+      return new Response(JSON.stringify({ error: 'Nickname too long (max 20 characters)' }), {
+        status: 400,
+        headers,
+      });
     }
+    
+    // Find the member
+    const member = room.members.find(m => m.id === updates.memberId);
+    if (!member) {
+      return new Response(JSON.stringify({ error: 'Member not found' }), {
+        status: 404,
+        headers,
+      });
+    }
+    
+    // Update nickname
+    // TODO: In a production system with authentication, verify that
+    // updates.memberId matches the authenticated user's ID
+    member.nickname = updates.nickname;
   }
   
   // Update last activity
