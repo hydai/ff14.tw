@@ -970,9 +970,71 @@ class RoomCollaboration {
             if (member.id === this.currentUser.id) {
                 memberTag.classList.add('current-user');
             }
-            memberTag.textContent = member.nickname;
+            
+            // 成員名稱
+            const nameSpan = document.createElement('span');
+            nameSpan.textContent = member.nickname;
+            memberTag.appendChild(nameSpan);
+            
+            // 移除按鈕（不能移除自己）
+            if (member.id !== this.currentUser.id) {
+                const removeBtn = document.createElement('button');
+                removeBtn.className = 'member-remove-btn';
+                removeBtn.innerHTML = '×';
+                removeBtn.title = `移除 ${member.nickname}`;
+                removeBtn.onclick = () => this.removeMember(member);
+                memberTag.appendChild(removeBtn);
+            }
+            
             membersList.appendChild(memberTag);
         });
+    }
+    
+    // 移除成員
+    async removeMember(member) {
+        if (!confirm(`確定要移除 ${member.nickname} 嗎？`)) {
+            return;
+        }
+        
+        try {
+            // 呼叫 API 移除成員
+            const response = await fetch(`${RoomCollaboration.CONSTANTS.API_BASE_URL}/rooms/${this.currentRoom.roomCode}/remove-member`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    requesterId: this.currentUser.id,  // 請求者 ID
+                    targetMemberId: member.id          // 要移除的成員 ID
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error('移除成員失敗');
+            }
+            
+            const updatedRoom = await response.json();
+            this.currentRoom = updatedRoom;
+            
+            // 更新成員列表顯示
+            this.updateMembersList();
+            
+            // 更新房間人數顯示
+            this.elements.roomMembers.textContent = `${this.currentRoom.members.length}/${RoomCollaboration.CONSTANTS.MAX_MEMBERS}人`;
+            
+            // 記錄操作歷史
+            this.addOperationHistory({
+                type: 'member_remove',
+                message: `${this.currentUser.nickname} 將 ${member.nickname} 移出房間`,
+                timestamp: new Date().toISOString()
+            });
+            
+            this.showToast(`已將 ${member.nickname} 移出房間`);
+            
+        } catch (error) {
+            console.error('移除成員失敗:', error);
+            alert('移除成員失敗，請稍後再試');
+        }
     }
 }
 

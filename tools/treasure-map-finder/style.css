@@ -143,6 +143,7 @@
 .member-tag {
     display: inline-flex;
     align-items: center;
+    gap: 0.5rem;
     padding: 0.25rem 0.75rem;
     background: var(--bg-secondary);
     border-radius: 1rem;
@@ -153,6 +154,35 @@
 .member-tag.current-user {
     background: var(--primary-color);
     color: white;
+}
+
+.member-remove-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    margin-left: 0.25rem;
+    background: rgba(231, 76, 60, 0.2);
+    color: #e74c3c;
+    border: 1px solid rgba(231, 76, 60, 0.3);
+    border-radius: 50%;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.member-remove-btn:hover {
+    background: #e74c3c;
+    color: white;
+    border-color: #e74c3c;
+    transform: scale(1.1);
+}
+
+.member-tag.current-user .member-remove-btn {
+    display: none;
 }
 
 /* 篩選區 */

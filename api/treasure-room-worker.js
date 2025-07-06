@@ -35,6 +35,9 @@ export default {
       } else if (path.startsWith('/api/rooms/') && path.endsWith('/leave') && request.method === 'POST') {
         const roomCode = path.split('/')[3];
         return await handleLeaveRoom(roomCode, request, env, headers);
+      } else if (path.startsWith('/api/rooms/') && path.endsWith('/remove-member') && request.method === 'POST') {
+        const roomCode = path.split('/')[3];
+        return await handleRemoveMember(roomCode, request, env, headers);
       } else if (path === '/api/cleanup' && request.method === 'POST') {
         return await handleCleanup(env, headers);
       } else {
@@ -209,6 +212,43 @@ async function handleLeaveRoom(roomCode, request, env, headers) {
   }
   
   // Otherwise update room
+  room.lastActivityAt = new Date().toISOString();
+  
+  const ttl = 24 * 60 * 60;
+  await env.TREASURE_ROOMS.put(`room:${roomCode}`, JSON.stringify(room), {
+    expirationTtl: ttl,
+  });
+  
+  return new Response(JSON.stringify(room), { headers });
+}
+
+// Remove member from room
+async function handleRemoveMember(roomCode, request, env, headers) {
+  const roomData = await env.TREASURE_ROOMS.get(`room:${roomCode}`);
+  
+  if (!roomData) {
+    return new Response(JSON.stringify({ error: 'Room not found' }), {
+      status: 404,
+      headers,
+    });
+  }
+  
+  const room = JSON.parse(roomData);
+  const { requesterId, targetMemberId } = await request.json();
+  
+  // Verify requester is in the room
+  const requester = room.members.find(m => m.id === requesterId);
+  if (!requester) {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      status: 403,
+      headers,
+    });
+  }
+  
+  // Remove target member
+  room.members = room.members.filter(m => m.id !== targetMemberId);
+  
+  // Update room
   room.lastActivityAt = new Date().toISOString();
   
   const ttl = 24 * 60 * 60;
