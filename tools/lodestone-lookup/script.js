@@ -164,19 +164,56 @@ class LodestoneCharacterLookup {
         }
         
         // Active job info
+        // Clear existing content
+        this.elements.jobLevels.textContent = '';
+        
         if (character.ActiveClassjobLevel && character.ActiveClassjobLevel.Level) {
-            this.elements.jobLevels.innerHTML = `
-                <div class="job-item">
-                    <img src="${character.ActiveClassjob}" alt="當前職業" class="job-icon">
-                    <div class="job-details">
-                        <p class="job-name">當前職業</p>
-                        <p class="job-level ${character.ActiveClassjobLevel.Level === '100' ? 'max-level' : ''}">Lv. ${character.ActiveClassjobLevel.Level}</p>
-                    </div>
-                </div>
-                <p style="margin-top: 1rem; color: var(--text-color-secondary);">詳細職業列表請前往官方 Lodestone 查看</p>
-            `;
+            // Create job item container
+            const jobItem = document.createElement('div');
+            jobItem.className = 'job-item';
+            
+            // Create and set job icon
+            const jobIcon = document.createElement('img');
+            jobIcon.src = character.ActiveClassjob || '';
+            jobIcon.alt = '當前職業';
+            jobIcon.className = 'job-icon';
+            
+            // Create job details container
+            const jobDetails = document.createElement('div');
+            jobDetails.className = 'job-details';
+            
+            // Create job name
+            const jobName = document.createElement('p');
+            jobName.className = 'job-name';
+            jobName.textContent = '當前職業';
+            
+            // Create job level
+            const jobLevel = document.createElement('p');
+            jobLevel.className = 'job-level';
+            if (character.ActiveClassjobLevel.Level === '100') {
+                jobLevel.className += ' max-level';
+            }
+            jobLevel.textContent = `Lv. ${character.ActiveClassjobLevel.Level}`;
+            
+            // Assemble job item
+            jobDetails.appendChild(jobName);
+            jobDetails.appendChild(jobLevel);
+            jobItem.appendChild(jobIcon);
+            jobItem.appendChild(jobDetails);
+            
+            // Create note
+            const note = document.createElement('p');
+            note.style.marginTop = '1rem';
+            note.style.color = 'var(--text-color-secondary)';
+            note.textContent = '詳細職業列表請前往官方 Lodestone 查看';
+            
+            // Add to container
+            this.elements.jobLevels.appendChild(jobItem);
+            this.elements.jobLevels.appendChild(note);
         } else {
-            this.elements.jobLevels.innerHTML = '<p>職業等級資料暫不可用</p>';
+            const noData = document.createElement('p');
+            noData.textContent = '職業等級資料暫不可用';
+            this.elements.jobLevels.appendChild(noData);
         }
         
         // Stats info
@@ -203,8 +240,13 @@ class LodestoneCharacterLookup {
     }
 
     displayJobLevels(classJobs) {
+        // Clear existing content
+        this.elements.jobLevels.textContent = '';
+        
         if (!classJobs || classJobs.length === 0) {
-            this.elements.jobLevels.innerHTML = '<p>無職業資料</p>';
+            const noData = document.createElement('p');
+            noData.textContent = '無職業資料';
+            this.elements.jobLevels.appendChild(noData);
             return;
         }
 
@@ -217,26 +259,45 @@ class LodestoneCharacterLookup {
             gathering: ['採礦工', '園藝工', '捕魚人']
         };
 
-        const jobsHtml = classJobs
+        // Filter and sort jobs
+        const activeJobs = classJobs
             .filter(job => job.Level > 0)
-            .sort((a, b) => b.Level - a.Level)
-            .map(job => {
-                const isMaxLevel = job.Level === 100;
-                const levelClass = isMaxLevel ? 'job-level max-level' : 'job-level';
-                
-                return `
-                    <div class="job-item">
-                        <img src="https://xivapi.com${job.Job.Icon}" alt="${job.Job.Name}" class="job-icon">
-                        <div class="job-details">
-                            <p class="job-name">${job.Job.Name}</p>
-                            <p class="${levelClass}">Lv. ${job.Level}</p>
-                        </div>
-                    </div>
-                `;
-            })
-            .join('');
+            .sort((a, b) => b.Level - a.Level);
 
-        this.elements.jobLevels.innerHTML = jobsHtml || '<p>無職業資料</p>';
+        // Create job elements
+        activeJobs.forEach(job => {
+            const jobItem = document.createElement('div');
+            jobItem.className = 'job-item';
+            
+            const jobIcon = document.createElement('img');
+            jobIcon.src = `https://xivapi.com${job.Job.Icon}`;
+            jobIcon.alt = job.Job.Name;
+            jobIcon.className = 'job-icon';
+            
+            const jobDetails = document.createElement('div');
+            jobDetails.className = 'job-details';
+            
+            const jobName = document.createElement('p');
+            jobName.className = 'job-name';
+            jobName.textContent = job.Job.Name;
+            
+            const jobLevel = document.createElement('p');
+            jobLevel.className = job.Level === 100 ? 'job-level max-level' : 'job-level';
+            jobLevel.textContent = `Lv. ${job.Level}`;
+            
+            jobDetails.appendChild(jobName);
+            jobDetails.appendChild(jobLevel);
+            jobItem.appendChild(jobIcon);
+            jobItem.appendChild(jobDetails);
+            
+            this.elements.jobLevels.appendChild(jobItem);
+        });
+        
+        if (activeJobs.length === 0) {
+            const noData = document.createElement('p');
+            noData.textContent = '無職業資料';
+            this.elements.jobLevels.appendChild(noData);
+        }
     }
 
     showLoading(show) {
