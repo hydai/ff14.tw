@@ -5,7 +5,7 @@ compatibility_date = "2024-01-01"
 # KV namespace 設定（預設環境：用於 wrangler dev 和預覽環境）
 [[kv_namespaces]]
 binding = "TREASURE_ROOMS"
-id = "TREASURE_ROOMS"
+id = "81b924a9a6f347fc96bf2b439d0dc2d6"
 preview_id = "LOCAL_KV_NAMESPACE"  # 用於 `wrangler dev --local` 本地開發
 
 # 本地開發設定
