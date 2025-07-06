@@ -5,7 +5,7 @@ compatibility_date = "2024-01-01"
 # KV namespace 設定（預設環境：用於 wrangler dev 和預覽環境）
 [[kv_namespaces]]
 binding = "TREASURE_ROOMS"
-id = "YOUR_PREVIEW_KV_NAMESPACE_ID"
+id = "TREASURE_ROOMS"
 preview_id = "LOCAL_KV_NAMESPACE"  # 用於 `wrangler dev --local` 本地開發
 
 # 本地開發設定
@@ -16,10 +16,6 @@ local_protocol = "http"
 [env.production]
 name = "ff14tw-treasure-room-api"
 route = { pattern = "api.ff14.tw/*", zone_name = "ff14.tw" }
-
-[[env.production.kv_namespaces]]
-binding = "TREASURE_ROOMS"
-id = "YOUR_PRODUCTION_KV_NAMESPACE_ID"  # 用於生產環境 (api.ff14.tw)
 
 [env.development]
 name = "ff14tw-treasure-room-api-dev"
