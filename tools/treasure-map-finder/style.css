@@ -1055,8 +1055,8 @@
     right: 20px !important;
     left: auto !important;
     transform: translateY(-20px) !important;
-    background: var(--success-color);
-    color: white;
+    background: #27ae60 !important; /* 綠色成功背景 */
+    color: white !important;
     padding: 12px 24px !important;
     border-radius: var(--border-radius);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
@@ -1076,15 +1076,15 @@
 }
 
 .toast-error {
-    background: var(--danger-color);
+    background: #e74c3c !important; /* 紅色錯誤背景 */
 }
 
 .toast-info {
-    background: var(--primary-color);
+    background: #4a90e2 !important; /* 藍色資訊背景 */
 }
 
 .toast-warning {
-    background: #f0ad4e;
+    background: #f0ad4e !important; /* 橘色警告背景 */
 }
 
 /* 響應式設計 */
