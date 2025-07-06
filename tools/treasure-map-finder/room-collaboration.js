@@ -240,7 +240,7 @@ class RoomCollaboration {
             
             // 更新 URL
             const url = new URL(window.location);
-            url.searchParams.set('room', roomCode);
+            url.searchParams.set('room', room.roomCode);
             window.history.pushState({}, '', url);
             
             this.updateRoomUI();
@@ -249,12 +249,12 @@ class RoomCollaboration {
             // 記錄操作歷史
             this.addOperationHistory({
                 type: 'room_create',
-                message: `建立了房間 ${roomCode}`,
+                message: `建立了房間 ${room.roomCode}`,
                 timestamp: new Date().toISOString()
             });
             
             // 顯示成功訊息
-            this.showToast(`房間 ${roomCode} 建立成功！`);
+            this.showToast(`房間 ${room.roomCode} 建立成功！`);
             
         } catch (error) {
             console.error('建立房間失敗:', error);
