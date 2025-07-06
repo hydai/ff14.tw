@@ -137,14 +137,17 @@ async function handleCreateRoom(request, env, headers) {
   
   // Create new room
   const now = new Date().toISOString();
+  const creatorId = Date.now() + Math.floor(Math.random() * 1000);
   const room = {
     roomCode,
     createdAt: now,
     lastActivityAt: now,
+    creatorId: creatorId,  // Store creator ID separately
     members: [{
-      id: 1,
+      id: creatorId,
       nickname: memberNickname || '光之戰士1',
       joinedAt: now,
+      isCreator: true,  // Mark as creator
     }],
     treasureMaps: [],
   };
@@ -215,14 +218,15 @@ async function handleJoinRoom(roomCode, request, env, headers) {
     });
   }
   
-  // Add new member
-  const newMemberId = room.members.length > 0 
-    ? Math.max(...room.members.map(m => m.id)) + 1 
-    : 1;
+  // Add new member with timestamp-based ID to prevent race conditions
+  // Use timestamp + random number for uniqueness
+  const newMemberId = Date.now() + Math.floor(Math.random() * 1000);
+  const memberCount = room.members.length + 1;
   const newMember = {
     id: newMemberId,
-    nickname: memberNickname || `光之戰士${newMemberId}`,
+    nickname: memberNickname || `光之戰士${memberCount}`,
     joinedAt: new Date().toISOString(),
+    isCreator: false,  // Mark as non-creator
   };
   
   room.members.push(newMember);
@@ -269,9 +273,12 @@ async function handleRemoveMember(roomCode, request, env, headers) {
   }
   const { requesterId, targetMemberId } = await request.json();
   
-  // Only allow room creator (member with id: 1) to remove members
+  // Check if room has new creator format (creatorId field)
+  const creatorId = room.creatorId || 1;  // Fallback to 1 for old rooms
+  
+  // Only allow room creator to remove members
   // This prevents impersonation attacks since we don't have authentication
-  if (requesterId !== 1) {
+  if (requesterId !== creatorId) {
     return new Response(JSON.stringify({ error: 'Only room creator can remove members' }), {
       status: 403,
       headers,
@@ -279,7 +286,7 @@ async function handleRemoveMember(roomCode, request, env, headers) {
   }
   
   // Verify the room creator is still in the room
-  const creator = room.members.find(m => m.id === 1);
+  const creator = room.members.find(m => m.id === creatorId);
   if (!creator) {
     return new Response(JSON.stringify({ error: 'Room creator not found' }), {
       status: 403,
@@ -288,7 +295,7 @@ async function handleRemoveMember(roomCode, request, env, headers) {
   }
   
   // Cannot remove the room creator
-  if (targetMemberId === 1) {
+  if (targetMemberId === creatorId) {
     return new Response(JSON.stringify({ error: 'Cannot remove room creator' }), {
       status: 400,
       headers,
