@@ -173,16 +173,6 @@ class RoomCollaboration {
         return (now - lastSync) < RoomCollaboration.CONSTANTS.ROOM_TTL;
     }
     
-    // 生成房間代號
-    generateRoomCode() {
-        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 避免容易混淆的字元
-        let code = '';
-        for (let i = 0; i < RoomCollaboration.CONSTANTS.ROOM_CODE_LENGTH; i++) {
-            code += chars.charAt(Math.floor(Math.random() * chars.length));
-        }
-        return code;
-    }
-    
     // 建立新房間
     async createRoom() {
         // 檢查是否已有房間
@@ -217,18 +207,16 @@ class RoomCollaboration {
             }
         }
         
-        const roomCode = this.generateRoomCode();
         const memberNickname = `光之戰士1`;
         
         try {
-            // 呼叫 API 建立房間
+            // 呼叫 API 建立房間（房間代號由伺服器生成）
             const response = await fetch(`${RoomCollaboration.CONSTANTS.API_BASE_URL}/rooms`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    roomCode,
                     memberNickname
                 })
             });

@@ -121,18 +121,43 @@ function createNotFoundResponse(headers) {
   });
 }
 
-// Create a new room
+// Generate a random room code
+function generateRoomCode() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let code = '';
+  for (let i = 0; i < 6; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+}
+
+// Create a new room with server-generated room code
 async function handleCreateRoom(request, env, headers) {
   const body = await request.json();
-  const { roomCode, memberNickname } = body;
+  const { memberNickname } = body;
   
-  // Check if room already exists
-  const existingRoom = await env.TREASURE_ROOMS.get(`room:${roomCode}`);
-  if (existingRoom) {
-    return new Response(JSON.stringify({ error: 'Room already exists' }), {
-      status: 409,
-      headers,
-    });
+  // Generate unique room code with retry logic
+  let roomCode;
+  let attempts = 0;
+  const maxAttempts = 10;
+  
+  while (attempts < maxAttempts) {
+    roomCode = generateRoomCode();
+    
+    // Check if room already exists
+    const existingRoom = await env.TREASURE_ROOMS.get(`room:${roomCode}`);
+    if (!existingRoom) {
+      // Room code is unique, proceed
+      break;
+    }
+    
+    attempts++;
+    if (attempts >= maxAttempts) {
+      return new Response(JSON.stringify({ error: 'Failed to generate unique room code' }), {
+        status: 500,
+        headers,
+      });
+    }
   }
   
   // Create new room
