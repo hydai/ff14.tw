@@ -986,6 +986,8 @@
     width: 90%;
     max-width: 400px;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    /* 確保背景不透明 */
+    background-color: #ffffff;
 }
 
 .modal-header {
@@ -1049,26 +1051,28 @@
 /* Toast 提示樣式 */
 .toast {
     position: fixed;
-    bottom: 2rem;
-    left: 50%;
-    transform: translateX(-50%) translateY(100px);
+    top: 20px !important;
+    right: 20px !important;
+    left: auto !important;
+    transform: translateY(-20px) !important;
     background: var(--success-color);
     color: white;
-    padding: 1rem 2rem;
+    padding: 12px 24px !important;
     border-radius: var(--border-radius);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     opacity: 0;
     transition: all 0.3s ease;
-    z-index: 2000;
+    z-index: 9999 !important;
     font-size: 0.875rem;
     font-weight: 500;
-    max-width: 90%;
+    max-width: 300px !important;
     text-align: center;
+    width: auto !important;
 }
 
 .toast.show {
-    transform: translateX(-50%) translateY(0);
-    opacity: 1;
+    transform: translateY(0) !important;
+    opacity: 1 !important;
 }
 
 .toast-error {

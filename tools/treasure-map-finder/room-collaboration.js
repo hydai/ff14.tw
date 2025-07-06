@@ -382,21 +382,53 @@ class RoomCollaboration {
         }
         
         try {
-            // TODO: 呼叫 API 更新暱稱
+            // 呼叫 API 更新暱稱
+            const response = await fetch(`${RoomCollaboration.CONSTANTS.API_BASE_URL}/rooms/${this.currentRoom.roomCode}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    memberId: this.currentUser.id,
+                    nickname: newNickname
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error('更新暱稱失敗');
+            }
+            
+            const updatedRoom = await response.json();
+            this.currentRoom = updatedRoom;
+            
+            // 更新本地資料
             this.currentUser.nickname = newNickname;
             this.elements.userNickname.textContent = newNickname;
             
             // 儲存偏好設定
             localStorage.setItem('ff14tw_user_nickname', newNickname);
             
-            // 更新房間資料中的成員暱稱
-            const member = this.currentRoom.members.find(m => m.id === this.currentUser.id);
-            if (member) {
-                member.nickname = newNickname;
-            }
+            // 更新成員列表顯示
+            this.updateMembersList();
+            
+            // 更新 localStorage 中的房間資料
+            const savedData = JSON.parse(localStorage.getItem('ff14tw_current_room') || '{}');
+            savedData.currentUser = this.currentUser;
+            localStorage.setItem('ff14tw_current_room', JSON.stringify({
+                ...this.currentRoom,
+                currentUser: this.currentUser,
+                lastSyncAt: savedData.lastSyncAt
+            }));
             
             this.hideModal('editNickname');
             this.showToast('暱稱已更新');
+            
+            // 記錄操作歷史
+            this.addOperationHistory({
+                type: 'nickname_update',
+                message: `${this.currentUser.nickname} 更新了暱稱`,
+                timestamp: new Date().toISOString()
+            });
             
         } catch (error) {
             console.error('更新暱稱失敗:', error);
@@ -412,7 +444,31 @@ class RoomCollaboration {
     // 離開房間
     async leaveRoom(keepList) {
         try {
-            // TODO: 呼叫 API 離開房間
+            // 記錄離開前的資訊
+            const roomCode = this.currentRoom.roomCode;
+            const nickname = this.currentUser.nickname;
+            
+            // 呼叫 API 離開房間
+            const response = await fetch(`${RoomCollaboration.CONSTANTS.API_BASE_URL}/rooms/${roomCode}/leave`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    memberId: this.currentUser.id
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error('離開房間失敗');
+            }
+            
+            // 記錄操作歷史（在清除資料前）
+            this.addOperationHistory({
+                type: 'room_leave',
+                message: `${nickname} 離開了房間`,
+                timestamp: new Date().toISOString()
+            });
             
             // 清除房間資料
             this.currentRoom = null;
