@@ -193,7 +193,9 @@ async function handleJoinRoom(roomCode, request, env, headers) {
   }
   
   // Add new member
-  const newMemberId = Math.max(...room.members.map(m => m.id)) + 1;
+  const newMemberId = room.members.length > 0 
+    ? Math.max(...room.members.map(m => m.id)) + 1 
+    : 1;
   const newMember = {
     id: newMemberId,
     nickname: memberNickname || `光之戰士${newMemberId}`,
