@@ -2,9 +2,9 @@ name = "ff14-tw-treasure"
 main = "treasure-room-worker.js"
 compatibility_date = "2024-01-01"
 
-routes = [
-  { pattern = "api.ff14.tw", custom_domain = true }
-]
+# wrangler.toml (wrangler v3.88.0^)
+[observability.logs]
+enabled = true
 
 # KV namespace 設定（預設環境：用於 wrangler dev 和預覽環境）
 [[kv_namespaces]]
@@ -19,7 +19,7 @@ local_protocol = "http"
 
 [env.production]
 name = "ff14tw-treasure-room-api"
-route = { pattern = "api.ff14.tw/*", zone_name = "ff14.tw" }
+route = { pattern = "api.ff14.tw/*", zone_name = "ff14.tw", custom_domain = true }
 
 [env.development]
 name = "ff14tw-treasure-room-api-dev"
