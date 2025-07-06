@@ -281,28 +281,11 @@ class RoomCollaboration {
     // 加入房間
     async joinRoom(roomCode) {
         try {
-            // 先檢查房間是否存在
-            const checkResponse = await fetch(`${RoomCollaboration.CONSTANTS.API_BASE_URL}/rooms/${roomCode}`);
-            
-            if (!checkResponse.ok) {
-                if (checkResponse.status === 404) {
-                    throw new Error('房間不存在或已過期');
-                }
-                throw new Error('無法檢查房間狀態');
-            }
-            
-            const roomData = await checkResponse.json();
-            
-            // 檢查房間是否已滿
-            if (roomData.members.length >= RoomCollaboration.CONSTANTS.MAX_MEMBERS) {
-                throw new Error(`房間已滿（${roomData.members.length}/${RoomCollaboration.CONSTANTS.MAX_MEMBERS}）`);
-            }
-            
             // 生成暱稱
             const existingNickname = localStorage.getItem('ff14tw_user_nickname');
-            const memberNickname = existingNickname || `光之戰士${roomData.members.length + 1}`;
+            const memberNickname = existingNickname || `光之戰士`;
             
-            // 加入房間
+            // 直接嘗試加入房間（伺服器會處理所有錯誤情況）
             const joinResponse = await fetch(`${RoomCollaboration.CONSTANTS.API_BASE_URL}/rooms/${roomCode}/join`, {
                 method: 'POST',
                 headers: {
@@ -315,7 +298,14 @@ class RoomCollaboration {
             
             if (!joinResponse.ok) {
                 const error = await joinResponse.json();
-                throw new Error(error.error || '加入房間失敗');
+                // 根據錯誤類型提供適當的中文訊息
+                let errorMessage = error.error || '加入房間失敗';
+                if (joinResponse.status === 404) {
+                    errorMessage = '房間不存在或已過期';
+                } else if (error.error === 'Room is full') {
+                    errorMessage = '房間已滿';
+                }
+                throw new Error(errorMessage);
             }
             
             const { room, newMember } = await joinResponse.json();
