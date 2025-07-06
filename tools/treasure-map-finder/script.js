@@ -588,6 +588,20 @@ class TreasureMapFinder {
             this.updateCardButtons();
             this.renderMyList();
             FF14Utils.showToast('已清空清單', 'success');
+            
+            // 記錄操作歷史
+            if (this.roomCollaboration?.currentRoom) {
+                this.roomCollaboration.addOperationHistory({
+                    type: 'clear_all',
+                    message: `${this.roomCollaboration.currentUser.nickname} 清空了所有寶圖`,
+                    timestamp: new Date().toISOString()
+                });
+            }
+            
+            // 同步到房間
+            if (this.roomCollaboration?.currentRoom) {
+                this.syncToRoom();
+            }
         }
     }
     
