@@ -1265,7 +1265,7 @@ class TreasureMapFinder {
                 x: item.coords.x,
                 y: item.coords.y,
                 zone: item.zone,
-                addedBy: item.addedBy || this.roomCollaboration.currentUser.id,
+                addedBy: item.addedBy,  // 保持原始值，即使是 null
                 addedAt: item.addedAt || new Date().toISOString()
             }));
             
