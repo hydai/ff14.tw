@@ -56,8 +56,8 @@ class LodestoneCharacterLookup {
         this.hideCharacterInfo();
 
         try {
-            // Using XIVAPI as a proxy to fetch Lodestone data
-            const response = await fetch(`https://xivapi.com/character/${characterId}`);
+            // Using logstone API to fetch Lodestone data
+            const response = await fetch(`https://logstone.z54981220.workers.dev/character/${characterId}`);
             
             if (!response.ok) {
                 if (response.status === 404) {
@@ -68,8 +68,8 @@ class LodestoneCharacterLookup {
 
             const data = await response.json();
             
-            if (data.Character) {
-                this.displayCharacterInfo(data.Character);
+            if (data) {
+                this.displayCharacterInfo(data);
             } else {
                 throw new Error('無法取得角色資料');
             }
@@ -80,38 +80,29 @@ class LodestoneCharacterLookup {
         }
     }
 
-    displayCharacterInfo(character) {
-        // Basic info
-        this.elements.characterAvatar.src = character.Avatar || '';
-        this.elements.characterAvatar.alt = character.Name || '';
-        this.elements.characterName.textContent = character.Name || '未知';
-        this.elements.characterTitle.textContent = character.Title || '無稱號';
-        this.elements.characterServer.textContent = `${character.Server || '未知'} (${character.DC || '未知'})`;
+    displayCharacterInfo(data) {
+        // Basic info from logstone API
+        this.elements.characterAvatar.src = data.avatar || '';
+        this.elements.characterAvatar.alt = data.name || '';
+        this.elements.characterName.textContent = data.name || '未知';
+        this.elements.characterTitle.textContent = data.title || '無稱號';
+        this.elements.characterServer.textContent = `${data.server || '未知'}`;
         
-        // Race and other info
-        this.elements.characterRace.textContent = `${character.Race || '未知'} / ${character.Tribe || '未知'}`;
-        this.elements.characterDeity.textContent = character.GuardianDeity || '未知';
-        this.elements.characterCity.textContent = character.Town || '未知';
+        // For now, these fields are not available in the basic logstone API
+        this.elements.characterRace.textContent = '資料載入中...';
+        this.elements.characterDeity.textContent = '資料載入中...';
+        this.elements.characterCity.textContent = '資料載入中...';
+        this.elements.characterFC.textContent = '資料載入中...';
         
-        // Free Company
-        if (character.FreeCompanyName) {
-            this.elements.characterFC.textContent = character.FreeCompanyName;
-        } else {
-            this.elements.characterFC.textContent = '無';
-        }
-
-        // Job levels
-        this.displayJobLevels(character.ClassJobs);
-
+        // Job levels - not available in basic API
+        this.elements.jobLevels.innerHTML = '<p>職業等級資料暫不可用</p>';
+        
         // Collectibles and achievements
-        if (character.ActiveClassJob) {
-            const activeJob = character.ActiveClassJob;
-            this.elements.collectibles.textContent = '暫無資料';
-            this.elements.achievementPoints.textContent = '暫無資料';
-        }
+        this.elements.collectibles.textContent = '暫無資料';
+        this.elements.achievementPoints.textContent = '暫無資料';
 
         // Lodestone link
-        this.elements.lodestoneLink.href = `https://na.finalfantasyxiv.com/lodestone/character/${character.ID}/`;
+        this.elements.lodestoneLink.href = `https://na.finalfantasyxiv.com/lodestone/character/${data.id}/`;
 
         this.showCharacterInfo();
     }
