@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lodestone 角色查詢 - FF14.tw</title>
+    <meta name="description" content="使用 Lodestone ID 查詢 Final Fantasy XIV 角色資訊。快速查看角色基本資料、職業等級、成就等資訊。">
+    <meta name="keywords" content="FF14, FFXIV, Final Fantasy XIV, Lodestone, 角色查詢, 角色資訊, Character Lookup">
+    <link rel="canonical" href="https://ff14.tw/tools/lodestone-lookup/">
+    
+    <!-- Open Graph / Social Media -->
+    <meta property="og:title" content="Lodestone 角色查詢 - FF14.tw">
+    <meta property="og:description" content="使用 Lodestone ID 查詢 Final Fantasy XIV 角色資訊">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://ff14.tw/tools/lodestone-lookup/">
+    <meta property="og:image" content="https://ff14.tw/assets/images/og-image.png">
+    
+    <link rel="stylesheet" href="../../assets/css/common.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <a href="/" class="logo">FF14.tw</a>
+            <nav class="nav">
+                <a href="/">首頁</a>
+                <a href="/copyright.html">版權聲明</a>
+                <a href="https://github.com/hydai/ff14.tw" target="_blank">GitHub</a>
+                <div class="nav-dropdown">
+                    <a href="#">關於本站</a>
+                    <div class="nav-dropdown-content">
+                        <a href="/about.html">關於</a>
+                        <a href="/changelog.html">修改紀錄</a>
+                    </div>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main container">
+        <div class="tool-header">
+            <h1>Lodestone 角色查詢</h1>
+            <p class="tool-description">輸入角色的 Lodestone ID 來查詢詳細資訊</p>
+        </div>
+
+        <div class="tool-content">
+            <div class="search-section">
+                <div class="search-box">
+                    <input 
+                        type="text" 
+                        id="characterId" 
+                        placeholder="請輸入 Lodestone ID (例如：12345678)"
+                        pattern="[0-9]+"
+                        maxlength="10"
+                    >
+                    <button id="searchBtn" class="search-btn">查詢</button>
+                </div>
+                <div class="search-hint">
+                    <p>提示：您可以在 Lodestone 官方網站的角色頁面 URL 中找到角色 ID</p>
+                    <p>例如：https://na.finalfantasyxiv.com/lodestone/character/<strong>12345678</strong>/</p>
+                </div>
+            </div>
+
+            <div id="loadingIndicator" class="loading-indicator hidden">
+                <div class="spinner"></div>
+                <p>正在查詢角色資訊...</p>
+            </div>
+
+            <div id="errorMessage" class="error-message hidden"></div>
+
+            <div id="characterInfo" class="character-info hidden">
+                <div class="character-header">
+                    <img id="characterAvatar" class="character-avatar" src="" alt="">
+                    <div class="character-basic">
+                        <h2 id="characterName" class="character-name"></h2>
+                        <p id="characterTitle" class="character-title"></p>
+                        <p id="characterServer" class="character-server"></p>
+                    </div>
+                </div>
+
+                <div class="info-sections">
+                    <section class="info-section">
+                        <h3>基本資訊</h3>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <label>種族/部族：</label>
+                                <span id="characterRace"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>守護神：</label>
+                                <span id="characterDeity"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>開始城市：</label>
+                                <span id="characterCity"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>公會：</label>
+                                <span id="characterFC"></span>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="info-section">
+                        <h3>職業等級</h3>
+                        <div id="jobLevels" class="job-levels-grid"></div>
+                    </section>
+
+                    <section class="info-section">
+                        <h3>其他資訊</h3>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <label>蒐集品數量：</label>
+                                <span id="collectibles"></span>
+                            </div>
+                            <div class="info-item">
+                                <label>成就點數：</label>
+                                <span id="achievementPoints"></span>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <div class="lodestone-link">
+                    <a id="lodestoneLink" href="" target="_blank" rel="noopener noreferrer">
+                        在 Lodestone 查看完整資訊 →
+                    </a>
+                </div>
+            </div>
+
+            <div class="usage-notes">
+                <h3>使用說明</h3>
+                <ul>
+                    <li>本工具使用 FFXIV Lodestone 官方資料</li>
+                    <li>查詢結果會快取 24 小時以提升效能</li>
+                    <li>部分資訊可能因隱私設定而無法顯示</li>
+                    <li>支援所有資料中心的角色查詢</li>
+                </ul>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024-2025 FF14.tw | 本站非官方網站，與 Square Enix 無關 | Made with ❤️ by hydai</p>
+        </div>
+    </footer>
+
+    <script src="../../assets/js/common.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
