@@ -22,24 +22,35 @@ export default {
     // Check if origin is allowed (exact match only for security)
     const isAllowedOrigin = allowedOrigins.includes(origin);
     
-    // Set CORS headers based on origin
-    const headers = {
-      'Access-Control-Allow-Origin': isAllowedOrigin ? origin : 'https://ff14.tw',
+    // Set CORS headers for allowed origins
+    const corsHeaders = isAllowedOrigin ? {
+      'Access-Control-Allow-Origin': origin,
       'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type',
+    } : {};
+    
+    // Standard headers for all responses
+    const headers = {
+      ...corsHeaders,
       'Content-Type': 'application/json',
     };
     
-    // Handle preflight requests
+    // Handle preflight requests (only for allowed origins)
     if (request.method === 'OPTIONS') {
-      return new Response(null, { headers });
+      if (isAllowedOrigin) {
+        return new Response(null, { headers });
+      } else {
+        // Don't include CORS headers for rejected origins
+        return new Response(null, { status: 403 });
+      }
     }
     
     // Reject requests from non-allowed origins
     if (!isAllowedOrigin && origin) {
+      // Don't include CORS headers when rejecting
       return new Response(JSON.stringify({ error: 'Forbidden: Invalid origin' }), {
         status: 403,
-        headers,
+        headers: { 'Content-Type': 'application/json' },
       });
     }
     
