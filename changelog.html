@@ -52,6 +52,25 @@
                     
                     <article class="changelog-entry">
                         <div class="changelog-header">
+                            <h3 class="changelog-version">v2.2.1</h3>
+                            <time class="changelog-date" datetime="2025-07-07">2025年7月7日</time>
+                        </div>
+                        <div class="changelog-content">
+                            <ul>
+                                <li><span class="tag tag-feature">功能</span> Lodestone 角色查詢現在顯示完整角色屬性資料</li>
+                                <li><span class="tag tag-feature">功能</span> 新增主要屬性顯示：HP、MP、攻擊力、防禦力等</li>
+                                <li><span class="tag tag-feature">功能</span> 新增副屬性顯示：力量、靈巧、耐力、智力、精神、爆擊、意志、直擊</li>
+                                <li><span class="tag tag-feature">功能</span> 新增裝備資訊顯示：所有裝備部位和幻化狀態</li>
+                                <li><span class="tag tag-feature">功能</span> 新增其他資訊：大國防軍階級、生日、個人簡介</li>
+                                <li><span class="tag tag-fix">修正</span> 修正 XSS 安全漏洞，所有使用者輸入都經過適當轉義</li>
+                                <li><span class="tag tag-fix">修正</span> 強化 API 安全限制，拒絕所有無 Origin 的請求</li>
+                                <li><span class="tag tag-improve">改進</span> API 加強 CORS 安全限制，只允許來自 ff14.tw 的請求</li>
+                            </ul>
+                        </div>
+                    </article>
+                    
+                    <article class="changelog-entry">
+                        <div class="changelog-header">
                             <h3 class="changelog-version">v2.2.0</h3>
                             <time class="changelog-date" datetime="2025-07-06">2025年7月6日</time>
                         </div>

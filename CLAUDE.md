@@ -35,6 +35,7 @@ php -S localhost:8000
 Tools that fetch JSON data require a local server:
 - 副本資料庫 (`dungeon-database/`) - loads `/data/dungeons.json`
 - 寶圖搜尋器 (`treasure-map-finder/`) - loads `/data/treasure-maps.json` and `/data/zone-translations.json`
+- Lodestone 角色查詢 (`lodestone-lookup/`) - uses logstone API
 
 Tools that work without server (can open HTML directly):
 - Mini Cactpot 計算機
@@ -279,6 +280,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 4. **Wondrous Tails Predictor** (`wondrous-tails/`): 4x4 bingo probability calculator
 5. **Faux Hollows Foxes** (`faux-hollows-foxes/`): 6x6 treasure hunting puzzle solver
 6. **Treasure Map Finder** (`treasure-map-finder/`): 219 treasure map coordinates with route planning (G8/G10/G12/G14/G15/G17)
+7. **Lodestone Lookup** (`lodestone-lookup/`): Character information lookup using Lodestone ID with complete stats, jobs, and equipment display
 
 ## Development Memories
 
@@ -288,6 +290,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
   - `dungeon-database` 為副本資料庫
   - `faux-hollows-foxes` 為宗長計算機
   - `treasure-map-finder` 為寶圖搜尋器
+  - `lodestone-lookup` 為 Lodestone 角色查詢
   - 請記住他們的對應關係，避免改錯工具
 
 ## Data Sources and Attribution
@@ -296,3 +299,29 @@ When adding external data sources, always:
 1. Add attribution in the tool's UI (see treasure-map-finder for example)
 2. Include source links with proper rel="noopener noreferrer"
 3. Respect original data licensing terms
+
+## API Integration
+
+### Treasure Map Room Collaboration API
+- Deployed on Cloudflare Workers
+- Supports room CRUD operations (Create, Read, Update, Delete)
+- Implements CORS security restrictions - only allows requests from ff14.tw domain
+- Development environment can enable localhost support via environment variables
+- Provides real-time collaboration features for treasure map hunting groups
+
+### Lodestone Character Lookup API
+- Uses logstone API for character data queries
+- Fetches complete character information including:
+  - Main attributes (HP, MP, Attack, Defense)
+  - Sub-attributes (STR, DEX, VIT, INT, MND, Critical Hit, Tenacity, Direct Hit)
+  - All job levels with max level highlighting
+  - Equipment information with glamour status
+  - Grand Company rank, birthday, and character biography
+- Provides direct links to official Lodestone pages
+- Implements proper error handling for invalid IDs or API failures
+
+### Security Considerations
+- All user inputs are properly escaped to prevent XSS attacks
+- APIs implement origin-based CORS restrictions
+- No sensitive data is exposed through API endpoints
+- Rate limiting is handled by the upstream API providers
