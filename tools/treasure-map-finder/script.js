@@ -350,16 +350,16 @@ class TreasureMapFinder {
         const actions = document.createElement('div');
         actions.className = 'card-actions';
         
-        // 複製座標按鈕
-        const copyBtn = document.createElement('button');
-        copyBtn.className = 'btn btn-secondary btn-sm btn-copy-coords';
-        copyBtn.title = '複製座標指令';
-        copyBtn.innerHTML = '<span class="btn-icon">📍</span> 複製座標';
-        copyBtn.addEventListener('click', (e) => {
+        // 詳細地圖按鈕
+        const detailBtn = document.createElement('button');
+        detailBtn.className = 'btn btn-secondary btn-sm btn-view-detail';
+        detailBtn.title = '查看詳細地圖';
+        detailBtn.innerHTML = '<span class="btn-icon">🗺️</span> 詳細地圖';
+        detailBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            this.copyCoordinates(map);
+            this.showDetailMap(map);
         });
-        actions.appendChild(copyBtn);
+        actions.appendChild(detailBtn);
         
         // 加入清單按鈕
         const addBtn = document.createElement('button');
@@ -461,6 +461,46 @@ class TreasureMapFinder {
             console.error('複製失敗:', err);
             FF14Utils.showToast('複製失敗', 'error');
         });
+    }
+    
+    showDetailMap(map) {
+        const modal = document.getElementById('mapDetailModal');
+        const img = document.getElementById('mapDetailImage');
+        const title = document.getElementById('mapDetailTitle');
+        const coords = document.getElementById('mapDetailCoords');
+        const closeBtn = document.getElementById('mapDetailClose');
+        const overlay = document.getElementById('mapDetailOverlay');
+        
+        // 設置圖片路徑 - 使用 full_3x 版本
+        const fullImagePath = map.fullImage || map.thumbnail.replace(/\.webp$/, '_full_3x.webp');
+        img.src = fullImagePath;
+        
+        // 設置標題和座標
+        const translations = this.zoneTranslations[map.zone] || {};
+        title.textContent = `${map.level.toUpperCase()} - ${translations.zh || map.zone}`;
+        coords.textContent = `座標：X: ${map.coords.x} Y: ${map.coords.y} Z: ${map.coords.z || 0}`;
+        
+        // 顯示彈出視窗
+        modal.style.display = 'flex';
+        
+        // 點擊關閉按鈕關閉
+        const closeModal = () => {
+            modal.style.display = 'none';
+            closeBtn.removeEventListener('click', closeModal);
+            overlay.removeEventListener('click', closeModal);
+        };
+        
+        closeBtn.addEventListener('click', closeModal);
+        overlay.addEventListener('click', closeModal);
+        
+        // 按 ESC 鍵關閉
+        const escHandler = (e) => {
+            if (e.key === 'Escape') {
+                closeModal();
+                document.removeEventListener('keydown', escHandler);
+            }
+        };
+        document.addEventListener('keydown', escHandler);
     }
     
     toggleListPanel() {
