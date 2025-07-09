@@ -498,6 +498,17 @@ class TreasureMapFinder {
     
     // 取得地區對應的傳送點資料
     getAetherytesForZone(zoneName) {
+        // G8 特殊地區的傳送點對應表
+        // Dravania 需要細分為不同子地區
+        const dravaniaZoneAetherytes = {
+            'the_dravanian_forelands': ['tailfeather', 'anyx_trine'],
+            'thedravanianforelands': ['tailfeather', 'anyx_trine'],
+            'the_churning_mists': ['moghome', 'zenith'],
+            'thechurningmists': ['moghome', 'zenith'],
+            'the_dravanian_hinterlands': ['idyllshire', 'prologue_gate'],  // G8 沒有此地區，保留給其他地圖用
+            'thedravanianhinterlands': ['idyllshire', 'prologue_gate']
+        };
+        
         // Gyr Abania 地區的特殊傳送點對應表 (G10)
         const gyrAbaniaZoneAetherytes = {
             'the_fringes': ['castrum_oriens', 'peering_stones'],
@@ -615,6 +626,17 @@ class TreasureMapFinder {
         
         // 正規化地區名稱
         const normalizedZone = zoneName.toLowerCase().replace(/[\s'-]/g, '');
+        
+        // 檢查是否為 Dravania 的子地區 (G8)
+        if (dravaniaZoneAetherytes[normalizedZone]) {
+            const allowedAetherytes = dravaniaZoneAetherytes[normalizedZone];
+            const dravaniaAetherytes = this.aetheryteData?.dravania || [];
+            
+            // 只返回屬於該地區的傳送點
+            return dravaniaAetherytes.filter(aetheryte => 
+                allowedAetherytes.includes(aetheryte.id)
+            );
+        }
         
         // 檢查是否為 Gyr Abania 的子地區
         if (gyrAbaniaZoneAetherytes[normalizedZone]) {
