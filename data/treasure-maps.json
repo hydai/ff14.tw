@@ -218,8 +218,8 @@
         "y": 14.2,
         "z": 1.7
       },
-      "thumbnail": "images/treasures/g17_urqopacha_01_thumb.jpg",
-      "fullImage": "images/treasures/g17_urqopacha_01.jpg"
+      "thumbnail": "images/treasures/g17_urqopacha_01.webp",
+      "fullImage": "images/treasures/g17_urqopacha_01_full_3x.webp"
     },
     {
       "id": "tm_008",
@@ -232,8 +232,8 @@
         "y": 23.3,
         "z": 2.8
       },
-      "thumbnail": "images/treasures/g17_urqopacha_02_thumb.jpg",
-      "fullImage": "images/treasures/g17_urqopacha_02.jpg"
+      "thumbnail": "images/treasures/g17_urqopacha_02.webp",
+      "fullImage": "images/treasures/g17_urqopacha_02_full_3x.webp"
     },
     {
       "id": "tm_009",
@@ -246,8 +246,8 @@
         "y": 30.6,
         "z": 2.9
       },
-      "thumbnail": "images/treasures/g17_urqopacha_03_thumb.jpg",
-      "fullImage": "images/treasures/g17_urqopacha_03.jpg"
+      "thumbnail": "images/treasures/g17_urqopacha_03.webp",
+      "fullImage": "images/treasures/g17_urqopacha_03_full_3x.webp"
     },
     {
       "id": "tm_010",
@@ -260,8 +260,8 @@
         "y": 23.9,
         "z": 2.3
       },
-      "thumbnail": "images/treasures/g17_urqopacha_04_thumb.jpg",
-      "fullImage": "images/treasures/g17_urqopacha_04.jpg"
+      "thumbnail": "images/treasures/g17_urqopacha_04.webp",
+      "fullImage": "images/treasures/g17_urqopacha_04_full_3x.webp"
     },
     {
       "id": "tm_011",
@@ -274,8 +274,8 @@
         "y": 26.0,
         "z": 2.4
       },
-      "thumbnail": "images/treasures/g17_urqopacha_05_thumb.jpg",
-      "fullImage": "images/treasures/g17_urqopacha_05.jpg"
+      "thumbnail": "images/treasures/g17_urqopacha_05.webp",
+      "fullImage": "images/treasures/g17_urqopacha_05_full_3x.webp"
     },
     {
       "id": "tm_012",
@@ -288,8 +288,8 @@
         "y": 24.0,
         "z": 2.8
       },
-      "thumbnail": "images/treasures/g17_urqopacha_06_thumb.jpg",
-      "fullImage": "images/treasures/g17_urqopacha_06.jpg"
+      "thumbnail": "images/treasures/g17_urqopacha_06.webp",
+      "fullImage": "images/treasures/g17_urqopacha_06_full_3x.webp"
     },
     {
       "id": "tm_013",
@@ -302,8 +302,8 @@
         "y": 29.0,
         "z": 3.4
       },
-      "thumbnail": "images/treasures/g17_urqopacha_07_thumb.jpg",
-      "fullImage": "images/treasures/g17_urqopacha_07.jpg"
+      "thumbnail": "images/treasures/g17_urqopacha_07.webp",
+      "fullImage": "images/treasures/g17_urqopacha_07_full_3x.webp"
     },
     {
       "id": "tm_014",
@@ -316,8 +316,8 @@
         "y": 32.5,
         "z": 3.3
       },
-      "thumbnail": "images/treasures/g17_urqopacha_08_thumb.jpg",
-      "fullImage": "images/treasures/g17_urqopacha_08.jpg"
+      "thumbnail": "images/treasures/g17_urqopacha_08.webp",
+      "fullImage": "images/treasures/g17_urqopacha_08_full_3x.webp"
     },
     {
       "id": "tm_015",
@@ -330,8 +330,8 @@
         "y": 19.4,
         "z": 0.6
       },
-      "thumbnail": "images/treasures/g17_kozamauka_01_thumb.jpg",
-      "fullImage": "images/treasures/g17_kozamauka_01.jpg"
+      "thumbnail": "images/treasures/g17_kozamauka_01.webp",
+      "fullImage": "images/treasures/g17_kozamauka_01_full_3x.webp"
     },
     {
       "id": "tm_016",
@@ -344,8 +344,8 @@
         "y": 33.9,
         "z": 1.3
       },
-      "thumbnail": "images/treasures/g17_kozamauka_02_thumb.jpg",
-      "fullImage": "images/treasures/g17_kozamauka_02.jpg"
+      "thumbnail": "images/treasures/g17_kozamauka_02.webp",
+      "fullImage": "images/treasures/g17_kozamauka_02_full_3x.webp"
     },
     {
       "id": "tm_017",
@@ -358,8 +358,8 @@
         "y": 6.9,
         "z": 0.2
       },
-      "thumbnail": "images/treasures/g17_kozamauka_03_thumb.jpg",
-      "fullImage": "images/treasures/g17_kozamauka_03.jpg"
+      "thumbnail": "images/treasures/g17_kozamauka_03.webp",
+      "fullImage": "images/treasures/g17_kozamauka_03_full_3x.webp"
     },
     {
       "id": "tm_018",
@@ -372,8 +372,8 @@
         "y": 22.5,
         "z": 1.1
       },
-      "thumbnail": "images/treasures/g17_kozamauka_04_thumb.jpg",
-      "fullImage": "images/treasures/g17_kozamauka_04.jpg"
+      "thumbnail": "images/treasures/g17_kozamauka_04.webp",
+      "fullImage": "images/treasures/g17_kozamauka_04_full_3x.webp"
     },
     {
       "id": "tm_019",
@@ -386,8 +386,8 @@
         "y": 14.9,
         "z": 0.1
       },
-      "thumbnail": "images/treasures/g17_kozamauka_05_thumb.jpg",
-      "fullImage": "images/treasures/g17_kozamauka_05.jpg"
+      "thumbnail": "images/treasures/g17_kozamauka_05.webp",
+      "fullImage": "images/treasures/g17_kozamauka_05_full_3x.webp"
     },
     {
       "id": "tm_020",
@@ -400,8 +400,8 @@
         "y": 36.1,
         "z": 1.2
       },
-      "thumbnail": "images/treasures/g17_kozamauka_06_thumb.jpg",
-      "fullImage": "images/treasures/g17_kozamauka_06.jpg"
+      "thumbnail": "images/treasures/g17_kozamauka_06.webp",
+      "fullImage": "images/treasures/g17_kozamauka_06_full_3x.webp"
     },
     {
       "id": "tm_021",
@@ -414,8 +414,8 @@
         "y": 6.2,
         "z": 0.4
       },
-      "thumbnail": "images/treasures/g17_kozamauka_07_thumb.jpg",
-      "fullImage": "images/treasures/g17_kozamauka_07.jpg"
+      "thumbnail": "images/treasures/g17_kozamauka_07.webp",
+      "fullImage": "images/treasures/g17_kozamauka_07_full_3x.webp"
     },
     {
       "id": "tm_022",
@@ -428,8 +428,8 @@
         "y": 21.8,
         "z": 0.2
       },
-      "thumbnail": "images/treasures/g17_kozamauka_08_thumb.jpg",
-      "fullImage": "images/treasures/g17_kozamauka_08.jpg"
+      "thumbnail": "images/treasures/g17_kozamauka_08.webp",
+      "fullImage": "images/treasures/g17_kozamauka_08_full_3x.webp"
     },
     {
       "id": "tm_023",
@@ -442,8 +442,8 @@
         "y": 19.6,
         "z": 3.3
       },
-      "thumbnail": "images/treasures/g17_yaktel_01_thumb.jpg",
-      "fullImage": "images/treasures/g17_yaktel_01.jpg"
+      "thumbnail": "images/treasures/g17_yaktel_01.webp",
+      "fullImage": "images/treasures/g17_yaktel_01_full_3x.webp"
     },
     {
       "id": "tm_024",
@@ -456,8 +456,8 @@
         "y": 33.2,
         "z": 1.4
       },
-      "thumbnail": "images/treasures/g17_yaktel_02_thumb.jpg",
-      "fullImage": "images/treasures/g17_yaktel_02.jpg"
+      "thumbnail": "images/treasures/g17_yaktel_02.webp",
+      "fullImage": "images/treasures/g17_yaktel_02_full_3x.webp"
     },
     {
       "id": "tm_025",
@@ -470,8 +470,8 @@
         "y": 26.8,
         "z": 1.3
       },
-      "thumbnail": "images/treasures/g17_yaktel_03_thumb.jpg",
-      "fullImage": "images/treasures/g17_yaktel_03.jpg"
+      "thumbnail": "images/treasures/g17_yaktel_03.webp",
+      "fullImage": "images/treasures/g17_yaktel_03_full_3x.webp"
     },
     {
       "id": "tm_026",
@@ -484,8 +484,8 @@
         "y": 5.7,
         "z": 3.0
       },
-      "thumbnail": "images/treasures/g17_yaktel_04_thumb.jpg",
-      "fullImage": "images/treasures/g17_yaktel_04.jpg"
+      "thumbnail": "images/treasures/g17_yaktel_04.webp",
+      "fullImage": "images/treasures/g17_yaktel_04_full_3x.webp"
     },
     {
       "id": "tm_027",
@@ -498,8 +498,8 @@
         "y": 21.0,
         "z": 1.4
       },
-      "thumbnail": "images/treasures/g17_yaktel_05_thumb.jpg",
-      "fullImage": "images/treasures/g17_yaktel_05.jpg"
+      "thumbnail": "images/treasures/g17_yaktel_05.webp",
+      "fullImage": "images/treasures/g17_yaktel_05_full_3x.webp"
     },
     {
       "id": "tm_028",
@@ -512,8 +512,8 @@
         "y": 35.9,
         "z": 1.3
       },
-      "thumbnail": "images/treasures/g17_yaktel_06_thumb.jpg",
-      "fullImage": "images/treasures/g17_yaktel_06.jpg"
+      "thumbnail": "images/treasures/g17_yaktel_06.webp",
+      "fullImage": "images/treasures/g17_yaktel_06_full_3x.webp"
     },
     {
       "id": "tm_029",
@@ -526,8 +526,8 @@
         "y": 21.9,
         "z": 3.1
       },
-      "thumbnail": "images/treasures/g17_yaktel_07_thumb.jpg",
-      "fullImage": "images/treasures/g17_yaktel_07.jpg"
+      "thumbnail": "images/treasures/g17_yaktel_07.webp",
+      "fullImage": "images/treasures/g17_yaktel_07_full_3x.webp"
     },
     {
       "id": "tm_030",
@@ -540,8 +540,8 @@
         "y": 12.5,
         "z": 3.3
       },
-      "thumbnail": "images/treasures/g17_yaktel_08_thumb.jpg",
-      "fullImage": "images/treasures/g17_yaktel_08.jpg"
+      "thumbnail": "images/treasures/g17_yaktel_08.webp",
+      "fullImage": "images/treasures/g17_yaktel_08_full_3x.webp"
     },
     {
       "id": "tm_031",
@@ -554,8 +554,8 @@
         "y": 14.3,
         "z": 0.5
       },
-      "thumbnail": "images/treasures/g17_shaaloani_01_thumb.jpg",
-      "fullImage": "images/treasures/g17_shaaloani_01.jpg"
+      "thumbnail": "images/treasures/g17_shaaloani_01.webp",
+      "fullImage": "images/treasures/g17_shaaloani_01_full_3x.webp"
     },
     {
       "id": "tm_032",
@@ -568,8 +568,8 @@
         "y": 11.5,
         "z": 0.9
       },
-      "thumbnail": "images/treasures/g17_shaaloani_02_thumb.jpg",
-      "fullImage": "images/treasures/g17_shaaloani_02.jpg"
+      "thumbnail": "images/treasures/g17_shaaloani_02.webp",
+      "fullImage": "images/treasures/g17_shaaloani_02_full_3x.webp"
     },
     {
       "id": "tm_033",
@@ -582,8 +582,8 @@
         "y": 21.0,
         "z": 0.9
       },
-      "thumbnail": "images/treasures/g17_shaaloani_03_thumb.jpg",
-      "fullImage": "images/treasures/g17_shaaloani_03.jpg"
+      "thumbnail": "images/treasures/g17_shaaloani_03.webp",
+      "fullImage": "images/treasures/g17_shaaloani_03_full_3x.webp"
     },
     {
       "id": "tm_034",
@@ -596,8 +596,8 @@
         "y": 34.5,
         "z": 0.5
       },
-      "thumbnail": "images/treasures/g17_shaaloani_04_thumb.jpg",
-      "fullImage": "images/treasures/g17_shaaloani_04.jpg"
+      "thumbnail": "images/treasures/g17_shaaloani_04.webp",
+      "fullImage": "images/treasures/g17_shaaloani_04_full_3x.webp"
     },
     {
       "id": "tm_035",
@@ -610,8 +610,8 @@
         "y": 19.6,
         "z": 0.7
       },
-      "thumbnail": "images/treasures/g17_shaaloani_05_thumb.jpg",
-      "fullImage": "images/treasures/g17_shaaloani_05.jpg"
+      "thumbnail": "images/treasures/g17_shaaloani_05.webp",
+      "fullImage": "images/treasures/g17_shaaloani_05_full_3x.webp"
     },
     {
       "id": "tm_036",
@@ -624,8 +624,8 @@
         "y": 8.3,
         "z": 0.5
       },
-      "thumbnail": "images/treasures/g17_shaaloani_06_thumb.jpg",
-      "fullImage": "images/treasures/g17_shaaloani_06.jpg"
+      "thumbnail": "images/treasures/g17_shaaloani_06.webp",
+      "fullImage": "images/treasures/g17_shaaloani_06_full_3x.webp"
     },
     {
       "id": "tm_037",
@@ -638,8 +638,8 @@
         "y": 32.9,
         "z": 0.9
       },
-      "thumbnail": "images/treasures/g17_shaaloani_07_thumb.jpg",
-      "fullImage": "images/treasures/g17_shaaloani_07.jpg"
+      "thumbnail": "images/treasures/g17_shaaloani_07.webp",
+      "fullImage": "images/treasures/g17_shaaloani_07_full_3x.webp"
     },
     {
       "id": "tm_038",
@@ -652,8 +652,8 @@
         "y": 16.8,
         "z": 0.6
       },
-      "thumbnail": "images/treasures/g17_shaaloani_08_thumb.jpg",
-      "fullImage": "images/treasures/g17_shaaloani_08.jpg"
+      "thumbnail": "images/treasures/g17_shaaloani_08.webp",
+      "fullImage": "images/treasures/g17_shaaloani_08_full_3x.webp"
     },
     {
       "id": "tm_039",
@@ -666,8 +666,8 @@
         "y": 21.3,
         "z": 0.3
       },
-      "thumbnail": "images/treasures/g17_heritage_01_thumb.jpg",
-      "fullImage": "images/treasures/g17_heritage_01.jpg"
+      "thumbnail": "images/treasures/g17_heritagefound_01.webp",
+      "fullImage": "images/treasures/g17_heritagefound_01_full_3x.webp"
     },
     {
       "id": "tm_040",
@@ -680,8 +680,8 @@
         "y": 13.1,
         "z": 0.3
       },
-      "thumbnail": "images/treasures/g17_heritage_02_thumb.jpg",
-      "fullImage": "images/treasures/g17_heritage_02.jpg"
+      "thumbnail": "images/treasures/g17_heritagefound_02.webp",
+      "fullImage": "images/treasures/g17_heritagefound_02_full_3x.webp"
     },
     {
       "id": "tm_041",
@@ -694,8 +694,8 @@
         "y": 22.3,
         "z": 0.4
       },
-      "thumbnail": "images/treasures/g17_heritage_03_thumb.jpg",
-      "fullImage": "images/treasures/g17_heritage_03.jpg"
+      "thumbnail": "images/treasures/g17_heritagefound_03.webp",
+      "fullImage": "images/treasures/g17_heritagefound_03_full_3x.webp"
     },
     {
       "id": "tm_042",
@@ -708,8 +708,8 @@
         "y": 35.8,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g17_heritage_04_thumb.jpg",
-      "fullImage": "images/treasures/g17_heritage_04.jpg"
+      "thumbnail": "images/treasures/g17_heritagefound_04.webp",
+      "fullImage": "images/treasures/g17_heritagefound_04_full_3x.webp"
     },
     {
       "id": "tm_043",
@@ -722,8 +722,8 @@
         "y": 19.0,
         "z": 1.0
       },
-      "thumbnail": "images/treasures/g17_heritage_05_thumb.jpg",
-      "fullImage": "images/treasures/g17_heritage_05.jpg"
+      "thumbnail": "images/treasures/g17_heritagefound_05.webp",
+      "fullImage": "images/treasures/g17_heritagefound_05_full_3x.webp"
     },
     {
       "id": "tm_044",
@@ -736,8 +736,8 @@
         "y": 30.8,
         "z": 1.3
       },
-      "thumbnail": "images/treasures/g17_heritage_06_thumb.jpg",
-      "fullImage": "images/treasures/g17_heritage_06.jpg"
+      "thumbnail": "images/treasures/g17_heritagefound_06.webp",
+      "fullImage": "images/treasures/g17_heritagefound_06_full_3x.webp"
     },
     {
       "id": "tm_045",
@@ -750,8 +750,8 @@
         "y": 8.3,
         "z": 1.4
       },
-      "thumbnail": "images/treasures/g17_heritage_07_thumb.jpg",
-      "fullImage": "images/treasures/g17_heritage_07.jpg"
+      "thumbnail": "images/treasures/g17_heritagefound_07.webp",
+      "fullImage": "images/treasures/g17_heritagefound_07_full_3x.webp"
     },
     {
       "id": "tm_046",
@@ -764,8 +764,8 @@
         "y": 25.5,
         "z": 1.6
       },
-      "thumbnail": "images/treasures/g17_heritage_08_thumb.jpg",
-      "fullImage": "images/treasures/g17_heritage_08.jpg"
+      "thumbnail": "images/treasures/g17_heritagefound_08.webp",
+      "fullImage": "images/treasures/g17_heritagefound_08_full_3x.webp"
     },
     {
       "id": "tm_047",
@@ -778,8 +778,8 @@
         "y": 33.1,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g15_elpis_01_thumb.jpg",
-      "fullImage": "images/treasures/g15_elpis_01.jpg"
+      "thumbnail": "images/treasures/g15_elpis_01.webp",
+      "fullImage": "images/treasures/g15_elpis_01_full_3x.webp"
     },
     {
       "id": "tm_048",
@@ -792,8 +792,8 @@
         "y": 8.7,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g15_elpis_02_thumb.jpg",
-      "fullImage": "images/treasures/g15_elpis_02.jpg"
+      "thumbnail": "images/treasures/g15_elpis_02.webp",
+      "fullImage": "images/treasures/g15_elpis_02_full_3x.webp"
     },
     {
       "id": "tm_049",
@@ -806,8 +806,8 @@
         "y": 31.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g15_elpis_03_thumb.jpg",
-      "fullImage": "images/treasures/g15_elpis_03.jpg"
+      "thumbnail": "images/treasures/g15_elpis_03.webp",
+      "fullImage": "images/treasures/g15_elpis_03_full_3x.webp"
     },
     {
       "id": "tm_050",
@@ -820,8 +820,8 @@
         "y": 24.6,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g15_elpis_04_thumb.jpg",
-      "fullImage": "images/treasures/g15_elpis_04.jpg"
+      "thumbnail": "images/treasures/g15_elpis_04.webp",
+      "fullImage": "images/treasures/g15_elpis_04_full_3x.webp"
     },
     {
       "id": "tm_051",
@@ -834,8 +834,8 @@
         "y": 24.3,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g15_elpis_05_thumb.jpg",
-      "fullImage": "images/treasures/g15_elpis_05.jpg"
+      "thumbnail": "images/treasures/g15_elpis_05.webp",
+      "fullImage": "images/treasures/g15_elpis_05_full_3x.webp"
     },
     {
       "id": "tm_052",
@@ -848,8 +848,8 @@
         "y": 17.5,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g15_elpis_06_thumb.jpg",
-      "fullImage": "images/treasures/g15_elpis_06.jpg"
+      "thumbnail": "images/treasures/g15_elpis_06.webp",
+      "fullImage": "images/treasures/g15_elpis_06_full_3x.webp"
     },
     {
       "id": "tm_053",
@@ -862,8 +862,8 @@
         "y": 9.5,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g15_elpis_07_thumb.jpg",
-      "fullImage": "images/treasures/g15_elpis_07.jpg"
+      "thumbnail": "images/treasures/g15_elpis_07.webp",
+      "fullImage": "images/treasures/g15_elpis_07_full_3x.webp"
     },
     {
       "id": "tm_054",
@@ -876,8 +876,8 @@
         "y": 18.5,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g15_elpis_08_thumb.jpg",
-      "fullImage": "images/treasures/g15_elpis_08.jpg"
+      "thumbnail": "images/treasures/g15_elpis_08.webp",
+      "fullImage": "images/treasures/g15_elpis_08_full_3x.webp"
     },
     {
       "id": "tm_055",
@@ -890,8 +890,8 @@
         "y": 20.9,
         "z": 2.2
       },
-      "thumbnail": "images/treasures/g14_labyrinthos_01_thumb.jpg",
-      "fullImage": "images/treasures/g14_labyrinthos_01.jpg"
+      "thumbnail": "images/treasures/g14_labyrinthos_01.webp",
+      "fullImage": "images/treasures/g14_labyrinthos_01_full_3x.webp"
     },
     {
       "id": "tm_056",
@@ -904,8 +904,8 @@
         "y": 30.4,
         "z": 1.9
       },
-      "thumbnail": "images/treasures/g14_labyrinthos_02_thumb.jpg",
-      "fullImage": "images/treasures/g14_labyrinthos_02.jpg"
+      "thumbnail": "images/treasures/g14_labyrinthos_02.webp",
+      "fullImage": "images/treasures/g14_labyrinthos_02_full_3x.webp"
     },
     {
       "id": "tm_057",
@@ -918,8 +918,8 @@
         "y": 18.1,
         "z": 2.0
       },
-      "thumbnail": "images/treasures/g14_labyrinthos_03_thumb.jpg",
-      "fullImage": "images/treasures/g14_labyrinthos_03.jpg"
+      "thumbnail": "images/treasures/g14_labyrinthos_03.webp",
+      "fullImage": "images/treasures/g14_labyrinthos_03_full_3x.webp"
     },
     {
       "id": "tm_058",
@@ -932,8 +932,8 @@
         "y": 37.5,
         "z": 2.1
       },
-      "thumbnail": "images/treasures/g14_labyrinthos_04_thumb.jpg",
-      "fullImage": "images/treasures/g14_labyrinthos_04.jpg"
+      "thumbnail": "images/treasures/g14_labyrinthos_04.webp",
+      "fullImage": "images/treasures/g14_labyrinthos_04_full_3x.webp"
     },
     {
       "id": "tm_059",
@@ -946,8 +946,8 @@
         "y": 10.9,
         "z": 3.0
       },
-      "thumbnail": "images/treasures/g14_labyrinthos_05_thumb.jpg",
-      "fullImage": "images/treasures/g14_labyrinthos_05.jpg"
+      "thumbnail": "images/treasures/g14_labyrinthos_05.webp",
+      "fullImage": "images/treasures/g14_labyrinthos_05_full_3x.webp"
     },
     {
       "id": "tm_060",
@@ -960,8 +960,8 @@
         "y": 21.8,
         "z": 2.0
       },
-      "thumbnail": "images/treasures/g14_labyrinthos_06_thumb.jpg",
-      "fullImage": "images/treasures/g14_labyrinthos_06.jpg"
+      "thumbnail": "images/treasures/g14_labyrinthos_06.webp",
+      "fullImage": "images/treasures/g14_labyrinthos_06_full_3x.webp"
     },
     {
       "id": "tm_061",
@@ -974,8 +974,8 @@
         "y": 29.6,
         "z": 2.0
       },
-      "thumbnail": "images/treasures/g14_labyrinthos_07_thumb.jpg",
-      "fullImage": "images/treasures/g14_labyrinthos_07.jpg"
+      "thumbnail": "images/treasures/g14_labyrinthos_07.webp",
+      "fullImage": "images/treasures/g14_labyrinthos_07_full_3x.webp"
     },
     {
       "id": "tm_062",
@@ -988,8 +988,8 @@
         "y": 14.4,
         "z": 3.8
       },
-      "thumbnail": "images/treasures/g14_labyrinthos_08_thumb.jpg",
-      "fullImage": "images/treasures/g14_labyrinthos_08.jpg"
+      "thumbnail": "images/treasures/g14_labyrinthos_08.webp",
+      "fullImage": "images/treasures/g14_labyrinthos_08_full_3x.webp"
     },
     {
       "id": "tm_063",
@@ -1002,8 +1002,8 @@
         "y": 7.9,
         "z": 0.5
       },
-      "thumbnail": "images/treasures/g14_thavnair_01_thumb.jpg",
-      "fullImage": "images/treasures/g14_thavnair_01.jpg"
+      "thumbnail": "images/treasures/g14_thavnair_01.webp",
+      "fullImage": "images/treasures/g14_thavnair_01_full_3x.webp"
     },
     {
       "id": "tm_064",
@@ -1016,8 +1016,8 @@
         "y": 26.6,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g14_thavnair_02_thumb.jpg",
-      "fullImage": "images/treasures/g14_thavnair_02.jpg"
+      "thumbnail": "images/treasures/g14_thavnair_02.webp",
+      "fullImage": "images/treasures/g14_thavnair_02_full_3x.webp"
     },
     {
       "id": "tm_065",
@@ -1030,8 +1030,8 @@
         "y": 14.2,
         "z": 0.3
       },
-      "thumbnail": "images/treasures/g14_thavnair_03_thumb.jpg",
-      "fullImage": "images/treasures/g14_thavnair_03.jpg"
+      "thumbnail": "images/treasures/g14_thavnair_03.webp",
+      "fullImage": "images/treasures/g14_thavnair_03_full_3x.webp"
     },
     {
       "id": "tm_066",
@@ -1044,8 +1044,8 @@
         "y": 21.0,
         "z": 0.2
       },
-      "thumbnail": "images/treasures/g14_thavnair_04_thumb.jpg",
-      "fullImage": "images/treasures/g14_thavnair_04.jpg"
+      "thumbnail": "images/treasures/g14_thavnair_04.webp",
+      "fullImage": "images/treasures/g14_thavnair_04_full_3x.webp"
     },
     {
       "id": "tm_067",
@@ -1058,8 +1058,8 @@
         "y": 27.2,
         "z": 0.5
       },
-      "thumbnail": "images/treasures/g14_thavnair_05_thumb.jpg",
-      "fullImage": "images/treasures/g14_thavnair_05.jpg"
+      "thumbnail": "images/treasures/g14_thavnair_05.webp",
+      "fullImage": "images/treasures/g14_thavnair_05_full_3x.webp"
     },
     {
       "id": "tm_068",
@@ -1072,8 +1072,8 @@
         "y": 8.9,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g14_thavnair_06_thumb.jpg",
-      "fullImage": "images/treasures/g14_thavnair_06.jpg"
+      "thumbnail": "images/treasures/g14_thavnair_06.webp",
+      "fullImage": "images/treasures/g14_thavnair_06_full_3x.webp"
     },
     {
       "id": "tm_069",
@@ -1086,8 +1086,8 @@
         "y": 28.9,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g14_thavnair_07_thumb.jpg",
-      "fullImage": "images/treasures/g14_thavnair_07.jpg"
+      "thumbnail": "images/treasures/g14_thavnair_07.webp",
+      "fullImage": "images/treasures/g14_thavnair_07_full_3x.webp"
     },
     {
       "id": "tm_070",
@@ -1100,8 +1100,8 @@
         "y": 14.4,
         "z": 0.1
       },
-      "thumbnail": "images/treasures/g14_thavnair_08_thumb.jpg",
-      "fullImage": "images/treasures/g14_thavnair_08.jpg"
+      "thumbnail": "images/treasures/g14_thavnair_08.webp",
+      "fullImage": "images/treasures/g14_thavnair_08_full_3x.webp"
     },
     {
       "id": "tm_071",
@@ -1114,8 +1114,8 @@
         "y": 25.7,
         "z": 0.6
       },
-      "thumbnail": "images/treasures/g14_garlemald_01_thumb.jpg",
-      "fullImage": "images/treasures/g14_garlemald_01.jpg"
+      "thumbnail": "images/treasures/g14_garlemald_01.webp",
+      "fullImage": "images/treasures/g14_garlemald_01_full_3x.webp"
     },
     {
       "id": "tm_072",
@@ -1128,8 +1128,8 @@
         "y": 11.9,
         "z": 0.3
       },
-      "thumbnail": "images/treasures/g14_garlemald_02_thumb.jpg",
-      "fullImage": "images/treasures/g14_garlemald_02.jpg"
+      "thumbnail": "images/treasures/g14_garlemald_02.webp",
+      "fullImage": "images/treasures/g14_garlemald_02_full_3x.webp"
     },
     {
       "id": "tm_073",
@@ -1142,8 +1142,8 @@
         "y": 17.8,
         "z": 0.3
       },
-      "thumbnail": "images/treasures/g14_garlemald_03_thumb.jpg",
-      "fullImage": "images/treasures/g14_garlemald_03.jpg"
+      "thumbnail": "images/treasures/g14_garlemald_03.webp",
+      "fullImage": "images/treasures/g14_garlemald_03_full_3x.webp"
     },
     {
       "id": "tm_074",
@@ -1156,8 +1156,8 @@
         "y": 12.4,
         "z": 0.4
       },
-      "thumbnail": "images/treasures/g14_garlemald_04_thumb.jpg",
-      "fullImage": "images/treasures/g14_garlemald_04.jpg"
+      "thumbnail": "images/treasures/g14_garlemald_04.webp",
+      "fullImage": "images/treasures/g14_garlemald_04_full_3x.webp"
     },
     {
       "id": "tm_075",
@@ -1170,8 +1170,8 @@
         "y": 26.4,
         "z": 0.1
       },
-      "thumbnail": "images/treasures/g14_garlemald_05_thumb.jpg",
-      "fullImage": "images/treasures/g14_garlemald_05.jpg"
+      "thumbnail": "images/treasures/g14_garlemald_05.webp",
+      "fullImage": "images/treasures/g14_garlemald_05_full_3x.webp"
     },
     {
       "id": "tm_076",
@@ -1184,8 +1184,8 @@
         "y": 35.4,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g14_garlemald_06_thumb.jpg",
-      "fullImage": "images/treasures/g14_garlemald_06.jpg"
+      "thumbnail": "images/treasures/g14_garlemald_06.webp",
+      "fullImage": "images/treasures/g14_garlemald_06_full_3x.webp"
     },
     {
       "id": "tm_077",
@@ -1198,8 +1198,8 @@
         "y": 9.9,
         "z": 0.3
       },
-      "thumbnail": "images/treasures/g14_garlemald_07_thumb.jpg",
-      "fullImage": "images/treasures/g14_garlemald_07.jpg"
+      "thumbnail": "images/treasures/g14_garlemald_07.webp",
+      "fullImage": "images/treasures/g14_garlemald_07_full_3x.webp"
     },
     {
       "id": "tm_078",
@@ -1212,8 +1212,8 @@
         "y": 17.3,
         "z": 0.3
       },
-      "thumbnail": "images/treasures/g14_garlemald_08_thumb.jpg",
-      "fullImage": "images/treasures/g14_garlemald_08.jpg"
+      "thumbnail": "images/treasures/g14_garlemald_08.webp",
+      "fullImage": "images/treasures/g14_garlemald_08_full_3x.webp"
     },
     {
       "id": "tm_079",
@@ -1226,8 +1226,8 @@
         "y": 26.6,
         "z": 1.2
       },
-      "thumbnail": "images/treasures/g14_mare_lamentorum_01_thumb.jpg",
-      "fullImage": "images/treasures/g14_mare_lamentorum_01.jpg"
+      "thumbnail": "images/treasures/g14_marelamentorum_01.webp",
+      "fullImage": "images/treasures/g14_marelamentorum_01_full_3x.webp"
     },
     {
       "id": "tm_080",
@@ -1240,8 +1240,8 @@
         "y": 19.4,
         "z": 1.2
       },
-      "thumbnail": "images/treasures/g14_mare_lamentorum_02_thumb.jpg",
-      "fullImage": "images/treasures/g14_mare_lamentorum_02.jpg"
+      "thumbnail": "images/treasures/g14_marelamentorum_02.webp",
+      "fullImage": "images/treasures/g14_marelamentorum_02_full_3x.webp"
     },
     {
       "id": "tm_081",
@@ -1254,8 +1254,8 @@
         "y": 34.4,
         "z": 1.1
       },
-      "thumbnail": "images/treasures/g14_mare_lamentorum_03_thumb.jpg",
-      "fullImage": "images/treasures/g14_mare_lamentorum_03.jpg"
+      "thumbnail": "images/treasures/g14_marelamentorum_03.webp",
+      "fullImage": "images/treasures/g14_marelamentorum_03_full_3x.webp"
     },
     {
       "id": "tm_082",
@@ -1268,8 +1268,8 @@
         "y": 25.7,
         "z": 0.6
       },
-      "thumbnail": "images/treasures/g14_mare_lamentorum_04_thumb.jpg",
-      "fullImage": "images/treasures/g14_mare_lamentorum_04.jpg"
+      "thumbnail": "images/treasures/g14_marelamentorum_04.webp",
+      "fullImage": "images/treasures/g14_marelamentorum_04_full_3x.webp"
     },
     {
       "id": "tm_083",
@@ -1282,8 +1282,8 @@
         "y": 36.3,
         "z": 1.1
       },
-      "thumbnail": "images/treasures/g14_mare_lamentorum_05_thumb.jpg",
-      "fullImage": "images/treasures/g14_mare_lamentorum_05.jpg"
+      "thumbnail": "images/treasures/g14_marelamentorum_05.webp",
+      "fullImage": "images/treasures/g14_marelamentorum_05_full_3x.webp"
     },
     {
       "id": "tm_084",
@@ -1296,8 +1296,8 @@
         "y": 33.3,
         "z": 0.8
       },
-      "thumbnail": "images/treasures/g14_mare_lamentorum_06_thumb.jpg",
-      "fullImage": "images/treasures/g14_mare_lamentorum_06.jpg"
+      "thumbnail": "images/treasures/g14_marelamentorum_06.webp",
+      "fullImage": "images/treasures/g14_marelamentorum_06_full_3x.webp"
     },
     {
       "id": "tm_085",
@@ -1310,8 +1310,8 @@
         "y": 24.9,
         "z": 1.0
       },
-      "thumbnail": "images/treasures/g14_mare_lamentorum_07_thumb.jpg",
-      "fullImage": "images/treasures/g14_mare_lamentorum_07.jpg"
+      "thumbnail": "images/treasures/g14_marelamentorum_07.webp",
+      "fullImage": "images/treasures/g14_marelamentorum_07_full_3x.webp"
     },
     {
       "id": "tm_086",
@@ -1324,8 +1324,8 @@
         "y": 29.9,
         "z": 1.4
       },
-      "thumbnail": "images/treasures/g14_mare_lamentorum_08_thumb.jpg",
-      "fullImage": "images/treasures/g14_mare_lamentorum_08.jpg"
+      "thumbnail": "images/treasures/g14_marelamentorum_08.webp",
+      "fullImage": "images/treasures/g14_marelamentorum_08_full_3x.webp"
     },
     {
       "id": "tm_087",
@@ -1338,8 +1338,8 @@
         "y": 19.0,
         "z": 0.2
       },
-      "thumbnail": "images/treasures/g14_ultima_thule_01_thumb.jpg",
-      "fullImage": "images/treasures/g14_ultima_thule_01.jpg"
+      "thumbnail": "images/treasures/g14_ultimathule_01.webp",
+      "fullImage": "images/treasures/g14_ultimathule_01_full_3x.webp"
     },
     {
       "id": "tm_088",
@@ -1352,8 +1352,8 @@
         "y": 30.7,
         "z": 0.1
       },
-      "thumbnail": "images/treasures/g14_ultima_thule_02_thumb.jpg",
-      "fullImage": "images/treasures/g14_ultima_thule_02.jpg"
+      "thumbnail": "images/treasures/g14_ultimathule_02.webp",
+      "fullImage": "images/treasures/g14_ultimathule_02_full_3x.webp"
     },
     {
       "id": "tm_089",
@@ -1366,8 +1366,8 @@
         "y": 13.4,
         "z": 2.2
       },
-      "thumbnail": "images/treasures/g14_ultima_thule_03_thumb.jpg",
-      "fullImage": "images/treasures/g14_ultima_thule_03.jpg"
+      "thumbnail": "images/treasures/g14_ultimathule_03.webp",
+      "fullImage": "images/treasures/g14_ultimathule_03_full_3x.webp"
     },
     {
       "id": "tm_090",
@@ -1380,8 +1380,8 @@
         "y": 27.0,
         "z": 0.2
       },
-      "thumbnail": "images/treasures/g14_ultima_thule_04_thumb.jpg",
-      "fullImage": "images/treasures/g14_ultima_thule_04.jpg"
+      "thumbnail": "images/treasures/g14_ultimathule_04.webp",
+      "fullImage": "images/treasures/g14_ultimathule_04_full_3x.webp"
     },
     {
       "id": "tm_091",
@@ -1394,8 +1394,8 @@
         "y": 36.3,
         "z": 0.1
       },
-      "thumbnail": "images/treasures/g14_ultima_thule_05_thumb.jpg",
-      "fullImage": "images/treasures/g14_ultima_thule_05.jpg"
+      "thumbnail": "images/treasures/g14_ultimathule_05.webp",
+      "fullImage": "images/treasures/g14_ultimathule_05_full_3x.webp"
     },
     {
       "id": "tm_092",
@@ -1408,8 +1408,8 @@
         "y": 35.5,
         "z": 3.4
       },
-      "thumbnail": "images/treasures/g14_ultima_thule_06_thumb.jpg",
-      "fullImage": "images/treasures/g14_ultima_thule_06.jpg"
+      "thumbnail": "images/treasures/g14_ultimathule_06.webp",
+      "fullImage": "images/treasures/g14_ultimathule_06_full_3x.webp"
     },
     {
       "id": "tm_093",
@@ -1422,8 +1422,8 @@
         "y": 17.2,
         "z": 1.9
       },
-      "thumbnail": "images/treasures/g14_ultima_thule_07_thumb.jpg",
-      "fullImage": "images/treasures/g14_ultima_thule_07.jpg"
+      "thumbnail": "images/treasures/g14_ultimathule_07.webp",
+      "fullImage": "images/treasures/g14_ultimathule_07_full_3x.webp"
     },
     {
       "id": "tm_094",
@@ -1436,8 +1436,8 @@
         "y": 9.4,
         "z": 2.4
       },
-      "thumbnail": "images/treasures/g14_ultima_thule_08_thumb.jpg",
-      "fullImage": "images/treasures/g14_ultima_thule_08.jpg"
+      "thumbnail": "images/treasures/g14_ultimathule_08.webp",
+      "fullImage": "images/treasures/g14_ultimathule_08_full_3x.webp"
     },
     {
       "id": "tm_095",
@@ -1450,8 +1450,8 @@
         "y": 12.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g10_fringes_01_thumb.jpg",
-      "fullImage": "images/treasures/g10_fringes_01.jpg"
+      "thumbnail": "images/treasures/g10_thefringes_01.webp",
+      "fullImage": "images/treasures/g10_thefringes_01_full_3x.webp"
     },
     {
       "id": "tm_096",
@@ -1464,8 +1464,8 @@
         "y": 28.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g10_fringes_02_thumb.jpg",
-      "fullImage": "images/treasures/g10_fringes_02.jpg"
+      "thumbnail": "images/treasures/g10_thefringes_02.webp",
+      "fullImage": "images/treasures/g10_thefringes_02_full_3x.webp"
     },
     {
       "id": "tm_097",
@@ -1478,8 +1478,8 @@
         "y": 31.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g10_fringes_03_thumb.jpg",
-      "fullImage": "images/treasures/g10_fringes_03.jpg"
+      "thumbnail": "images/treasures/g10_thefringes_03.webp",
+      "fullImage": "images/treasures/g10_thefringes_03_full_3x.webp"
     },
     {
       "id": "tm_098",
@@ -1492,8 +1492,8 @@
         "y": 16.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g10_fringes_04_thumb.jpg",
-      "fullImage": "images/treasures/g10_fringes_04.jpg"
+      "thumbnail": "images/treasures/g10_thefringes_04.webp",
+      "fullImage": "images/treasures/g10_thefringes_04_full_3x.webp"
     },
     {
       "id": "tm_099",
@@ -1506,8 +1506,8 @@
         "y": 12.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g10_fringes_05_thumb.jpg",
-      "fullImage": "images/treasures/g10_fringes_05.jpg"
+      "thumbnail": "images/treasures/g10_thefringes_05.webp",
+      "fullImage": "images/treasures/g10_thefringes_05_full_3x.webp"
     },
     {
       "id": "tm_100",
@@ -1520,8 +1520,8 @@
         "y": 20.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g10_fringes_06_thumb.jpg",
-      "fullImage": "images/treasures/g10_fringes_06.jpg"
+      "thumbnail": "images/treasures/g10_thefringes_06.webp",
+      "fullImage": "images/treasures/g10_thefringes_06_full_3x.webp"
     },
     {
       "id": "tm_101",
@@ -1534,8 +1534,8 @@
         "y": 21.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g10_fringes_07_thumb.jpg",
-      "fullImage": "images/treasures/g10_fringes_07.jpg"
+      "thumbnail": "images/treasures/g10_thefringes_07.webp",
+      "fullImage": "images/treasures/g10_thefringes_07_full_3x.webp"
     },
     {
       "id": "tm_102",
@@ -1548,8 +1548,8 @@
         "y": 31.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g10_fringes_08_thumb.jpg",
-      "fullImage": "images/treasures/g10_fringes_08.jpg"
+      "thumbnail": "images/treasures/g10_thefringes_08.webp",
+      "fullImage": "images/treasures/g10_thefringes_08_full_3x.webp"
     },
     {
       "id": "tm_103",
@@ -1562,8 +1562,8 @@
         "y": 32.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g10_peaks_01_thumb.jpg",
-      "fullImage": "images/treasures/g10_peaks_01.jpg"
+      "thumbnail": "images/treasures/g10_thepeaks_01.webp",
+      "fullImage": "images/treasures/g10_thepeaks_01_full_3x.webp"
     },
     {
       "id": "tm_104",
@@ -1576,8 +1576,8 @@
         "y": 5.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g10_peaks_02_thumb.jpg",
-      "fullImage": "images/treasures/g10_peaks_02.jpg"
+      "thumbnail": "images/treasures/g10_thepeaks_02.webp",
+      "fullImage": "images/treasures/g10_thepeaks_02_full_3x.webp"
     },
     {
       "id": "tm_105",
@@ -1590,8 +1590,8 @@
         "y": 9.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g10_peaks_03_thumb.jpg",
-      "fullImage": "images/treasures/g10_peaks_03.jpg"
+      "thumbnail": "images/treasures/g10_thepeaks_03.webp",
+      "fullImage": "images/treasures/g10_thepeaks_03_full_3x.webp"
     },
     {
       "id": "tm_106",
@@ -1604,8 +1604,8 @@
         "y": 23.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g10_peaks_04_thumb.jpg",
-      "fullImage": "images/treasures/g10_peaks_04.jpg"
+      "thumbnail": "images/treasures/g10_thepeaks_04.webp",
+      "fullImage": "images/treasures/g10_thepeaks_04_full_3x.webp"
     },
     {
       "id": "tm_107",
@@ -1618,8 +1618,8 @@
         "y": 33.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g10_peaks_05_thumb.jpg",
-      "fullImage": "images/treasures/g10_peaks_05.jpg"
+      "thumbnail": "images/treasures/g10_thepeaks_05.webp",
+      "fullImage": "images/treasures/g10_thepeaks_05_full_3x.webp"
     },
     {
       "id": "tm_108",
@@ -1632,8 +1632,8 @@
         "y": 32.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g10_peaks_06_thumb.jpg",
-      "fullImage": "images/treasures/g10_peaks_06.jpg"
+      "thumbnail": "images/treasures/g10_thepeaks_06.webp",
+      "fullImage": "images/treasures/g10_thepeaks_06_full_3x.webp"
     },
     {
       "id": "tm_109",
@@ -1646,8 +1646,8 @@
         "y": 14.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g10_peaks_07_thumb.jpg",
-      "fullImage": "images/treasures/g10_peaks_07.jpg"
+      "thumbnail": "images/treasures/g10_thepeaks_07.webp",
+      "fullImage": "images/treasures/g10_thepeaks_07_full_3x.webp"
     },
     {
       "id": "tm_110",
@@ -1660,8 +1660,8 @@
         "y": 10.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g10_peaks_08_thumb.jpg",
-      "fullImage": "images/treasures/g10_peaks_08.jpg"
+      "thumbnail": "images/treasures/g10_thepeaks_08.webp",
+      "fullImage": "images/treasures/g10_thepeaks_08_full_3x.webp"
     },
     {
       "id": "tm_111",
@@ -1674,8 +1674,8 @@
         "y": 7.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g10_lochs_01_thumb.jpg",
-      "fullImage": "images/treasures/g10_lochs_01.jpg"
+      "thumbnail": "images/treasures/g10_thelochs_01.webp",
+      "fullImage": "images/treasures/g10_thelochs_01_full_3x.webp"
     },
     {
       "id": "tm_112",
@@ -1688,8 +1688,8 @@
         "y": 18.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g10_lochs_02_thumb.jpg",
-      "fullImage": "images/treasures/g10_lochs_02.jpg"
+      "thumbnail": "images/treasures/g10_thelochs_02.webp",
+      "fullImage": "images/treasures/g10_thelochs_02_full_3x.webp"
     },
     {
       "id": "tm_113",
@@ -1702,8 +1702,8 @@
         "y": 29.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g10_lochs_03_thumb.jpg",
-      "fullImage": "images/treasures/g10_lochs_03.jpg"
+      "thumbnail": "images/treasures/g10_thelochs_03.webp",
+      "fullImage": "images/treasures/g10_thelochs_03_full_3x.webp"
     },
     {
       "id": "tm_114",
@@ -1716,8 +1716,8 @@
         "y": 23.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g10_lochs_04_thumb.jpg",
-      "fullImage": "images/treasures/g10_lochs_04.jpg"
+      "thumbnail": "images/treasures/g10_thelochs_04.webp",
+      "fullImage": "images/treasures/g10_thelochs_04_full_3x.webp"
     },
     {
       "id": "tm_115",
@@ -1730,8 +1730,8 @@
         "y": 8.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g10_lochs_05_thumb.jpg",
-      "fullImage": "images/treasures/g10_lochs_05.jpg"
+      "thumbnail": "images/treasures/g10_thelochs_05.webp",
+      "fullImage": "images/treasures/g10_thelochs_05_full_3x.webp"
     },
     {
       "id": "tm_116",
@@ -1744,8 +1744,8 @@
         "y": 32.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g10_lochs_06_thumb.jpg",
-      "fullImage": "images/treasures/g10_lochs_06.jpg"
+      "thumbnail": "images/treasures/g10_thelochs_06.webp",
+      "fullImage": "images/treasures/g10_thelochs_06_full_3x.webp"
     },
     {
       "id": "tm_117",
@@ -1758,8 +1758,8 @@
         "y": 17.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g10_lochs_07_thumb.jpg",
-      "fullImage": "images/treasures/g10_lochs_07.jpg"
+      "thumbnail": "images/treasures/g10_thelochs_07.webp",
+      "fullImage": "images/treasures/g10_thelochs_07_full_3x.webp"
     },
     {
       "id": "tm_118",
@@ -1772,8 +1772,8 @@
         "y": 6.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g10_lochs_08_thumb.jpg",
-      "fullImage": "images/treasures/g10_lochs_08.jpg"
+      "thumbnail": "images/treasures/g10_thelochs_08.webp",
+      "fullImage": "images/treasures/g10_thelochs_08_full_3x.webp"
     },
     {
       "id": "tm_119",
@@ -1786,8 +1786,8 @@
         "y": 15.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g10_ruby_sea_01_thumb.jpg",
-      "fullImage": "images/treasures/g10_ruby_sea_01.jpg"
+      "thumbnail": "images/treasures/g10_therubysea_01.webp",
+      "fullImage": "images/treasures/g10_therubysea_01_full_3x.webp"
     },
     {
       "id": "tm_120",
@@ -1800,8 +1800,8 @@
         "y": 30.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g10_ruby_sea_02_thumb.jpg",
-      "fullImage": "images/treasures/g10_ruby_sea_02.jpg"
+      "thumbnail": "images/treasures/g10_therubysea_02.webp",
+      "fullImage": "images/treasures/g10_therubysea_02_full_3x.webp"
     },
     {
       "id": "tm_121",
@@ -1814,8 +1814,8 @@
         "y": 10.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g10_ruby_sea_03_thumb.jpg",
-      "fullImage": "images/treasures/g10_ruby_sea_03.jpg"
+      "thumbnail": "images/treasures/g10_therubysea_03.webp",
+      "fullImage": "images/treasures/g10_therubysea_03_full_3x.webp"
     },
     {
       "id": "tm_122",
@@ -1828,8 +1828,8 @@
         "y": 36.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g10_ruby_sea_04_thumb.jpg",
-      "fullImage": "images/treasures/g10_ruby_sea_04.jpg"
+      "thumbnail": "images/treasures/g10_therubysea_04.webp",
+      "fullImage": "images/treasures/g10_therubysea_04_full_3x.webp"
     },
     {
       "id": "tm_123",
@@ -1842,8 +1842,8 @@
         "y": 30.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g10_ruby_sea_05_thumb.jpg",
-      "fullImage": "images/treasures/g10_ruby_sea_05.jpg"
+      "thumbnail": "images/treasures/g10_therubysea_05.webp",
+      "fullImage": "images/treasures/g10_therubysea_05_full_3x.webp"
     },
     {
       "id": "tm_124",
@@ -1856,8 +1856,8 @@
         "y": 25.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g10_ruby_sea_06_thumb.jpg",
-      "fullImage": "images/treasures/g10_ruby_sea_06.jpg"
+      "thumbnail": "images/treasures/g10_therubysea_06.webp",
+      "fullImage": "images/treasures/g10_therubysea_06_full_3x.webp"
     },
     {
       "id": "tm_125",
@@ -1870,8 +1870,8 @@
         "y": 9.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g10_ruby_sea_07_thumb.jpg",
-      "fullImage": "images/treasures/g10_ruby_sea_07.jpg"
+      "thumbnail": "images/treasures/g10_therubysea_07.webp",
+      "fullImage": "images/treasures/g10_therubysea_07_full_3x.webp"
     },
     {
       "id": "tm_126",
@@ -1884,8 +1884,8 @@
         "y": 18.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g10_ruby_sea_08_thumb.jpg",
-      "fullImage": "images/treasures/g10_ruby_sea_08.jpg"
+      "thumbnail": "images/treasures/g10_therubysea_08.webp",
+      "fullImage": "images/treasures/g10_therubysea_08_full_3x.webp"
     },
     {
       "id": "tm_127",
@@ -1898,8 +1898,8 @@
         "y": 19.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g10_yanxia_01_thumb.jpg",
-      "fullImage": "images/treasures/g10_yanxia_01.jpg"
+      "thumbnail": "images/treasures/g10_yanxia_01.webp",
+      "fullImage": "images/treasures/g10_yanxia_01_full_3x.webp"
     },
     {
       "id": "tm_128",
@@ -1912,8 +1912,8 @@
         "y": 30.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g10_yanxia_02_thumb.jpg",
-      "fullImage": "images/treasures/g10_yanxia_02.jpg"
+      "thumbnail": "images/treasures/g10_yanxia_02.webp",
+      "fullImage": "images/treasures/g10_yanxia_02_full_3x.webp"
     },
     {
       "id": "tm_129",
@@ -1926,8 +1926,8 @@
         "y": 5.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g10_yanxia_03_thumb.jpg",
-      "fullImage": "images/treasures/g10_yanxia_03.jpg"
+      "thumbnail": "images/treasures/g10_yanxia_03.webp",
+      "fullImage": "images/treasures/g10_yanxia_03_full_3x.webp"
     },
     {
       "id": "tm_130",
@@ -1940,8 +1940,8 @@
         "y": 14.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g10_yanxia_04_thumb.jpg",
-      "fullImage": "images/treasures/g10_yanxia_04.jpg"
+      "thumbnail": "images/treasures/g10_yanxia_04.webp",
+      "fullImage": "images/treasures/g10_yanxia_04_full_3x.webp"
     },
     {
       "id": "tm_131",
@@ -1954,8 +1954,8 @@
         "y": 28.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g10_yanxia_05_thumb.jpg",
-      "fullImage": "images/treasures/g10_yanxia_05.jpg"
+      "thumbnail": "images/treasures/g10_yanxia_05.webp",
+      "fullImage": "images/treasures/g10_yanxia_05_full_3x.webp"
     },
     {
       "id": "tm_132",
@@ -1968,8 +1968,8 @@
         "y": 5.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g10_yanxia_06_thumb.jpg",
-      "fullImage": "images/treasures/g10_yanxia_06.jpg"
+      "thumbnail": "images/treasures/g10_yanxia_06.webp",
+      "fullImage": "images/treasures/g10_yanxia_06_full_3x.webp"
     },
     {
       "id": "tm_133",
@@ -1982,8 +1982,8 @@
         "y": 28.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g10_yanxia_07_thumb.jpg",
-      "fullImage": "images/treasures/g10_yanxia_07.jpg"
+      "thumbnail": "images/treasures/g10_yanxia_07.webp",
+      "fullImage": "images/treasures/g10_yanxia_07_full_3x.webp"
     },
     {
       "id": "tm_134",
@@ -1996,8 +1996,8 @@
         "y": 35.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g10_yanxia_08_thumb.jpg",
-      "fullImage": "images/treasures/g10_yanxia_08.jpg"
+      "thumbnail": "images/treasures/g10_yanxia_08.webp",
+      "fullImage": "images/treasures/g10_yanxia_08_full_3x.webp"
     },
     {
       "id": "tm_135",
@@ -2010,8 +2010,8 @@
         "y": 25.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g10_azim_steppe_01_thumb.jpg",
-      "fullImage": "images/treasures/g10_azim_steppe_01.jpg"
+      "thumbnail": "images/treasures/g10_theazimsteppe_01.webp",
+      "fullImage": "images/treasures/g10_theazimsteppe_01_full_3x.webp"
     },
     {
       "id": "tm_136",
@@ -2024,8 +2024,8 @@
         "y": 16.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g10_azim_steppe_02_thumb.jpg",
-      "fullImage": "images/treasures/g10_azim_steppe_02.jpg"
+      "thumbnail": "images/treasures/g10_theazimsteppe_02.webp",
+      "fullImage": "images/treasures/g10_theazimsteppe_02_full_3x.webp"
     },
     {
       "id": "tm_137",
@@ -2038,8 +2038,8 @@
         "y": 25.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g10_azim_steppe_03_thumb.jpg",
-      "fullImage": "images/treasures/g10_azim_steppe_03.jpg"
+      "thumbnail": "images/treasures/g10_theazimsteppe_03.webp",
+      "fullImage": "images/treasures/g10_theazimsteppe_03_full_3x.webp"
     },
     {
       "id": "tm_138",
@@ -2052,8 +2052,8 @@
         "y": 33.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g10_azim_steppe_04_thumb.jpg",
-      "fullImage": "images/treasures/g10_azim_steppe_04.jpg"
+      "thumbnail": "images/treasures/g10_theazimsteppe_04.webp",
+      "fullImage": "images/treasures/g10_theazimsteppe_04_full_3x.webp"
     },
     {
       "id": "tm_139",
@@ -2066,8 +2066,8 @@
         "y": 37.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g10_azim_steppe_05_thumb.jpg",
-      "fullImage": "images/treasures/g10_azim_steppe_05.jpg"
+      "thumbnail": "images/treasures/g10_theazimsteppe_05.webp",
+      "fullImage": "images/treasures/g10_theazimsteppe_05_full_3x.webp"
     },
     {
       "id": "tm_140",
@@ -2080,8 +2080,8 @@
         "y": 12.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g10_azim_steppe_06_thumb.jpg",
-      "fullImage": "images/treasures/g10_azim_steppe_06.jpg"
+      "thumbnail": "images/treasures/g10_theazimsteppe_06.webp",
+      "fullImage": "images/treasures/g10_theazimsteppe_06_full_3x.webp"
     },
     {
       "id": "tm_141",
@@ -2094,8 +2094,8 @@
         "y": 22.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g10_azim_steppe_07_thumb.jpg",
-      "fullImage": "images/treasures/g10_azim_steppe_07.jpg"
+      "thumbnail": "images/treasures/g10_theazimsteppe_07.webp",
+      "fullImage": "images/treasures/g10_theazimsteppe_07_full_3x.webp"
     },
     {
       "id": "tm_142",
@@ -2108,8 +2108,8 @@
         "y": 35.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g10_azim_steppe_08_thumb.jpg",
-      "fullImage": "images/treasures/g10_azim_steppe_08.jpg"
+      "thumbnail": "images/treasures/g10_theazimsteppe_08.webp",
+      "fullImage": "images/treasures/g10_theazimsteppe_08_full_3x.webp"
     },
     {
       "id": "tm_143",
@@ -2122,8 +2122,8 @@
         "y": 30.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g8_coerthas_western_01_thumb.jpg",
-      "fullImage": "images/treasures/g8_coerthas_western_01.jpg"
+      "thumbnail": "images/treasures/g8_coerthaswesternhighlands_01.webp",
+      "fullImage": "images/treasures/g8_coerthaswesternhighlands_01_full_3x.webp"
     },
     {
       "id": "tm_144",
@@ -2136,8 +2136,8 @@
         "y": 24.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g8_coerthas_western_02_thumb.jpg",
-      "fullImage": "images/treasures/g8_coerthas_western_02.jpg"
+      "thumbnail": "images/treasures/g8_coerthaswesternhighlands_02.webp",
+      "fullImage": "images/treasures/g8_coerthaswesternhighlands_02_full_3x.webp"
     },
     {
       "id": "tm_145",
@@ -2150,8 +2150,8 @@
         "y": 12.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g8_coerthas_western_03_thumb.jpg",
-      "fullImage": "images/treasures/g8_coerthas_western_03.jpg"
+      "thumbnail": "images/treasures/g8_coerthaswesternhighlands_03.webp",
+      "fullImage": "images/treasures/g8_coerthaswesternhighlands_03_full_3x.webp"
     },
     {
       "id": "tm_146",
@@ -2164,8 +2164,8 @@
         "y": 12.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g8_coerthas_western_04_thumb.jpg",
-      "fullImage": "images/treasures/g8_coerthas_western_04.jpg"
+      "thumbnail": "images/treasures/g8_coerthaswesternhighlands_04.webp",
+      "fullImage": "images/treasures/g8_coerthaswesternhighlands_04_full_3x.webp"
     },
     {
       "id": "tm_147",
@@ -2178,8 +2178,8 @@
         "y": 15.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g8_coerthas_western_05_thumb.jpg",
-      "fullImage": "images/treasures/g8_coerthas_western_05.jpg"
+      "thumbnail": "images/treasures/g8_coerthaswesternhighlands_05.webp",
+      "fullImage": "images/treasures/g8_coerthaswesternhighlands_05_full_3x.webp"
     },
     {
       "id": "tm_148",
@@ -2192,8 +2192,8 @@
         "y": 7.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g8_coerthas_western_06_thumb.jpg",
-      "fullImage": "images/treasures/g8_coerthas_western_06.jpg"
+      "thumbnail": "images/treasures/g8_coerthaswesternhighlands_06.webp",
+      "fullImage": "images/treasures/g8_coerthaswesternhighlands_06_full_3x.webp"
     },
     {
       "id": "tm_149",
@@ -2206,8 +2206,8 @@
         "y": 26.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g8_coerthas_western_07_thumb.jpg",
-      "fullImage": "images/treasures/g8_coerthas_western_07.jpg"
+      "thumbnail": "images/treasures/g8_coerthaswesternhighlands_07.webp",
+      "fullImage": "images/treasures/g8_coerthaswesternhighlands_07_full_3x.webp"
     },
     {
       "id": "tm_150",
@@ -2220,8 +2220,8 @@
         "y": 24.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g8_dravanian_forelands_01_thumb.jpg",
-      "fullImage": "images/treasures/g8_dravanian_forelands_01.jpg"
+      "thumbnail": "images/treasures/g8_thedravanianforelands_01.webp",
+      "fullImage": "images/treasures/g8_thedravanianforelands_01_full_3x.webp"
     },
     {
       "id": "tm_151",
@@ -2234,8 +2234,8 @@
         "y": 25.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g8_dravanian_forelands_02_thumb.jpg",
-      "fullImage": "images/treasures/g8_dravanian_forelands_02.jpg"
+      "thumbnail": "images/treasures/g8_thedravanianforelands_02.webp",
+      "fullImage": "images/treasures/g8_thedravanianforelands_02_full_3x.webp"
     },
     {
       "id": "tm_152",
@@ -2248,8 +2248,8 @@
         "y": 30.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g8_dravanian_forelands_03_thumb.jpg",
-      "fullImage": "images/treasures/g8_dravanian_forelands_03.jpg"
+      "thumbnail": "images/treasures/g8_thedravanianforelands_03.webp",
+      "fullImage": "images/treasures/g8_thedravanianforelands_03_full_3x.webp"
     },
     {
       "id": "tm_153",
@@ -2262,8 +2262,8 @@
         "y": 32.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g8_dravanian_forelands_04_thumb.jpg",
-      "fullImage": "images/treasures/g8_dravanian_forelands_04.jpg"
+      "thumbnail": "images/treasures/g8_thedravanianforelands_04.webp",
+      "fullImage": "images/treasures/g8_thedravanianforelands_04_full_3x.webp"
     },
     {
       "id": "tm_154",
@@ -2276,8 +2276,8 @@
         "y": 34.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g8_dravanian_forelands_05_thumb.jpg",
-      "fullImage": "images/treasures/g8_dravanian_forelands_05.jpg"
+      "thumbnail": "images/treasures/g8_thedravanianforelands_05.webp",
+      "fullImage": "images/treasures/g8_thedravanianforelands_05_full_3x.webp"
     },
     {
       "id": "tm_155",
@@ -2290,8 +2290,8 @@
         "y": 34.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g8_dravanian_forelands_06_thumb.jpg",
-      "fullImage": "images/treasures/g8_dravanian_forelands_06.jpg"
+      "thumbnail": "images/treasures/g8_thedravanianforelands_06.webp",
+      "fullImage": "images/treasures/g8_thedravanianforelands_06_full_3x.webp"
     },
     {
       "id": "tm_156",
@@ -2304,8 +2304,8 @@
         "y": 34.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g8_dravanian_forelands_07_thumb.jpg",
-      "fullImage": "images/treasures/g8_dravanian_forelands_07.jpg"
+      "thumbnail": "images/treasures/g8_thedravanianforelands_07.webp",
+      "fullImage": "images/treasures/g8_thedravanianforelands_07_full_3x.webp"
     },
     {
       "id": "tm_157",
@@ -2318,8 +2318,8 @@
         "y": 34.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g8_dravanian_forelands_08_thumb.jpg",
-      "fullImage": "images/treasures/g8_dravanian_forelands_08.jpg"
+      "thumbnail": "images/treasures/g8_thedravanianforelands_08.webp",
+      "fullImage": "images/treasures/g8_thedravanianforelands_08_full_3x.webp"
     },
     {
       "id": "tm_158",
@@ -2332,8 +2332,8 @@
         "y": 30.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g8_dravanian_forelands_09_thumb.jpg",
-      "fullImage": "images/treasures/g8_dravanian_forelands_09.jpg"
+      "thumbnail": "images/treasures/g8_thedravanianforelands_09.webp",
+      "fullImage": "images/treasures/g8_thedravanianforelands_09_full_3x.webp"
     },
     {
       "id": "tm_159",
@@ -2346,8 +2346,8 @@
         "y": 37.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g8_churning_mists_01_thumb.jpg",
-      "fullImage": "images/treasures/g8_churning_mists_01.jpg"
+      "thumbnail": "images/treasures/g8_thechurningmists_01.webp",
+      "fullImage": "images/treasures/g8_thechurningmists_01_full_3x.webp"
     },
     {
       "id": "tm_160",
@@ -2360,8 +2360,8 @@
         "y": 38.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g8_churning_mists_02_thumb.jpg",
-      "fullImage": "images/treasures/g8_churning_mists_02.jpg"
+      "thumbnail": "images/treasures/g8_thechurningmists_02.webp",
+      "fullImage": "images/treasures/g8_thechurningmists_02_full_3x.webp"
     },
     {
       "id": "tm_161",
@@ -2374,8 +2374,8 @@
         "y": 33.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g8_churning_mists_03_thumb.jpg",
-      "fullImage": "images/treasures/g8_churning_mists_03.jpg"
+      "thumbnail": "images/treasures/g8_thechurningmists_03.webp",
+      "fullImage": "images/treasures/g8_thechurningmists_03_full_3x.webp"
     },
     {
       "id": "tm_162",
@@ -2388,8 +2388,8 @@
         "y": 25.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g8_churning_mists_04_thumb.jpg",
-      "fullImage": "images/treasures/g8_churning_mists_04.jpg"
+      "thumbnail": "images/treasures/g8_thechurningmists_04.webp",
+      "fullImage": "images/treasures/g8_thechurningmists_04_full_3x.webp"
     },
     {
       "id": "tm_163",
@@ -2402,8 +2402,8 @@
         "y": 18.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g8_churning_mists_05_thumb.jpg",
-      "fullImage": "images/treasures/g8_churning_mists_05.jpg"
+      "thumbnail": "images/treasures/g8_thechurningmists_05.webp",
+      "fullImage": "images/treasures/g8_thechurningmists_05_full_3x.webp"
     },
     {
       "id": "tm_164",
@@ -2416,8 +2416,8 @@
         "y": 20.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g8_churning_mists_06_thumb.jpg",
-      "fullImage": "images/treasures/g8_churning_mists_06.jpg"
+      "thumbnail": "images/treasures/g8_thechurningmists_06.webp",
+      "fullImage": "images/treasures/g8_thechurningmists_06_full_3x.webp"
     },
     {
       "id": "tm_165",
@@ -2430,8 +2430,8 @@
         "y": 17.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g8_churning_mists_07_thumb.jpg",
-      "fullImage": "images/treasures/g8_churning_mists_07.jpg"
+      "thumbnail": "images/treasures/g8_thechurningmists_07.webp",
+      "fullImage": "images/treasures/g8_thechurningmists_07_full_3x.webp"
     },
     {
       "id": "tm_166",
@@ -2444,8 +2444,8 @@
         "y": 13.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g8_churning_mists_08_thumb.jpg",
-      "fullImage": "images/treasures/g8_churning_mists_08.jpg"
+      "thumbnail": "images/treasures/g8_thechurningmists_08.webp",
+      "fullImage": "images/treasures/g8_thechurningmists_08_full_3x.webp"
     },
     {
       "id": "tm_167",
@@ -2458,8 +2458,8 @@
         "y": 9.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g8_churning_mists_09_thumb.jpg",
-      "fullImage": "images/treasures/g8_churning_mists_09.jpg"
+      "thumbnail": "images/treasures/g8_thechurningmists_09.webp",
+      "fullImage": "images/treasures/g8_thechurningmists_09_full_3x.webp"
     },
     {
       "id": "tm_168",
@@ -2472,8 +2472,8 @@
         "y": 7.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g8_sea_of_clouds_01_thumb.jpg",
-      "fullImage": "images/treasures/g8_sea_of_clouds_01.jpg"
+      "thumbnail": "images/treasures/g8_theseaofclouds_01.webp",
+      "fullImage": "images/treasures/g8_theseaofclouds_01_full_3x.webp"
     },
     {
       "id": "tm_169",
@@ -2486,8 +2486,8 @@
         "y": 5.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g8_sea_of_clouds_02_thumb.jpg",
-      "fullImage": "images/treasures/g8_sea_of_clouds_02.jpg"
+      "thumbnail": "images/treasures/g8_theseaofclouds_02.webp",
+      "fullImage": "images/treasures/g8_theseaofclouds_02_full_3x.webp"
     },
     {
       "id": "tm_170",
@@ -2500,8 +2500,8 @@
         "y": 10.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g8_sea_of_clouds_03_thumb.jpg",
-      "fullImage": "images/treasures/g8_sea_of_clouds_03.jpg"
+      "thumbnail": "images/treasures/g8_theseaofclouds_03.webp",
+      "fullImage": "images/treasures/g8_theseaofclouds_03_full_3x.webp"
     },
     {
       "id": "tm_171",
@@ -2514,8 +2514,8 @@
         "y": 17.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g8_sea_of_clouds_04_thumb.jpg",
-      "fullImage": "images/treasures/g8_sea_of_clouds_04.jpg"
+      "thumbnail": "images/treasures/g8_theseaofclouds_04.webp",
+      "fullImage": "images/treasures/g8_theseaofclouds_04_full_3x.webp"
     },
     {
       "id": "tm_172",
@@ -2528,8 +2528,8 @@
         "y": 18.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g8_sea_of_clouds_05_thumb.jpg",
-      "fullImage": "images/treasures/g8_sea_of_clouds_05.jpg"
+      "thumbnail": "images/treasures/g8_theseaofclouds_05.webp",
+      "fullImage": "images/treasures/g8_theseaofclouds_05_full_3x.webp"
     },
     {
       "id": "tm_173",
@@ -2542,8 +2542,8 @@
         "y": 24.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g8_sea_of_clouds_06_thumb.jpg",
-      "fullImage": "images/treasures/g8_sea_of_clouds_06.jpg"
+      "thumbnail": "images/treasures/g8_theseaofclouds_06.webp",
+      "fullImage": "images/treasures/g8_theseaofclouds_06_full_3x.webp"
     },
     {
       "id": "tm_174",
@@ -2556,8 +2556,8 @@
         "y": 27.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g8_sea_of_clouds_07_thumb.jpg",
-      "fullImage": "images/treasures/g8_sea_of_clouds_07.jpg"
+      "thumbnail": "images/treasures/g8_theseaofclouds_07.webp",
+      "fullImage": "images/treasures/g8_theseaofclouds_07_full_3x.webp"
     },
     {
       "id": "tm_175",
@@ -2570,8 +2570,8 @@
         "y": 31.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g8_sea_of_clouds_08_thumb.jpg",
-      "fullImage": "images/treasures/g8_sea_of_clouds_08.jpg"
+      "thumbnail": "images/treasures/g8_theseaofclouds_08.webp",
+      "fullImage": "images/treasures/g8_theseaofclouds_08_full_3x.webp"
     },
     {
       "id": "tm_176",
@@ -2584,8 +2584,8 @@
         "y": 35.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g8_sea_of_clouds_09_thumb.jpg",
-      "fullImage": "images/treasures/g8_sea_of_clouds_09.jpg"
+      "thumbnail": "images/treasures/g8_theseaofclouds_09.webp",
+      "fullImage": "images/treasures/g8_theseaofclouds_09_full_3x.webp"
     },
     {
       "id": "tm_177",
@@ -2598,8 +2598,8 @@
         "y": 38.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g8_sea_of_clouds_10_thumb.jpg",
-      "fullImage": "images/treasures/g8_sea_of_clouds_10.jpg"
+      "thumbnail": "images/treasures/g8_theseaofclouds_10.webp",
+      "fullImage": "images/treasures/g8_theseaofclouds_10_full_3x.webp"
     },
     {
       "id": "tm_178",
@@ -2612,8 +2612,8 @@
         "y": 21.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g12_lakeland_01_thumb.jpg",
-      "fullImage": "images/treasures/g12_lakeland_01.jpg"
+      "thumbnail": "images/treasures/g12_lakeland_01.webp",
+      "fullImage": "images/treasures/g12_lakeland_01_full_3x.webp"
     },
     {
       "id": "tm_179",
@@ -2626,8 +2626,8 @@
         "y": 25.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g12_lakeland_02_thumb.jpg",
-      "fullImage": "images/treasures/g12_lakeland_02.jpg"
+      "thumbnail": "images/treasures/g12_lakeland_02.webp",
+      "fullImage": "images/treasures/g12_lakeland_02_full_3x.webp"
     },
     {
       "id": "tm_180",
@@ -2640,8 +2640,8 @@
         "y": 11.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g12_lakeland_03_thumb.jpg",
-      "fullImage": "images/treasures/g12_lakeland_03.jpg"
+      "thumbnail": "images/treasures/g12_lakeland_03.webp",
+      "fullImage": "images/treasures/g12_lakeland_03_full_3x.webp"
     },
     {
       "id": "tm_181",
@@ -2654,8 +2654,8 @@
         "y": 12.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g12_lakeland_04_thumb.jpg",
-      "fullImage": "images/treasures/g12_lakeland_04.jpg"
+      "thumbnail": "images/treasures/g12_lakeland_04.webp",
+      "fullImage": "images/treasures/g12_lakeland_04_full_3x.webp"
     },
     {
       "id": "tm_182",
@@ -2668,8 +2668,8 @@
         "y": 17.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g12_lakeland_05_thumb.jpg",
-      "fullImage": "images/treasures/g12_lakeland_05.jpg"
+      "thumbnail": "images/treasures/g12_lakeland_05.webp",
+      "fullImage": "images/treasures/g12_lakeland_05_full_3x.webp"
     },
     {
       "id": "tm_183",
@@ -2682,8 +2682,8 @@
         "y": 7.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g12_lakeland_06_thumb.jpg",
-      "fullImage": "images/treasures/g12_lakeland_06.jpg"
+      "thumbnail": "images/treasures/g12_lakeland_06.webp",
+      "fullImage": "images/treasures/g12_lakeland_06_full_3x.webp"
     },
     {
       "id": "tm_184",
@@ -2696,8 +2696,8 @@
         "y": 25.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g12_lakeland_07_thumb.jpg",
-      "fullImage": "images/treasures/g12_lakeland_07.jpg"
+      "thumbnail": "images/treasures/g12_lakeland_07.webp",
+      "fullImage": "images/treasures/g12_lakeland_07_full_3x.webp"
     },
     {
       "id": "tm_185",
@@ -2710,8 +2710,8 @@
         "y": 13.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g12_lakeland_08_thumb.jpg",
-      "fullImage": "images/treasures/g12_lakeland_08.jpg"
+      "thumbnail": "images/treasures/g12_lakeland_08.webp",
+      "fullImage": "images/treasures/g12_lakeland_08_full_3x.webp"
     },
     {
       "id": "tm_186",
@@ -2724,8 +2724,8 @@
         "y": 18.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g12_kholusia_01_thumb.jpg",
-      "fullImage": "images/treasures/g12_kholusia_01.jpg"
+      "thumbnail": "images/treasures/g12_kholusia_01.webp",
+      "fullImage": "images/treasures/g12_kholusia_01_full_3x.webp"
     },
     {
       "id": "tm_187",
@@ -2738,8 +2738,8 @@
         "y": 13.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g12_kholusia_02_thumb.jpg",
-      "fullImage": "images/treasures/g12_kholusia_02.jpg"
+      "thumbnail": "images/treasures/g12_kholusia_02.webp",
+      "fullImage": "images/treasures/g12_kholusia_02_full_3x.webp"
     },
     {
       "id": "tm_188",
@@ -2752,8 +2752,8 @@
         "y": 16.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g12_kholusia_03_thumb.jpg",
-      "fullImage": "images/treasures/g12_kholusia_03.jpg"
+      "thumbnail": "images/treasures/g12_kholusia_03.webp",
+      "fullImage": "images/treasures/g12_kholusia_03_full_3x.webp"
     },
     {
       "id": "tm_189",
@@ -2766,8 +2766,8 @@
         "y": 17.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g12_kholusia_04_thumb.jpg",
-      "fullImage": "images/treasures/g12_kholusia_04.jpg"
+      "thumbnail": "images/treasures/g12_kholusia_04.webp",
+      "fullImage": "images/treasures/g12_kholusia_04_full_3x.webp"
     },
     {
       "id": "tm_190",
@@ -2780,8 +2780,8 @@
         "y": 9.5,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g12_kholusia_05_thumb.jpg",
-      "fullImage": "images/treasures/g12_kholusia_05.jpg"
+      "thumbnail": "images/treasures/g12_kholusia_05.webp",
+      "fullImage": "images/treasures/g12_kholusia_05_full_3x.webp"
     },
     {
       "id": "tm_191",
@@ -2794,8 +2794,8 @@
         "y": 17.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g12_kholusia_06_thumb.jpg",
-      "fullImage": "images/treasures/g12_kholusia_06.jpg"
+      "thumbnail": "images/treasures/g12_kholusia_06.webp",
+      "fullImage": "images/treasures/g12_kholusia_06_full_3x.webp"
     },
     {
       "id": "tm_192",
@@ -2808,8 +2808,8 @@
         "y": 10.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g12_kholusia_07_thumb.jpg",
-      "fullImage": "images/treasures/g12_kholusia_07.jpg"
+      "thumbnail": "images/treasures/g12_kholusia_07.webp",
+      "fullImage": "images/treasures/g12_kholusia_07_full_3x.webp"
     },
     {
       "id": "tm_193",
@@ -2822,8 +2822,8 @@
         "y": 31.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g12_kholusia_08_thumb.jpg",
-      "fullImage": "images/treasures/g12_kholusia_08.jpg"
+      "thumbnail": "images/treasures/g12_kholusia_08.webp",
+      "fullImage": "images/treasures/g12_kholusia_08_full_3x.webp"
     },
     {
       "id": "tm_194",
@@ -2836,8 +2836,8 @@
         "y": 14.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g12_amh_araeng_01_thumb.jpg",
-      "fullImage": "images/treasures/g12_amh_araeng_01.jpg"
+      "thumbnail": "images/treasures/g12_amharaeng_01.webp",
+      "fullImage": "images/treasures/g12_amharaeng_01_full_3x.webp"
     },
     {
       "id": "tm_195",
@@ -2850,8 +2850,8 @@
         "y": 30.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g12_amh_araeng_02_thumb.jpg",
-      "fullImage": "images/treasures/g12_amh_araeng_02.jpg"
+      "thumbnail": "images/treasures/g12_amharaeng_02.webp",
+      "fullImage": "images/treasures/g12_amharaeng_02_full_3x.webp"
     },
     {
       "id": "tm_196",
@@ -2864,8 +2864,8 @@
         "y": 13.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g12_amh_araeng_03_thumb.jpg",
-      "fullImage": "images/treasures/g12_amh_araeng_03.jpg"
+      "thumbnail": "images/treasures/g12_amharaeng_03.webp",
+      "fullImage": "images/treasures/g12_amharaeng_03_full_3x.webp"
     },
     {
       "id": "tm_197",
@@ -2878,8 +2878,8 @@
         "y": 23.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g12_amh_araeng_04_thumb.jpg",
-      "fullImage": "images/treasures/g12_amh_araeng_04.jpg"
+      "thumbnail": "images/treasures/g12_amharaeng_04.webp",
+      "fullImage": "images/treasures/g12_amharaeng_04_full_3x.webp"
     },
     {
       "id": "tm_198",
@@ -2892,8 +2892,8 @@
         "y": 30.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g12_amh_araeng_05_thumb.jpg",
-      "fullImage": "images/treasures/g12_amh_araeng_05.jpg"
+      "thumbnail": "images/treasures/g12_amharaeng_05.webp",
+      "fullImage": "images/treasures/g12_amharaeng_05_full_3x.webp"
     },
     {
       "id": "tm_199",
@@ -2906,8 +2906,8 @@
         "y": 8.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g12_amh_araeng_06_thumb.jpg",
-      "fullImage": "images/treasures/g12_amh_araeng_06.jpg"
+      "thumbnail": "images/treasures/g12_amharaeng_06.webp",
+      "fullImage": "images/treasures/g12_amharaeng_06_full_3x.webp"
     },
     {
       "id": "tm_200",
@@ -2920,8 +2920,8 @@
         "y": 11.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g12_amh_araeng_07_thumb.jpg",
-      "fullImage": "images/treasures/g12_amh_araeng_07.jpg"
+      "thumbnail": "images/treasures/g12_amharaeng_07.webp",
+      "fullImage": "images/treasures/g12_amharaeng_07_full_3x.webp"
     },
     {
       "id": "tm_201",
@@ -2934,8 +2934,8 @@
         "y": 17.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g12_amh_araeng_08_thumb.jpg",
-      "fullImage": "images/treasures/g12_amh_araeng_08.jpg"
+      "thumbnail": "images/treasures/g12_amharaeng_08.webp",
+      "fullImage": "images/treasures/g12_amharaeng_08_full_3x.webp"
     },
     {
       "id": "tm_202",
@@ -2948,8 +2948,8 @@
         "y": 17.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g12_il_mheg_01_thumb.jpg",
-      "fullImage": "images/treasures/g12_il_mheg_01.jpg"
+      "thumbnail": "images/treasures/g12_ilmheg_01.webp",
+      "fullImage": "images/treasures/g12_ilmheg_01_full_3x.webp"
     },
     {
       "id": "tm_203",
@@ -2962,8 +2962,8 @@
         "y": 13.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g12_il_mheg_02_thumb.jpg",
-      "fullImage": "images/treasures/g12_il_mheg_02.jpg"
+      "thumbnail": "images/treasures/g12_ilmheg_02.webp",
+      "fullImage": "images/treasures/g12_ilmheg_02_full_3x.webp"
     },
     {
       "id": "tm_204",
@@ -2976,8 +2976,8 @@
         "y": 20.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g12_il_mheg_03_thumb.jpg",
-      "fullImage": "images/treasures/g12_il_mheg_03.jpg"
+      "thumbnail": "images/treasures/g12_ilmheg_03.webp",
+      "fullImage": "images/treasures/g12_ilmheg_03_full_3x.webp"
     },
     {
       "id": "tm_205",
@@ -2990,8 +2990,8 @@
         "y": 27.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g12_il_mheg_04_thumb.jpg",
-      "fullImage": "images/treasures/g12_il_mheg_04.jpg"
+      "thumbnail": "images/treasures/g12_ilmheg_04.webp",
+      "fullImage": "images/treasures/g12_ilmheg_04_full_3x.webp"
     },
     {
       "id": "tm_206",
@@ -3004,8 +3004,8 @@
         "y": 7.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g12_il_mheg_05_thumb.jpg",
-      "fullImage": "images/treasures/g12_il_mheg_05.jpg"
+      "thumbnail": "images/treasures/g12_ilmheg_05.webp",
+      "fullImage": "images/treasures/g12_ilmheg_05_full_3x.webp"
     },
     {
       "id": "tm_207",
@@ -3018,8 +3018,8 @@
         "y": 12.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g12_il_mheg_06_thumb.jpg",
-      "fullImage": "images/treasures/g12_il_mheg_06.jpg"
+      "thumbnail": "images/treasures/g12_ilmheg_06.webp",
+      "fullImage": "images/treasures/g12_ilmheg_06_full_3x.webp"
     },
     {
       "id": "tm_208",
@@ -3032,8 +3032,8 @@
         "y": 4.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g12_il_mheg_07_thumb.jpg",
-      "fullImage": "images/treasures/g12_il_mheg_07.jpg"
+      "thumbnail": "images/treasures/g12_ilmheg_07.webp",
+      "fullImage": "images/treasures/g12_ilmheg_07_full_3x.webp"
     },
     {
       "id": "tm_209",
@@ -3046,8 +3046,8 @@
         "y": 10.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g12_il_mheg_08_thumb.jpg",
-      "fullImage": "images/treasures/g12_il_mheg_08.jpg"
+      "thumbnail": "images/treasures/g12_ilmheg_08.webp",
+      "fullImage": "images/treasures/g12_ilmheg_08_full_3x.webp"
     },
     {
       "id": "tm_210",
@@ -3060,8 +3060,8 @@
         "y": 19.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g12_raktika_01_thumb.jpg",
-      "fullImage": "images/treasures/g12_raktika_01.jpg"
+      "thumbnail": "images/treasures/g12_theraktikagreatwood_01.webp",
+      "fullImage": "images/treasures/g12_theraktikagreatwood_01_full_3x.webp"
     },
     {
       "id": "tm_211",
@@ -3074,8 +3074,8 @@
         "y": 24.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g12_raktika_02_thumb.jpg",
-      "fullImage": "images/treasures/g12_raktika_02.jpg"
+      "thumbnail": "images/treasures/g12_theraktikagreatwood_02.webp",
+      "fullImage": "images/treasures/g12_theraktikagreatwood_02_full_3x.webp"
     },
     {
       "id": "tm_212",
@@ -3088,8 +3088,8 @@
         "y": 32.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g12_raktika_03_thumb.jpg",
-      "fullImage": "images/treasures/g12_raktika_03.jpg"
+      "thumbnail": "images/treasures/g12_theraktikagreatwood_03.webp",
+      "fullImage": "images/treasures/g12_theraktikagreatwood_03_full_3x.webp"
     },
     {
       "id": "tm_213",
@@ -3102,8 +3102,8 @@
         "y": 15.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g12_raktika_04_thumb.jpg",
-      "fullImage": "images/treasures/g12_raktika_04.jpg"
+      "thumbnail": "images/treasures/g12_theraktikagreatwood_04.webp",
+      "fullImage": "images/treasures/g12_theraktikagreatwood_04_full_3x.webp"
     },
     {
       "id": "tm_214",
@@ -3116,8 +3116,8 @@
         "y": 27.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g12_raktika_05_thumb.jpg",
-      "fullImage": "images/treasures/g12_raktika_05.jpg"
+      "thumbnail": "images/treasures/g12_theraktikagreatwood_05.webp",
+      "fullImage": "images/treasures/g12_theraktikagreatwood_05_full_3x.webp"
     },
     {
       "id": "tm_215",
@@ -3130,8 +3130,8 @@
         "y": 34.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g12_raktika_06_thumb.jpg",
-      "fullImage": "images/treasures/g12_raktika_06.jpg"
+      "thumbnail": "images/treasures/g12_theraktikagreatwood_06.webp",
+      "fullImage": "images/treasures/g12_theraktikagreatwood_06_full_3x.webp"
     },
     {
       "id": "tm_216",
@@ -3144,8 +3144,8 @@
         "y": 17.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g12_raktika_07_thumb.jpg",
-      "fullImage": "images/treasures/g12_raktika_07.jpg"
+      "thumbnail": "images/treasures/g12_theraktikagreatwood_07.webp",
+      "fullImage": "images/treasures/g12_theraktikagreatwood_07_full_3x.webp"
     },
     {
       "id": "tm_217",
@@ -3158,8 +3158,8 @@
         "y": 22.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g12_raktika_08_thumb.jpg",
-      "fullImage": "images/treasures/g12_raktika_08.jpg"
+      "thumbnail": "images/treasures/g12_theraktikagreatwood_08.webp",
+      "fullImage": "images/treasures/g12_theraktikagreatwood_08_full_3x.webp"
     },
     {
       "id": "tm_218",
@@ -3172,8 +3172,8 @@
         "y": 11.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g12_tempest_01_thumb.jpg",
-      "fullImage": "images/treasures/g12_tempest_01.jpg"
+      "thumbnail": "images/treasures/g12_thetempest_01.webp",
+      "fullImage": "images/treasures/g12_thetempest_01_full_3x.webp"
     },
     {
       "id": "tm_219",
@@ -3186,8 +3186,8 @@
         "y": 14.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g12_tempest_02_thumb.jpg",
-      "fullImage": "images/treasures/g12_tempest_02.jpg"
+      "thumbnail": "images/treasures/g12_thetempest_02.webp",
+      "fullImage": "images/treasures/g12_thetempest_02_full_3x.webp"
     },
     {
       "id": "tm_220",
@@ -3200,8 +3200,8 @@
         "y": 18.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g12_tempest_03_thumb.jpg",
-      "fullImage": "images/treasures/g12_tempest_03.jpg"
+      "thumbnail": "images/treasures/g12_thetempest_03.webp",
+      "fullImage": "images/treasures/g12_thetempest_03_full_3x.webp"
     },
     {
       "id": "tm_221",
@@ -3214,8 +3214,8 @@
         "y": 8.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g12_tempest_04_thumb.jpg",
-      "fullImage": "images/treasures/g12_tempest_04.jpg"
+      "thumbnail": "images/treasures/g12_thetempest_04.webp",
+      "fullImage": "images/treasures/g12_thetempest_04_full_3x.webp"
     },
     {
       "id": "tm_222",
@@ -3228,8 +3228,8 @@
         "y": 11.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g12_tempest_05_thumb.jpg",
-      "fullImage": "images/treasures/g12_tempest_05.jpg"
+      "thumbnail": "images/treasures/g12_thetempest_05.webp",
+      "fullImage": "images/treasures/g12_thetempest_05_full_3x.webp"
     },
     {
       "id": "tm_223",
@@ -3242,8 +3242,8 @@
         "y": 5.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g12_tempest_06_thumb.jpg",
-      "fullImage": "images/treasures/g12_tempest_06.jpg"
+      "thumbnail": "images/treasures/g12_thetempest_06.webp",
+      "fullImage": "images/treasures/g12_thetempest_06_full_3x.webp"
     },
     {
       "id": "tm_224",
@@ -3256,8 +3256,8 @@
         "y": 20.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g12_tempest_07_thumb.jpg",
-      "fullImage": "images/treasures/g12_tempest_07.jpg"
+      "thumbnail": "images/treasures/g12_thetempest_07.webp",
+      "fullImage": "images/treasures/g12_thetempest_07_full_3x.webp"
     },
     {
       "id": "tm_225",
@@ -3270,8 +3270,8 @@
         "y": 17.0,
         "z": 0.0
       },
-      "thumbnail": "images/treasures/g12_tempest_08_thumb.jpg",
-      "fullImage": "images/treasures/g12_tempest_08.jpg"
+      "thumbnail": "images/treasures/g12_thetempest_08.webp",
+      "fullImage": "images/treasures/g12_thetempest_08_full_3x.webp"
     }
   ]
 }
