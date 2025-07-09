@@ -14,6 +14,8 @@ class TreasureMapFinder {
         this.displayCount = 24;
         this.currentDisplayCount = 0;
         this.zoneTranslations = null; // 地區翻譯資料
+        this.aetheryteData = null; // 傳送點資料
+        this.aetheryteIcon = null; // 傳送點圖標
         this.roomCollaboration = null; // 協作功能實例
         
         // DOM 元素快取
@@ -36,7 +38,9 @@ class TreasureMapFinder {
         try {
             await Promise.all([
                 this.loadData(),
-                this.loadTranslations()
+                this.loadTranslations(),
+                this.loadAetherytes(),
+                this.loadAetheryteIcon()
             ]);
             this.setupEventListeners();
             this.updateListCount();
@@ -57,6 +61,35 @@ class TreasureMapFinder {
         } catch (error) {
             console.error('載入翻譯資料失敗:', error);
             this.zoneTranslations = {}; // 失敗時使用空物件
+        }
+    }
+    
+    async loadAetherytes() {
+        try {
+            const response = await fetch('../../data/aetherytes.json');
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            this.aetheryteData = data.aetherytes;
+        } catch (error) {
+            console.error('載入傳送點資料失敗:', error);
+            this.aetheryteData = {}; // 失敗時使用空物件
+        }
+    }
+    
+    async loadAetheryteIcon() {
+        try {
+            const img = new Image();
+            img.src = 'images/ui/crysis.png';
+            await new Promise((resolve, reject) => {
+                img.onload = resolve;
+                img.onerror = reject;
+            });
+            this.aetheryteIcon = img;
+        } catch (error) {
+            console.error('載入傳送點圖標失敗:', error);
+            this.aetheryteIcon = null;
         }
     }
     
@@ -463,9 +496,113 @@ class TreasureMapFinder {
         });
     }
     
+    // 取得地區對應的傳送點資料
+    getAetherytesForZone(zoneName) {
+        // 建立地區名稱對應表
+        const zoneMapping = {
+            // Coerthas 高地
+            'coerthas_western_highlands': 'coerthas',
+            'coerthaswesternhighlands': 'coerthas',
+            
+            // Abalathia's Spine
+            'the_sea_of_clouds': 'abalathia',
+            'theseaofclouds': 'abalathia',
+            
+            // Dravania
+            'the_dravanian_forelands': 'dravania',
+            'thedravanianforelands': 'dravania',
+            'the_churning_mists': 'dravania',
+            'thechurningmists': 'dravania',
+            'the_dravanian_hinterlands': 'dravania',
+            'thedravanianhinterlands': 'dravania',
+            
+            // Gyr Abania
+            'the_fringes': 'gyr_abania',
+            'thefringes': 'gyr_abania',
+            'the_peaks': 'gyr_abania',
+            'thepeaks': 'gyr_abania',
+            'the_lochs': 'gyr_abania',
+            'thelochs': 'gyr_abania',
+            
+            // Othard
+            'the_ruby_sea': 'othard',
+            'therubysea': 'othard',
+            'yanxia': 'othard',
+            'the_azim_steppe': 'othard',
+            'theazimsteppe': 'othard',
+            
+            // Norvrandt
+            'lakeland': 'norvrandt',
+            'kholusia': 'norvrandt',
+            'amh_araeng': 'norvrandt',
+            'amharaeng': 'norvrandt',
+            'il_mheg': 'norvrandt',
+            'ilmheg': 'norvrandt',
+            'the_rak\'tika_greatwood': 'norvrandt',
+            'theraktikagreatwod': 'norvrandt',
+            'the_tempest': 'norvrandt',
+            'thetempest': 'norvrandt',
+            
+            // Ilsabard (Endwalker)
+            'labyrinthos': 'ilsabard',
+            'thavnair': 'ilsabard',
+            'garlemald': 'ilsabard',
+            'mare_lamentorum': 'ilsabard',
+            'marelamentorum': 'ilsabard',
+            'ultima_thule': 'ilsabard',
+            'ultimathule': 'ilsabard',
+            
+            // Elpis
+            'elpis': 'elpis',
+            
+            // Tural (Dawntrail)
+            'urqopacha': 'tural',
+            'kozama\'uka': 'tural',
+            'kozamauka': 'tural',
+            'yak_t\'el': 'tural',
+            'yaktel': 'tural',
+            'shaaloani': 'tural',
+            'heritage_found': 'tural',
+            'heritagefound': 'tural'
+        };
+        
+        // 正規化地區名稱
+        const normalizedZone = zoneName.toLowerCase().replace(/[\s'-]/g, '');
+        const aetheryteRegion = zoneMapping[normalizedZone] || zoneMapping[zoneName.toLowerCase().replace(/[\s-]/g, '_')];
+        
+        if (aetheryteRegion && this.aetheryteData) {
+            return this.aetheryteData[aetheryteRegion] || [];
+        }
+        
+        // 嘗試直接從地區名稱查找
+        const directMatch = this.aetheryteData?.[zoneName.toLowerCase()] || [];
+        if (directMatch.length > 0) {
+            return directMatch;
+        }
+        
+        return [];
+    }
+    
+    // 將遊戲座標轉換為圖片座標
+    gameToImageCoords(gameX, gameY, imageWidth, imageHeight) {
+        // 遊戲座標系統：左上角(1,1) 右下角(42,42)
+        // 圖片座標系統：左上角(0,0) 右下角(imageWidth, imageHeight)
+        
+        // 將遊戲座標從 1-42 轉換為 0-1 的比例
+        const normalizedX = (gameX - 1) / 41;
+        const normalizedY = (gameY - 1) / 41;
+        
+        // 轉換為圖片座標
+        const imageX = normalizedX * imageWidth;
+        const imageY = normalizedY * imageHeight;
+        
+        return { x: imageX, y: imageY };
+    }
+    
     showDetailMap(map) {
         const modal = document.getElementById('mapDetailModal');
         const img = document.getElementById('mapDetailImage');
+        const canvas = document.getElementById('mapDetailCanvas');
         const title = document.getElementById('mapDetailTitle');
         const coords = document.getElementById('mapDetailCoords');
         const closeBtn = document.getElementById('mapDetailClose');
@@ -480,6 +617,64 @@ class TreasureMapFinder {
         title.textContent = `${map.level.toUpperCase()} - ${translations.zh || map.zone}`;
         coords.textContent = `座標：X: ${map.coords.x} Y: ${map.coords.y} Z: ${map.coords.z || 0}`;
         
+        // 當圖片載入完成後繪製傳送點
+        img.onload = () => {
+            // 設置 canvas 尺寸與圖片相同
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+            
+            // 繪製傳送點
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 取得該地區的傳送點
+            const aetherytes = this.getAetherytesForZone(map.zone);
+            console.log(`Zone: ${map.zone}, Found ${aetherytes.length} aetherytes`);
+            
+            if (aetherytes.length > 0 && this.aetheryteIcon) {
+                // 計算圖標大小（根據圖片大小調整）
+                const iconSize = Math.max(24, Math.min(48, canvas.width / 20));
+                
+                aetherytes.forEach(aetheryte => {
+                    // 轉換座標
+                    const imageCoords = this.gameToImageCoords(
+                        aetheryte.coords.x,
+                        aetheryte.coords.y,
+                        canvas.width,
+                        canvas.height
+                    );
+                    
+                    // 繪製傳送點圖標
+                    ctx.drawImage(
+                        this.aetheryteIcon,
+                        imageCoords.x - iconSize / 2,
+                        imageCoords.y - iconSize / 2,
+                        iconSize,
+                        iconSize
+                    );
+                    
+                    // 繪製傳送點名稱（如果空間足夠）
+                    if (iconSize >= 32) {
+                        ctx.save();
+                        ctx.font = '12px Arial';
+                        ctx.fillStyle = 'white';
+                        ctx.strokeStyle = 'black';
+                        ctx.lineWidth = 3;
+                        ctx.textAlign = 'center';
+                        
+                        const text = aetheryte.name.zh || aetheryte.name.en;
+                        const textY = imageCoords.y + iconSize / 2 + 15;
+                        
+                        // 繪製文字邊框
+                        ctx.strokeText(text, imageCoords.x, textY);
+                        // 繪製文字
+                        ctx.fillText(text, imageCoords.x, textY);
+                        ctx.restore();
+                    }
+                });
+            }
+        };
+        
         // 顯示彈出視窗
         modal.style.display = 'flex';
         
@@ -488,6 +683,7 @@ class TreasureMapFinder {
             modal.style.display = 'none';
             closeBtn.removeEventListener('click', closeModal);
             overlay.removeEventListener('click', closeModal);
+            img.onload = null; // 清理事件
         };
         
         closeBtn.addEventListener('click', closeModal);

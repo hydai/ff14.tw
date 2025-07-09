@@ -503,7 +503,10 @@
         <div class="map-detail-overlay" id="mapDetailOverlay"></div>
         <div class="map-detail-content">
             <button class="map-detail-close" id="mapDetailClose" title="關閉">×</button>
-            <img id="mapDetailImage" src="" alt="詳細地圖" />
+            <div class="map-detail-image-container">
+                <img id="mapDetailImage" src="" alt="詳細地圖" />
+                <canvas id="mapDetailCanvas" class="map-detail-canvas"></canvas>
+            </div>
             <div class="map-detail-info">
                 <h3 id="mapDetailTitle"></h3>
                 <p id="mapDetailCoords"></p>
