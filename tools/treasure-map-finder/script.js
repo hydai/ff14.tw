@@ -794,24 +794,39 @@ class TreasureMapFinder {
                         ctx.restore();
                     }
                     
-                    // 繪製傳送點名稱（如果空間足夠）
-                    if (iconSize >= 32) {
-                        ctx.save();
-                        ctx.font = '12px Arial';
-                        ctx.fillStyle = 'white';
-                        ctx.strokeStyle = 'black';
-                        ctx.lineWidth = 3;
-                        ctx.textAlign = 'center';
-                        
-                        const text = aetheryte.name.zh || aetheryte.name.en;
-                        const textY = imageCoords.y + iconSize / 2 + 15;
-                        
-                        // 繪製文字邊框
-                        ctx.strokeText(text, imageCoords.x, textY);
-                        // 繪製文字
-                        ctx.fillText(text, imageCoords.x, textY);
-                        ctx.restore();
-                    }
+                    // 繪製傳送點名稱
+                    ctx.save();
+                    
+                    // 根據圖片大小動態調整字體大小
+                    const fontSize = Math.max(16, Math.min(24, canvas.width / 40));
+                    ctx.font = `bold ${fontSize}px Arial, "Microsoft JhengHei", sans-serif`;
+                    ctx.fillStyle = 'white';
+                    ctx.strokeStyle = 'black';
+                    ctx.lineWidth = 4;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'top';
+                    
+                    const text = aetheryte.name.zh || aetheryte.name.en;
+                    const textY = imageCoords.y + iconSize / 2 + 10;
+                    
+                    // 添加半透明背景以提高可讀性
+                    const metrics = ctx.measureText(text);
+                    const textWidth = metrics.width;
+                    const textHeight = fontSize * 1.2;
+                    
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                    ctx.fillRect(
+                        imageCoords.x - textWidth / 2 - 5,
+                        textY - 2,
+                        textWidth + 10,
+                        textHeight
+                    );
+                    
+                    // 繪製文字
+                    ctx.fillStyle = 'white';
+                    ctx.strokeText(text, imageCoords.x, textY);
+                    ctx.fillText(text, imageCoords.x, textY);
+                    ctx.restore();
                 });
             }
         };
