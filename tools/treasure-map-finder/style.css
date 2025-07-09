@@ -403,6 +403,33 @@
     border-color: var(--primary-color);
 }
 
+/* 卡片點擊提示 */
+.treasure-card {
+    position: relative;
+}
+
+.treasure-card::before {
+    content: '點擊複製座標';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+    z-index: 10;
+    white-space: nowrap;
+}
+
+.treasure-card:hover::before {
+    opacity: 1;
+}
+
 .card-image-wrapper {
     position: relative;
     width: 100%;

@@ -378,6 +378,18 @@ class TreasureMapFinder {
         card.appendChild(imageWrapper);
         card.appendChild(content);
         
+        // 為整個卡片添加點擊事件（複製座標）
+        card.addEventListener('click', (e) => {
+            // 如果點擊的是按鈕，則不處理
+            if (e.target.closest('button')) {
+                return;
+            }
+            this.copyCoordinates(map);
+        });
+        
+        // 添加游標樣式提示可點擊
+        card.style.cursor = 'pointer';
+        
         return card;
     }
     
