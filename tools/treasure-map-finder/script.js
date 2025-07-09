@@ -660,14 +660,29 @@ class TreasureMapFinder {
                         canvas.height
                     );
                     
-                    // 繪製傳送點圖標
+                    // 繪製傳送點圖標（確保中心對齊）
+                    // 使用 Math.floor 確保像素對齊
                     ctx.drawImage(
                         this.aetheryteIcon,
-                        imageCoords.x - iconSize / 2,
-                        imageCoords.y - iconSize / 2,
+                        Math.floor(imageCoords.x - iconSize / 2),
+                        Math.floor(imageCoords.y - iconSize / 2),
                         iconSize,
                         iconSize
                     );
+                    
+                    // 開發模式：繪製精確座標點（可選）
+                    if (window.location.hostname === 'localhost') {
+                        ctx.save();
+                        ctx.strokeStyle = 'red';
+                        ctx.lineWidth = 1;
+                        ctx.beginPath();
+                        ctx.moveTo(imageCoords.x - 5, imageCoords.y);
+                        ctx.lineTo(imageCoords.x + 5, imageCoords.y);
+                        ctx.moveTo(imageCoords.x, imageCoords.y - 5);
+                        ctx.lineTo(imageCoords.x, imageCoords.y + 5);
+                        ctx.stroke();
+                        ctx.restore();
+                    }
                     
                     // 繪製傳送點名稱（如果空間足夠）
                     if (iconSize >= 32) {
