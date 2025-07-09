@@ -498,8 +498,52 @@ class TreasureMapFinder {
     
     // 取得地區對應的傳送點資料
     getAetherytesForZone(zoneName) {
-        // Tural 地區的特殊傳送點對應表
-        // 根據各地區的實際傳送點分配
+        // Gyr Abania 地區的特殊傳送點對應表 (G10)
+        const gyrAbaniaZoneAetherytes = {
+            'the_fringes': ['castrum_oriens', 'peering_stones'],
+            'thefringes': ['castrum_oriens', 'peering_stones'],
+            'the_peaks': ['ala_gannha', 'ala_ghiri'],
+            'thepeaks': ['ala_gannha', 'ala_ghiri'],
+            'the_lochs': ['porta_praetoria', 'ala_mhigan_quarter'],
+            'thelochs': ['porta_praetoria', 'ala_mhigan_quarter']
+        };
+        
+        // Othard 地區的特殊傳送點對應表 (G10)
+        const othardZoneAetherytes = {
+            'the_ruby_sea': ['tamamizu', 'onokoro'],
+            'therubysea': ['tamamizu', 'onokoro'],
+            'yanxia': ['house_of_the_fierce', 'namai'],
+            'the_azim_steppe': ['dhoro_iloh', 'dawn_throne', 'reunion'],
+            'theazimsteppe': ['dhoro_iloh', 'dawn_throne', 'reunion']
+        };
+        
+        // Norvrandt 地區的特殊傳送點對應表 (G12)
+        const norvrandtZoneAetherytes = {
+            'lakeland': ['the_ostall_imperative', 'fort_jobb'],
+            'kholusia': ['stilltide', 'tomra'],
+            'amh_araeng': ['twine', 'mord_souq', 'inn_at_journeys_head'],
+            'amharaeng': ['twine', 'mord_souq', 'inn_at_journeys_head'],
+            'il_mheg': ['lydha_lran', 'pla_enni', 'wolekdorf'],
+            'ilmheg': ['lydha_lran', 'pla_enni', 'wolekdorf'],
+            'the_rak\'tika_greatwood': ['slitherbough', 'fanow'],
+            'theraktikagreatwod': ['slitherbough', 'fanow'],
+            'theraktikagreatwod': ['slitherbough', 'fanow'],
+            'the_tempest': ['the_ondo_cups', 'the_macarenses_angle'],
+            'thetempest': ['the_ondo_cups', 'the_macarenses_angle']
+        };
+        
+        // Ilsabard 地區的特殊傳送點對應表 (G14)
+        const ilsabardZoneAetherytes = {
+            'labyrinthos': ['the_archeion', 'sharlayan_hamlet', 'aporia'],
+            'thavnair': ['yedlihmad', 'great_work', 'palaka_stand'],
+            'garlemald': ['camp_broken_glass', 'tertium'],
+            'mare_lamentorum': ['sinus_lacrimarum', 'bestways_burrow'],
+            'marelamentorum': ['sinus_lacrimarum', 'bestways_burrow'],
+            'ultima_thule': ['reah_tahra', 'base_omicron', 'ostrakon_deka_hexi'],
+            'ultimathule': ['reah_tahra', 'base_omicron', 'ostrakon_deka_hexi']
+        };
+        
+        // Tural 地區的特殊傳送點對應表 (G17)
         const turalZoneAetherytes = {
             'urqopacha': ['wachunpelo', 'worqor_zormor'],
             'kozama\'uka': ['ok_hanu', 'earthenshire', 'many_fires', 'dock_poga'],
@@ -571,6 +615,50 @@ class TreasureMapFinder {
         
         // 正規化地區名稱
         const normalizedZone = zoneName.toLowerCase().replace(/[\s'-]/g, '');
+        
+        // 檢查是否為 Gyr Abania 的子地區
+        if (gyrAbaniaZoneAetherytes[normalizedZone]) {
+            const allowedAetherytes = gyrAbaniaZoneAetherytes[normalizedZone];
+            const gyrAbaniaAetherytes = this.aetheryteData?.gyr_abania || [];
+            
+            // 只返回屬於該地區的傳送點
+            return gyrAbaniaAetherytes.filter(aetheryte => 
+                allowedAetherytes.includes(aetheryte.id)
+            );
+        }
+        
+        // 檢查是否為 Othard 的子地區
+        if (othardZoneAetherytes[normalizedZone]) {
+            const allowedAetherytes = othardZoneAetherytes[normalizedZone];
+            const othardAetherytes = this.aetheryteData?.othard || [];
+            
+            // 只返回屬於該地區的傳送點
+            return othardAetherytes.filter(aetheryte => 
+                allowedAetherytes.includes(aetheryte.id)
+            );
+        }
+        
+        // 檢查是否為 Norvrandt 的子地區
+        if (norvrandtZoneAetherytes[normalizedZone]) {
+            const allowedAetherytes = norvrandtZoneAetherytes[normalizedZone];
+            const norvrandtAetherytes = this.aetheryteData?.norvrandt || [];
+            
+            // 只返回屬於該地區的傳送點
+            return norvrandtAetherytes.filter(aetheryte => 
+                allowedAetherytes.includes(aetheryte.id)
+            );
+        }
+        
+        // 檢查是否為 Ilsabard 的子地區
+        if (ilsabardZoneAetherytes[normalizedZone]) {
+            const allowedAetherytes = ilsabardZoneAetherytes[normalizedZone];
+            const ilsabardAetherytes = this.aetheryteData?.ilsabard || [];
+            
+            // 只返回屬於該地區的傳送點
+            return ilsabardAetherytes.filter(aetheryte => 
+                allowedAetherytes.includes(aetheryte.id)
+            );
+        }
         
         // 檢查是否為 Tural 的子地區
         if (turalZoneAetherytes[normalizedZone]) {
