@@ -498,6 +498,19 @@ class TreasureMapFinder {
     
     // 取得地區對應的傳送點資料
     getAetherytesForZone(zoneName) {
+        // Tural 地區的特殊傳送點對應表
+        // 根據各地區的實際傳送點分配
+        const turalZoneAetherytes = {
+            'urqopacha': ['wachunpelo', 'worqor_zormor'],
+            'kozama\'uka': ['ok_hanu', 'earthenshire', 'many_fires', 'dock_poga'],
+            'kozamauka': ['ok_hanu', 'earthenshire', 'many_fires', 'dock_poga'],
+            'yak_t\'el': ['iq_br_aak', 'mamook'],
+            'yaktel': ['iq_br_aak', 'mamook'],
+            'shaaloani': ['hhusatahwi', 'meyhane', 'sheshenewezi_springs'],
+            'heritage_found': ['the_outskirts', 'electrope_strike', 'yyasulani_station'],
+            'heritagefound': ['the_outskirts', 'electrope_strike', 'yyasulani_station']
+        };
+        
         // 建立地區名稱對應表
         const zoneMapping = {
             // Coerthas 高地
@@ -553,21 +566,24 @@ class TreasureMapFinder {
             'ultimathule': 'ilsabard',
             
             // Elpis
-            'elpis': 'elpis',
-            
-            // Tural (Dawntrail)
-            'urqopacha': 'tural',
-            'kozama\'uka': 'tural',
-            'kozamauka': 'tural',
-            'yak_t\'el': 'tural',
-            'yaktel': 'tural',
-            'shaaloani': 'tural',
-            'heritage_found': 'tural',
-            'heritagefound': 'tural'
+            'elpis': 'elpis'
         };
         
         // 正規化地區名稱
         const normalizedZone = zoneName.toLowerCase().replace(/[\s'-]/g, '');
+        
+        // 檢查是否為 Tural 的子地區
+        if (turalZoneAetherytes[normalizedZone]) {
+            const allowedAetherytes = turalZoneAetherytes[normalizedZone];
+            const turalAetherytes = this.aetheryteData?.tural || [];
+            
+            // 只返回屬於該地區的傳送點
+            return turalAetherytes.filter(aetheryte => 
+                allowedAetherytes.includes(aetheryte.id)
+            );
+        }
+        
+        // 其他地區使用原本的對應邏輯
         const aetheryteRegion = zoneMapping[normalizedZone] || zoneMapping[zoneName.toLowerCase().replace(/[\s-]/g, '_')];
         
         if (aetheryteRegion && this.aetheryteData) {
