@@ -13,7 +13,6 @@ class TreasureMapFinder {
         };
         this.displayCount = 24;
         this.currentDisplayCount = 0;
-        this.zoneTranslations = null; // 地區翻譯資料
         this.aetheryteData = null; // 傳送點資料
         this.aetheryteIcon = null; // 傳送點圖標
         this.roomCollaboration = null; // 協作功能實例
@@ -37,8 +36,8 @@ class TreasureMapFinder {
     async init() {
         try {
             await Promise.all([
+                zoneManager.init(),
                 this.loadData(),
-                this.loadTranslations(),
                 this.loadAetherytes(),
                 this.loadAetheryteIcon()
             ]);
@@ -51,18 +50,6 @@ class TreasureMapFinder {
         }
     }
     
-    async loadTranslations() {
-        try {
-            const response = await fetch('../../data/zone-translations.json');
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            this.zoneTranslations = await response.json();
-        } catch (error) {
-            console.error('載入翻譯資料失敗:', error);
-            this.zoneTranslations = {}; // 失敗時使用空物件
-        }
-    }
     
     async loadAetherytes() {
         try {
@@ -101,7 +88,21 @@ class TreasureMapFinder {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             this.data = await response.json();
-            this.maps = this.data.maps;
+            
+            // 為每個寶圖添加衍生資料
+            this.maps = this.data.maps.map(map => {
+                const zoneNames = zoneManager.getZoneNames(map.zoneId);
+                const levelInfo = this.data.mapLevels.find(level => level.id === map.level);
+                
+                return {
+                    ...map,
+                    zone: zoneNames.en,
+                    zoneName: zoneNames.zh,
+                    levelName: levelInfo ? levelInfo.name : map.level,
+                    thumbnail: `images/treasures/${zoneManager.generateImageFileName(map.level, map.zoneId, map.index)}`,
+                    fullImage: `images/treasures/${zoneManager.generateFullImageFileName(map.level, map.zoneId, map.index)}`
+                };
+            });
         } catch (error) {
             console.error('載入資料失敗:', error);
             throw error;
@@ -349,7 +350,7 @@ class TreasureMapFinder {
         zoneTitle.className = 'map-zone';
         
         // 取得翻譯資料
-        const translations = this.zoneTranslations[map.zone] || {};
+        const translations = zoneManager.getZoneNames(map.zoneId) || { zh: map.zone, en: map.zone, ja: map.zone };
         
         // 建立多語言顯示
         if (translations.zh || translations.en || translations.ja) {
@@ -739,7 +740,7 @@ class TreasureMapFinder {
         img.src = fullImagePath;
         
         // 設置標題和座標
-        const translations = this.zoneTranslations[map.zone] || {};
+        const translations = zoneManager.getZoneNames(map.zoneId) || { zh: map.zone, en: map.zone, ja: map.zone };
         title.textContent = `${map.level.toUpperCase()} - ${translations.zh || map.zone}`;
         coords.textContent = `座標：X: ${map.coords.x} Y: ${map.coords.y} Z: ${map.coords.z || 0}`;
         
@@ -922,7 +923,7 @@ class TreasureMapFinder {
             zoneSpan.className = 'item-zone';
             
             // 使用多語言顯示
-            const translations = this.zoneTranslations[item.zone] || {};
+            const translations = zoneManager.getZoneNames(item.zoneId) || { zh: item.zone, en: item.zone, ja: item.zone };
             if (translations.zh) {
                 zoneSpan.textContent = translations.zh;
                 zoneSpan.title = `${translations.en || item.zone} / ${translations.ja || ''}`;
@@ -1340,7 +1341,7 @@ class TreasureMapFinder {
         }
         
         // 計算路線
-        const result = routeCalculator.calculateRoute(this.myList, this.zoneTranslations);
+        const result = routeCalculator.calculateRoute(this.myList);
         
         if (!result || !result.route || result.route.length === 0) {
             FF14Utils.showToast('無法生成路線', 'error');
@@ -1477,9 +1478,10 @@ class TreasureMapFinder {
     
     // 取得地區的所有語言名稱
     getZoneAllNames(zone) {
-        // 從 zone translations 取得
-        if (this.zoneTranslations && this.zoneTranslations[zone]) {
-            return this.zoneTranslations[zone];
+        // 從 zoneManager 取得
+        const zoneData = this.maps.find(map => map.zone === zone);
+        if (zoneData && zoneData.zoneId) {
+            return zoneManager.getZoneNames(zoneData.zoneId);
         }
         
         // 備用：返回原始名稱
@@ -1637,10 +1639,7 @@ class TreasureMapFinder {
     
     // 取得地區名稱
     getZoneName(zoneId) {
-        if (!this.zoneTranslations || !this.zoneTranslations[zoneId]) {
-            return zoneId;
-        }
-        return this.zoneTranslations[zoneId].zh || zoneId;
+        return zoneManager.getZoneNameZh(zoneId) || zoneId;
     }
     
     // 取得傳送點名稱
@@ -1776,7 +1775,7 @@ class RouteCalculator {
     }
     
     // 主要路線計算
-    calculateRoute(maps, zoneTranslations = {}) {
+    calculateRoute(maps) {
         console.log('=== 開始路線計算 ===');
         console.log('輸入地圖數量:', maps.length);
         console.log('輸入地圖資料:', JSON.stringify(maps, null, 2));
@@ -1788,9 +1787,6 @@ class RouteCalculator {
         }
         
         console.log('傳送點資料已載入:', Object.keys(this.aetherytes));
-        
-        // 儲存 zone translations 供後續使用
-        this.zoneTranslations = zoneTranslations;
         
         // 1. 找出起始地區（全域最近的寶圖-傳送點配對）
         const { startRegion, startMap } = this.findStartingRegion(maps);

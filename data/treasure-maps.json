@@ -210,3068 +210,2411 @@
     {
       "id": "tm_007",
       "level": "g17",
-      "levelName": "獰豹革地圖",
-      "zone": "Urqopacha",
-      "zoneId": "tural",
+      "zoneId": "urqopacha",
+      "index": 1,
       "coords": {
         "x": 13.7,
         "y": 14.2,
         "z": 1.7
-      },
-      "thumbnail": "images/treasures/g17_urqopacha_01.webp",
-      "fullImage": "images/treasures/g17_urqopacha_01_full_3x.webp"
+      }
     },
     {
       "id": "tm_008",
       "level": "g17",
-      "levelName": "獰豹革地圖",
-      "zone": "Urqopacha",
-      "zoneId": "tural",
+      "zoneId": "urqopacha",
+      "index": 2,
       "coords": {
-        "x": 17.0,
+        "x": 17,
         "y": 23.3,
         "z": 2.8
-      },
-      "thumbnail": "images/treasures/g17_urqopacha_02.webp",
-      "fullImage": "images/treasures/g17_urqopacha_02_full_3x.webp"
+      }
     },
     {
       "id": "tm_009",
       "level": "g17",
-      "levelName": "獰豹革地圖",
-      "zone": "Urqopacha",
-      "zoneId": "tural",
+      "zoneId": "urqopacha",
+      "index": 3,
       "coords": {
         "x": 15.8,
         "y": 30.6,
         "z": 2.9
-      },
-      "thumbnail": "images/treasures/g17_urqopacha_03.webp",
-      "fullImage": "images/treasures/g17_urqopacha_03_full_3x.webp"
+      }
     },
     {
       "id": "tm_010",
       "level": "g17",
-      "levelName": "獰豹革地圖",
-      "zone": "Urqopacha",
-      "zoneId": "tural",
+      "zoneId": "urqopacha",
+      "index": 4,
       "coords": {
         "x": 21.6,
         "y": 23.9,
         "z": 2.3
-      },
-      "thumbnail": "images/treasures/g17_urqopacha_04.webp",
-      "fullImage": "images/treasures/g17_urqopacha_04_full_3x.webp"
+      }
     },
     {
       "id": "tm_011",
       "level": "g17",
-      "levelName": "獰豹革地圖",
-      "zone": "Urqopacha",
-      "zoneId": "tural",
+      "zoneId": "urqopacha",
+      "index": 5,
       "coords": {
         "x": 21.6,
-        "y": 26.0,
+        "y": 26,
         "z": 2.4
-      },
-      "thumbnail": "images/treasures/g17_urqopacha_05.webp",
-      "fullImage": "images/treasures/g17_urqopacha_05_full_3x.webp"
+      }
     },
     {
       "id": "tm_012",
       "level": "g17",
-      "levelName": "獰豹革地圖",
-      "zone": "Urqopacha",
-      "zoneId": "tural",
+      "zoneId": "urqopacha",
+      "index": 6,
       "coords": {
-        "x": 29.0,
-        "y": 24.0,
+        "x": 29,
+        "y": 24,
         "z": 2.8
-      },
-      "thumbnail": "images/treasures/g17_urqopacha_06.webp",
-      "fullImage": "images/treasures/g17_urqopacha_06_full_3x.webp"
+      }
     },
     {
       "id": "tm_013",
       "level": "g17",
-      "levelName": "獰豹革地圖",
-      "zone": "Urqopacha",
-      "zoneId": "tural",
+      "zoneId": "urqopacha",
+      "index": 7,
       "coords": {
         "x": 34.1,
-        "y": 29.0,
+        "y": 29,
         "z": 3.4
-      },
-      "thumbnail": "images/treasures/g17_urqopacha_07.webp",
-      "fullImage": "images/treasures/g17_urqopacha_07_full_3x.webp"
+      }
     },
     {
       "id": "tm_014",
       "level": "g17",
-      "levelName": "獰豹革地圖",
-      "zone": "Urqopacha",
-      "zoneId": "tural",
+      "zoneId": "urqopacha",
+      "index": 8,
       "coords": {
         "x": 34.2,
         "y": 32.5,
         "z": 3.3
-      },
-      "thumbnail": "images/treasures/g17_urqopacha_08.webp",
-      "fullImage": "images/treasures/g17_urqopacha_08_full_3x.webp"
+      }
     },
     {
       "id": "tm_015",
       "level": "g17",
-      "levelName": "獰豹革地圖",
-      "zone": "Kozama'uka",
-      "zoneId": "tural",
+      "zoneId": "kozamauka",
+      "index": 1,
       "coords": {
         "x": 6.8,
         "y": 19.4,
         "z": 0.6
-      },
-      "thumbnail": "images/treasures/g17_kozamauka_01.webp",
-      "fullImage": "images/treasures/g17_kozamauka_01_full_3x.webp"
+      }
     },
     {
       "id": "tm_016",
       "level": "g17",
-      "levelName": "獰豹革地圖",
-      "zone": "Kozama'uka",
-      "zoneId": "tural",
+      "zoneId": "kozamauka",
+      "index": 2,
       "coords": {
-        "x": 9.0,
+        "x": 9,
         "y": 33.9,
         "z": 1.3
-      },
-      "thumbnail": "images/treasures/g17_kozamauka_02.webp",
-      "fullImage": "images/treasures/g17_kozamauka_02_full_3x.webp"
+      }
     },
     {
       "id": "tm_017",
       "level": "g17",
-      "levelName": "獰豹革地圖",
-      "zone": "Kozama'uka",
-      "zoneId": "tural",
+      "zoneId": "kozamauka",
+      "index": 3,
       "coords": {
-        "x": 20.0,
+        "x": 20,
         "y": 6.9,
         "z": 0.2
-      },
-      "thumbnail": "images/treasures/g17_kozamauka_03.webp",
-      "fullImage": "images/treasures/g17_kozamauka_03_full_3x.webp"
+      }
     },
     {
       "id": "tm_018",
       "level": "g17",
-      "levelName": "獰豹革地圖",
-      "zone": "Kozama'uka",
-      "zoneId": "tural",
+      "zoneId": "kozamauka",
+      "index": 4,
       "coords": {
         "x": 18.9,
         "y": 22.5,
         "z": 1.1
-      },
-      "thumbnail": "images/treasures/g17_kozamauka_04.webp",
-      "fullImage": "images/treasures/g17_kozamauka_04_full_3x.webp"
+      }
     },
     {
       "id": "tm_019",
       "level": "g17",
-      "levelName": "獰豹革地圖",
-      "zone": "Kozama'uka",
-      "zoneId": "tural",
+      "zoneId": "kozamauka",
+      "index": 5,
       "coords": {
         "x": 31.3,
         "y": 14.9,
         "z": 0.1
-      },
-      "thumbnail": "images/treasures/g17_kozamauka_05.webp",
-      "fullImage": "images/treasures/g17_kozamauka_05_full_3x.webp"
+      }
     },
     {
       "id": "tm_020",
       "level": "g17",
-      "levelName": "獰豹革地圖",
-      "zone": "Kozama'uka",
-      "zoneId": "tural",
+      "zoneId": "kozamauka",
+      "index": 6,
       "coords": {
         "x": 32.2,
         "y": 36.1,
         "z": 1.2
-      },
-      "thumbnail": "images/treasures/g17_kozamauka_06.webp",
-      "fullImage": "images/treasures/g17_kozamauka_06_full_3x.webp"
+      }
     },
     {
       "id": "tm_021",
       "level": "g17",
-      "levelName": "獰豹革地圖",
-      "zone": "Kozama'uka",
-      "zoneId": "tural",
+      "zoneId": "kozamauka",
+      "index": 7,
       "coords": {
         "x": 36.8,
         "y": 6.2,
         "z": 0.4
-      },
-      "thumbnail": "images/treasures/g17_kozamauka_07.webp",
-      "fullImage": "images/treasures/g17_kozamauka_07_full_3x.webp"
+      }
     },
     {
       "id": "tm_022",
       "level": "g17",
-      "levelName": "獰豹革地圖",
-      "zone": "Kozama'uka",
-      "zoneId": "tural",
+      "zoneId": "kozamauka",
+      "index": 8,
       "coords": {
         "x": 37.9,
         "y": 21.8,
         "z": 0.2
-      },
-      "thumbnail": "images/treasures/g17_kozamauka_08.webp",
-      "fullImage": "images/treasures/g17_kozamauka_08_full_3x.webp"
+      }
     },
     {
       "id": "tm_023",
       "level": "g17",
-      "levelName": "獰豹革地圖",
-      "zone": "Yak T'el",
-      "zoneId": "tural",
+      "zoneId": "yaktel",
+      "index": 1,
       "coords": {
         "x": 5.6,
         "y": 19.6,
         "z": 3.3
-      },
-      "thumbnail": "images/treasures/g17_yaktel_01.webp",
-      "fullImage": "images/treasures/g17_yaktel_01_full_3x.webp"
+      }
     },
     {
       "id": "tm_024",
       "level": "g17",
-      "levelName": "獰豹革地圖",
-      "zone": "Yak T'el",
-      "zoneId": "tural",
+      "zoneId": "yaktel",
+      "index": 2,
       "coords": {
         "x": 11.3,
         "y": 33.2,
         "z": 1.4
-      },
-      "thumbnail": "images/treasures/g17_yaktel_02.webp",
-      "fullImage": "images/treasures/g17_yaktel_02_full_3x.webp"
+      }
     },
     {
       "id": "tm_025",
       "level": "g17",
-      "levelName": "獰豹革地圖",
-      "zone": "Yak T'el",
-      "zoneId": "tural",
+      "zoneId": "yaktel",
+      "index": 3,
       "coords": {
         "x": 15.5,
         "y": 26.8,
         "z": 1.3
-      },
-      "thumbnail": "images/treasures/g17_yaktel_03.webp",
-      "fullImage": "images/treasures/g17_yaktel_03_full_3x.webp"
+      }
     },
     {
       "id": "tm_026",
       "level": "g17",
-      "levelName": "獰豹革地圖",
-      "zone": "Yak T'el",
-      "zoneId": "tural",
+      "zoneId": "yaktel",
+      "index": 4,
       "coords": {
         "x": 22.6,
         "y": 5.7,
-        "z": 3.0
-      },
-      "thumbnail": "images/treasures/g17_yaktel_04.webp",
-      "fullImage": "images/treasures/g17_yaktel_04_full_3x.webp"
+        "z": 3
+      }
     },
     {
       "id": "tm_027",
       "level": "g17",
-      "levelName": "獰豹革地圖",
-      "zone": "Yak T'el",
-      "zoneId": "tural",
+      "zoneId": "yaktel",
+      "index": 5,
       "coords": {
         "x": 24.7,
-        "y": 21.0,
+        "y": 21,
         "z": 1.4
-      },
-      "thumbnail": "images/treasures/g17_yaktel_05.webp",
-      "fullImage": "images/treasures/g17_yaktel_05_full_3x.webp"
+      }
     },
     {
       "id": "tm_028",
       "level": "g17",
-      "levelName": "獰豹革地圖",
-      "zone": "Yak T'el",
-      "zoneId": "tural",
+      "zoneId": "yaktel",
+      "index": 6,
       "coords": {
         "x": 22.7,
         "y": 35.9,
         "z": 1.3
-      },
-      "thumbnail": "images/treasures/g17_yaktel_06.webp",
-      "fullImage": "images/treasures/g17_yaktel_06_full_3x.webp"
+      }
     },
     {
       "id": "tm_029",
       "level": "g17",
-      "levelName": "獰豹革地圖",
-      "zone": "Yak T'el",
-      "zoneId": "tural",
+      "zoneId": "yaktel",
+      "index": 7,
       "coords": {
         "x": 31.2,
         "y": 21.9,
         "z": 3.1
-      },
-      "thumbnail": "images/treasures/g17_yaktel_07.webp",
-      "fullImage": "images/treasures/g17_yaktel_07_full_3x.webp"
+      }
     },
     {
       "id": "tm_030",
       "level": "g17",
-      "levelName": "獰豹革地圖",
-      "zone": "Yak T'el",
-      "zoneId": "tural",
+      "zoneId": "yaktel",
+      "index": 8,
       "coords": {
         "x": 36.7,
         "y": 12.5,
         "z": 3.3
-      },
-      "thumbnail": "images/treasures/g17_yaktel_08.webp",
-      "fullImage": "images/treasures/g17_yaktel_08_full_3x.webp"
+      }
     },
     {
       "id": "tm_031",
       "level": "g17",
-      "levelName": "獰豹革地圖",
-      "zone": "Shaaloani",
-      "zoneId": "tural",
+      "zoneId": "shaaloani",
+      "index": 1,
       "coords": {
         "x": 12.5,
         "y": 14.3,
         "z": 0.5
-      },
-      "thumbnail": "images/treasures/g17_shaaloani_01.webp",
-      "fullImage": "images/treasures/g17_shaaloani_01_full_3x.webp"
+      }
     },
     {
       "id": "tm_032",
       "level": "g17",
-      "levelName": "獰豹革地圖",
-      "zone": "Shaaloani",
-      "zoneId": "tural",
+      "zoneId": "shaaloani",
+      "index": 2,
       "coords": {
         "x": 18.5,
         "y": 11.5,
         "z": 0.9
-      },
-      "thumbnail": "images/treasures/g17_shaaloani_02.webp",
-      "fullImage": "images/treasures/g17_shaaloani_02_full_3x.webp"
+      }
     },
     {
       "id": "tm_033",
       "level": "g17",
-      "levelName": "獰豹革地圖",
-      "zone": "Shaaloani",
-      "zoneId": "tural",
+      "zoneId": "shaaloani",
+      "index": 3,
       "coords": {
         "x": 18.2,
-        "y": 21.0,
+        "y": 21,
         "z": 0.9
-      },
-      "thumbnail": "images/treasures/g17_shaaloani_03.webp",
-      "fullImage": "images/treasures/g17_shaaloani_03_full_3x.webp"
+      }
     },
     {
       "id": "tm_034",
       "level": "g17",
-      "levelName": "獰豹革地圖",
-      "zone": "Shaaloani",
-      "zoneId": "tural",
+      "zoneId": "shaaloani",
+      "index": 4,
       "coords": {
         "x": 19.6,
         "y": 34.5,
         "z": 0.5
-      },
-      "thumbnail": "images/treasures/g17_shaaloani_04.webp",
-      "fullImage": "images/treasures/g17_shaaloani_04_full_3x.webp"
+      }
     },
     {
       "id": "tm_035",
       "level": "g17",
-      "levelName": "獰豹革地圖",
-      "zone": "Shaaloani",
-      "zoneId": "tural",
+      "zoneId": "shaaloani",
+      "index": 5,
       "coords": {
         "x": 25.6,
         "y": 19.6,
         "z": 0.7
-      },
-      "thumbnail": "images/treasures/g17_shaaloani_05.webp",
-      "fullImage": "images/treasures/g17_shaaloani_05_full_3x.webp"
+      }
     },
     {
       "id": "tm_036",
       "level": "g17",
-      "levelName": "獰豹革地圖",
-      "zone": "Shaaloani",
-      "zoneId": "tural",
+      "zoneId": "shaaloani",
+      "index": 6,
       "coords": {
         "x": 29.3,
         "y": 8.3,
         "z": 0.5
-      },
-      "thumbnail": "images/treasures/g17_shaaloani_06.webp",
-      "fullImage": "images/treasures/g17_shaaloani_06_full_3x.webp"
+      }
     },
     {
       "id": "tm_037",
       "level": "g17",
-      "levelName": "獰豹革地圖",
-      "zone": "Shaaloani",
-      "zoneId": "tural",
+      "zoneId": "shaaloani",
+      "index": 7,
       "coords": {
         "x": 31.8,
         "y": 32.9,
         "z": 0.9
-      },
-      "thumbnail": "images/treasures/g17_shaaloani_07.webp",
-      "fullImage": "images/treasures/g17_shaaloani_07_full_3x.webp"
+      }
     },
     {
       "id": "tm_038",
       "level": "g17",
-      "levelName": "獰豹革地圖",
-      "zone": "Shaaloani",
-      "zoneId": "tural",
+      "zoneId": "shaaloani",
+      "index": 8,
       "coords": {
         "x": 35.5,
         "y": 16.8,
         "z": 0.6
-      },
-      "thumbnail": "images/treasures/g17_shaaloani_08.webp",
-      "fullImage": "images/treasures/g17_shaaloani_08_full_3x.webp"
+      }
     },
     {
       "id": "tm_039",
       "level": "g17",
-      "levelName": "獰豹革地圖",
-      "zone": "Heritage Found",
-      "zoneId": "tural",
+      "zoneId": "heritage_found",
+      "index": 1,
       "coords": {
         "x": 9.1,
         "y": 21.3,
         "z": 0.3
-      },
-      "thumbnail": "images/treasures/g17_heritagefound_01.webp",
-      "fullImage": "images/treasures/g17_heritagefound_01_full_3x.webp"
+      }
     },
     {
       "id": "tm_040",
       "level": "g17",
-      "levelName": "獰豹革地圖",
-      "zone": "Heritage Found",
-      "zoneId": "tural",
+      "zoneId": "heritage_found",
+      "index": 2,
       "coords": {
         "x": 16.6,
         "y": 13.1,
         "z": 0.3
-      },
-      "thumbnail": "images/treasures/g17_heritagefound_02.webp",
-      "fullImage": "images/treasures/g17_heritagefound_02_full_3x.webp"
+      }
     },
     {
       "id": "tm_041",
       "level": "g17",
-      "levelName": "獰豹革地圖",
-      "zone": "Heritage Found",
-      "zoneId": "tural",
+      "zoneId": "heritage_found",
+      "index": 3,
       "coords": {
         "x": 17.2,
         "y": 22.3,
         "z": 0.4
-      },
-      "thumbnail": "images/treasures/g17_heritagefound_03.webp",
-      "fullImage": "images/treasures/g17_heritagefound_03_full_3x.webp"
+      }
     },
     {
       "id": "tm_042",
       "level": "g17",
-      "levelName": "獰豹革地圖",
-      "zone": "Heritage Found",
-      "zoneId": "tural",
+      "zoneId": "heritage_found",
+      "index": 4,
       "coords": {
         "x": 16.8,
         "y": 35.8,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g17_heritagefound_04.webp",
-      "fullImage": "images/treasures/g17_heritagefound_04_full_3x.webp"
+        "z": 0
+      }
     },
     {
       "id": "tm_043",
       "level": "g17",
-      "levelName": "獰豹革地圖",
-      "zone": "Heritage Found",
-      "zoneId": "tural",
+      "zoneId": "heritage_found",
+      "index": 5,
       "coords": {
-        "x": 22.0,
-        "y": 19.0,
-        "z": 1.0
-      },
-      "thumbnail": "images/treasures/g17_heritagefound_05.webp",
-      "fullImage": "images/treasures/g17_heritagefound_05_full_3x.webp"
+        "x": 22,
+        "y": 19,
+        "z": 1
+      }
     },
     {
       "id": "tm_044",
       "level": "g17",
-      "levelName": "獰豹革地圖",
-      "zone": "Heritage Found",
-      "zoneId": "tural",
+      "zoneId": "heritage_found",
+      "index": 6,
       "coords": {
         "x": 26.3,
         "y": 30.8,
         "z": 1.3
-      },
-      "thumbnail": "images/treasures/g17_heritagefound_06.webp",
-      "fullImage": "images/treasures/g17_heritagefound_06_full_3x.webp"
+      }
     },
     {
       "id": "tm_045",
       "level": "g17",
-      "levelName": "獰豹革地圖",
-      "zone": "Heritage Found",
-      "zoneId": "tural",
+      "zoneId": "heritage_found",
+      "index": 7,
       "coords": {
         "x": 31.1,
         "y": 8.3,
         "z": 1.4
-      },
-      "thumbnail": "images/treasures/g17_heritagefound_07.webp",
-      "fullImage": "images/treasures/g17_heritagefound_07_full_3x.webp"
+      }
     },
     {
       "id": "tm_046",
       "level": "g17",
-      "levelName": "獰豹革地圖",
-      "zone": "Heritage Found",
-      "zoneId": "tural",
+      "zoneId": "heritage_found",
+      "index": 8,
       "coords": {
         "x": 35.7,
         "y": 25.5,
         "z": 1.6
-      },
-      "thumbnail": "images/treasures/g17_heritagefound_08.webp",
-      "fullImage": "images/treasures/g17_heritagefound_08_full_3x.webp"
+      }
     },
     {
       "id": "tm_047",
       "level": "g15",
-      "levelName": "蛇牛革地圖",
-      "zone": "Elpis",
-      "zoneId": "ilsabard",
+      "zoneId": "elpis",
+      "index": 1,
       "coords": {
         "x": 11.8,
         "y": 33.1,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g15_elpis_01.webp",
-      "fullImage": "images/treasures/g15_elpis_01_full_3x.webp"
+        "z": 0
+      }
     },
     {
       "id": "tm_048",
       "level": "g15",
-      "levelName": "蛇牛革地圖",
-      "zone": "Elpis",
-      "zoneId": "ilsabard",
+      "zoneId": "elpis",
+      "index": 2,
       "coords": {
-        "x": 13.0,
+        "x": 13,
         "y": 8.7,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g15_elpis_02.webp",
-      "fullImage": "images/treasures/g15_elpis_02_full_3x.webp"
+        "z": 0
+      }
     },
     {
       "id": "tm_049",
       "level": "g15",
-      "levelName": "蛇牛革地圖",
-      "zone": "Elpis",
-      "zoneId": "ilsabard",
+      "zoneId": "elpis",
+      "index": 3,
       "coords": {
         "x": 16.8,
-        "y": 31.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g15_elpis_03.webp",
-      "fullImage": "images/treasures/g15_elpis_03_full_3x.webp"
+        "y": 31,
+        "z": 0
+      }
     },
     {
       "id": "tm_050",
       "level": "g15",
-      "levelName": "蛇牛革地圖",
-      "zone": "Elpis",
-      "zoneId": "ilsabard",
+      "zoneId": "elpis",
+      "index": 4,
       "coords": {
         "x": 22.5,
         "y": 24.6,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g15_elpis_04.webp",
-      "fullImage": "images/treasures/g15_elpis_04_full_3x.webp"
+        "z": 0
+      }
     },
     {
       "id": "tm_051",
       "level": "g15",
-      "levelName": "蛇牛革地圖",
-      "zone": "Elpis",
-      "zoneId": "ilsabard",
+      "zoneId": "elpis",
+      "index": 5,
       "coords": {
         "x": 27.2,
         "y": 24.3,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g15_elpis_05.webp",
-      "fullImage": "images/treasures/g15_elpis_05_full_3x.webp"
+        "z": 0
+      }
     },
     {
       "id": "tm_052",
       "level": "g15",
-      "levelName": "蛇牛革地圖",
-      "zone": "Elpis",
-      "zoneId": "ilsabard",
+      "zoneId": "elpis",
+      "index": 6,
       "coords": {
-        "x": 29.0,
+        "x": 29,
         "y": 17.5,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g15_elpis_06.webp",
-      "fullImage": "images/treasures/g15_elpis_06_full_3x.webp"
+        "z": 0
+      }
     },
     {
       "id": "tm_053",
       "level": "g15",
-      "levelName": "蛇牛革地圖",
-      "zone": "Elpis",
-      "zoneId": "ilsabard",
+      "zoneId": "elpis",
+      "index": 7,
       "coords": {
         "x": 29.9,
         "y": 9.5,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g15_elpis_07.webp",
-      "fullImage": "images/treasures/g15_elpis_07_full_3x.webp"
+        "z": 0
+      }
     },
     {
       "id": "tm_054",
       "level": "g15",
-      "levelName": "蛇牛革地圖",
-      "zone": "Elpis",
-      "zoneId": "ilsabard",
+      "zoneId": "elpis",
+      "index": 8,
       "coords": {
         "x": 37.1,
         "y": 18.5,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g15_elpis_08.webp",
-      "fullImage": "images/treasures/g15_elpis_08_full_3x.webp"
+        "z": 0
+      }
     },
     {
       "id": "tm_055",
       "level": "g14",
-      "levelName": "金毗羅鱷革地圖",
-      "zone": "Labyrinthos",
-      "zoneId": "ilsabard",
+      "zoneId": "labyrinthos",
+      "index": 1,
       "coords": {
         "x": 6.8,
         "y": 20.9,
         "z": 2.2
-      },
-      "thumbnail": "images/treasures/g14_labyrinthos_01.webp",
-      "fullImage": "images/treasures/g14_labyrinthos_01_full_3x.webp"
+      }
     },
     {
       "id": "tm_056",
       "level": "g14",
-      "levelName": "金毗羅鱷革地圖",
-      "zone": "Labyrinthos",
-      "zoneId": "ilsabard",
+      "zoneId": "labyrinthos",
+      "index": 2,
       "coords": {
         "x": 8.4,
         "y": 30.4,
         "z": 1.9
-      },
-      "thumbnail": "images/treasures/g14_labyrinthos_02.webp",
-      "fullImage": "images/treasures/g14_labyrinthos_02_full_3x.webp"
+      }
     },
     {
       "id": "tm_057",
       "level": "g14",
-      "levelName": "金毗羅鱷革地圖",
-      "zone": "Labyrinthos",
-      "zoneId": "ilsabard",
+      "zoneId": "labyrinthos",
+      "index": 3,
       "coords": {
         "x": 18.6,
         "y": 18.1,
-        "z": 2.0
-      },
-      "thumbnail": "images/treasures/g14_labyrinthos_03.webp",
-      "fullImage": "images/treasures/g14_labyrinthos_03_full_3x.webp"
+        "z": 2
+      }
     },
     {
       "id": "tm_058",
       "level": "g14",
-      "levelName": "金毗羅鱷革地圖",
-      "zone": "Labyrinthos",
-      "zoneId": "ilsabard",
+      "zoneId": "labyrinthos",
+      "index": 4,
       "coords": {
         "x": 21.8,
         "y": 37.5,
         "z": 2.1
-      },
-      "thumbnail": "images/treasures/g14_labyrinthos_04.webp",
-      "fullImage": "images/treasures/g14_labyrinthos_04_full_3x.webp"
+      }
     },
     {
       "id": "tm_059",
       "level": "g14",
-      "levelName": "金毗羅鱷革地圖",
-      "zone": "Labyrinthos",
-      "zoneId": "ilsabard",
+      "zoneId": "labyrinthos",
+      "index": 5,
       "coords": {
         "x": 24.2,
         "y": 10.9,
-        "z": 3.0
-      },
-      "thumbnail": "images/treasures/g14_labyrinthos_05.webp",
-      "fullImage": "images/treasures/g14_labyrinthos_05_full_3x.webp"
+        "z": 3
+      }
     },
     {
       "id": "tm_060",
       "level": "g14",
-      "levelName": "金毗羅鱷革地圖",
-      "zone": "Labyrinthos",
-      "zoneId": "ilsabard",
+      "zoneId": "labyrinthos",
+      "index": 6,
       "coords": {
         "x": 24.9,
         "y": 21.8,
-        "z": 2.0
-      },
-      "thumbnail": "images/treasures/g14_labyrinthos_06.webp",
-      "fullImage": "images/treasures/g14_labyrinthos_06_full_3x.webp"
+        "z": 2
+      }
     },
     {
       "id": "tm_061",
       "level": "g14",
-      "levelName": "金毗羅鱷革地圖",
-      "zone": "Labyrinthos",
-      "zoneId": "ilsabard",
+      "zoneId": "labyrinthos",
+      "index": 7,
       "coords": {
         "x": 24.7,
         "y": 29.6,
-        "z": 2.0
-      },
-      "thumbnail": "images/treasures/g14_labyrinthos_07.webp",
-      "fullImage": "images/treasures/g14_labyrinthos_07_full_3x.webp"
+        "z": 2
+      }
     },
     {
       "id": "tm_062",
       "level": "g14",
-      "levelName": "金毗羅鱷革地圖",
-      "zone": "Labyrinthos",
-      "zoneId": "ilsabard",
+      "zoneId": "labyrinthos",
+      "index": 8,
       "coords": {
         "x": 31.8,
         "y": 14.4,
         "z": 3.8
-      },
-      "thumbnail": "images/treasures/g14_labyrinthos_08.webp",
-      "fullImage": "images/treasures/g14_labyrinthos_08_full_3x.webp"
+      }
     },
     {
       "id": "tm_063",
       "level": "g14",
-      "levelName": "金毗羅鱷革地圖",
-      "zone": "Thavnair",
-      "zoneId": "ilsabard",
+      "zoneId": "thavnair",
+      "index": 1,
       "coords": {
         "x": 14.7,
         "y": 7.9,
         "z": 0.5
-      },
-      "thumbnail": "images/treasures/g14_thavnair_01.webp",
-      "fullImage": "images/treasures/g14_thavnair_01_full_3x.webp"
+      }
     },
     {
       "id": "tm_064",
       "level": "g14",
-      "levelName": "金毗羅鱷革地圖",
-      "zone": "Thavnair",
-      "zoneId": "ilsabard",
+      "zoneId": "thavnair",
+      "index": 2,
       "coords": {
         "x": 14.8,
         "y": 26.6,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g14_thavnair_02.webp",
-      "fullImage": "images/treasures/g14_thavnair_02_full_3x.webp"
+        "z": 0
+      }
     },
     {
       "id": "tm_065",
       "level": "g14",
-      "levelName": "金毗羅鱷革地圖",
-      "zone": "Thavnair",
-      "zoneId": "ilsabard",
+      "zoneId": "thavnair",
+      "index": 3,
       "coords": {
         "x": 19.5,
         "y": 14.2,
         "z": 0.3
-      },
-      "thumbnail": "images/treasures/g14_thavnair_03.webp",
-      "fullImage": "images/treasures/g14_thavnair_03_full_3x.webp"
+      }
     },
     {
       "id": "tm_066",
       "level": "g14",
-      "levelName": "金毗羅鱷革地圖",
-      "zone": "Thavnair",
-      "zoneId": "ilsabard",
+      "zoneId": "thavnair",
+      "index": 4,
       "coords": {
         "x": 21.9,
-        "y": 21.0,
+        "y": 21,
         "z": 0.2
-      },
-      "thumbnail": "images/treasures/g14_thavnair_04.webp",
-      "fullImage": "images/treasures/g14_thavnair_04_full_3x.webp"
+      }
     },
     {
       "id": "tm_067",
       "level": "g14",
-      "levelName": "金毗羅鱷革地圖",
-      "zone": "Thavnair",
-      "zoneId": "ilsabard",
+      "zoneId": "thavnair",
+      "index": 5,
       "coords": {
-        "x": 21.0,
+        "x": 21,
         "y": 27.2,
         "z": 0.5
-      },
-      "thumbnail": "images/treasures/g14_thavnair_05.webp",
-      "fullImage": "images/treasures/g14_thavnair_05_full_3x.webp"
+      }
     },
     {
       "id": "tm_068",
       "level": "g14",
-      "levelName": "金毗羅鱷革地圖",
-      "zone": "Thavnair",
-      "zoneId": "ilsabard",
+      "zoneId": "thavnair",
+      "index": 6,
       "coords": {
         "x": 27.1,
         "y": 8.9,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g14_thavnair_06.webp",
-      "fullImage": "images/treasures/g14_thavnair_06_full_3x.webp"
+        "z": 0
+      }
     },
     {
       "id": "tm_069",
       "level": "g14",
-      "levelName": "金毗羅鱷革地圖",
-      "zone": "Thavnair",
-      "zoneId": "ilsabard",
+      "zoneId": "thavnair",
+      "index": 7,
       "coords": {
         "x": 26.8,
         "y": 28.9,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g14_thavnair_07.webp",
-      "fullImage": "images/treasures/g14_thavnair_07_full_3x.webp"
+        "z": 0
+      }
     },
     {
       "id": "tm_070",
       "level": "g14",
-      "levelName": "金毗羅鱷革地圖",
-      "zone": "Thavnair",
-      "zoneId": "ilsabard",
+      "zoneId": "thavnair",
+      "index": 8,
       "coords": {
         "x": 32.2,
         "y": 14.4,
         "z": 0.1
-      },
-      "thumbnail": "images/treasures/g14_thavnair_08.webp",
-      "fullImage": "images/treasures/g14_thavnair_08_full_3x.webp"
+      }
     },
     {
       "id": "tm_071",
       "level": "g14",
-      "levelName": "金毗羅鱷革地圖",
-      "zone": "Garlemald",
-      "zoneId": "ilsabard",
+      "zoneId": "garlemald",
+      "index": 1,
       "coords": {
         "x": 11.8,
         "y": 25.7,
         "z": 0.6
-      },
-      "thumbnail": "images/treasures/g14_garlemald_01.webp",
-      "fullImage": "images/treasures/g14_garlemald_01_full_3x.webp"
+      }
     },
     {
       "id": "tm_072",
       "level": "g14",
-      "levelName": "金毗羅鱷革地圖",
-      "zone": "Garlemald",
-      "zoneId": "ilsabard",
+      "zoneId": "garlemald",
+      "index": 2,
       "coords": {
         "x": 16.6,
         "y": 11.9,
         "z": 0.3
-      },
-      "thumbnail": "images/treasures/g14_garlemald_02.webp",
-      "fullImage": "images/treasures/g14_garlemald_02_full_3x.webp"
+      }
     },
     {
       "id": "tm_073",
       "level": "g14",
-      "levelName": "金毗羅鱷革地圖",
-      "zone": "Garlemald",
-      "zoneId": "ilsabard",
+      "zoneId": "garlemald",
+      "index": 3,
       "coords": {
         "x": 16.1,
         "y": 17.8,
         "z": 0.3
-      },
-      "thumbnail": "images/treasures/g14_garlemald_03.webp",
-      "fullImage": "images/treasures/g14_garlemald_03_full_3x.webp"
+      }
     },
     {
       "id": "tm_074",
       "level": "g14",
-      "levelName": "金毗羅鱷革地圖",
-      "zone": "Garlemald",
-      "zoneId": "ilsabard",
+      "zoneId": "garlemald",
+      "index": 4,
       "coords": {
         "x": 25.3,
         "y": 12.4,
         "z": 0.4
-      },
-      "thumbnail": "images/treasures/g14_garlemald_04.webp",
-      "fullImage": "images/treasures/g14_garlemald_04_full_3x.webp"
+      }
     },
     {
       "id": "tm_075",
       "level": "g14",
-      "levelName": "金毗羅鱷革地圖",
-      "zone": "Garlemald",
-      "zoneId": "ilsabard",
+      "zoneId": "garlemald",
+      "index": 5,
       "coords": {
         "x": 28.1,
         "y": 26.4,
         "z": 0.1
-      },
-      "thumbnail": "images/treasures/g14_garlemald_05.webp",
-      "fullImage": "images/treasures/g14_garlemald_05_full_3x.webp"
+      }
     },
     {
       "id": "tm_076",
       "level": "g14",
-      "levelName": "金毗羅鱷革地圖",
-      "zone": "Garlemald",
-      "zoneId": "ilsabard",
+      "zoneId": "garlemald",
+      "index": 6,
       "coords": {
         "x": 29.3,
         "y": 35.4,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g14_garlemald_06.webp",
-      "fullImage": "images/treasures/g14_garlemald_06_full_3x.webp"
+        "z": 0
+      }
     },
     {
       "id": "tm_077",
       "level": "g14",
-      "levelName": "金毗羅鱷革地圖",
-      "zone": "Garlemald",
-      "zoneId": "ilsabard",
+      "zoneId": "garlemald",
+      "index": 7,
       "coords": {
         "x": 34.2,
         "y": 9.9,
         "z": 0.3
-      },
-      "thumbnail": "images/treasures/g14_garlemald_07.webp",
-      "fullImage": "images/treasures/g14_garlemald_07_full_3x.webp"
+      }
     },
     {
       "id": "tm_078",
       "level": "g14",
-      "levelName": "金毗羅鱷革地圖",
-      "zone": "Garlemald",
-      "zoneId": "ilsabard",
+      "zoneId": "garlemald",
+      "index": 8,
       "coords": {
         "x": 34.4,
         "y": 17.3,
         "z": 0.3
-      },
-      "thumbnail": "images/treasures/g14_garlemald_08.webp",
-      "fullImage": "images/treasures/g14_garlemald_08_full_3x.webp"
+      }
     },
     {
       "id": "tm_079",
       "level": "g14",
-      "levelName": "金毗羅鱷革地圖",
-      "zone": "Mare Lamentorum",
-      "zoneId": "ilsabard",
+      "zoneId": "mare_lamentorum",
+      "index": 1,
       "coords": {
         "x": 12.2,
         "y": 26.6,
         "z": 1.2
-      },
-      "thumbnail": "images/treasures/g14_marelamentorum_01.webp",
-      "fullImage": "images/treasures/g14_marelamentorum_01_full_3x.webp"
+      }
     },
     {
       "id": "tm_080",
       "level": "g14",
-      "levelName": "金毗羅鱷革地圖",
-      "zone": "Mare Lamentorum",
-      "zoneId": "ilsabard",
+      "zoneId": "mare_lamentorum",
+      "index": 2,
       "coords": {
         "x": 17.1,
         "y": 19.4,
         "z": 1.2
-      },
-      "thumbnail": "images/treasures/g14_marelamentorum_02.webp",
-      "fullImage": "images/treasures/g14_marelamentorum_02_full_3x.webp"
+      }
     },
     {
       "id": "tm_081",
       "level": "g14",
-      "levelName": "金毗羅鱷革地圖",
-      "zone": "Mare Lamentorum",
-      "zoneId": "ilsabard",
+      "zoneId": "mare_lamentorum",
+      "index": 3,
       "coords": {
         "x": 15.9,
         "y": 34.4,
         "z": 1.1
-      },
-      "thumbnail": "images/treasures/g14_marelamentorum_03.webp",
-      "fullImage": "images/treasures/g14_marelamentorum_03_full_3x.webp"
+      }
     },
     {
       "id": "tm_082",
       "level": "g14",
-      "levelName": "金毗羅鱷革地圖",
-      "zone": "Mare Lamentorum",
-      "zoneId": "ilsabard",
+      "zoneId": "mare_lamentorum",
+      "index": 4,
       "coords": {
         "x": 18.7,
         "y": 25.7,
         "z": 0.6
-      },
-      "thumbnail": "images/treasures/g14_marelamentorum_04.webp",
-      "fullImage": "images/treasures/g14_marelamentorum_04_full_3x.webp"
+      }
     },
     {
       "id": "tm_083",
       "level": "g14",
-      "levelName": "金毗羅鱷革地圖",
-      "zone": "Mare Lamentorum",
-      "zoneId": "ilsabard",
+      "zoneId": "mare_lamentorum",
+      "index": 5,
       "coords": {
         "x": 22.8,
         "y": 36.3,
         "z": 1.1
-      },
-      "thumbnail": "images/treasures/g14_marelamentorum_05.webp",
-      "fullImage": "images/treasures/g14_marelamentorum_05_full_3x.webp"
+      }
     },
     {
       "id": "tm_084",
       "level": "g14",
-      "levelName": "金毗羅鱷革地圖",
-      "zone": "Mare Lamentorum",
-      "zoneId": "ilsabard",
+      "zoneId": "mare_lamentorum",
+      "index": 6,
       "coords": {
         "x": 25.6,
         "y": 33.3,
         "z": 0.8
-      },
-      "thumbnail": "images/treasures/g14_marelamentorum_06.webp",
-      "fullImage": "images/treasures/g14_marelamentorum_06_full_3x.webp"
+      }
     },
     {
       "id": "tm_085",
       "level": "g14",
-      "levelName": "金毗羅鱷革地圖",
-      "zone": "Mare Lamentorum",
-      "zoneId": "ilsabard",
+      "zoneId": "mare_lamentorum",
+      "index": 7,
       "coords": {
         "x": 30.5,
         "y": 24.9,
-        "z": 1.0
-      },
-      "thumbnail": "images/treasures/g14_marelamentorum_07.webp",
-      "fullImage": "images/treasures/g14_marelamentorum_07_full_3x.webp"
+        "z": 1
+      }
     },
     {
       "id": "tm_086",
       "level": "g14",
-      "levelName": "金毗羅鱷革地圖",
-      "zone": "Mare Lamentorum",
-      "zoneId": "ilsabard",
+      "zoneId": "mare_lamentorum",
+      "index": 8,
       "coords": {
         "x": 34.8,
         "y": 29.9,
         "z": 1.4
-      },
-      "thumbnail": "images/treasures/g14_marelamentorum_08.webp",
-      "fullImage": "images/treasures/g14_marelamentorum_08_full_3x.webp"
+      }
     },
     {
       "id": "tm_087",
       "level": "g14",
-      "levelName": "金毗羅鱷革地圖",
-      "zone": "Ultima Thule",
-      "zoneId": "ilsabard",
+      "zoneId": "ultima_thule",
+      "index": 1,
       "coords": {
         "x": 6.1,
-        "y": 19.0,
+        "y": 19,
         "z": 0.2
-      },
-      "thumbnail": "images/treasures/g14_ultimathule_01.webp",
-      "fullImage": "images/treasures/g14_ultimathule_01_full_3x.webp"
+      }
     },
     {
       "id": "tm_088",
       "level": "g14",
-      "levelName": "金毗羅鱷革地圖",
-      "zone": "Ultima Thule",
-      "zoneId": "ilsabard",
+      "zoneId": "ultima_thule",
+      "index": 2,
       "coords": {
         "x": 8.1,
         "y": 30.7,
         "z": 0.1
-      },
-      "thumbnail": "images/treasures/g14_ultimathule_02.webp",
-      "fullImage": "images/treasures/g14_ultimathule_02_full_3x.webp"
+      }
     },
     {
       "id": "tm_089",
       "level": "g14",
-      "levelName": "金毗羅鱷革地圖",
-      "zone": "Ultima Thule",
-      "zoneId": "ilsabard",
+      "zoneId": "ultima_thule",
+      "index": 3,
       "coords": {
         "x": 12.7,
         "y": 13.4,
         "z": 2.2
-      },
-      "thumbnail": "images/treasures/g14_ultimathule_03.webp",
-      "fullImage": "images/treasures/g14_ultimathule_03_full_3x.webp"
+      }
     },
     {
       "id": "tm_090",
       "level": "g14",
-      "levelName": "金毗羅鱷革地圖",
-      "zone": "Ultima Thule",
-      "zoneId": "ilsabard",
+      "zoneId": "ultima_thule",
+      "index": 4,
       "coords": {
         "x": 17.9,
-        "y": 27.0,
+        "y": 27,
         "z": 0.2
-      },
-      "thumbnail": "images/treasures/g14_ultimathule_04.webp",
-      "fullImage": "images/treasures/g14_ultimathule_04_full_3x.webp"
+      }
     },
     {
       "id": "tm_091",
       "level": "g14",
-      "levelName": "金毗羅鱷革地圖",
-      "zone": "Ultima Thule",
-      "zoneId": "ilsabard",
+      "zoneId": "ultima_thule",
+      "index": 5,
       "coords": {
         "x": 21.4,
         "y": 36.3,
         "z": 0.1
-      },
-      "thumbnail": "images/treasures/g14_ultimathule_05.webp",
-      "fullImage": "images/treasures/g14_ultimathule_05_full_3x.webp"
+      }
     },
     {
       "id": "tm_092",
       "level": "g14",
-      "levelName": "金毗羅鱷革地圖",
-      "zone": "Ultima Thule",
-      "zoneId": "ilsabard",
+      "zoneId": "ultima_thule",
+      "index": 6,
       "coords": {
         "x": 26.7,
         "y": 35.5,
         "z": 3.4
-      },
-      "thumbnail": "images/treasures/g14_ultimathule_06.webp",
-      "fullImage": "images/treasures/g14_ultimathule_06_full_3x.webp"
+      }
     },
     {
       "id": "tm_093",
       "level": "g14",
-      "levelName": "金毗羅鱷革地圖",
-      "zone": "Ultima Thule",
-      "zoneId": "ilsabard",
+      "zoneId": "ultima_thule",
+      "index": 7,
       "coords": {
         "x": 25.7,
         "y": 17.2,
         "z": 1.9
-      },
-      "thumbnail": "images/treasures/g14_ultimathule_07.webp",
-      "fullImage": "images/treasures/g14_ultimathule_07_full_3x.webp"
+      }
     },
     {
       "id": "tm_094",
       "level": "g14",
-      "levelName": "金毗羅鱷革地圖",
-      "zone": "Ultima Thule",
-      "zoneId": "ilsabard",
+      "zoneId": "ultima_thule",
+      "index": 8,
       "coords": {
         "x": 29.6,
         "y": 9.4,
         "z": 2.4
-      },
-      "thumbnail": "images/treasures/g14_ultimathule_08.webp",
-      "fullImage": "images/treasures/g14_ultimathule_08_full_3x.webp"
+      }
     },
     {
       "id": "tm_095",
       "level": "g10",
-      "levelName": "瞪羚革地圖",
-      "zone": "The Fringes",
-      "zoneId": "gyr_abania",
+      "zoneId": "the_fringes",
+      "index": 1,
       "coords": {
-        "x": 9.0,
-        "y": 12.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g10_thefringes_01.webp",
-      "fullImage": "images/treasures/g10_thefringes_01_full_3x.webp"
+        "x": 9,
+        "y": 12,
+        "z": 0
+      }
     },
     {
       "id": "tm_096",
       "level": "g10",
-      "levelName": "瞪羚革地圖",
-      "zone": "The Fringes",
-      "zoneId": "gyr_abania",
+      "zoneId": "the_fringes",
+      "index": 2,
       "coords": {
-        "x": 8.0,
-        "y": 28.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g10_thefringes_02.webp",
-      "fullImage": "images/treasures/g10_thefringes_02_full_3x.webp"
+        "x": 8,
+        "y": 28,
+        "z": 0
+      }
     },
     {
       "id": "tm_097",
       "level": "g10",
-      "levelName": "瞪羚革地圖",
-      "zone": "The Fringes",
-      "zoneId": "gyr_abania",
+      "zoneId": "the_fringes",
+      "index": 3,
       "coords": {
-        "x": 11.0,
-        "y": 31.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g10_thefringes_03.webp",
-      "fullImage": "images/treasures/g10_thefringes_03_full_3x.webp"
+        "x": 11,
+        "y": 31,
+        "z": 0
+      }
     },
     {
       "id": "tm_098",
       "level": "g10",
-      "levelName": "瞪羚革地圖",
-      "zone": "The Fringes",
-      "zoneId": "gyr_abania",
+      "zoneId": "the_fringes",
+      "index": 4,
       "coords": {
-        "x": 15.0,
-        "y": 16.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g10_thefringes_04.webp",
-      "fullImage": "images/treasures/g10_thefringes_04_full_3x.webp"
+        "x": 15,
+        "y": 16,
+        "z": 0
+      }
     },
     {
       "id": "tm_099",
       "level": "g10",
-      "levelName": "瞪羚革地圖",
-      "zone": "The Fringes",
-      "zoneId": "gyr_abania",
+      "zoneId": "the_fringes",
+      "index": 5,
       "coords": {
-        "x": 23.0,
-        "y": 12.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g10_thefringes_05.webp",
-      "fullImage": "images/treasures/g10_thefringes_05_full_3x.webp"
+        "x": 23,
+        "y": 12,
+        "z": 0
+      }
     },
     {
       "id": "tm_100",
       "level": "g10",
-      "levelName": "瞪羚革地圖",
-      "zone": "The Fringes",
-      "zoneId": "gyr_abania",
+      "zoneId": "the_fringes",
+      "index": 6,
       "coords": {
-        "x": 26.0,
-        "y": 20.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g10_thefringes_06.webp",
-      "fullImage": "images/treasures/g10_thefringes_06_full_3x.webp"
+        "x": 26,
+        "y": 20,
+        "z": 0
+      }
     },
     {
       "id": "tm_101",
       "level": "g10",
-      "levelName": "瞪羚革地圖",
-      "zone": "The Fringes",
-      "zoneId": "gyr_abania",
+      "zoneId": "the_fringes",
+      "index": 7,
       "coords": {
-        "x": 32.0,
-        "y": 21.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g10_thefringes_07.webp",
-      "fullImage": "images/treasures/g10_thefringes_07_full_3x.webp"
+        "x": 32,
+        "y": 21,
+        "z": 0
+      }
     },
     {
       "id": "tm_102",
       "level": "g10",
-      "levelName": "瞪羚革地圖",
-      "zone": "The Fringes",
-      "zoneId": "gyr_abania",
+      "zoneId": "the_fringes",
+      "index": 8,
       "coords": {
-        "x": 33.0,
-        "y": 31.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g10_thefringes_08.webp",
-      "fullImage": "images/treasures/g10_thefringes_08_full_3x.webp"
+        "x": 33,
+        "y": 31,
+        "z": 0
+      }
     },
     {
       "id": "tm_103",
       "level": "g10",
-      "levelName": "瞪羚革地圖",
-      "zone": "The Peaks",
-      "zoneId": "gyr_abania",
+      "zoneId": "the_peaks",
+      "index": 1,
       "coords": {
-        "x": 9.0,
-        "y": 32.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g10_thepeaks_01.webp",
-      "fullImage": "images/treasures/g10_thepeaks_01_full_3x.webp"
+        "x": 9,
+        "y": 32,
+        "z": 0
+      }
     },
     {
       "id": "tm_104",
       "level": "g10",
-      "levelName": "瞪羚革地圖",
-      "zone": "The Peaks",
-      "zoneId": "gyr_abania",
+      "zoneId": "the_peaks",
+      "index": 2,
       "coords": {
-        "x": 12.0,
-        "y": 5.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g10_thepeaks_02.webp",
-      "fullImage": "images/treasures/g10_thepeaks_02_full_3x.webp"
+        "x": 12,
+        "y": 5,
+        "z": 0
+      }
     },
     {
       "id": "tm_105",
       "level": "g10",
-      "levelName": "瞪羚革地圖",
-      "zone": "The Peaks",
-      "zoneId": "gyr_abania",
+      "zoneId": "the_peaks",
+      "index": 3,
       "coords": {
-        "x": 16.0,
-        "y": 9.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g10_thepeaks_03.webp",
-      "fullImage": "images/treasures/g10_thepeaks_03_full_3x.webp"
+        "x": 16,
+        "y": 9,
+        "z": 0
+      }
     },
     {
       "id": "tm_106",
       "level": "g10",
-      "levelName": "瞪羚革地圖",
-      "zone": "The Peaks",
-      "zoneId": "gyr_abania",
+      "zoneId": "the_peaks",
+      "index": 4,
       "coords": {
-        "x": 15.0,
-        "y": 23.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g10_thepeaks_04.webp",
-      "fullImage": "images/treasures/g10_thepeaks_04_full_3x.webp"
+        "x": 15,
+        "y": 23,
+        "z": 0
+      }
     },
     {
       "id": "tm_107",
       "level": "g10",
-      "levelName": "瞪羚革地圖",
-      "zone": "The Peaks",
-      "zoneId": "gyr_abania",
+      "zoneId": "the_peaks",
+      "index": 5,
       "coords": {
-        "x": 16.0,
-        "y": 33.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g10_thepeaks_05.webp",
-      "fullImage": "images/treasures/g10_thepeaks_05_full_3x.webp"
+        "x": 16,
+        "y": 33,
+        "z": 0
+      }
     },
     {
       "id": "tm_108",
       "level": "g10",
-      "levelName": "瞪羚革地圖",
-      "zone": "The Peaks",
-      "zoneId": "gyr_abania",
+      "zoneId": "the_peaks",
+      "index": 6,
       "coords": {
-        "x": 24.0,
-        "y": 32.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g10_thepeaks_06.webp",
-      "fullImage": "images/treasures/g10_thepeaks_06_full_3x.webp"
+        "x": 24,
+        "y": 32,
+        "z": 0
+      }
     },
     {
       "id": "tm_109",
       "level": "g10",
-      "levelName": "瞪羚革地圖",
-      "zone": "The Peaks",
-      "zoneId": "gyr_abania",
+      "zoneId": "the_peaks",
+      "index": 7,
       "coords": {
-        "x": 26.0,
-        "y": 14.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g10_thepeaks_07.webp",
-      "fullImage": "images/treasures/g10_thepeaks_07_full_3x.webp"
+        "x": 26,
+        "y": 14,
+        "z": 0
+      }
     },
     {
       "id": "tm_110",
       "level": "g10",
-      "levelName": "瞪羚革地圖",
-      "zone": "The Peaks",
-      "zoneId": "gyr_abania",
+      "zoneId": "the_peaks",
+      "index": 8,
       "coords": {
-        "x": 33.0,
-        "y": 10.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g10_thepeaks_08.webp",
-      "fullImage": "images/treasures/g10_thepeaks_08_full_3x.webp"
+        "x": 33,
+        "y": 10,
+        "z": 0
+      }
     },
     {
       "id": "tm_111",
       "level": "g10",
-      "levelName": "瞪羚革地圖",
-      "zone": "The Lochs",
-      "zoneId": "gyr_abania",
+      "zoneId": "the_lochs",
+      "index": 1,
       "coords": {
-        "x": 6.0,
-        "y": 7.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g10_thelochs_01.webp",
-      "fullImage": "images/treasures/g10_thelochs_01_full_3x.webp"
+        "x": 6,
+        "y": 7,
+        "z": 0
+      }
     },
     {
       "id": "tm_112",
       "level": "g10",
-      "levelName": "瞪羚革地圖",
-      "zone": "The Lochs",
-      "zoneId": "gyr_abania",
+      "zoneId": "the_lochs",
+      "index": 2,
       "coords": {
-        "x": 9.0,
-        "y": 18.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g10_thelochs_02.webp",
-      "fullImage": "images/treasures/g10_thelochs_02_full_3x.webp"
+        "x": 9,
+        "y": 18,
+        "z": 0
+      }
     },
     {
       "id": "tm_113",
       "level": "g10",
-      "levelName": "瞪羚革地圖",
-      "zone": "The Lochs",
-      "zoneId": "gyr_abania",
+      "zoneId": "the_lochs",
+      "index": 3,
       "coords": {
-        "x": 16.0,
-        "y": 29.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g10_thelochs_03.webp",
-      "fullImage": "images/treasures/g10_thelochs_03_full_3x.webp"
+        "x": 16,
+        "y": 29,
+        "z": 0
+      }
     },
     {
       "id": "tm_114",
       "level": "g10",
-      "levelName": "瞪羚革地圖",
-      "zone": "The Lochs",
-      "zoneId": "gyr_abania",
+      "zoneId": "the_lochs",
+      "index": 4,
       "coords": {
-        "x": 20.0,
-        "y": 23.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g10_thelochs_04.webp",
-      "fullImage": "images/treasures/g10_thelochs_04_full_3x.webp"
+        "x": 20,
+        "y": 23,
+        "z": 0
+      }
     },
     {
       "id": "tm_115",
       "level": "g10",
-      "levelName": "瞪羚革地圖",
-      "zone": "The Lochs",
-      "zoneId": "gyr_abania",
+      "zoneId": "the_lochs",
+      "index": 5,
       "coords": {
-        "x": 25.0,
-        "y": 8.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g10_thelochs_05.webp",
-      "fullImage": "images/treasures/g10_thelochs_05_full_3x.webp"
+        "x": 25,
+        "y": 8,
+        "z": 0
+      }
     },
     {
       "id": "tm_116",
       "level": "g10",
-      "levelName": "瞪羚革地圖",
-      "zone": "The Lochs",
-      "zoneId": "gyr_abania",
+      "zoneId": "the_lochs",
+      "index": 6,
       "coords": {
-        "x": 24.0,
-        "y": 32.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g10_thelochs_06.webp",
-      "fullImage": "images/treasures/g10_thelochs_06_full_3x.webp"
+        "x": 24,
+        "y": 32,
+        "z": 0
+      }
     },
     {
       "id": "tm_117",
       "level": "g10",
-      "levelName": "瞪羚革地圖",
-      "zone": "The Lochs",
-      "zoneId": "gyr_abania",
+      "zoneId": "the_lochs",
+      "index": 7,
       "coords": {
-        "x": 30.0,
-        "y": 17.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g10_thelochs_07.webp",
-      "fullImage": "images/treasures/g10_thelochs_07_full_3x.webp"
+        "x": 30,
+        "y": 17,
+        "z": 0
+      }
     },
     {
       "id": "tm_118",
       "level": "g10",
-      "levelName": "瞪羚革地圖",
-      "zone": "The Lochs",
-      "zoneId": "gyr_abania",
+      "zoneId": "the_lochs",
+      "index": 8,
       "coords": {
-        "x": 32.0,
-        "y": 6.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g10_thelochs_08.webp",
-      "fullImage": "images/treasures/g10_thelochs_08_full_3x.webp"
+        "x": 32,
+        "y": 6,
+        "z": 0
+      }
     },
     {
       "id": "tm_119",
       "level": "g10",
-      "levelName": "瞪羚革地圖",
-      "zone": "The Ruby Sea",
-      "zoneId": "othard",
+      "zoneId": "the_ruby_sea",
+      "index": 1,
       "coords": {
-        "x": 5.0,
-        "y": 15.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g10_therubysea_01.webp",
-      "fullImage": "images/treasures/g10_therubysea_01_full_3x.webp"
+        "x": 5,
+        "y": 15,
+        "z": 0
+      }
     },
     {
       "id": "tm_120",
       "level": "g10",
-      "levelName": "瞪羚革地圖",
-      "zone": "The Ruby Sea",
-      "zoneId": "othard",
+      "zoneId": "the_ruby_sea",
+      "index": 2,
       "coords": {
-        "x": 8.0,
-        "y": 30.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g10_therubysea_02.webp",
-      "fullImage": "images/treasures/g10_therubysea_02_full_3x.webp"
+        "x": 8,
+        "y": 30,
+        "z": 0
+      }
     },
     {
       "id": "tm_121",
       "level": "g10",
-      "levelName": "瞪羚革地圖",
-      "zone": "The Ruby Sea",
-      "zoneId": "othard",
+      "zoneId": "the_ruby_sea",
+      "index": 3,
       "coords": {
-        "x": 17.0,
-        "y": 10.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g10_therubysea_03.webp",
-      "fullImage": "images/treasures/g10_therubysea_03_full_3x.webp"
+        "x": 17,
+        "y": 10,
+        "z": 0
+      }
     },
     {
       "id": "tm_122",
       "level": "g10",
-      "levelName": "瞪羚革地圖",
-      "zone": "The Ruby Sea",
-      "zoneId": "othard",
+      "zoneId": "the_ruby_sea",
+      "index": 4,
       "coords": {
-        "x": 18.0,
-        "y": 36.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g10_therubysea_04.webp",
-      "fullImage": "images/treasures/g10_therubysea_04_full_3x.webp"
+        "x": 18,
+        "y": 36,
+        "z": 0
+      }
     },
     {
       "id": "tm_123",
       "level": "g10",
-      "levelName": "瞪羚革地圖",
-      "zone": "The Ruby Sea",
-      "zoneId": "othard",
+      "zoneId": "the_ruby_sea",
+      "index": 5,
       "coords": {
-        "x": 28.0,
-        "y": 30.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g10_therubysea_05.webp",
-      "fullImage": "images/treasures/g10_therubysea_05_full_3x.webp"
+        "x": 28,
+        "y": 30,
+        "z": 0
+      }
     },
     {
       "id": "tm_124",
       "level": "g10",
-      "levelName": "瞪羚革地圖",
-      "zone": "The Ruby Sea",
-      "zoneId": "othard",
+      "zoneId": "the_ruby_sea",
+      "index": 6,
       "coords": {
-        "x": 30.0,
-        "y": 25.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g10_therubysea_06.webp",
-      "fullImage": "images/treasures/g10_therubysea_06_full_3x.webp"
+        "x": 30,
+        "y": 25,
+        "z": 0
+      }
     },
     {
       "id": "tm_125",
       "level": "g10",
-      "levelName": "瞪羚革地圖",
-      "zone": "The Ruby Sea",
-      "zoneId": "othard",
+      "zoneId": "the_ruby_sea",
+      "index": 7,
       "coords": {
-        "x": 33.0,
-        "y": 9.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g10_therubysea_07.webp",
-      "fullImage": "images/treasures/g10_therubysea_07_full_3x.webp"
+        "x": 33,
+        "y": 9,
+        "z": 0
+      }
     },
     {
       "id": "tm_126",
       "level": "g10",
-      "levelName": "瞪羚革地圖",
-      "zone": "The Ruby Sea",
-      "zoneId": "othard",
+      "zoneId": "the_ruby_sea",
+      "index": 8,
       "coords": {
-        "x": 33.0,
-        "y": 18.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g10_therubysea_08.webp",
-      "fullImage": "images/treasures/g10_therubysea_08_full_3x.webp"
+        "x": 33,
+        "y": 18,
+        "z": 0
+      }
     },
     {
       "id": "tm_127",
       "level": "g10",
-      "levelName": "瞪羚革地圖",
-      "zone": "Yanxia",
-      "zoneId": "othard",
+      "zoneId": "yanxia",
+      "index": 1,
       "coords": {
-        "x": 12.0,
-        "y": 19.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g10_yanxia_01.webp",
-      "fullImage": "images/treasures/g10_yanxia_01_full_3x.webp"
+        "x": 12,
+        "y": 19,
+        "z": 0
+      }
     },
     {
       "id": "tm_128",
       "level": "g10",
-      "levelName": "瞪羚革地圖",
-      "zone": "Yanxia",
-      "zoneId": "othard",
+      "zoneId": "yanxia",
+      "index": 2,
       "coords": {
-        "x": 13.0,
-        "y": 30.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g10_yanxia_02.webp",
-      "fullImage": "images/treasures/g10_yanxia_02_full_3x.webp"
+        "x": 13,
+        "y": 30,
+        "z": 0
+      }
     },
     {
       "id": "tm_129",
       "level": "g10",
-      "levelName": "瞪羚革地圖",
-      "zone": "Yanxia",
-      "zoneId": "othard",
+      "zoneId": "yanxia",
+      "index": 3,
       "coords": {
-        "x": 20.0,
-        "y": 5.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g10_yanxia_03.webp",
-      "fullImage": "images/treasures/g10_yanxia_03_full_3x.webp"
+        "x": 20,
+        "y": 5,
+        "z": 0
+      }
     },
     {
       "id": "tm_130",
       "level": "g10",
-      "levelName": "瞪羚革地圖",
-      "zone": "Yanxia",
-      "zoneId": "othard",
+      "zoneId": "yanxia",
+      "index": 4,
       "coords": {
-        "x": 22.0,
-        "y": 14.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g10_yanxia_04.webp",
-      "fullImage": "images/treasures/g10_yanxia_04_full_3x.webp"
+        "x": 22,
+        "y": 14,
+        "z": 0
+      }
     },
     {
       "id": "tm_131",
       "level": "g10",
-      "levelName": "瞪羚革地圖",
-      "zone": "Yanxia",
-      "zoneId": "othard",
+      "zoneId": "yanxia",
+      "index": 5,
       "coords": {
-        "x": 22.0,
-        "y": 28.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g10_yanxia_05.webp",
-      "fullImage": "images/treasures/g10_yanxia_05_full_3x.webp"
+        "x": 22,
+        "y": 28,
+        "z": 0
+      }
     },
     {
       "id": "tm_132",
       "level": "g10",
-      "levelName": "瞪羚革地圖",
-      "zone": "Yanxia",
-      "zoneId": "othard",
+      "zoneId": "yanxia",
+      "index": 6,
       "coords": {
-        "x": 32.0,
-        "y": 5.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g10_yanxia_06.webp",
-      "fullImage": "images/treasures/g10_yanxia_06_full_3x.webp"
+        "x": 32,
+        "y": 5,
+        "z": 0
+      }
     },
     {
       "id": "tm_133",
       "level": "g10",
-      "levelName": "瞪羚革地圖",
-      "zone": "Yanxia",
-      "zoneId": "othard",
+      "zoneId": "yanxia",
+      "index": 7,
       "coords": {
-        "x": 31.0,
-        "y": 28.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g10_yanxia_07.webp",
-      "fullImage": "images/treasures/g10_yanxia_07_full_3x.webp"
+        "x": 31,
+        "y": 28,
+        "z": 0
+      }
     },
     {
       "id": "tm_134",
       "level": "g10",
-      "levelName": "瞪羚革地圖",
-      "zone": "Yanxia",
-      "zoneId": "othard",
+      "zoneId": "yanxia",
+      "index": 8,
       "coords": {
-        "x": 32.0,
-        "y": 35.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g10_yanxia_08.webp",
-      "fullImage": "images/treasures/g10_yanxia_08_full_3x.webp"
+        "x": 32,
+        "y": 35,
+        "z": 0
+      }
     },
     {
       "id": "tm_135",
       "level": "g10",
-      "levelName": "瞪羚革地圖",
-      "zone": "The Azim Steppe",
-      "zoneId": "othard",
+      "zoneId": "the_azim_steppe",
+      "index": 1,
       "coords": {
-        "x": 5.0,
-        "y": 25.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g10_theazimsteppe_01.webp",
-      "fullImage": "images/treasures/g10_theazimsteppe_01_full_3x.webp"
+        "x": 5,
+        "y": 25,
+        "z": 0
+      }
     },
     {
       "id": "tm_136",
       "level": "g10",
-      "levelName": "瞪羚革地圖",
-      "zone": "The Azim Steppe",
-      "zoneId": "othard",
+      "zoneId": "the_azim_steppe",
+      "index": 2,
       "coords": {
-        "x": 10.0,
-        "y": 16.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g10_theazimsteppe_02.webp",
-      "fullImage": "images/treasures/g10_theazimsteppe_02_full_3x.webp"
+        "x": 10,
+        "y": 16,
+        "z": 0
+      }
     },
     {
       "id": "tm_137",
       "level": "g10",
-      "levelName": "瞪羚革地圖",
-      "zone": "The Azim Steppe",
-      "zoneId": "othard",
+      "zoneId": "the_azim_steppe",
+      "index": 3,
       "coords": {
-        "x": 16.0,
-        "y": 25.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g10_theazimsteppe_03.webp",
-      "fullImage": "images/treasures/g10_theazimsteppe_03_full_3x.webp"
+        "x": 16,
+        "y": 25,
+        "z": 0
+      }
     },
     {
       "id": "tm_138",
       "level": "g10",
-      "levelName": "瞪羚革地圖",
-      "zone": "The Azim Steppe",
-      "zoneId": "othard",
+      "zoneId": "the_azim_steppe",
+      "index": 4,
       "coords": {
-        "x": 15.0,
-        "y": 33.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g10_theazimsteppe_04.webp",
-      "fullImage": "images/treasures/g10_theazimsteppe_04_full_3x.webp"
+        "x": 15,
+        "y": 33,
+        "z": 0
+      }
     },
     {
       "id": "tm_139",
       "level": "g10",
-      "levelName": "瞪羚革地圖",
-      "zone": "The Azim Steppe",
-      "zoneId": "othard",
+      "zoneId": "the_azim_steppe",
+      "index": 5,
       "coords": {
-        "x": 22.0,
-        "y": 37.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g10_theazimsteppe_05.webp",
-      "fullImage": "images/treasures/g10_theazimsteppe_05_full_3x.webp"
+        "x": 22,
+        "y": 37,
+        "z": 0
+      }
     },
     {
       "id": "tm_140",
       "level": "g10",
-      "levelName": "瞪羚革地圖",
-      "zone": "The Azim Steppe",
-      "zoneId": "othard",
+      "zoneId": "the_azim_steppe",
+      "index": 6,
       "coords": {
-        "x": 29.0,
-        "y": 12.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g10_theazimsteppe_06.webp",
-      "fullImage": "images/treasures/g10_theazimsteppe_06_full_3x.webp"
+        "x": 29,
+        "y": 12,
+        "z": 0
+      }
     },
     {
       "id": "tm_141",
       "level": "g10",
-      "levelName": "瞪羚革地圖",
-      "zone": "The Azim Steppe",
-      "zoneId": "othard",
+      "zoneId": "the_azim_steppe",
+      "index": 7,
       "coords": {
-        "x": 31.0,
-        "y": 22.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g10_theazimsteppe_07.webp",
-      "fullImage": "images/treasures/g10_theazimsteppe_07_full_3x.webp"
+        "x": 31,
+        "y": 22,
+        "z": 0
+      }
     },
     {
       "id": "tm_142",
       "level": "g10",
-      "levelName": "瞪羚革地圖",
-      "zone": "The Azim Steppe",
-      "zoneId": "othard",
+      "zoneId": "the_azim_steppe",
+      "index": 8,
       "coords": {
-        "x": 29.0,
-        "y": 35.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g10_theazimsteppe_08.webp",
-      "fullImage": "images/treasures/g10_theazimsteppe_08_full_3x.webp"
+        "x": 29,
+        "y": 35,
+        "z": 0
+      }
     },
     {
       "id": "tm_143",
       "level": "g8",
-      "levelName": "巨龍革地圖",
-      "zone": "Coerthas Western Highlands",
-      "zoneId": "coerthas",
+      "zoneId": "coerthas_western_highlands",
+      "index": 1,
       "coords": {
-        "x": 20.0,
-        "y": 30.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g8_coerthaswesternhighlands_01.webp",
-      "fullImage": "images/treasures/g8_coerthaswesternhighlands_01_full_3x.webp"
+        "x": 20,
+        "y": 30,
+        "z": 0
+      }
     },
     {
       "id": "tm_144",
       "level": "g8",
-      "levelName": "巨龍革地圖",
-      "zone": "Coerthas Western Highlands",
-      "zoneId": "coerthas",
+      "zoneId": "coerthas_western_highlands",
+      "index": 2,
       "coords": {
-        "x": 12.0,
-        "y": 24.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g8_coerthaswesternhighlands_02.webp",
-      "fullImage": "images/treasures/g8_coerthaswesternhighlands_02_full_3x.webp"
+        "x": 12,
+        "y": 24,
+        "z": 0
+      }
     },
     {
       "id": "tm_145",
       "level": "g8",
-      "levelName": "巨龍革地圖",
-      "zone": "Coerthas Western Highlands",
-      "zoneId": "coerthas",
+      "zoneId": "coerthas_western_highlands",
+      "index": 3,
       "coords": {
-        "x": 7.0,
-        "y": 12.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g8_coerthaswesternhighlands_03.webp",
-      "fullImage": "images/treasures/g8_coerthaswesternhighlands_03_full_3x.webp"
+        "x": 7,
+        "y": 12,
+        "z": 0
+      }
     },
     {
       "id": "tm_146",
       "level": "g8",
-      "levelName": "巨龍革地圖",
-      "zone": "Coerthas Western Highlands",
-      "zoneId": "coerthas",
+      "zoneId": "coerthas_western_highlands",
+      "index": 4,
       "coords": {
-        "x": 21.0,
-        "y": 12.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g8_coerthaswesternhighlands_04.webp",
-      "fullImage": "images/treasures/g8_coerthaswesternhighlands_04_full_3x.webp"
+        "x": 21,
+        "y": 12,
+        "z": 0
+      }
     },
     {
       "id": "tm_147",
       "level": "g8",
-      "levelName": "巨龍革地圖",
-      "zone": "Coerthas Western Highlands",
-      "zoneId": "coerthas",
+      "zoneId": "coerthas_western_highlands",
+      "index": 5,
       "coords": {
-        "x": 28.0,
-        "y": 15.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g8_coerthaswesternhighlands_05.webp",
-      "fullImage": "images/treasures/g8_coerthaswesternhighlands_05_full_3x.webp"
+        "x": 28,
+        "y": 15,
+        "z": 0
+      }
     },
     {
       "id": "tm_148",
       "level": "g8",
-      "levelName": "巨龍革地圖",
-      "zone": "Coerthas Western Highlands",
-      "zoneId": "coerthas",
+      "zoneId": "coerthas_western_highlands",
+      "index": 6,
       "coords": {
-        "x": 34.0,
-        "y": 7.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g8_coerthaswesternhighlands_06.webp",
-      "fullImage": "images/treasures/g8_coerthaswesternhighlands_06_full_3x.webp"
+        "x": 34,
+        "y": 7,
+        "z": 0
+      }
     },
     {
       "id": "tm_149",
       "level": "g8",
-      "levelName": "巨龍革地圖",
-      "zone": "Coerthas Western Highlands",
-      "zoneId": "coerthas",
+      "zoneId": "coerthas_western_highlands",
+      "index": 7,
       "coords": {
-        "x": 36.0,
-        "y": 26.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g8_coerthaswesternhighlands_07.webp",
-      "fullImage": "images/treasures/g8_coerthaswesternhighlands_07_full_3x.webp"
+        "x": 36,
+        "y": 26,
+        "z": 0
+      }
     },
     {
       "id": "tm_150",
       "level": "g8",
-      "levelName": "巨龍革地圖",
-      "zone": "The Dravanian Forelands",
-      "zoneId": "dravania",
+      "zoneId": "the_dravanian_forelands",
+      "index": 1,
       "coords": {
-        "x": 28.0,
-        "y": 24.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g8_thedravanianforelands_01.webp",
-      "fullImage": "images/treasures/g8_thedravanianforelands_01_full_3x.webp"
+        "x": 28,
+        "y": 24,
+        "z": 0
+      }
     },
     {
       "id": "tm_151",
       "level": "g8",
-      "levelName": "巨龍革地圖",
-      "zone": "The Dravanian Forelands",
-      "zoneId": "dravania",
+      "zoneId": "the_dravanian_forelands",
+      "index": 2,
       "coords": {
-        "x": 23.0,
-        "y": 25.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g8_thedravanianforelands_02.webp",
-      "fullImage": "images/treasures/g8_thedravanianforelands_02_full_3x.webp"
+        "x": 23,
+        "y": 25,
+        "z": 0
+      }
     },
     {
       "id": "tm_152",
       "level": "g8",
-      "levelName": "巨龍革地圖",
-      "zone": "The Dravanian Forelands",
-      "zoneId": "dravania",
+      "zoneId": "the_dravanian_forelands",
+      "index": 3,
       "coords": {
-        "x": 27.0,
-        "y": 30.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g8_thedravanianforelands_03.webp",
-      "fullImage": "images/treasures/g8_thedravanianforelands_03_full_3x.webp"
+        "x": 27,
+        "y": 30,
+        "z": 0
+      }
     },
     {
       "id": "tm_153",
       "level": "g8",
-      "levelName": "巨龍革地圖",
-      "zone": "The Dravanian Forelands",
-      "zoneId": "dravania",
+      "zoneId": "the_dravanian_forelands",
+      "index": 4,
       "coords": {
-        "x": 24.0,
-        "y": 32.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g8_thedravanianforelands_04.webp",
-      "fullImage": "images/treasures/g8_thedravanianforelands_04_full_3x.webp"
+        "x": 24,
+        "y": 32,
+        "z": 0
+      }
     },
     {
       "id": "tm_154",
       "level": "g8",
-      "levelName": "巨龍革地圖",
-      "zone": "The Dravanian Forelands",
-      "zoneId": "dravania",
+      "zoneId": "the_dravanian_forelands",
+      "index": 5,
       "coords": {
-        "x": 18.0,
-        "y": 34.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g8_thedravanianforelands_05.webp",
-      "fullImage": "images/treasures/g8_thedravanianforelands_05_full_3x.webp"
+        "x": 18,
+        "y": 34,
+        "z": 0
+      }
     },
     {
       "id": "tm_155",
       "level": "g8",
-      "levelName": "巨龍革地圖",
-      "zone": "The Dravanian Forelands",
-      "zoneId": "dravania",
+      "zoneId": "the_dravanian_forelands",
+      "index": 6,
       "coords": {
-        "x": 14.0,
-        "y": 34.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g8_thedravanianforelands_06.webp",
-      "fullImage": "images/treasures/g8_thedravanianforelands_06_full_3x.webp"
+        "x": 14,
+        "y": 34,
+        "z": 0
+      }
     },
     {
       "id": "tm_156",
       "level": "g8",
-      "levelName": "巨龍革地圖",
-      "zone": "The Dravanian Forelands",
-      "zoneId": "dravania",
+      "zoneId": "the_dravanian_forelands",
+      "index": 7,
       "coords": {
-        "x": 13.0,
-        "y": 34.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g8_thedravanianforelands_07.webp",
-      "fullImage": "images/treasures/g8_thedravanianforelands_07_full_3x.webp"
+        "x": 13,
+        "y": 34,
+        "z": 0
+      }
     },
     {
       "id": "tm_157",
       "level": "g8",
-      "levelName": "巨龍革地圖",
-      "zone": "The Dravanian Forelands",
-      "zoneId": "dravania",
+      "zoneId": "the_dravanian_forelands",
+      "index": 8,
       "coords": {
-        "x": 12.0,
-        "y": 34.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g8_thedravanianforelands_08.webp",
-      "fullImage": "images/treasures/g8_thedravanianforelands_08_full_3x.webp"
+        "x": 12,
+        "y": 34,
+        "z": 0
+      }
     },
     {
       "id": "tm_158",
       "level": "g8",
-      "levelName": "巨龍革地圖",
-      "zone": "The Dravanian Forelands",
-      "zoneId": "dravania",
+      "zoneId": "the_dravanian_forelands",
+      "index": 9,
       "coords": {
-        "x": 10.0,
-        "y": 30.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g8_thedravanianforelands_09.webp",
-      "fullImage": "images/treasures/g8_thedravanianforelands_09_full_3x.webp"
+        "x": 10,
+        "y": 30,
+        "z": 0
+      }
     },
     {
       "id": "tm_159",
       "level": "g8",
-      "levelName": "巨龍革地圖",
-      "zone": "The Churning Mists",
-      "zoneId": "dravania",
+      "zoneId": "the_churning_mists",
+      "index": 1,
       "coords": {
-        "x": 29.0,
-        "y": 37.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g8_thechurningmists_01.webp",
-      "fullImage": "images/treasures/g8_thechurningmists_01_full_3x.webp"
+        "x": 29,
+        "y": 37,
+        "z": 0
+      }
     },
     {
       "id": "tm_160",
       "level": "g8",
-      "levelName": "巨龍革地圖",
-      "zone": "The Churning Mists",
-      "zoneId": "dravania",
+      "zoneId": "the_churning_mists",
+      "index": 2,
       "coords": {
-        "x": 21.0,
-        "y": 38.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g8_thechurningmists_02.webp",
-      "fullImage": "images/treasures/g8_thechurningmists_02_full_3x.webp"
+        "x": 21,
+        "y": 38,
+        "z": 0
+      }
     },
     {
       "id": "tm_161",
       "level": "g8",
-      "levelName": "巨龍革地圖",
-      "zone": "The Churning Mists",
-      "zoneId": "dravania",
+      "zoneId": "the_churning_mists",
+      "index": 3,
       "coords": {
-        "x": 17.0,
-        "y": 33.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g8_thechurningmists_03.webp",
-      "fullImage": "images/treasures/g8_thechurningmists_03_full_3x.webp"
+        "x": 17,
+        "y": 33,
+        "z": 0
+      }
     },
     {
       "id": "tm_162",
       "level": "g8",
-      "levelName": "巨龍革地圖",
-      "zone": "The Churning Mists",
-      "zoneId": "dravania",
+      "zoneId": "the_churning_mists",
+      "index": 4,
       "coords": {
-        "x": 32.0,
-        "y": 25.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g8_thechurningmists_04.webp",
-      "fullImage": "images/treasures/g8_thechurningmists_04_full_3x.webp"
+        "x": 32,
+        "y": 25,
+        "z": 0
+      }
     },
     {
       "id": "tm_163",
       "level": "g8",
-      "levelName": "巨龍革地圖",
-      "zone": "The Churning Mists",
-      "zoneId": "dravania",
+      "zoneId": "the_churning_mists",
+      "index": 5,
       "coords": {
-        "x": 23.0,
-        "y": 18.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g8_thechurningmists_05.webp",
-      "fullImage": "images/treasures/g8_thechurningmists_05_full_3x.webp"
+        "x": 23,
+        "y": 18,
+        "z": 0
+      }
     },
     {
       "id": "tm_164",
       "level": "g8",
-      "levelName": "巨龍革地圖",
-      "zone": "The Churning Mists",
-      "zoneId": "dravania",
+      "zoneId": "the_churning_mists",
+      "index": 6,
       "coords": {
-        "x": 11.0,
-        "y": 20.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g8_thechurningmists_06.webp",
-      "fullImage": "images/treasures/g8_thechurningmists_06_full_3x.webp"
+        "x": 11,
+        "y": 20,
+        "z": 0
+      }
     },
     {
       "id": "tm_165",
       "level": "g8",
-      "levelName": "巨龍革地圖",
-      "zone": "The Churning Mists",
-      "zoneId": "dravania",
+      "zoneId": "the_churning_mists",
+      "index": 7,
       "coords": {
-        "x": 8.0,
-        "y": 17.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g8_thechurningmists_07.webp",
-      "fullImage": "images/treasures/g8_thechurningmists_07_full_3x.webp"
+        "x": 8,
+        "y": 17,
+        "z": 0
+      }
     },
     {
       "id": "tm_166",
       "level": "g8",
-      "levelName": "巨龍革地圖",
-      "zone": "The Churning Mists",
-      "zoneId": "dravania",
+      "zoneId": "the_churning_mists",
+      "index": 8,
       "coords": {
-        "x": 13.0,
-        "y": 13.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g8_thechurningmists_08.webp",
-      "fullImage": "images/treasures/g8_thechurningmists_08_full_3x.webp"
+        "x": 13,
+        "y": 13,
+        "z": 0
+      }
     },
     {
       "id": "tm_167",
       "level": "g8",
-      "levelName": "巨龍革地圖",
-      "zone": "The Churning Mists",
-      "zoneId": "dravania",
+      "zoneId": "the_churning_mists",
+      "index": 9,
       "coords": {
-        "x": 10.0,
-        "y": 9.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g8_thechurningmists_09.webp",
-      "fullImage": "images/treasures/g8_thechurningmists_09_full_3x.webp"
+        "x": 10,
+        "y": 9,
+        "z": 0
+      }
     },
     {
       "id": "tm_168",
       "level": "g8",
-      "levelName": "巨龍革地圖",
-      "zone": "The Sea of Clouds",
-      "zoneId": "abalathia",
+      "zoneId": "the_sea_of_clouds",
+      "index": 1,
       "coords": {
-        "x": 6.0,
-        "y": 7.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g8_theseaofclouds_01.webp",
-      "fullImage": "images/treasures/g8_theseaofclouds_01_full_3x.webp"
+        "x": 6,
+        "y": 7,
+        "z": 0
+      }
     },
     {
       "id": "tm_169",
       "level": "g8",
-      "levelName": "巨龍革地圖",
-      "zone": "The Sea of Clouds",
-      "zoneId": "abalathia",
+      "zoneId": "the_sea_of_clouds",
+      "index": 2,
       "coords": {
-        "x": 20.0,
-        "y": 5.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g8_theseaofclouds_02.webp",
-      "fullImage": "images/treasures/g8_theseaofclouds_02_full_3x.webp"
+        "x": 20,
+        "y": 5,
+        "z": 0
+      }
     },
     {
       "id": "tm_170",
       "level": "g8",
-      "levelName": "巨龍革地圖",
-      "zone": "The Sea of Clouds",
-      "zoneId": "abalathia",
+      "zoneId": "the_sea_of_clouds",
+      "index": 3,
       "coords": {
-        "x": 22.0,
-        "y": 10.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g8_theseaofclouds_03.webp",
-      "fullImage": "images/treasures/g8_theseaofclouds_03_full_3x.webp"
+        "x": 22,
+        "y": 10,
+        "z": 0
+      }
     },
     {
       "id": "tm_171",
       "level": "g8",
-      "levelName": "巨龍革地圖",
-      "zone": "The Sea of Clouds",
-      "zoneId": "abalathia",
+      "zoneId": "the_sea_of_clouds",
+      "index": 4,
       "coords": {
-        "x": 17.0,
-        "y": 17.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g8_theseaofclouds_04.webp",
-      "fullImage": "images/treasures/g8_theseaofclouds_04_full_3x.webp"
+        "x": 17,
+        "y": 17,
+        "z": 0
+      }
     },
     {
       "id": "tm_172",
       "level": "g8",
-      "levelName": "巨龍革地圖",
-      "zone": "The Sea of Clouds",
-      "zoneId": "abalathia",
+      "zoneId": "the_sea_of_clouds",
+      "index": 5,
       "coords": {
-        "x": 31.0,
-        "y": 18.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g8_theseaofclouds_05.webp",
-      "fullImage": "images/treasures/g8_theseaofclouds_05_full_3x.webp"
+        "x": 31,
+        "y": 18,
+        "z": 0
+      }
     },
     {
       "id": "tm_173",
       "level": "g8",
-      "levelName": "巨龍革地圖",
-      "zone": "The Sea of Clouds",
-      "zoneId": "abalathia",
+      "zoneId": "the_sea_of_clouds",
+      "index": 6,
       "coords": {
-        "x": 29.0,
-        "y": 24.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g8_theseaofclouds_06.webp",
-      "fullImage": "images/treasures/g8_theseaofclouds_06_full_3x.webp"
+        "x": 29,
+        "y": 24,
+        "z": 0
+      }
     },
     {
       "id": "tm_174",
       "level": "g8",
-      "levelName": "巨龍革地圖",
-      "zone": "The Sea of Clouds",
-      "zoneId": "abalathia",
+      "zoneId": "the_sea_of_clouds",
+      "index": 7,
       "coords": {
-        "x": 14.0,
-        "y": 27.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g8_theseaofclouds_07.webp",
-      "fullImage": "images/treasures/g8_theseaofclouds_07_full_3x.webp"
+        "x": 14,
+        "y": 27,
+        "z": 0
+      }
     },
     {
       "id": "tm_175",
       "level": "g8",
-      "levelName": "巨龍革地圖",
-      "zone": "The Sea of Clouds",
-      "zoneId": "abalathia",
+      "zoneId": "the_sea_of_clouds",
+      "index": 8,
       "coords": {
-        "x": 21.0,
-        "y": 31.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g8_theseaofclouds_08.webp",
-      "fullImage": "images/treasures/g8_theseaofclouds_08_full_3x.webp"
+        "x": 21,
+        "y": 31,
+        "z": 0
+      }
     },
     {
       "id": "tm_176",
       "level": "g8",
-      "levelName": "巨龍革地圖",
-      "zone": "The Sea of Clouds",
-      "zoneId": "abalathia",
+      "zoneId": "the_sea_of_clouds",
+      "index": 9,
       "coords": {
-        "x": 19.0,
-        "y": 35.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g8_theseaofclouds_09.webp",
-      "fullImage": "images/treasures/g8_theseaofclouds_09_full_3x.webp"
+        "x": 19,
+        "y": 35,
+        "z": 0
+      }
     },
     {
       "id": "tm_177",
       "level": "g8",
-      "levelName": "巨龍革地圖",
-      "zone": "The Sea of Clouds",
-      "zoneId": "abalathia",
+      "zoneId": "the_sea_of_clouds",
+      "index": 10,
       "coords": {
-        "x": 10.0,
-        "y": 38.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g8_theseaofclouds_10.webp",
-      "fullImage": "images/treasures/g8_theseaofclouds_10_full_3x.webp"
+        "x": 10,
+        "y": 38,
+        "z": 0
+      }
     },
     {
       "id": "tm_178",
       "level": "g12",
-      "levelName": "纏尾蛟革地圖",
-      "zone": "Lakeland",
-      "zoneId": "norvrandt",
+      "zoneId": "lakeland",
+      "index": 1,
       "coords": {
-        "x": 8.0,
-        "y": 21.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g12_lakeland_01.webp",
-      "fullImage": "images/treasures/g12_lakeland_01_full_3x.webp"
+        "x": 8,
+        "y": 21,
+        "z": 0
+      }
     },
     {
       "id": "tm_179",
       "level": "g12",
-      "levelName": "纏尾蛟革地圖",
-      "zone": "Lakeland",
-      "zoneId": "norvrandt",
+      "zoneId": "lakeland",
+      "index": 2,
       "coords": {
-        "x": 10.0,
-        "y": 25.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g12_lakeland_02.webp",
-      "fullImage": "images/treasures/g12_lakeland_02_full_3x.webp"
+        "x": 10,
+        "y": 25,
+        "z": 0
+      }
     },
     {
       "id": "tm_180",
       "level": "g12",
-      "levelName": "纏尾蛟革地圖",
-      "zone": "Lakeland",
-      "zoneId": "norvrandt",
+      "zoneId": "lakeland",
+      "index": 3,
       "coords": {
-        "x": 10.0,
-        "y": 11.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g12_lakeland_03.webp",
-      "fullImage": "images/treasures/g12_lakeland_03_full_3x.webp"
+        "x": 10,
+        "y": 11,
+        "z": 0
+      }
     },
     {
       "id": "tm_181",
       "level": "g12",
-      "levelName": "纏尾蛟革地圖",
-      "zone": "Lakeland",
-      "zoneId": "norvrandt",
+      "zoneId": "lakeland",
+      "index": 4,
       "coords": {
-        "x": 13.0,
-        "y": 12.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g12_lakeland_04.webp",
-      "fullImage": "images/treasures/g12_lakeland_04_full_3x.webp"
+        "x": 13,
+        "y": 12,
+        "z": 0
+      }
     },
     {
       "id": "tm_182",
       "level": "g12",
-      "levelName": "纏尾蛟革地圖",
-      "zone": "Lakeland",
-      "zoneId": "norvrandt",
+      "zoneId": "lakeland",
+      "index": 5,
       "coords": {
-        "x": 17.0,
-        "y": 17.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g12_lakeland_05.webp",
-      "fullImage": "images/treasures/g12_lakeland_05_full_3x.webp"
+        "x": 17,
+        "y": 17,
+        "z": 0
+      }
     },
     {
       "id": "tm_183",
       "level": "g12",
-      "levelName": "纏尾蛟革地圖",
-      "zone": "Lakeland",
-      "zoneId": "norvrandt",
+      "zoneId": "lakeland",
+      "index": 6,
       "coords": {
-        "x": 18.0,
-        "y": 7.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g12_lakeland_06.webp",
-      "fullImage": "images/treasures/g12_lakeland_06_full_3x.webp"
+        "x": 18,
+        "y": 7,
+        "z": 0
+      }
     },
     {
       "id": "tm_184",
       "level": "g12",
-      "levelName": "纏尾蛟革地圖",
-      "zone": "Lakeland",
-      "zoneId": "norvrandt",
+      "zoneId": "lakeland",
+      "index": 7,
       "coords": {
-        "x": 34.0,
-        "y": 25.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g12_lakeland_07.webp",
-      "fullImage": "images/treasures/g12_lakeland_07_full_3x.webp"
+        "x": 34,
+        "y": 25,
+        "z": 0
+      }
     },
     {
       "id": "tm_185",
       "level": "g12",
-      "levelName": "纏尾蛟革地圖",
-      "zone": "Lakeland",
-      "zoneId": "norvrandt",
+      "zoneId": "lakeland",
+      "index": 8,
       "coords": {
-        "x": 38.0,
-        "y": 13.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g12_lakeland_08.webp",
-      "fullImage": "images/treasures/g12_lakeland_08_full_3x.webp"
+        "x": 38,
+        "y": 13,
+        "z": 0
+      }
     },
     {
       "id": "tm_186",
       "level": "g12",
-      "levelName": "纏尾蛟革地圖",
-      "zone": "Kholusia",
-      "zoneId": "norvrandt",
+      "zoneId": "kholusia",
+      "index": 1,
       "coords": {
-        "x": 7.0,
-        "y": 18.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g12_kholusia_01.webp",
-      "fullImage": "images/treasures/g12_kholusia_01_full_3x.webp"
+        "x": 7,
+        "y": 18,
+        "z": 0
+      }
     },
     {
       "id": "tm_187",
       "level": "g12",
-      "levelName": "纏尾蛟革地圖",
-      "zone": "Kholusia",
-      "zoneId": "norvrandt",
+      "zoneId": "kholusia",
+      "index": 2,
       "coords": {
-        "x": 11.0,
-        "y": 13.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g12_kholusia_02.webp",
-      "fullImage": "images/treasures/g12_kholusia_02_full_3x.webp"
+        "x": 11,
+        "y": 13,
+        "z": 0
+      }
     },
     {
       "id": "tm_188",
       "level": "g12",
-      "levelName": "纏尾蛟革地圖",
-      "zone": "Kholusia",
-      "zoneId": "norvrandt",
+      "zoneId": "kholusia",
+      "index": 3,
       "coords": {
-        "x": 13.0,
-        "y": 16.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g12_kholusia_03.webp",
-      "fullImage": "images/treasures/g12_kholusia_03_full_3x.webp"
+        "x": 13,
+        "y": 16,
+        "z": 0
+      }
     },
     {
       "id": "tm_189",
       "level": "g12",
-      "levelName": "纏尾蛟革地圖",
-      "zone": "Kholusia",
-      "zoneId": "norvrandt",
+      "zoneId": "kholusia",
+      "index": 4,
       "coords": {
-        "x": 20.0,
-        "y": 17.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g12_kholusia_04.webp",
-      "fullImage": "images/treasures/g12_kholusia_04_full_3x.webp"
+        "x": 20,
+        "y": 17,
+        "z": 0
+      }
     },
     {
       "id": "tm_190",
       "level": "g12",
-      "levelName": "纏尾蛟革地圖",
-      "zone": "Kholusia",
-      "zoneId": "norvrandt",
+      "zoneId": "kholusia",
+      "index": 5,
       "coords": {
-        "x": 21.0,
+        "x": 21,
         "y": 9.5,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g12_kholusia_05.webp",
-      "fullImage": "images/treasures/g12_kholusia_05_full_3x.webp"
+        "z": 0
+      }
     },
     {
       "id": "tm_191",
       "level": "g12",
-      "levelName": "纏尾蛟革地圖",
-      "zone": "Kholusia",
-      "zoneId": "norvrandt",
+      "zoneId": "kholusia",
+      "index": 6,
       "coords": {
-        "x": 30.0,
-        "y": 17.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g12_kholusia_06.webp",
-      "fullImage": "images/treasures/g12_kholusia_06_full_3x.webp"
+        "x": 30,
+        "y": 17,
+        "z": 0
+      }
     },
     {
       "id": "tm_192",
       "level": "g12",
-      "levelName": "纏尾蛟革地圖",
-      "zone": "Kholusia",
-      "zoneId": "norvrandt",
+      "zoneId": "kholusia",
+      "index": 7,
       "coords": {
-        "x": 34.0,
-        "y": 10.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g12_kholusia_07.webp",
-      "fullImage": "images/treasures/g12_kholusia_07_full_3x.webp"
+        "x": 34,
+        "y": 10,
+        "z": 0
+      }
     },
     {
       "id": "tm_193",
       "level": "g12",
-      "levelName": "纏尾蛟革地圖",
-      "zone": "Kholusia",
-      "zoneId": "norvrandt",
+      "zoneId": "kholusia",
+      "index": 8,
       "coords": {
-        "x": 33.0,
-        "y": 31.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g12_kholusia_08.webp",
-      "fullImage": "images/treasures/g12_kholusia_08_full_3x.webp"
+        "x": 33,
+        "y": 31,
+        "z": 0
+      }
     },
     {
       "id": "tm_194",
       "level": "g12",
-      "levelName": "纏尾蛟革地圖",
-      "zone": "Amh Araeng",
-      "zoneId": "norvrandt",
+      "zoneId": "amh_araeng",
+      "index": 1,
       "coords": {
-        "x": 12.0,
-        "y": 14.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g12_amharaeng_01.webp",
-      "fullImage": "images/treasures/g12_amharaeng_01_full_3x.webp"
+        "x": 12,
+        "y": 14,
+        "z": 0
+      }
     },
     {
       "id": "tm_195",
       "level": "g12",
-      "levelName": "纏尾蛟革地圖",
-      "zone": "Amh Araeng",
-      "zoneId": "norvrandt",
+      "zoneId": "amh_araeng",
+      "index": 2,
       "coords": {
-        "x": 13.0,
-        "y": 30.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g12_amharaeng_02.webp",
-      "fullImage": "images/treasures/g12_amharaeng_02_full_3x.webp"
+        "x": 13,
+        "y": 30,
+        "z": 0
+      }
     },
     {
       "id": "tm_196",
       "level": "g12",
-      "levelName": "纏尾蛟革地圖",
-      "zone": "Amh Araeng",
-      "zoneId": "norvrandt",
+      "zoneId": "amh_araeng",
+      "index": 3,
       "coords": {
-        "x": 27.0,
-        "y": 13.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g12_amharaeng_03.webp",
-      "fullImage": "images/treasures/g12_amharaeng_03_full_3x.webp"
+        "x": 27,
+        "y": 13,
+        "z": 0
+      }
     },
     {
       "id": "tm_197",
       "level": "g12",
-      "levelName": "纏尾蛟革地圖",
-      "zone": "Amh Araeng",
-      "zoneId": "norvrandt",
+      "zoneId": "amh_araeng",
+      "index": 4,
       "coords": {
-        "x": 26.0,
-        "y": 23.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g12_amharaeng_04.webp",
-      "fullImage": "images/treasures/g12_amharaeng_04_full_3x.webp"
+        "x": 26,
+        "y": 23,
+        "z": 0
+      }
     },
     {
       "id": "tm_198",
       "level": "g12",
-      "levelName": "纏尾蛟革地圖",
-      "zone": "Amh Araeng",
-      "zoneId": "norvrandt",
+      "zoneId": "amh_araeng",
+      "index": 5,
       "coords": {
-        "x": 30.0,
-        "y": 30.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g12_amharaeng_05.webp",
-      "fullImage": "images/treasures/g12_amharaeng_05_full_3x.webp"
+        "x": 30,
+        "y": 30,
+        "z": 0
+      }
     },
     {
       "id": "tm_199",
       "level": "g12",
-      "levelName": "纏尾蛟革地圖",
-      "zone": "Amh Araeng",
-      "zoneId": "norvrandt",
+      "zoneId": "amh_araeng",
+      "index": 6,
       "coords": {
-        "x": 32.0,
-        "y": 8.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g12_amharaeng_06.webp",
-      "fullImage": "images/treasures/g12_amharaeng_06_full_3x.webp"
+        "x": 32,
+        "y": 8,
+        "z": 0
+      }
     },
     {
       "id": "tm_200",
       "level": "g12",
-      "levelName": "纏尾蛟革地圖",
-      "zone": "Amh Araeng",
-      "zoneId": "norvrandt",
+      "zoneId": "amh_araeng",
+      "index": 7,
       "coords": {
-        "x": 36.0,
-        "y": 11.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g12_amharaeng_07.webp",
-      "fullImage": "images/treasures/g12_amharaeng_07_full_3x.webp"
+        "x": 36,
+        "y": 11,
+        "z": 0
+      }
     },
     {
       "id": "tm_201",
       "level": "g12",
-      "levelName": "纏尾蛟革地圖",
-      "zone": "Amh Araeng",
-      "zoneId": "norvrandt",
+      "zoneId": "amh_araeng",
+      "index": 8,
       "coords": {
-        "x": 34.0,
-        "y": 17.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g12_amharaeng_08.webp",
-      "fullImage": "images/treasures/g12_amharaeng_08_full_3x.webp"
+        "x": 34,
+        "y": 17,
+        "z": 0
+      }
     },
     {
       "id": "tm_202",
       "level": "g12",
-      "levelName": "纏尾蛟革地圖",
-      "zone": "Il Mheg",
-      "zoneId": "norvrandt",
+      "zoneId": "il_mheg",
+      "index": 1,
       "coords": {
-        "x": 7.0,
-        "y": 17.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g12_ilmheg_01.webp",
-      "fullImage": "images/treasures/g12_ilmheg_01_full_3x.webp"
+        "x": 7,
+        "y": 17,
+        "z": 0
+      }
     },
     {
       "id": "tm_203",
       "level": "g12",
-      "levelName": "纏尾蛟革地圖",
-      "zone": "Il Mheg",
-      "zoneId": "norvrandt",
+      "zoneId": "il_mheg",
+      "index": 2,
       "coords": {
-        "x": 10.0,
-        "y": 13.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g12_ilmheg_02.webp",
-      "fullImage": "images/treasures/g12_ilmheg_02_full_3x.webp"
+        "x": 10,
+        "y": 13,
+        "z": 0
+      }
     },
     {
       "id": "tm_204",
       "level": "g12",
-      "levelName": "纏尾蛟革地圖",
-      "zone": "Il Mheg",
-      "zoneId": "norvrandt",
+      "zoneId": "il_mheg",
+      "index": 3,
       "coords": {
-        "x": 12.0,
-        "y": 20.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g12_ilmheg_03.webp",
-      "fullImage": "images/treasures/g12_ilmheg_03_full_3x.webp"
+        "x": 12,
+        "y": 20,
+        "z": 0
+      }
     },
     {
       "id": "tm_205",
       "level": "g12",
-      "levelName": "纏尾蛟革地圖",
-      "zone": "Il Mheg",
-      "zoneId": "norvrandt",
+      "zoneId": "il_mheg",
+      "index": 4,
       "coords": {
-        "x": 14.0,
-        "y": 27.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g12_ilmheg_04.webp",
-      "fullImage": "images/treasures/g12_ilmheg_04_full_3x.webp"
+        "x": 14,
+        "y": 27,
+        "z": 0
+      }
     },
     {
       "id": "tm_206",
       "level": "g12",
-      "levelName": "纏尾蛟革地圖",
-      "zone": "Il Mheg",
-      "zoneId": "norvrandt",
+      "zoneId": "il_mheg",
+      "index": 5,
       "coords": {
-        "x": 21.0,
-        "y": 7.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g12_ilmheg_05.webp",
-      "fullImage": "images/treasures/g12_ilmheg_05_full_3x.webp"
+        "x": 21,
+        "y": 7,
+        "z": 0
+      }
     },
     {
       "id": "tm_207",
       "level": "g12",
-      "levelName": "纏尾蛟革地圖",
-      "zone": "Il Mheg",
-      "zoneId": "norvrandt",
+      "zoneId": "il_mheg",
+      "index": 6,
       "coords": {
-        "x": 25.0,
-        "y": 12.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g12_ilmheg_06.webp",
-      "fullImage": "images/treasures/g12_ilmheg_06_full_3x.webp"
+        "x": 25,
+        "y": 12,
+        "z": 0
+      }
     },
     {
       "id": "tm_208",
       "level": "g12",
-      "levelName": "纏尾蛟革地圖",
-      "zone": "Il Mheg",
-      "zoneId": "norvrandt",
+      "zoneId": "il_mheg",
+      "index": 7,
       "coords": {
-        "x": 31.0,
-        "y": 4.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g12_ilmheg_07.webp",
-      "fullImage": "images/treasures/g12_ilmheg_07_full_3x.webp"
+        "x": 31,
+        "y": 4,
+        "z": 0
+      }
     },
     {
       "id": "tm_209",
       "level": "g12",
-      "levelName": "纏尾蛟革地圖",
-      "zone": "Il Mheg",
-      "zoneId": "norvrandt",
+      "zoneId": "il_mheg",
+      "index": 8,
       "coords": {
-        "x": 33.0,
-        "y": 10.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g12_ilmheg_08.webp",
-      "fullImage": "images/treasures/g12_ilmheg_08_full_3x.webp"
+        "x": 33,
+        "y": 10,
+        "z": 0
+      }
     },
     {
       "id": "tm_210",
       "level": "g12",
-      "levelName": "纏尾蛟革地圖",
-      "zone": "The Rak'tika Greatwood",
-      "zoneId": "norvrandt",
+      "zoneId": "the_raktika_greatwood",
+      "index": 1,
       "coords": {
-        "x": 11.0,
-        "y": 19.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g12_theraktikagreatwood_01.webp",
-      "fullImage": "images/treasures/g12_theraktikagreatwood_01_full_3x.webp"
+        "x": 11,
+        "y": 19,
+        "z": 0
+      }
     },
     {
       "id": "tm_211",
       "level": "g12",
-      "levelName": "纏尾蛟革地圖",
-      "zone": "The Rak'tika Greatwood",
-      "zoneId": "norvrandt",
+      "zoneId": "the_raktika_greatwood",
+      "index": 2,
       "coords": {
-        "x": 13.0,
-        "y": 24.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g12_theraktikagreatwood_02.webp",
-      "fullImage": "images/treasures/g12_theraktikagreatwood_02_full_3x.webp"
+        "x": 13,
+        "y": 24,
+        "z": 0
+      }
     },
     {
       "id": "tm_212",
       "level": "g12",
-      "levelName": "纏尾蛟革地圖",
-      "zone": "The Rak'tika Greatwood",
-      "zoneId": "norvrandt",
+      "zoneId": "the_raktika_greatwood",
+      "index": 3,
       "coords": {
-        "x": 22.0,
-        "y": 32.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g12_theraktikagreatwood_03.webp",
-      "fullImage": "images/treasures/g12_theraktikagreatwood_03_full_3x.webp"
+        "x": 22,
+        "y": 32,
+        "z": 0
+      }
     },
     {
       "id": "tm_213",
       "level": "g12",
-      "levelName": "纏尾蛟革地圖",
-      "zone": "The Rak'tika Greatwood",
-      "zoneId": "norvrandt",
+      "zoneId": "the_raktika_greatwood",
+      "index": 4,
       "coords": {
-        "x": 24.0,
-        "y": 15.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g12_theraktikagreatwood_04.webp",
-      "fullImage": "images/treasures/g12_theraktikagreatwood_04_full_3x.webp"
+        "x": 24,
+        "y": 15,
+        "z": 0
+      }
     },
     {
       "id": "tm_214",
       "level": "g12",
-      "levelName": "纏尾蛟革地圖",
-      "zone": "The Rak'tika Greatwood",
-      "zoneId": "norvrandt",
+      "zoneId": "the_raktika_greatwood",
+      "index": 5,
       "coords": {
-        "x": 24.0,
-        "y": 27.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g12_theraktikagreatwood_05.webp",
-      "fullImage": "images/treasures/g12_theraktikagreatwood_05_full_3x.webp"
+        "x": 24,
+        "y": 27,
+        "z": 0
+      }
     },
     {
       "id": "tm_215",
       "level": "g12",
-      "levelName": "纏尾蛟革地圖",
-      "zone": "The Rak'tika Greatwood",
-      "zoneId": "norvrandt",
+      "zoneId": "the_raktika_greatwood",
+      "index": 6,
       "coords": {
-        "x": 26.0,
-        "y": 34.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g12_theraktikagreatwood_06.webp",
-      "fullImage": "images/treasures/g12_theraktikagreatwood_06_full_3x.webp"
+        "x": 26,
+        "y": 34,
+        "z": 0
+      }
     },
     {
       "id": "tm_216",
       "level": "g12",
-      "levelName": "纏尾蛟革地圖",
-      "zone": "The Rak'tika Greatwood",
-      "zoneId": "norvrandt",
+      "zoneId": "the_raktika_greatwood",
+      "index": 7,
       "coords": {
-        "x": 34.0,
-        "y": 17.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g12_theraktikagreatwood_07.webp",
-      "fullImage": "images/treasures/g12_theraktikagreatwood_07_full_3x.webp"
+        "x": 34,
+        "y": 17,
+        "z": 0
+      }
     },
     {
       "id": "tm_217",
       "level": "g12",
-      "levelName": "纏尾蛟革地圖",
-      "zone": "The Rak'tika Greatwood",
-      "zoneId": "norvrandt",
+      "zoneId": "the_raktika_greatwood",
+      "index": 8,
       "coords": {
-        "x": 35.0,
-        "y": 22.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g12_theraktikagreatwood_08.webp",
-      "fullImage": "images/treasures/g12_theraktikagreatwood_08_full_3x.webp"
+        "x": 35,
+        "y": 22,
+        "z": 0
+      }
     },
     {
       "id": "tm_218",
       "level": "g12",
-      "levelName": "纏尾蛟革地圖",
-      "zone": "The Tempest",
-      "zoneId": "norvrandt",
+      "zoneId": "the_tempest",
+      "index": 1,
       "coords": {
-        "x": 12.0,
-        "y": 11.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g12_thetempest_01.webp",
-      "fullImage": "images/treasures/g12_thetempest_01_full_3x.webp"
+        "x": 12,
+        "y": 11,
+        "z": 0
+      }
     },
     {
       "id": "tm_219",
       "level": "g12",
-      "levelName": "纏尾蛟革地圖",
-      "zone": "The Tempest",
-      "zoneId": "norvrandt",
+      "zoneId": "the_tempest",
+      "index": 2,
       "coords": {
-        "x": 13.0,
-        "y": 14.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g12_thetempest_02.webp",
-      "fullImage": "images/treasures/g12_thetempest_02_full_3x.webp"
+        "x": 13,
+        "y": 14,
+        "z": 0
+      }
     },
     {
       "id": "tm_220",
       "level": "g12",
-      "levelName": "纏尾蛟革地圖",
-      "zone": "The Tempest",
-      "zoneId": "norvrandt",
+      "zoneId": "the_tempest",
+      "index": 3,
       "coords": {
-        "x": 16.0,
-        "y": 18.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g12_thetempest_03.webp",
-      "fullImage": "images/treasures/g12_thetempest_03_full_3x.webp"
+        "x": 16,
+        "y": 18,
+        "z": 0
+      }
     },
     {
       "id": "tm_221",
       "level": "g12",
-      "levelName": "纏尾蛟革地圖",
-      "zone": "The Tempest",
-      "zoneId": "norvrandt",
+      "zoneId": "the_tempest",
+      "index": 4,
       "coords": {
-        "x": 19.0,
-        "y": 8.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g12_thetempest_04.webp",
-      "fullImage": "images/treasures/g12_thetempest_04_full_3x.webp"
+        "x": 19,
+        "y": 8,
+        "z": 0
+      }
     },
     {
       "id": "tm_222",
       "level": "g12",
-      "levelName": "纏尾蛟革地圖",
-      "zone": "The Tempest",
-      "zoneId": "norvrandt",
+      "zoneId": "the_tempest",
+      "index": 5,
       "coords": {
-        "x": 25.0,
-        "y": 11.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g12_thetempest_05.webp",
-      "fullImage": "images/treasures/g12_thetempest_05_full_3x.webp"
+        "x": 25,
+        "y": 11,
+        "z": 0
+      }
     },
     {
       "id": "tm_223",
       "level": "g12",
-      "levelName": "纏尾蛟革地圖",
-      "zone": "The Tempest",
-      "zoneId": "norvrandt",
+      "zoneId": "the_tempest",
+      "index": 6,
       "coords": {
-        "x": 32.0,
-        "y": 5.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g12_thetempest_06.webp",
-      "fullImage": "images/treasures/g12_thetempest_06_full_3x.webp"
+        "x": 32,
+        "y": 5,
+        "z": 0
+      }
     },
     {
       "id": "tm_224",
       "level": "g12",
-      "levelName": "纏尾蛟革地圖",
-      "zone": "The Tempest",
-      "zoneId": "norvrandt",
+      "zoneId": "the_tempest",
+      "index": 7,
       "coords": {
-        "x": 30.0,
-        "y": 20.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g12_thetempest_07.webp",
-      "fullImage": "images/treasures/g12_thetempest_07_full_3x.webp"
+        "x": 30,
+        "y": 20,
+        "z": 0
+      }
     },
     {
       "id": "tm_225",
       "level": "g12",
-      "levelName": "纏尾蛟革地圖",
-      "zone": "The Tempest",
-      "zoneId": "norvrandt",
+      "zoneId": "the_tempest",
+      "index": 8,
       "coords": {
-        "x": 37.0,
-        "y": 17.0,
-        "z": 0.0
-      },
-      "thumbnail": "images/treasures/g12_thetempest_08.webp",
-      "fullImage": "images/treasures/g12_thetempest_08_full_3x.webp"
+        "x": 37,
+        "y": 17,
+        "z": 0
+      }
     }
   ]
 }

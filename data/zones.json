@@ -1,0 +1,595 @@
+{
+  "zones": {
+    "tural": {
+      "id": "tural",
+      "names": {
+        "en": "Tural",
+        "zh": "圖拉爾",
+        "ja": "トラル"
+      },
+      "region": "7.0",
+      "expansion": "Dawntrail",
+      "subZones": [
+        {
+          "id": "urqopacha",
+          "names": {
+            "en": "Urqopacha",
+            "zh": "烏爾科帕恰",
+            "ja": "オルコ・パチャ"
+          },
+          "normalizedName": "urqopacha",
+          "filePrefix": "urqopacha",
+          "aetherytes": ["wachunpelo", "worqor_zormor"]
+        },
+        {
+          "id": "kozamauka",
+          "names": {
+            "en": "Kozama'uka",
+            "zh": "科扎馬烏卡",
+            "ja": "コザマル・カ"
+          },
+          "normalizedName": "kozamauka",
+          "filePrefix": "kozamauka",
+          "aetherytes": ["ok_hanu", "earthenshire"]
+        },
+        {
+          "id": "yaktel",
+          "names": {
+            "en": "Yak T'el",
+            "zh": "亞克特爾樹海",
+            "ja": "ヤクテル樹海"
+          },
+          "normalizedName": "yaktel",
+          "filePrefix": "yaktel",
+          "aetherytes": ["iq_rrax", "mamook"]
+        },
+        {
+          "id": "shaaloani",
+          "names": {
+            "en": "Shaaloani",
+            "zh": "夏羅尼荒野",
+            "ja": "シャーローニ荒野"
+          },
+          "normalizedName": "shaaloani",
+          "filePrefix": "shaaloani",
+          "aetherytes": ["hhusatahwi", "shaaloani"]
+        },
+        {
+          "id": "heritage_found",
+          "names": {
+            "en": "Heritage Found",
+            "zh": "遺產之地",
+            "ja": "ヘリテージファウンド"
+          },
+          "normalizedName": "heritage_found",
+          "filePrefix": "heritagefound",
+          "aetherytes": ["mehwahjaxas", "xagjhalyokawak"]
+        }
+      ]
+    },
+    "ilsabard": {
+      "id": "ilsabard",
+      "names": {
+        "en": "Ilsabard",
+        "zh": "伊爾薩巴德",
+        "ja": "イルサバード"
+      },
+      "region": "6.0",
+      "expansion": "Endwalker",
+      "subZones": [
+        {
+          "id": "labyrinthos",
+          "names": {
+            "en": "Labyrinthos",
+            "zh": "拉比陵托斯",
+            "ja": "ラヴィリンソス"
+          },
+          "normalizedName": "labyrinthos",
+          "filePrefix": "labyrinthos",
+          "aetherytes": ["archon_lounge", "sharlayan_hamlet"]
+        },
+        {
+          "id": "thavnair",
+          "names": {
+            "en": "Thavnair",
+            "zh": "薩維奈島",
+            "ja": "サベネア島"
+          },
+          "normalizedName": "thavnair",
+          "filePrefix": "thavnair",
+          "aetherytes": ["yedlihmad", "palaka_stand"]
+        },
+        {
+          "id": "garlemald",
+          "names": {
+            "en": "Garlemald",
+            "zh": "加雷馬",
+            "ja": "ガレマルド"
+          },
+          "normalizedName": "garlemald",
+          "filePrefix": "garlemald",
+          "aetherytes": ["tertium", "camp_broken_glass"]
+        },
+        {
+          "id": "marelamentorum",
+          "names": {
+            "en": "Mare Lamentorum",
+            "zh": "嘆息海",
+            "ja": "嘆きの海"
+          },
+          "normalizedName": "marelamentorum",
+          "filePrefix": "marelamentorum",
+          "aetherytes": ["sinus_lacrimarum", "bestways_burrow"]
+        },
+        {
+          "id": "elpis",
+          "names": {
+            "en": "Elpis",
+            "zh": "厄爾庇斯",
+            "ja": "エルピス"
+          },
+          "normalizedName": "elpis",
+          "filePrefix": "elpis",
+          "aetherytes": ["the_twelve_wonders", "anagnorisis"]
+        },
+        {
+          "id": "ultimathule",
+          "names": {
+            "en": "Ultima Thule",
+            "zh": "天外天垓",
+            "ja": "ウルティマ・トゥーレ"
+          },
+          "normalizedName": "ultimathule",
+          "filePrefix": "ultimathule",
+          "aetherytes": ["reah_tahra", "base_omicron"]
+        }
+      ]
+    },
+    "norvrandt": {
+      "id": "norvrandt",
+      "names": {
+        "en": "Norvrandt",
+        "zh": "諾弗蘭特",
+        "ja": "ノルヴラント"
+      },
+      "region": "5.0",
+      "expansion": "Shadowbringers",
+      "subZones": [
+        {
+          "id": "lakeland",
+          "names": {
+            "en": "Lakeland",
+            "zh": "雷克蘭德",
+            "ja": "レイクランド"
+          },
+          "normalizedName": "lakeland",
+          "filePrefix": "lakeland",
+          "aetherytes": ["the_ostall_imperative", "fort_jobb"]
+        },
+        {
+          "id": "kholusia",
+          "names": {
+            "en": "Kholusia",
+            "zh": "珂露西亞島",
+            "ja": "コルシア島"
+          },
+          "normalizedName": "kholusia",
+          "filePrefix": "kholusia",
+          "aetherytes": ["tomra", "stilltide"]
+        },
+        {
+          "id": "amharaeng",
+          "names": {
+            "en": "Amh Araeng",
+            "zh": "安穆·艾蘭",
+            "ja": "アム・アレーン"
+          },
+          "normalizedName": "amharaeng",
+          "filePrefix": "amharaeng",
+          "aetherytes": ["twine", "mord_souq"]
+        },
+        {
+          "id": "ilmheg",
+          "names": {
+            "en": "Il Mheg",
+            "zh": "伊爾美格",
+            "ja": "イル・メグ"
+          },
+          "normalizedName": "ilmheg",
+          "filePrefix": "ilmheg",
+          "aetherytes": ["lydha_lran", "pla_enni"]
+        },
+        {
+          "id": "theraktikagreatwood",
+          "names": {
+            "en": "The Rak'tika Greatwood",
+            "zh": "拉凱提卡大森林",
+            "ja": "ラケティカ大森林"
+          },
+          "normalizedName": "theraktikagreatwood",
+          "filePrefix": "theraktikagreatwood",
+          "aetherytes": ["slitherbough", "fanow"]
+        },
+        {
+          "id": "thetempest",
+          "names": {
+            "en": "The Tempest",
+            "zh": "黑風海",
+            "ja": "テンペスト"
+          },
+          "normalizedName": "thetempest",
+          "filePrefix": "thetempest",
+          "aetherytes": ["ondo_cups", "macarenses_angle"]
+        }
+      ]
+    },
+    "gyr_abania": {
+      "id": "gyr_abania",
+      "names": {
+        "en": "Gyr Abania",
+        "zh": "基拉巴尼亞",
+        "ja": "ギラバニア"
+      },
+      "region": "4.0",
+      "expansion": "Stormblood",
+      "subZones": [
+        {
+          "id": "thefringes",
+          "names": {
+            "en": "The Fringes",
+            "zh": "邊域",
+            "ja": "ギラバニア辺境地帯"
+          },
+          "normalizedName": "thefringes",
+          "filePrefix": "thefringes",
+          "aetherytes": ["castrum_oriens", "peering_stones"]
+        },
+        {
+          "id": "thepeaks",
+          "names": {
+            "en": "The Peaks",
+            "zh": "基拉巴尼亞山區",
+            "ja": "ギラバニア山岳地帯"
+          },
+          "normalizedName": "thepeaks",
+          "filePrefix": "thepeaks",
+          "aetherytes": ["ala_gannha", "ala_ghiri"]
+        },
+        {
+          "id": "thelochs",
+          "names": {
+            "en": "The Lochs",
+            "zh": "基拉巴尼亞湖區",
+            "ja": "ギラバニア湖畔地帯"
+          },
+          "normalizedName": "thelochs",
+          "filePrefix": "thelochs",
+          "aetherytes": ["porta_praetoria", "ala_mhigan_quarter"]
+        }
+      ]
+    },
+    "othard": {
+      "id": "othard",
+      "names": {
+        "en": "Othard",
+        "zh": "奧薩德",
+        "ja": "オサード"
+      },
+      "region": "4.0",
+      "expansion": "Stormblood",
+      "subZones": [
+        {
+          "id": "therubysea",
+          "names": {
+            "en": "The Ruby Sea",
+            "zh": "紅玉海",
+            "ja": "紅玉海"
+          },
+          "normalizedName": "therubysea",
+          "filePrefix": "therubysea",
+          "aetherytes": ["tamamizu", "onokoro"]
+        },
+        {
+          "id": "yanxia",
+          "names": {
+            "en": "Yanxia",
+            "zh": "延夏",
+            "ja": "ヤンサ"
+          },
+          "normalizedName": "yanxia",
+          "filePrefix": "yanxia",
+          "aetherytes": ["house_of_the_fierce", "namai"]
+        },
+        {
+          "id": "theazimsteppe",
+          "names": {
+            "en": "The Azim Steppe",
+            "zh": "阿吉姆草原",
+            "ja": "アジムステップ"
+          },
+          "normalizedName": "theazimsteppe",
+          "filePrefix": "theazimsteppe",
+          "aetherytes": ["dawn_throne", "dhoro_iloh"]
+        }
+      ]
+    },
+    "coerthas": {
+      "id": "coerthas",
+      "names": {
+        "en": "Coerthas",
+        "zh": "庫爾札斯",
+        "ja": "クルザス"
+      },
+      "region": "3.0",
+      "expansion": "Heavensward",
+      "subZones": [
+        {
+          "id": "coerthaswesternhighlands",
+          "names": {
+            "en": "Coerthas Western Highlands",
+            "zh": "庫爾札斯西部高地",
+            "ja": "クルザス西部高地"
+          },
+          "normalizedName": "coerthaswesternhighlands",
+          "filePrefix": "coerthaswesternhighlands",
+          "aetherytes": ["falcon_nest"]
+        }
+      ]
+    },
+    "dravania": {
+      "id": "dravania",
+      "names": {
+        "en": "Dravania",
+        "zh": "龍堡",
+        "ja": "ドラヴァニア"
+      },
+      "region": "3.0",
+      "expansion": "Heavensward",
+      "subZones": [
+        {
+          "id": "thedravanianforelands",
+          "names": {
+            "en": "The Dravanian Forelands",
+            "zh": "龍堡參天高地",
+            "ja": "高地ドラヴァニア"
+          },
+          "normalizedName": "thedravanianforelands",
+          "filePrefix": "thedravanianforelands",
+          "aetherytes": ["tailfeather", "anyx_trine"]
+        },
+        {
+          "id": "thechurningmists",
+          "names": {
+            "en": "The Churning Mists",
+            "zh": "翻雲霧海",
+            "ja": "雲海"
+          },
+          "normalizedName": "thechurningmists",
+          "filePrefix": "thechurningmists",
+          "aetherytes": ["moghome", "zenith"]
+        }
+      ]
+    },
+    "abalathia": {
+      "id": "abalathia",
+      "names": {
+        "en": "Abalathia",
+        "zh": "阿巴拉提亞",
+        "ja": "アバラシア"
+      },
+      "region": "3.0",
+      "expansion": "Heavensward",
+      "subZones": [
+        {
+          "id": "theseaofclouds",
+          "names": {
+            "en": "The Sea of Clouds",
+            "zh": "雲海",
+            "ja": "アバラシア雲海"
+          },
+          "normalizedName": "theseaofclouds",
+          "filePrefix": "theseaofclouds",
+          "aetherytes": ["camp_cloudtop", "ok_zundu"]
+        }
+      ]
+    },
+    "thanalan": {
+      "id": "thanalan",
+      "names": {
+        "en": "Thanalan",
+        "zh": "薩納蘭",
+        "ja": "ザナラーン"
+      },
+      "region": "2.0",
+      "expansion": "A Realm Reborn",
+      "subZones": [
+        {
+          "id": "easternthanalan",
+          "names": {
+            "en": "Eastern Thanalan",
+            "zh": "東薩納蘭",
+            "ja": "東ザナラーン"
+          },
+          "normalizedName": "easternthanalan",
+          "filePrefix": "easternthanalan",
+          "aetherytes": ["camp_drybone"]
+        }
+      ]
+    },
+    "la_noscea": {
+      "id": "la_noscea",
+      "names": {
+        "en": "La Noscea",
+        "zh": "拉諾西亞",
+        "ja": "ラノシア"
+      },
+      "region": "2.0",
+      "expansion": "A Realm Reborn",
+      "subZones": [
+        {
+          "id": "westernlanoscea",
+          "names": {
+            "en": "Western La Noscea",
+            "zh": "西拉諾西亞",
+            "ja": "西ラノシア"
+          },
+          "normalizedName": "westernlanoscea",
+          "filePrefix": "westernlanoscea",
+          "aetherytes": ["aleport"]
+        }
+      ]
+    }
+  },
+  "mappings": {
+    "zoneNameToId": {
+      "Urqopacha": "urqopacha",
+      "烏爾科帕恰": "urqopacha",
+      "オルコ・パチャ": "urqopacha",
+      "Kozama'uka": "kozamauka",
+      "科扎馬烏卡": "kozamauka",
+      "コザマル・カ": "kozamauka",
+      "Yak T'el": "yaktel",
+      "亞克特爾樹海": "yaktel",
+      "ヤクテル樹海": "yaktel",
+      "Shaaloani": "shaaloani",
+      "夏羅尼荒野": "shaaloani",
+      "シャーローニ荒野": "shaaloani",
+      "Heritage Found": "heritagefound",
+      "遺產之地": "heritagefound",
+      "ヘリテージファウンド": "heritagefound",
+      "Labyrinthos": "labyrinthos",
+      "拉比陵托斯": "labyrinthos",
+      "ラヴィリンソス": "labyrinthos",
+      "Thavnair": "thavnair",
+      "薩維奈島": "thavnair",
+      "サベネア島": "thavnair",
+      "Garlemald": "garlemald",
+      "加雷馬": "garlemald",
+      "ガレマルド": "garlemald",
+      "Mare Lamentorum": "marelamentorum",
+      "嘆息海": "marelamentorum",
+      "嘆きの海": "marelamentorum",
+      "Elpis": "elpis",
+      "厄爾庇斯": "elpis",
+      "エルピス": "elpis",
+      "Ultima Thule": "ultimathule",
+      "天外天垓": "ultimathule",
+      "ウルティマ・トゥーレ": "ultimathule",
+      "Lakeland": "lakeland",
+      "雷克蘭德": "lakeland",
+      "レイクランド": "lakeland",
+      "Kholusia": "kholusia",
+      "珂露西亞島": "kholusia",
+      "コルシア島": "kholusia",
+      "Amh Araeng": "amharaeng",
+      "安穆·艾蘭": "amharaeng",
+      "アム・アレーン": "amharaeng",
+      "Il Mheg": "ilmheg",
+      "伊爾美格": "ilmheg",
+      "イル・メグ": "ilmheg",
+      "The Rak'tika Greatwood": "theraktikagreatwood",
+      "拉凱提卡大森林": "theraktikagreatwood",
+      "ラケティカ大森林": "theraktikagreatwood",
+      "The Tempest": "thetempest",
+      "黑風海": "thetempest",
+      "テンペスト": "thetempest",
+      "The Fringes": "thefringes",
+      "邊域": "thefringes",
+      "ギラバニア辺境地帯": "thefringes",
+      "The Peaks": "thepeaks",
+      "基拉巴尼亞山區": "thepeaks",
+      "ギラバニア山岳地帯": "thepeaks",
+      "The Lochs": "thelochs",
+      "基拉巴尼亞湖區": "thelochs",
+      "ギラバニア湖畔地帯": "thelochs",
+      "The Ruby Sea": "therubysea",
+      "紅玉海": "therubysea",
+      "Yanxia": "yanxia",
+      "延夏": "yanxia",
+      "ヤンサ": "yanxia",
+      "The Azim Steppe": "theazimsteppe",
+      "阿吉姆草原": "theazimsteppe",
+      "アジムステップ": "theazimsteppe",
+      "Coerthas Western Highlands": "coerthaswesternhighlands",
+      "庫爾札斯西部高地": "coerthaswesternhighlands",
+      "クルザス西部高地": "coerthaswesternhighlands",
+      "The Dravanian Forelands": "thedravanianforelands",
+      "龍堡參天高地": "thedravanianforelands",
+      "高地ドラヴァニア": "thedravanianforelands",
+      "The Churning Mists": "thechurningmists",
+      "翻雲霧海": "thechurningmists",
+      "雲海": "thechurningmists",
+      "The Sea of Clouds": "theseaofclouds",
+      "雲海": "theseaofclouds",
+      "アバラシア雲海": "theseaofclouds",
+      "Eastern Thanalan": "easternthanalan",
+      "東薩納蘭": "easternthanalan",
+      "東ザナラーン": "easternthanalan",
+      "Western La Noscea": "westernlanoscea",
+      "西拉諾西亞": "westernlanoscea",
+      "西ラノシア": "westernlanoscea"
+    },
+    "zoneIdToRegion": {
+      "urqopacha": "tural",
+      "kozamauka": "tural",
+      "yaktel": "tural",
+      "shaaloani": "tural",
+      "heritage_found": "tural",
+      "labyrinthos": "ilsabard",
+      "thavnair": "ilsabard",
+      "garlemald": "ilsabard",
+      "marelamentorum": "ilsabard",
+      "elpis": "ilsabard",
+      "ultimathule": "ilsabard",
+      "lakeland": "norvrandt",
+      "kholusia": "norvrandt",
+      "amharaeng": "norvrandt",
+      "ilmheg": "norvrandt",
+      "theraktikagreatwood": "norvrandt",
+      "thetempest": "norvrandt",
+      "thefringes": "gyr_abania",
+      "thepeaks": "gyr_abania",
+      "thelochs": "gyr_abania",
+      "therubysea": "othard",
+      "yanxia": "othard",
+      "theazimsteppe": "othard",
+      "coerthaswesternhighlands": "coerthas",
+      "thedravanianforelands": "dravania",
+      "thechurningmists": "dravania",
+      "theseaofclouds": "abalathia",
+      "easternthanalan": "thanalan",
+      "westernlanoscea": "la_noscea"
+    },
+    "filePrefixToZoneId": {
+      "urqopacha": "urqopacha",
+      "kozamauka": "kozamauka",
+      "yaktel": "yaktel",
+      "shaaloani": "shaaloani",
+      "heritagefound": "heritage_found",
+      "labyrinthos": "labyrinthos",
+      "thavnair": "thavnair",
+      "garlemald": "garlemald",
+      "marelamentorum": "marelamentorum",
+      "elpis": "elpis",
+      "ultimathule": "ultimathule",
+      "lakeland": "lakeland",
+      "kholusia": "kholusia",
+      "amharaeng": "amharaeng",
+      "ilmheg": "ilmheg",
+      "theraktikagreatwood": "theraktikagreatwood",
+      "thetempest": "thetempest",
+      "thefringes": "thefringes",
+      "thepeaks": "thepeaks",
+      "thelochs": "thelochs",
+      "therubysea": "therubysea",
+      "yanxia": "yanxia",
+      "theazimsteppe": "theazimsteppe",
+      "coerthaswesternhighlands": "coerthaswesternhighlands",
+      "thedravanianforelands": "thedravanianforelands",
+      "thechurningmists": "thechurningmists",
+      "theseaofclouds": "theseaofclouds",
+      "easternthanalan": "easternthanalan",
+      "westernlanoscea": "westernlanoscea"
+    }
+  }
+}
