@@ -736,24 +736,74 @@ class TreasureMapFinder {
         const closeBtn = document.getElementById('mapDetailClose');
         const overlay = document.getElementById('mapDetailOverlay');
         
-        // 設置圖片路徑 - 使用 full_3x 版本
-        const fullImagePath = map.fullImage || map.thumbnail.replace(/\.webp$/, '_full_3x.webp');
-        img.src = fullImagePath;
+        // 設置圖片路徑 - 使用基礎地圖
+        const filePrefix = zoneManager.getFilePrefix(map.zoneId);
+        const baseMapPath = `images/maps/map-${filePrefix}.webp`;
+        img.src = baseMapPath;
         
         // 設置標題和座標
         const translations = zoneManager.getZoneNames(map.zoneId) || { zh: map.zone, en: map.zone, ja: map.zone };
         title.textContent = `${map.level.toUpperCase()} - ${translations.zh || map.zone}`;
         coords.textContent = `座標：X: ${map.coords.x} Y: ${map.coords.y} Z: ${map.coords.z || 0}`;
         
-        // 當圖片載入完成後繪製傳送點
+        // 載入寶圖標記圖示
+        const markIcon = new Image();
+        markIcon.src = 'images/ui/mark.png';
+        
+        // 當圖片載入完成後繪製傳送點和寶圖標記
         img.onload = () => {
             // 設置 canvas 尺寸與圖片相同
             canvas.width = img.naturalWidth;
             canvas.height = img.naturalHeight;
             
-            // 繪製傳送點
+            // 繪製內容
             const ctx = canvas.getContext('2d');
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 繪製寶圖標記的函數
+            const drawTreasureMark = () => {
+                // 計算標記大小（原始大小的3倍）
+                const markWidth = 27 * 3;  // 原始寬度 27px
+                const markHeight = 29 * 3; // 原始高度 29px
+                
+                // 轉換寶圖座標並繪製標記
+                const treasureCoords = this.gameToImageCoords(
+                    map.coords.x,
+                    map.coords.y,
+                    canvas.width,
+                    canvas.height
+                );
+                
+                // 繪製寶圖標記（確保中心對齊）
+                ctx.drawImage(
+                    markIcon,
+                    Math.floor(treasureCoords.x - markWidth / 2),
+                    Math.floor(treasureCoords.y - markHeight / 2),
+                    markWidth,
+                    markHeight
+                );
+                
+                // 開發模式：繪製精確座標點
+                if (window.location.hostname === 'localhost') {
+                    ctx.save();
+                    ctx.strokeStyle = 'lime';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(treasureCoords.x - 10, treasureCoords.y);
+                    ctx.lineTo(treasureCoords.x + 10, treasureCoords.y);
+                    ctx.moveTo(treasureCoords.x, treasureCoords.y - 10);
+                    ctx.lineTo(treasureCoords.x, treasureCoords.y + 10);
+                    ctx.stroke();
+                    ctx.restore();
+                }
+            };
+            
+            // 檢查標記圖示是否已經載入
+            if (markIcon.complete && markIcon.naturalHeight !== 0) {
+                drawTreasureMark();
+            } else {
+                markIcon.onload = drawTreasureMark;
+            }
             
             // 取得該地區的傳送點
             const aetherytes = this.getAetherytesForZone(map.zone);
@@ -842,6 +892,7 @@ class TreasureMapFinder {
             closeBtn.removeEventListener('click', closeModal);
             overlay.removeEventListener('click', closeModal);
             img.onload = null; // 清理事件
+            markIcon.onload = null; // 清理標記圖示事件
         };
         
         closeBtn.addEventListener('click', closeModal);
