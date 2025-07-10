@@ -14,7 +14,9 @@ class LodestoneCharacterLookup {
             characterRace: document.getElementById('characterRace'),
             characterDeity: document.getElementById('characterDeity'),
             characterCity: document.getElementById('characterCity'),
-            characterFC: document.getElementById('characterFC'),
+            fcName: document.getElementById('fcName'),
+            fcIcon: document.getElementById('fcIcon'),
+            characterPortrait: document.getElementById('characterPortrait'),
             jobLevels: document.getElementById('jobLevels'),
             lodestoneLink: document.getElementById('lodestoneLink'),
             // Stats
@@ -33,6 +35,10 @@ class LodestoneCharacterLookup {
             criticalHit: document.getElementById('criticalHit'),
             determination: document.getElementById('determination'),
             directHit: document.getElementById('directHit'),
+            skillSpeed: document.getElementById('skillSpeed'),
+            spellSpeed: document.getElementById('spellSpeed'),
+            piety: document.getElementById('piety'),
+            tenacity: document.getElementById('tenacity'),
             // Other info
             grandCompany: document.getElementById('grandCompany'),
             nameday: document.getElementById('nameday'),
@@ -147,6 +153,16 @@ class LodestoneCharacterLookup {
         console.log('設定稱號:', character.Title);
         this.elements.characterTitle.textContent = character.Title || '無稱號';
         
+        // Portrait (立繪)
+        if (character.Portrait) {
+            console.log('設定立繪:', character.Portrait);
+            this.elements.characterPortrait.src = character.Portrait;
+            this.elements.characterPortrait.alt = `${character.Name} 立繪`;
+            this.elements.characterPortrait.style.display = 'block';
+        } else {
+            this.elements.characterPortrait.style.display = 'none';
+        }
+        
         // Server info
         const serverInfo = character.Server;
         console.log('伺服器資訊:', serverInfo);
@@ -174,9 +190,21 @@ class LodestoneCharacterLookup {
         
         // Free Company
         if (character.FreeCompany && character.FreeCompany.Name && character.FreeCompany.Name.ID) {
-            this.elements.characterFC.textContent = '有公會（名稱需額外查詢）';
+            this.elements.fcName.textContent = '有公會（名稱需額外查詢）';
+            
+            // Display FC icon if available
+            if (character.FreeCompany.IconLayers) {
+                const iconLayers = character.FreeCompany.IconLayers;
+                // 使用 Bottom layer 作為主要圖標
+                if (iconLayers.Bottom) {
+                    this.elements.fcIcon.src = iconLayers.Bottom;
+                    this.elements.fcIcon.alt = '公會圖標';
+                    this.elements.fcIcon.style.display = 'inline-block';
+                }
+            }
         } else {
-            this.elements.characterFC.textContent = '無';
+            this.elements.fcName.textContent = '無';
+            this.elements.fcIcon.style.display = 'none';
         }
         
         // Active job info
@@ -249,6 +277,10 @@ class LodestoneCharacterLookup {
         this.elements.criticalHit.textContent = character.CriticalHitRate || '0';
         this.elements.determination.textContent = character.Determination || '0';
         this.elements.directHit.textContent = character.DirectHitRate || '0';
+        this.elements.skillSpeed.textContent = character.SkillSpeed || '0';
+        this.elements.spellSpeed.textContent = character.SpellSpeed || '0';
+        this.elements.piety.textContent = character.Piety || '0';
+        this.elements.tenacity.textContent = character.Tenacity || '0';
         
         // Other Info
         if (character.GrandCompany && character.GrandCompany.Name) {
@@ -309,6 +341,15 @@ class LodestoneCharacterLookup {
                     mirage.className = 'mirage-name';
                     mirage.textContent = ` (幻化: ${equipment.MirageName})`;
                     name.appendChild(mirage);
+                }
+                
+                // Display stain info if available
+                if (equipment.Stain && equipment.Stain !== '') {
+                    const stain = document.createElement('span');
+                    stain.className = 'stain-info';
+                    stain.textContent = ` [已染色]`;
+                    stain.title = `染料: ${equipment.Stain}`;
+                    name.appendChild(stain);
                 }
                 
                 equipItem.appendChild(label);
