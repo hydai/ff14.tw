@@ -118,7 +118,7 @@
             "ja": "嘆きの海"
           },
           "normalizedName": "marelamentorum",
-          "filePrefix": "marelamentorum",
+          "filePrefix": "mare_lamentorum",
           "aetherytes": ["sinus_lacrimarum", "bestways_burrow"]
         },
         {
@@ -140,7 +140,7 @@
             "ja": "ウルティマ・トゥーレ"
           },
           "normalizedName": "ultimathule",
-          "filePrefix": "ultimathule",
+          "filePrefix": "ultima_thule",
           "aetherytes": ["reah_tahra", "base_omicron"]
         }
       ]
@@ -185,7 +185,7 @@
             "ja": "アム・アレーン"
           },
           "normalizedName": "amharaeng",
-          "filePrefix": "amharaeng",
+          "filePrefix": "amh_araeng",
           "aetherytes": ["twine", "mord_souq"]
         },
         {
@@ -196,7 +196,7 @@
             "ja": "イル・メグ"
           },
           "normalizedName": "ilmheg",
-          "filePrefix": "ilmheg",
+          "filePrefix": "il_mheg",
           "aetherytes": ["lydha_lran", "pla_enni"]
         },
         {
@@ -207,7 +207,7 @@
             "ja": "ラケティカ大森林"
           },
           "normalizedName": "theraktikagreatwood",
-          "filePrefix": "theraktikagreatwood",
+          "filePrefix": "the_raktika_greatwood",
           "aetherytes": ["slitherbough", "fanow"]
         },
         {
@@ -218,7 +218,7 @@
             "ja": "テンペスト"
           },
           "normalizedName": "thetempest",
-          "filePrefix": "thetempest",
+          "filePrefix": "the_tempest",
           "aetherytes": ["ondo_cups", "macarenses_angle"]
         }
       ]
@@ -241,7 +241,7 @@
             "ja": "ギラバニア辺境地帯"
           },
           "normalizedName": "thefringes",
-          "filePrefix": "thefringes",
+          "filePrefix": "the_fringes",
           "aetherytes": ["castrum_oriens", "peering_stones"]
         },
         {
@@ -252,7 +252,7 @@
             "ja": "ギラバニア山岳地帯"
           },
           "normalizedName": "thepeaks",
-          "filePrefix": "thepeaks",
+          "filePrefix": "the_peaks",
           "aetherytes": ["ala_gannha", "ala_ghiri"]
         },
         {
@@ -263,7 +263,7 @@
             "ja": "ギラバニア湖畔地帯"
           },
           "normalizedName": "thelochs",
-          "filePrefix": "thelochs",
+          "filePrefix": "the_lochs",
           "aetherytes": ["porta_praetoria", "ala_mhigan_quarter"]
         }
       ]
@@ -286,7 +286,7 @@
             "ja": "紅玉海"
           },
           "normalizedName": "therubysea",
-          "filePrefix": "therubysea",
+          "filePrefix": "the_ruby_sea",
           "aetherytes": ["tamamizu", "onokoro"]
         },
         {
@@ -308,7 +308,7 @@
             "ja": "アジムステップ"
           },
           "normalizedName": "theazimsteppe",
-          "filePrefix": "theazimsteppe",
+          "filePrefix": "the_azim_steppe",
           "aetherytes": ["dawn_throne", "dhoro_iloh"]
         }
       ]
@@ -331,7 +331,7 @@
             "ja": "クルザス西部高地"
           },
           "normalizedName": "coerthaswesternhighlands",
-          "filePrefix": "coerthaswesternhighlands",
+          "filePrefix": "coerthas_western_highlands",
           "aetherytes": ["falcon_nest"]
         }
       ]
@@ -354,7 +354,7 @@
             "ja": "高地ドラヴァニア"
           },
           "normalizedName": "thedravanianforelands",
-          "filePrefix": "thedravanianforelands",
+          "filePrefix": "the_dravanian_forelands",
           "aetherytes": ["tailfeather", "anyx_trine"]
         },
         {
@@ -365,7 +365,7 @@
             "ja": "雲海"
           },
           "normalizedName": "thechurningmists",
-          "filePrefix": "thechurningmists",
+          "filePrefix": "the_churning_mists",
           "aetherytes": ["moghome", "zenith"]
         }
       ]
@@ -388,7 +388,7 @@
             "ja": "アバラシア雲海"
           },
           "normalizedName": "theseaofclouds",
-          "filePrefix": "theseaofclouds",
+          "filePrefix": "the_sea_of_clouds",
           "aetherytes": ["camp_cloudtop", "ok_zundu"]
         }
       ]
