@@ -936,21 +936,29 @@ class RoomCollaboration {
         });
     }
 
-    // 更新房間 UI（修改以顯示標籤頁）
+    // 更新隊伍 UI
     updateRoomUI() {
         const panelTabs = document.getElementById('panelTabs');
+        const teamActions = document.getElementById('teamActions');
 
         if (this.currentRoom) {
-            // 顯示房間狀態
-            this.elements.roomActions.classList.add('hidden');
-            this.elements.roomStatus.classList.remove('hidden');
+            // 顯示隊伍狀態區域
+            this.elements.roomSection.classList.remove('hidden');
+            if (this.elements.roomStatus) {
+                this.elements.roomStatus.classList.remove('hidden');
+            }
+            
+            // 隱藏頂部的組隊按鈕
+            if (teamActions) {
+                teamActions.classList.add('hidden');
+            }
 
             // 顯示標籤頁
             if (panelTabs) {
                 panelTabs.classList.remove('hidden');
             }
 
-            // 更新房間資訊
+            // 更新隊伍資訊
             this.elements.roomCode.textContent = this.currentRoom.roomCode;
             this.elements.roomMembers.textContent = `${this.currentRoom.members.length}/${RoomCollaboration.CONSTANTS.MAX_MEMBERS}人`;
             this.elements.userNickname.textContent = this.currentUser.nickname;
@@ -961,9 +969,16 @@ class RoomCollaboration {
             this.updateActivityTime();
             this.updateRoomTTL();
         } else {
-            // 顯示房間操作按鈕
-            this.elements.roomActions.classList.remove('hidden');
-            this.elements.roomStatus.classList.add('hidden');
+            // 隱藏隊伍狀態區域
+            this.elements.roomSection.classList.add('hidden');
+            if (this.elements.roomStatus) {
+                this.elements.roomStatus.classList.add('hidden');
+            }
+            
+            // 顯示頂部的組隊按鈕
+            if (teamActions) {
+                teamActions.classList.remove('hidden');
+            }
 
             // 隱藏標籤頁
             if (panelTabs) {

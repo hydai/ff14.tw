@@ -5,32 +5,12 @@
     display: none !important;
 }
 
-/* 控制列 */
-.control-bar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1.5rem;
-    padding-bottom: 1rem;
-    border-bottom: 2px solid var(--border-color);
-}
-
-.control-bar-left {
-    display: flex;
-    align-items: center;
-}
-
+/* 標題樣式 */
 .section-title {
     margin: 0;
     font-size: 1.5rem;
     color: var(--text-primary);
     font-weight: 600;
-}
-
-.control-bar-right {
-    display: flex;
-    gap: 1rem;
-    align-items: center;
 }
 
 .btn-icon {
@@ -50,13 +30,14 @@
     font-weight: 600;
 }
 
-/* 房間協作區域 */
+/* 隊伍協作區域 */
 .room-section {
     background: var(--card-bg);
     border-radius: var(--border-radius);
     padding: 1.5rem;
     margin-bottom: 2rem;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border: 2px solid var(--primary-color);
 }
 
 .room-actions {
@@ -126,7 +107,7 @@
     color: var(--text-primary);
 }
 
-/* 房間成員列表 */
+/* 隊伍成員列表 */
 .room-members {
     margin-top: 1rem;
     padding-top: 1rem;
@@ -1272,16 +1253,6 @@ body > div[class~="toast-warning"] {
         width: 350px;
     }
     
-    .control-bar {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 1rem;
-    }
-    
-    .control-bar-right {
-        width: 100%;
-        justify-content: space-between;
-    }
 }
 
 @media (max-width: 768px) {
@@ -1336,15 +1307,6 @@ body > div[class~="toast-warning"] {
         font-size: 1.25rem;
     }
     
-    .control-bar-right {
-        flex-direction: column;
-        width: 100%;
-        gap: 0.75rem;
-    }
-    
-    .control-bar-right button {
-        width: 100%;
-    }
     
     .my-list-panel {
         position: fixed;
@@ -1375,7 +1337,7 @@ body > div[class~="toast-warning"] {
         margin: 1rem;
     }
     
-    /* 房間區域手機版調整 */
+    /* 隊伍區域手機版調整 */
     .room-section {
         padding: 1rem;
     }
@@ -1563,4 +1525,91 @@ body > div[class~="toast-warning"] {
 .source-list a:hover {
     color: var(--primary-hover);
     text-decoration: underline;
+}/* 頂部操作欄 */
+.top-action-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding: 1rem;
+    background: var(--card-bg);
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.action-bar-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.action-bar-right {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+/* 組隊操作按鈕組 */
+.team-actions {
+    display: flex;
+    gap: 0.5rem;
+    padding-left: 0.75rem;
+    border-left: 1px solid var(--border-color);
+}
+
+/* 篩選標題欄 */
+.filter-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: var(--card-bg);
+    border-radius: 12px;
+}
+
+/* 組隊狀態區域調整 */
+.room-section {
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: var(--card-bg);
+    border-radius: 12px;
+    border: 2px solid var(--primary-color);
+}
+
+.room-section.hidden {
+    display: none;
+}
+
+/* 移動組隊按鈕時隱藏原本的區域 */
+.room-actions {
+    display: none;
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+    .top-action-bar {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .action-bar-right {
+        width: 100%;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .team-actions {
+        width: 100%;
+        border-left: none;
+        border-top: 1px solid var(--border-color);
+        padding-left: 0;
+        padding-top: 0.75rem;
+    }
+    
+    .filter-header {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
 }

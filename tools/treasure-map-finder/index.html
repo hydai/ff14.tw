@@ -35,33 +35,29 @@
             </div>
 
             <div class="tool-content">
-                <!-- 控制列 -->
-                <div class="control-bar">
-                    <div class="control-bar-left">
-                        <h2 class="section-title">篩選條件</h2>
+                <!-- 頂部操作欄 -->
+                <div class="top-action-bar">
+                    <div class="action-bar-left">
+                        <!-- 預留空間 -->
                     </div>
-                    <div class="control-bar-right">
-                        <button class="btn btn-secondary" id="resetFilters">
-                            <span class="btn-icon">↻</span> 重置篩選
-                        </button>
+                    <div class="action-bar-right">
                         <button class="btn btn-primary my-list-toggle" id="myListToggle">
                             <span class="btn-icon">📋</span> 我的清單 <span class="list-count" id="listCount">(0)</span>
                         </button>
+                        <!-- 組隊操作按鈕 -->
+                        <div class="team-actions" id="teamActions">
+                            <button class="btn btn-primary" id="createRoomBtn">
+                                <span class="btn-icon">🏠</span> 建立組隊
+                            </button>
+                            <button class="btn btn-secondary" id="joinRoomBtn">
+                                <span class="btn-icon">🚪</span> 加入隊伍
+                            </button>
+                        </div>
                     </div>
                 </div>
 
-                <!-- 組隊協作區域 -->
-                <div class="room-section" id="roomSection">
-                    <!-- 未加入隊伍時顯示 -->
-                    <div class="room-actions" id="roomActions">
-                        <button class="btn btn-primary" id="createRoomBtn">
-                            <span class="btn-icon">🏠</span> 建立組隊
-                        </button>
-                        <button class="btn btn-secondary" id="joinRoomBtn">
-                            <span class="btn-icon">🚪</span> 加入隊伍
-                        </button>
-                    </div>
-                    
+                <!-- 組隊狀態區域 -->
+                <div class="room-section hidden" id="roomSection">
                     <!-- 已加入隊伍時顯示 -->
                     <div class="room-status hidden" id="roomStatus">
                         <div class="room-info">
@@ -106,6 +102,14 @@
 
                 <!-- 篩選區 -->
                 <div class="filter-section">
+                    <!-- 篩選標題欄 -->
+                    <div class="filter-header">
+                        <h2 class="section-title">篩選條件</h2>
+                        <button class="btn btn-secondary" id="resetFilters">
+                            <span class="btn-icon">↻</span> 重置篩選
+                        </button>
+                    </div>
+                    
                     <!-- 等級篩選 -->
                     <div class="filter-group level-filter-group">
                         <div class="filter-group-header">
