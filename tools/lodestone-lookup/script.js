@@ -489,7 +489,15 @@ class LodestoneCharacterLookup {
         // 創建分類標題
         const categoryHeader = document.createElement('h4');
         categoryHeader.className = 'job-category-title';
-        categoryHeader.innerHTML = `<span class="job-category-icon">${category.icon}</span> ${category.name}`;
+        
+        // 使用 DOM 操作替代 innerHTML
+        const iconSpan = document.createElement('span');
+        iconSpan.className = 'job-category-icon';
+        iconSpan.textContent = category.icon;
+        
+        categoryHeader.appendChild(iconSpan);
+        categoryHeader.appendChild(document.createTextNode(` ${category.name}`));
+        
         this.elements.jobLevels.appendChild(categoryHeader);
 
         // 創建職業網格容器
@@ -553,7 +561,15 @@ class LodestoneCharacterLookup {
         // 創建分類標題
         const categoryHeader = document.createElement('h4');
         categoryHeader.className = 'job-category-title';
-        categoryHeader.innerHTML = `<span class="job-category-icon">⭐</span> 特殊內容`;
+        
+        // 使用 DOM 操作替代 innerHTML
+        const iconSpan = document.createElement('span');
+        iconSpan.className = 'job-category-icon';
+        iconSpan.textContent = '⭐';
+        
+        categoryHeader.appendChild(iconSpan);
+        categoryHeader.appendChild(document.createTextNode(' 特殊內容'));
+        
         this.elements.jobLevels.appendChild(categoryHeader);
 
         // 創建網格容器
