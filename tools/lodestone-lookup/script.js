@@ -84,39 +84,61 @@ class LodestoneCharacterLookup {
         this.hideCharacterInfo();
 
         const apiUrl = `https://logstone.z54981220.workers.dev/character/${characterId}`;
+        const jobApiUrl = `https://logstone.z54981220.workers.dev/character/${characterId}/classjob`;
         console.log('API URL:', apiUrl);
+        console.log('Job API URL:', jobApiUrl);
 
         try {
             console.log('正在發送請求...');
-            const response = await fetch(apiUrl);
+            // 同時發送兩個請求
+            const [characterResponse, jobResponse] = await Promise.all([
+                fetch(apiUrl),
+                fetch(jobApiUrl)
+            ]);
             
-            console.log('Response 狀態:', response.status);
-            console.log('Response Headers:', Object.fromEntries(response.headers.entries()));
+            console.log('Character Response 狀態:', characterResponse.status);
+            console.log('Job Response 狀態:', jobResponse.status);
             
-            if (!response.ok) {
-                console.error('Response 不是 OK:', response.status, response.statusText);
-                if (response.status === 404) {
+            if (!characterResponse.ok) {
+                console.error('Character Response 不是 OK:', characterResponse.status, characterResponse.statusText);
+                if (characterResponse.status === 404) {
                     throw new Error('找不到此角色，請確認 ID 是否正確');
                 }
-                throw new Error(`查詢失敗 (${response.status}): ${response.statusText}`);
+                throw new Error(`查詢失敗 (${characterResponse.status}): ${characterResponse.statusText}`);
             }
 
-            const responseText = await response.text();
-            console.log('原始回應內容:', responseText);
+            const characterText = await characterResponse.text();
+            console.log('原始角色回應內容:', characterText);
             
-            let data;
+            let characterData;
             try {
-                data = JSON.parse(responseText);
-                console.log('解析後的 JSON 資料:', data);
+                characterData = JSON.parse(characterText);
+                console.log('解析後的角色 JSON 資料:', characterData);
             } catch (parseError) {
-                console.error('JSON 解析錯誤:', parseError);
-                console.error('無法解析的內容:', responseText);
+                console.error('角色 JSON 解析錯誤:', parseError);
+                console.error('無法解析的內容:', characterText);
                 throw new Error('伺服器回應格式錯誤');
             }
             
-            if (data && data.Character) {
+            // 處理職業資料（如果請求成功）
+            let jobData = null;
+            if (jobResponse.ok) {
+                const jobText = await jobResponse.text();
+                try {
+                    const jobDataResponse = JSON.parse(jobText);
+                    jobData = jobDataResponse.data;  // 根據 API 格式，資料在 data 欄位內
+                    console.log('解析後的職業 JSON 資料:', jobData);
+                } catch (parseError) {
+                    console.error('職業 JSON 解析錯誤:', parseError);
+                    // 職業資料解析失敗不影響主要功能
+                }
+            } else {
+                console.warn('無法取得職業資料:', jobResponse.status);
+            }
+            
+            if (characterData && characterData.Character) {
                 console.log('準備顯示角色資料...');
-                this.displayCharacterInfo(data.Character);
+                this.displayCharacterInfo(characterData.Character, jobData);
             } else {
                 console.error('資料格式錯誤或資料為空');
                 console.error('預期格式: {Character: {...}}');
@@ -136,9 +158,10 @@ class LodestoneCharacterLookup {
         }
     }
 
-    displayCharacterInfo(character) {
+    displayCharacterInfo(character, jobData) {
         console.log('=== 顯示角色資料 ===');
         console.log('接收到的資料結構:', character);
+        console.log('接收到的職業資料:', jobData);
         console.log('資料類型:', typeof character);
         console.log('資料的所有屬性:', Object.keys(character));
         
@@ -207,57 +230,61 @@ class LodestoneCharacterLookup {
             this.elements.fcIcon.style.display = 'none';
         }
         
-        // Active job info
-        // Clear existing content
-        this.elements.jobLevels.textContent = '';
-        
-        if (character.ActiveClassjobLevel && character.ActiveClassjobLevel.Level) {
-            // Create job item container
-            const jobItem = document.createElement('div');
-            jobItem.className = 'job-item';
-            
-            // Create and set job icon
-            const jobIcon = document.createElement('img');
-            jobIcon.src = character.ActiveClassjob || '';
-            jobIcon.alt = '當前職業';
-            jobIcon.className = 'job-icon';
-            
-            // Create job details container
-            const jobDetails = document.createElement('div');
-            jobDetails.className = 'job-details';
-            
-            // Create job name
-            const jobName = document.createElement('p');
-            jobName.className = 'job-name';
-            jobName.textContent = '當前職業';
-            
-            // Create job level
-            const jobLevel = document.createElement('p');
-            jobLevel.className = 'job-level';
-            if (character.ActiveClassjobLevel.Level === '100') {
-                jobLevel.className += ' max-level';
-            }
-            jobLevel.textContent = `Lv. ${character.ActiveClassjobLevel.Level}`;
-            
-            // Assemble job item
-            jobDetails.appendChild(jobName);
-            jobDetails.appendChild(jobLevel);
-            jobItem.appendChild(jobIcon);
-            jobItem.appendChild(jobDetails);
-            
-            // Create note
-            const note = document.createElement('p');
-            note.style.marginTop = '1rem';
-            note.style.color = 'var(--text-color-secondary)';
-            note.textContent = '詳細職業列表請前往官方 Lodestone 查看';
-            
-            // Add to container
-            this.elements.jobLevels.appendChild(jobItem);
-            this.elements.jobLevels.appendChild(note);
+        // Job levels info
+        if (jobData && jobData.ClassJob) {
+            this.displayJobLevels(jobData.ClassJob);
         } else {
-            const noData = document.createElement('p');
-            noData.textContent = '職業等級資料暫不可用';
-            this.elements.jobLevels.appendChild(noData);
+            // Fallback to displaying current job only
+            this.elements.jobLevels.textContent = '';
+            
+            if (character.ActiveClassjobLevel && character.ActiveClassjobLevel.Level) {
+                // Create job item container
+                const jobItem = document.createElement('div');
+                jobItem.className = 'job-item';
+                
+                // Create and set job icon
+                const jobIcon = document.createElement('img');
+                jobIcon.src = character.ActiveClassjob || '';
+                jobIcon.alt = '當前職業';
+                jobIcon.className = 'job-icon';
+                
+                // Create job details container
+                const jobDetails = document.createElement('div');
+                jobDetails.className = 'job-details';
+                
+                // Create job name
+                const jobName = document.createElement('p');
+                jobName.className = 'job-name';
+                jobName.textContent = '當前職業';
+                
+                // Create job level
+                const jobLevel = document.createElement('p');
+                jobLevel.className = 'job-level';
+                if (character.ActiveClassjobLevel.Level === '100') {
+                    jobLevel.className += ' max-level';
+                }
+                jobLevel.textContent = `Lv. ${character.ActiveClassjobLevel.Level}`;
+                
+                // Assemble job item
+                jobDetails.appendChild(jobName);
+                jobDetails.appendChild(jobLevel);
+                jobItem.appendChild(jobIcon);
+                jobItem.appendChild(jobDetails);
+                
+                // Create note
+                const note = document.createElement('p');
+                note.style.marginTop = '1rem';
+                note.style.color = 'var(--text-color-secondary)';
+                note.textContent = '載入詳細職業列表中...';
+                
+                // Add to container
+                this.elements.jobLevels.appendChild(jobItem);
+                this.elements.jobLevels.appendChild(note);
+            } else {
+                const noData = document.createElement('p');
+                noData.textContent = '職業等級資料暫不可用';
+                this.elements.jobLevels.appendChild(noData);
+            }
         }
         
         // Primary Stats
@@ -369,59 +396,128 @@ class LodestoneCharacterLookup {
         // Clear existing content
         this.elements.jobLevels.textContent = '';
         
-        if (!classJobs || classJobs.length === 0) {
+        if (!classJobs) {
             const noData = document.createElement('p');
             noData.textContent = '無職業資料';
             this.elements.jobLevels.appendChild(noData);
             return;
         }
 
-        const jobCategories = {
-            tank: ['劍術士', '斧術士', '騎士', '戰士', '暗黑騎士', '絕槍戰士'],
-            healer: ['幻術士', '白魔道士', '學者', '占星術士', '賢者'],
-            dps: ['格鬥士', '槍術士', '弓術士', '雙劍士', '忍者', '武士', '龍騎士', '吟遊詩人', '機工士', '舞者', '鐮刀師', '毒蛇使'],
-            magic: ['咒術士', '巴術士', '黑魔道士', '召喚士', '赤魔道士', '祕術師', '畫師'],
-            crafting: ['刻木匠', '鍛鐵匠', '鎧甲匠', '雕金匠', '製革匠', '裁縫匠', '煉金術士', '烹調師'],
-            gathering: ['採礦工', '園藝工', '捕魚人']
+        // 定義職業分類
+        const categories = [
+            { name: '坦克', icon: '🛡️', class: 'tank', jobs: ['Paladin', 'Warrior', 'DarkKnight', 'Gunbreaker'] },
+            { name: '治療', icon: '💚', class: 'healer', jobs: ['WhiteMage', 'Scholar', 'Astrologian', 'Sage'] },
+            { name: '近戰 DPS', icon: '⚔️', class: 'melee', jobs: ['Monk', 'Dragoon', 'Ninja', 'Samurai', 'Reaper', 'Viper'] },
+            { name: '遠程物理 DPS', icon: '🏹', class: 'ranged', jobs: ['Bard', 'Machinist', 'Dancer'] },
+            { name: '遠程魔法 DPS', icon: '🔮', class: 'magic', jobs: ['BlackMage', 'Summoner', 'RedMage', 'Pictomancer'] },
+            { name: '生產職業', icon: '🔨', class: 'crafting', jobs: ['Carpenter', 'Blacksmith', 'Armorer', 'Goldsmith', 'Leatherworker', 'Weaver', 'Alchemist', 'Culinarian'] },
+            { name: '採集職業', icon: '⛏️', class: 'gathering', jobs: ['Miner', 'Botanist', 'Fisher'] }
+        ];
+
+        // 職業中文名稱對照
+        const jobNames = {
+            'Paladin': '騎士',
+            'Warrior': '戰士',
+            'DarkKnight': '暗黑騎士',
+            'Gunbreaker': '絕槍戰士',
+            'WhiteMage': '白魔道士',
+            'Scholar': '學者',
+            'Astrologian': '占星術士',
+            'Sage': '賢者',
+            'Monk': '武僧',
+            'Dragoon': '龍騎士',
+            'Ninja': '忍者',
+            'Samurai': '武士',
+            'Reaper': '鐮刀師',
+            'Viper': '毒蛇使',
+            'Bard': '吟遊詩人',
+            'Machinist': '機工士',
+            'Dancer': '舞者',
+            'BlackMage': '黑魔道士',
+            'Summoner': '召喚士',
+            'RedMage': '赤魔道士',
+            'Pictomancer': '繪靈法師',
+            'Carpenter': '刻木匠',
+            'Blacksmith': '鍛鐵匠',
+            'Armorer': '鎧甲匠',
+            'Goldsmith': '雕金匠',
+            'Leatherworker': '製革匠',
+            'Weaver': '裁縫匠',
+            'Alchemist': '煉金術士',
+            'Culinarian': '烹調師',
+            'Miner': '採礦工',
+            'Botanist': '園藝工',
+            'Fisher': '捕魚人'
         };
 
-        // Filter and sort jobs
-        const activeJobs = classJobs
-            .filter(job => job.Level > 0)
-            .sort((a, b) => b.Level - a.Level);
+        // 根據分類顯示職業
+        categories.forEach(category => {
+            const categoryJobs = category.jobs
+                .map(jobKey => classJobs[jobKey])
+                .filter(job => job && job.Level > 0);
 
-        // Create job elements
-        activeJobs.forEach(job => {
-            const jobItem = document.createElement('div');
-            jobItem.className = 'job-item';
-            
-            const jobIcon = document.createElement('img');
-            jobIcon.src = `https://xivapi.com${job.Job.Icon}`;
-            jobIcon.alt = job.Job.Name;
-            jobIcon.className = 'job-icon';
-            
-            const jobDetails = document.createElement('div');
-            jobDetails.className = 'job-details';
-            
-            const jobName = document.createElement('p');
-            jobName.className = 'job-name';
-            jobName.textContent = job.Job.Name;
-            
-            const jobLevel = document.createElement('p');
-            jobLevel.className = job.Level === 100 ? 'job-level max-level' : 'job-level';
-            jobLevel.textContent = `Lv. ${job.Level}`;
-            
-            jobDetails.appendChild(jobName);
-            jobDetails.appendChild(jobLevel);
-            jobItem.appendChild(jobIcon);
-            jobItem.appendChild(jobDetails);
-            
-            this.elements.jobLevels.appendChild(jobItem);
+            if (categoryJobs.length > 0) {
+                // 創建分類標題
+                const categoryHeader = document.createElement('h4');
+                categoryHeader.className = 'job-category-title';
+                categoryHeader.innerHTML = `<span class="job-category-icon">${category.icon}</span> ${category.name}`;
+                this.elements.jobLevels.appendChild(categoryHeader);
+
+                // 創建職業網格容器
+                const jobGrid = document.createElement('div');
+                jobGrid.className = `job-levels-grid job-category-${category.class}`;
+
+                categoryJobs
+                    .sort((a, b) => b.Level - a.Level)
+                    .forEach(job => {
+                        const jobKey = Object.keys(classJobs).find(key => classJobs[key] === job);
+                        const jobItem = document.createElement('div');
+                        jobItem.className = 'job-item';
+                        
+                        // 創建職業圖標（使用文字圖標作為替代）
+                        const jobIcon = document.createElement('div');
+                        jobIcon.className = 'job-icon-text';
+                        jobIcon.textContent = jobNames[jobKey]?.charAt(0) || jobKey.charAt(0);
+                        
+                        const jobDetails = document.createElement('div');
+                        jobDetails.className = 'job-details';
+                        
+                        const jobName = document.createElement('p');
+                        jobName.className = 'job-name';
+                        jobName.textContent = jobNames[jobKey] || jobKey;
+                        
+                        const jobLevel = document.createElement('p');
+                        jobLevel.className = job.Level === 100 ? 'job-level max-level' : 'job-level';
+                        jobLevel.textContent = `Lv. ${job.Level}`;
+                        
+                        // 如果有經驗值資訊，顯示進度條
+                        if (job.ExpLevel && job.ExpLevelMax && job.Level < 100) {
+                            const progressBar = document.createElement('div');
+                            progressBar.className = 'exp-progress';
+                            const progress = document.createElement('div');
+                            progress.className = 'exp-progress-bar';
+                            progress.style.width = `${(job.ExpLevel / job.ExpLevelMax) * 100}%`;
+                            progressBar.appendChild(progress);
+                            jobDetails.appendChild(progressBar);
+                        }
+                        
+                        jobDetails.appendChild(jobName);
+                        jobDetails.appendChild(jobLevel);
+                        jobItem.appendChild(jobIcon);
+                        jobItem.appendChild(jobDetails);
+                        
+                        jobGrid.appendChild(jobItem);
+                    });
+
+                this.elements.jobLevels.appendChild(jobGrid);
+            }
         });
-        
-        if (activeJobs.length === 0) {
+
+        // 如果沒有任何職業資料
+        const allJobs = Object.values(classJobs).filter(job => job && job.Level > 0);
+        if (allJobs.length === 0) {
             const noData = document.createElement('p');
-            noData.textContent = '無職業資料';
+            noData.textContent = '尚未解鎖任何職業';
             this.elements.jobLevels.appendChild(noData);
         }
     }

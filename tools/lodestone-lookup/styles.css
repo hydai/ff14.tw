@@ -223,11 +223,30 @@
     color: var(--text-color);
 }
 
+/* Job Category Title */
+.job-category-title {
+    margin: 1.5rem 0 1rem 0;
+    font-size: 1.1rem;
+    color: var(--primary-color);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.job-category-title:first-child {
+    margin-top: 0;
+}
+
+.job-category-icon {
+    font-size: 1.2rem;
+}
+
 /* Job Levels Grid */
 .job-levels-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 1rem;
+    margin-bottom: 1.5rem;
 }
 
 .job-item {
@@ -238,6 +257,12 @@
     background: var(--card-background);
     border: 1px solid var(--border-color);
     border-radius: 4px;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.job-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .job-icon {
@@ -245,24 +270,70 @@
     height: 32px;
 }
 
+/* Text-based job icon */
+.job-icon-text {
+    width: 32px;
+    height: 32px;
+    background: var(--primary-color);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+/* Category-specific colors */
+.job-category-tank .job-icon-text { background: #3f51b5; }
+.job-category-healer .job-icon-text { background: #4caf50; }
+.job-category-melee .job-icon-text { background: #f44336; }
+.job-category-ranged .job-icon-text { background: #ff9800; }
+.job-category-magic .job-icon-text { background: #9c27b0; }
+.job-category-crafting .job-icon-text { background: #795548; }
+.job-category-gathering .job-icon-text { background: #607d8b; }
+
 .job-details {
     flex: 1;
+    min-width: 0;
 }
 
 .job-name {
     font-weight: 600;
-    margin: 0;
+    margin: 0 0 0.25rem 0;
     font-size: 0.9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .job-level {
     color: var(--primary-color);
     font-size: 0.85rem;
+    margin: 0;
 }
 
 .job-level.max-level {
     color: #ff9800;
     font-weight: 600;
+}
+
+/* Experience Progress Bar */
+.exp-progress {
+    width: 100%;
+    height: 4px;
+    background: var(--border-color);
+    border-radius: 2px;
+    margin: 0.5rem 0 0.25rem 0;
+    overflow: hidden;
+}
+
+.exp-progress-bar {
+    height: 100%;
+    background: var(--primary-color);
+    border-radius: 2px;
+    transition: width 0.3s ease;
 }
 
 /* Lodestone Link */
