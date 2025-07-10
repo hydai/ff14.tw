@@ -1,4 +1,4 @@
-// 房間協作功能
+// 組隊協作功能
 class RoomCollaboration {
     static CONSTANTS = {
         ROOM_CODE_LENGTH: 6,
@@ -69,7 +69,7 @@ class RoomCollaboration {
     }
 
     setupEventListeners() {
-        // 房間操作
+        // 隊伍操作
         this.elements.createRoomBtn.addEventListener('click', () => this.createRoom());
         this.elements.joinRoomBtn.addEventListener('click', () => this.showJoinRoomDialog());
         this.elements.leaveRoomBtn.addEventListener('click', () => this.showLeaveRoomDialog());
@@ -79,7 +79,7 @@ class RoomCollaboration {
         // 標籤頁切換
         this.setupTabSwitching();
 
-        // 加入房間對話框
+        // 加入隊伍對話框
         document.getElementById('closeJoinModalBtn').addEventListener('click', () => this.hideModal('joinRoom'));
         document.getElementById('cancelJoinBtn').addEventListener('click', () => this.hideModal('joinRoom'));
         document.getElementById('confirmJoinBtn').addEventListener('click', () => this.confirmJoinRoom());
@@ -89,7 +89,7 @@ class RoomCollaboration {
         document.getElementById('cancelNicknameBtn').addEventListener('click', () => this.hideModal('editNickname'));
         document.getElementById('confirmNicknameBtn').addEventListener('click', () => this.confirmEditNickname());
 
-        // 離開房間對話框
+        // 離開隊伍對話框
         document.getElementById('closeLeaveModalBtn').addEventListener('click', () => this.hideModal('leaveRoom'));
         document.getElementById('cancelLeaveBtn').addEventListener('click', () => this.hideModal('leaveRoom'));
         document.getElementById('leaveKeepListBtn').addEventListener('click', () => this.leaveRoom(true));
@@ -108,18 +108,18 @@ class RoomCollaboration {
         document.addEventListener('keypress', () => this.updateActivity());
     }
 
-    // 檢查是否已有房間（從 URL 或 localStorage）
+    // 檢查是否已有隊伍（從 URL 或 localStorage）
     checkExistingRoom() {
         const urlParams = new URLSearchParams(window.location.search);
         const roomCode = urlParams.get('room');
 
         if (roomCode) {
-            // 先檢查 localStorage 是否已有相同房間的資料
+            // 先檢查 localStorage 是否已有相同隊伍的資料
             const savedRoom = localStorage.getItem('ff14tw_current_room');
             if (savedRoom) {
                 try {
                     const roomData = JSON.parse(savedRoom);
-                    // 如果已在相同房間且資料有效，直接恢復會話
+                    // 如果已在相同隊伍且資料有效，直接恢復會話
                     if (roomData.roomCode === roomCode && this.isRoomValid(roomData)) {
                         this.currentRoom = roomData;
                         this.currentUser = roomData.currentUser;
@@ -128,10 +128,10 @@ class RoomCollaboration {
                         return; // 避免重複加入
                     }
                 } catch (error) {
-                    console.error('載入房間資料失敗:', error);
+                    console.error('載入隊伍資料失敗:', error);
                 }
             }
-            // 如果不在房間或在不同房間，才執行加入
+            // 如果不在隊伍或在不同隊伍，才執行加入
             this.joinRoom(roomCode);
         } else {
             const savedRoom = localStorage.getItem('ff14tw_current_room');
@@ -147,7 +147,7 @@ class RoomCollaboration {
                         localStorage.removeItem('ff14tw_current_room');
                     }
                 } catch (error) {
-                    console.error('載入房間資料失敗:', error);
+                    console.error('載入隊伍資料失敗:', error);
                     localStorage.removeItem('ff14tw_current_room');
                 }
             }
@@ -163,7 +163,7 @@ class RoomCollaboration {
         }
     }
 
-    // 檢查房間是否有效（未過期且格式正確）
+    // 檢查隊伍是否有效（未過期且格式正確）
     isRoomValid(roomData) {
         if (!roomData || !roomData.lastSyncAt) return false;
         // 檢查是否為新格式（必須有 creatorId）
@@ -173,18 +173,18 @@ class RoomCollaboration {
         return (now - lastSync) < RoomCollaboration.CONSTANTS.ROOM_TTL;
     }
 
-    // 建立新房間
+    // 建立新隊伍
     async createRoom() {
-        // 檢查是否已有房間
+        // 檢查是否已有隊伍
         if (this.currentRoom) {
-            this.showToast('您已在房間中，請先離開現有房間', 'warning');
+            this.showToast('您已在隊伍中，請先離開現有隊伍', 'warning');
             return;
         }
 
         // 檢查瀏覽器限制
         const browserLimit = localStorage.getItem('ff14tw_room_created');
         if (browserLimit) {
-            this.showToast('此瀏覽器已有房間記錄，請先清除或使用其他瀏覽器', 'warning');
+            this.showToast('此瀏覽器已有隊伍記錄，請先清除或使用其他瀏覽器', 'warning');
             return;
         }
 
@@ -192,7 +192,7 @@ class RoomCollaboration {
         if (this.finder.myList.length > 0) {
             const clearLocal = confirm(
                 `您目前有 ${this.finder.myList.length} 張本地寶圖。\n\n` +
-                `建立房間後，這些寶圖會被歸屬為您新增的，但實際新增時間可能不正確。\n\n` +
+                `建立隊伍後，這些寶圖會被歸屬為您新增的，但實際新增時間可能不正確。\n\n` +
                 `建議清空本地清單以確保協作資料的準確性。\n\n` +
                 `要清空本地清單嗎？`
             );
@@ -210,7 +210,7 @@ class RoomCollaboration {
         const memberNickname = `光之戰士1`;
 
         try {
-            // 呼叫 API 建立房間（房間代號由伺服器生成）
+            // 呼叫 API 建立隊伍（隊伍代號由伺服器生成）
             const response = await fetch(`${RoomCollaboration.CONSTANTS.API_BASE_URL}/rooms`, {
                 method: 'POST',
                 headers: {
@@ -223,7 +223,7 @@ class RoomCollaboration {
 
             if (!response.ok) {
                 const error = await response.json();
-                throw new Error(error.error || '建立房間失敗');
+                throw new Error(error.error || '建立隊伍失敗');
             }
 
             const room = await response.json();
@@ -249,23 +249,23 @@ class RoomCollaboration {
             // 記錄操作歷史
             this.addOperationHistory({
                 type: 'room_create',
-                message: `建立了房間 ${room.roomCode}`,
+                message: `建立了隊伍 ${room.roomCode}`,
                 timestamp: new Date().toISOString()
             });
 
             // 顯示成功訊息
-            this.showToast(`房間 ${room.roomCode} 建立成功！`);
+            this.showToast(`隊伍 ${room.roomCode} 建立成功！`);
 
         } catch (error) {
-            console.error('建立房間失敗:', error);
-            this.showToast(error.message || '建立房間失敗，請稍後再試', 'error');
+            console.error('建立隊伍失敗:', error);
+            this.showToast(error.message || '建立隊伍失敗，請稍後再試', 'error');
         }
     }
 
-    // 顯示加入房間對話框
+    // 顯示加入隊伍對話框
     showJoinRoomDialog() {
         if (this.currentRoom) {
-            this.showToast('您已在房間中，請先離開現有房間', 'warning');
+            this.showToast('您已在隊伍中，請先離開現有隊伍', 'warning');
             return;
         }
 
@@ -274,12 +274,12 @@ class RoomCollaboration {
         document.getElementById('roomCodeInput').focus();
     }
 
-    // 確認加入房間
+    // 確認加入隊伍
     async confirmJoinRoom() {
         const roomCode = document.getElementById('roomCodeInput').value.trim().toUpperCase();
 
         if (!roomCode || roomCode.length !== RoomCollaboration.CONSTANTS.ROOM_CODE_LENGTH) {
-            this.showToast('請輸入有效的 6 位房間代號', 'warning');
+            this.showToast('請輸入有效的 6 位隊伍代號', 'warning');
             return;
         }
 
@@ -287,14 +287,14 @@ class RoomCollaboration {
         await this.joinRoom(roomCode);
     }
 
-    // 加入房間
+    // 加入隊伍
     async joinRoom(roomCode) {
         try {
             // 檢查是否有本地寶圖
             if (this.finder.myList.length > 0) {
                 const clearLocal = confirm(
                     `您目前有 ${this.finder.myList.length} 張本地寶圖。\n\n` +
-                    `加入房間後，這些寶圖會被歸屬為您新增的，但實際新增時間可能不正確。\n\n` +
+                    `加入隊伍後，這些寶圖會被歸屬為您新增的，但實際新增時間可能不正確。\n\n` +
                     `建議清空本地清單以確保協作資料的準確性。\n\n` +
                     `要清空本地清單嗎？`
                 );
@@ -368,11 +368,11 @@ class RoomCollaboration {
             // 同步現有的寶圖清單
             this.syncTreasureMaps();
 
-            this.showToast(`成功加入房間 ${roomCode}`);
+            this.showToast(`成功加入隊伍 ${roomCode}`);
 
         } catch (error) {
-            console.error('加入房間失敗:', error);
-            this.showToast(error.message || '加入房間失敗，請確認房間代號是否正確', 'error');
+            console.error('加入隊伍失敗:', error);
+            this.showToast(error.message || '加入隊伍失敗，請確認隊伍代號是否正確', 'error');
         }
     }
 
@@ -455,12 +455,12 @@ class RoomCollaboration {
         }
     }
 
-    // 顯示離開房間對話框
+    // 顯示離開隊伍對話框
     showLeaveRoomDialog() {
         this.showModal('leaveRoom');
     }
 
-    // 離開房間
+    // 離開隊伍
     async leaveRoom(keepList) {
         try {
             // 記錄離開前的資訊
@@ -486,7 +486,7 @@ class RoomCollaboration {
             // 記錄操作歷史（在清除資料前）
             this.addOperationHistory({
                 type: 'room_leave',
-                message: `${nickname} 離開了房間`,
+                message: `${nickname} 離開了隊伍`,
                 timestamp: new Date().toISOString()
             });
 
@@ -512,20 +512,20 @@ class RoomCollaboration {
             this.hideModal('leaveRoom');
             this.updateRoomUI();
 
-            this.showToast('已離開房間');
+            this.showToast('已離開隊伍');
 
         } catch (error) {
-            console.error('離開房間失敗:', error);
-            this.showToast('離開房間失敗，請稍後再試', 'error');
+            console.error('離開隊伍失敗:', error);
+            this.showToast('離開隊伍失敗，請稍後再試', 'error');
         }
     }
 
-    // 複製房間代號
+    // 複製隊伍代號
     copyRoomCode() {
         const code = this.currentRoom.roomCode;
         if (navigator.clipboard) {
             navigator.clipboard.writeText(code).then(() => {
-                this.showToast('房間代號已複製');
+                this.showToast('隊伍代號已複製');
             }).catch(() => {
                 this.fallbackCopy(code);
             });
@@ -544,7 +544,7 @@ class RoomCollaboration {
         textarea.select();
         document.execCommand('copy');
         document.body.removeChild(textarea);
-        this.showToast('房間代號已複製');
+        this.showToast('隊伍代號已複製');
     }
 
 
@@ -639,8 +639,8 @@ class RoomCollaboration {
 
             if (!response.ok) {
                 if (response.status === 404) {
-                    // 房間已過期
-                    this.showToast('房間已過期', 'error');
+                    // 隊伍已過期
+                    this.showToast('隊伍已過期', 'error');
                     this.forceLeaveRoom();
                     return;
                 }
@@ -979,13 +979,13 @@ class RoomCollaboration {
 
         membersList.innerHTML = '';
 
-        // 排序成員（房主優先，其次當前使用者，其他按加入時間）
+        // 排序成員（隊長優先，其次當前使用者，其他按加入時間）
         const sortedMembers = [...this.currentRoom.members].sort((a, b) => {
-            // 房主永遠排第一
+            // 隊長永遠排第一
             if (a.id === this.currentRoom.creatorId) return -1;
             if (b.id === this.currentRoom.creatorId) return 1;
 
-            // 當前使用者排第二（除非已經是房主）
+            // 當前使用者排第二（除非已經是隊長）
             if (a.id === this.currentUser.id) return -1;
             if (b.id === this.currentUser.id) return 1;
 
@@ -1004,18 +1004,18 @@ class RoomCollaboration {
             const nameSpan = document.createElement('span');
             nameSpan.textContent = member.nickname;
 
-            // 標示房主
+            // 標示隊長
             const isCreator = member.id === this.currentRoom.creatorId;
             if (isCreator) {
                 const crownIcon = document.createElement('span');
                 crownIcon.textContent = ' 👑';
-                crownIcon.title = '房主';
+                crownIcon.title = '隊長';
                 nameSpan.appendChild(crownIcon);
             }
 
             memberTag.appendChild(nameSpan);
 
-            // 移除按鈕（只有房主可以移除其他成員）
+            // 移除按鈕（只有隊長可以移除其他成員）
             const currentUserIsCreator = this.currentUser.id === this.currentRoom.creatorId;
             if (currentUserIsCreator && !isCreator) {
                 const removeBtn = document.createElement('button');
@@ -1065,11 +1065,11 @@ class RoomCollaboration {
             // 記錄操作歷史
             this.addOperationHistory({
                 type: 'member_remove',
-                message: `${this.currentUser.nickname} 將 ${member.nickname} 移出房間`,
+                message: `${this.currentUser.nickname} 將 ${member.nickname} 移出隊伍`,
                 timestamp: new Date().toISOString()
             });
 
-            this.showToast(`已將 ${member.nickname} 移出房間`);
+            this.showToast(`已將 ${member.nickname} 移出隊伍`);
 
         } catch (error) {
             console.error('移除成員失敗:', error);
