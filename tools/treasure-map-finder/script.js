@@ -447,6 +447,7 @@ class TreasureMapFinder {
                 level: map.level,
                 levelName: map.levelName,
                 zone: map.zone,
+                zoneId: map.zoneId,
                 coords: map.coords,
                 thumbnail: map.thumbnail,
                 addedAt: new Date().toISOString(),
@@ -923,8 +924,18 @@ class TreasureMapFinder {
             zoneSpan.className = 'item-zone';
             
             // 使用多語言顯示
-            const translations = zoneManager.getZoneNames(item.zoneId) || { zh: item.zone, en: item.zone, ja: item.zone };
-            if (translations.zh) {
+            // 如果沒有 zoneId，嘗試從 zone 名稱獲取
+            let zoneId = item.zoneId;
+            if (!zoneId && item.zone) {
+                // 嘗試從原始地圖資料中找到對應的 zoneId
+                const originalMap = this.maps.find(m => m.id === item.id);
+                if (originalMap) {
+                    zoneId = originalMap.zoneId;
+                }
+            }
+            
+            const translations = zoneId ? zoneManager.getZoneNames(zoneId) : null;
+            if (translations && translations.zh) {
                 zoneSpan.textContent = translations.zh;
                 zoneSpan.title = `${translations.en || item.zone} / ${translations.ja || ''}`;
             } else {
@@ -1388,7 +1399,7 @@ class TreasureMapFinder {
             } else {
                 stepDiv.innerHTML = `
                     <span class="step-icon">📍</span>
-                    <span class="step-text">${step.mapLevel || ''} - ${this.getZoneName(step.zone)}</span>
+                    <span class="step-text">${step.mapLevel || ''} - ${this.getZoneName(step.zoneId || step.zone)}</span>
                     <span class="step-coords">(${step.coords.x}, ${step.coords.y}, ${step.coords.z || 0})</span>
                 `;
             }
@@ -1463,7 +1474,8 @@ class TreasureMapFinder {
             result = result.replace('<傳送點_ja>', aetheryteNames.ja || step.to.ja || '');
         } else {
             result = result.replace('<寶圖等級>', step.mapLevel || '');
-            const zoneNames = this.getZoneAllNames(step.zone);
+            // 優先使用 zoneId 來獲取正確的翻譯
+            const zoneNames = step.zoneId ? zoneManager.getZoneNames(step.zoneId) : this.getZoneAllNames(step.zone);
             result = result.replace('<地區>', zoneNames.zh);
             result = result.replace('<地區_en>', zoneNames.en);
             result = result.replace('<地區_ja>', zoneNames.ja);
@@ -1719,6 +1731,7 @@ class TreasureMapFinder {
                     level: fullMap.level,
                     levelName: fullMap.levelName,
                     zone: fullMap.zone,
+                    zoneId: fullMap.zoneId,
                     coords: fullMap.coords,
                     thumbnail: fullMap.thumbnail,
                     addedAt: roomMap.addedAt,
@@ -1823,10 +1836,9 @@ class RouteCalculator {
         const regionsVisited = [];
         for (const regionId of regionOrder) {
             if (mapsByRegion[regionId] && mapsByRegion[regionId].length > 0) {
-                // 使用第一個地圖的 zone 名稱
-                const zoneName = mapsByRegion[regionId][0].zone;
-                if (zoneName && !regionsVisited.includes(zoneName)) {
-                    regionsVisited.push(zoneName);
+                // 儲存 zoneId 而不是 zone 名稱，以便後續能正確翻譯
+                if (!regionsVisited.includes(regionId)) {
+                    regionsVisited.push(regionId);
                 }
             }
         }
@@ -1886,8 +1898,8 @@ class RouteCalculator {
     groupByZone(maps) {
         const groups = {};
         for (const map of maps) {
-            // 將 zone 名稱轉換為 zoneId
-            const zoneId = this.getZoneId(map.zone) || map.zoneId || 'unknown';
+            // 優先使用原始的 zoneId，這樣可以保留具體的地區資訊
+            const zoneId = map.zoneId || this.getZoneId(map.zone) || 'unknown';
             if (!groups[zoneId]) {
                 groups[zoneId] = [];
             }
@@ -1976,27 +1988,47 @@ class RouteCalculator {
     // 取得地區的傳送點
     getRegionAetherytes(zoneId) {
         console.log(`getRegionAetherytes 查詢 zoneId: ${zoneId}`);
-        console.log('可用的 zoneIds:', this.aetherytes ? Object.keys(this.aetherytes) : 'aetherytes 未載入');
         
         if (!this.aetherytes) {
             console.log('傳送點資料尚未載入');
             return [];
         }
         
-        if (!this.aetherytes[zoneId]) {
-            console.log(`找不到 ${zoneId} 的傳送點資料`);
-            return [];
+        // 先嘗試直接查找（對於區域 ID 如 "coerthas", "dravania" 等）
+        if (this.aetherytes[zoneId]) {
+            const aetherytes = this.aetherytes[zoneId].map(a => ({
+                ...a,
+                zoneId: zoneId,
+                isTeleport: true
+            }));
+            console.log(`找到 ${aetherytes.length} 個傳送點 (直接):`, aetherytes.map(a => a.name?.zh || a.id));
+            return aetherytes;
         }
         
-        // 將傳送點資料加上必要的屬性
-        const aetherytes = this.aetherytes[zoneId].map(a => ({
-            ...a,
-            zoneId: zoneId,
-            isTeleport: true
-        }));
+        // 如果沒找到，可能是具體的地區 ID（如 "urqopacha"），需要找到它所屬的區域
+        const regionId = zoneManager.getRegionId(zoneId);
+        console.log(`${zoneId} 所屬區域: ${regionId}`);
         
-        console.log(`找到 ${aetherytes.length} 個傳送點:`, aetherytes.map(a => a.name?.zh || a.id));
-        return aetherytes;
+        if (regionId && this.aetherytes[regionId]) {
+            // 獲取該地區的傳送點列表
+            const zoneAetheryteIds = zoneManager.getZoneById(zoneId)?.aetherytes || [];
+            console.log(`${zoneId} 的傳送點 IDs:`, zoneAetheryteIds);
+            
+            // 從區域傳送點中篩選出屬於該地區的傳送點
+            const aetherytes = this.aetherytes[regionId]
+                .filter(a => zoneAetheryteIds.includes(a.id))
+                .map(a => ({
+                    ...a,
+                    zoneId: zoneId,
+                    isTeleport: true
+                }));
+            
+            console.log(`找到 ${aetherytes.length} 個傳送點 (篩選):`, aetherytes.map(a => a.name?.zh || a.id));
+            return aetherytes;
+        }
+        
+        console.log(`找不到 ${zoneId} 的傳送點資料`);
+        return [];
     }
     
     // 地區內路線規劃（基於傳送點分組策略）
