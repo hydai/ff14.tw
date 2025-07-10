@@ -19,7 +19,10 @@
           },
           "normalizedName": "urqopacha",
           "filePrefix": "urqopacha",
-          "aetherytes": ["wachunpelo", "worqor_zormor"]
+          "aetherytes": [
+            "wachunpelo",
+            "worqor_zormor"
+          ]
         },
         {
           "id": "kozamauka",
@@ -30,7 +33,10 @@
           },
           "normalizedName": "kozamauka",
           "filePrefix": "kozamauka",
-          "aetherytes": ["ok_hanu", "earthenshire"]
+          "aetherytes": [
+            "ok_hanu",
+            "earthenshire"
+          ]
         },
         {
           "id": "yaktel",
@@ -41,7 +47,10 @@
           },
           "normalizedName": "yaktel",
           "filePrefix": "yaktel",
-          "aetherytes": ["iq_rrax", "mamook"]
+          "aetherytes": [
+            "iq_rrax",
+            "mamook"
+          ]
         },
         {
           "id": "shaaloani",
@@ -52,18 +61,24 @@
           },
           "normalizedName": "shaaloani",
           "filePrefix": "shaaloani",
-          "aetherytes": ["hhusatahwi", "shaaloani"]
+          "aetherytes": [
+            "hhusatahwi",
+            "shaaloani"
+          ]
         },
         {
-          "id": "heritage_found",
+          "id": "heritagefound",
           "names": {
             "en": "Heritage Found",
             "zh": "遺產之地",
             "ja": "ヘリテージファウンド"
           },
-          "normalizedName": "heritage_found",
+          "normalizedName": "heritagefound",
           "filePrefix": "heritagefound",
-          "aetherytes": ["mehwahjaxas", "xagjhalyokawak"]
+          "aetherytes": [
+            "mehwahjaxas",
+            "xagjhalyokawak"
+          ]
         }
       ]
     },
@@ -86,7 +101,10 @@
           },
           "normalizedName": "labyrinthos",
           "filePrefix": "labyrinthos",
-          "aetherytes": ["archon_lounge", "sharlayan_hamlet"]
+          "aetherytes": [
+            "archon_lounge",
+            "sharlayan_hamlet"
+          ]
         },
         {
           "id": "thavnair",
@@ -97,7 +115,10 @@
           },
           "normalizedName": "thavnair",
           "filePrefix": "thavnair",
-          "aetherytes": ["yedlihmad", "palaka_stand"]
+          "aetherytes": [
+            "yedlihmad",
+            "palaka_stand"
+          ]
         },
         {
           "id": "garlemald",
@@ -108,7 +129,10 @@
           },
           "normalizedName": "garlemald",
           "filePrefix": "garlemald",
-          "aetherytes": ["tertium", "camp_broken_glass"]
+          "aetherytes": [
+            "tertium",
+            "camp_broken_glass"
+          ]
         },
         {
           "id": "marelamentorum",
@@ -118,8 +142,11 @@
             "ja": "嘆きの海"
           },
           "normalizedName": "marelamentorum",
-          "filePrefix": "mare_lamentorum",
-          "aetherytes": ["sinus_lacrimarum", "bestways_burrow"]
+          "filePrefix": "marelamentorum",
+          "aetherytes": [
+            "sinus_lacrimarum",
+            "bestways_burrow"
+          ]
         },
         {
           "id": "elpis",
@@ -130,7 +157,10 @@
           },
           "normalizedName": "elpis",
           "filePrefix": "elpis",
-          "aetherytes": ["the_twelve_wonders", "anagnorisis"]
+          "aetherytes": [
+            "the_twelve_wonders",
+            "anagnorisis"
+          ]
         },
         {
           "id": "ultimathule",
@@ -140,8 +170,11 @@
             "ja": "ウルティマ・トゥーレ"
           },
           "normalizedName": "ultimathule",
-          "filePrefix": "ultima_thule",
-          "aetherytes": ["reah_tahra", "base_omicron"]
+          "filePrefix": "ultimathule",
+          "aetherytes": [
+            "reah_tahra",
+            "base_omicron"
+          ]
         }
       ]
     },
@@ -164,7 +197,10 @@
           },
           "normalizedName": "lakeland",
           "filePrefix": "lakeland",
-          "aetherytes": ["the_ostall_imperative", "fort_jobb"]
+          "aetherytes": [
+            "the_ostall_imperative",
+            "fort_jobb"
+          ]
         },
         {
           "id": "kholusia",
@@ -175,7 +211,10 @@
           },
           "normalizedName": "kholusia",
           "filePrefix": "kholusia",
-          "aetherytes": ["tomra", "stilltide"]
+          "aetherytes": [
+            "tomra",
+            "stilltide"
+          ]
         },
         {
           "id": "amharaeng",
@@ -185,8 +224,11 @@
             "ja": "アム・アレーン"
           },
           "normalizedName": "amharaeng",
-          "filePrefix": "amh_araeng",
-          "aetherytes": ["twine", "mord_souq"]
+          "filePrefix": "amharaeng",
+          "aetherytes": [
+            "twine",
+            "mord_souq"
+          ]
         },
         {
           "id": "ilmheg",
@@ -196,8 +238,11 @@
             "ja": "イル・メグ"
           },
           "normalizedName": "ilmheg",
-          "filePrefix": "il_mheg",
-          "aetherytes": ["lydha_lran", "pla_enni"]
+          "filePrefix": "ilmheg",
+          "aetherytes": [
+            "lydha_lran",
+            "pla_enni"
+          ]
         },
         {
           "id": "theraktikagreatwood",
@@ -207,8 +252,11 @@
             "ja": "ラケティカ大森林"
           },
           "normalizedName": "theraktikagreatwood",
-          "filePrefix": "the_raktika_greatwood",
-          "aetherytes": ["slitherbough", "fanow"]
+          "filePrefix": "theraktikagreatwood",
+          "aetherytes": [
+            "slitherbough",
+            "fanow"
+          ]
         },
         {
           "id": "thetempest",
@@ -218,8 +266,11 @@
             "ja": "テンペスト"
           },
           "normalizedName": "thetempest",
-          "filePrefix": "the_tempest",
-          "aetherytes": ["ondo_cups", "macarenses_angle"]
+          "filePrefix": "thetempest",
+          "aetherytes": [
+            "ondo_cups",
+            "macarenses_angle"
+          ]
         }
       ]
     },
@@ -241,8 +292,11 @@
             "ja": "ギラバニア辺境地帯"
           },
           "normalizedName": "thefringes",
-          "filePrefix": "the_fringes",
-          "aetherytes": ["castrum_oriens", "peering_stones"]
+          "filePrefix": "thefringes",
+          "aetherytes": [
+            "castrum_oriens",
+            "peering_stones"
+          ]
         },
         {
           "id": "thepeaks",
@@ -252,8 +306,11 @@
             "ja": "ギラバニア山岳地帯"
           },
           "normalizedName": "thepeaks",
-          "filePrefix": "the_peaks",
-          "aetherytes": ["ala_gannha", "ala_ghiri"]
+          "filePrefix": "thepeaks",
+          "aetherytes": [
+            "ala_gannha",
+            "ala_ghiri"
+          ]
         },
         {
           "id": "thelochs",
@@ -263,8 +320,11 @@
             "ja": "ギラバニア湖畔地帯"
           },
           "normalizedName": "thelochs",
-          "filePrefix": "the_lochs",
-          "aetherytes": ["porta_praetoria", "ala_mhigan_quarter"]
+          "filePrefix": "thelochs",
+          "aetherytes": [
+            "porta_praetoria",
+            "ala_mhigan_quarter"
+          ]
         }
       ]
     },
@@ -286,8 +346,11 @@
             "ja": "紅玉海"
           },
           "normalizedName": "therubysea",
-          "filePrefix": "the_ruby_sea",
-          "aetherytes": ["tamamizu", "onokoro"]
+          "filePrefix": "therubysea",
+          "aetherytes": [
+            "tamamizu",
+            "onokoro"
+          ]
         },
         {
           "id": "yanxia",
@@ -298,7 +361,10 @@
           },
           "normalizedName": "yanxia",
           "filePrefix": "yanxia",
-          "aetherytes": ["house_of_the_fierce", "namai"]
+          "aetherytes": [
+            "house_of_the_fierce",
+            "namai"
+          ]
         },
         {
           "id": "theazimsteppe",
@@ -308,8 +374,11 @@
             "ja": "アジムステップ"
           },
           "normalizedName": "theazimsteppe",
-          "filePrefix": "the_azim_steppe",
-          "aetherytes": ["dawn_throne", "dhoro_iloh"]
+          "filePrefix": "theazimsteppe",
+          "aetherytes": [
+            "dawn_throne",
+            "dhoro_iloh"
+          ]
         }
       ]
     },
@@ -331,8 +400,10 @@
             "ja": "クルザス西部高地"
           },
           "normalizedName": "coerthaswesternhighlands",
-          "filePrefix": "coerthas_western_highlands",
-          "aetherytes": ["falcon_nest"]
+          "filePrefix": "coerthaswesternhighlands",
+          "aetherytes": [
+            "falcon_nest"
+          ]
         }
       ]
     },
@@ -354,8 +425,11 @@
             "ja": "高地ドラヴァニア"
           },
           "normalizedName": "thedravanianforelands",
-          "filePrefix": "the_dravanian_forelands",
-          "aetherytes": ["tailfeather", "anyx_trine"]
+          "filePrefix": "thedravanianforelands",
+          "aetherytes": [
+            "tailfeather",
+            "anyx_trine"
+          ]
         },
         {
           "id": "thechurningmists",
@@ -365,8 +439,11 @@
             "ja": "雲海"
           },
           "normalizedName": "thechurningmists",
-          "filePrefix": "the_churning_mists",
-          "aetherytes": ["moghome", "zenith"]
+          "filePrefix": "thechurningmists",
+          "aetherytes": [
+            "moghome",
+            "zenith"
+          ]
         }
       ]
     },
@@ -388,8 +465,11 @@
             "ja": "アバラシア雲海"
           },
           "normalizedName": "theseaofclouds",
-          "filePrefix": "the_sea_of_clouds",
-          "aetherytes": ["camp_cloudtop", "ok_zundu"]
+          "filePrefix": "theseaofclouds",
+          "aetherytes": [
+            "camp_cloudtop",
+            "ok_zundu"
+          ]
         }
       ]
     },
@@ -412,7 +492,9 @@
           },
           "normalizedName": "easternthanalan",
           "filePrefix": "easternthanalan",
-          "aetherytes": ["camp_drybone"]
+          "aetherytes": [
+            "camp_drybone"
+          ]
         }
       ]
     },
@@ -435,7 +517,9 @@
           },
           "normalizedName": "westernlanoscea",
           "filePrefix": "westernlanoscea",
-          "aetherytes": ["aleport"]
+          "aetherytes": [
+            "aleport"
+          ]
         }
       ]
     }
@@ -518,9 +602,8 @@
       "高地ドラヴァニア": "thedravanianforelands",
       "The Churning Mists": "thechurningmists",
       "翻雲霧海": "thechurningmists",
-      "雲海": "thechurningmists",
-      "The Sea of Clouds": "theseaofclouds",
       "雲海": "theseaofclouds",
+      "The Sea of Clouds": "theseaofclouds",
       "アバラシア雲海": "theseaofclouds",
       "Eastern Thanalan": "easternthanalan",
       "東薩納蘭": "easternthanalan",
@@ -534,7 +617,7 @@
       "kozamauka": "tural",
       "yaktel": "tural",
       "shaaloani": "tural",
-      "heritage_found": "tural",
+      "heritagefound": "tural",
       "labyrinthos": "ilsabard",
       "thavnair": "ilsabard",
       "garlemald": "ilsabard",
@@ -559,37 +642,6 @@
       "theseaofclouds": "abalathia",
       "easternthanalan": "thanalan",
       "westernlanoscea": "la_noscea"
-    },
-    "filePrefixToZoneId": {
-      "urqopacha": "urqopacha",
-      "kozamauka": "kozamauka",
-      "yaktel": "yaktel",
-      "shaaloani": "shaaloani",
-      "heritagefound": "heritage_found",
-      "labyrinthos": "labyrinthos",
-      "thavnair": "thavnair",
-      "garlemald": "garlemald",
-      "marelamentorum": "marelamentorum",
-      "elpis": "elpis",
-      "ultimathule": "ultimathule",
-      "lakeland": "lakeland",
-      "kholusia": "kholusia",
-      "amharaeng": "amharaeng",
-      "ilmheg": "ilmheg",
-      "theraktikagreatwood": "theraktikagreatwood",
-      "thetempest": "thetempest",
-      "thefringes": "thefringes",
-      "thepeaks": "thepeaks",
-      "thelochs": "thelochs",
-      "therubysea": "therubysea",
-      "yanxia": "yanxia",
-      "theazimsteppe": "theazimsteppe",
-      "coerthaswesternhighlands": "coerthaswesternhighlands",
-      "thedravanianforelands": "thedravanianforelands",
-      "thechurningmists": "thechurningmists",
-      "theseaofclouds": "theseaofclouds",
-      "easternthanalan": "easternthanalan",
-      "westernlanoscea": "westernlanoscea"
     }
   }
 }

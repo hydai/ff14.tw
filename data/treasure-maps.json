@@ -562,7 +562,7 @@
     {
       "id": "tm_039",
       "level": "g17",
-      "zoneId": "heritage_found",
+      "zoneId": "heritagefound",
       "index": 1,
       "coords": {
         "x": 9.1,
@@ -573,7 +573,7 @@
     {
       "id": "tm_040",
       "level": "g17",
-      "zoneId": "heritage_found",
+      "zoneId": "heritagefound",
       "index": 2,
       "coords": {
         "x": 16.6,
@@ -584,7 +584,7 @@
     {
       "id": "tm_041",
       "level": "g17",
-      "zoneId": "heritage_found",
+      "zoneId": "heritagefound",
       "index": 3,
       "coords": {
         "x": 17.2,
@@ -595,7 +595,7 @@
     {
       "id": "tm_042",
       "level": "g17",
-      "zoneId": "heritage_found",
+      "zoneId": "heritagefound",
       "index": 4,
       "coords": {
         "x": 16.8,
@@ -606,7 +606,7 @@
     {
       "id": "tm_043",
       "level": "g17",
-      "zoneId": "heritage_found",
+      "zoneId": "heritagefound",
       "index": 5,
       "coords": {
         "x": 22,
@@ -617,7 +617,7 @@
     {
       "id": "tm_044",
       "level": "g17",
-      "zoneId": "heritage_found",
+      "zoneId": "heritagefound",
       "index": 6,
       "coords": {
         "x": 26.3,
@@ -628,7 +628,7 @@
     {
       "id": "tm_045",
       "level": "g17",
-      "zoneId": "heritage_found",
+      "zoneId": "heritagefound",
       "index": 7,
       "coords": {
         "x": 31.1,
@@ -639,7 +639,7 @@
     {
       "id": "tm_046",
       "level": "g17",
-      "zoneId": "heritage_found",
+      "zoneId": "heritagefound",
       "index": 8,
       "coords": {
         "x": 35.7,
@@ -1002,7 +1002,7 @@
     {
       "id": "tm_079",
       "level": "g14",
-      "zoneId": "mare_lamentorum",
+      "zoneId": "marelamentorum",
       "index": 1,
       "coords": {
         "x": 12.2,
@@ -1013,7 +1013,7 @@
     {
       "id": "tm_080",
       "level": "g14",
-      "zoneId": "mare_lamentorum",
+      "zoneId": "marelamentorum",
       "index": 2,
       "coords": {
         "x": 17.1,
@@ -1024,7 +1024,7 @@
     {
       "id": "tm_081",
       "level": "g14",
-      "zoneId": "mare_lamentorum",
+      "zoneId": "marelamentorum",
       "index": 3,
       "coords": {
         "x": 15.9,
@@ -1035,7 +1035,7 @@
     {
       "id": "tm_082",
       "level": "g14",
-      "zoneId": "mare_lamentorum",
+      "zoneId": "marelamentorum",
       "index": 4,
       "coords": {
         "x": 18.7,
@@ -1046,7 +1046,7 @@
     {
       "id": "tm_083",
       "level": "g14",
-      "zoneId": "mare_lamentorum",
+      "zoneId": "marelamentorum",
       "index": 5,
       "coords": {
         "x": 22.8,
@@ -1057,7 +1057,7 @@
     {
       "id": "tm_084",
       "level": "g14",
-      "zoneId": "mare_lamentorum",
+      "zoneId": "marelamentorum",
       "index": 6,
       "coords": {
         "x": 25.6,
@@ -1068,7 +1068,7 @@
     {
       "id": "tm_085",
       "level": "g14",
-      "zoneId": "mare_lamentorum",
+      "zoneId": "marelamentorum",
       "index": 7,
       "coords": {
         "x": 30.5,
@@ -1079,7 +1079,7 @@
     {
       "id": "tm_086",
       "level": "g14",
-      "zoneId": "mare_lamentorum",
+      "zoneId": "marelamentorum",
       "index": 8,
       "coords": {
         "x": 34.8,
@@ -1090,7 +1090,7 @@
     {
       "id": "tm_087",
       "level": "g14",
-      "zoneId": "ultima_thule",
+      "zoneId": "ultimathule",
       "index": 1,
       "coords": {
         "x": 6.1,
@@ -1101,7 +1101,7 @@
     {
       "id": "tm_088",
       "level": "g14",
-      "zoneId": "ultima_thule",
+      "zoneId": "ultimathule",
       "index": 2,
       "coords": {
         "x": 8.1,
@@ -1112,7 +1112,7 @@
     {
       "id": "tm_089",
       "level": "g14",
-      "zoneId": "ultima_thule",
+      "zoneId": "ultimathule",
       "index": 3,
       "coords": {
         "x": 12.7,
@@ -1123,7 +1123,7 @@
     {
       "id": "tm_090",
       "level": "g14",
-      "zoneId": "ultima_thule",
+      "zoneId": "ultimathule",
       "index": 4,
       "coords": {
         "x": 17.9,
@@ -1134,7 +1134,7 @@
     {
       "id": "tm_091",
       "level": "g14",
-      "zoneId": "ultima_thule",
+      "zoneId": "ultimathule",
       "index": 5,
       "coords": {
         "x": 21.4,
@@ -1145,7 +1145,7 @@
     {
       "id": "tm_092",
       "level": "g14",
-      "zoneId": "ultima_thule",
+      "zoneId": "ultimathule",
       "index": 6,
       "coords": {
         "x": 26.7,
@@ -1156,7 +1156,7 @@
     {
       "id": "tm_093",
       "level": "g14",
-      "zoneId": "ultima_thule",
+      "zoneId": "ultimathule",
       "index": 7,
       "coords": {
         "x": 25.7,
@@ -1167,7 +1167,7 @@
     {
       "id": "tm_094",
       "level": "g14",
-      "zoneId": "ultima_thule",
+      "zoneId": "ultimathule",
       "index": 8,
       "coords": {
         "x": 29.6,
@@ -1178,7 +1178,7 @@
     {
       "id": "tm_095",
       "level": "g10",
-      "zoneId": "the_fringes",
+      "zoneId": "thefringes",
       "index": 1,
       "coords": {
         "x": 9,
@@ -1189,7 +1189,7 @@
     {
       "id": "tm_096",
       "level": "g10",
-      "zoneId": "the_fringes",
+      "zoneId": "thefringes",
       "index": 2,
       "coords": {
         "x": 8,
@@ -1200,7 +1200,7 @@
     {
       "id": "tm_097",
       "level": "g10",
-      "zoneId": "the_fringes",
+      "zoneId": "thefringes",
       "index": 3,
       "coords": {
         "x": 11,
@@ -1211,7 +1211,7 @@
     {
       "id": "tm_098",
       "level": "g10",
-      "zoneId": "the_fringes",
+      "zoneId": "thefringes",
       "index": 4,
       "coords": {
         "x": 15,
@@ -1222,7 +1222,7 @@
     {
       "id": "tm_099",
       "level": "g10",
-      "zoneId": "the_fringes",
+      "zoneId": "thefringes",
       "index": 5,
       "coords": {
         "x": 23,
@@ -1233,7 +1233,7 @@
     {
       "id": "tm_100",
       "level": "g10",
-      "zoneId": "the_fringes",
+      "zoneId": "thefringes",
       "index": 6,
       "coords": {
         "x": 26,
@@ -1244,7 +1244,7 @@
     {
       "id": "tm_101",
       "level": "g10",
-      "zoneId": "the_fringes",
+      "zoneId": "thefringes",
       "index": 7,
       "coords": {
         "x": 32,
@@ -1255,7 +1255,7 @@
     {
       "id": "tm_102",
       "level": "g10",
-      "zoneId": "the_fringes",
+      "zoneId": "thefringes",
       "index": 8,
       "coords": {
         "x": 33,
@@ -1266,7 +1266,7 @@
     {
       "id": "tm_103",
       "level": "g10",
-      "zoneId": "the_peaks",
+      "zoneId": "thepeaks",
       "index": 1,
       "coords": {
         "x": 9,
@@ -1277,7 +1277,7 @@
     {
       "id": "tm_104",
       "level": "g10",
-      "zoneId": "the_peaks",
+      "zoneId": "thepeaks",
       "index": 2,
       "coords": {
         "x": 12,
@@ -1288,7 +1288,7 @@
     {
       "id": "tm_105",
       "level": "g10",
-      "zoneId": "the_peaks",
+      "zoneId": "thepeaks",
       "index": 3,
       "coords": {
         "x": 16,
@@ -1299,7 +1299,7 @@
     {
       "id": "tm_106",
       "level": "g10",
-      "zoneId": "the_peaks",
+      "zoneId": "thepeaks",
       "index": 4,
       "coords": {
         "x": 15,
@@ -1310,7 +1310,7 @@
     {
       "id": "tm_107",
       "level": "g10",
-      "zoneId": "the_peaks",
+      "zoneId": "thepeaks",
       "index": 5,
       "coords": {
         "x": 16,
@@ -1321,7 +1321,7 @@
     {
       "id": "tm_108",
       "level": "g10",
-      "zoneId": "the_peaks",
+      "zoneId": "thepeaks",
       "index": 6,
       "coords": {
         "x": 24,
@@ -1332,7 +1332,7 @@
     {
       "id": "tm_109",
       "level": "g10",
-      "zoneId": "the_peaks",
+      "zoneId": "thepeaks",
       "index": 7,
       "coords": {
         "x": 26,
@@ -1343,7 +1343,7 @@
     {
       "id": "tm_110",
       "level": "g10",
-      "zoneId": "the_peaks",
+      "zoneId": "thepeaks",
       "index": 8,
       "coords": {
         "x": 33,
@@ -1354,7 +1354,7 @@
     {
       "id": "tm_111",
       "level": "g10",
-      "zoneId": "the_lochs",
+      "zoneId": "thelochs",
       "index": 1,
       "coords": {
         "x": 6,
@@ -1365,7 +1365,7 @@
     {
       "id": "tm_112",
       "level": "g10",
-      "zoneId": "the_lochs",
+      "zoneId": "thelochs",
       "index": 2,
       "coords": {
         "x": 9,
@@ -1376,7 +1376,7 @@
     {
       "id": "tm_113",
       "level": "g10",
-      "zoneId": "the_lochs",
+      "zoneId": "thelochs",
       "index": 3,
       "coords": {
         "x": 16,
@@ -1387,7 +1387,7 @@
     {
       "id": "tm_114",
       "level": "g10",
-      "zoneId": "the_lochs",
+      "zoneId": "thelochs",
       "index": 4,
       "coords": {
         "x": 20,
@@ -1398,7 +1398,7 @@
     {
       "id": "tm_115",
       "level": "g10",
-      "zoneId": "the_lochs",
+      "zoneId": "thelochs",
       "index": 5,
       "coords": {
         "x": 25,
@@ -1409,7 +1409,7 @@
     {
       "id": "tm_116",
       "level": "g10",
-      "zoneId": "the_lochs",
+      "zoneId": "thelochs",
       "index": 6,
       "coords": {
         "x": 24,
@@ -1420,7 +1420,7 @@
     {
       "id": "tm_117",
       "level": "g10",
-      "zoneId": "the_lochs",
+      "zoneId": "thelochs",
       "index": 7,
       "coords": {
         "x": 30,
@@ -1431,7 +1431,7 @@
     {
       "id": "tm_118",
       "level": "g10",
-      "zoneId": "the_lochs",
+      "zoneId": "thelochs",
       "index": 8,
       "coords": {
         "x": 32,
@@ -1442,7 +1442,7 @@
     {
       "id": "tm_119",
       "level": "g10",
-      "zoneId": "the_ruby_sea",
+      "zoneId": "therubysea",
       "index": 1,
       "coords": {
         "x": 5,
@@ -1453,7 +1453,7 @@
     {
       "id": "tm_120",
       "level": "g10",
-      "zoneId": "the_ruby_sea",
+      "zoneId": "therubysea",
       "index": 2,
       "coords": {
         "x": 8,
@@ -1464,7 +1464,7 @@
     {
       "id": "tm_121",
       "level": "g10",
-      "zoneId": "the_ruby_sea",
+      "zoneId": "therubysea",
       "index": 3,
       "coords": {
         "x": 17,
@@ -1475,7 +1475,7 @@
     {
       "id": "tm_122",
       "level": "g10",
-      "zoneId": "the_ruby_sea",
+      "zoneId": "therubysea",
       "index": 4,
       "coords": {
         "x": 18,
@@ -1486,7 +1486,7 @@
     {
       "id": "tm_123",
       "level": "g10",
-      "zoneId": "the_ruby_sea",
+      "zoneId": "therubysea",
       "index": 5,
       "coords": {
         "x": 28,
@@ -1497,7 +1497,7 @@
     {
       "id": "tm_124",
       "level": "g10",
-      "zoneId": "the_ruby_sea",
+      "zoneId": "therubysea",
       "index": 6,
       "coords": {
         "x": 30,
@@ -1508,7 +1508,7 @@
     {
       "id": "tm_125",
       "level": "g10",
-      "zoneId": "the_ruby_sea",
+      "zoneId": "therubysea",
       "index": 7,
       "coords": {
         "x": 33,
@@ -1519,7 +1519,7 @@
     {
       "id": "tm_126",
       "level": "g10",
-      "zoneId": "the_ruby_sea",
+      "zoneId": "therubysea",
       "index": 8,
       "coords": {
         "x": 33,
@@ -1618,7 +1618,7 @@
     {
       "id": "tm_135",
       "level": "g10",
-      "zoneId": "the_azim_steppe",
+      "zoneId": "theazimsteppe",
       "index": 1,
       "coords": {
         "x": 5,
@@ -1629,7 +1629,7 @@
     {
       "id": "tm_136",
       "level": "g10",
-      "zoneId": "the_azim_steppe",
+      "zoneId": "theazimsteppe",
       "index": 2,
       "coords": {
         "x": 10,
@@ -1640,7 +1640,7 @@
     {
       "id": "tm_137",
       "level": "g10",
-      "zoneId": "the_azim_steppe",
+      "zoneId": "theazimsteppe",
       "index": 3,
       "coords": {
         "x": 16,
@@ -1651,7 +1651,7 @@
     {
       "id": "tm_138",
       "level": "g10",
-      "zoneId": "the_azim_steppe",
+      "zoneId": "theazimsteppe",
       "index": 4,
       "coords": {
         "x": 15,
@@ -1662,7 +1662,7 @@
     {
       "id": "tm_139",
       "level": "g10",
-      "zoneId": "the_azim_steppe",
+      "zoneId": "theazimsteppe",
       "index": 5,
       "coords": {
         "x": 22,
@@ -1673,7 +1673,7 @@
     {
       "id": "tm_140",
       "level": "g10",
-      "zoneId": "the_azim_steppe",
+      "zoneId": "theazimsteppe",
       "index": 6,
       "coords": {
         "x": 29,
@@ -1684,7 +1684,7 @@
     {
       "id": "tm_141",
       "level": "g10",
-      "zoneId": "the_azim_steppe",
+      "zoneId": "theazimsteppe",
       "index": 7,
       "coords": {
         "x": 31,
@@ -1695,7 +1695,7 @@
     {
       "id": "tm_142",
       "level": "g10",
-      "zoneId": "the_azim_steppe",
+      "zoneId": "theazimsteppe",
       "index": 8,
       "coords": {
         "x": 29,
@@ -1706,7 +1706,7 @@
     {
       "id": "tm_143",
       "level": "g8",
-      "zoneId": "coerthas_western_highlands",
+      "zoneId": "coerthaswesternhighlands",
       "index": 1,
       "coords": {
         "x": 20,
@@ -1717,7 +1717,7 @@
     {
       "id": "tm_144",
       "level": "g8",
-      "zoneId": "coerthas_western_highlands",
+      "zoneId": "coerthaswesternhighlands",
       "index": 2,
       "coords": {
         "x": 12,
@@ -1728,7 +1728,7 @@
     {
       "id": "tm_145",
       "level": "g8",
-      "zoneId": "coerthas_western_highlands",
+      "zoneId": "coerthaswesternhighlands",
       "index": 3,
       "coords": {
         "x": 7,
@@ -1739,7 +1739,7 @@
     {
       "id": "tm_146",
       "level": "g8",
-      "zoneId": "coerthas_western_highlands",
+      "zoneId": "coerthaswesternhighlands",
       "index": 4,
       "coords": {
         "x": 21,
@@ -1750,7 +1750,7 @@
     {
       "id": "tm_147",
       "level": "g8",
-      "zoneId": "coerthas_western_highlands",
+      "zoneId": "coerthaswesternhighlands",
       "index": 5,
       "coords": {
         "x": 28,
@@ -1761,7 +1761,7 @@
     {
       "id": "tm_148",
       "level": "g8",
-      "zoneId": "coerthas_western_highlands",
+      "zoneId": "coerthaswesternhighlands",
       "index": 6,
       "coords": {
         "x": 34,
@@ -1772,7 +1772,7 @@
     {
       "id": "tm_149",
       "level": "g8",
-      "zoneId": "coerthas_western_highlands",
+      "zoneId": "coerthaswesternhighlands",
       "index": 7,
       "coords": {
         "x": 36,
@@ -1783,7 +1783,7 @@
     {
       "id": "tm_150",
       "level": "g8",
-      "zoneId": "the_dravanian_forelands",
+      "zoneId": "thedravanianforelands",
       "index": 1,
       "coords": {
         "x": 28,
@@ -1794,7 +1794,7 @@
     {
       "id": "tm_151",
       "level": "g8",
-      "zoneId": "the_dravanian_forelands",
+      "zoneId": "thedravanianforelands",
       "index": 2,
       "coords": {
         "x": 23,
@@ -1805,7 +1805,7 @@
     {
       "id": "tm_152",
       "level": "g8",
-      "zoneId": "the_dravanian_forelands",
+      "zoneId": "thedravanianforelands",
       "index": 3,
       "coords": {
         "x": 27,
@@ -1816,7 +1816,7 @@
     {
       "id": "tm_153",
       "level": "g8",
-      "zoneId": "the_dravanian_forelands",
+      "zoneId": "thedravanianforelands",
       "index": 4,
       "coords": {
         "x": 24,
@@ -1827,7 +1827,7 @@
     {
       "id": "tm_154",
       "level": "g8",
-      "zoneId": "the_dravanian_forelands",
+      "zoneId": "thedravanianforelands",
       "index": 5,
       "coords": {
         "x": 18,
@@ -1838,7 +1838,7 @@
     {
       "id": "tm_155",
       "level": "g8",
-      "zoneId": "the_dravanian_forelands",
+      "zoneId": "thedravanianforelands",
       "index": 6,
       "coords": {
         "x": 14,
@@ -1849,7 +1849,7 @@
     {
       "id": "tm_156",
       "level": "g8",
-      "zoneId": "the_dravanian_forelands",
+      "zoneId": "thedravanianforelands",
       "index": 7,
       "coords": {
         "x": 13,
@@ -1860,7 +1860,7 @@
     {
       "id": "tm_157",
       "level": "g8",
-      "zoneId": "the_dravanian_forelands",
+      "zoneId": "thedravanianforelands",
       "index": 8,
       "coords": {
         "x": 12,
@@ -1871,7 +1871,7 @@
     {
       "id": "tm_158",
       "level": "g8",
-      "zoneId": "the_dravanian_forelands",
+      "zoneId": "thedravanianforelands",
       "index": 9,
       "coords": {
         "x": 10,
@@ -1882,7 +1882,7 @@
     {
       "id": "tm_159",
       "level": "g8",
-      "zoneId": "the_churning_mists",
+      "zoneId": "thechurningmists",
       "index": 1,
       "coords": {
         "x": 29,
@@ -1893,7 +1893,7 @@
     {
       "id": "tm_160",
       "level": "g8",
-      "zoneId": "the_churning_mists",
+      "zoneId": "thechurningmists",
       "index": 2,
       "coords": {
         "x": 21,
@@ -1904,7 +1904,7 @@
     {
       "id": "tm_161",
       "level": "g8",
-      "zoneId": "the_churning_mists",
+      "zoneId": "thechurningmists",
       "index": 3,
       "coords": {
         "x": 17,
@@ -1915,7 +1915,7 @@
     {
       "id": "tm_162",
       "level": "g8",
-      "zoneId": "the_churning_mists",
+      "zoneId": "thechurningmists",
       "index": 4,
       "coords": {
         "x": 32,
@@ -1926,7 +1926,7 @@
     {
       "id": "tm_163",
       "level": "g8",
-      "zoneId": "the_churning_mists",
+      "zoneId": "thechurningmists",
       "index": 5,
       "coords": {
         "x": 23,
@@ -1937,7 +1937,7 @@
     {
       "id": "tm_164",
       "level": "g8",
-      "zoneId": "the_churning_mists",
+      "zoneId": "thechurningmists",
       "index": 6,
       "coords": {
         "x": 11,
@@ -1948,7 +1948,7 @@
     {
       "id": "tm_165",
       "level": "g8",
-      "zoneId": "the_churning_mists",
+      "zoneId": "thechurningmists",
       "index": 7,
       "coords": {
         "x": 8,
@@ -1959,7 +1959,7 @@
     {
       "id": "tm_166",
       "level": "g8",
-      "zoneId": "the_churning_mists",
+      "zoneId": "thechurningmists",
       "index": 8,
       "coords": {
         "x": 13,
@@ -1970,7 +1970,7 @@
     {
       "id": "tm_167",
       "level": "g8",
-      "zoneId": "the_churning_mists",
+      "zoneId": "thechurningmists",
       "index": 9,
       "coords": {
         "x": 10,
@@ -1981,7 +1981,7 @@
     {
       "id": "tm_168",
       "level": "g8",
-      "zoneId": "the_sea_of_clouds",
+      "zoneId": "theseaofclouds",
       "index": 1,
       "coords": {
         "x": 6,
@@ -1992,7 +1992,7 @@
     {
       "id": "tm_169",
       "level": "g8",
-      "zoneId": "the_sea_of_clouds",
+      "zoneId": "theseaofclouds",
       "index": 2,
       "coords": {
         "x": 20,
@@ -2003,7 +2003,7 @@
     {
       "id": "tm_170",
       "level": "g8",
-      "zoneId": "the_sea_of_clouds",
+      "zoneId": "theseaofclouds",
       "index": 3,
       "coords": {
         "x": 22,
@@ -2014,7 +2014,7 @@
     {
       "id": "tm_171",
       "level": "g8",
-      "zoneId": "the_sea_of_clouds",
+      "zoneId": "theseaofclouds",
       "index": 4,
       "coords": {
         "x": 17,
@@ -2025,7 +2025,7 @@
     {
       "id": "tm_172",
       "level": "g8",
-      "zoneId": "the_sea_of_clouds",
+      "zoneId": "theseaofclouds",
       "index": 5,
       "coords": {
         "x": 31,
@@ -2036,7 +2036,7 @@
     {
       "id": "tm_173",
       "level": "g8",
-      "zoneId": "the_sea_of_clouds",
+      "zoneId": "theseaofclouds",
       "index": 6,
       "coords": {
         "x": 29,
@@ -2047,7 +2047,7 @@
     {
       "id": "tm_174",
       "level": "g8",
-      "zoneId": "the_sea_of_clouds",
+      "zoneId": "theseaofclouds",
       "index": 7,
       "coords": {
         "x": 14,
@@ -2058,7 +2058,7 @@
     {
       "id": "tm_175",
       "level": "g8",
-      "zoneId": "the_sea_of_clouds",
+      "zoneId": "theseaofclouds",
       "index": 8,
       "coords": {
         "x": 21,
@@ -2069,7 +2069,7 @@
     {
       "id": "tm_176",
       "level": "g8",
-      "zoneId": "the_sea_of_clouds",
+      "zoneId": "theseaofclouds",
       "index": 9,
       "coords": {
         "x": 19,
@@ -2080,7 +2080,7 @@
     {
       "id": "tm_177",
       "level": "g8",
-      "zoneId": "the_sea_of_clouds",
+      "zoneId": "theseaofclouds",
       "index": 10,
       "coords": {
         "x": 10,
@@ -2267,7 +2267,7 @@
     {
       "id": "tm_194",
       "level": "g12",
-      "zoneId": "amh_araeng",
+      "zoneId": "amharaeng",
       "index": 1,
       "coords": {
         "x": 12,
@@ -2278,7 +2278,7 @@
     {
       "id": "tm_195",
       "level": "g12",
-      "zoneId": "amh_araeng",
+      "zoneId": "amharaeng",
       "index": 2,
       "coords": {
         "x": 13,
@@ -2289,7 +2289,7 @@
     {
       "id": "tm_196",
       "level": "g12",
-      "zoneId": "amh_araeng",
+      "zoneId": "amharaeng",
       "index": 3,
       "coords": {
         "x": 27,
@@ -2300,7 +2300,7 @@
     {
       "id": "tm_197",
       "level": "g12",
-      "zoneId": "amh_araeng",
+      "zoneId": "amharaeng",
       "index": 4,
       "coords": {
         "x": 26,
@@ -2311,7 +2311,7 @@
     {
       "id": "tm_198",
       "level": "g12",
-      "zoneId": "amh_araeng",
+      "zoneId": "amharaeng",
       "index": 5,
       "coords": {
         "x": 30,
@@ -2322,7 +2322,7 @@
     {
       "id": "tm_199",
       "level": "g12",
-      "zoneId": "amh_araeng",
+      "zoneId": "amharaeng",
       "index": 6,
       "coords": {
         "x": 32,
@@ -2333,7 +2333,7 @@
     {
       "id": "tm_200",
       "level": "g12",
-      "zoneId": "amh_araeng",
+      "zoneId": "amharaeng",
       "index": 7,
       "coords": {
         "x": 36,
@@ -2344,7 +2344,7 @@
     {
       "id": "tm_201",
       "level": "g12",
-      "zoneId": "amh_araeng",
+      "zoneId": "amharaeng",
       "index": 8,
       "coords": {
         "x": 34,
@@ -2355,7 +2355,7 @@
     {
       "id": "tm_202",
       "level": "g12",
-      "zoneId": "il_mheg",
+      "zoneId": "ilmheg",
       "index": 1,
       "coords": {
         "x": 7,
@@ -2366,7 +2366,7 @@
     {
       "id": "tm_203",
       "level": "g12",
-      "zoneId": "il_mheg",
+      "zoneId": "ilmheg",
       "index": 2,
       "coords": {
         "x": 10,
@@ -2377,7 +2377,7 @@
     {
       "id": "tm_204",
       "level": "g12",
-      "zoneId": "il_mheg",
+      "zoneId": "ilmheg",
       "index": 3,
       "coords": {
         "x": 12,
@@ -2388,7 +2388,7 @@
     {
       "id": "tm_205",
       "level": "g12",
-      "zoneId": "il_mheg",
+      "zoneId": "ilmheg",
       "index": 4,
       "coords": {
         "x": 14,
@@ -2399,7 +2399,7 @@
     {
       "id": "tm_206",
       "level": "g12",
-      "zoneId": "il_mheg",
+      "zoneId": "ilmheg",
       "index": 5,
       "coords": {
         "x": 21,
@@ -2410,7 +2410,7 @@
     {
       "id": "tm_207",
       "level": "g12",
-      "zoneId": "il_mheg",
+      "zoneId": "ilmheg",
       "index": 6,
       "coords": {
         "x": 25,
@@ -2421,7 +2421,7 @@
     {
       "id": "tm_208",
       "level": "g12",
-      "zoneId": "il_mheg",
+      "zoneId": "ilmheg",
       "index": 7,
       "coords": {
         "x": 31,
@@ -2432,7 +2432,7 @@
     {
       "id": "tm_209",
       "level": "g12",
-      "zoneId": "il_mheg",
+      "zoneId": "ilmheg",
       "index": 8,
       "coords": {
         "x": 33,
@@ -2443,7 +2443,7 @@
     {
       "id": "tm_210",
       "level": "g12",
-      "zoneId": "the_raktika_greatwood",
+      "zoneId": "theraktikagreatwood",
       "index": 1,
       "coords": {
         "x": 11,
@@ -2454,7 +2454,7 @@
     {
       "id": "tm_211",
       "level": "g12",
-      "zoneId": "the_raktika_greatwood",
+      "zoneId": "theraktikagreatwood",
       "index": 2,
       "coords": {
         "x": 13,
@@ -2465,7 +2465,7 @@
     {
       "id": "tm_212",
       "level": "g12",
-      "zoneId": "the_raktika_greatwood",
+      "zoneId": "theraktikagreatwood",
       "index": 3,
       "coords": {
         "x": 22,
@@ -2476,7 +2476,7 @@
     {
       "id": "tm_213",
       "level": "g12",
-      "zoneId": "the_raktika_greatwood",
+      "zoneId": "theraktikagreatwood",
       "index": 4,
       "coords": {
         "x": 24,
@@ -2487,7 +2487,7 @@
     {
       "id": "tm_214",
       "level": "g12",
-      "zoneId": "the_raktika_greatwood",
+      "zoneId": "theraktikagreatwood",
       "index": 5,
       "coords": {
         "x": 24,
@@ -2498,7 +2498,7 @@
     {
       "id": "tm_215",
       "level": "g12",
-      "zoneId": "the_raktika_greatwood",
+      "zoneId": "theraktikagreatwood",
       "index": 6,
       "coords": {
         "x": 26,
@@ -2509,7 +2509,7 @@
     {
       "id": "tm_216",
       "level": "g12",
-      "zoneId": "the_raktika_greatwood",
+      "zoneId": "theraktikagreatwood",
       "index": 7,
       "coords": {
         "x": 34,
@@ -2520,7 +2520,7 @@
     {
       "id": "tm_217",
       "level": "g12",
-      "zoneId": "the_raktika_greatwood",
+      "zoneId": "theraktikagreatwood",
       "index": 8,
       "coords": {
         "x": 35,
@@ -2531,7 +2531,7 @@
     {
       "id": "tm_218",
       "level": "g12",
-      "zoneId": "the_tempest",
+      "zoneId": "thetempest",
       "index": 1,
       "coords": {
         "x": 12,
@@ -2542,7 +2542,7 @@
     {
       "id": "tm_219",
       "level": "g12",
-      "zoneId": "the_tempest",
+      "zoneId": "thetempest",
       "index": 2,
       "coords": {
         "x": 13,
@@ -2553,7 +2553,7 @@
     {
       "id": "tm_220",
       "level": "g12",
-      "zoneId": "the_tempest",
+      "zoneId": "thetempest",
       "index": 3,
       "coords": {
         "x": 16,
@@ -2564,7 +2564,7 @@
     {
       "id": "tm_221",
       "level": "g12",
-      "zoneId": "the_tempest",
+      "zoneId": "thetempest",
       "index": 4,
       "coords": {
         "x": 19,
@@ -2575,7 +2575,7 @@
     {
       "id": "tm_222",
       "level": "g12",
-      "zoneId": "the_tempest",
+      "zoneId": "thetempest",
       "index": 5,
       "coords": {
         "x": 25,
@@ -2586,7 +2586,7 @@
     {
       "id": "tm_223",
       "level": "g12",
-      "zoneId": "the_tempest",
+      "zoneId": "thetempest",
       "index": 6,
       "coords": {
         "x": 32,
@@ -2597,7 +2597,7 @@
     {
       "id": "tm_224",
       "level": "g12",
-      "zoneId": "the_tempest",
+      "zoneId": "thetempest",
       "index": 7,
       "coords": {
         "x": 30,
@@ -2608,7 +2608,7 @@
     {
       "id": "tm_225",
       "level": "g12",
-      "zoneId": "the_tempest",
+      "zoneId": "thetempest",
       "index": 8,
       "coords": {
         "x": 37,
