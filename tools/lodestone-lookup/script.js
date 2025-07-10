@@ -124,12 +124,15 @@ class LodestoneCharacterLookup {
             let jobData = null;
             if (jobResponse.ok) {
                 const jobText = await jobResponse.text();
+                console.log('原始職業回應內容:', jobText);
                 try {
                     const jobDataResponse = JSON.parse(jobText);
-                    jobData = jobDataResponse.data;  // 根據 API 格式，資料在 data 欄位內
+                    console.log('完整職業資料結構:', jobDataResponse);
+                    jobData = jobDataResponse.data || jobDataResponse;  // 嘗試兩種可能的資料結構
                     console.log('解析後的職業 JSON 資料:', jobData);
                 } catch (parseError) {
                     console.error('職業 JSON 解析錯誤:', parseError);
+                    console.error('無法解析的內容:', jobText);
                     // 職業資料解析失敗不影響主要功能
                 }
             } else {
