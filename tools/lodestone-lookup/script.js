@@ -412,6 +412,10 @@ class LodestoneCharacterLookup {
             this.elements.jobLevels.appendChild(noData);
             return;
         }
+        
+        // 創建統一的職業網格容器
+        const jobGrid = document.createElement('div');
+        jobGrid.className = 'job-levels-grid-unified';
 
         // 職業中文名稱對照
         const jobNames = {
@@ -450,130 +454,103 @@ class LodestoneCharacterLookup {
             'Fisher': '捕魚人'
         };
 
-        // 處理戰鬥職業
+        // 處理戰鬥職業 - 依照原本的分類順序，但不顯示分類標題
         if (classJobs.CombatJobs) {
             const combatCategories = [
-                { name: '坦克', icon: '🛡️', class: 'tank', data: classJobs.CombatJobs.Tank },
-                { name: '治療', icon: '💚', class: 'healer', data: classJobs.CombatJobs.Healer },
-                { name: '近戰 DPS', icon: '⚔️', class: 'melee', data: classJobs.CombatJobs.MeleeDPS },
-                { name: '遠程物理 DPS', icon: '🏹', class: 'ranged', data: classJobs.CombatJobs.RangedDPS },
-                { name: '遠程魔法 DPS', icon: '🔮', class: 'magic', data: classJobs.CombatJobs.MagicalDPS }
+                { class: 'tank', data: classJobs.CombatJobs.Tank },
+                { class: 'healer', data: classJobs.CombatJobs.Healer },
+                { class: 'melee', data: classJobs.CombatJobs.MeleeDPS },
+                { class: 'ranged', data: classJobs.CombatJobs.RangedDPS },
+                { class: 'magic', data: classJobs.CombatJobs.MagicalDPS }
             ];
 
             combatCategories.forEach(category => {
                 if (category.data) {
-                    this.displayJobCategory(category, category.data, jobNames);
+                    this.displayJobsInUnifiedGrid(jobGrid, category.data, category.class, jobNames);
                 }
             });
         }
 
         // 處理生產職業
         if (classJobs.CraftingJobs) {
-            this.displayJobCategory(
-                { name: '生產職業', icon: '🔨', class: 'crafting' },
-                classJobs.CraftingJobs,
-                jobNames
-            );
+            this.displayJobsInUnifiedGrid(jobGrid, classJobs.CraftingJobs, 'crafting', jobNames);
         }
 
         // 處理採集職業
         if (classJobs.GatheringJobs) {
-            this.displayJobCategory(
-                { name: '採集職業', icon: '⛏️', class: 'gathering' },
-                classJobs.GatheringJobs,
-                jobNames
-            );
+            this.displayJobsInUnifiedGrid(jobGrid, classJobs.GatheringJobs, 'gathering', jobNames);
         }
+        
+        this.elements.jobLevels.appendChild(jobGrid);
 
-        // 處理特殊內容 (Eureka/Bozja)
+        // 處理特殊內容 (Eureka/Bozja) - 保持獨立區塊
         if (classJobs.SpecialContent) {
             this.displaySpecialContent(classJobs.SpecialContent);
         }
     }
 
-    displayJobCategory(category, jobs, jobNames) {
+    displayJobsInUnifiedGrid(jobGrid, jobs, categoryClass, jobNames) {
         const jobEntries = Object.entries(jobs).filter(([_, job]) => job && job.Level && parseInt(job.Level) > 0);
         
         if (jobEntries.length === 0) return;
 
-        // 創建分類標題
-        const categoryHeader = document.createElement('h4');
-        categoryHeader.className = 'job-category-title';
-        
-        // 使用 DOM 操作替代 innerHTML
-        const iconSpan = document.createElement('span');
-        iconSpan.className = 'job-category-icon';
-        iconSpan.textContent = category.icon;
-        
-        categoryHeader.appendChild(iconSpan);
-        categoryHeader.appendChild(document.createTextNode(` ${category.name}`));
-        
-        this.elements.jobLevels.appendChild(categoryHeader);
-
-        // 創建職業網格容器
-        const jobGrid = document.createElement('div');
-        jobGrid.className = `job-levels-grid job-category-${category.class}`;
-
-        jobEntries
-            .sort(([_, a], [__, b]) => parseInt(b.Level) - parseInt(a.Level))
-            .forEach(([jobKey, job]) => {
-                const jobItem = document.createElement('div');
-                jobItem.className = 'job-item';
-                
-                // 創建職業圖標
-                const jobIcon = document.createElement('img');
-                jobIcon.className = 'job-icon';
-                const displayName = job.UnlockState || jobKey;
-                const chineseName = jobNames[displayName] || displayName;
-                
-                // 根據職業名稱找到對應的圖標路徑
-                jobIcon.src = this.getJobIconPath(displayName);
-                jobIcon.alt = chineseName;
-                
-                // 如果圖標載入失敗，使用文字圖標作為後備
-                jobIcon.addEventListener('error', function() {
-                    const textIcon = document.createElement('div');
-                    textIcon.className = 'job-icon-text';
-                    textIcon.textContent = chineseName.charAt(0);
-                    this.parentNode.replaceChild(textIcon, this);
-                });
-                
-                const jobDetails = document.createElement('div');
-                jobDetails.className = 'job-details';
-                
-                const jobName = document.createElement('p');
-                jobName.className = 'job-name';
-                jobName.textContent = chineseName;
-                
-                const jobLevel = document.createElement('p');
-                const level = parseInt(job.Level);
-                jobLevel.className = level === 100 ? 'job-level max-level' : 'job-level';
-                jobLevel.textContent = `Lv. ${job.Level}`;
-                
-                // 如果有經驗值資訊且未滿級，顯示進度條
-                if (job.CurrentEXP && job.MaxEXP && job.CurrentEXP !== '--' && level < 100) {
-                    const currentExp = parseInt(job.CurrentEXP.replace(/,/g, ''));
-                    const maxExp = parseInt(job.MaxEXP.replace(/,/g, ''));
-                    if (!isNaN(currentExp) && !isNaN(maxExp) && maxExp > 0) {
-                        const progressBar = document.createElement('div');
-                        progressBar.className = 'exp-progress';
-                        const progress = document.createElement('div');
-                        progress.className = 'exp-progress-bar';
-                        progress.style.width = `${(currentExp / maxExp) * 100}%`;
-                        progressBar.appendChild(progress);
-                        jobDetails.appendChild(progressBar);
-                    }
-                }
-                
-                jobDetails.appendChild(jobName);
-                jobDetails.appendChild(jobLevel);
-                jobItem.appendChild(jobIcon);
-                jobItem.appendChild(jobDetails);
-                
-                jobGrid.appendChild(jobItem);
+        // 不排序，保持原本的順序
+        jobEntries.forEach(([jobKey, job]) => {
+            const jobItem = document.createElement('div');
+            jobItem.className = `job-item job-category-${categoryClass}`;
+            
+            // 創建職業圖標
+            const jobIcon = document.createElement('img');
+            jobIcon.className = 'job-icon';
+            const displayName = job.UnlockState || jobKey;
+            const chineseName = jobNames[displayName] || displayName;
+            
+            // 根據職業名稱找到對應的圖標路徑
+            jobIcon.src = this.getJobIconPath(displayName);
+            jobIcon.alt = chineseName;
+            
+            // 如果圖標載入失敗，使用文字圖標作為後備
+            jobIcon.addEventListener('error', function() {
+                const textIcon = document.createElement('div');
+                textIcon.className = 'job-icon-text';
+                textIcon.textContent = chineseName.charAt(0);
+                this.parentNode.replaceChild(textIcon, this);
             });
-
-        this.elements.jobLevels.appendChild(jobGrid);
+            
+            const jobDetails = document.createElement('div');
+            jobDetails.className = 'job-details';
+            
+            const jobName = document.createElement('p');
+            jobName.className = 'job-name';
+            jobName.textContent = chineseName;
+            
+            const jobLevel = document.createElement('p');
+            const level = parseInt(job.Level);
+            jobLevel.className = level === 100 ? 'job-level max-level' : 'job-level';
+            jobLevel.textContent = `Lv. ${job.Level}`;
+            
+            // 如果有經驗值資訊且未滿級，顯示進度條
+            if (job.CurrentEXP && job.MaxEXP && job.CurrentEXP !== '--' && level < 100) {
+                const currentExp = parseInt(job.CurrentEXP.replace(/,/g, ''));
+                const maxExp = parseInt(job.MaxEXP.replace(/,/g, ''));
+                if (!isNaN(currentExp) && !isNaN(maxExp) && maxExp > 0) {
+                    const progressBar = document.createElement('div');
+                    progressBar.className = 'exp-progress';
+                    const progress = document.createElement('div');
+                    progress.className = 'exp-progress-bar';
+                    progress.style.width = `${(currentExp / maxExp) * 100}%`;
+                    progressBar.appendChild(progress);
+                    jobDetails.appendChild(progressBar);
+                }
+            }
+            
+            jobDetails.appendChild(jobName);
+            jobDetails.appendChild(jobLevel);
+            jobItem.appendChild(jobIcon);
+            jobItem.appendChild(jobDetails);
+            
+            jobGrid.appendChild(jobItem);
+        });
     }
 
     displaySpecialContent(specialContent) {

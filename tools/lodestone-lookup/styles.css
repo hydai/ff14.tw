@@ -249,6 +249,14 @@
     margin-bottom: 1.5rem;
 }
 
+/* Unified Job Grid - 無分類標題的統一網格 */
+.job-levels-grid-unified {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
 .job-item {
     display: flex;
     align-items: center;
@@ -455,6 +463,10 @@
     }
     
     .job-levels-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .job-levels-grid-unified {
         grid-template-columns: 1fr;
     }
 }
