@@ -292,6 +292,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
   - `treasure-map-finder` 為寶圖搜尋器
   - `lodestone-lookup` 為 Lodestone 角色查詢
   - 請記住他們的對應關係，避免改錯工具
+- 永遠使用 DOM 操作來取代 innerHTML
 
 ## Data Sources and Attribution
 

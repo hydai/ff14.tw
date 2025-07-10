@@ -43,7 +43,9 @@ class LodestoneCharacterLookup {
             grandCompany: document.getElementById('grandCompany'),
             nameday: document.getElementById('nameday'),
             bio: document.getElementById('bio'),
-            equipmentInfo: document.getElementById('equipmentInfo')
+            equipmentInfo: document.getElementById('equipmentInfo'),
+            dataTimestamp: document.getElementById('dataTimestamp'),
+            updateTime: document.getElementById('updateTime')
         };
 
         this.initializeEvents();
@@ -142,6 +144,11 @@ class LodestoneCharacterLookup {
             if (characterData && characterData.Character) {
                 console.log('準備顯示角色資料...');
                 this.displayCharacterInfo(characterData.Character, jobData);
+                
+                // 顯示時間戳記（如果職業資料中有）
+                if (jobData && jobData.timestamp) {
+                    this.displayTimestamp(jobData.timestamp);
+                }
             } else {
                 console.error('資料格式錯誤或資料為空');
                 console.error('預期格式: {Character: {...}}');
@@ -514,11 +521,22 @@ class LodestoneCharacterLookup {
                 jobItem.className = 'job-item';
                 
                 // 創建職業圖標
-                const jobIcon = document.createElement('div');
-                jobIcon.className = 'job-icon-text';
+                const jobIcon = document.createElement('img');
+                jobIcon.className = 'job-icon';
                 const displayName = job.UnlockState || jobKey;
                 const chineseName = jobNames[displayName] || displayName;
-                jobIcon.textContent = chineseName.charAt(0);
+                
+                // 根據職業名稱找到對應的圖標路徑
+                jobIcon.src = this.getJobIconPath(displayName);
+                jobIcon.alt = chineseName;
+                
+                // 如果圖標載入失敗，使用文字圖標作為後備
+                jobIcon.addEventListener('error', function() {
+                    const textIcon = document.createElement('div');
+                    textIcon.className = 'job-icon-text';
+                    textIcon.textContent = chineseName.charAt(0);
+                    this.parentNode.replaceChild(textIcon, this);
+                });
                 
                 const jobDetails = document.createElement('div');
                 jobDetails.className = 'job-details';
@@ -579,23 +597,23 @@ class LodestoneCharacterLookup {
         const contentGrid = document.createElement('div');
         contentGrid.className = 'job-levels-grid job-category-special';
 
-        // 處理 Eureka
+        // 處理 Eureka（元素等級）
         if (specialContent.Eureka) {
             const eurekaItem = this.createSpecialContentItem(
                 'Eureka',
-                specialContent.Eureka.Name || 'Elemental Level',
+                'Elemental Level',  // 固定為正確的名稱
                 specialContent.Eureka.Level,
                 specialContent.Eureka.CurrentEXP,
-                specialContent.Eureka.MaxEXP
+                null  // Eureka 使用 CurrentEXP 但不顯示 MaxEXP
             );
             contentGrid.appendChild(eurekaItem);
         }
 
-        // 處理 Bozja
+        // 處理 Bozja（抵抗軍階級）
         if (specialContent.Bozja) {
             const bozjaItem = this.createSpecialContentItem(
                 'Bozja',
-                specialContent.Bozja.Name || 'Resistance Rank',
+                'Resistance Rank',  // 固定為正確的名稱
                 specialContent.Bozja.Level,
                 specialContent.Bozja.Mettle,
                 null
@@ -635,10 +653,16 @@ class LodestoneCharacterLookup {
             info.className = 'job-extra-info';
             info.style.fontSize = '0.8rem';
             info.style.color = 'var(--text-color-secondary)';
-            if (max) {
+            
+            // 根據區域決定顯示格式
+            if (area === 'Eureka') {
+                info.textContent = `EXP: ${current}`;
+            } else if (area === 'Bozja') {
+                info.textContent = `Mettle: ${current}`;
+            } else if (max) {
                 info.textContent = `EXP: ${current} / ${max}`;
             } else {
-                info.textContent = `Mettle: ${current}`;
+                info.textContent = current;
             }
             details.appendChild(info);
         }
@@ -669,6 +693,75 @@ class LodestoneCharacterLookup {
 
     hideCharacterInfo() {
         this.elements.characterInfo.classList.add('hidden');
+    }
+
+    displayTimestamp(timestamp) {
+        if (!timestamp) return;
+        
+        const date = new Date(timestamp);
+        const formattedDate = date.toLocaleString('zh-TW', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        });
+        
+        this.elements.updateTime.textContent = formattedDate;
+        this.elements.dataTimestamp.style.display = 'block';
+    }
+
+    getJobIconPath(jobName) {
+        // 基礎路徑
+        const basePath = '../../assets/images/se/FFXIVJobIcons/';
+        
+        // 將職業名稱標準化（移除空格）
+        const normalizedName = jobName.replace(/\s+/g, '');
+        
+        // 職業分類對應
+        const jobCategories = {
+            // 坦克
+            'Paladin': '01_TANK/Job/Paladin.png',
+            'Warrior': '01_TANK/Job/Warrior.png',
+            'DarkKnight': '01_TANK/Job/DarkKnight.png',
+            'Gunbreaker': '01_TANK/Job/Gunbreaker.png',
+            // 治療
+            'WhiteMage': '02_HEALER/Job/WhiteMage.png',
+            'Scholar': '02_HEALER/Job/Scholar.png',
+            'Astrologian': '02_HEALER/Job/Astrologian.png',
+            'Sage': '02_HEALER/Job/Sage.png',
+            // DPS
+            'Monk': '03_DPS/Job/Monk.png',
+            'Dragoon': '03_DPS/Job/Dragoon.png',
+            'Ninja': '03_DPS/Job/Ninja.png',
+            'Samurai': '03_DPS/Job/Samurai.png',
+            'Reaper': '03_DPS/Job/Reaper.png',
+            'Viper': '03_DPS/Job/Viper.png',
+            'Bard': '03_DPS/Job/Bard.png',
+            'Machinist': '03_DPS/Job/Machinist.png',
+            'Dancer': '03_DPS/Job/Dancer.png',
+            'BlackMage': '03_DPS/Job/BlackMage.png',
+            'Summoner': '03_DPS/Job/Summoner.png',
+            'RedMage': '03_DPS/Job/RedMage.png',
+            'Pictomancer': '03_DPS/Job/Pictomancer.png',
+            'BlueMage': '06_LIMITED/BlueMage.png',
+            // 生產
+            'Carpenter': '04_CRAFTER/Carpenter.png',
+            'Blacksmith': '04_CRAFTER/Blacksmith.png',
+            'Armorer': '04_CRAFTER/Armorer.png',
+            'Goldsmith': '04_CRAFTER/Goldsmith.png',
+            'Leatherworker': '04_CRAFTER/Leatherworker.png',
+            'Weaver': '04_CRAFTER/Weaver.png',
+            'Alchemist': '04_CRAFTER/Alchemist.png',
+            'Culinarian': '04_CRAFTER/Culinarian.png',
+            // 採集
+            'Miner': '05_GATHERER/Miner.png',
+            'Botanist': '05_GATHERER/Botanist.png',
+            'Fisher': '05_GATHERER/Fisher.png'
+        };
+        
+        return basePath + (jobCategories[normalizedName] || '00_ROLE/DPSRole.png');
     }
 }
 

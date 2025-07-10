@@ -358,6 +358,14 @@
     text-decoration: underline;
 }
 
+/* Data Timestamp */
+.data-timestamp {
+    text-align: center;
+    margin-top: 1rem;
+    font-size: 0.9rem;
+    color: var(--text-color-secondary);
+}
+
 /* Usage Notes */
 .usage-notes {
     background: var(--info-background);
