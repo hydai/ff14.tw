@@ -728,6 +728,80 @@
     transition: width 0.3s ease;
 }
 
+/* Free Company Members */
+.fc-members {
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.fc-members h5 {
+    margin: 0 0 1.5rem 0;
+    color: var(--primary-color);
+    font-size: 1.2rem;
+}
+
+.members-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.member-item {
+    display: flex;
+    gap: 1rem;
+    padding: 1rem;
+    background: var(--card-background);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.member-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.member-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: 2px solid var(--border-color);
+}
+
+.member-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.member-name {
+    font-weight: 600;
+    color: var(--primary-color);
+    text-decoration: none;
+    transition: text-decoration 0.2s;
+}
+
+.member-name:hover {
+    text-decoration: underline;
+}
+
+.member-fc-rank,
+.member-gc-rank {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--text-color-secondary);
+}
+
+.rank-icon {
+    width: 16px;
+    height: 16px;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .search-box {
@@ -784,5 +858,9 @@
     
     .reputation-progress {
         width: 100%;
+    }
+    
+    .members-grid {
+        grid-template-columns: 1fr;
     }
 }

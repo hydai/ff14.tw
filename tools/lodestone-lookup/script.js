@@ -74,10 +74,13 @@ class LodestoneCharacterLookup {
             fcEstateGreeting: document.getElementById('fcEstateGreeting'),
             fcFocusList: document.getElementById('fcFocusList'),
             fcSeekingList: document.getElementById('fcSeekingList'),
-            fcReputationList: document.getElementById('fcReputationList')
+            fcReputationList: document.getElementById('fcReputationList'),
+            fcMembersList: document.getElementById('fcMembersList'),
+            fcMembersPagination: document.getElementById('fcMembersPagination')
         };
         
         this.currentAchievementPage = 1;
+        this.currentFCId = null;
 
         this.initializeEvents();
     }
@@ -992,9 +995,16 @@ class LodestoneCharacterLookup {
     
     async loadFreeCompanyInfo(fcId) {
         try {
-            const response = await fetch(`https://logstone.z54981220.workers.dev/freecompany/${fcId}`);
-            if (response.ok) {
-                const data = await response.json();
+            this.currentFCId = fcId;
+            
+            // 同時載入公會資訊和成員列表
+            const [fcResponse, membersResponse] = await Promise.all([
+                fetch(`https://logstone.z54981220.workers.dev/freecompany/${fcId}`),
+                fetch(`https://logstone.z54981220.workers.dev/freecompany/${fcId}/members?page=1`)
+            ]);
+            
+            if (fcResponse.ok) {
+                const data = await fcResponse.json();
                 console.log('公會資料:', data);
                 if (data.FreeCompany) {
                     this.displayFreeCompanyInfo(data.FreeCompany);
@@ -1006,6 +1016,12 @@ class LodestoneCharacterLookup {
                         document.getElementById('freeCompanySection').scrollIntoView({ behavior: 'smooth' });
                     };
                 }
+            }
+            
+            if (membersResponse.ok) {
+                const membersData = await membersResponse.json();
+                console.log('公會成員資料:', membersData);
+                this.displayFreeCompanyMembers(membersData);
             }
         } catch (error) {
             console.error('載入公會資訊失敗:', error);
@@ -1155,6 +1171,135 @@ class LodestoneCharacterLookup {
             'Allied': '同盟'
         };
         return translations[rank] || rank;
+    }
+    
+    displayFreeCompanyMembers(data) {
+        console.log('顯示公會成員:', data);
+        
+        // 清空成員列表
+        this.elements.fcMembersList.textContent = '';
+        
+        if (data.Members && data.Members.length > 0) {
+            data.Members.forEach(member => {
+                const memberItem = document.createElement('div');
+                memberItem.className = 'member-item';
+                
+                // 頭像
+                const avatar = document.createElement('img');
+                avatar.src = member.Avatar;
+                avatar.alt = member.Name;
+                avatar.className = 'member-avatar';
+                
+                // 成員資訊容器
+                const memberInfo = document.createElement('div');
+                memberInfo.className = 'member-info';
+                
+                // 名稱（可點擊查看角色）
+                const name = document.createElement('a');
+                name.className = 'member-name';
+                name.textContent = member.Name;
+                name.href = '#';
+                name.onclick = (e) => {
+                    e.preventDefault();
+                    // 將角色 ID 填入查詢框並查詢
+                    this.elements.characterId.value = member.ID;
+                    this.searchCharacter();
+                };
+                
+                // 公會階級
+                const fcRank = document.createElement('div');
+                fcRank.className = 'member-fc-rank';
+                
+                if (member.FCRankIcon) {
+                    const fcRankIcon = document.createElement('img');
+                    fcRankIcon.src = member.FCRankIcon;
+                    fcRankIcon.alt = member.FCRank;
+                    fcRankIcon.className = 'rank-icon';
+                    fcRank.appendChild(fcRankIcon);
+                }
+                
+                const fcRankText = document.createElement('span');
+                fcRankText.textContent = member.FCRank;
+                fcRank.appendChild(fcRankText);
+                
+                // 大國防軍階級
+                const gcRank = document.createElement('div');
+                gcRank.className = 'member-gc-rank';
+                
+                if (member.RankIcon) {
+                    const gcRankIcon = document.createElement('img');
+                    gcRankIcon.src = member.RankIcon;
+                    gcRankIcon.alt = member.Rank;
+                    gcRankIcon.className = 'rank-icon';
+                    gcRank.appendChild(gcRankIcon);
+                }
+                
+                const gcRankText = document.createElement('span');
+                gcRankText.textContent = member.Rank;
+                gcRank.appendChild(gcRankText);
+                
+                // 組裝成員資訊
+                memberInfo.appendChild(name);
+                memberInfo.appendChild(fcRank);
+                memberInfo.appendChild(gcRank);
+                
+                memberItem.appendChild(avatar);
+                memberItem.appendChild(memberInfo);
+                
+                this.elements.fcMembersList.appendChild(memberItem);
+            });
+            
+            // 顯示分頁
+            if (data.Pagination && data.Pagination.PageTotal > 1) {
+                this.displayFCMembersPagination(data.Pagination);
+            }
+        } else {
+            const noData = document.createElement('p');
+            noData.textContent = '暫無成員資料';
+            this.elements.fcMembersList.appendChild(noData);
+        }
+    }
+    
+    displayFCMembersPagination(pagination) {
+        this.elements.fcMembersPagination.textContent = '';
+        
+        const paginationInfo = document.createElement('div');
+        paginationInfo.className = 'pagination-info';
+        paginationInfo.textContent = `第 ${pagination.Page} 頁，共 ${pagination.PageTotal} 頁`;
+        
+        const paginationButtons = document.createElement('div');
+        paginationButtons.className = 'pagination-buttons';
+        
+        if (pagination.Page > 1) {
+            const prevBtn = document.createElement('button');
+            prevBtn.textContent = '上一頁';
+            prevBtn.onclick = () => this.loadFCMembersPage(pagination.Page - 1);
+            paginationButtons.appendChild(prevBtn);
+        }
+        
+        if (pagination.Page < pagination.PageTotal) {
+            const nextBtn = document.createElement('button');
+            nextBtn.textContent = '下一頁';
+            nextBtn.onclick = () => this.loadFCMembersPage(pagination.Page + 1);
+            paginationButtons.appendChild(nextBtn);
+        }
+        
+        this.elements.fcMembersPagination.appendChild(paginationInfo);
+        this.elements.fcMembersPagination.appendChild(paginationButtons);
+    }
+    
+    async loadFCMembersPage(page) {
+        if (!this.currentFCId) return;
+        
+        try {
+            const response = await fetch(`https://logstone.z54981220.workers.dev/freecompany/${this.currentFCId}/members?page=${page}`);
+            if (response.ok) {
+                const data = await response.json();
+                this.displayFreeCompanyMembers(data);
+            }
+        } catch (error) {
+            console.error('載入公會成員頁面失敗:', error);
+        }
     }
 }
 
