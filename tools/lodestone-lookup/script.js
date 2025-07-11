@@ -11,7 +11,6 @@ class LodestoneCharacterLookup {
             characterName: document.getElementById('characterName'),
             characterTitle: document.getElementById('characterTitle'),
             characterServer: document.getElementById('characterServer'),
-            characterRace: document.getElementById('characterRace'),
             characterDeity: document.getElementById('characterDeity'),
             characterCity: document.getElementById('characterCity'),
             fcName: document.getElementById('fcName'),
@@ -76,7 +75,14 @@ class LodestoneCharacterLookup {
             fcSeekingList: document.getElementById('fcSeekingList'),
             fcReputationList: document.getElementById('fcReputationList'),
             fcMembersList: document.getElementById('fcMembersList'),
-            fcMembersPagination: document.getElementById('fcMembersPagination')
+            fcMembersPagination: document.getElementById('fcMembersPagination'),
+            // Special Content
+            specialContentSection: document.getElementById('specialContentSection'),
+            specialContent: document.getElementById('specialContent'),
+            // Tabs
+            tabNavigation: document.getElementById('tabNavigation'),
+            tabButtons: document.querySelectorAll('.tab-button'),
+            tabPanes: document.querySelectorAll('.tab-pane')
         };
         
         this.currentAchievementPage = 1;
@@ -96,6 +102,26 @@ class LodestoneCharacterLookup {
         // Only allow numbers in the input
         this.elements.characterId.addEventListener('input', (e) => {
             e.target.value = e.target.value.replace(/[^0-9]/g, '');
+        });
+        
+        // Tab navigation
+        this.elements.tabButtons.forEach(button => {
+            button.addEventListener('click', (e) => {
+                this.switchTab(e.target.dataset.tab);
+            });
+        });
+    }
+    
+    switchTab(tabName) {
+        // 更新按鈕狀態
+        this.elements.tabButtons.forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.tab === tabName);
+        });
+        
+        // 更新分頁內容
+        this.elements.tabPanes.forEach(pane => {
+            const isActive = pane.id === `${tabName}Tab`;
+            pane.classList.toggle('active', isActive);
         });
     }
 
@@ -235,6 +261,13 @@ class LodestoneCharacterLookup {
                     this.displayMinions(minionsData);
                 }
                 
+                // 顯示分頁導航並創建總覽
+                this.elements.tabNavigation.style.display = 'flex';
+                this.createOverview(achievementsData, mountsData, minionsData);
+                
+                // 預設顯示總覽分頁
+                this.switchTab('overview');
+                
                 // 顯示時間戳記（如果職業資料中有）
                 if (jobData && jobData.timestamp) {
                     this.displayTimestamp(jobData.timestamp);
@@ -296,8 +329,6 @@ class LodestoneCharacterLookup {
         }
         
         // Additional character info
-        // Note: Race and Tribe are not provided in the current API response
-        this.elements.characterRace.textContent = '資料未提供';
         
         if (character.GuardianDeity && character.GuardianDeity.Name) {
             this.elements.characterDeity.textContent = character.GuardianDeity.Name;
@@ -578,8 +609,8 @@ class LodestoneCharacterLookup {
         
         this.elements.jobLevels.appendChild(jobGrid);
 
-        // 處理特殊內容 (Eureka/Bozja) - 保持獨立區塊
-        if (classJobs.SpecialContent) {
+        // 處理特殊內容 (Eureka/Bozja) - 移到獨立區塊
+        if (classJobs.SpecialContent && (classJobs.SpecialContent.Eureka || classJobs.SpecialContent.Bozja)) {
             this.displaySpecialContent(classJobs.SpecialContent);
         }
     }
@@ -651,19 +682,8 @@ class LodestoneCharacterLookup {
     displaySpecialContent(specialContent) {
         if (!specialContent || Object.keys(specialContent).length === 0) return;
 
-        // 創建分類標題
-        const categoryHeader = document.createElement('h4');
-        categoryHeader.className = 'job-category-title';
-        
-        // 使用 DOM 操作替代 innerHTML
-        const iconSpan = document.createElement('span');
-        iconSpan.className = 'job-category-icon';
-        iconSpan.textContent = '⭐';
-        
-        categoryHeader.appendChild(iconSpan);
-        categoryHeader.appendChild(document.createTextNode(' 特殊內容'));
-        
-        this.elements.jobLevels.appendChild(categoryHeader);
+        // 清空特殊內容區域
+        this.elements.specialContent.textContent = '';
 
         // 創建網格容器
         const contentGrid = document.createElement('div');
@@ -693,7 +713,10 @@ class LodestoneCharacterLookup {
             contentGrid.appendChild(bozjaItem);
         }
 
-        this.elements.jobLevels.appendChild(contentGrid);
+        this.elements.specialContent.appendChild(contentGrid);
+        
+        // 顯示特殊內容區塊
+        this.elements.specialContentSection.style.display = 'block';
     }
 
     createSpecialContentItem(area, name, level, current, max) {
@@ -868,9 +891,6 @@ class LodestoneCharacterLookup {
             noData.textContent = '暫無成就資料';
             this.elements.achievementsList.appendChild(noData);
         }
-        
-        // 顯示成就區塊
-        this.elements.achievementsSection.style.display = 'block';
     }
     
     displayAchievementsPagination(pagination, characterId) {
@@ -936,11 +956,11 @@ class LodestoneCharacterLookup {
                     mountItem.appendChild(icon);
                 }
                 
-                const name = document.createElement('p');
-                name.className = 'mount-name';
-                name.textContent = mount.Name || '未知坐騎';
-                
-                mountItem.appendChild(name);
+                // 暫時隱藏坐騎名稱，因為是 name-hash
+                // const name = document.createElement('p');
+                // name.className = 'mount-name';
+                // name.textContent = mount.Name || '未知坐騎';
+                // mountItem.appendChild(name);
                 this.elements.mountsList.appendChild(mountItem);
             });
         } else {
@@ -948,9 +968,6 @@ class LodestoneCharacterLookup {
             noData.textContent = '暫無坐騎資料';
             this.elements.mountsList.appendChild(noData);
         }
-        
-        // 顯示坐騎區塊
-        this.elements.mountsSection.style.display = 'block';
     }
     
     displayMinions(data) {
@@ -976,11 +993,11 @@ class LodestoneCharacterLookup {
                     minionItem.appendChild(icon);
                 }
                 
-                const name = document.createElement('p');
-                name.className = 'minion-name';
-                name.textContent = minion.Name || '未知寵物';
-                
-                minionItem.appendChild(name);
+                // 暫時隱藏寵物名稱，因為是 name-hash
+                // const name = document.createElement('p');
+                // name.className = 'minion-name';
+                // name.textContent = minion.Name || '未知寵物';
+                // minionItem.appendChild(name);
                 this.elements.minionsList.appendChild(minionItem);
             });
         } else {
@@ -988,9 +1005,6 @@ class LodestoneCharacterLookup {
             noData.textContent = '暫無寵物資料';
             this.elements.minionsList.appendChild(noData);
         }
-        
-        // 顯示寵物區塊
-        this.elements.minionsSection.style.display = 'block';
     }
     
     async loadFreeCompanyInfo(fcId) {
@@ -1091,9 +1105,6 @@ class LodestoneCharacterLookup {
                 }
             });
         }
-        
-        // 顯示公會區塊
-        this.elements.freeCompanySection.style.display = 'block';
     }
     
     translateFocusTag(tag) {
@@ -1300,6 +1311,75 @@ class LodestoneCharacterLookup {
         } catch (error) {
             console.error('載入公會成員頁面失敗:', error);
         }
+    }
+    
+    createOverview(achievementsData, mountsData, minionsData) {
+        const overviewTab = document.getElementById('overviewTab');
+        overviewTab.textContent = '';
+        
+        const overviewGrid = document.createElement('div');
+        overviewGrid.className = 'overview-grid';
+        
+        // 成就統計
+        const achievementCard = document.createElement('div');
+        achievementCard.className = 'overview-card';
+        achievementCard.innerHTML = `
+            <h4>成就</h4>
+            <div class="overview-stat">
+                <span class="stat-value">${achievementsData?.TotalAchievements || 0}</span>
+                <span class="stat-label">總成就數</span>
+            </div>
+            <div class="overview-stat">
+                <span class="stat-value">${achievementsData?.AchievementPoints || 0}</span>
+                <span class="stat-label">成就點數</span>
+            </div>
+        `;
+        achievementCard.onclick = () => this.switchTab('achievements');
+        
+        // 坐騎統計
+        const mountCard = document.createElement('div');
+        mountCard.className = 'overview-card';
+        mountCard.innerHTML = `
+            <h4>坐騎</h4>
+            <div class="overview-stat">
+                <span class="stat-value">${mountsData?.Mounts?.length || 0}</span>
+                <span class="stat-label">已收集</span>
+            </div>
+        `;
+        mountCard.onclick = () => this.switchTab('mounts');
+        
+        // 寵物統計
+        const minionCard = document.createElement('div');
+        minionCard.className = 'overview-card';
+        minionCard.innerHTML = `
+            <h4>寵物</h4>
+            <div class="overview-stat">
+                <span class="stat-value">${minionsData?.Minions?.length || 0}</span>
+                <span class="stat-label">已收集</span>
+            </div>
+        `;
+        minionCard.onclick = () => this.switchTab('minions');
+        
+        // 公會統計（如果有）
+        if (this.currentFCId) {
+            const fcCard = document.createElement('div');
+            fcCard.className = 'overview-card';
+            fcCard.innerHTML = `
+                <h4>公會</h4>
+                <div class="overview-stat">
+                    <span class="stat-value">${this.elements.fcMemberCount.textContent}</span>
+                    <span class="stat-label">成員數</span>
+                </div>
+            `;
+            fcCard.onclick = () => this.switchTab('freecompany');
+            overviewGrid.appendChild(fcCard);
+        }
+        
+        overviewGrid.appendChild(achievementCard);
+        overviewGrid.appendChild(mountCard);
+        overviewGrid.appendChild(minionCard);
+        
+        overviewTab.appendChild(overviewGrid);
     }
 }
 

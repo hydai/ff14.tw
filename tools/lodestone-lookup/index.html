@@ -91,10 +91,6 @@
                         <h3>基本資訊</h3>
                         <div class="info-grid">
                             <div class="info-item">
-                                <label>種族/部族：</label>
-                                <span id="characterRace"></span>
-                            </div>
-                            <div class="info-item">
                                 <label>守護神：</label>
                                 <span id="characterDeity"></span>
                             </div>
@@ -106,8 +102,13 @@
                     </section>
 
                     <section class="info-section">
-                        <h3>當前職業</h3>
+                        <h3>職業等級</h3>
                         <div id="jobLevels" class="job-levels-grid"></div>
+                    </section>
+                    
+                    <section class="info-section" id="specialContentSection" style="display: none;">
+                        <h3>特殊內容</h3>
+                        <div id="specialContent" class="special-content-grid"></div>
                     </section>
                     
                     <section class="info-section">
@@ -217,7 +218,25 @@
                         </div>
                     </section>
                     
-                    <section class="info-section" id="achievementsSection" style="display: none;">
+                    <!-- 分頁導航 -->
+                    <div class="tab-navigation" id="tabNavigation" style="display: none;">
+                        <button class="tab-button active" data-tab="overview">總覽</button>
+                        <button class="tab-button" data-tab="achievements">成就</button>
+                        <button class="tab-button" data-tab="mounts">坐騎</button>
+                        <button class="tab-button" data-tab="minions">寵物</button>
+                        <button class="tab-button" data-tab="freecompany">公會</button>
+                    </div>
+                    
+                    <!-- 分頁內容 -->
+                    <div class="tab-content" id="tabContent">
+                        <!-- 總覽分頁 -->
+                        <div class="tab-pane active" id="overviewTab">
+                            <!-- 這裡可以放置簡要統計資訊 -->
+                        </div>
+                        
+                        <!-- 成就分頁 -->
+                        <div class="tab-pane" id="achievementsTab">
+                    <section class="info-section" id="achievementsSection">
                         <h3>成就</h3>
                         <div class="achievements-summary">
                             <div class="summary-item">
@@ -232,24 +251,33 @@
                         <div id="achievementsList" class="achievements-grid"></div>
                         <div id="achievementsPagination" class="pagination"></div>
                     </section>
-                    
-                    <section class="info-section" id="mountsSection" style="display: none;">
+                        </div>
+                        
+                        <!-- 坐騎分頁 -->
+                        <div class="tab-pane" id="mountsTab">
+                    <section class="info-section" id="mountsSection">
                         <h3>坐騎收藏</h3>
                         <div class="collection-summary">
                             <span id="mountsCount">0</span> 個坐騎
                         </div>
                         <div id="mountsList" class="mounts-grid"></div>
                     </section>
-                    
-                    <section class="info-section" id="minionsSection" style="display: none;">
+                        </div>
+                        
+                        <!-- 寵物分頁 -->
+                        <div class="tab-pane" id="minionsTab">
+                    <section class="info-section" id="minionsSection">
                         <h3>寵物收藏</h3>
                         <div class="collection-summary">
                             <span id="minionsCount">0</span> 隻寵物
                         </div>
                         <div id="minionsList" class="minions-grid"></div>
                     </section>
-                    
-                    <section class="info-section" id="freeCompanySection" style="display: none;">
+                        </div>
+                        
+                        <!-- 公會分頁 -->
+                        <div class="tab-pane" id="freecompanyTab">
+                    <section class="info-section" id="freeCompanySection">
                         <h3>公會資訊</h3>
                         <div class="fc-header">
                             <div class="fc-crest" id="fcCrest"></div>
@@ -294,6 +322,8 @@
                             <div id="fcMembersPagination" class="pagination"></div>
                         </div>
                     </section>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="lodestone-link">
