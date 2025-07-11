@@ -259,16 +259,16 @@
 
 /* Job Levels Grid */
 .job-levels-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    display: flex;
+    flex-wrap: wrap;
     gap: 0.5rem;
     margin-bottom: 1.5rem;
 }
 
 /* Unified Job Grid - 無分類標題的統一網格 */
 .job-levels-grid-unified {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    display: flex;
+    flex-wrap: wrap;
     gap: 0.5rem;
     margin-bottom: 1.5rem;
 }
@@ -277,11 +277,13 @@
     display: flex;
     align-items: center;
     gap: 0.4rem;
-    padding: 0.4rem;
+    padding: 0.4rem 0.6rem;
     background: var(--card-background);
     border: 1px solid var(--border-color);
     border-radius: 4px;
     transition: transform 0.2s, box-shadow 0.2s;
+    flex: 0 0 auto;
+    min-width: 120px;
 }
 
 .job-item:hover {
@@ -954,12 +956,14 @@
         grid-template-columns: 1fr;
     }
     
-    .job-levels-grid {
-        grid-template-columns: repeat(2, 1fr);
+    .job-levels-grid,
+    .job-levels-grid-unified {
+        justify-content: center;
     }
     
-    .job-levels-grid-unified {
-        grid-template-columns: repeat(2, 1fr);
+    .job-item {
+        min-width: calc(50% - 0.25rem);
+        max-width: calc(50% - 0.25rem);
     }
     
     .fc-header {
