@@ -216,6 +216,38 @@
                             </div>
                         </div>
                     </section>
+                    
+                    <section class="info-section" id="achievementsSection" style="display: none;">
+                        <h3>成就</h3>
+                        <div class="achievements-summary">
+                            <div class="summary-item">
+                                <label>總成就數：</label>
+                                <span id="totalAchievements">0</span>
+                            </div>
+                            <div class="summary-item">
+                                <label>成就點數：</label>
+                                <span id="achievementPoints">0</span>
+                            </div>
+                        </div>
+                        <div id="achievementsList" class="achievements-grid"></div>
+                        <div id="achievementsPagination" class="pagination"></div>
+                    </section>
+                    
+                    <section class="info-section" id="mountsSection" style="display: none;">
+                        <h3>坐騎收藏</h3>
+                        <div class="collection-summary">
+                            <span id="mountsCount">0</span> 個坐騎
+                        </div>
+                        <div id="mountsList" class="mounts-grid"></div>
+                    </section>
+                    
+                    <section class="info-section" id="minionsSection" style="display: none;">
+                        <h3>寵物收藏</h3>
+                        <div class="collection-summary">
+                            <span id="minionsCount">0</span> 隻寵物
+                        </div>
+                        <div id="minionsList" class="minions-grid"></div>
+                    </section>
                 </div>
 
                 <div class="lodestone-link">
@@ -234,7 +266,8 @@
                 <ul>
                     <li>本工具使用 FFXIV Lodestone 官方資料</li>
                     <li>查詢結果會快取 24 小時以提升效能</li>
-                    <li>目前僅支援基本角色資訊查詢</li>
+                    <li>支援查詢角色資訊、職業等級、成就、坐騎和寵物收藏</li>
+                    <li>成就資料支援分頁瀏覽</li>
                     <li>支援北美資料中心的角色查詢</li>
                     <li>更多詳細資訊請前往官方 Lodestone 頁面查看</li>
                 </ul>

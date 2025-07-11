@@ -45,8 +45,24 @@ class LodestoneCharacterLookup {
             bio: document.getElementById('bio'),
             equipmentInfo: document.getElementById('equipmentInfo'),
             dataTimestamp: document.getElementById('dataTimestamp'),
-            updateTime: document.getElementById('updateTime')
+            updateTime: document.getElementById('updateTime'),
+            // Achievements
+            achievementsSection: document.getElementById('achievementsSection'),
+            totalAchievements: document.getElementById('totalAchievements'),
+            achievementPoints: document.getElementById('achievementPoints'),
+            achievementsList: document.getElementById('achievementsList'),
+            achievementsPagination: document.getElementById('achievementsPagination'),
+            // Mounts
+            mountsSection: document.getElementById('mountsSection'),
+            mountsCount: document.getElementById('mountsCount'),
+            mountsList: document.getElementById('mountsList'),
+            // Minions
+            minionsSection: document.getElementById('minionsSection'),
+            minionsCount: document.getElementById('minionsCount'),
+            minionsList: document.getElementById('minionsList')
         };
+        
+        this.currentAchievementPage = 1;
 
         this.initializeEvents();
     }
@@ -87,15 +103,27 @@ class LodestoneCharacterLookup {
 
         const apiUrl = `https://logstone.z54981220.workers.dev/character/${characterId}`;
         const jobApiUrl = `https://logstone.z54981220.workers.dev/character/${characterId}/classjob`;
-        console.log('API URL:', apiUrl);
-        console.log('Job API URL:', jobApiUrl);
+        const achievementsApiUrl = `https://logstone.z54981220.workers.dev/character/${characterId}/achievements?page=1`;
+        const mountsApiUrl = `https://logstone.z54981220.workers.dev/character/${characterId}/mounts`;
+        const minionsApiUrl = `https://logstone.z54981220.workers.dev/character/${characterId}/minions`;
+        
+        console.log('API URLs:', {
+            character: apiUrl,
+            job: jobApiUrl,
+            achievements: achievementsApiUrl,
+            mounts: mountsApiUrl,
+            minions: minionsApiUrl
+        });
 
         try {
             console.log('正在發送請求...');
-            // 同時發送兩個請求
-            const [characterResponse, jobResponse] = await Promise.all([
+            // 同時發送所有請求
+            const [characterResponse, jobResponse, achievementsResponse, mountsResponse, minionsResponse] = await Promise.all([
                 fetch(apiUrl),
-                fetch(jobApiUrl)
+                fetch(jobApiUrl),
+                fetch(achievementsApiUrl),
+                fetch(mountsApiUrl),
+                fetch(minionsApiUrl)
             ]);
             
             console.log('Character Response 狀態:', characterResponse.status);
@@ -141,9 +169,53 @@ class LodestoneCharacterLookup {
                 console.warn('無法取得職業資料:', jobResponse.status);
             }
             
+            // 處理成就資料
+            let achievementsData = null;
+            if (achievementsResponse.ok) {
+                try {
+                    achievementsData = await achievementsResponse.json();
+                    console.log('成就資料:', achievementsData);
+                } catch (parseError) {
+                    console.error('成就資料解析錯誤:', parseError);
+                }
+            }
+            
+            // 處理坐騎資料
+            let mountsData = null;
+            if (mountsResponse.ok) {
+                try {
+                    mountsData = await mountsResponse.json();
+                    console.log('坐騎資料:', mountsData);
+                } catch (parseError) {
+                    console.error('坐騎資料解析錯誤:', parseError);
+                }
+            }
+            
+            // 處理寵物資料
+            let minionsData = null;
+            if (minionsResponse.ok) {
+                try {
+                    minionsData = await minionsResponse.json();
+                    console.log('寵物資料:', minionsData);
+                } catch (parseError) {
+                    console.error('寵物資料解析錯誤:', parseError);
+                }
+            }
+            
             if (characterData && characterData.Character) {
                 console.log('準備顯示角色資料...');
                 this.displayCharacterInfo(characterData.Character, jobData);
+                
+                // 顯示額外資料
+                if (achievementsData) {
+                    this.displayAchievements(achievementsData);
+                }
+                if (mountsData) {
+                    this.displayMounts(mountsData);
+                }
+                if (minionsData) {
+                    this.displayMinions(minionsData);
+                }
                 
                 // 顯示時間戳記（如果職業資料中有）
                 if (jobData && jobData.timestamp) {
@@ -739,6 +811,163 @@ class LodestoneCharacterLookup {
         };
         
         return basePath + (jobCategories[normalizedName] || '00_ROLE/DPSRole.png');
+    }
+    
+    displayAchievements(data) {
+        console.log('顯示成就資料:', data);
+        
+        // 顯示成就統計
+        this.elements.totalAchievements.textContent = data.TotalAchievements || '0';
+        this.elements.achievementPoints.textContent = data.AchievementPoints || '0';
+        
+        // 清空並顯示成就列表
+        this.elements.achievementsList.textContent = '';
+        
+        if (data.Achievements && data.Achievements.length > 0) {
+            data.Achievements.forEach(achievement => {
+                const achievementItem = document.createElement('div');
+                achievementItem.className = 'achievement-item';
+                
+                const name = document.createElement('p');
+                name.className = 'achievement-name';
+                name.textContent = achievement.Name || '未知成就';
+                
+                achievementItem.appendChild(name);
+                this.elements.achievementsList.appendChild(achievementItem);
+            });
+            
+            // 顯示分頁
+            if (data.Pagination) {
+                this.displayAchievementsPagination(data.Pagination, data.CharacterID);
+            }
+        } else {
+            const noData = document.createElement('p');
+            noData.textContent = '暫無成就資料';
+            this.elements.achievementsList.appendChild(noData);
+        }
+        
+        // 顯示成就區塊
+        this.elements.achievementsSection.style.display = 'block';
+    }
+    
+    displayAchievementsPagination(pagination, characterId) {
+        this.elements.achievementsPagination.textContent = '';
+        
+        const paginationInfo = document.createElement('div');
+        paginationInfo.className = 'pagination-info';
+        paginationInfo.textContent = `第 ${pagination.Page} 頁，共 ${pagination.PageTotal} 頁`;
+        
+        const paginationButtons = document.createElement('div');
+        paginationButtons.className = 'pagination-buttons';
+        
+        if (pagination.PagePrev) {
+            const prevBtn = document.createElement('button');
+            prevBtn.textContent = '上一頁';
+            prevBtn.onclick = () => this.loadAchievementsPage(characterId, pagination.PagePrev);
+            paginationButtons.appendChild(prevBtn);
+        }
+        
+        if (pagination.PageNext) {
+            const nextBtn = document.createElement('button');
+            nextBtn.textContent = '下一頁';
+            nextBtn.onclick = () => this.loadAchievementsPage(characterId, pagination.PageNext);
+            paginationButtons.appendChild(nextBtn);
+        }
+        
+        this.elements.achievementsPagination.appendChild(paginationInfo);
+        this.elements.achievementsPagination.appendChild(paginationButtons);
+    }
+    
+    async loadAchievementsPage(characterId, page) {
+        try {
+            const response = await fetch(`https://logstone.z54981220.workers.dev/character/${characterId}/achievements?page=${page}`);
+            if (response.ok) {
+                const data = await response.json();
+                this.displayAchievements(data);
+            }
+        } catch (error) {
+            console.error('載入成就頁面失敗:', error);
+        }
+    }
+    
+    displayMounts(data) {
+        console.log('顯示坐騎資料:', data);
+        
+        // 顯示坐騎數量
+        const mountCount = data.Mounts ? data.Mounts.length : 0;
+        this.elements.mountsCount.textContent = mountCount;
+        
+        // 清空並顯示坐騎列表
+        this.elements.mountsList.textContent = '';
+        
+        if (data.Mounts && data.Mounts.length > 0) {
+            data.Mounts.forEach(mount => {
+                const mountItem = document.createElement('div');
+                mountItem.className = 'mount-item';
+                
+                if (mount.Icon) {
+                    const icon = document.createElement('img');
+                    icon.src = mount.Icon;
+                    icon.alt = mount.Name || '未知坐騎';
+                    icon.className = 'mount-icon';
+                    mountItem.appendChild(icon);
+                }
+                
+                const name = document.createElement('p');
+                name.className = 'mount-name';
+                name.textContent = mount.Name || '未知坐騎';
+                
+                mountItem.appendChild(name);
+                this.elements.mountsList.appendChild(mountItem);
+            });
+        } else {
+            const noData = document.createElement('p');
+            noData.textContent = '暫無坐騎資料';
+            this.elements.mountsList.appendChild(noData);
+        }
+        
+        // 顯示坐騎區塊
+        this.elements.mountsSection.style.display = 'block';
+    }
+    
+    displayMinions(data) {
+        console.log('顯示寵物資料:', data);
+        
+        // 顯示寵物數量
+        const minionCount = data.Minions ? data.Minions.length : 0;
+        this.elements.minionsCount.textContent = minionCount;
+        
+        // 清空並顯示寵物列表
+        this.elements.minionsList.textContent = '';
+        
+        if (data.Minions && data.Minions.length > 0) {
+            data.Minions.forEach(minion => {
+                const minionItem = document.createElement('div');
+                minionItem.className = 'minion-item';
+                
+                if (minion.Icon) {
+                    const icon = document.createElement('img');
+                    icon.src = minion.Icon;
+                    icon.alt = minion.Name || '未知寵物';
+                    icon.className = 'minion-icon';
+                    minionItem.appendChild(icon);
+                }
+                
+                const name = document.createElement('p');
+                name.className = 'minion-name';
+                name.textContent = minion.Name || '未知寵物';
+                
+                minionItem.appendChild(name);
+                this.elements.minionsList.appendChild(minionItem);
+            });
+        } else {
+            const noData = document.createElement('p');
+            noData.textContent = '暫無寵物資料';
+            this.elements.minionsList.appendChild(noData);
+        }
+        
+        // 顯示寵物區塊
+        this.elements.minionsSection.style.display = 'block';
     }
 }
 
