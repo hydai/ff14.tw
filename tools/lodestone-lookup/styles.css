@@ -260,24 +260,24 @@
 /* Job Levels Grid */
 .job-levels-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 1rem;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 0.5rem;
     margin-bottom: 1.5rem;
 }
 
 /* Unified Job Grid - 無分類標題的統一網格 */
 .job-levels-grid-unified {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 0.75rem;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 0.5rem;
     margin-bottom: 1.5rem;
 }
 
 .job-item {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    padding: 0.75rem;
+    gap: 0.4rem;
+    padding: 0.4rem;
     background: var(--card-background);
     border: 1px solid var(--border-color);
     border-radius: 4px;
@@ -285,19 +285,19 @@
 }
 
 .job-item:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .job-icon {
-    width: 32px;
-    height: 32px;
+    width: 20px;
+    height: 20px;
 }
 
 /* Text-based job icon */
 .job-icon-text {
-    width: 32px;
-    height: 32px;
+    width: 20px;
+    height: 20px;
     background: var(--primary-color);
     color: white;
     border-radius: 50%;
@@ -305,7 +305,7 @@
     align-items: center;
     justify-content: center;
     font-weight: bold;
-    font-size: 1rem;
+    font-size: 0.7rem;
     flex-shrink: 0;
 }
 
@@ -313,11 +313,21 @@
 .job-category-tank .job-icon-text { background: #3f51b5; }
 .job-category-healer .job-icon-text { background: #4caf50; }
 .job-category-melee .job-icon-text { background: #f44336; }
-.job-category-ranged .job-icon-text { background: #ff9800; }
-.job-category-magic .job-icon-text { background: #9c27b0; }
-.job-category-crafting .job-icon-text { background: #795548; }
-.job-category-gathering .job-icon-text { background: #607d8b; }
+.job-category-ranged .job-icon-text { background: #f44336; }
+.job-category-magic .job-icon-text { background: #f44336; }
+.job-category-crafting .job-icon-text { background: #9e9e9e; }
+.job-category-gathering .job-icon-text { background: #9e9e9e; }
 .job-category-special .job-icon-text { background: #ffc107; }
+
+/* Add subtle left border for category identification */
+.job-category-tank { border-left: 2px solid #3f51b5; }
+.job-category-healer { border-left: 2px solid #4caf50; }
+.job-category-melee { border-left: 2px solid #f44336; }
+.job-category-ranged { border-left: 2px solid #f44336; }
+.job-category-magic { border-left: 2px solid #f44336; }
+.job-category-crafting { border-left: 2px solid #9e9e9e; }
+.job-category-gathering { border-left: 2px solid #9e9e9e; }
+.job-category-special { border-left: 2px solid #ffc107; }
 
 .job-details {
     flex: 1;
@@ -326,17 +336,19 @@
 
 .job-name {
     font-weight: 600;
-    margin: 0 0 0.25rem 0;
-    font-size: 0.9rem;
+    margin: 0;
+    font-size: 0.7rem;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    line-height: 1.1;
 }
 
 .job-level {
     color: var(--primary-color);
-    font-size: 0.85rem;
+    font-size: 0.65rem;
     margin: 0;
+    line-height: 1.1;
 }
 
 .job-level.max-level {
@@ -347,10 +359,10 @@
 /* Experience Progress Bar */
 .exp-progress {
     width: 100%;
-    height: 4px;
+    height: 3px;
     background: var(--border-color);
     border-radius: 2px;
-    margin: 0.5rem 0 0.25rem 0;
+    margin: 0.25rem 0 0 0;
     overflow: hidden;
 }
 
@@ -943,11 +955,11 @@
     }
     
     .job-levels-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, 1fr);
     }
     
     .job-levels-grid-unified {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, 1fr);
     }
     
     .fc-header {
