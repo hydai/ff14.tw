@@ -2,6 +2,7 @@ class LodestoneCharacterLookup {
     constructor() {
         this.elements = {
             characterId: document.getElementById('characterId'),
+            datacenterSelect: document.getElementById('datacenterSelect'),
             searchBtn: document.getElementById('searchBtn'),
             loadingIndicator: document.getElementById('loadingIndicator'),
             errorMessage: document.getElementById('errorMessage'),
@@ -145,13 +146,14 @@ class LodestoneCharacterLookup {
         this.hideError();
         this.hideCharacterInfo();
 
-        const apiUrl = `https://logstone.z54981220.workers.dev/character/${characterId}`;
-        const jobApiUrl = `https://logstone.z54981220.workers.dev/character/${characterId}/classjob`;
-        const achievementsApiUrl = `https://logstone.z54981220.workers.dev/character/${characterId}/achievements?page=1`;
-        const mountsApiUrl = `https://logstone.z54981220.workers.dev/character/${characterId}/mounts`;
-        const minionsApiUrl = `https://logstone.z54981220.workers.dev/character/${characterId}/minions`;
+        const datacenter = this.elements.datacenterSelect.value;
+        const apiUrl = `https://logstone.z54981220.workers.dev/character/${characterId}?dc=${datacenter}`;
+        const jobApiUrl = `https://logstone.z54981220.workers.dev/character/${characterId}/classjob?dc=${datacenter}`;
+        const achievementsApiUrl = `https://logstone.z54981220.workers.dev/character/${characterId}/achievements?page=1&dc=${datacenter}`;
+        const mountsApiUrl = `https://logstone.z54981220.workers.dev/character/${characterId}/mounts?dc=${datacenter}`;
+        const minionsApiUrl = `https://logstone.z54981220.workers.dev/character/${characterId}/minions?dc=${datacenter}`;
         
-        console.log('API URLs:', {
+        console.log('API URLs (DC: ' + datacenter + '):', {
             character: apiUrl,
             job: jobApiUrl,
             achievements: achievementsApiUrl,
@@ -923,7 +925,8 @@ class LodestoneCharacterLookup {
     
     async loadAchievementsPage(characterId, page) {
         try {
-            const response = await fetch(`https://logstone.z54981220.workers.dev/character/${characterId}/achievements?page=${page}`);
+            const datacenter = this.elements.datacenterSelect.value;
+            const response = await fetch(`https://logstone.z54981220.workers.dev/character/${characterId}/achievements?page=${page}&dc=${datacenter}`);
             if (response.ok) {
                 const data = await response.json();
                 this.displayAchievements(data);
@@ -1010,11 +1013,12 @@ class LodestoneCharacterLookup {
     async loadFreeCompanyInfo(fcId) {
         try {
             this.currentFCId = fcId;
+            const datacenter = this.elements.datacenterSelect.value;
             
             // 同時載入公會資訊和成員列表
             const [fcResponse, membersResponse] = await Promise.all([
-                fetch(`https://logstone.z54981220.workers.dev/freecompany/${fcId}`),
-                fetch(`https://logstone.z54981220.workers.dev/freecompany/${fcId}/members?page=1`)
+                fetch(`https://logstone.z54981220.workers.dev/freecompany/${fcId}?dc=${datacenter}`),
+                fetch(`https://logstone.z54981220.workers.dev/freecompany/${fcId}/members?page=1&dc=${datacenter}`)
             ]);
             
             if (fcResponse.ok) {
@@ -1303,7 +1307,8 @@ class LodestoneCharacterLookup {
         if (!this.currentFCId) return;
         
         try {
-            const response = await fetch(`https://logstone.z54981220.workers.dev/freecompany/${this.currentFCId}/members?page=${page}`);
+            const datacenter = this.elements.datacenterSelect.value;
+            const response = await fetch(`https://logstone.z54981220.workers.dev/freecompany/${this.currentFCId}/members?page=${page}&dc=${datacenter}`);
             if (response.ok) {
                 const data = await response.json();
                 this.displayFreeCompanyMembers(data);

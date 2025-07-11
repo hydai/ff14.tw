@@ -32,6 +32,16 @@
 }
 
 #characterId {
+    flex: 2;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 1.1rem;
+    background: var(--background-color);
+    color: var(--text-color);
+}
+
+.datacenter-select {
     flex: 1;
     padding: 0.75rem 1rem;
     border: 1px solid var(--border-color);
@@ -39,6 +49,12 @@
     font-size: 1.1rem;
     background: var(--background-color);
     color: var(--text-color);
+    cursor: pointer;
+}
+
+.datacenter-select:focus {
+    outline: none;
+    border-color: var(--primary-color);
 }
 
 #characterId:focus {
@@ -898,6 +914,11 @@
 @media (max-width: 768px) {
     .search-box {
         flex-direction: column;
+    }
+    
+    #characterId,
+    .datacenter-select {
+        width: 100%;
     }
     
     .search-btn {
