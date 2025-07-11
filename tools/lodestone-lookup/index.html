@@ -78,7 +78,7 @@
                         <p id="characterServer" class="character-server"></p>
                         <div id="characterFC" class="character-fc">
                             <img id="fcIcon" class="fc-icon" src="" alt="" style="display: none;">
-                            <span id="fcName"></span>
+                            <span id="fcName" class="fc-name-link"></span>
                         </div>
                     </div>
                     <div class="character-portrait">
@@ -247,6 +247,46 @@
                             <span id="minionsCount">0</span> 隻寵物
                         </div>
                         <div id="minionsList" class="minions-grid"></div>
+                    </section>
+                    
+                    <section class="info-section" id="freeCompanySection" style="display: none;">
+                        <h3>公會資訊</h3>
+                        <div class="fc-header">
+                            <div class="fc-crest" id="fcCrest"></div>
+                            <div class="fc-basic-info">
+                                <h4 id="fcDetailName" class="fc-detail-name"></h4>
+                                <p id="fcSlogan" class="fc-slogan"></p>
+                                <div class="fc-stats">
+                                    <span>成員數：<strong id="fcMemberCount">0</strong></span>
+                                    <span>排名：<strong id="fcRank">--</strong></span>
+                                    <span>招募狀態：<strong id="fcRecruitment">--</strong></span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="fc-details">
+                            <div class="fc-estate" id="fcEstateInfo" style="display: none;">
+                                <h5>公會房屋</h5>
+                                <p id="fcEstateName"></p>
+                                <p id="fcEstatePlot"></p>
+                                <p id="fcEstateGreeting" class="fc-greeting"></p>
+                            </div>
+                            
+                            <div class="fc-focus">
+                                <h5>公會目標</h5>
+                                <div id="fcFocusList" class="tag-list"></div>
+                            </div>
+                            
+                            <div class="fc-seeking">
+                                <h5>招募對象</h5>
+                                <div id="fcSeekingList" class="tag-list"></div>
+                            </div>
+                            
+                            <div class="fc-reputation">
+                                <h5>大國防軍聲望</h5>
+                                <div id="fcReputationList" class="reputation-list"></div>
+                            </div>
+                        </div>
                     </section>
                 </div>
 

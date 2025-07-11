@@ -59,7 +59,22 @@ class LodestoneCharacterLookup {
             // Minions
             minionsSection: document.getElementById('minionsSection'),
             minionsCount: document.getElementById('minionsCount'),
-            minionsList: document.getElementById('minionsList')
+            minionsList: document.getElementById('minionsList'),
+            // Free Company
+            freeCompanySection: document.getElementById('freeCompanySection'),
+            fcCrest: document.getElementById('fcCrest'),
+            fcDetailName: document.getElementById('fcDetailName'),
+            fcSlogan: document.getElementById('fcSlogan'),
+            fcMemberCount: document.getElementById('fcMemberCount'),
+            fcRank: document.getElementById('fcRank'),
+            fcRecruitment: document.getElementById('fcRecruitment'),
+            fcEstateInfo: document.getElementById('fcEstateInfo'),
+            fcEstateName: document.getElementById('fcEstateName'),
+            fcEstatePlot: document.getElementById('fcEstatePlot'),
+            fcEstateGreeting: document.getElementById('fcEstateGreeting'),
+            fcFocusList: document.getElementById('fcFocusList'),
+            fcSeekingList: document.getElementById('fcSeekingList'),
+            fcReputationList: document.getElementById('fcReputationList')
         };
         
         this.currentAchievementPage = 1;
@@ -295,7 +310,12 @@ class LodestoneCharacterLookup {
         
         // Free Company
         if (character.FreeCompany && character.FreeCompany.Name && character.FreeCompany.Name.ID) {
-            this.elements.fcName.textContent = '有公會（名稱需額外查詢）';
+            const fcId = character.FreeCompany.Name.ID;
+            this.elements.fcName.textContent = '載入公會資訊中...';
+            this.elements.fcName.dataset.fcId = fcId;
+            
+            // 查詢公會詳細資訊
+            this.loadFreeCompanyInfo(fcId);
             
             // Display FC icon if available
             if (character.FreeCompany.IconLayers) {
@@ -968,6 +988,173 @@ class LodestoneCharacterLookup {
         
         // 顯示寵物區塊
         this.elements.minionsSection.style.display = 'block';
+    }
+    
+    async loadFreeCompanyInfo(fcId) {
+        try {
+            const response = await fetch(`https://logstone.z54981220.workers.dev/freecompany/${fcId}`);
+            if (response.ok) {
+                const data = await response.json();
+                console.log('公會資料:', data);
+                if (data.FreeCompany) {
+                    this.displayFreeCompanyInfo(data.FreeCompany);
+                    // 更新頂部的公會名稱為可點擊連結
+                    this.elements.fcName.textContent = data.FreeCompany.Name || '未知公會';
+                    this.elements.fcName.style.cursor = 'pointer';
+                    this.elements.fcName.style.color = 'var(--primary-color)';
+                    this.elements.fcName.onclick = () => {
+                        document.getElementById('freeCompanySection').scrollIntoView({ behavior: 'smooth' });
+                    };
+                }
+            }
+        } catch (error) {
+            console.error('載入公會資訊失敗:', error);
+            this.elements.fcName.textContent = '公會資訊載入失敗';
+        }
+    }
+    
+    displayFreeCompanyInfo(fc) {
+        console.log('顯示公會資訊:', fc);
+        
+        // 顯示公會徽章
+        if (fc.CrestLayers && fc.CrestLayers.length > 0) {
+            this.elements.fcCrest.textContent = '';
+            fc.CrestLayers.forEach(layer => {
+                const img = document.createElement('img');
+                img.src = layer;
+                img.className = 'fc-crest-layer';
+                this.elements.fcCrest.appendChild(img);
+            });
+        }
+        
+        // 基本資訊
+        this.elements.fcDetailName.textContent = fc.Name || '未知公會';
+        this.elements.fcSlogan.textContent = fc.Slogan || '無標語';
+        this.elements.fcMemberCount.textContent = fc.ActiveMemberCount || '0';
+        this.elements.fcRank.textContent = fc.Rank || '--';
+        this.elements.fcRecruitment.textContent = fc.Recruitment === 'Open' ? '開放' : '關閉';
+        
+        // 房屋資訊
+        if (fc.Estate && fc.Estate.Plot) {
+            this.elements.fcEstateName.textContent = fc.Estate.Name || '未命名';
+            this.elements.fcEstatePlot.textContent = fc.Estate.Plot;
+            this.elements.fcEstateGreeting.textContent = fc.Estate.Greeting || '無歡迎詞';
+            this.elements.fcEstateInfo.style.display = 'block';
+        }
+        
+        // 公會目標
+        this.elements.fcFocusList.textContent = '';
+        if (fc.Focus && fc.Focus.length > 0) {
+            fc.Focus.forEach(focus => {
+                const tag = document.createElement('span');
+                tag.className = 'tag';
+                tag.textContent = this.translateFocusTag(focus);
+                this.elements.fcFocusList.appendChild(tag);
+            });
+        }
+        
+        // 招募對象
+        this.elements.fcSeekingList.textContent = '';
+        if (fc.Seeking && fc.Seeking.length > 0) {
+            fc.Seeking.forEach(seeking => {
+                const tag = document.createElement('span');
+                tag.className = 'tag';
+                tag.textContent = this.translateSeekingTag(seeking);
+                this.elements.fcSeekingList.appendChild(tag);
+            });
+        }
+        
+        // 聲望
+        this.elements.fcReputationList.textContent = '';
+        if (fc.Reputation) {
+            ['ADDERS', 'FLAMES', 'MAELSTROM'].forEach(key => {
+                const rep = fc.Reputation[key];
+                if (rep) {
+                    const repItem = this.createReputationItem(rep);
+                    this.elements.fcReputationList.appendChild(repItem);
+                }
+            });
+        }
+        
+        // 顯示公會區塊
+        this.elements.freeCompanySection.style.display = 'block';
+    }
+    
+    translateFocusTag(tag) {
+        const translations = {
+            'Casual': '休閒',
+            'Dungeons': '副本',
+            'Leveling': '練級',
+            'Raids': '團隊戰',
+            'Trials': '討伐戰',
+            'Guildhests': '公會令',
+            'Role-playing': '角色扮演',
+            'Questing': '任務',
+            'Crafting': '生產',
+            'Gathering': '採集',
+            'PvP': 'PvP'
+        };
+        return translations[tag] || tag;
+    }
+    
+    translateSeekingTag(tag) {
+        const translations = {
+            'Tank': '坦克',
+            'Healer': '治療',
+            'DPS': 'DPS',
+            'Crafter': '生產職',
+            'Gatherer': '採集職'
+        };
+        return translations[tag] || tag;
+    }
+    
+    createReputationItem(rep) {
+        const container = document.createElement('div');
+        container.className = 'reputation-item';
+        
+        const name = document.createElement('div');
+        name.className = 'reputation-name';
+        name.textContent = this.translateGrandCompany(rep.NAME);
+        
+        const rank = document.createElement('div');
+        rank.className = 'reputation-rank';
+        rank.textContent = this.translateReputationRank(rep.RANK);
+        
+        const progressBar = document.createElement('div');
+        progressBar.className = 'reputation-progress';
+        
+        const progressFill = document.createElement('div');
+        progressFill.className = 'reputation-progress-fill';
+        progressFill.style.width = `${rep.PROGRESS.Progress || 0}%`;
+        
+        progressBar.appendChild(progressFill);
+        
+        container.appendChild(name);
+        container.appendChild(rank);
+        container.appendChild(progressBar);
+        
+        return container;
+    }
+    
+    translateGrandCompany(name) {
+        const translations = {
+            'Order of the Twin Adder': '雙蛇黨',
+            'Immortal Flames': '恆輝隊',
+            'Maelstrom': '黑渦團'
+        };
+        return translations[name] || name;
+    }
+    
+    translateReputationRank(rank) {
+        const translations = {
+            'Neutral': '中立',
+            'Friendly': '友好',
+            'Trusted': '信賴',
+            'Respected': '敬重',
+            'Honored': '崇敬',
+            'Allied': '同盟'
+        };
+        return translations[rank] || rank;
     }
 }
 
