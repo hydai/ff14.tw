@@ -587,3 +587,109 @@
         font-size: 0.9rem;
     }
 }
+
+/* Dark mode 支援 */
+[data-theme="dark"] .filter-section {
+    background: var(--card-bg);
+    color: var(--text-color);
+}
+
+[data-theme="dark"] .search-box input {
+    background-color: var(--bg-secondary);
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .search-box input:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(90, 159, 240, 0.3);
+}
+
+[data-theme="dark"] .search-box input::placeholder {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .level-tag {
+    background-color: var(--bg-secondary);
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .level-tag:hover {
+    background-color: var(--hover-bg);
+    border-color: var(--primary-color);
+}
+
+[data-theme="dark"] .level-tag.active {
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+[data-theme="dark"] .type-tag,
+[data-theme="dark"] .expansion-tag {
+    background-color: var(--bg-secondary);
+    color: var(--text-color);
+}
+
+[data-theme="dark"] .type-tag:hover,
+[data-theme="dark"] .expansion-tag:hover {
+    background-color: var(--hover-bg);
+}
+
+[data-theme="dark"] .type-tag.active,
+[data-theme="dark"] .expansion-tag.active {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+[data-theme="dark"] .dungeon-card {
+    background: var(--card-bg);
+    color: var(--text-color);
+}
+
+[data-theme="dark"] .dungeon-card:hover {
+    box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .dungeon-icon {
+    background: linear-gradient(45deg, #4a5568, #2d3748);
+}
+
+[data-theme="dark"] .badge {
+    opacity: 0.9;
+}
+
+[data-theme="dark"] .badge.ilv {
+    background: var(--primary-color);
+}
+
+[data-theme="dark"] .badge.drops {
+    background: var(--secondary-color);
+}
+
+[data-theme="dark"] .badge.difficulty {
+    background: #4a5568;
+}
+
+[data-theme="dark"] .badge.highlight {
+    background-color: rgba(245, 158, 11, 0.2);
+    color: #f5a623;
+}
+
+[data-theme="dark"] .dungeon-stats {
+    background: var(--bg-secondary);
+    color: var(--text-color);
+}
+
+[data-theme="dark"] .dungeon-stats:hover {
+    background: var(--bg-color);
+}
+
+[data-theme="dark"] .loading-container {
+    background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-color) 100%);
+}
+
+[data-theme="dark"] .no-results {
+    background: var(--card-bg);
+}
