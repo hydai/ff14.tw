@@ -3,23 +3,13 @@
 // 主題管理器
 class ThemeManager {
     constructor() {
-        this.theme = this.getStoredTheme() || this.getSystemPreference();
+        // 預設為 light mode，除非使用者明確選擇過
+        this.theme = this.getStoredTheme() || 'light';
         this.init();
     }
 
     init() {
-        // 設置初始主題
         this.applyTheme(this.theme);
-        
-        // 監聽系統主題變化
-        if (window.matchMedia) {
-            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-                if (!this.getStoredTheme()) {
-                    this.theme = e.matches ? 'dark' : 'light';
-                    this.applyTheme(this.theme);
-                }
-            });
-        }
     }
 
     getStoredTheme() {
