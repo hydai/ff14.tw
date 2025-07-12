@@ -137,6 +137,28 @@
             font-weight: 600;
         }
         
+        /* Dark mode 支援 */
+        [data-theme="dark"] .tool-card {
+            background: var(--card-bg);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        
+        [data-theme="dark"] .tool-card:hover {
+            box-shadow: 0 12px 40px rgba(255,255,255,0.1);
+        }
+        
+        [data-theme="dark"] .tool-card.coming-soon {
+            background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-color) 100%);
+        }
+        
+        [data-theme="dark"] .tool-title {
+            color: var(--text-color);
+        }
+        
+        [data-theme="dark"] .tool-description {
+            color: var(--text-secondary);
+        }
+        
         .tool-card.under-construction::after {
             content: '🚧 施工中';
             position: absolute;
