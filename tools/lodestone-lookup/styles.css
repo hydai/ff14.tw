@@ -993,3 +993,45 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* Dark mode 支援 */
+[data-theme="dark"] .search-section {
+    background: var(--card-bg);
+}
+
+[data-theme="dark"] #characterId {
+    background: var(--bg-secondary);
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] #characterId:focus {
+    border-color: var(--primary-color);
+}
+
+[data-theme="dark"] .error-message {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ff7b7b;
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+[data-theme="dark"] .character-info,
+[data-theme="dark"] .attributes-section,
+[data-theme="dark"] .jobs-section,
+[data-theme="dark"] .equipment-section,
+[data-theme="dark"] .achievements-section,
+[data-theme="dark"] .mounts-section,
+[data-theme="dark"] .minions-section,
+[data-theme="dark"] .fc-section {
+    background: var(--card-bg);
+}
+
+[data-theme="dark"] .attribute-item,
+[data-theme="dark"] .equipment-item {
+    background: var(--bg-secondary);
+}
+
+[data-theme="dark"] .attribute-item:hover,
+[data-theme="dark"] .equipment-item:hover {
+    background: var(--hover-bg);
+}

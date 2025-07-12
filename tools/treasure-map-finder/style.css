@@ -1613,3 +1613,54 @@ body > div[class~="toast-warning"] {
         text-align: center;
     }
 }
+
+/* Dark mode 支援 */
+[data-theme="dark"] .filter-section {
+    background: var(--card-bg);
+}
+
+[data-theme="dark"] .filter-tag {
+    background: var(--bg-secondary);
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .filter-tag:hover {
+    background: var(--hover-bg);
+}
+
+[data-theme="dark"] .filter-tag.active {
+    background: var(--primary-color);
+    color: white;
+}
+
+[data-theme="dark"] .treasure-card {
+    background: var(--card-bg);
+}
+
+[data-theme="dark"] .treasure-popup {
+    background: var(--card-bg);
+    color: var(--text-color);
+}
+
+[data-theme="dark"] .popup-btn {
+    background: var(--bg-secondary);
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .popup-btn:hover {
+    background: var(--hover-bg);
+}
+
+[data-theme="dark"] .my-list-panel {
+    background: var(--card-bg);
+}
+
+[data-theme="dark"] .panel-header {
+    background: var(--bg-secondary);
+}
+
+[data-theme="dark"] .list-content {
+    background: var(--card-bg);
+}

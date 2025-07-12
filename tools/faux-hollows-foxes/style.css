@@ -620,3 +620,59 @@
         background-color: #fff;
     }
 }
+
+/* Dark mode 支援 */
+[data-theme="dark"] .board-cell {
+    background: var(--bg-secondary);
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .board-cell:hover {
+    background: var(--hover-bg);
+}
+
+[data-theme="dark"] .board-cell.clicked {
+    background: var(--bg-color);
+}
+
+[data-theme="dark"] .popup-btn {
+    background: var(--bg-secondary);
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .popup-btn:hover {
+    background: var(--hover-bg);
+}
+
+[data-theme="dark"] .my-list-panel {
+    background: var(--card-bg);
+}
+
+[data-theme="dark"] .panel-header {
+    background: var(--bg-secondary);
+}
+
+[data-theme="dark"] .list-content {
+    background: var(--card-bg);
+}
+
+[data-theme="dark"] .format-input:focus {
+    background: var(--bg-secondary);
+    color: var(--text-color);
+}
+
+[data-theme="dark"] .modal-content {
+    background-color: var(--card-bg);
+    color: var(--text-color);
+}
+
+[data-theme="dark"] @keyframes cell-pulse {
+    0%, 100% {
+        background-color: var(--bg-secondary);
+    }
+    50% {
+        background-color: var(--hover-bg);
+    }
+}

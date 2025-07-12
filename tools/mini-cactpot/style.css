@@ -290,3 +290,37 @@
         align-items: center;
     }
 }
+
+/* Dark mode 支援 */
+[data-theme="dark"] .grid-cell {
+    background: var(--bg-secondary);
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .grid-cell:hover:not(.revealed) {
+    background: var(--hover-bg);
+}
+
+[data-theme="dark"] .grid-cell.selected,
+[data-theme="dark"] .grid-cell.revealed {
+    color: var(--text-color);
+}
+
+[data-theme="dark"] .grid-cell input {
+    color: var(--text-color);
+    background: transparent;
+}
+
+[data-theme="dark"] .prob-item {
+    background: var(--card-bg);
+    color: var(--text-color);
+}
+
+[data-theme="dark"] .prob-list h3 {
+    color: var(--text-color);
+}
+
+[data-theme="dark"] .best-line-text {
+    color: var(--text-color);
+}

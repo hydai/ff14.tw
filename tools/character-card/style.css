@@ -1075,3 +1075,67 @@
 .collapsible-content.collapsed .server-selection-step {
     margin-bottom: 0;
 }
+
+/* Dark mode 支援 */
+[data-theme="dark"] .input-section,
+[data-theme="dark"] .preview-section {
+    background: var(--card-bg);
+}
+
+[data-theme="dark"] .input-field,
+[data-theme="dark"] .job-level,
+[data-theme="dark"] textarea {
+    background: var(--bg-secondary);
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .input-field:focus,
+[data-theme="dark"] .job-level:focus,
+[data-theme="dark"] textarea:focus {
+    border-color: var(--primary-color);
+}
+
+[data-theme="dark"] .template-option {
+    background: var(--bg-secondary);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .template-option:hover {
+    border-color: var(--primary-color);
+}
+
+[data-theme="dark"] .template-option.selected {
+    border-color: var(--primary-color);
+    background: var(--primary-color);
+}
+
+[data-theme="dark"] .image-controls,
+[data-theme="dark"] .control-panel {
+    background: var(--bg-secondary);
+}
+
+[data-theme="dark"] .control-btn,
+[data-theme="dark"] .selection-btn,
+[data-theme="dark"] .clear-btn {
+    background: var(--bg-secondary);
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .control-btn:hover,
+[data-theme="dark"] .selection-btn:hover,
+[data-theme="dark"] .clear-btn:hover {
+    background: var(--hover-bg);
+}
+
+[data-theme="dark"] .file-input {
+    background: var(--bg-secondary);
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .preview-box {
+    background: var(--bg-secondary);
+    border-color: var(--border-color);
+}
