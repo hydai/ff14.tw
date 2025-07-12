@@ -1,0 +1,216 @@
+/* FF14.tw 工具頁面 Dark Mode 樣式調整 */
+
+/* 通用工具頁面調整 */
+[data-theme="dark"] .grid-cell,
+[data-theme="dark"] .cell,
+[data-theme="dark"] .cactpot-cell {
+    background-color: var(--bg-secondary);
+    border-color: var(--border-color);
+    color: var(--text-color);
+}
+
+[data-theme="dark"] .grid-cell:hover,
+[data-theme="dark"] .cell:hover,
+[data-theme="dark"] .cactpot-cell:hover {
+    background-color: var(--hover-bg);
+}
+
+[data-theme="dark"] .selected,
+[data-theme="dark"] .grid-cell.selected,
+[data-theme="dark"] .cell.selected {
+    background-color: var(--primary-color) !important;
+    color: white !important;
+}
+
+[data-theme="dark"] .best-choice {
+    box-shadow: 0 0 25px rgba(90, 159, 240, 0.8);
+}
+
+/* Loading spinner */
+[data-theme="dark"] .loading-spinner {
+    border-color: var(--border-color);
+    border-top-color: var(--primary-color);
+}
+
+/* Modal 和 Popup */
+[data-theme="dark"] .modal,
+[data-theme="dark"] .popup,
+[data-theme="dark"] .treasure-popup {
+    background-color: var(--bg-secondary);
+    color: var(--text-color);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+}
+
+[data-theme="dark"] .modal-header,
+[data-theme="dark"] .popup-header {
+    background-color: var(--bg-color);
+    border-bottom-color: var(--border-color);
+}
+
+/* 表格樣式 */
+[data-theme="dark"] table {
+    background-color: var(--bg-secondary);
+}
+
+[data-theme="dark"] th {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+}
+
+[data-theme="dark"] td {
+    border-color: var(--border-color);
+    color: var(--text-color);
+}
+
+[data-theme="dark"] tr:hover {
+    background-color: var(--hover-bg);
+}
+
+/* 統計數據 */
+[data-theme="dark"] .stats,
+[data-theme="dark"] .statistics,
+[data-theme="dark"] .info-box {
+    background-color: var(--bg-secondary);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .stat-item {
+    background-color: var(--bg-color);
+    border-color: var(--border-color);
+}
+
+/* 篩選標籤 */
+[data-theme="dark"] .type-tag,
+[data-theme="dark"] .expansion-tag,
+[data-theme="dark"] .filter-tag {
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+}
+
+[data-theme="dark"] .type-tag:hover,
+[data-theme="dark"] .expansion-tag:hover,
+[data-theme="dark"] .filter-tag:hover {
+    background-color: var(--hover-bg);
+}
+
+[data-theme="dark"] .type-tag.active,
+[data-theme="dark"] .expansion-tag.active,
+[data-theme="dark"] .filter-tag.active {
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+/* 副本卡片 */
+[data-theme="dark"] .dungeon-card {
+    background-color: var(--card-bg);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .dungeon-card:hover {
+    box-shadow: 0 4px 12px rgba(255,255,255,0.1);
+}
+
+/* 角色卡片特殊調整 */
+[data-theme="dark"] .card-preview {
+    background-color: var(--bg-secondary);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+[data-theme="dark"] .color-input-wrapper {
+    background-color: var(--bg-color);
+}
+
+[data-theme="dark"] .template-option {
+    background-color: var(--bg-secondary);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .template-option:hover {
+    border-color: var(--primary-color);
+}
+
+/* 寶圖搜尋器 */
+[data-theme="dark"] .treasure-card {
+    background-color: var(--card-bg);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .zone-info {
+    background-color: var(--bg-color);
+}
+
+[data-theme="dark"] .copied-message {
+    background-color: var(--primary-color);
+}
+
+/* Lodestone 查詢 */
+[data-theme="dark"] .character-info,
+[data-theme="dark"] .attributes-section,
+[data-theme="dark"] .jobs-section,
+[data-theme="dark"] .equipment-section {
+    background-color: var(--card-bg);
+}
+
+[data-theme="dark"] .attribute-item,
+[data-theme="dark"] .job-item,
+[data-theme="dark"] .equipment-item {
+    background-color: var(--bg-secondary);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .job-item.max-level {
+    background-color: rgba(90, 159, 240, 0.1);
+    border-color: var(--primary-color);
+}
+
+/* 動畫效果調整 */
+[data-theme="dark"] @keyframes glow {
+    0%, 100% {
+        box-shadow: 0 0 15px rgba(90, 159, 240, 0.6);
+    }
+    50% {
+        box-shadow: 0 0 25px rgba(90, 159, 240, 0.8);
+    }
+}
+
+/* 特殊顏色調整 */
+[data-theme="dark"] .success {
+    color: #34d058;
+}
+
+[data-theme="dark"] .error {
+    color: #ff7b7b;
+}
+
+[data-theme="dark"] .warning {
+    color: #f7b84a;
+}
+
+[data-theme="dark"] .info {
+    color: #20c9e6;
+}
+
+/* 圖表和數據視覺化 */
+[data-theme="dark"] .chart,
+[data-theme="dark"] .progress-bar {
+    background-color: var(--bg-secondary);
+}
+
+[data-theme="dark"] .progress-fill {
+    background-color: var(--primary-color);
+}
+
+/* 捲軸樣式 */
+[data-theme="dark"] ::-webkit-scrollbar {
+    background-color: var(--bg-color);
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+    background-color: var(--border-color);
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+    background-color: var(--text-secondary);
+}

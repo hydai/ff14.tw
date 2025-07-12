@@ -1,5 +1,65 @@
 /* Changelog Page Styles */
 
+/* Dark mode 支援 */
+[data-theme="dark"] .changelog-container {
+    background-color: var(--bg-secondary);
+}
+
+[data-theme="dark"] .version-card {
+    background-color: var(--card-bg);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .version-card:hover {
+    box-shadow: 0 8px 16px rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .version-header {
+    background-color: var(--bg-color);
+}
+
+[data-theme="dark"] .version-date {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .changelog-list li {
+    color: var(--text-color);
+}
+
+[data-theme="dark"] .changelog-list li::before {
+    color: var(--primary-color);
+}
+
+[data-theme="dark"] .tag {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+}
+
+[data-theme="dark"] .tag.feature {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    color: white;
+}
+
+[data-theme="dark"] .tag.ui {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    color: white;
+}
+
+[data-theme="dark"] .tag.fix {
+    background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+    color: white;
+}
+
+[data-theme="dark"] .tag.style {
+    background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+    color: white;
+}
+
+[data-theme="dark"] .tag.refactor {
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+    color: white;
+}
+
 .subtitle {
     color: var(--text-secondary);
     font-size: 1.1rem;

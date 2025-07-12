@@ -10,6 +10,42 @@
     --border-color: #ddd;
     --shadow: 0 2px 10px rgba(0,0,0,0.1);
     --gradient-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    
+    /* 新增變數以支援更好的主題切換 */
+    --bg-color: #f5f7fa;
+    --bg-secondary: #ffffff;
+    --text-secondary: #666;
+    --header-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    --card-bg: #ffffff;
+    --hover-bg: rgba(0,0,0,0.05);
+    --dropdown-bg: #ffffff;
+    --dropdown-shadow: 0 8px 16px rgba(0,0,0,0.2);
+    --nav-hover: rgba(255,255,255,0.2);
+    --nav-active: rgba(255,255,255,0.3);
+}
+
+/* Dark mode 變數定義 */
+[data-theme="dark"] {
+    --primary-color: #5a9ff0;
+    --secondary-color: #f5a623;
+    --accent-color: #ff6b6b;
+    --dark-color: #1a1d2e;
+    --light-color: #2d3142;
+    --text-color: #e8e8e8;
+    --border-color: #3d4154;
+    --shadow: 0 2px 10px rgba(0,0,0,0.3);
+    --gradient-bg: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+    
+    --bg-color: #0f1419;
+    --bg-secondary: #1a1d2e;
+    --text-secondary: #a0a0a0;
+    --header-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    --card-bg: #1a1d2e;
+    --hover-bg: rgba(255,255,255,0.05);
+    --dropdown-bg: #2d3142;
+    --dropdown-shadow: 0 8px 16px rgba(0,0,0,0.5);
+    --nav-hover: rgba(255,255,255,0.1);
+    --nav-active: rgba(255,255,255,0.2);
 }
 
 * {
@@ -480,4 +516,150 @@ h3 {
     .header .container {
         padding-right: 50px;
     }
+}
+
+/* Dark mode 切換按鈕 */
+.theme-toggle {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+}
+
+.theme-toggle:hover {
+    background-color: var(--nav-hover);
+}
+
+.theme-toggle svg {
+    width: 20px;
+    height: 20px;
+    fill: currentColor;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.theme-toggle svg circle,
+.theme-toggle svg line {
+    fill: none;
+}
+
+/* 返回頂部按鈕 */
+.back-to-top {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: var(--primary-color);
+    color: white;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    box-shadow: var(--shadow);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s, visibility 0.3s, transform 0.3s;
+    z-index: 999;
+}
+
+.back-to-top.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.back-to-top:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+}
+
+/* 響應式調整主題按鈕 */
+@media (max-width: 768px) {
+    .theme-toggle {
+        position: absolute;
+        right: 60px;
+        top: 50%;
+        transform: translateY(-50%);
+    }
+}
+
+/* Dark mode 特定調整 */
+[data-theme="dark"] body {
+    background-color: var(--bg-color);
+}
+
+[data-theme="dark"] .hero {
+    background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+}
+
+[data-theme="dark"] .tool-card:hover {
+    box-shadow: 0 5px 20px rgba(255,255,255,0.1);
+}
+
+[data-theme="dark"] .btn:not(.theme-toggle) {
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+}
+
+[data-theme="dark"] .btn-primary:hover {
+    background: #6bb1f5;
+}
+
+[data-theme="dark"] .btn-secondary:hover {
+    background: #f7b84a;
+}
+
+[data-theme="dark"] .btn-success:hover {
+    background: #34d058;
+}
+
+[data-theme="dark"] .btn-danger:hover {
+    background: #ff7b7b;
+}
+
+[data-theme="dark"] .btn-info:hover {
+    background: #20c9e6;
+}
+
+[data-theme="dark"] input,
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+    background-color: var(--bg-secondary);
+    color: var(--text-color);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] input:focus,
+[data-theme="dark"] select:focus,
+[data-theme="dark"] textarea:focus {
+    border-color: var(--primary-color);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(90, 159, 240, 0.2);
+}
+
+[data-theme="dark"] .back-to-top:hover {
+    box-shadow: 0 5px 20px rgba(255,255,255,0.2);
+}
+
+/* 確保過渡動畫順暢 */
+* {
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* 排除不需要過渡的元素 */
+.theme-toggle svg,
+.theme-toggle svg *,
+.hamburger span {
+    transition: none;
 }

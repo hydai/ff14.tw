@@ -1,5 +1,69 @@
 // FF14.tw 共用 JavaScript 功能
 
+// 主題管理器
+class ThemeManager {
+    constructor() {
+        this.theme = this.getStoredTheme() || this.getSystemPreference();
+        this.init();
+    }
+
+    init() {
+        // 設置初始主題
+        this.applyTheme(this.theme);
+        
+        // 監聽系統主題變化
+        if (window.matchMedia) {
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+                if (!this.getStoredTheme()) {
+                    this.theme = e.matches ? 'dark' : 'light';
+                    this.applyTheme(this.theme);
+                }
+            });
+        }
+    }
+
+    getStoredTheme() {
+        return localStorage.getItem('theme');
+    }
+
+    setStoredTheme(theme) {
+        localStorage.setItem('theme', theme);
+    }
+
+    getSystemPreference() {
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            return 'dark';
+        }
+        return 'light';
+    }
+
+    applyTheme(theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+        this.theme = theme;
+        
+        // 更新所有主題切換按鈕的圖標
+        this.updateThemeToggleButtons();
+    }
+
+    toggle() {
+        const newTheme = this.theme === 'light' ? 'dark' : 'light';
+        this.applyTheme(newTheme);
+        this.setStoredTheme(newTheme);
+        return newTheme;
+    }
+
+    updateThemeToggleButtons() {
+        const buttons = document.querySelectorAll('.theme-toggle');
+        buttons.forEach(button => {
+            button.innerHTML = this.theme === 'light' 
+                ? '<svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>' // 月亮圖標
+                : '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>'; // 太陽圖標
+            
+            button.setAttribute('aria-label', this.theme === 'light' ? '切換至深色模式' : '切換至淺色模式');
+        });
+    }
+}
+
 // 通用工具函數
 const FF14Utils = {
     // 格式化數字（加入千分位符號）
@@ -237,13 +301,52 @@ function updateLogoText() {
     }
 }
 
+// 初始化主題切換功能
+function initThemeToggle() {
+    const nav = document.querySelector('.nav');
+    const hamburger = document.querySelector('.hamburger');
+    
+    if (!nav) return;
+    
+    // 創建主題切換按鈕
+    const themeToggle = document.createElement('button');
+    themeToggle.className = 'theme-toggle';
+    themeToggle.setAttribute('type', 'button');
+    
+    // 設置初始圖標
+    window.themeManager.updateThemeToggleButtons();
+    
+    // 綁定點擊事件
+    themeToggle.addEventListener('click', () => {
+        window.themeManager.toggle();
+    });
+    
+    // 根據螢幕大小決定插入位置
+    if (window.innerWidth <= 768 && hamburger) {
+        // 手機版：插入到漢堡選單前
+        hamburger.parentNode.insertBefore(themeToggle, hamburger);
+    } else {
+        // 桌面版：插入到導航列最後
+        nav.appendChild(themeToggle);
+    }
+    
+    // 初次更新按鈕圖標
+    window.themeManager.updateThemeToggleButtons();
+}
+
 // 頁面載入完成後執行
 document.addEventListener('DOMContentLoaded', function() {
-    // 動態更新 logo 文字（工具頁面）- 優先執行
+    // 初始化主題管理器（最優先）
+    window.themeManager = new ThemeManager();
+    
+    // 動態更新 logo 文字（工具頁面）
     updateLogoText();
     
     // 初始化漢堡選單功能
     initHamburgerMenu();
+    
+    // 初始化主題切換功能
+    initThemeToggle();
     
     // 為所有工具卡片添加點擊效果
     const toolCards = document.querySelectorAll('.tool-card');
