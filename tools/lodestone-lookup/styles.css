@@ -31,24 +31,20 @@
     margin-bottom: 1rem;
 }
 
+.search-box .form-control {
+    /* 覆蓋 form-control 的 display: block 和 width: 100% */
+    display: flex;
+    width: auto;
+}
+
 #characterId {
     flex: 2;
-    padding: 0.75rem 1rem;
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
-    font-size: 1.1rem;
-    background: var(--background-color);
-    color: var(--text-color);
+    /* 其他樣式由 form-control 提供 */
 }
 
 .datacenter-select {
     flex: 1;
-    padding: 0.75rem 1rem;
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
-    font-size: 1.1rem;
-    background: var(--background-color);
-    color: var(--text-color);
+    /* 其他樣式由 form-control 提供 */
     cursor: pointer;
 }
 
@@ -57,30 +53,7 @@
     border-color: var(--primary-color);
 }
 
-#characterId:focus {
-    outline: none;
-    border-color: var(--primary-color);
-}
-
-.search-btn {
-    padding: 0.75rem 2rem;
-    background: var(--primary-color);
-    color: white;
-    border: none;
-    border-radius: 4px;
-    font-size: 1.1rem;
-    cursor: pointer;
-    transition: background-color 0.3s;
-}
-
-.search-btn:hover {
-    background: var(--primary-color-dark);
-}
-
-.search-btn:disabled {
-    background: var(--text-color-secondary);
-    cursor: not-allowed;
-}
+/* 搜尋按鈕樣式由 btn 類別提供 */
 
 .search-hint {
     font-size: 0.9rem;
@@ -935,10 +908,6 @@
         width: 100%;
     }
     
-    .search-btn {
-        width: 100%;
-    }
-    
     .character-header {
         flex-direction: column;
         text-align: center;
@@ -999,15 +968,7 @@
     background: var(--card-bg);
 }
 
-[data-theme="dark"] #characterId {
-    background: var(--bg-secondary);
-    color: var(--text-color);
-    border-color: var(--border-color);
-}
-
-[data-theme="dark"] #characterId:focus {
-    border-color: var(--primary-color);
-}
+/* Dark mode 樣式由 form-control 在 forms.css 中提供 */
 
 [data-theme="dark"] .error-message {
     background: rgba(239, 68, 68, 0.1);

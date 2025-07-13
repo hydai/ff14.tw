@@ -131,6 +131,7 @@ HTML Structure:
    - **Buttons**: Use `.btn`, `.btn-primary`, `.btn-secondary`, `.btn-success`, `.btn-danger`, `.btn-sm`, `.btn-lg`
    - **Cards**: Use `.card`, `.card-header`, `.card-body`, `.card-footer`, `.card-grid`, `.card-hoverable`
    - **Forms**: Use `.form-control`, `.form-group`, `.form-label`, `.form-text`, `.form-check`
+   - **Tags/Badges**: Use `.tag`, `.tag-primary`, `.tag-filter`, `.badge`, `.tag-pill`, `.tag-outline-*`
    - **Loading states**: Use `.loading`, `.loading-spinner`
    - **Messages**: Use `.error-message`, `.success-message`, `.info-message`, `.warning-message`
 5. Follow the class-based JavaScript architecture pattern
@@ -316,6 +317,49 @@ The project includes a modular CSS component system in `/assets/css/components/`
 
 <!-- Range slider -->
 <input type="range" class="form-range" min="0" max="100">
+```
+
+#### 6. Tags/Badges (`components/tags.css`)
+```html
+<!-- Basic tags -->
+<span class="tag">預設標籤</span>
+<span class="tag tag-primary">主要標籤</span>
+<span class="tag tag-secondary">次要標籤</span>
+<span class="tag tag-success">成功標籤</span>
+<span class="tag tag-danger">危險標籤</span>
+<span class="tag tag-warning">警告標籤</span>
+<span class="tag tag-info">資訊標籤</span>
+
+<!-- Size variants -->
+<span class="tag tag-sm">小型標籤</span>
+<span class="tag tag-lg">大型標籤</span>
+
+<!-- Pill tags -->
+<span class="tag tag-pill tag-primary">藥丸標籤</span>
+
+<!-- Outline tags -->
+<span class="tag tag-outline-primary">輪廓標籤</span>
+
+<!-- Filter tags (toggleable) -->
+<button class="tag tag-filter">四人迷宮</button>
+<button class="tag tag-filter active">八人副本</button>
+
+<!-- Tag groups -->
+<div class="tag-group">
+    <span class="tag tag-primary">標籤1</span>
+    <span class="tag tag-secondary">標籤2</span>
+    <span class="tag tag-info">標籤3</span>
+</div>
+
+<!-- Badges -->
+<span class="badge">99+</span>
+<span class="badge badge-circle">5</span>
+
+<!-- Dismissible tag -->
+<span class="tag tag-primary tag-dismissible">
+    可關閉標籤
+    <button class="tag-close">&times;</button>
+</span>
 ```
 
 ### Component Usage Guidelines

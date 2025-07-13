@@ -1,0 +1,283 @@
+/* ===================================
+   標籤元件樣式 (Tag/Badge Components)
+   =================================== */
+
+/* 基礎標籤樣式 */
+.tag {
+    display: inline-block;
+    padding: 0.375rem 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    border-radius: 0.375rem;
+    transition: all 0.2s ease;
+    background-color: var(--gray-200, #e9ecef);
+    color: var(--gray-700, #495057);
+}
+
+/* 藥丸形標籤 */
+.tag-pill {
+    padding-right: 0.875rem;
+    padding-left: 0.875rem;
+    border-radius: 10rem;
+}
+
+/* 標籤尺寸變體 */
+.tag-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+}
+
+.tag-lg {
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+}
+
+/* 標籤顏色變體 */
+.tag-primary {
+    background-color: var(--primary-color, #4a90e2);
+    color: white;
+}
+
+.tag-secondary {
+    background-color: var(--secondary-color, #6c757d);
+    color: white;
+}
+
+.tag-success {
+    background-color: var(--success-color, #28a745);
+    color: white;
+}
+
+.tag-danger {
+    background-color: var(--danger-color, #dc3545);
+    color: white;
+}
+
+.tag-warning {
+    background-color: var(--warning-color, #ffc107);
+    color: var(--gray-900, #212529);
+}
+
+.tag-info {
+    background-color: var(--info-color, #17a2b8);
+    color: white;
+}
+
+.tag-light {
+    background-color: var(--gray-100, #f8f9fa);
+    color: var(--gray-800, #343a40);
+}
+
+.tag-dark {
+    background-color: var(--gray-800, #343a40);
+    color: white;
+}
+
+/* 輪廓標籤變體 */
+.tag-outline {
+    background-color: transparent;
+    border: 2px solid currentColor;
+}
+
+.tag-outline-primary {
+    color: var(--primary-color, #4a90e2);
+    border-color: var(--primary-color, #4a90e2);
+}
+
+.tag-outline-secondary {
+    color: var(--secondary-color, #6c757d);
+    border-color: var(--secondary-color, #6c757d);
+}
+
+.tag-outline-success {
+    color: var(--success-color, #28a745);
+    border-color: var(--success-color, #28a745);
+}
+
+.tag-outline-danger {
+    color: var(--danger-color, #dc3545);
+    border-color: var(--danger-color, #dc3545);
+}
+
+/* 可點擊標籤 */
+.tag-clickable {
+    cursor: pointer;
+}
+
+.tag-clickable:hover {
+    filter: brightness(0.9);
+    transform: translateY(-1px);
+}
+
+/* 可關閉標籤 */
+.tag-dismissible {
+    padding-right: 2rem;
+    position: relative;
+}
+
+.tag-close {
+    position: absolute;
+    top: 50%;
+    right: 0.5rem;
+    transform: translateY(-50%);
+    font-size: 1.25rem;
+    line-height: 1;
+    color: inherit;
+    opacity: 0.7;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+}
+
+.tag-close:hover {
+    opacity: 1;
+}
+
+/* 標籤群組 */
+.tag-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.tag-group-vertical {
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+/* 過濾標籤（可切換狀態） */
+.tag-filter {
+    background: white;
+    border: 2px solid var(--border-color, #dee2e6);
+    color: var(--gray-700, #495057);
+    cursor: pointer;
+}
+
+.tag-filter:hover {
+    background-color: var(--gray-50, #f8f9fa);
+    border-color: var(--primary-color, #4a90e2);
+    color: var(--primary-color, #4a90e2);
+}
+
+.tag-filter.active {
+    background-color: var(--primary-color, #4a90e2);
+    border-color: var(--primary-color, #4a90e2);
+    color: white;
+}
+
+/* 徽章樣式（用於計數等） */
+.badge {
+    display: inline-block;
+    padding: 0.25em 0.6em;
+    font-size: 0.75rem;
+    font-weight: 700;
+    line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    border-radius: 0.25rem;
+    background-color: var(--secondary-color, #6c757d);
+    color: white;
+}
+
+/* 圓形徽章 */
+.badge-circle {
+    padding: 0.5em;
+    border-radius: 50%;
+    min-width: 2em;
+    min-height: 2em;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* 徽章位置（配合相對定位容器） */
+.badge-positioned {
+    position: absolute;
+    top: 0;
+    right: 0;
+    transform: translate(50%, -50%);
+}
+
+/* 標籤列表樣式 */
+.tag-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.tag-list li {
+    margin: 0;
+}
+
+/* 動畫效果 */
+@keyframes tag-pulse {
+    0% {
+        box-shadow: 0 0 0 0 currentColor;
+    }
+    70% {
+        box-shadow: 0 0 0 6px rgba(0, 0, 0, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(0, 0, 0, 0);
+    }
+}
+
+.tag-pulse {
+    animation: tag-pulse 2s infinite;
+}
+
+/* Dark Mode 支援 */
+[data-theme="dark"] .tag {
+    background-color: var(--dark-gray-700, #374151);
+    color: var(--dark-gray-100, #f3f4f6);
+}
+
+[data-theme="dark"] .tag-light {
+    background-color: var(--dark-gray-800, #1f2937);
+    color: var(--dark-gray-100, #f3f4f6);
+}
+
+[data-theme="dark"] .tag-filter {
+    background-color: var(--dark-gray-800, #1f2937);
+    border-color: var(--dark-border-color, #4b5563);
+    color: var(--dark-text-color, #e5e7eb);
+}
+
+[data-theme="dark"] .tag-filter:hover {
+    background-color: var(--dark-gray-700, #374151);
+    border-color: var(--primary-color, #4a90e2);
+    color: var(--primary-color, #4a90e2);
+}
+
+[data-theme="dark"] .tag-filter.active {
+    background-color: var(--primary-color, #4a90e2);
+    border-color: var(--primary-color, #4a90e2);
+    color: white;
+}
+
+/* 響應式設計 */
+@media (max-width: 480px) {
+    .tag {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+    }
+    
+    .tag-lg {
+        font-size: 0.875rem;
+        padding: 0.375rem 0.75rem;
+    }
+    
+    .tag-group {
+        gap: 0.25rem;
+    }
+}
