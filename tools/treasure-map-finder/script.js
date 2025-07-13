@@ -4,8 +4,7 @@ class TreasureMapFinder {
         this.data = null;
         this.maps = [];
         this.filteredMaps = [];
-        this.myList = this.loadFromStorage();
-        this.myListIds = new Set(this.myList.map(item => item.id)); // 優化查找效能
+        this.listManager = new ListManager(); // 使用 ListManager 模組
         this.filters = {
             levels: new Set(),
             zones: new Set(),
@@ -322,7 +321,7 @@ class TreasureMapFinder {
         card.className = 'treasure-card';
         card.dataset.mapId = map.id;
         
-        const isInList = this.myListIds.has(map.id);
+        const isInList = this.listManager.has(map.id);
         
         // 建立圖片容器
         const imageWrapper = document.createElement('div');
@@ -428,42 +427,26 @@ class TreasureMapFinder {
     }
     
     toggleMapInList(map) {
-        if (this.myListIds.has(map.id)) {
-            // 從清單移除
-            this.myList = this.myList.filter(item => item.id !== map.id);
-            this.myListIds.delete(map.id);
-            FF14Utils.showToast('已從清單移除', 'info');
-        } else {
-            // 檢查房間寶圖上限
-            if (this.roomCollaboration?.currentRoom && 
-                this.myList.length >= RoomCollaboration.CONSTANTS.MAX_MAPS) {
-                FF14Utils.showToast(`清單已滿（${RoomCollaboration.CONSTANTS.MAX_MAPS}/${RoomCollaboration.CONSTANTS.MAX_MAPS}）`, 'error');
-                return;
-            }
-            
-            // 加入清單
-            const mapData = {
-                id: map.id,
-                level: map.level,
-                levelName: map.levelName,
-                zone: map.zone,
-                zoneId: map.zoneId,
-                coords: map.coords,
-                thumbnail: map.thumbnail,
-                addedAt: new Date().toISOString(),
-                addedBy: this.roomCollaboration?.currentUser?.id || null
-            };
-            this.myList.push(mapData);
-            this.myListIds.add(map.id);
-            FF14Utils.showToast('已加入清單', 'success');
+        // 使用 ListManager 處理清單操作
+        const options = {
+            maxItems: this.roomCollaboration?.currentRoom ? RoomCollaboration.CONSTANTS.MAX_MAPS : Infinity,
+            addedBy: this.roomCollaboration?.currentUser?.id || null
+        };
+        
+        const result = this.listManager.toggle(map, options);
+        
+        if (result.success) {
+            FF14Utils.showToast(result.message, result.action === 'add' ? 'success' : 'info');
             
             // 記錄操作歷史
-            if (this.roomCollaboration?.currentRoom) {
+            if (this.roomCollaboration?.currentRoom && result.action === 'add') {
                 this.roomCollaboration.recordMapOperation('add', map, this.roomCollaboration.currentUser);
             }
+        } else {
+            FF14Utils.showToast(result.message, 'error');
+            return;
         }
         
-        this.saveToStorage();
         this.updateListCount();
         this.updateCardButtons();
         this.renderMyList();
@@ -478,7 +461,7 @@ class TreasureMapFinder {
         document.querySelectorAll('.treasure-card').forEach(card => {
             const mapId = card.dataset.mapId;
             const button = card.querySelector('.btn-add-to-list');
-            const isInList = this.myListIds.has(mapId);
+            const isInList = this.listManager.has(mapId);
             
             button.dataset.state = isInList ? 'added' : 'default';
             button.className = `btn ${isInList ? 'btn-success' : 'btn-primary'} btn-sm btn-add-to-list`;
@@ -916,7 +899,9 @@ class TreasureMapFinder {
         // 清空內容
         this.elements.listContent.innerHTML = '';
         
-        if (this.myList.length === 0) {
+        const myList = this.listManager.getList();
+        
+        if (myList.length === 0) {
             const emptyState = document.createElement('div');
             emptyState.className = 'empty-state';
             
@@ -934,7 +919,7 @@ class TreasureMapFinder {
         }
         
         // 建立清單項目
-        this.myList.forEach(item => {
+        myList.forEach(item => {
             const listItem = document.createElement('div');
             listItem.className = 'list-item';
             listItem.dataset.mapId = item.id;
@@ -1004,56 +989,57 @@ class TreasureMapFinder {
     
     removeFromList(mapId) {
         if (confirm('確定要移除這張寶圖嗎？')) {
-            // 找到要移除的地圖資料（用於記錄）
-            const mapToRemove = this.myList.find(item => item.id === mapId);
+            const result = this.listManager.remove(mapId);
             
-            this.myList = this.myList.filter(item => item.id !== mapId);
-            this.myListIds.delete(mapId);
-            this.saveToStorage();
-            this.updateListCount();
-            this.updateCardButtons();
-            this.renderMyList();
-            FF14Utils.showToast('已從清單移除', 'info');
-            
-            // 記錄操作歷史
-            if (this.roomCollaboration?.currentRoom && mapToRemove) {
-                this.roomCollaboration.recordMapOperation('remove', mapToRemove, this.roomCollaboration.currentUser);
-            }
-            
-            // 同步到房間
-            if (this.roomCollaboration?.currentRoom) {
-                this.syncToRoom();
+            if (result.success) {
+                FF14Utils.showToast(result.message, 'info');
+                this.updateListCount();
+                this.updateCardButtons();
+                this.renderMyList();
+                
+                // 記錄操作歷史
+                if (this.roomCollaboration?.currentRoom && result.removedItem) {
+                    this.roomCollaboration.recordMapOperation('remove', result.removedItem, this.roomCollaboration.currentUser);
+                }
+                
+                // 同步到房間
+                if (this.roomCollaboration?.currentRoom) {
+                    this.syncToRoom();
+                }
             }
         }
     }
     
     clearAllMaps() {
-        if (this.myList.length === 0) {
+        const currentLength = this.listManager.getLength();
+        
+        if (currentLength === 0) {
             FF14Utils.showToast('清單已經是空的', 'info');
             return;
         }
         
-        if (confirm(`確定要清空所有寶圖嗎？共 ${this.myList.length} 張`)) {
-            this.myList = [];
-            this.myListIds.clear();
-            this.saveToStorage();
-            this.updateListCount();
-            this.updateCardButtons();
-            this.renderMyList();
-            FF14Utils.showToast('已清空清單', 'success');
+        if (confirm(`確定要清空所有寶圖嗎？共 ${currentLength} 張`)) {
+            const result = this.listManager.clear();
             
-            // 記錄操作歷史
-            if (this.roomCollaboration?.currentRoom) {
-                this.roomCollaboration.addOperationHistory({
-                    type: 'clear_all',
-                    message: `${this.roomCollaboration.currentUser.nickname} 清空了所有寶圖`,
-                    timestamp: new Date().toISOString()
-                });
-            }
-            
-            // 同步到房間
-            if (this.roomCollaboration?.currentRoom) {
-                this.syncToRoom();
+            if (result.success) {
+                FF14Utils.showToast(result.message, 'success');
+                this.updateListCount();
+                this.updateCardButtons();
+                this.renderMyList();
+                
+                // 記錄操作歷史
+                if (this.roomCollaboration?.currentRoom) {
+                    this.roomCollaboration.addOperationHistory({
+                        type: 'clear_all',
+                        message: `${this.roomCollaboration.currentUser.nickname} 清空了所有寶圖`,
+                        timestamp: new Date().toISOString()
+                    });
+                }
+                
+                // 同步到房間
+                if (this.roomCollaboration?.currentRoom) {
+                    this.syncToRoom();
+                }
             }
         }
     }
@@ -1068,38 +1054,15 @@ class TreasureMapFinder {
     }
     
     updateListCount() {
-        this.elements.listCount.textContent = `(${this.myList.length})`;
-        this.elements.totalCount.textContent = this.myList.length;
+        const count = this.listManager.getLength();
+        this.elements.listCount.textContent = `(${count})`;
+        this.elements.totalCount.textContent = count;
         
         // 更新生成路線按鈕狀態
         const generateRouteBtn = document.getElementById('generateRouteBtn');
         if (generateRouteBtn) {
-            generateRouteBtn.disabled = this.myList.length < 2;
+            generateRouteBtn.disabled = count < 2;
         }
-    }
-    
-    saveToStorage() {
-        const data = {
-            version: '1.0',
-            lastUpdated: new Date().toISOString(),
-            maps: this.myList
-        };
-        localStorage.setItem('ff14tw_treasure_map_list', JSON.stringify(data));
-    }
-    
-    loadFromStorage() {
-        try {
-            const stored = localStorage.getItem('ff14tw_treasure_map_list');
-            if (stored) {
-                const data = JSON.parse(stored);
-                if (data.version === '1.0') {
-                    return data.maps || [];
-                }
-            }
-        } catch (error) {
-            console.error('載入儲存資料失敗:', error);
-        }
-        return [];
     }
     
     showLoading(show) {
@@ -1129,59 +1092,19 @@ class TreasureMapFinder {
         this.elements.treasureGrid.appendChild(errorDiv);
     }
     
-    // 驗證地圖資料
-    validateMapData(map) {
-        if (!map || typeof map !== 'object') return false;
-        
-        // 必要欄位
-        if (!map.id || typeof map.id !== 'string') return false;
-        if (!map.level || typeof map.level !== 'string') return false;
-        if (!map.zone || typeof map.zone !== 'string') return false;
-        
-        // 使用 CoordinateUtils 進行座標驗證
-        return CoordinateUtils.validateCoordinates(map.coords);
-    }
-    
-    // 清理地圖資料
-    sanitizeMapData(map) {
-        return {
-            id: String(map.id).substring(0, 50),
-            level: String(map.level).substring(0, 10),
-            levelName: map.levelName ? String(map.levelName).substring(0, 50) : '',
-            zone: String(map.zone).substring(0, 50),
-            coords: CoordinateUtils.normalizeCoordinates(map.coords),
-            thumbnail: map.thumbnail || '/assets/images/treasure-map-placeholder.png',
-            addedAt: map.addedAt || new Date().toISOString()
-        };
-    }
-    
     // 匯出清單功能（複製到剪貼簿）
     exportList() {
-        if (this.myList.length === 0) {
+        if (this.listManager.getLength() === 0) {
             FF14Utils.showToast('清單是空的，無法匯出', 'warning');
             return;
         }
         
-        const exportData = {
-            version: '1.0',
-            exportDate: new Date().toISOString(),
-            appName: 'FF14.tw 寶圖搜尋器',
-            totalMaps: this.myList.length,
-            maps: this.myList.map(map => ({
-                id: map.id,
-                level: map.level,
-                levelName: map.levelName,
-                zone: map.zone,
-                coords: map.coords
-            }))
-        };
-        
-        // 轉換為 JSON 字串
-        const jsonString = JSON.stringify(exportData);
+        // 使用 ListManager 的匯出功能
+        const jsonString = this.listManager.exportAsJson();
         
         // 複製到剪貼簿
         navigator.clipboard.writeText(jsonString).then(() => {
-            FF14Utils.showToast(`已複製 ${this.myList.length} 張寶圖清單到剪貼簿`, 'success');
+            FF14Utils.showToast(`已複製 ${this.listManager.getLength()} 張寶圖清單到剪貼簿`, 'success');
         }).catch(err => {
             console.error('複製失敗:', err);
             // 備用方案：顯示可複製的文字框
@@ -1280,63 +1203,31 @@ class TreasureMapFinder {
         }
         
         try {
-            const data = JSON.parse(text);
-            
-            // 驗證資料格式
-            if (!data.version || !data.maps || !Array.isArray(data.maps)) {
-                throw new Error('無效的清單格式');
-            }
-            
-            // 驗證版本
-            if (data.version !== '1.0') {
-                throw new Error('不支援的清單版本');
-            }
-            
-            // 驗證每個地圖項目
-            const validatedMaps = [];
-            for (const map of data.maps) {
-                if (!this.validateMapData(map)) {
-                    console.warn('跳過無效的地圖資料:', map);
-                    continue;
-                }
-                validatedMaps.push(this.sanitizeMapData(map));
-            }
-            
-            if (validatedMaps.length === 0) {
-                throw new Error('沒有有效的地圖資料');
-            }
-            
             // 確認是否要合併或取代
-            let action = 'replace';
+            let merge = false;
             
-            if (this.myList.length > 0) {
-                const confirmMessage = `目前清單有 ${this.myList.length} 張寶圖。\n` +
-                    `要匯入的清單包含 ${validatedMaps.length} 張寶圖。\n\n` +
+            if (this.listManager.getLength() > 0) {
+                // 先解析資料以獲取數量
+                const previewData = JSON.parse(text);
+                const confirmMessage = `目前清單有 ${this.listManager.getLength()} 張寶圖。\n` +
+                    `要匯入的清單包含 ${previewData.maps?.length || 0} 張寶圖。\n\n` +
                     `選擇「確定」將合併清單（避免重複）\n` +
                     `選擇「取消」將取代現有清單`;
                 
-                action = confirm(confirmMessage) ? 'merge' : 'replace';
+                merge = confirm(confirmMessage);
             }
             
-            if (action === 'merge') {
-                // 合併清單，避免重複
-                const newMaps = validatedMaps.filter(map => !this.myListIds.has(map.id));
-                
-                this.myList = [...this.myList, ...newMaps];
-                newMaps.forEach(map => this.myListIds.add(map.id));
-                FF14Utils.showToast(`已合併匯入 ${newMaps.length} 張新寶圖`, 'success');
+            // 使用 ListManager 的匯入功能
+            const result = this.listManager.import(text, merge);
+            
+            if (result.success) {
+                FF14Utils.showToast(result.message, 'success');
+                this.updateListCount();
+                this.updateCardButtons();
+                this.renderMyList();
             } else {
-                // 取代清單
-                this.myList = validatedMaps;
-                this.myListIds = new Set(validatedMaps.map(m => m.id));
-                FF14Utils.showToast(`已匯入 ${validatedMaps.length} 張寶圖`, 'success');
+                FF14Utils.showToast(result.message, 'error');
             }
-            
-            // 更新儲存和UI
-            this.saveToStorage();
-            this.updateListCount();
-            this.updateCardButtons();
-            this.renderMyList();
             
         } catch (error) {
             console.error('匯入失敗:', error);
@@ -1363,7 +1254,9 @@ class TreasureMapFinder {
     
     // 生成路線
     async generateRoute() {
-        if (this.myList.length < 2) {
+        const myList = this.listManager.getList();
+        
+        if (myList.length < 2) {
             FF14Utils.showToast('至少需要 2 張寶圖才能生成路線', 'error');
             return;
         }
@@ -1381,7 +1274,7 @@ class TreasureMapFinder {
         }
         
         // 計算路線
-        const result = routeCalculator.calculateRoute(this.myList);
+        const result = routeCalculator.calculateRoute(myList);
         
         if (!result || !result.route || result.route.length === 0) {
             FF14Utils.showToast('無法生成路線', 'error');
@@ -1703,7 +1596,8 @@ class TreasureMapFinder {
         if (!this.roomCollaboration?.currentRoom) return;
         
         try {
-            const treasureMaps = this.myList.map(item => ({
+            const myList = this.listManager.getList();
+            const treasureMaps = myList.map(item => ({
                 id: item.id,
                 type: item.level,
                 x: item.coords.x,
@@ -1746,34 +1640,10 @@ class TreasureMapFinder {
         
         const roomMaps = this.roomCollaboration.currentRoom.treasureMaps || [];
         
-        // 清空現有清單
-        this.myList = [];
-        this.myListIds.clear();
-        
-        // 從房間資料重建清單
-        roomMaps.forEach(roomMap => {
-            // 找到對應的完整地圖資料
-            const fullMap = this.maps.find(m => m.id === roomMap.id);
-            if (fullMap) {
-                const mapData = {
-                    id: fullMap.id,
-                    level: fullMap.level,
-                    levelName: fullMap.levelName,
-                    zone: fullMap.zone,
-                    zoneId: fullMap.zoneId,
-                    coords: fullMap.coords,
-                    thumbnail: fullMap.thumbnail,
-                    addedAt: roomMap.addedAt,
-                    addedBy: roomMap.addedBy
-                };
-                
-                this.myList.push(mapData);
-                this.myListIds.add(fullMap.id);
-            }
-        });
+        // 使用 ListManager 的 syncFromRoom 方法
+        this.listManager.syncFromRoom(roomMaps, this.maps);
         
         // 更新 UI
-        this.saveToStorage();
         this.updateListCount();
         this.updateCardButtons();
         this.renderMyList();
