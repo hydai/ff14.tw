@@ -1,0 +1,339 @@
+/* ===================================
+   表單元件樣式 (Form Components)
+   =================================== */
+
+/* 表單群組 */
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group:last-child {
+    margin-bottom: 0;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: var(--text-color, #212529);
+}
+
+.form-label.required::after {
+    content: " *";
+    color: var(--danger-color, #dc3545);
+}
+
+/* 基礎輸入框樣式 */
+.form-control {
+    display: block;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    line-height: 1.5;
+    color: var(--text-color, #495057);
+    background-color: var(--input-bg, #fff);
+    background-clip: padding-box;
+    border: 1px solid var(--border-color, #ced4da);
+    border-radius: var(--border-radius, 6px);
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+/* 輸入框焦點狀態 */
+.form-control:focus {
+    color: var(--text-color, #495057);
+    background-color: var(--input-bg, #fff);
+    border-color: var(--primary-color, #4a90e2);
+    outline: 0;
+    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.25);
+}
+
+/* 輸入框禁用狀態 */
+.form-control:disabled,
+.form-control[readonly] {
+    background-color: var(--input-disabled-bg, #e9ecef);
+    opacity: 1;
+    cursor: not-allowed;
+}
+
+/* 輸入框尺寸變體 */
+.form-control-sm {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    border-radius: var(--border-radius-sm, 4px);
+}
+
+.form-control-lg {
+    padding: 1rem 1.25rem;
+    font-size: 1.125rem;
+    border-radius: var(--border-radius-lg, 8px);
+}
+
+/* 文字區域 */
+textarea.form-control {
+    min-height: calc(1.5em + 1.5rem + 2px);
+    resize: vertical;
+}
+
+/* 選擇框 */
+select.form-control {
+    padding-right: 2.5rem;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 16px 12px;
+    appearance: none;
+}
+
+/* 檔案輸入 */
+.form-control-file {
+    display: block;
+    width: 100%;
+}
+
+/* 搜尋框 */
+.search-box {
+    position: relative;
+    margin-bottom: 1.5rem;
+}
+
+.search-input {
+    padding-left: 2.75rem;
+}
+
+.search-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted, #6c757d);
+    pointer-events: none;
+}
+
+/* 輸入群組 */
+.input-group {
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    width: 100%;
+}
+
+.input-group > .form-control {
+    position: relative;
+    flex: 1 1 auto;
+    width: 1%;
+    min-width: 0;
+}
+
+.input-group-prepend,
+.input-group-append {
+    display: flex;
+}
+
+.input-group-text {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    font-weight: 400;
+    line-height: 1.5;
+    color: var(--text-color, #495057);
+    text-align: center;
+    white-space: nowrap;
+    background-color: var(--gray-100, #f8f9fa);
+    border: 1px solid var(--border-color, #ced4da);
+}
+
+.input-group-prepend .input-group-text {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.input-group-append .input-group-text {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+.input-group > .form-control:not(:first-child) {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+.input-group > .form-control:not(:last-child) {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+/* 表單驗證狀態 */
+.form-control.is-valid {
+    border-color: var(--success-color, #28a745);
+}
+
+.form-control.is-valid:focus {
+    border-color: var(--success-color, #28a745);
+    box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.25);
+}
+
+.form-control.is-invalid {
+    border-color: var(--danger-color, #dc3545);
+}
+
+.form-control.is-invalid:focus {
+    border-color: var(--danger-color, #dc3545);
+    box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.25);
+}
+
+/* 表單提示文字 */
+.form-text {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 0.875rem;
+    color: var(--text-muted, #6c757d);
+}
+
+.invalid-feedback {
+    display: none;
+    width: 100%;
+    margin-top: 0.25rem;
+    font-size: 0.875rem;
+    color: var(--danger-color, #dc3545);
+}
+
+.form-control.is-invalid ~ .invalid-feedback {
+    display: block;
+}
+
+.valid-feedback {
+    display: none;
+    width: 100%;
+    margin-top: 0.25rem;
+    font-size: 0.875rem;
+    color: var(--success-color, #28a745);
+}
+
+.form-control.is-valid ~ .valid-feedback {
+    display: block;
+}
+
+/* 橫向表單 */
+.form-row {
+    display: flex;
+    flex-wrap: wrap;
+    margin-right: -0.5rem;
+    margin-left: -0.5rem;
+}
+
+.form-row > .form-group {
+    padding-right: 0.5rem;
+    padding-left: 0.5rem;
+}
+
+/* 內聯表單 */
+.form-inline {
+    display: flex;
+    flex-flow: row wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.form-inline .form-control {
+    display: inline-block;
+    width: auto;
+    vertical-align: middle;
+}
+
+/* 核取方塊和單選按鈕 */
+.form-check {
+    position: relative;
+    display: block;
+    padding-left: 1.25rem;
+    margin-bottom: 0.5rem;
+}
+
+.form-check-input {
+    position: absolute;
+    margin-top: 0.3rem;
+    margin-left: -1.25rem;
+}
+
+.form-check-label {
+    margin-bottom: 0;
+    cursor: pointer;
+}
+
+.form-check-inline {
+    display: inline-flex;
+    align-items: center;
+    padding-left: 0;
+    margin-right: 0.75rem;
+}
+
+.form-check-inline .form-check-input {
+    position: static;
+    margin-top: 0;
+    margin-right: 0.3125rem;
+    margin-left: 0;
+}
+
+/* 範圍滑桿 */
+.form-range {
+    width: 100%;
+    height: 1.5rem;
+    padding: 0;
+    background-color: transparent;
+    appearance: none;
+}
+
+.form-range:focus {
+    outline: 0;
+}
+
+.form-range::-webkit-slider-thumb {
+    width: 1rem;
+    height: 1rem;
+    background-color: var(--primary-color, #4a90e2);
+    border: 0;
+    border-radius: 1rem;
+    appearance: none;
+}
+
+.form-range::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 0.5rem;
+    color: transparent;
+    cursor: pointer;
+    background-color: var(--gray-300, #dee2e6);
+    border-color: transparent;
+    border-radius: 1rem;
+}
+
+/* Dark Mode 支援 */
+[data-theme="dark"] .form-control {
+    color: var(--dark-text-color, #e2e8f0);
+    background-color: var(--dark-input-bg, #2d3748);
+    border-color: var(--dark-border-color, #4a5568);
+}
+
+[data-theme="dark"] .form-control:focus {
+    background-color: var(--dark-input-bg, #2d3748);
+    border-color: var(--primary-color, #4a90e2);
+}
+
+[data-theme="dark"] .form-control:disabled,
+[data-theme="dark"] .form-control[readonly] {
+    background-color: var(--dark-input-disabled-bg, #1a202c);
+}
+
+[data-theme="dark"] select.form-control {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%23e2e8f0' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3E%3C/svg%3E");
+}
+
+[data-theme="dark"] .input-group-text {
+    color: var(--dark-text-color, #e2e8f0);
+    background-color: var(--dark-gray-700, #374151);
+    border-color: var(--dark-border-color, #4a5568);
+}
+
+[data-theme="dark"] .form-text {
+    color: var(--dark-text-muted, #9ca3af);
+}

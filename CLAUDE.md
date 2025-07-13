@@ -120,10 +120,220 @@ HTML Structure:
 ### Adding New Tools
 1. Create directory under `tools/[tool-name]/`
 2. Copy HTML structure from existing tool, update title/descriptions
-3. Import shared CSS/JS: `../../assets/css/common.css` and `../../assets/js/common.js`
-4. Follow the class-based JavaScript architecture pattern
-5. Add tool card to main `index.html`
-6. Update changelog.html with new version entry
+3. Import shared CSS/JS in the following order:
+   ```html
+   <link rel="stylesheet" href="../../assets/css/common.css">
+   <link rel="stylesheet" href="../../assets/css/dark-mode-tools.css">
+   <link rel="stylesheet" href="../../assets/css/tools-common.css">
+   <link rel="stylesheet" href="style.css">
+   ```
+4. **Use shared UI components instead of creating custom styles:**
+   - **Buttons**: Use `.btn`, `.btn-primary`, `.btn-secondary`, `.btn-success`, `.btn-danger`, `.btn-sm`, `.btn-lg`
+   - **Cards**: Use `.card`, `.card-header`, `.card-body`, `.card-footer`, `.card-grid`, `.card-hoverable`
+   - **Forms**: Use `.form-control`, `.form-group`, `.form-label`, `.form-text`, `.form-check`
+   - **Loading states**: Use `.loading`, `.loading-spinner`
+   - **Messages**: Use `.error-message`, `.success-message`, `.info-message`, `.warning-message`
+5. Follow the class-based JavaScript architecture pattern
+6. Add tool card to main `index.html`
+7. Update changelog.html with new version entry
+
+## Shared Component System
+
+### Overview
+The project includes a modular CSS component system in `/assets/css/components/` to ensure UI consistency across all tools. **Always use these shared components instead of creating custom styles.**
+
+### Available Components
+
+#### 1. Buttons (`components/buttons.css`)
+```html
+<!-- Basic buttons -->
+<button class="btn btn-primary">Primary Button</button>
+<button class="btn btn-secondary">Secondary Button</button>
+<button class="btn btn-success">Success Button</button>
+<button class="btn btn-danger">Danger Button</button>
+<button class="btn btn-warning">Warning Button</button>
+<button class="btn btn-info">Info Button</button>
+
+<!-- Size variants -->
+<button class="btn btn-primary btn-sm">Small Button</button>
+<button class="btn btn-primary btn-lg">Large Button</button>
+
+<!-- Outline buttons -->
+<button class="btn btn-outline-primary">Outline Primary</button>
+
+<!-- Icon buttons -->
+<button class="btn btn-primary">
+    <span class="btn-icon">🔍</span> Search
+</button>
+
+<!-- Block button -->
+<button class="btn btn-primary btn-block">Full Width Button</button>
+
+<!-- Loading state -->
+<button class="btn btn-primary btn-loading">Loading...</button>
+```
+
+#### 2. Cards (`components/cards.css`)
+```html
+<!-- Basic card -->
+<div class="card">
+    <div class="card-header">Card Header</div>
+    <div class="card-body">
+        <h3 class="card-title">Card Title</h3>
+        <p class="card-text">Card content goes here.</p>
+    </div>
+    <div class="card-footer">Card Footer</div>
+</div>
+
+<!-- Hoverable clickable card -->
+<div class="card hoverable clickable">
+    <img class="card-img-top" src="image.jpg" alt="Card image">
+    <div class="card-body">
+        <h3 class="card-title">Interactive Card</h3>
+        <p class="card-text">This card responds to hover and click.</p>
+    </div>
+</div>
+
+<!-- Card grid layout -->
+<div class="card-grid">
+    <div class="card">...</div>
+    <div class="card">...</div>
+    <div class="card">...</div>
+</div>
+
+<!-- Horizontal card -->
+<div class="card card-horizontal">
+    <img class="card-img-left" src="image.jpg" alt="Card image">
+    <div class="card-body">
+        <h3 class="card-title">Horizontal Card</h3>
+        <p class="card-text">Content flows horizontally.</p>
+    </div>
+</div>
+
+<!-- Card states -->
+<div class="card card-selected">Selected card</div>
+<div class="card card-disabled">Disabled card</div>
+<div class="card card-loading">Loading card</div>
+```
+
+#### 3. Loading States (`tools-common.css`)
+```html
+<!-- Simple loading message -->
+<div class="loading">
+    <p>載入中...</p>
+</div>
+
+<!-- Loading with spinner -->
+<div class="loading">
+    <div class="loading-spinner"></div>
+    <p>載入資料中...</p>
+</div>
+```
+
+#### 4. Message Components (`tools-common.css`)
+```html
+<!-- Error message -->
+<div class="error-message">
+    發生錯誤：無法載入資料
+</div>
+
+<!-- Success message -->
+<div class="success-message">
+    操作成功完成！
+</div>
+
+<!-- Info message -->
+<div class="info-message">
+    提示：您可以使用鍵盤快捷鍵
+</div>
+
+<!-- Warning message -->
+<div class="warning-message">
+    警告：此操作無法復原
+</div>
+```
+
+#### 5. Forms (`components/forms.css`)
+```html
+<!-- Basic input -->
+<input type="text" class="form-control" placeholder="請輸入文字">
+
+<!-- Size variants -->
+<input type="text" class="form-control form-control-sm" placeholder="小型輸入框">
+<input type="text" class="form-control form-control-lg" placeholder="大型輸入框">
+
+<!-- Form group -->
+<div class="form-group">
+    <label class="form-label">標籤</label>
+    <input type="text" class="form-control">
+    <small class="form-text">說明文字</small>
+</div>
+
+<!-- Select -->
+<select class="form-control">
+    <option>選項 1</option>
+    <option>選項 2</option>
+</select>
+
+<!-- Textarea -->
+<textarea class="form-control" rows="3"></textarea>
+
+<!-- Search box -->
+<div class="search-box">
+    <input type="text" class="form-control search-input" placeholder="搜尋...">
+</div>
+
+<!-- Input group -->
+<div class="input-group">
+    <div class="input-group-prepend">
+        <span class="input-group-text">@</span>
+    </div>
+    <input type="text" class="form-control" placeholder="使用者名稱">
+</div>
+
+<!-- Validation states -->
+<input type="text" class="form-control is-valid">
+<div class="valid-feedback">輸入正確！</div>
+
+<input type="text" class="form-control is-invalid">
+<div class="invalid-feedback">請輸入有效的資料</div>
+
+<!-- Checkbox -->
+<div class="form-check">
+    <input class="form-check-input" type="checkbox" id="check1">
+    <label class="form-check-label" for="check1">
+        核取方塊
+    </label>
+</div>
+
+<!-- Radio -->
+<div class="form-check">
+    <input class="form-check-input" type="radio" name="radio" id="radio1">
+    <label class="form-check-label" for="radio1">
+        單選按鈕
+    </label>
+</div>
+
+<!-- Range slider -->
+<input type="range" class="form-range" min="0" max="100">
+```
+
+### Component Usage Guidelines
+
+1. **Always check for existing components** before creating custom styles
+2. **Use semantic class names** from the component system
+3. **Avoid inline styles** - use component classes instead
+4. **Extend components** by adding modifier classes, not overriding base styles
+5. **Maintain consistency** - if a component doesn't meet your needs, consider updating the shared component instead of creating a one-off solution
+
+### Dark Mode Support
+All components automatically support Dark Mode through `[data-theme="dark"]` selectors. No additional styling needed.
+
+### Responsive Design
+Components include responsive breakpoints:
+- Mobile: < 480px
+- Tablet: < 768px  
+- Desktop: ≥ 768px
 
 ## UI Consistency Requirements
 

@@ -5,6 +5,7 @@
 /* 引入元件樣式 */
 @import url('components/buttons.css');
 @import url('components/cards.css');
+@import url('components/forms.css');
 
 /* 工具頁面基礎樣式 */
 .tool-content {
