@@ -6,6 +6,7 @@ class TreasureMapFinder {
         this.filteredMaps = [];
         this.listManager = new ListManager(); // 使用 ListManager 模組
         this.filterManager = new FilterManager(); // 使用 FilterManager 模組
+        this.uiDialogManager = new UIDialogManager(); // 使用 UIDialogManager 模組
         this.displayCount = 24;
         this.currentDisplayCount = 0;
         this.aetheryteData = null; // 傳送點資料
@@ -125,7 +126,9 @@ class TreasureMapFinder {
         
         // 匯出/匯入功能
         document.getElementById('exportListBtn').addEventListener('click', () => this.exportList());
-        document.getElementById('importListBtn').addEventListener('click', () => this.showImportDialog());
+        document.getElementById('importListBtn').addEventListener('click', () => {
+            this.uiDialogManager.showImportDialog((text) => this.importFromText(text));
+        });
         document.getElementById('importFileInput').addEventListener('change', (e) => this.importList(e));
         
         // 載入更多
@@ -165,13 +168,18 @@ class TreasureMapFinder {
         // 自訂格式按鈕
         const customFormatBtn = document.getElementById('customFormatBtn');
         if (customFormatBtn) {
-            customFormatBtn.addEventListener('click', () => this.openFormatPanel());
+            customFormatBtn.addEventListener('click', () => {
+                this.uiDialogManager.showFormatPanel(
+                    this.formatSettings,
+                    (teleportFormat, mapFormat) => this.updateFormatPreview(teleportFormat, mapFormat)
+                );
+            });
         }
         
         // 格式設定面板事件
         const closeFormatPanelBtn = document.getElementById('closeFormatPanelBtn');
         if (closeFormatPanelBtn) {
-            closeFormatPanelBtn.addEventListener('click', () => this.closeFormatPanel());
+            closeFormatPanelBtn.addEventListener('click', () => this.uiDialogManager.hideFormatPanel());
         }
         
         const saveFormatBtn = document.getElementById('saveFormatBtn');
@@ -339,7 +347,12 @@ class TreasureMapFinder {
         detailBtn.innerHTML = '<span class="btn-icon">🗺️</span> 詳細地圖';
         detailBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            this.showDetailMap(map);
+            this.uiDialogManager.showMapDetail(map, {
+                zoneManager: zoneManager,
+                aetheryteData: this.aetheryteData,
+                aetheryteIcon: this.aetheryteIcon,
+                getAetherytesForZone: (zone) => this.getAetherytesForZone(zone)
+            });
         });
         actions.appendChild(detailBtn);
         
@@ -1057,91 +1070,8 @@ class TreasureMapFinder {
         }).catch(err => {
             console.error('複製失敗:', err);
             // 備用方案：顯示可複製的文字框
-            this.showExportDialog(jsonString);
+            this.uiDialogManager.showExportDialog(jsonString);
         });
-    }
-    
-    // 顯示匯出對話框（備用方案）
-    showExportDialog(jsonString) {
-        const dialog = document.createElement('div');
-        dialog.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); z-index: 10000; max-width: 500px; width: 90%;';
-        
-        const title = document.createElement('h3');
-        title.style.margin = '0 0 10px 0';
-        title.textContent = '匯出清單';
-        dialog.appendChild(title);
-        
-        const instruction = document.createElement('p');
-        instruction.style.marginBottom = '10px';
-        instruction.textContent = '請複製以下內容：';
-        dialog.appendChild(instruction);
-        
-        const textarea = document.createElement('textarea');
-        textarea.style.cssText = 'width: 100%; height: 200px; margin-bottom: 10px; font-family: monospace; font-size: 12px;';
-        textarea.readOnly = true;
-        textarea.value = jsonString;
-        dialog.appendChild(textarea);
-        
-        const buttonDiv = document.createElement('div');
-        buttonDiv.style.textAlign = 'right';
-        
-        const closeBtn = document.createElement('button');
-        closeBtn.className = 'btn btn-primary';
-        closeBtn.textContent = '關閉';
-        closeBtn.addEventListener('click', () => dialog.remove());
-        buttonDiv.appendChild(closeBtn);
-        
-        dialog.appendChild(buttonDiv);
-        document.body.appendChild(dialog);
-        
-        textarea.select();
-    }
-    
-    // 顯示匯入對話框
-    showImportDialog() {
-        const dialog = document.createElement('div');
-        dialog.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); z-index: 10000; max-width: 500px; width: 90%;';
-        
-        const title = document.createElement('h3');
-        title.style.margin = '0 0 10px 0';
-        title.textContent = '匯入清單';
-        dialog.appendChild(title);
-        
-        const instruction = document.createElement('p');
-        instruction.style.marginBottom = '10px';
-        instruction.textContent = '請貼上匯出的清單內容：';
-        dialog.appendChild(instruction);
-        
-        const textarea = document.createElement('textarea');
-        textarea.id = 'importTextarea';
-        textarea.style.cssText = 'width: 100%; height: 200px; margin-bottom: 10px; font-family: monospace; font-size: 12px;';
-        textarea.placeholder = '在此貼上清單資料...';
-        dialog.appendChild(textarea);
-        
-        const buttonDiv = document.createElement('div');
-        buttonDiv.style.cssText = 'text-align: right; display: flex; gap: 10px; justify-content: flex-end;';
-        
-        const cancelBtn = document.createElement('button');
-        cancelBtn.className = 'btn btn-secondary';
-        cancelBtn.textContent = '取消';
-        cancelBtn.addEventListener('click', () => dialog.remove());
-        buttonDiv.appendChild(cancelBtn);
-        
-        const confirmBtn = document.createElement('button');
-        confirmBtn.className = 'btn btn-primary';
-        confirmBtn.textContent = '匯入';
-        confirmBtn.addEventListener('click', () => {
-            const text = textarea.value;
-            this.importFromText(text);
-            dialog.remove();
-        });
-        buttonDiv.appendChild(confirmBtn);
-        
-        dialog.appendChild(buttonDiv);
-        document.body.appendChild(dialog);
-        
-        // 自動聚焦到文字框
-        textarea.focus();
     }
     
     // 從文字匯入清單
@@ -1230,64 +1160,19 @@ class TreasureMapFinder {
             return;
         }
         
-        // 顯示路線結果
-        this.showRouteResult(result);
-    }
-    
-    // 顯示路線結果
-    showRouteResult(result) {
-        const routePanel = document.getElementById('routePanel');
-        const routeSummary = document.getElementById('routeSummary');
-        const routeSteps = document.getElementById('routeSteps');
-        
         // 儲存路線資料供複製使用
         this.currentRoute = result.route;
         
-        // 生成摘要
-        const regionsText = result.summary.regionsVisited
-            .map(zone => this.getZoneName(zone))
-            .join('、');
-        
-        routeSummary.innerHTML = `
-            <p>總計：${result.summary.totalMaps} 張寶圖 | 
-               傳送次數：${result.summary.totalTeleports} 次 | 
-               訪問地區：${regionsText}</p>
-        `;
-        
-        // 生成步驟
-        routeSteps.innerHTML = '';
-        result.route.forEach((step, index) => {
-            const stepDiv = document.createElement('div');
-            stepDiv.className = 'route-step';
-            
-            if (step.type === 'teleport') {
-                const aetheryteNames = this.getAetheryteName(step.to);
-                stepDiv.innerHTML = `
-                    <span class="step-icon">🔄</span>
-                    <span class="step-text">傳送至 ${aetheryteNames.zh || step.to.zh || step.to}</span>
-                    <span class="step-coords">${CoordinateUtils.formatCoordinatesShort(step.coords)}</span>
-                `;
-            } else {
-                stepDiv.innerHTML = `
-                    <span class="step-icon">📍</span>
-                    <span class="step-text">${step.mapLevel || ''} - ${this.getZoneName(step.zoneId || step.zone)}</span>
-                    <span class="step-coords">${CoordinateUtils.formatCoordinatesShort(step.coords)}</span>
-                `;
-            }
-            
-            // 點擊複製座標（使用自訂格式）
-            stepDiv.addEventListener('click', () => {
-                const formattedText = this.formatStepForCopy(step, index + 1, result.route.length);
+        // 顯示路線結果
+        this.uiDialogManager.showRouteResult(result, {
+            onStepCopy: (step, index, total) => {
+                const formattedText = this.formatStepForCopy(step, index + 1, total);
                 navigator.clipboard.writeText(formattedText).then(() => {
                     FF14Utils.showToast('已複製', 'success');
                 });
-            });
-            
-            routeSteps.appendChild(stepDiv);
+            },
+            getZoneName: (zoneId) => this.getZoneName(zoneId)
         });
-        
-        // 顯示面板
-        routePanel.classList.add('active');
     }
     
     // 摺疊功能
@@ -1403,58 +1288,37 @@ class TreasureMapFinder {
         };
     }
     
-    // 開啟格式設定面板
-    openFormatPanel() {
-        const formatPanel = document.getElementById('formatPanel');
-        if (formatPanel) {
-            formatPanel.classList.add('active');
-            this.updateFormatPreview();
-        }
-    }
-    
-    // 關閉格式設定面板
-    closeFormatPanel() {
-        const formatPanel = document.getElementById('formatPanel');
-        if (formatPanel) {
-            formatPanel.classList.remove('active');
-        }
-    }
-    
     // 儲存格式設定
     saveFormatSettings() {
-        const teleportFormat = document.getElementById('teleportFormat').value;
-        const mapFormat = document.getElementById('mapFormat').value;
+        const values = this.uiDialogManager.getFormatValues();
         
         this.formatSettings = {
-            teleport: teleportFormat,
-            map: mapFormat
+            teleport: values.teleport,
+            map: values.map
         };
         
         localStorage.setItem('treasureMapFormatSettings', JSON.stringify(this.formatSettings));
         FF14Utils.showToast('格式設定已儲存', 'success');
-        this.closeFormatPanel();
+        this.uiDialogManager.hideFormatPanel();
     }
     
     // 重置格式設定
     resetFormatSettings() {
         this.formatSettings = this.getDefaultFormats();
         
-        const teleportFormat = document.getElementById('teleportFormat');
-        const mapFormat = document.getElementById('mapFormat');
-        if (teleportFormat) teleportFormat.value = this.formatSettings.teleport;
-        if (mapFormat) mapFormat.value = this.formatSettings.map;
-        
+        this.uiDialogManager.setFormatValues(this.formatSettings);
         this.updateFormatPreview();
         FF14Utils.showToast('已重置為預設格式', 'info');
     }
     
     // 更新格式預覽
-    updateFormatPreview() {
+    updateFormatPreview(teleportFormatValue, mapFormatValue) {
         const preview = document.getElementById('formatPreview');
         if (!preview) return;
         
-        const teleportFormat = document.getElementById('teleportFormat').value;
-        const mapFormat = document.getElementById('mapFormat').value;
+        // 如果沒有提供值，從 UI 取得
+        const teleportFormat = teleportFormatValue || document.getElementById('teleportFormat')?.value || this.formatSettings.teleport;
+        const mapFormat = mapFormatValue || document.getElementById('mapFormat')?.value || this.formatSettings.map;
         
         // 建立範例預覽
         const teleportExample = teleportFormat
@@ -1516,8 +1380,7 @@ class TreasureMapFinder {
     
     // 關閉路線面板
     closeRoutePanel() {
-        const routePanel = document.getElementById('routePanel');
-        routePanel.classList.remove('active');
+        this.uiDialogManager.hideRouteResult();
     }
     
     // 取得地區名稱
