@@ -5,11 +5,7 @@ class TreasureMapFinder {
         this.maps = [];
         this.filteredMaps = [];
         this.listManager = new ListManager(); // 使用 ListManager 模組
-        this.filters = {
-            levels: new Set(),
-            zones: new Set(),
-            maps: new Set()
-        };
+        this.filterManager = new FilterManager(); // 使用 FilterManager 模組
         this.displayCount = 24;
         this.currentDisplayCount = 0;
         this.aetheryteData = null; // 傳送點資料
@@ -42,7 +38,7 @@ class TreasureMapFinder {
             ]);
             this.setupEventListeners();
             this.updateListCount();
-            this.applyFilters();
+            this.updateFilteredMaps();
         } catch (error) {
             console.error('初始化失敗:', error);
             this.showError('載入寶圖資料失敗，請重新整理頁面再試。');
@@ -111,13 +107,11 @@ class TreasureMapFinder {
     }
     
     setupEventListeners() {
-        // 篩選標籤
-        document.querySelectorAll('.filter-tag').forEach(tag => {
-            tag.addEventListener('click', (e) => this.handleFilterClick(e));
+        // 設定過濾器管理器
+        this.filterManager.setupEventListeners();
+        this.filterManager.onChange(() => {
+            this.updateFilteredMaps();
         });
-        
-        // 重置篩選按鈕
-        document.getElementById('resetFilters').addEventListener('click', () => this.resetFilters());
         
         // 我的清單
         this.elements.myListToggle.addEventListener('click', () => this.toggleListPanel());
@@ -220,66 +214,21 @@ class TreasureMapFinder {
         this.loadFormatSettings();
     }
     
-    handleFilterClick(e) {
-        const tag = e.target.closest('.filter-tag');
-        if (!tag) return;
-        
-        let filterSet;
-        let value;
-        
-        if (tag.hasAttribute('data-level')) {
-            value = tag.dataset.level;
-            filterSet = this.filters.levels;
-        } else if (tag.hasAttribute('data-zone')) {
-            value = tag.dataset.zone;
-            filterSet = this.filters.zones;
-        } else if (tag.hasAttribute('data-map')) {
-            value = tag.dataset.map;
-            filterSet = this.filters.maps;
-        }
-        
-        if (filterSet && value) {
-            if (filterSet.has(value)) {
-                filterSet.delete(value);
-                tag.classList.remove('active');
-            } else {
-                filterSet.add(value);
-                tag.classList.add('active');
-            }
-            
-            this.applyFilters();
-        }
-    }
-    
-    applyFilters() {
-        this.filteredMaps = this.maps.filter(map => {
-            const levelMatch = this.filters.levels.size === 0 || 
-                             this.filters.levels.has(map.level);
-            const zoneMatch = this.filters.zones.size === 0 || 
-                            this.filters.zones.has(map.zoneId);
-            const mapMatch = this.filters.maps.size === 0 || 
-                           this.filters.maps.has(map.zone);
-            return levelMatch && zoneMatch && mapMatch;
-        });
-        
+    // 更新過濾後的地圖列表
+    updateFilteredMaps() {
+        this.filteredMaps = this.filterManager.applyFilters(this.maps);
         this.currentDisplayCount = 0;
         this.displayMaps();
-    }
-    
-    resetFilters() {
-        // 清除所有篩選
-        this.filters.levels.clear();
-        this.filters.zones.clear();
-        this.filters.maps.clear();
         
-        // 移除所有 active 類別
-        document.querySelectorAll('.filter-tag.active').forEach(tag => {
-            tag.classList.remove('active');
-        });
+        // 如果有重置訊息需求
+        if (!this.filterManager.hasActiveFilters() && this.lastFilterState?.hadFilters) {
+            FF14Utils.showToast('已重置所有篩選條件', 'info');
+        }
         
-        // 重新套用篩選
-        this.applyFilters();
-        FF14Utils.showToast('已重置所有篩選條件', 'info');
+        // 記錄過濾器狀態
+        this.lastFilterState = {
+            hadFilters: this.filterManager.hasActiveFilters()
+        };
     }
     
     displayMaps() {
