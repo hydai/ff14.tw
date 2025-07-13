@@ -1,1 +1,72 @@
-/* Common styles for tools can be added here. */
+/* ===================================
+   工具共用樣式 (Common Tool Styles)
+   =================================== */
+
+/* 引入元件樣式 */
+@import url('components/buttons.css');
+
+/* 工具頁面基礎樣式 */
+.tool-content {
+    padding: var(--spacing-xl, 2rem) 0;
+}
+
+/* 載入狀態 */
+.loading {
+    text-align: center;
+    padding: 3rem;
+    color: var(--text-secondary, #6c757d);
+}
+
+.loading-spinner {
+    display: inline-block;
+    width: 2rem;
+    height: 2rem;
+    border: 3px solid var(--gray-200, #e9ecef);
+    border-top-color: var(--primary-color, #4a90e2);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* 錯誤訊息 */
+.error-message {
+    background-color: var(--danger-light, #f8d7da);
+    color: var(--danger-dark, #721c24);
+    padding: 1rem;
+    border-radius: 6px;
+    margin: 1rem 0;
+    border: 1px solid var(--danger-border, #f5c6cb);
+}
+
+/* 成功訊息 */
+.success-message {
+    background-color: var(--success-light, #d4edda);
+    color: var(--success-dark, #155724);
+    padding: 1rem;
+    border-radius: 6px;
+    margin: 1rem 0;
+    border: 1px solid var(--success-border, #c3e6cb);
+}
+
+/* 資訊訊息 */
+.info-message {
+    background-color: var(--info-light, #d1ecf1);
+    color: var(--info-dark, #0c5460);
+    padding: 1rem;
+    border-radius: 6px;
+    margin: 1rem 0;
+    border: 1px solid var(--info-border, #bee5eb);
+}
+
+/* 警告訊息 */
+.warning-message {
+    background-color: var(--warning-light, #fff3cd);
+    color: var(--warning-dark, #856404);
+    padding: 1rem;
+    border-radius: 6px;
+    margin: 1rem 0;
+    border: 1px solid var(--warning-border, #ffeaa7);
+}
