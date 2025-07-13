@@ -119,26 +119,7 @@
     box-shadow: 0 0 0 3px var(--focus-ring);
 }
 
-.btn {
-    padding: var(--spacing-sm) var(--spacing-lg);
-    border: none;
-    border-radius: var(--border-radius-sm);
-    font-size: 1rem;
-    cursor: pointer;
-    transition: all var(--transition-normal);
-    font-weight: 500;
-}
-
-.btn-secondary {
-    background-color: var(--gray-600);
-    color: var(--white);
-}
-
-.btn-secondary:hover {
-    background-color: var(--gray-700);
-    transform: translateY(-2px);
-    box-shadow: var(--card-hover-shadow);
-}
+/* 按鈕樣式已由 tools-common.css 提供 */
 
 /* 副本列表 */
 .dungeon-list {
