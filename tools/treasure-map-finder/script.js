@@ -377,7 +377,7 @@ class TreasureMapFinder {
         
         const coords = document.createElement('p');
         coords.className = 'map-coords';
-        coords.textContent = `X: ${map.coords.x} Y: ${map.coords.y} Z: ${map.coords.z || 0}`;
+        coords.textContent = CoordinateUtils.formatCoordinatesForDisplay(map.coords);
         content.appendChild(coords);
         
         // 建立按鈕區域
@@ -487,10 +487,7 @@ class TreasureMapFinder {
     }
     
     copyCoordinates(map) {
-        const coords = map.coords;
-        const command = `/pos ${coords.x} ${coords.y} ${coords.z || 0}`;
-        
-        navigator.clipboard.writeText(command).then(() => {
+        CoordinateUtils.copyCoordinatesToClipboard(map.coords).then(() => {
             FF14Utils.showToast('座標指令已複製', 'success');
         }).catch(err => {
             console.error('複製失敗:', err);
@@ -713,18 +710,7 @@ class TreasureMapFinder {
     
     // 將遊戲座標轉換為圖片座標
     gameToImageCoords(gameX, gameY, imageWidth, imageHeight) {
-        // 遊戲座標系統：左上角(1,1) 右下角(42,42)
-        // 圖片座標系統：左上角(0,0) 右下角(imageWidth, imageHeight)
-        
-        // 將遊戲座標從 1-42 轉換為 0-1 的比例
-        const normalizedX = (gameX - 1) / 41;
-        const normalizedY = (gameY - 1) / 41;
-        
-        // 轉換為圖片座標
-        const imageX = normalizedX * imageWidth;
-        const imageY = normalizedY * imageHeight;
-        
-        return { x: imageX, y: imageY };
+        return CoordinateUtils.gameToImageCoords(gameX, gameY, imageWidth, imageHeight);
     }
     
     showDetailMap(map) {
@@ -744,7 +730,7 @@ class TreasureMapFinder {
         // 設置標題和座標
         const translations = zoneManager.getZoneNames(map.zoneId) || { zh: map.zone, en: map.zone, ja: map.zone };
         title.textContent = `${map.level.toUpperCase()} - ${translations.zh || map.zone}`;
-        coords.textContent = `座標：X: ${map.coords.x} Y: ${map.coords.y} Z: ${map.coords.z || 0}`;
+        coords.textContent = `座標：${CoordinateUtils.formatCoordinatesForDisplay(map.coords)}`;
         
         // 載入寶圖標記圖示
         const markIcon = new Image();
@@ -997,7 +983,7 @@ class TreasureMapFinder {
             
             const coordsSpan = document.createElement('span');
             coordsSpan.className = 'item-coords';
-            coordsSpan.textContent = `(${item.coords.x}, ${item.coords.y}, ${item.coords.z || 0})`;
+            coordsSpan.textContent = CoordinateUtils.formatCoordinatesShort(item.coords);
             itemInfo.appendChild(coordsSpan);
             
             listItem.appendChild(itemInfo);
@@ -1151,13 +1137,9 @@ class TreasureMapFinder {
         if (!map.id || typeof map.id !== 'string') return false;
         if (!map.level || typeof map.level !== 'string') return false;
         if (!map.zone || typeof map.zone !== 'string') return false;
-        if (!map.coords || typeof map.coords !== 'object') return false;
         
-        // 座標驗證
-        if (typeof map.coords.x !== 'number' || typeof map.coords.y !== 'number') return false;
-        if (map.coords.x < 0 || map.coords.x > 50 || map.coords.y < 0 || map.coords.y > 50) return false;
-        
-        return true;
+        // 使用 CoordinateUtils 進行座標驗證
+        return CoordinateUtils.validateCoordinates(map.coords);
     }
     
     // 清理地圖資料
@@ -1167,11 +1149,7 @@ class TreasureMapFinder {
             level: String(map.level).substring(0, 10),
             levelName: map.levelName ? String(map.levelName).substring(0, 50) : '',
             zone: String(map.zone).substring(0, 50),
-            coords: {
-                x: Number(map.coords.x),
-                y: Number(map.coords.y),
-                z: map.coords.z ? Number(map.coords.z) : 0
-            },
+            coords: CoordinateUtils.normalizeCoordinates(map.coords),
             thumbnail: map.thumbnail || '/assets/images/treasure-map-placeholder.png',
             addedAt: map.addedAt || new Date().toISOString()
         };
@@ -1445,13 +1423,13 @@ class TreasureMapFinder {
                 stepDiv.innerHTML = `
                     <span class="step-icon">🔄</span>
                     <span class="step-text">傳送至 ${aetheryteNames.zh || step.to.zh || step.to}</span>
-                    <span class="step-coords">(${step.coords.x}, ${step.coords.y}, ${step.coords.z || 0})</span>
+                    <span class="step-coords">${CoordinateUtils.formatCoordinatesShort(step.coords)}</span>
                 `;
             } else {
                 stepDiv.innerHTML = `
                     <span class="step-icon">📍</span>
                     <span class="step-text">${step.mapLevel || ''} - ${this.getZoneName(step.zoneId || step.zone)}</span>
-                    <span class="step-coords">(${step.coords.x}, ${step.coords.y}, ${step.coords.z || 0})</span>
+                    <span class="step-coords">${CoordinateUtils.formatCoordinatesShort(step.coords)}</span>
                 `;
             }
             
@@ -1514,7 +1492,7 @@ class TreasureMapFinder {
     // 格式化單一步驟供複製
     formatStepForCopy(step, index, total) {
         const format = step.type === 'teleport' ? this.formatSettings.teleport : this.formatSettings.map;
-        const coords = `/pos ${step.coords.x} ${step.coords.y} ${step.coords.z || 0}`;
+        const coords = CoordinateUtils.formatCoordinatesAsCommand(step.coords);
         
         let result = format;
         
@@ -1832,10 +1810,7 @@ class RouteCalculator {
         }
         
         // 傳送點到普通點或普通點到普通點：3D 歐幾里得距離
-        const dx = from.coords.x - to.coords.x;
-        const dy = from.coords.y - to.coords.y;
-        const dz = from.coords.z - to.coords.z;
-        return Math.sqrt(dx * dx + dy * dy + dz * dz);
+        return CoordinateUtils.calculate3DDistance(from.coords, to.coords);
     }
     
     // 主要路線計算
