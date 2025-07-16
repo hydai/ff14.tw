@@ -1328,54 +1328,107 @@ class LodestoneCharacterLookup {
         // 成就統計
         const achievementCard = document.createElement('div');
         achievementCard.className = 'overview-card';
-        achievementCard.innerHTML = `
-            <h4>成就</h4>
-            <div class="overview-stat">
-                <span class="stat-value">${achievementsData?.TotalAchievements || 0}</span>
-                <span class="stat-label">總成就數</span>
-            </div>
-            <div class="overview-stat">
-                <span class="stat-value">${achievementsData?.AchievementPoints || 0}</span>
-                <span class="stat-label">成就點數</span>
-            </div>
-        `;
+        
+        // 建立 h4 標題
+        const achievementTitle = document.createElement('h4');
+        achievementTitle.textContent = '成就';
+        achievementCard.appendChild(achievementTitle);
+        
+        // 建立總成就數統計
+        const totalAchievementsStat = document.createElement('div');
+        totalAchievementsStat.className = 'overview-stat';
+        const totalAchievementsValue = document.createElement('span');
+        totalAchievementsValue.className = 'stat-value';
+        totalAchievementsValue.textContent = achievementsData?.TotalAchievements || 0;
+        const totalAchievementsLabel = document.createElement('span');
+        totalAchievementsLabel.className = 'stat-label';
+        totalAchievementsLabel.textContent = '總成就數';
+        totalAchievementsStat.appendChild(totalAchievementsValue);
+        totalAchievementsStat.appendChild(totalAchievementsLabel);
+        achievementCard.appendChild(totalAchievementsStat);
+        
+        // 建立成就點數統計
+        const achievementPointsStat = document.createElement('div');
+        achievementPointsStat.className = 'overview-stat';
+        const achievementPointsValue = document.createElement('span');
+        achievementPointsValue.className = 'stat-value';
+        achievementPointsValue.textContent = achievementsData?.AchievementPoints || 0;
+        const achievementPointsLabel = document.createElement('span');
+        achievementPointsLabel.className = 'stat-label';
+        achievementPointsLabel.textContent = '成就點數';
+        achievementPointsStat.appendChild(achievementPointsValue);
+        achievementPointsStat.appendChild(achievementPointsLabel);
+        achievementCard.appendChild(achievementPointsStat);
         achievementCard.onclick = () => this.switchTab('achievements');
         
         // 坐騎統計
         const mountCard = document.createElement('div');
         mountCard.className = 'overview-card';
-        mountCard.innerHTML = `
-            <h4>坐騎</h4>
-            <div class="overview-stat">
-                <span class="stat-value">${mountsData?.Mounts?.length || 0}</span>
-                <span class="stat-label">已收集</span>
-            </div>
-        `;
+        
+        // 建立 h4 標題
+        const mountTitle = document.createElement('h4');
+        mountTitle.textContent = '坐騎';
+        mountCard.appendChild(mountTitle);
+        
+        // 建立坐騎統計
+        const mountStat = document.createElement('div');
+        mountStat.className = 'overview-stat';
+        const mountValue = document.createElement('span');
+        mountValue.className = 'stat-value';
+        mountValue.textContent = mountsData?.Mounts?.length || 0;
+        const mountLabel = document.createElement('span');
+        mountLabel.className = 'stat-label';
+        mountLabel.textContent = '已收集';
+        mountStat.appendChild(mountValue);
+        mountStat.appendChild(mountLabel);
+        mountCard.appendChild(mountStat);
         mountCard.onclick = () => this.switchTab('mounts');
         
         // 寵物統計
         const minionCard = document.createElement('div');
         minionCard.className = 'overview-card';
-        minionCard.innerHTML = `
-            <h4>寵物</h4>
-            <div class="overview-stat">
-                <span class="stat-value">${minionsData?.Minions?.length || 0}</span>
-                <span class="stat-label">已收集</span>
-            </div>
-        `;
+        
+        // 建立 h4 標題
+        const minionTitle = document.createElement('h4');
+        minionTitle.textContent = '寵物';
+        minionCard.appendChild(minionTitle);
+        
+        // 建立寵物統計
+        const minionStat = document.createElement('div');
+        minionStat.className = 'overview-stat';
+        const minionValue = document.createElement('span');
+        minionValue.className = 'stat-value';
+        minionValue.textContent = minionsData?.Minions?.length || 0;
+        const minionLabel = document.createElement('span');
+        minionLabel.className = 'stat-label';
+        minionLabel.textContent = '已收集';
+        minionStat.appendChild(minionValue);
+        minionStat.appendChild(minionLabel);
+        minionCard.appendChild(minionStat);
         minionCard.onclick = () => this.switchTab('minions');
         
         // 公會統計（如果有）
         if (this.currentFCId) {
             const fcCard = document.createElement('div');
             fcCard.className = 'overview-card';
-            fcCard.innerHTML = `
-                <h4>公會</h4>
-                <div class="overview-stat">
-                    <span class="stat-value">${this.elements.fcMemberCount.textContent}</span>
-                    <span class="stat-label">成員數</span>
-                </div>
-            `;
+            
+            // 建立 h4 標題
+            const fcTitle = document.createElement('h4');
+            fcTitle.textContent = '公會';
+            fcCard.appendChild(fcTitle);
+            
+            // 建立公會統計
+            const fcStat = document.createElement('div');
+            fcStat.className = 'overview-stat';
+            const fcValue = document.createElement('span');
+            fcValue.className = 'stat-value';
+            fcValue.textContent = this.elements.fcMemberCount.textContent;
+            const fcLabel = document.createElement('span');
+            fcLabel.className = 'stat-label';
+            fcLabel.textContent = '成員數';
+            fcStat.appendChild(fcValue);
+            fcStat.appendChild(fcLabel);
+            fcCard.appendChild(fcStat);
             fcCard.onclick = () => this.switchTab('freecompany');
             overviewGrid.appendChild(fcCard);
         }
