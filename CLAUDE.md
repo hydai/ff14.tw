@@ -497,6 +497,23 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 - Early returns in filter functions
 - Use Set for O(1) lookup performance in filtering
 
+### Security Guidelines
+- **NEVER use innerHTML**: Always use DOM manipulation methods (createElement, appendChild, textContent)
+- **Prevent XSS attacks**: All user inputs and dynamic content must be properly escaped
+- **Use textContent for text**: When setting text content, always use textContent instead of innerHTML
+- **DOM manipulation pattern**: Create elements with createElement, set properties, then appendChild
+- **No direct HTML string injection**: Avoid template literals with HTML, build DOM trees programmatically
+- Example of correct approach:
+  ```javascript
+  // ❌ Wrong - Security Risk
+  element.innerHTML = `<div>${userContent}</div>`;
+  
+  // ✅ Correct - Safe DOM Manipulation
+  const div = document.createElement('div');
+  div.textContent = userContent;
+  element.appendChild(div);
+  ```
+
 ### Accessibility Standards
 - Keyboard navigation for interactive elements
 - Focus indicators with proper contrast
