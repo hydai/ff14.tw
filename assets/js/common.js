@@ -2,29 +2,96 @@
 
 // 主題管理器
 class ThemeManager {
+    // 定義常數以避免魔術字串
+    static THEMES = {
+        LIGHT: 'light',
+        DARK: 'dark'
+    };
+
+    static ACTIONS = {
+        ADD: 'add',
+        REMOVE: 'remove'
+    };
+
+    static STORAGE_KEY = 'theme';
+
+    // 定義主題圖標
+    static ICONS = {
+        MOON: '<svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>',
+        SUN: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>'
+    };
+
     constructor() {
-        // 預設為 light mode，除非使用者明確選擇過
-        this.theme = this.getStoredTheme() || 'light';
+        // 儲存 media query 和綁定的事件處理器以便後續管理
+        this.darkModeQuery = window.matchMedia?.('(prefers-color-scheme: dark)');
+        this._boundSystemThemeChangeHandler = this._handleSystemThemeChange.bind(this);
+        
+        // 檢查是否有儲存的主題偏好
+        const storedTheme = this.getStoredTheme();
+        
+        // 如果有儲存的偏好就使用，否則偵測系統偏好
+        this.theme = storedTheme || this.getSystemPreference();
+        
         this.init();
     }
 
     init() {
         this.applyTheme(this.theme);
+        
+        // 監聽系統主題變更
+        this._updateListener(ThemeManager.ACTIONS.ADD);
+    }
+
+    // 清理方法，用於移除事件監聽器
+    // 預留給未來可能的單頁應用程式（SPA）架構使用
+    // 在元件卸載時呼叫此方法以防止記憶體洩漏
+    destroy() {
+        this._updateListener(ThemeManager.ACTIONS.REMOVE);
+    }
+
+    // 統一處理事件監聽器的新增與移除
+    _updateListener(action) {
+        if (!this.darkModeQuery) return;
+
+        const isAdding = action === ThemeManager.ACTIONS.ADD;
+
+        if (isAdding) {
+            this.darkModeQuery.addEventListener('change', this._boundSystemThemeChangeHandler);
+        } else {
+            this.darkModeQuery.removeEventListener('change', this._boundSystemThemeChangeHandler);
+        }
+    }
+
+    _handleSystemThemeChange(e) {
+        // 只有在使用者沒有明確設定主題時才自動切換
+        if (!this.getStoredTheme()) {
+            const newTheme = e.matches ? ThemeManager.THEMES.DARK : ThemeManager.THEMES.LIGHT;
+            // 只有在主題真的改變時才更新，避免不必要的 DOM 操作
+            if (this.theme !== newTheme) {
+                this.applyTheme(newTheme);
+            }
+        }
     }
 
     getStoredTheme() {
-        return localStorage.getItem('theme');
+        try {
+            return localStorage.getItem(ThemeManager.STORAGE_KEY);
+        } catch (e) {
+            console.warn('無法存取 localStorage，主題偏好將不會被保存', e);
+            return null;
+        }
     }
 
     setStoredTheme(theme) {
-        localStorage.setItem('theme', theme);
+        try {
+            localStorage.setItem(ThemeManager.STORAGE_KEY, theme);
+        } catch (e) {
+            console.warn('無法存取 localStorage，主題偏好將不會被儲存', e);
+        }
     }
 
     getSystemPreference() {
-        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-            return 'dark';
-        }
-        return 'light';
+        return this.darkModeQuery?.matches ? ThemeManager.THEMES.DARK : ThemeManager.THEMES.LIGHT;
     }
 
     applyTheme(theme) {
@@ -36,7 +103,7 @@ class ThemeManager {
     }
 
     toggle() {
-        const newTheme = this.theme === 'light' ? 'dark' : 'light';
+        const newTheme = this.theme === ThemeManager.THEMES.LIGHT ? ThemeManager.THEMES.DARK : ThemeManager.THEMES.LIGHT;
         this.applyTheme(newTheme);
         this.setStoredTheme(newTheme);
         return newTheme;
@@ -45,11 +112,12 @@ class ThemeManager {
     updateThemeToggleButtons() {
         const buttons = document.querySelectorAll('.theme-toggle');
         buttons.forEach(button => {
-            button.innerHTML = this.theme === 'light' 
-                ? '<svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>' // 月亮圖標
-                : '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>'; // 太陽圖標
+            const isLight = this.theme === ThemeManager.THEMES.LIGHT;
+            button.innerHTML = isLight 
+                ? ThemeManager.ICONS.MOON  // 月亮圖標
+                : ThemeManager.ICONS.SUN;   // 太陽圖標
             
-            button.setAttribute('aria-label', this.theme === 'light' ? '切換至深色模式' : '切換至淺色模式');
+            button.setAttribute('aria-label', isLight ? '切換至深色模式' : '切換至淺色模式');
         });
     }
 }
