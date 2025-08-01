@@ -636,6 +636,36 @@
     background: var(--bg-color);
 }
 
+/* Dark mode - 修正已確定選擇的格子顏色，使其在深色模式下仍然清晰可辨 */
+[data-theme="dark"] .board-cell.sword {
+    background: linear-gradient(135deg, #2196f3, #1976d2);
+    color: white;
+    border-color: #1565c0;
+}
+
+[data-theme="dark"] .board-cell.chest {
+    background: linear-gradient(135deg, #e91e63, #c2185b);
+    color: white;
+    border-color: #ad1457;
+}
+
+[data-theme="dark"] .board-cell.fox {
+    background: linear-gradient(135deg, #cd853f, #a0522d);
+    color: white;
+    border-color: #8b4513;
+}
+
+[data-theme="dark"] .board-cell.empty {
+    background: linear-gradient(135deg, #795548, #5d4037);
+    border-color: #4e342e;
+}
+
+[data-theme="dark"] .board-cell.obstacle {
+    background: linear-gradient(135deg, #616161, #424242);
+    color: white;
+    border-color: #212121;
+}
+
 [data-theme="dark"] .popup-btn {
     background: var(--bg-secondary);
     color: var(--text-color);
