@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>特殊採集時間管理器 - FF14.tw</title>
+    <meta name="description" content="FF14 特殊採集時間管理工具，支援搜尋、多清單管理、巨集匯出功能">
+    <link rel="icon" type="image/x-icon" href="../../assets/images/ff14tw.ico">
+    <link rel="stylesheet" href="../../assets/css/common.css">
+    <link rel="stylesheet" href="../../assets/css/dark-mode-tools.css">
+    <link rel="stylesheet" href="../../assets/css/tools-common.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <a href="/" class="logo">FF14.tw</a>
+            <nav class="nav">
+                <a href="/">首頁</a>
+                <a href="/copyright.html">版權聲明</a>
+                <a href="https://github.com/hydai/ff14.tw" target="_blank">GitHub</a>
+                <div class="nav-dropdown">
+                    <a href="#">關於本站</a>
+                    <div class="nav-dropdown-content">
+                        <a href="/about.html">關於</a>
+                        <a href="/changelog.html">修改紀錄</a>
+                    </div>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container">
+            <div class="page-header">
+                <h1>特殊採集時間管理器</h1>
+                <p class="page-description">管理 FF14 特殊採集時間，支援搜尋、多清單管理與巨集匯出</p>
+            </div>
+
+            <div class="tool-content">
+                <!-- 頂部工具列 -->
+                <div class="toolbar">
+                    <div class="search-section">
+                        <input type="text" id="searchInput" class="form-control search-input" placeholder="搜尋採集物名稱、地點...">
+                        <button id="clearSearchBtn" class="btn btn-secondary btn-sm">清除</button>
+                    </div>
+                    <div class="toolbar-actions">
+                        <button id="newListBtn" class="btn btn-primary">
+                            <span class="btn-icon">➕</span> 新增清單
+                        </button>
+                        <button id="importBtn" class="btn btn-secondary">
+                            <span class="btn-icon">📥</span> 匯入
+                        </button>
+                        <button id="exportBtn" class="btn btn-secondary">
+                            <span class="btn-icon">📤</span> 匯出
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 篩選標籤 -->
+                <div class="filter-section">
+                    <div class="filter-group">
+                        <label class="filter-label">類型：</label>
+                        <div class="filter-tags" id="typeFilters">
+                            <button class="tag tag-filter" data-type="mining">
+                                <span class="tag-icon">⛏️</span> 採礦
+                            </button>
+                            <button class="tag tag-filter" data-type="botany">
+                                <span class="tag-icon">🌿</span> 園藝
+                            </button>
+                            <button class="tag tag-filter" data-type="fishing">
+                                <span class="tag-icon">🎣</span> 釣魚
+                            </button>
+                        </div>
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label">資料片：</label>
+                        <div class="filter-tags" id="expansionFilters">
+                            <button class="tag tag-filter" data-expansion="3.0">蒼天</button>
+                            <button class="tag tag-filter" data-expansion="4.0">紅蓮</button>
+                            <button class="tag tag-filter" data-expansion="5.0">漆黑</button>
+                            <button class="tag tag-filter" data-expansion="6.0">曉月</button>
+                            <button class="tag tag-filter" data-expansion="7.0">黃金</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 主要內容區 -->
+                <div class="main-content">
+                    <!-- 左側：採集物列表 -->
+                    <div class="items-panel">
+                        <div class="panel-header">
+                            <h2>採集物列表</h2>
+                            <span class="item-count" id="itemCount">載入中...</span>
+                        </div>
+                        
+                        <!-- 載入中提示 -->
+                        <div class="loading" id="loadingIndicator">
+                            <div class="loading-spinner"></div>
+                            <p>載入採集物資料中...</p>
+                        </div>
+                        
+                        <!-- 錯誤訊息 -->
+                        <div class="error-message" id="errorMessage" style="display: none;"></div>
+                        
+                        <!-- 採集物卡片容器 -->
+                        <div class="items-container" id="itemsContainer"></div>
+                    </div>
+
+                    <!-- 右側：清單管理 -->
+                    <div class="lists-panel">
+                        <!-- 清單標籤頁 -->
+                        <div class="list-tabs" id="listTabs">
+                            <button class="list-tab active" data-list-id="default">預設清單</button>
+                        </div>
+
+                        <!-- 清單內容 -->
+                        <div class="list-content">
+                            <div class="list-header">
+                                <h3 id="currentListName">預設清單</h3>
+                                <div class="list-actions">
+                                    <button id="renameListBtn" class="btn btn-sm" title="重新命名">✏️</button>
+                                    <button id="deleteListBtn" class="btn btn-sm btn-danger" title="刪除清單">🗑️</button>
+                                    <button id="clearListBtn" class="btn btn-sm" title="清空清單">🧹</button>
+                                </div>
+                            </div>
+                            
+                            <div class="list-items" id="listItems">
+                                <div class="empty-list-message">
+                                    <p>清單為空</p>
+                                    <small>從左側點擊「加入清單」按鈕來新增採集物</small>
+                                </div>
+                            </div>
+
+                            <!-- 巨集匯出區 -->
+                            <div class="macro-section">
+                                <div class="macro-header">
+                                    <h3>巨集匯出</h3>
+                                    <button id="generateMacroBtn" class="btn btn-success btn-sm">
+                                        <span class="btn-icon">⚙️</span> 生成巨集
+                                    </button>
+                                </div>
+                                <div class="macro-options">
+                                    <label class="form-check">
+                                        <input type="checkbox" id="includeClearCmd" class="form-check-input" checked>
+                                        <span class="form-check-label">包含清除指令</span>
+                                    </label>
+                                    <label class="form-check">
+                                        <input type="checkbox" id="sortByTime" class="form-check-input" checked>
+                                        <span class="form-check-label">按時間排序</span>
+                                    </label>
+                                </div>
+                                <div class="macro-output" id="macroOutput" style="display: none;">
+                                    <textarea id="macroText" class="form-control" rows="10" readonly></textarea>
+                                    <button id="copyMacroBtn" class="btn btn-primary btn-block">
+                                        <span class="btn-icon">📋</span> 複製到剪貼簿
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024-2025 FF14.tw | 本站非官方網站，與 Square Enix 無關 | Made with ❤️ by hydai</p>
+        </div>
+    </footer>
+
+    <!-- 對話框 -->
+    <div id="dialogOverlay" class="dialog-overlay" style="display: none;">
+        <div class="dialog">
+            <div class="dialog-header">
+                <h3 id="dialogTitle">對話框標題</h3>
+                <button class="dialog-close" id="dialogClose">&times;</button>
+            </div>
+            <div class="dialog-body" id="dialogBody">
+                <!-- 動態內容 -->
+            </div>
+            <div class="dialog-footer">
+                <button id="dialogCancel" class="btn btn-secondary">取消</button>
+                <button id="dialogConfirm" class="btn btn-primary">確認</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="list-manager.js"></script>
+    <script src="macro-exporter.js"></script>
+    <script src="search-filter.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
