@@ -4,9 +4,12 @@ class SearchFilter {
         // 搜尋權重設定
         this.searchWeights = {
             name: 3.0,        // 名稱匹配權重最高
+            nameJp: 3.0,      // 日文名稱權重相同
             nameEn: 2.0,      // 英文名稱
             zone: 1.5,        // 地區名稱
+            zoneJp: 1.5,      // 日文地區名稱
             location: 1.5,    // 地點名稱
+            locationJp: 1.5,  // 日文地點名稱
             description: 1.0, // 描述
             coordinates: 0.5  // 座標
         };
@@ -106,6 +109,15 @@ class SearchFilter {
                         score += this.searchWeights.name;
                     }
                 }
+                
+                // 日文名稱匹配
+                if (item.nameJp && item.nameJp.toLowerCase().includes(word)) {
+                    score += this.searchWeights.nameJp;
+                    // 完全匹配額外加分
+                    if (item.nameJp.toLowerCase() === word) {
+                        score += this.searchWeights.nameJp;
+                    }
+                }
 
                 // 英文名稱匹配
                 if (item.nameEn && item.nameEn.toLowerCase().includes(word)) {
@@ -116,10 +128,20 @@ class SearchFilter {
                 if (item.zone && item.zone.toLowerCase().includes(word)) {
                     score += this.searchWeights.zone;
                 }
+                
+                // 日文地區匹配
+                if (item.zoneJp && item.zoneJp.toLowerCase().includes(word)) {
+                    score += this.searchWeights.zoneJp;
+                }
 
                 // 地點匹配
                 if (item.location && item.location.toLowerCase().includes(word)) {
                     score += this.searchWeights.location;
+                }
+                
+                // 日文地點匹配
+                if (item.locationJp && item.locationJp.toLowerCase().includes(word)) {
+                    score += this.searchWeights.locationJp;
                 }
 
                 // 描述匹配
@@ -464,9 +486,12 @@ class SearchFilter {
         
         return (
             (item.name && item.name.toLowerCase().includes(lowerTerm)) ||
+            (item.nameJp && item.nameJp.toLowerCase().includes(lowerTerm)) ||
             (item.nameEn && item.nameEn.toLowerCase().includes(lowerTerm)) ||
             (item.zone && item.zone.toLowerCase().includes(lowerTerm)) ||
+            (item.zoneJp && item.zoneJp.toLowerCase().includes(lowerTerm)) ||
             (item.location && item.location.toLowerCase().includes(lowerTerm)) ||
+            (item.locationJp && item.locationJp.toLowerCase().includes(lowerTerm)) ||
             (item.description && item.description.toLowerCase().includes(lowerTerm))
         );
     }

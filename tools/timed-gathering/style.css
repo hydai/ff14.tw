@@ -29,6 +29,42 @@
 .toolbar-actions {
     display: flex;
     gap: 0.5rem;
+    align-items: center;
+}
+
+/* 語言選擇器 */
+.language-selector {
+    display: flex;
+    gap: 0.25rem;
+    padding: 0.25rem;
+    background: var(--bg-primary);
+    border-radius: 6px;
+    margin-right: 0.5rem;
+}
+
+.language-btn {
+    padding: 0.25rem 0.75rem;
+    font-size: 0.875rem;
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--text-secondary);
+    transition: all 0.2s ease;
+}
+
+.language-btn:hover {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+.language-btn.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.language-btn.active:hover {
+    background: var(--primary-dark);
+    border-color: var(--primary-dark);
 }
 
 /* 篩選區域 */

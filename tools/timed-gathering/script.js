@@ -16,6 +16,7 @@ class TimedGatheringManager {
         this.searchFilter = null;
         this.currentListId = 'default';
         this.debounceTimer = null;
+        this.currentLanguage = localStorage.getItem('ff14tw_preferred_language') || 'zh';
         
         this.elements = {
             // 搜尋與篩選
@@ -57,7 +58,10 @@ class TimedGatheringManager {
             dialogBody: document.getElementById('dialogBody'),
             dialogClose: document.getElementById('dialogClose'),
             dialogCancel: document.getElementById('dialogCancel'),
-            dialogConfirm: document.getElementById('dialogConfirm')
+            dialogConfirm: document.getElementById('dialogConfirm'),
+            
+            // 語言選擇器
+            languageButtons: document.querySelectorAll('.language-btn')
         };
         
         this.initialize();
@@ -142,6 +146,17 @@ class TimedGatheringManager {
     }
 
     initializeEvents() {
+        // 語言切換
+        this.elements.languageButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const lang = btn.dataset.lang;
+                this.switchLanguage(lang);
+            });
+        });
+        
+        // 初始化語言按鈕狀態
+        this.updateLanguageButtons();
+        
         // 搜尋
         this.elements.searchInput.addEventListener('input', () => {
             this.debounceSearch();
@@ -220,6 +235,21 @@ class TimedGatheringManager {
         });
     }
 
+    switchLanguage(lang) {
+        this.currentLanguage = lang;
+        localStorage.setItem('ff14tw_preferred_language', lang);
+        this.updateLanguageButtons();
+        this.updateDisplay();
+        this.updateListDisplay();
+    }
+    
+    updateLanguageButtons() {
+        this.elements.languageButtons.forEach(btn => {
+            const isActive = btn.dataset.lang === this.currentLanguage;
+            btn.classList.toggle('active', isActive);
+        });
+    }
+
     debounceSearch() {
         clearTimeout(this.debounceTimer);
         this.debounceTimer = setTimeout(() => {
@@ -289,7 +319,9 @@ class TimedGatheringManager {
         
         const title = document.createElement('h3');
         title.className = 'item-name';
-        title.textContent = item.name;
+        // 根據當前語言顯示名稱
+        const displayName = this.currentLanguage === 'ja' && item.nameJp ? item.nameJp : item.name;
+        title.textContent = displayName;
         titleSection.appendChild(title);
         
         header.appendChild(titleSection);
@@ -309,7 +341,10 @@ class TimedGatheringManager {
         
         const zoneDiv = document.createElement('div');
         zoneDiv.className = 'item-zone';
-        zoneDiv.textContent = `📍 ${item.zone} - ${item.location}`;
+        // 根據當前語言顯示地區和位置
+        const displayZone = this.currentLanguage === 'ja' && item.zoneJp ? item.zoneJp : item.zone;
+        const displayLocation = this.currentLanguage === 'ja' && item.locationJp ? item.locationJp : item.location;
+        zoneDiv.textContent = `📍 ${displayZone} - ${displayLocation}`;
         info.appendChild(zoneDiv);
         
         const coordsDiv = document.createElement('div');
@@ -415,7 +450,9 @@ class TimedGatheringManager {
         
         const name = document.createElement('span');
         name.className = 'list-item-name';
-        name.textContent = item.name;
+        // 根據當前語言顯示名稱
+        const displayName = this.currentLanguage === 'ja' && item.nameJp ? item.nameJp : item.name;
+        name.textContent = displayName;
         info.appendChild(name);
         
         const time = document.createElement('span');
