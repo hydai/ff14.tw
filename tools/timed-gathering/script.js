@@ -95,8 +95,39 @@ class TimedGatheringManager {
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-            const jsonData = await response.json();
-            this.data = jsonData.items || [];
+            
+            const jsonText = await response.text();
+            
+            // Define schema for gathering items
+            const itemSchema = {
+                required: ['items'],
+                properties: {
+                    items: {
+                        type: 'array',
+                        minItems: 0
+                    }
+                }
+            };
+            
+            // Use safe JSON parsing with schema validation
+            const parseResult = SecurityUtils.safeJSONParse(jsonText, itemSchema);
+            
+            if (!parseResult.success) {
+                throw new Error(parseResult.error);
+            }
+            
+            // Validate and sanitize each item in the array
+            const items = parseResult.data.items || [];
+            this.data = items.filter(item => {
+                // Basic validation for each item
+                return item && 
+                       typeof item.id === 'string' && 
+                       typeof item.name === 'string' &&
+                       typeof item.type === 'string' &&
+                       (typeof item.level === 'number' || typeof item.level === 'string') &&
+                       typeof item.zone === 'string';
+            });
+            
             this.filteredData = [...this.data];
             
             // 更新項目計數
@@ -197,7 +228,9 @@ class TimedGatheringManager {
     }
 
     applyFilters() {
-        const searchTerm = this.elements.searchInput.value.toLowerCase();
+        // Sanitize search input to prevent XSS
+        const rawSearchTerm = this.elements.searchInput.value;
+        const searchTerm = SecurityUtils.sanitizeInput(rawSearchTerm).toLowerCase();
         const activeTypes = Array.from(this.elements.typeFilters.querySelectorAll('.tag-filter.active'))
             .map(tag => tag.dataset.type);
         const activeExpansions = Array.from(this.elements.expansionFilters.querySelectorAll('.tag-filter.active'))
@@ -305,15 +338,19 @@ class TimedGatheringManager {
         
         const addBtn = document.createElement('button');
         addBtn.className = isInList ? 'btn btn-success btn-sm' : 'btn btn-primary btn-sm';
-        addBtn.innerHTML = isInList ? 
-            '<span class="btn-icon">✔️</span> 已加入' : 
-            '<span class="btn-icon">➕</span> 加入清單';
+        // Use safe DOM manipulation instead of innerHTML
+        SecurityUtils.updateButtonContent(
+            addBtn,
+            isInList ? '✔️' : '➕',
+            isInList ? '已加入' : '加入清單'
+        );
         addBtn.disabled = isInList;
         
         addBtn.addEventListener('click', () => {
             this.addItemToList(item);
             addBtn.className = 'btn btn-success btn-sm';
-            addBtn.innerHTML = '<span class="btn-icon">✔️</span> 已加入';
+            // Use safe DOM manipulation instead of innerHTML
+            SecurityUtils.updateButtonContent(addBtn, '✔️', '已加入');
             addBtn.disabled = true;
         });
         
@@ -348,12 +385,11 @@ class TimedGatheringManager {
         container.innerHTML = '';
         
         if (!list || list.items.length === 0) {
-            const emptyMessage = document.createElement('div');
-            emptyMessage.className = 'empty-list-message';
-            emptyMessage.innerHTML = `
-                <p>清單為空</p>
-                <small>從左側點擊「加入清單」按鈕來新增採集物</small>
-            `;
+            // Use safe DOM manipulation instead of innerHTML
+            const emptyMessage = SecurityUtils.createEmptyMessage(
+                '清單為空',
+                '從左側點擊「加入清單」按鈕來新增採集物'
+            );
             container.appendChild(emptyMessage);
             return;
         }
@@ -391,7 +427,7 @@ class TimedGatheringManager {
         
         const removeBtn = document.createElement('button');
         removeBtn.className = 'btn btn-sm btn-danger';
-        removeBtn.innerHTML = '🗑️';
+        removeBtn.textContent = '🗑️';  // Use textContent instead of innerHTML
         removeBtn.title = '移除';
         removeBtn.addEventListener('click', () => {
             this.removeItemFromList(item.id);
@@ -467,17 +503,28 @@ class TimedGatheringManager {
         }
         
         this.elements.dialogTitle.textContent = '新增清單';
-        this.elements.dialogBody.innerHTML = `
-            <div class="form-group">
-                <label for="newListName">清單名稱：</label>
-                <input type="text" id="newListName" class="form-control" 
-                       placeholder="輸入清單名稱" maxlength="${TimedGatheringManager.CONSTANTS.MAX_LIST_NAME_LENGTH}">
-            </div>
-        `;
+        // Use safe DOM manipulation instead of innerHTML
+        SecurityUtils.clearElement(this.elements.dialogBody);
+        const formGroup = SecurityUtils.createFormGroup({
+            label: '清單名稱：',
+            inputId: 'newListName',
+            placeholder: '輸入清單名稱',
+            maxLength: TimedGatheringManager.CONSTANTS.MAX_LIST_NAME_LENGTH
+        });
+        this.elements.dialogBody.appendChild(formGroup);
         
         this.elements.dialogConfirm.onclick = () => {
             const input = document.getElementById('newListName');
-            const name = input.value.trim();
+            const rawName = input.value.trim();
+            
+            // Validate and sanitize input
+            if (!SecurityUtils.validateTextLength(rawName, 1, TimedGatheringManager.CONSTANTS.MAX_LIST_NAME_LENGTH)) {
+                this.showNotification('清單名稱長度不符合要求', 'error');
+                return;
+            }
+            
+            // Sanitize the name to prevent XSS
+            const name = SecurityUtils.sanitizeInput(rawName);
             
             if (name) {
                 const result = this.listManager.createList(name);
@@ -504,17 +551,28 @@ class TimedGatheringManager {
         const currentList = this.listManager.getList(this.currentListId);
         
         this.elements.dialogTitle.textContent = '重新命名清單';
-        this.elements.dialogBody.innerHTML = `
-            <div class="form-group">
-                <label for="renameListInput">新名稱：</label>
-                <input type="text" id="renameListInput" class="form-control" 
-                       value="${currentList.name}" maxlength="${TimedGatheringManager.CONSTANTS.MAX_LIST_NAME_LENGTH}">
-            </div>
-        `;
+        // Use safe DOM manipulation instead of innerHTML
+        SecurityUtils.clearElement(this.elements.dialogBody);
+        const formGroup = SecurityUtils.createFormGroup({
+            label: '新名稱：',
+            inputId: 'renameListInput',
+            value: currentList.name,
+            maxLength: TimedGatheringManager.CONSTANTS.MAX_LIST_NAME_LENGTH
+        });
+        this.elements.dialogBody.appendChild(formGroup);
         
         this.elements.dialogConfirm.onclick = () => {
             const input = document.getElementById('renameListInput');
-            const newName = input.value.trim();
+            const rawName = input.value.trim();
+            
+            // Validate and sanitize input
+            if (!SecurityUtils.validateTextLength(rawName, 1, TimedGatheringManager.CONSTANTS.MAX_LIST_NAME_LENGTH)) {
+                this.showNotification('清單名稱長度不符合要求', 'error');
+                return;
+            }
+            
+            // Sanitize the name to prevent XSS
+            const newName = SecurityUtils.sanitizeInput(rawName);
             
             if (newName && newName !== currentList.name) {
                 const result = this.listManager.renameList(this.currentListId, newName);
@@ -549,10 +607,18 @@ class TimedGatheringManager {
         const currentList = this.listManager.getList(this.currentListId);
         
         this.elements.dialogTitle.textContent = '刪除清單';
-        this.elements.dialogBody.innerHTML = `
-            <p>確定要刪除清單「${currentList.name}」嗎？</p>
-            <p class="text-danger">此操作無法復原！</p>
-        `;
+        // Use safe DOM manipulation instead of innerHTML
+        SecurityUtils.clearElement(this.elements.dialogBody);
+        
+        const confirmText = document.createElement('p');
+        confirmText.textContent = `確定要刪除清單「${currentList.name}」嗎？`;
+        
+        const warningText = document.createElement('p');
+        warningText.className = 'text-danger';
+        warningText.textContent = '此操作無法復原！';
+        
+        this.elements.dialogBody.appendChild(confirmText);
+        this.elements.dialogBody.appendChild(warningText);
         
         this.elements.dialogConfirm.onclick = () => {
             const result = this.listManager.deleteList(this.currentListId);
@@ -581,10 +647,17 @@ class TimedGatheringManager {
         }
         
         this.elements.dialogTitle.textContent = '清空清單';
-        this.elements.dialogBody.innerHTML = `
-            <p>確定要清空清單「${list.name}」嗎？</p>
-            <p>將移除 ${list.items.length} 個採集物</p>
-        `;
+        // Use safe DOM manipulation instead of innerHTML
+        SecurityUtils.clearElement(this.elements.dialogBody);
+        
+        const confirmText = document.createElement('p');
+        confirmText.textContent = `確定要清空清單「${list.name}」嗎？`;
+        
+        const itemCountText = document.createElement('p');
+        itemCountText.textContent = `將移除 ${list.items.length} 個採集物`;
+        
+        this.elements.dialogBody.appendChild(confirmText);
+        this.elements.dialogBody.appendChild(itemCountText);
         
         this.elements.dialogConfirm.onclick = () => {
             this.listManager.clearList(this.currentListId);
@@ -631,10 +704,16 @@ class TimedGatheringManager {
             this.showNotification('巨集已複製到剪貼簿', 'success');
             
             // 暫時改變按鈕文字
-            const originalText = this.elements.copyMacroBtn.innerHTML;
-            this.elements.copyMacroBtn.innerHTML = '<span class="btn-icon">✔️</span> 已複製！';
+            // Store original button content
+            const originalIcon = this.elements.copyMacroBtn.querySelector('.btn-icon')?.textContent || '📋';
+            const originalText = this.elements.copyMacroBtn.textContent.replace(originalIcon, '').trim();
+            
+            // Update button safely
+            SecurityUtils.updateButtonContent(this.elements.copyMacroBtn, '✔️', '已複製！');
+            
             setTimeout(() => {
-                this.elements.copyMacroBtn.innerHTML = originalText;
+                // Restore original content
+                SecurityUtils.updateButtonContent(this.elements.copyMacroBtn, originalIcon, originalText || '複製到剪貼簿');
             }, 2000);
         }).catch(err => {
             console.error('複製失敗:', err);
@@ -644,13 +723,22 @@ class TimedGatheringManager {
 
     showImportDialog() {
         this.elements.dialogTitle.textContent = '匯入清單';
-        this.elements.dialogBody.innerHTML = `
-            <div class="form-group">
-                <label for="importFile">選擇檔案：</label>
-                <input type="file" id="importFile" class="form-control" accept=".json">
-            </div>
-            <p class="text-muted">請選擇之前匯出的 JSON 檔案</p>
-        `;
+        // Use safe DOM manipulation instead of innerHTML
+        SecurityUtils.clearElement(this.elements.dialogBody);
+        
+        const formGroup = SecurityUtils.createFormGroup({
+            label: '選擇檔案：',
+            inputId: 'importFile',
+            inputType: 'file',
+            accept: '.json'
+        });
+        
+        const helpText = document.createElement('p');
+        helpText.className = 'text-muted';
+        helpText.textContent = '請選擇之前匯出的 JSON 檔案';
+        
+        this.elements.dialogBody.appendChild(formGroup);
+        this.elements.dialogBody.appendChild(helpText);
         
         this.elements.dialogConfirm.onclick = () => {
             const fileInput = document.getElementById('importFile');
@@ -668,20 +756,33 @@ class TimedGatheringManager {
         const reader = new FileReader();
         
         reader.onload = (e) => {
-            try {
-                const data = JSON.parse(e.target.result);
-                const result = this.listManager.importLists(data);
-                
-                if (result.success) {
-                    this.loadLists();
-                    this.hideDialog();
-                    this.showNotification(`成功匯入 ${result.count} 個清單`, 'success');
-                } else {
-                    this.showNotification(result.message, 'error');
+            // Define schema for import data
+            const importSchema = {
+                required: ['version', 'lists'],
+                properties: {
+                    version: { type: 'string' },
+                    lists: { type: 'array', minItems: 0 },
+                    exportDate: { type: 'string' }
                 }
-            } catch (error) {
-                console.error('匯入失敗:', error);
-                this.showNotification('檔案格式錯誤', 'error');
+            };
+            
+            // Use safe JSON parsing with schema validation
+            const parseResult = SecurityUtils.safeJSONParse(e.target.result, importSchema);
+            
+            if (!parseResult.success) {
+                console.error('匯入失敗:', parseResult.error);
+                this.showNotification('檔案格式錯誤: ' + parseResult.error, 'error');
+                return;
+            }
+            
+            const result = this.listManager.importLists(parseResult.data);
+            
+            if (result.success) {
+                this.loadLists();
+                this.hideDialog();
+                this.showNotification(`成功匯入 ${result.count} 個清單`, 'success');
+            } else {
+                this.showNotification(result.message, 'error');
             }
         };
         

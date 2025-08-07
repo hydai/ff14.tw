@@ -41,7 +41,31 @@ class ListManager {
         try {
             const stored = localStorage.getItem(ListManager.CONSTANTS.STORAGE_KEY);
             if (stored) {
-                const data = JSON.parse(stored);
+                // Define schema for stored data
+                const storageSchema = {
+                    required: ['version', 'lists'],
+                    properties: {
+                        version: { type: 'string' },
+                        lists: { type: 'object' },
+                        lastUpdated: { type: 'string' }
+                    }
+                };
+                
+                // Use safe JSON parsing if SecurityUtils is available
+                let data;
+                if (typeof SecurityUtils !== 'undefined' && SecurityUtils.safeJSONParse) {
+                    const parseResult = SecurityUtils.safeJSONParse(stored, storageSchema);
+                    if (!parseResult.success) {
+                        console.error('清單資料格式錯誤:', parseResult.error);
+                        this.lists = {};
+                        return;
+                    }
+                    data = parseResult.data;
+                } else {
+                    // Fallback to regular parsing with try-catch
+                    data = JSON.parse(stored);
+                }
+                
                 if (data.version === ListManager.CONSTANTS.STORAGE_VERSION) {
                     this.lists = data.lists || {};
                     return;
