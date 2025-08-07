@@ -2,12 +2,6 @@
    特殊採集時間管理器樣式
    =================================== */
 
-/* 頁面描述 */
-.page-description {
-    color: var(--text-secondary);
-    margin-top: 0.5rem;
-    font-size: 1rem;
-}
 
 /* 工具列 */
 .toolbar {
@@ -397,7 +391,7 @@
 }
 
 .dialog {
-    background: var(--bg-primary);
+    background: white;
     border-radius: 8px;
     width: 90%;
     max-width: 500px;
@@ -516,6 +510,19 @@
 [data-theme="dark"] .list-tab.active {
     background: var(--primary-dark);
     border-color: var(--primary-dark);
+}
+
+[data-theme="dark"] .dialog {
+    background: #2d3748;
+    color: #e2e8f0;
+}
+
+[data-theme="dark"] .dialog-header {
+    border-bottom-color: #4a5568;
+}
+
+[data-theme="dark"] .dialog-footer {
+    border-top-color: #4a5568;
 }
 
 /* 響應式設計 */
