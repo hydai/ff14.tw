@@ -23,9 +23,9 @@ class ListManager {
         try {
             const stored = localStorage.getItem(ListManager.CONSTANTS.STORAGE_KEY);
             if (stored) {
-                const data = JSON.parse(stored);
-                if (data.version === ListManager.CONSTANTS.STORAGE_VERSION) {
-                    this.list = data.maps || [];
+                const parseResult = SecurityUtils.safeJSONParse(stored);
+                if (parseResult.success && parseResult.data.version === ListManager.CONSTANTS.STORAGE_VERSION) {
+                    this.list = parseResult.data.maps || [];
                     this.listIds = new Set(this.list.map(item => item.id));
                     return this.list;
                 }
@@ -244,7 +244,16 @@ class ListManager {
     import(data, merge = false) {
         try {
             // 如果是字串，嘗試解析
-            const importData = typeof data === 'string' ? JSON.parse(data) : data;
+            let importData;
+            if (typeof data === 'string') {
+                const parseResult = SecurityUtils.safeJSONParse(data);
+                if (!parseResult.success) {
+                    throw new Error('無效的 JSON 格式');
+                }
+                importData = parseResult.data;
+            } else {
+                importData = data;
+            }
             
             // 驗證格式
             if (!importData.maps || !Array.isArray(importData.maps)) {

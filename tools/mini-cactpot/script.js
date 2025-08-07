@@ -73,7 +73,7 @@ class MiniCactpotCalculator {
         // 清除所有格子
         document.querySelectorAll('.grid-cell').forEach(cell => {
             cell.classList.remove('selected', 'revealed');
-            cell.innerHTML = '';
+            cell.textContent = '';
         });
         
         // 重新繪製格子狀態
@@ -83,7 +83,7 @@ class MiniCactpotCalculator {
             
             if (this.grid[position] !== null) {
                 cell.classList.add('revealed');
-                cell.innerHTML = this.grid[position];
+                cell.textContent = this.grid[position];
             } else {
                 // 重新創建輸入框
                 const input = document.createElement('input');
@@ -99,7 +99,7 @@ class MiniCactpotCalculator {
                         e.target.blur();
                     }
                 });
-                cell.innerHTML = '';
+                SecurityUtils.clearElement(cell);
                 cell.appendChild(input);
             }
         });
@@ -155,7 +155,7 @@ class MiniCactpotCalculator {
             }
         });
         
-        cell.innerHTML = '';
+        SecurityUtils.clearElement(cell);
         cell.appendChild(input);
         input.focus();
         
@@ -168,7 +168,7 @@ class MiniCactpotCalculator {
         
         const cell = document.querySelector(`[data-position="${position}"]`);
         cell.classList.remove('selected', 'revealed');
-        cell.innerHTML = '';
+        cell.textContent = '';
         
         this.selectedCells = this.selectedCells.filter(pos => pos !== position);
         this.grid[position] = null;
@@ -190,7 +190,7 @@ class MiniCactpotCalculator {
             this.grid[position] = value;
             const cell = document.querySelector(`[data-position="${position}"]`);
             cell.classList.add('revealed');
-            cell.innerHTML = value;
+            cell.textContent = value;
             
             this.updateUI();
         }
@@ -330,17 +330,24 @@ class MiniCactpotCalculator {
     }
 
     showBestChoice(bestResult) {
-        this.elements.bestLineSummary.innerHTML = `
-            <div class="best-choice-title">
-                <strong>${bestResult.name}</strong>
-            </div>
-            <div class="best-choice-value">
-                期望值：${FF14Utils.formatNumber(Math.round(bestResult.expectedValue))} MGP
-            </div>
-            <div class="best-choice-range">
-                範圍：${FF14Utils.formatNumber(bestResult.minMGP)} - ${FF14Utils.formatNumber(bestResult.maxMGP)} MGP
-            </div>
-        `;
+        // Clear existing content
+        SecurityUtils.clearElement(this.elements.bestLineSummary);
+        
+        // Create the card using SecurityUtils
+        const card = SecurityUtils.createCard({
+            className: '',
+            title: bestResult.name,
+            titleClass: 'best-choice-title',
+            value: `期望值：${FF14Utils.formatNumber(Math.round(bestResult.expectedValue))} MGP`,
+            valueClass: 'best-choice-value',
+            range: `範圍：${FF14Utils.formatNumber(bestResult.minMGP)} - ${FF14Utils.formatNumber(bestResult.maxMGP)} MGP`,
+            rangeClass: 'best-choice-range'
+        });
+        
+        // Move children from card to bestLineSummary
+        while (card.firstChild) {
+            this.elements.bestLineSummary.appendChild(card.firstChild);
+        }
         
         this.elements.bestChoiceInfo.style.display = 'block';
         this.elements.bestChoiceInfo.scrollIntoView({ behavior: 'smooth' });
@@ -373,7 +380,7 @@ function resetGrid() {
     // 清除所有格子的狀態
     document.querySelectorAll('.grid-cell').forEach(cell => {
         cell.classList.remove('selected', 'revealed');
-        cell.innerHTML = '';
+        cell.textContent = '';
     });
     
     // 清除期望值顯示

@@ -21,7 +21,7 @@ class WondrousTailsCalculator {
     }
     
     initializeGrid() {
-        this.elements.grid.innerHTML = '';
+        SecurityUtils.clearElement(this.elements.grid);
         
         for (let i = 0; i < 16; i++) {
             const cell = document.createElement('div');

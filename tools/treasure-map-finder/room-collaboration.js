@@ -118,7 +118,12 @@ class RoomCollaboration {
             const savedRoom = localStorage.getItem('ff14tw_current_room');
             if (savedRoom) {
                 try {
-                    const roomData = JSON.parse(savedRoom);
+                    const parseResult = SecurityUtils.safeJSONParse(savedRoom);
+                    if (!parseResult.success) {
+                        console.warn('Invalid room data format');
+                        return;
+                    }
+                    const roomData = parseResult.data;
                     // 如果已在相同隊伍且資料有效，直接恢復會話
                     if (roomData.roomCode === roomCode && this.isRoomValid(roomData)) {
                         this.currentRoom = roomData;
@@ -137,7 +142,13 @@ class RoomCollaboration {
             const savedRoom = localStorage.getItem('ff14tw_current_room');
             if (savedRoom) {
                 try {
-                    const roomData = JSON.parse(savedRoom);
+                    const parseResult = SecurityUtils.safeJSONParse(savedRoom);
+                    if (!parseResult.success) {
+                        console.warn('Invalid saved room data');
+                        localStorage.removeItem('ff14tw_current_room');
+                        return;
+                    }
+                    const roomData = parseResult.data;
                     if (this.isRoomValid(roomData)) {
                         this.currentRoom = roomData;
                         this.currentUser = roomData.currentUser;
@@ -431,7 +442,9 @@ class RoomCollaboration {
             this.updateMembersList();
 
             // 更新 localStorage 中的房間資料
-            const savedData = JSON.parse(localStorage.getItem('ff14tw_current_room') || '{}');
+            const savedDataStr = localStorage.getItem('ff14tw_current_room') || '{}';
+            const parseResult = SecurityUtils.safeJSONParse(savedDataStr);
+            const savedData = parseResult.success ? parseResult.data : {};
             savedData.currentUser = this.currentUser;
             localStorage.setItem('ff14tw_current_room', JSON.stringify({
                 ...this.currentRoom,
@@ -662,7 +675,9 @@ class RoomCollaboration {
                 this.updateRoomUI();
 
                 // 儲存更新
-                const savedData = JSON.parse(localStorage.getItem('ff14tw_current_room') || '{}');
+                const savedDataStr = localStorage.getItem('ff14tw_current_room') || '{}';
+                const parseResult = SecurityUtils.safeJSONParse(savedDataStr);
+                const savedData = parseResult.success ? parseResult.data : {};
                 savedData.lastSyncAt = new Date().toISOString();
                 localStorage.setItem('ff14tw_current_room', JSON.stringify({
                     ...roomData,
@@ -817,7 +832,8 @@ class RoomCollaboration {
 
         if (savedHistory) {
             try {
-                this.operationHistory = JSON.parse(savedHistory);
+                const parseResult = SecurityUtils.safeJSONParse(savedHistory);
+                this.operationHistory = parseResult.success ? parseResult.data : [];
             } catch (error) {
                 console.error('載入操作歷史失敗:', error);
                 this.operationHistory = [];
@@ -834,7 +850,9 @@ class RoomCollaboration {
         keys.forEach(key => {
             if (key.startsWith('ff14tw_room_history_')) {
                 try {
-                    const history = JSON.parse(localStorage.getItem(key));
+                    const historyStr = localStorage.getItem(key);
+                    const parseResult = SecurityUtils.safeJSONParse(historyStr || '[]');
+                    const history = parseResult.success ? parseResult.data : [];
                     if (Array.isArray(history) && history.length > 0) {
                         const lastOperation = history[0];
                         const lastTime = new Date(lastOperation.timestamp).getTime();
@@ -913,10 +931,15 @@ class RoomCollaboration {
         const historyContent = document.getElementById('historyContent');
         if (!historyContent) return;
 
-        historyContent.innerHTML = '';
+        SecurityUtils.clearElement(historyContent);
 
         if (this.operationHistory.length === 0) {
-            historyContent.innerHTML = '<div class="empty-state"><p>尚無操作記錄</p></div>';
+            const emptyDiv = document.createElement('div');
+            emptyDiv.className = 'empty-state';
+            const p = document.createElement('p');
+            p.textContent = '尚無操作記錄';
+            emptyDiv.appendChild(p);
+            historyContent.appendChild(emptyDiv);
             return;
         }
 
@@ -927,10 +950,16 @@ class RoomCollaboration {
             const time = new Date(item.timestamp);
             const timeStr = `${time.getHours().toString().padStart(2, '0')}:${time.getMinutes().toString().padStart(2, '0')}`;
 
-            historyItem.innerHTML = `
-                <span class="history-time">${timeStr}</span>
-                <span class="history-message">${item.message}</span>
-            `;
+            const timeSpan = document.createElement('span');
+            timeSpan.className = 'history-time';
+            timeSpan.textContent = timeStr;
+            
+            const messageSpan = document.createElement('span');
+            messageSpan.className = 'history-message';
+            messageSpan.textContent = item.message;
+            
+            historyItem.appendChild(timeSpan);
+            historyItem.appendChild(messageSpan);
 
             historyContent.appendChild(historyItem);
         });
@@ -992,7 +1021,7 @@ class RoomCollaboration {
         const membersList = document.getElementById('membersList');
         if (!membersList || !this.currentRoom) return;
 
-        membersList.innerHTML = '';
+        SecurityUtils.clearElement(membersList);
 
         // 排序成員（隊長優先，其次當前使用者，其他按加入時間）
         const sortedMembers = [...this.currentRoom.members].sort((a, b) => {
@@ -1035,7 +1064,7 @@ class RoomCollaboration {
             if (currentUserIsCreator && !isCreator) {
                 const removeBtn = document.createElement('button');
                 removeBtn.className = 'member-remove-btn';
-                removeBtn.innerHTML = '×';
+                removeBtn.textContent = '×';
                 removeBtn.title = `移除 ${member.nickname}`;
                 removeBtn.onclick = () => this.removeMember(member);
                 memberTag.appendChild(removeBtn);

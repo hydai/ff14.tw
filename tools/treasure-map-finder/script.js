@@ -244,7 +244,7 @@ class TreasureMapFinder {
         const end = Math.min(start + this.displayCount, this.filteredMaps.length);
         
         if (start === 0) {
-            this.elements.treasureGrid.innerHTML = '';
+            SecurityUtils.clearElement(this.elements.treasureGrid);
         }
         
         for (let i = start; i < end; i++) {
@@ -344,7 +344,7 @@ class TreasureMapFinder {
         const detailBtn = document.createElement('button');
         detailBtn.className = 'btn btn-secondary btn-sm btn-view-detail';
         detailBtn.title = '查看詳細地圖';
-        detailBtn.innerHTML = '<span class="btn-icon">🗺️</span> 詳細地圖';
+        SecurityUtils.updateButtonContent(detailBtn, '🗺️', '詳細地圖');
         detailBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             this.uiDialogManager.showMapDetail(map, {
@@ -360,7 +360,12 @@ class TreasureMapFinder {
         const addBtn = document.createElement('button');
         addBtn.className = `btn ${isInList ? 'btn-success' : 'btn-primary'} btn-sm btn-add-to-list`;
         addBtn.dataset.state = isInList ? 'added' : 'default';
-        addBtn.innerHTML = `<span class="btn-text">${isInList ? '✓ 已加入' : '加入清單'}</span>`;
+        const btnText = isInList ? '✓ 已加入' : '加入清單';
+        const span = document.createElement('span');
+        span.className = 'btn-text';
+        span.textContent = btnText;
+        SecurityUtils.clearElement(addBtn);
+        addBtn.appendChild(span);
         addBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             this.toggleMapInList(map);
@@ -859,7 +864,7 @@ class TreasureMapFinder {
     
     renderMyList() {
         // 清空內容
-        this.elements.listContent.innerHTML = '';
+        SecurityUtils.clearElement(this.elements.listContent);
         
         const myList = this.listManager.getList();
         
@@ -1029,7 +1034,7 @@ class TreasureMapFinder {
     
     showLoading(show) {
         if (show) {
-            this.elements.treasureGrid.innerHTML = '';
+            SecurityUtils.clearElement(this.elements.treasureGrid);
             const loadingDiv = document.createElement('div');
             loadingDiv.className = 'loading';
             loadingDiv.textContent = '載入中...';
@@ -1038,7 +1043,7 @@ class TreasureMapFinder {
     }
     
     showError(message) {
-        this.elements.treasureGrid.innerHTML = '';
+        SecurityUtils.clearElement(this.elements.treasureGrid);
         
         const errorDiv = document.createElement('div');
         errorDiv.className = 'error-message';
@@ -1087,7 +1092,12 @@ class TreasureMapFinder {
             
             if (this.listManager.getLength() > 0) {
                 // 先解析資料以獲取數量
-                const previewData = JSON.parse(text);
+                const parseResult = SecurityUtils.safeJSONParse(text);
+                if (!parseResult.success) {
+                    FF14Utils.showToast('檔案格式錯誤', 'error');
+                    return;
+                }
+                const previewData = parseResult.data;
                 const confirmMessage = `目前清單有 ${this.listManager.getLength()} 張寶圖。\n` +
                     `要匯入的清單包含 ${previewData.maps?.length || 0} 張寶圖。\n\n` +
                     `選擇「確定」將合併清單（避免重複）\n` +
@@ -1265,7 +1275,8 @@ class TreasureMapFinder {
         const saved = localStorage.getItem('treasureMapFormatSettings');
         if (saved) {
             try {
-                this.formatSettings = JSON.parse(saved);
+                const parseResult = SecurityUtils.safeJSONParse(saved);
+                this.formatSettings = parseResult.success ? parseResult.data : this.getDefaultFormats();
             } catch (e) {
                 this.formatSettings = this.getDefaultFormats();
             }

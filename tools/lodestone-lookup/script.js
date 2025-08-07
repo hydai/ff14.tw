@@ -147,11 +147,11 @@ class LodestoneCharacterLookup {
         this.hideCharacterInfo();
 
         const datacenter = this.elements.datacenterSelect.value;
-        const apiUrl = `https://logstone.z54981220.workers.dev/character/${characterId}?dc=${datacenter}`;
-        const jobApiUrl = `https://logstone.z54981220.workers.dev/character/${characterId}/classjob?dc=${datacenter}`;
-        const achievementsApiUrl = `https://logstone.z54981220.workers.dev/character/${characterId}/achievements?page=1&dc=${datacenter}`;
-        const mountsApiUrl = `https://logstone.z54981220.workers.dev/character/${characterId}/mounts?dc=${datacenter}`;
-        const minionsApiUrl = `https://logstone.z54981220.workers.dev/character/${characterId}/minions?dc=${datacenter}`;
+        const apiUrl = SecurityUtils.buildSafeURL(`https://logstone.z54981220.workers.dev/character/${encodeURIComponent(characterId)}`, { dc: datacenter });
+        const jobApiUrl = SecurityUtils.buildSafeURL(`https://logstone.z54981220.workers.dev/character/${encodeURIComponent(characterId)}/classjob`, { dc: datacenter });
+        const achievementsApiUrl = SecurityUtils.buildSafeURL(`https://logstone.z54981220.workers.dev/character/${encodeURIComponent(characterId)}/achievements`, { page: 1, dc: datacenter });
+        const mountsApiUrl = SecurityUtils.buildSafeURL(`https://logstone.z54981220.workers.dev/character/${encodeURIComponent(characterId)}/mounts`, { dc: datacenter });
+        const minionsApiUrl = SecurityUtils.buildSafeURL(`https://logstone.z54981220.workers.dev/character/${encodeURIComponent(characterId)}/minions`, { dc: datacenter });
         
         console.log('API URLs (DC: ' + datacenter + '):', {
             character: apiUrl,
@@ -188,7 +188,11 @@ class LodestoneCharacterLookup {
             
             let characterData;
             try {
-                characterData = JSON.parse(characterText);
+                const parseResult = SecurityUtils.safeJSONParse(characterText);
+                if (!parseResult.success) {
+                    throw new Error('伺服器回應格式錯誤');
+                }
+                characterData = parseResult.data;
                 console.log('解析後的角色 JSON 資料:', characterData);
             } catch (parseError) {
                 console.error('角色 JSON 解析錯誤:', parseError);
@@ -202,7 +206,12 @@ class LodestoneCharacterLookup {
                 const jobText = await jobResponse.text();
                 console.log('原始職業回應內容:', jobText);
                 try {
-                    const jobDataResponse = JSON.parse(jobText);
+                    const parseResult = SecurityUtils.safeJSONParse(jobText);
+                    if (!parseResult.success) {
+                        console.error('職業資料格式錯誤');
+                        return;
+                    }
+                    const jobDataResponse = parseResult.data;
                     console.log('完整職業資料結構:', jobDataResponse);
                     jobData = jobDataResponse.data || jobDataResponse;  // 嘗試兩種可能的資料結構
                     console.log('解析後的職業 JSON 資料:', jobData);
@@ -926,7 +935,8 @@ class LodestoneCharacterLookup {
     async loadAchievementsPage(characterId, page) {
         try {
             const datacenter = this.elements.datacenterSelect.value;
-            const response = await fetch(`https://logstone.z54981220.workers.dev/character/${characterId}/achievements?page=${page}&dc=${datacenter}`);
+            const url = SecurityUtils.buildSafeURL(`https://logstone.z54981220.workers.dev/character/${encodeURIComponent(characterId)}/achievements`, { page: page, dc: datacenter });
+            const response = await fetch(url);
             if (response.ok) {
                 const data = await response.json();
                 this.displayAchievements(data);
@@ -1016,9 +1026,11 @@ class LodestoneCharacterLookup {
             const datacenter = this.elements.datacenterSelect.value;
             
             // 同時載入公會資訊和成員列表
+            const fcUrl = SecurityUtils.buildSafeURL(`https://logstone.z54981220.workers.dev/freecompany/${encodeURIComponent(fcId)}`, { dc: datacenter });
+            const membersUrl = SecurityUtils.buildSafeURL(`https://logstone.z54981220.workers.dev/freecompany/${encodeURIComponent(fcId)}/members`, { page: 1, dc: datacenter });
             const [fcResponse, membersResponse] = await Promise.all([
-                fetch(`https://logstone.z54981220.workers.dev/freecompany/${fcId}?dc=${datacenter}`),
-                fetch(`https://logstone.z54981220.workers.dev/freecompany/${fcId}/members?page=1&dc=${datacenter}`)
+                fetch(fcUrl),
+                fetch(membersUrl)
             ]);
             
             if (fcResponse.ok) {
@@ -1308,7 +1320,8 @@ class LodestoneCharacterLookup {
         
         try {
             const datacenter = this.elements.datacenterSelect.value;
-            const response = await fetch(`https://logstone.z54981220.workers.dev/freecompany/${this.currentFCId}/members?page=${page}&dc=${datacenter}`);
+            const url = SecurityUtils.buildSafeURL(`https://logstone.z54981220.workers.dev/freecompany/${encodeURIComponent(this.currentFCId)}/members`, { page: page, dc: datacenter });
+            const response = await fetch(url);
             if (response.ok) {
                 const data = await response.json();
                 this.displayFreeCompanyMembers(data);

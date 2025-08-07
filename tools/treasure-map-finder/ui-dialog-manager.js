@@ -334,11 +334,12 @@ class UIDialogManager {
         const { onStepCopy, getZoneName } = options;
         
         // 生成摘要
-        const summaryHtml = this.generateRouteSummary(result, getZoneName);
-        elements.summary.innerHTML = summaryHtml;
+        const summaryElement = this.generateRouteSummary(result, getZoneName);
+        SecurityUtils.clearElement(elements.summary);
+        elements.summary.appendChild(summaryElement);
         
         // 生成步驟列表
-        elements.steps.innerHTML = '';
+        SecurityUtils.clearElement(elements.steps);
         result.route.forEach((step, index) => {
             const stepElement = this.createRouteStep(step, index, result.route.length, {
                 onStepCopy,
@@ -359,14 +360,28 @@ class UIDialogManager {
             .map(zone => getZoneName ? getZoneName(zone) : zone)
             .join(' → ');
         
-        return `
-            <div class="route-summary-content">
-                <p><strong>路線摘要：</strong></p>
-                <p>地區順序：${regionsText}</p>
-                <p>總傳送次數：${result.summary.totalTeleports || 0}</p>
-                <p>總寶圖數量：${result.summary.totalMaps || 0}</p>
-            </div>
-        `;
+        const summaryDiv = document.createElement('div');
+        summaryDiv.className = 'route-summary-content';
+        
+        const titleP = document.createElement('p');
+        const strong = document.createElement('strong');
+        strong.textContent = '路線摘要：';
+        titleP.appendChild(strong);
+        summaryDiv.appendChild(titleP);
+        
+        const regionsP = document.createElement('p');
+        regionsP.textContent = `地區順序：${regionsText}`;
+        summaryDiv.appendChild(regionsP);
+        
+        const teleportsP = document.createElement('p');
+        teleportsP.textContent = `總傳送次數：${result.summary.totalTeleports || 0}`;
+        summaryDiv.appendChild(teleportsP);
+        
+        const mapsP = document.createElement('p');
+        mapsP.textContent = `總寶圖數量：${result.summary.totalMaps || 0}`;
+        summaryDiv.appendChild(mapsP);
+        
+        return summaryDiv;
     }
 
     /**
@@ -387,23 +402,45 @@ class UIDialogManager {
         
         if (step.type === 'teleport') {
             const aetheryteNames = step.to;
-            stepContent.innerHTML = `
-                <span class="step-icon">🔮</span>
-                <span class="step-text">傳送至 ${aetheryteNames.zh || aetheryteNames}</span>
-                <span class="step-coords">${CoordinateUtils.formatCoordinatesShort(step.coords)}</span>
-            `;
+            
+            const iconSpan = document.createElement('span');
+            iconSpan.className = 'step-icon';
+            iconSpan.textContent = '🔮';
+            
+            const textSpan = document.createElement('span');
+            textSpan.className = 'step-text';
+            textSpan.textContent = `傳送至 ${aetheryteNames.zh || aetheryteNames}`;
+            
+            const coordsSpan = document.createElement('span');
+            coordsSpan.className = 'step-coords';
+            coordsSpan.textContent = CoordinateUtils.formatCoordinatesShort(step.coords);
+            
+            stepContent.appendChild(iconSpan);
+            stepContent.appendChild(textSpan);
+            stepContent.appendChild(coordsSpan);
         } else {
             const zoneName = getZoneName ? getZoneName(step.zoneId || step.zone) : step.zone;
-            stepContent.innerHTML = `
-                <span class="step-icon">📍</span>
-                <span class="step-text">${step.mapLevel || ''} - ${zoneName}</span>
-                <span class="step-coords">${CoordinateUtils.formatCoordinatesShort(step.coords)}</span>
-            `;
+            
+            const iconSpan = document.createElement('span');
+            iconSpan.className = 'step-icon';
+            iconSpan.textContent = '📍';
+            
+            const textSpan = document.createElement('span');
+            textSpan.className = 'step-text';
+            textSpan.textContent = `${step.mapLevel || ''} - ${zoneName}`;
+            
+            const coordsSpan = document.createElement('span');
+            coordsSpan.className = 'step-coords';
+            coordsSpan.textContent = CoordinateUtils.formatCoordinatesShort(step.coords);
+            
+            stepContent.appendChild(iconSpan);
+            stepContent.appendChild(textSpan);
+            stepContent.appendChild(coordsSpan);
         }
         
         const copyBtn = document.createElement('button');
         copyBtn.className = 'btn btn-sm btn-copy';
-        copyBtn.innerHTML = '📋';
+        copyBtn.textContent = '📋';
         copyBtn.title = '複製';
         copyBtn.onclick = () => {
             if (onStepCopy) {
@@ -532,7 +569,12 @@ class UIDialogManager {
         
         if (content) {
             const contentDiv = document.createElement('div');
-            contentDiv.innerHTML = content;
+            // Check if content is a string or DOM element
+            if (typeof content === 'string') {
+                contentDiv.textContent = content;
+            } else if (content instanceof HTMLElement) {
+                contentDiv.appendChild(content);
+            }
             dialog.appendChild(contentDiv);
         }
         

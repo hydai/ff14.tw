@@ -321,7 +321,7 @@ class FauxHollowsFoxes {
     }
 
     initializeBoard() {
-        this.elements.board.innerHTML = '';
+        SecurityUtils.clearElement(this.elements.board);
         for (let i = 0; i < FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS; i++) {
             const cell = document.createElement('div');
             cell.className = 'board-cell';
@@ -469,7 +469,7 @@ class FauxHollowsFoxes {
             if (this.board[i] === null) {
                 // 只在未設置的格子上顯示機率
                 cell.textContent = '';
-                cell.innerHTML = '';
+                SecurityUtils.clearElement(cell);
                 
                 if (this.showTreasureProbabilities && this.obstaclesConfirmed) {
                     // 顯示寶物機率
@@ -505,16 +505,22 @@ class FauxHollowsFoxes {
         
         if (validProbabilities.length > 0) {
             // 創建三等份結構，只顯示有效的機率
-            let itemsHtml = '';
+            SecurityUtils.clearElement(cell);
+            const container = document.createElement('div');
+            container.className = 'treasure-prob-container';
+            
             for (let i = 0; i < 3; i++) {
+                const item = document.createElement('div');
                 if (validProbabilities[i]) {
-                    itemsHtml += `<div class="treasure-prob-item ${validProbabilities[i].className}">${validProbabilities[i].text}</div>`;
+                    item.className = `treasure-prob-item ${validProbabilities[i].className}`;
+                    item.textContent = validProbabilities[i].text;
                 } else {
-                    itemsHtml += `<div class="treasure-prob-item empty-prob"></div>`;
+                    item.className = 'treasure-prob-item empty-prob';
                 }
+                container.appendChild(item);
             }
             
-            cell.innerHTML = `<div class="treasure-prob-container">${itemsHtml}</div>`;
+            cell.appendChild(container);
             cell.classList.add('treasure-probability-display');
         }
     }
@@ -1128,7 +1134,7 @@ class FauxHollowsFoxes {
         // Place the single cell
         this.board[index] = type;
         cell.className = `board-cell ${type}`;
-        cell.innerHTML = '';
+        SecurityUtils.clearElement(cell);
         
         // Set display text
         if (type === 'fox') {
@@ -1176,7 +1182,7 @@ class FauxHollowsFoxes {
 
         this.board[index] = 'empty';
         cell.className = 'board-cell empty';
-        cell.innerHTML = '';
+        SecurityUtils.clearElement(cell);
         cell.textContent = '';
         
         // Only increment click count if not overwriting
@@ -1423,11 +1429,19 @@ class FauxHollowsFoxes {
             }
         }
 
-        this.elements.resultDetails.innerHTML = `
-            <p>劍 x ${shapes.sword} = ${shapes.sword * FauxHollowsFoxes.CONSTANTS.SCORES.SWORD} 分</p>
-            <p>寶箱 x ${shapes.chest} = ${shapes.chest * FauxHollowsFoxes.CONSTANTS.SCORES.CHEST} 分</p>
-            <p>宗長 x ${shapes.fox} = ${shapes.fox * FauxHollowsFoxes.CONSTANTS.SCORES.FOX} 分</p>
-        `;
+        SecurityUtils.clearElement(this.elements.resultDetails);
+        
+        const swordP = document.createElement('p');
+        swordP.textContent = `劍 x ${shapes.sword} = ${shapes.sword * FauxHollowsFoxes.CONSTANTS.SCORES.SWORD} 分`;
+        this.elements.resultDetails.appendChild(swordP);
+        
+        const chestP = document.createElement('p');
+        chestP.textContent = `寶箱 x ${shapes.chest} = ${shapes.chest * FauxHollowsFoxes.CONSTANTS.SCORES.CHEST} 分`;
+        this.elements.resultDetails.appendChild(chestP);
+        
+        const foxP = document.createElement('p');
+        foxP.textContent = `宗長 x ${shapes.fox} = ${shapes.fox * FauxHollowsFoxes.CONSTANTS.SCORES.FOX} 分`;
+        this.elements.resultDetails.appendChild(foxP);
 
         this.elements.resultPanel.style.display = 'block';
     }
@@ -1628,13 +1642,32 @@ class FauxHollowsFoxes {
                         const foxProb = this.treasureProbabilities.fox[i];
                         
                         if (swordProb > 0 || chestProb > 0 || foxProb > 0) {
-                            cell.innerHTML = `
-                                <div class="treasure-prob-container">
-                                    ${swordProb > 0 ? `<div class="treasure-prob sword-prob">劍:${swordProb}%</div>` : ''}
-                                    ${chestProb > 0 ? `<div class="treasure-prob chest-prob">箱:${chestProb}%</div>` : ''}
-                                    ${foxProb > 0 ? `<div class="treasure-prob fox-prob">狐:${foxProb}%</div>` : ''}
-                                </div>
-                            `;
+                            SecurityUtils.clearElement(cell);
+                            const container = document.createElement('div');
+                            container.className = 'treasure-prob-container';
+                            
+                            if (swordProb > 0) {
+                                const swordDiv = document.createElement('div');
+                                swordDiv.className = 'treasure-prob sword-prob';
+                                swordDiv.textContent = `劍:${swordProb}%`;
+                                container.appendChild(swordDiv);
+                            }
+                            
+                            if (chestProb > 0) {
+                                const chestDiv = document.createElement('div');
+                                chestDiv.className = 'treasure-prob chest-prob';
+                                chestDiv.textContent = `箱:${chestProb}%`;
+                                container.appendChild(chestDiv);
+                            }
+                            
+                            if (foxProb > 0) {
+                                const foxDiv = document.createElement('div');
+                                foxDiv.className = 'treasure-prob fox-prob';
+                                foxDiv.textContent = `狐:${foxProb}%`;
+                                container.appendChild(foxDiv);
+                            }
+                            
+                            cell.appendChild(container);
                             cell.classList.add('treasure-probability-display');
                         }
                     }

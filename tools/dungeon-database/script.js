@@ -79,7 +79,11 @@ class DungeonDatabase {
 
     showError(message) {
         const { BLOCK, NONE } = DungeonDatabase.CONSTANTS.DISPLAY_STATES;
-        this.elements.noResults.innerHTML = `<p style="color: var(--accent-color);">${message}</p>`;
+        SecurityUtils.clearElement(this.elements.noResults);
+        const p = document.createElement('p');
+        p.style.color = 'var(--accent-color)';
+        p.textContent = message;
+        this.elements.noResults.appendChild(p);
         this.setElementDisplay(this.elements.noResults, BLOCK);
         this.setElementDisplay(this.elements.dungeonList, NONE);
     }
@@ -375,22 +379,194 @@ class DungeonDatabase {
         this.setElementDisplay(container, GRID);
         this.setElementDisplay(this.elements.noResults, NONE);
 
-        container.innerHTML = this.filteredDungeons.map(dungeon => 
-            this.createDungeonCard(dungeon)
-        ).join('');
+        // Clear container safely
+        SecurityUtils.clearElement(container);
+        
+        // Create and append cards using DOM manipulation
+        this.filteredDungeons.forEach((dungeon, index) => {
+            const card = this.createDungeonCardElement(dungeon);
+            card.addEventListener('click', () => {
+                this.showDungeonDetail(dungeon);
+            });
+            container.appendChild(card);
+        });
+    }
 
-        // 添加點擊事件
-        this.attachCardEvents(container);
+    createDungeonCardElement(dungeon) {
+        const { DUNGEON_CARD } = DungeonDatabase.CONSTANTS.CSS_CLASSES;
+        
+        // Create main card container
+        const card = document.createElement('div');
+        card.className = DUNGEON_CARD;
+        card.dataset.id = dungeon.id;
+        
+        // Create image section
+        const imageDiv = document.createElement('div');
+        imageDiv.className = 'dungeon-image';
+        
+        if (dungeon.image) {
+            const img = document.createElement('img');
+            img.src = dungeon.image;
+            img.alt = dungeon.name;
+            img.onerror = function() {
+                this.style.display = 'none';
+                const placeholder = this.nextElementSibling;
+                if (placeholder) placeholder.style.display = 'flex';
+            };
+            img.onload = function() {
+                this.style.display = 'block';
+                const placeholder = this.nextElementSibling;
+                if (placeholder) placeholder.style.display = 'none';
+            };
+            imageDiv.appendChild(img);
+            
+            const placeholder = document.createElement('div');
+            placeholder.className = 'image-placeholder';
+            placeholder.style.display = 'none';
+            const placeholderText = document.createElement('span');
+            placeholderText.textContent = '圖片載入中...';
+            placeholder.appendChild(placeholderText);
+            imageDiv.appendChild(placeholder);
+        } else {
+            imageDiv.textContent = '圖片準備中';
+        }
+        
+        card.appendChild(imageDiv);
+        
+        // Create content section
+        const content = document.createElement('div');
+        content.className = 'dungeon-content';
+        
+        // Header
+        const header = document.createElement('div');
+        header.className = 'dungeon-header';
+        
+        const title = document.createElement('h3');
+        title.className = 'dungeon-title';
+        const highlightedName = this.highlightSearchTermsDOM(dungeon.name, this.currentSearchTerm);
+        title.appendChild(highlightedName);
+        header.appendChild(title);
+        
+        const level = document.createElement('span');
+        level.className = 'dungeon-level';
+        level.textContent = `Lv.${dungeon.level}`;
+        header.appendChild(level);
+        
+        content.appendChild(header);
+        
+        // Meta information
+        const meta = document.createElement('div');
+        meta.className = 'dungeon-meta';
+        
+        const type = document.createElement('span');
+        type.className = 'dungeon-type';
+        type.textContent = dungeon.type;
+        meta.appendChild(type);
+        
+        const expansion = document.createElement('span');
+        expansion.className = 'dungeon-expansion';
+        expansion.textContent = dungeon.expansion;
+        meta.appendChild(expansion);
+        
+        content.appendChild(meta);
+        
+        // Rewards
+        const rewards = document.createElement('div');
+        rewards.className = 'dungeon-rewards';
+        
+        const rewardsTitle = document.createElement('h4');
+        rewardsTitle.textContent = '獎勵';
+        rewards.appendChild(rewardsTitle);
+        
+        const rewardItem = document.createElement('div');
+        rewardItem.className = 'reward-item';
+        
+        const rewardName = document.createElement('span');
+        rewardName.className = 'reward-name';
+        rewardName.textContent = '神典石';
+        rewardItem.appendChild(rewardName);
+        
+        const rewardValue = document.createElement('span');
+        rewardValue.className = 'reward-value';
+        rewardValue.textContent = dungeon.tombstoneReward;
+        rewardItem.appendChild(rewardValue);
+        
+        rewards.appendChild(rewardItem);
+        content.appendChild(rewards);
+        
+        // Special drops
+        if (dungeon.specialDrops && dungeon.specialDrops.length > 0) {
+            const specialDrops = document.createElement('div');
+            specialDrops.className = DungeonDatabase.CONSTANTS.CSS_CLASSES.SPECIAL_DROPS;
+            
+            const dropsTitle = document.createElement('h4');
+            dropsTitle.textContent = '特殊掉落物';
+            specialDrops.appendChild(dropsTitle);
+            
+            const dropsList = document.createElement('div');
+            dropsList.className = 'drops-list';
+            
+            dungeon.specialDrops.forEach(drop => {
+                const dropItem = document.createElement('span');
+                dropItem.className = DungeonDatabase.CONSTANTS.CSS_CLASSES.DROP_ITEM;
+                dropItem.textContent = drop;
+                dropsList.appendChild(dropItem);
+            });
+            
+            specialDrops.appendChild(dropsList);
+            content.appendChild(specialDrops);
+        }
+        
+        // Description - Mechanics
+        const mechanicsDiv = document.createElement('div');
+        mechanicsDiv.className = 'dungeon-description';
+        
+        const mechanicsLabel = document.createElement('strong');
+        mechanicsLabel.textContent = '機制說明：';
+        mechanicsDiv.appendChild(mechanicsLabel);
+        
+        const highlightedMechanics = this.highlightSearchTermsDOM(dungeon.mechanics, this.currentSearchTerm);
+        mechanicsDiv.appendChild(highlightedMechanics);
+        content.appendChild(mechanicsDiv);
+        
+        // Description - Main description
+        const descriptionDiv = document.createElement('div');
+        descriptionDiv.className = 'dungeon-description';
+        const highlightedDescription = this.highlightSearchTermsDOM(dungeon.description, this.currentSearchTerm);
+        descriptionDiv.appendChild(highlightedDescription);
+        content.appendChild(descriptionDiv);
+        
+        card.appendChild(content);
+        
+        return card;
+    }
+    
+    highlightSearchTermsDOM(text, searchTerm) {
+        const container = document.createDocumentFragment();
+        
+        if (!searchTerm || searchTerm.length < 2) {
+            container.appendChild(document.createTextNode(text));
+            return container;
+        }
+        
+        const regex = new RegExp(`(${searchTerm})`, 'gi');
+        const parts = text.split(regex);
+        
+        parts.forEach(part => {
+            if (part.toLowerCase() === searchTerm.toLowerCase()) {
+                const mark = document.createElement('mark');
+                mark.textContent = part;
+                container.appendChild(mark);
+            } else {
+                container.appendChild(document.createTextNode(part));
+            }
+        });
+        
+        return container;
     }
 
     attachCardEvents(container) {
-        const { DUNGEON_CARD } = DungeonDatabase.CONSTANTS.CSS_CLASSES;
-        
-        container.querySelectorAll(`.${DUNGEON_CARD}`).forEach((card, index) => {
-            card.addEventListener('click', () => {
-                this.showDungeonDetail(this.filteredDungeons[index]);
-            });
-        });
+        // This method is no longer needed as we add events in displayDungeons
     }
 
     createDungeonCard(dungeon) {

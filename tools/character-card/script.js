@@ -215,7 +215,12 @@ document.addEventListener('DOMContentLoaded', function() {
         cardElements.jobIcon.forEach(el => {
             if (jobIconPath) {
                 // 清除舊內容並添加圖片
-                el.innerHTML = `<img src="../../${jobIconPath}" alt="${jobName}" class="job-icon-img">`;
+                SecurityUtils.clearElement(el);
+                const img = document.createElement('img');
+                img.src = `../../${jobIconPath}`;
+                img.alt = jobName;
+                img.className = 'job-icon-img';
+                el.appendChild(img);
             } else {
                 // 回退到預設圖示
                 el.textContent = '⚔️';
@@ -549,7 +554,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!datacenters) return;
 
         // 清空並重新生成資料中心按鈕
-        serverSelectionElements.datacenterGrid.innerHTML = '';
+        SecurityUtils.clearElement(serverSelectionElements.datacenterGrid);
         
         Object.keys(datacenters).forEach(datacenter => {
             const button = document.createElement('button');
@@ -587,7 +592,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!servers) return;
 
         // 清空並重新生成伺服器按鈕
-        serverSelectionElements.serverGrid.innerHTML = '';
+        SecurityUtils.clearElement(serverSelectionElements.serverGrid);
         
         servers.forEach(server => {
             const button = document.createElement('button');
