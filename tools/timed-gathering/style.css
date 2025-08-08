@@ -311,11 +311,7 @@
 .item-version {
     font-weight: 600;
     color: var(--primary);
-    background: var(--bg-primary);
-    padding: 0.2rem 0.5rem;
-    border-radius: 4px;
     font-size: 0.9rem;
-    border: 1px solid var(--primary);
 }
 
 .item-description {
