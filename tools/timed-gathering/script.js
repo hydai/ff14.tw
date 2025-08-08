@@ -352,10 +352,10 @@ class TimedGatheringManager {
         coordsDiv.textContent = `📐 ${item.coordinates}`;
         info.appendChild(coordsDiv);
         
-        const levelDiv = document.createElement('div');
-        levelDiv.className = 'item-level';
-        levelDiv.textContent = `Lv.${item.level}`;
-        info.appendChild(levelDiv);
+        const versionDiv = document.createElement('div');
+        versionDiv.className = 'item-version';
+        versionDiv.textContent = `v${item.expansion}`;
+        info.appendChild(versionDiv);
         
         body.appendChild(info);
         
@@ -454,6 +454,11 @@ class TimedGatheringManager {
         const displayName = this.currentLanguage === 'ja' && item.nameJp ? item.nameJp : item.name;
         name.textContent = displayName;
         info.appendChild(name);
+        
+        const version = document.createElement('span');
+        version.className = 'list-item-version';
+        version.textContent = `v${item.expansion}`;
+        info.appendChild(version);
         
         const time = document.createElement('span');
         time.className = 'list-item-time';
