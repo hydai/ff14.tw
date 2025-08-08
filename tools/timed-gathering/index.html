@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>特殊採集時間管理器 - FF14.tw</title>
-    <meta name="description" content="FF14 特殊採集時間管理工具，支援搜尋、多清單管理、巨集匯出功能">
+    <title data-i18n="pageTitle">特殊採集時間管理器</title>
+    <meta name="description" content="FF14 特殊採集時間管理工具，支援搜尋、多清單管理、巨集匯出功能" data-i18n="pageDescription" data-i18n-attr="content">
     <link rel="icon" type="image/x-icon" href="../../assets/images/ff14tw.ico">
     <link rel="stylesheet" href="../../assets/css/common.css">
     <link rel="stylesheet" href="../../assets/css/dark-mode-tools.css">
@@ -33,28 +33,28 @@
     <main class="main">
         <div class="container">
             <div class="page-header">
-                <h1>特殊採集時間管理器</h1>
+                <h1 data-i18n="pageTitle">特殊採集時間管理器</h1>
             </div>
 
             <div class="tool-content">
                 <!-- 頂部工具列 -->
                 <div class="toolbar">
                     <div class="search-section">
-                        <input type="text" id="searchInput" class="form-control search-input" placeholder="搜尋採集物名稱、地點...">
-                        <button id="clearSearchBtn" class="btn btn-secondary btn-sm">清除</button>
+                        <input type="text" id="searchInput" class="form-control search-input" placeholder="搜尋採集物名稱、地點..." data-i18n="searchPlaceholder" data-i18n-attr="placeholder">
+                        <button id="clearSearchBtn" class="btn btn-secondary btn-sm" data-i18n="clearButton">清除</button>
                     </div>
                     <div class="toolbar-actions">
                         <div class="language-selector">
                             <button class="btn btn-sm language-btn active" data-lang="zh">中文</button>
                             <button class="btn btn-sm language-btn" data-lang="ja">日本語</button>
                         </div>
-                        <button id="newListBtn" class="btn btn-primary">
+                        <button id="newListBtn" class="btn btn-primary" data-i18n-html="newListButton">
                             <span class="btn-icon">➕</span> 新增清單
                         </button>
-                        <button id="importBtn" class="btn btn-secondary">
+                        <button id="importBtn" class="btn btn-secondary" data-i18n-html="importButton">
                             <span class="btn-icon">📥</span> 匯入
                         </button>
-                        <button id="exportBtn" class="btn btn-secondary">
+                        <button id="exportBtn" class="btn btn-secondary" data-i18n-html="exportButton">
                             <span class="btn-icon">📤</span> 匯出
                         </button>
                     </div>
@@ -63,21 +63,21 @@
                 <!-- 篩選標籤 -->
                 <div class="filter-section">
                     <div class="filter-group">
-                        <label class="filter-label">類型：</label>
+                        <label class="filter-label" data-i18n="filterType">類型：</label>
                         <div class="filter-tags" id="typeFilters">
-                            <button class="tag tag-filter" data-type="mining">
+                            <button class="tag tag-filter" data-type="mining" data-i18n-html="typeMining">
                                 <span class="tag-icon">⛏️</span> 採礦
                             </button>
-                            <button class="tag tag-filter" data-type="botany">
+                            <button class="tag tag-filter" data-type="botany" data-i18n-html="typeBotany">
                                 <span class="tag-icon">🌿</span> 園藝
                             </button>
-                            <button class="tag tag-filter" data-type="fishing">
+                            <button class="tag tag-filter" data-type="fishing" data-i18n-html="typeFishing">
                                 <span class="tag-icon">🎣</span> 釣魚
                             </button>
                         </div>
                     </div>
                     <div class="filter-group">
-                        <label class="filter-label">資料片：</label>
+                        <label class="filter-label" data-i18n="filterExpansion">資料片：</label>
                         <div class="filter-tags" id="expansionFilters">
                             <button class="tag tag-filter" data-expansion="3.0">蒼天</button>
                             <button class="tag tag-filter" data-expansion="4.0">紅蓮</button>
@@ -93,14 +93,14 @@
                     <!-- 左側：採集物列表 -->
                     <div class="items-panel">
                         <div class="panel-header">
-                            <h2>採集物列表</h2>
+                            <h2 data-i18n="itemsListTitle">採集物列表</h2>
                             <span class="item-count" id="itemCount">載入中...</span>
                         </div>
                         
                         <!-- 載入中提示 -->
                         <div class="loading" id="loadingIndicator">
                             <div class="loading-spinner"></div>
-                            <p>載入採集物資料中...</p>
+                            <p data-i18n="loadingItems">載入採集物資料中...</p>
                         </div>
                         
                         <!-- 錯誤訊息 -->
@@ -114,48 +114,48 @@
                     <div class="lists-panel">
                         <!-- 清單標籤頁 -->
                         <div class="list-tabs" id="listTabs">
-                            <button class="list-tab active" data-list-id="default">預設清單</button>
+                            <button class="list-tab active" data-list-id="default" data-i18n="defaultListName">預設清單</button>
                         </div>
 
                         <!-- 清單內容 -->
                         <div class="list-content">
                             <div class="list-header">
-                                <h3 id="currentListName">預設清單</h3>
+                                <h3 id="currentListName" data-i18n="defaultListName">預設清單</h3>
                                 <div class="list-actions">
-                                    <button id="renameListBtn" class="btn btn-sm" title="重新命名">✏️</button>
-                                    <button id="deleteListBtn" class="btn btn-sm btn-danger" title="刪除清單">🗑️</button>
-                                    <button id="clearListBtn" class="btn btn-sm" title="清空清單">🧹</button>
+                                    <button id="renameListBtn" class="btn btn-sm" title="重新命名" data-i18n="renameListTooltip" data-i18n-attr="title">✏️</button>
+                                    <button id="deleteListBtn" class="btn btn-sm btn-danger" title="刪除清單" data-i18n="deleteListTooltip" data-i18n-attr="title">🗑️</button>
+                                    <button id="clearListBtn" class="btn btn-sm" title="清空清單" data-i18n="clearListTooltip" data-i18n-attr="title">🧹</button>
                                 </div>
                             </div>
                             
                             <div class="list-items" id="listItems">
                                 <div class="empty-list-message">
-                                    <p>清單為空</p>
-                                    <small>從左側點擊「加入清單」按鈕來新增採集物</small>
+                                    <p data-i18n="emptyListMessage">清單為空</p>
+                                    <small data-i18n="emptyListHint">從左側點擊「加入清單」按鈕來新增採集物</small>
                                 </div>
                             </div>
 
                             <!-- 巨集匯出區 -->
                             <div class="macro-section">
                                 <div class="macro-header">
-                                    <h3>巨集匯出</h3>
-                                    <button id="generateMacroBtn" class="btn btn-success btn-sm">
+                                    <h3 data-i18n="macroSectionTitle">巨集匯出</h3>
+                                    <button id="generateMacroBtn" class="btn btn-success btn-sm" data-i18n-html="generateMacroButton">
                                         <span class="btn-icon">⚙️</span> 生成巨集
                                     </button>
                                 </div>
                                 <div class="macro-options">
                                     <label class="form-check">
                                         <input type="checkbox" id="includeClearCmd" class="form-check-input" checked>
-                                        <span class="form-check-label">包含清除指令</span>
+                                        <span class="form-check-label" data-i18n="includeClearOption">包含清除指令</span>
                                     </label>
                                     <label class="form-check">
                                         <input type="checkbox" id="sortByTime" class="form-check-input" checked>
-                                        <span class="form-check-label">按時間排序</span>
+                                        <span class="form-check-label" data-i18n="sortByTimeOption">按時間排序</span>
                                     </label>
                                 </div>
                                 <div class="macro-output" id="macroOutput" style="display: none;">
                                     <textarea id="macroText" class="form-control" rows="10" readonly></textarea>
-                                    <button id="copyMacroBtn" class="btn btn-primary btn-block">
+                                    <button id="copyMacroBtn" class="btn btn-primary btn-block" data-i18n-html="copyMacroButton">
                                         <span class="btn-icon">📋</span> 複製到剪貼簿
                                     </button>
                                 </div>
@@ -177,21 +177,22 @@
     <div id="dialogOverlay" class="dialog-overlay" style="display: none;">
         <div class="dialog">
             <div class="dialog-header">
-                <h3 id="dialogTitle">對話框標題</h3>
+                <h3 id="dialogTitle" data-i18n="dialogTitle">對話框標題</h3>
                 <button class="dialog-close" id="dialogClose">&times;</button>
             </div>
             <div class="dialog-body" id="dialogBody">
                 <!-- 動態內容 -->
             </div>
             <div class="dialog-footer">
-                <button id="dialogCancel" class="btn btn-secondary">取消</button>
-                <button id="dialogConfirm" class="btn btn-primary">確認</button>
+                <button id="dialogCancel" class="btn btn-secondary" data-i18n="cancelButton">取消</button>
+                <button id="dialogConfirm" class="btn btn-primary" data-i18n="confirmButton">確認</button>
             </div>
         </div>
     </div>
 
     <!-- JavaScript -->
     <script src="../../assets/js/common.js"></script>
+    <script src="i18n.js"></script>
     <script src="security-utils.js"></script>
     <script src="list-manager.js"></script>
     <script src="macro-exporter.js"></script>

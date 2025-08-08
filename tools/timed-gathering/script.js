@@ -16,7 +16,7 @@ class TimedGatheringManager {
         this.searchFilter = null;
         this.currentListId = 'default';
         this.debounceTimer = null;
-        this.currentLanguage = localStorage.getItem('ff14tw_preferred_language') || 'zh';
+        this.currentLanguage = window.i18n.getCurrentLanguage();
         
         this.elements = {
             // 搜尋與篩選
@@ -88,7 +88,7 @@ class TimedGatheringManager {
             
         } catch (error) {
             console.error('初始化失敗:', error);
-            this.showError('初始化失敗，請重新整理頁面');
+            this.showError(window.i18n.getText('initFailedError'));
         }
     }
 
@@ -139,7 +139,7 @@ class TimedGatheringManager {
             
         } catch (error) {
             console.error('載入資料失敗:', error);
-            this.showError('載入採集物資料失敗，請重新整理頁面再試');
+            this.showError(window.i18n.getText('dataLoadFailedError'));
         } finally {
             this.showLoading(false);
         }
@@ -237,7 +237,7 @@ class TimedGatheringManager {
 
     switchLanguage(lang) {
         this.currentLanguage = lang;
-        localStorage.setItem('ff14tw_preferred_language', lang);
+        window.i18n.setLanguage(lang);
         this.updateLanguageButtons();
         this.updateDisplay();
         this.updateListDisplay();
@@ -287,7 +287,7 @@ class TimedGatheringManager {
         if (this.filteredData.length === 0) {
             const emptyMessage = document.createElement('div');
             emptyMessage.className = 'empty-message';
-            emptyMessage.textContent = '沒有符合條件的採集物';
+            emptyMessage.textContent = window.i18n.getText('noItemsFound');
             container.appendChild(emptyMessage);
             return;
         }
@@ -377,7 +377,7 @@ class TimedGatheringManager {
         SecurityUtils.updateButtonContent(
             addBtn,
             isInList ? '✔️' : '➕',
-            isInList ? '已加入' : '加入清單'
+            isInList ? window.i18n.getText('addedToListButton') : window.i18n.getText('addToListButton')
         );
         addBtn.disabled = isInList;
         
@@ -385,7 +385,7 @@ class TimedGatheringManager {
             this.addItemToList(item);
             addBtn.className = 'btn btn-success btn-sm';
             // Use safe DOM manipulation instead of innerHTML
-            SecurityUtils.updateButtonContent(addBtn, '✔️', '已加入');
+            SecurityUtils.updateButtonContent(addBtn, '✔️', window.i18n.getText('addedToListButton'));
             addBtn.disabled = true;
         });
         
@@ -408,7 +408,7 @@ class TimedGatheringManager {
         const result = this.listManager.addToList(this.currentListId, item);
         if (result.success) {
             this.updateListDisplay();
-            this.showNotification('已加入清單', 'success');
+            this.showNotification(window.i18n.getText('addedToListNotification'), 'success');
         } else {
             this.showNotification(result.message, 'warning');
         }
@@ -422,8 +422,8 @@ class TimedGatheringManager {
         if (!list || list.items.length === 0) {
             // Use safe DOM manipulation instead of innerHTML
             const emptyMessage = SecurityUtils.createEmptyMessage(
-                '清單為空',
-                '從左側點擊「加入清單」按鈕來新增採集物'
+                window.i18n.getText('emptyListMessage'),
+                window.i18n.getText('emptyListHint')
             );
             container.appendChild(emptyMessage);
             return;
@@ -465,7 +465,7 @@ class TimedGatheringManager {
         const removeBtn = document.createElement('button');
         removeBtn.className = 'btn btn-sm btn-danger';
         removeBtn.textContent = '🗑️';  // Use textContent instead of innerHTML
-        removeBtn.title = '移除';
+        removeBtn.title = window.i18n.getText('removeFromList');
         removeBtn.addEventListener('click', () => {
             this.removeItemFromList(item.id);
         });
@@ -479,7 +479,7 @@ class TimedGatheringManager {
         this.listManager.removeFromList(this.currentListId, itemId);
         this.updateListDisplay();
         this.updateDisplay(); // 更新左側顯示
-        this.showNotification('已從清單移除', 'info');
+        this.showNotification(window.i18n.getText('removedFromListNotification'), 'info');
     }
 
     loadLists() {
@@ -535,17 +535,17 @@ class TimedGatheringManager {
 
     showNewListDialog() {
         if (this.listManager.getAllLists().length >= TimedGatheringManager.CONSTANTS.MAX_LISTS) {
-            this.showNotification(`最多只能建立 ${TimedGatheringManager.CONSTANTS.MAX_LISTS} 個清單`, 'warning');
+            this.showNotification(window.i18n.getText('maxListsWarning') + ' ' + TimedGatheringManager.CONSTANTS.MAX_LISTS + ' ' + window.i18n.getText('maxListsUnit'), 'warning');
             return;
         }
         
-        this.elements.dialogTitle.textContent = '新增清單';
+        this.elements.dialogTitle.textContent = window.i18n.getText('newListDialogTitle');
         // Use safe DOM manipulation instead of innerHTML
         SecurityUtils.clearElement(this.elements.dialogBody);
         const formGroup = SecurityUtils.createFormGroup({
-            label: '清單名稱：',
+            label: window.i18n.getText('listNameLabel'),
             inputId: 'newListName',
-            placeholder: '輸入清單名稱',
+            placeholder: window.i18n.getText('enterListNamePlaceholder'),
             maxLength: TimedGatheringManager.CONSTANTS.MAX_LIST_NAME_LENGTH
         });
         this.elements.dialogBody.appendChild(formGroup);
@@ -556,7 +556,7 @@ class TimedGatheringManager {
             
             // Validate and sanitize input
             if (!SecurityUtils.validateTextLength(rawName, 1, TimedGatheringManager.CONSTANTS.MAX_LIST_NAME_LENGTH)) {
-                this.showNotification('清單名稱長度不符合要求', 'error');
+                this.showNotification(window.i18n.getText('invalidListNameError'), 'error');
                 return;
             }
             
@@ -569,7 +569,7 @@ class TimedGatheringManager {
                     this.loadLists();
                     this.switchToList(result.listId);
                     this.hideDialog();
-                    this.showNotification('清單已建立', 'success');
+                    this.showNotification(window.i18n.getText('listCreatedNotification'), 'success');
                 } else {
                     this.showNotification(result.message, 'error');
                 }
@@ -587,11 +587,11 @@ class TimedGatheringManager {
     showRenameListDialog() {
         const currentList = this.listManager.getList(this.currentListId);
         
-        this.elements.dialogTitle.textContent = '重新命名清單';
+        this.elements.dialogTitle.textContent = window.i18n.getText('renameListDialogTitle');
         // Use safe DOM manipulation instead of innerHTML
         SecurityUtils.clearElement(this.elements.dialogBody);
         const formGroup = SecurityUtils.createFormGroup({
-            label: '新名稱：',
+            label: window.i18n.getText('newNameLabel'),
             inputId: 'renameListInput',
             value: currentList.name,
             maxLength: TimedGatheringManager.CONSTANTS.MAX_LIST_NAME_LENGTH
@@ -604,7 +604,7 @@ class TimedGatheringManager {
             
             // Validate and sanitize input
             if (!SecurityUtils.validateTextLength(rawName, 1, TimedGatheringManager.CONSTANTS.MAX_LIST_NAME_LENGTH)) {
-                this.showNotification('清單名稱長度不符合要求', 'error');
+                this.showNotification(window.i18n.getText('invalidListNameError'), 'error');
                 return;
             }
             
@@ -617,7 +617,7 @@ class TimedGatheringManager {
                     this.loadLists();
                     this.elements.currentListName.textContent = newName;
                     this.hideDialog();
-                    this.showNotification('清單已重新命名', 'success');
+                    this.showNotification(window.i18n.getText('listRenamedNotification'), 'success');
                 } else {
                     this.showNotification(result.message, 'error');
                 }
@@ -637,22 +637,22 @@ class TimedGatheringManager {
         const lists = this.listManager.getAllLists();
         
         if (lists.length <= 1) {
-            this.showNotification('至少需要保留一個清單', 'warning');
+            this.showNotification(window.i18n.getText('atLeastOneListWarning'), 'warning');
             return;
         }
         
         const currentList = this.listManager.getList(this.currentListId);
         
-        this.elements.dialogTitle.textContent = '刪除清單';
+        this.elements.dialogTitle.textContent = window.i18n.getText('deleteListDialogTitle');
         // Use safe DOM manipulation instead of innerHTML
         SecurityUtils.clearElement(this.elements.dialogBody);
         
         const confirmText = document.createElement('p');
-        confirmText.textContent = `確定要刪除清單「${currentList.name}」嗎？`;
+        confirmText.textContent = window.i18n.getText('confirmDeleteList') + `「${currentList.name}」嗎？`;
         
         const warningText = document.createElement('p');
         warningText.className = 'text-danger';
-        warningText.textContent = '此操作無法復原！';
+        warningText.textContent = window.i18n.getText('operationCannotUndo');
         
         this.elements.dialogBody.appendChild(confirmText);
         this.elements.dialogBody.appendChild(warningText);
@@ -666,7 +666,7 @@ class TimedGatheringManager {
                     this.switchToList(remainingLists[0].id);
                 }
                 this.hideDialog();
-                this.showNotification('清單已刪除', 'success');
+                this.showNotification(window.i18n.getText('listDeletedNotification'), 'success');
             } else {
                 this.showNotification(result.message, 'error');
             }
@@ -679,19 +679,19 @@ class TimedGatheringManager {
         const list = this.listManager.getList(this.currentListId);
         
         if (!list || list.items.length === 0) {
-            this.showNotification('清單已經是空的', 'info');
+            this.showNotification(window.i18n.getText('listAlreadyEmptyInfo'), 'info');
             return;
         }
         
-        this.elements.dialogTitle.textContent = '清空清單';
+        this.elements.dialogTitle.textContent = window.i18n.getText('clearListDialogTitle');
         // Use safe DOM manipulation instead of innerHTML
         SecurityUtils.clearElement(this.elements.dialogBody);
         
         const confirmText = document.createElement('p');
-        confirmText.textContent = `確定要清空清單「${list.name}」嗎？`;
+        confirmText.textContent = window.i18n.getText('confirmClearList') + `「${list.name}」嗎？`;
         
         const itemCountText = document.createElement('p');
-        itemCountText.textContent = `將移除 ${list.items.length} 個採集物`;
+        itemCountText.textContent = window.i18n.getText('willRemoveItems') + ' ' + list.items.length + ' ' + window.i18n.getText('itemsUnit');
         
         this.elements.dialogBody.appendChild(confirmText);
         this.elements.dialogBody.appendChild(itemCountText);
@@ -701,7 +701,7 @@ class TimedGatheringManager {
             this.updateListDisplay();
             this.updateDisplay();
             this.hideDialog();
-            this.showNotification('清單已清空', 'success');
+            this.showNotification(window.i18n.getText('listClearedNotification'), 'success');
         };
         
         this.showDialog();
@@ -711,7 +711,7 @@ class TimedGatheringManager {
         const list = this.listManager.getList(this.currentListId);
         
         if (!list || list.items.length === 0) {
-            this.showNotification('清單為空，無法生成巨集', 'warning');
+            this.showNotification(window.i18n.getText('emptyListNoMacroWarning'), 'warning');
             return;
         }
         
@@ -733,12 +733,12 @@ class TimedGatheringManager {
         const macroText = this.elements.macroText.value;
         
         if (!macroText) {
-            this.showNotification('沒有巨集可複製', 'warning');
+            this.showNotification(window.i18n.getText('noMacroToCopyWarning'), 'warning');
             return;
         }
         
         navigator.clipboard.writeText(macroText).then(() => {
-            this.showNotification('巨集已複製到剪貼簿', 'success');
+            this.showNotification(window.i18n.getText('macroCopiedNotification'), 'success');
             
             // 暫時改變按鈕文字
             // Store original button content
@@ -746,25 +746,25 @@ class TimedGatheringManager {
             const originalText = this.elements.copyMacroBtn.textContent.replace(originalIcon, '').trim();
             
             // Update button safely
-            SecurityUtils.updateButtonContent(this.elements.copyMacroBtn, '✔️', '已複製！');
+            SecurityUtils.updateButtonContent(this.elements.copyMacroBtn, '✔️', window.i18n.getText('copiedButton'));
             
             setTimeout(() => {
                 // Restore original content
-                SecurityUtils.updateButtonContent(this.elements.copyMacroBtn, originalIcon, originalText || '複製到剪貼簿');
+                SecurityUtils.updateButtonContent(this.elements.copyMacroBtn, originalIcon, originalText || window.i18n.getText('copyMacroButton'));
             }, 2000);
         }).catch(err => {
             console.error('複製失敗:', err);
-            this.showNotification('複製失敗，請手動選取複製', 'error');
+            this.showNotification(window.i18n.getText('copyFailedError'), 'error');
         });
     }
 
     showImportDialog() {
-        this.elements.dialogTitle.textContent = '匯入清單';
+        this.elements.dialogTitle.textContent = window.i18n.getText('importDialogTitle');
         // Use safe DOM manipulation instead of innerHTML
         SecurityUtils.clearElement(this.elements.dialogBody);
         
         const formGroup = SecurityUtils.createFormGroup({
-            label: '選擇檔案：',
+            label: window.i18n.getText('selectFileLabel'),
             inputId: 'importFile',
             inputType: 'file',
             accept: '.json'
@@ -772,7 +772,7 @@ class TimedGatheringManager {
         
         const helpText = document.createElement('p');
         helpText.className = 'text-muted';
-        helpText.textContent = '請選擇之前匯出的 JSON 檔案';
+        helpText.textContent = window.i18n.getText('selectJsonFileHint');
         
         this.elements.dialogBody.appendChild(formGroup);
         this.elements.dialogBody.appendChild(helpText);
@@ -808,7 +808,7 @@ class TimedGatheringManager {
             
             if (!parseResult.success) {
                 console.error('匯入失敗:', parseResult.error);
-                this.showNotification('檔案格式錯誤: ' + parseResult.error, 'error');
+                this.showNotification(window.i18n.getText('fileFormatError') + ': ' + parseResult.error, 'error');
                 return;
             }
             
@@ -817,7 +817,7 @@ class TimedGatheringManager {
             if (result.success) {
                 this.loadLists();
                 this.hideDialog();
-                this.showNotification(`成功匯入 ${result.count} 個清單`, 'success');
+                this.showNotification(window.i18n.getText('listsImportedNotification') + ' ' + result.count + ' ' + window.i18n.getText('listsImportedUnit'), 'success');
             } else {
                 this.showNotification(result.message, 'error');
             }
@@ -841,7 +841,7 @@ class TimedGatheringManager {
         
         URL.revokeObjectURL(url);
         
-        this.showNotification('清單已匯出', 'success');
+        this.showNotification(window.i18n.getText('listsExportedNotification'), 'success');
     }
 
     updateItemCount() {

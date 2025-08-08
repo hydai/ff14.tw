@@ -4,7 +4,6 @@ class ListManager {
         STORAGE_KEY: 'ff14tw_timed_gathering_lists',
         STORAGE_VERSION: '1.0',
         DEFAULT_LIST_ID: 'default',
-        DEFAULT_LIST_NAME: '預設清單',
         MAX_LIST_NAME_LENGTH: 50,
         MAX_LISTS: 10,
         MAX_ITEMS_PER_LIST: 100
@@ -24,9 +23,11 @@ class ListManager {
      * 建立預設清單
      */
     createDefaultList() {
+        // Use i18n for default list name if available
+        const defaultName = window.i18n ? window.i18n.getText('defaultListName') : '預設清單';
         this.lists[ListManager.CONSTANTS.DEFAULT_LIST_ID] = {
             id: ListManager.CONSTANTS.DEFAULT_LIST_ID,
-            name: ListManager.CONSTANTS.DEFAULT_LIST_NAME,
+            name: defaultName,
             items: [],
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
@@ -127,33 +128,41 @@ class ListManager {
     createList(name) {
         // 檢查清單數量限制
         if (Object.keys(this.lists).length >= ListManager.CONSTANTS.MAX_LISTS) {
+            const message = window.i18n ? 
+                window.i18n.getText('maxListsWarning') + ' ' + ListManager.CONSTANTS.MAX_LISTS + ' ' + window.i18n.getText('maxListsUnit') :
+                `最多只能建立 ${ListManager.CONSTANTS.MAX_LISTS} 個清單`;
             return {
                 success: false,
-                message: `最多只能建立 ${ListManager.CONSTANTS.MAX_LISTS} 個清單`
+                message: message
             };
         }
         
         // 驗證名稱
         if (!name || name.trim().length === 0) {
+            const message = window.i18n ? window.i18n.getText('listNameEmpty') : '清單名稱不能為空';
             return {
                 success: false,
-                message: '清單名稱不能為空'
+                message: message
             };
         }
         
         if (name.length > ListManager.CONSTANTS.MAX_LIST_NAME_LENGTH) {
+            const message = window.i18n ? 
+                window.i18n.getText('listNameTooLong') + ' ' + ListManager.CONSTANTS.MAX_LIST_NAME_LENGTH + ' ' + window.i18n.getText('listNameTooLongUnit') :
+                `清單名稱不能超過 ${ListManager.CONSTANTS.MAX_LIST_NAME_LENGTH} 個字元`;
             return {
                 success: false,
-                message: `清單名稱不能超過 ${ListManager.CONSTANTS.MAX_LIST_NAME_LENGTH} 個字元`
+                message: message
             };
         }
         
         // 檢查名稱是否重複
         const isDuplicate = Object.values(this.lists).some(list => list.name === name);
         if (isDuplicate) {
+            const message = window.i18n ? window.i18n.getText('listNameExists') : '清單名稱已存在';
             return {
                 success: false,
-                message: '清單名稱已存在'
+                message: message
             };
         }
         
@@ -320,19 +329,26 @@ class ListManager {
             };
         }
         
-        // 新增項目
+        // 新增項目（保存所有語言版本的資料）
         list.items.push({
             id: item.id,
             name: item.name,
+            nameJp: item.nameJp,
+            nameEn: item.nameEn,
             type: item.type,
             level: item.level,
             zone: item.zone,
+            zoneJp: item.zoneJp,
+            zoneEn: item.zoneEn,
             location: item.location,
+            locationJp: item.locationJp,
+            locationEn: item.locationEn,
             coordinates: item.coordinates,
             time: item.time,
             duration: item.duration,
             macroFormat: item.macroFormat,
             expansion: item.expansion,
+            description: item.description,
             addedAt: new Date().toISOString()
         });
         
