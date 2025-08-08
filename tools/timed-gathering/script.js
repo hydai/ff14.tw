@@ -304,6 +304,7 @@ class TimedGatheringManager {
         this.updateLanguageButtons();
         this.updateDisplay();
         this.updateListDisplay();
+        this.updateNotificationStatus(); // 更新通知狀態文字
     }
     
     updateLanguageButtons() {

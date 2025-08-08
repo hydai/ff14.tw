@@ -8,6 +8,17 @@ class I18nManager {
 
     constructor() {
         this.currentLanguage = localStorage.getItem(I18nManager.CONSTANTS.STORAGE_KEY) || I18nManager.CONSTANTS.DEFAULT_LANGUAGE;
+        
+        // 在 DOM 載入完成後自動更新頁面語言
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                this.updatePageLanguage();
+            });
+        } else {
+            // DOM 已經載入完成，直接更新
+            setTimeout(() => this.updatePageLanguage(), 0);
+        }
+        
         this.translations = {
             zh: {
                 // 頁面標題和標頭
@@ -154,7 +165,8 @@ class I18nManager {
                 notificationNotSupported: '瀏覽器不支援通知',
                 notificationHint: '採集時間到達時發送瀏覽器通知提醒',
                 notificationTitle: 'FF14 採集提醒',
-                notificationBodyTemplate: '${itemName} 現在可以採集了！\n地點：${zone} ${location}\n座標：${coordinates}'
+                notificationBodyTemplate: '${itemName} 現在可以採集了！\n地點：${zone} ${location}\n座標：${coordinates}',
+                testNotificationButton: '🔔 測試'
             },
             ja: {
                 // 頁面標題和標頭
@@ -301,7 +313,8 @@ class I18nManager {
                 notificationNotSupported: 'ブラウザは通知をサポートしていません',
                 notificationHint: '採集時間になったらブラウザ通知でお知らせします',
                 notificationTitle: 'FF14 採集リマインダー',
-                notificationBodyTemplate: '${itemName} が採集可能になりました！\n場所：${zone} ${location}\n座標：${coordinates}'
+                notificationBodyTemplate: '${itemName} が採集可能になりました！\n場所：${zone} ${location}\n座標：${coordinates}',
+                testNotificationButton: '🔔 テスト'
             }
         };
     }
