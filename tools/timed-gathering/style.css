@@ -2,6 +2,22 @@
    特殊採集時間管理器樣式
    =================================== */
 
+/* CSS 變數定義 - 映射到 common.css 的變數 */
+:root {
+    --primary: var(--primary-color);
+    --primary-dark: #3a7bc8;
+    --bg-primary: var(--bg-secondary);
+    --bg-hover: var(--hover-bg);
+    --bg-tertiary: #f0f4f8;
+}
+
+[data-theme="dark"] {
+    --primary: var(--primary-color);
+    --primary-dark: #4a8fd8;
+    --bg-primary: #1a1d2e;
+    --bg-hover: rgba(255,255,255,0.1);
+    --bg-tertiary: #2d3142;
+}
 
 /* 工具列 */
 .toolbar {
