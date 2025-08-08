@@ -14,6 +14,7 @@ class TimedGatheringManager {
         this.listManager = null;
         this.macroExporter = null;
         this.searchFilter = null;
+        this.timeCalculator = null;
         this.currentListId = 'default';
         this.debounceTimer = null;
         this.currentLanguage = window.i18n.getCurrentLanguage();
@@ -73,6 +74,7 @@ class TimedGatheringManager {
             this.listManager = new ListManager();
             this.macroExporter = new MacroExporter();
             this.searchFilter = new SearchFilter();
+            this.timeCalculator = new TimeCalculator();
             
             // 載入資料
             await this.loadData();

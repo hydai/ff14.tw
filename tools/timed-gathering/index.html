@@ -36,6 +36,21 @@
                 <h1 data-i18n="pageTitle">特殊採集時間管理器</h1>
             </div>
 
+            <!-- 時間顯示區域 -->
+            <div class="time-display-container">
+                <div class="time-display-card">
+                    <div class="time-label" data-i18n="localTimeLabel">本地時間 (LT)</div>
+                    <div class="time-value" id="localTimeDisplay">--:--:--</div>
+                </div>
+                <div class="time-display-card">
+                    <div class="time-label" data-i18n="eorzeaTimeLabel">艾歐爾傑亞時間 (ET)</div>
+                    <div class="time-value-wrapper">
+                        <span class="time-value" id="eorzeaTimeDisplay">--:--:--</span>
+                        <span class="time-period" id="etPeriod" title="時段"></span>
+                    </div>
+                </div>
+            </div>
+
             <div class="tool-content">
                 <!-- 頂部工具列 -->
                 <div class="toolbar">
@@ -193,6 +208,7 @@
     <script src="../../assets/js/common.js"></script>
     <script src="i18n.js"></script>
     <script src="security-utils.js"></script>
+    <script src="time-calculator.js"></script>
     <script src="list-manager.js"></script>
     <script src="macro-exporter.js"></script>
     <script src="search-filter.js"></script>

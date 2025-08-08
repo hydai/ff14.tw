@@ -19,6 +19,72 @@
     --bg-tertiary: #2d3142;
 }
 
+/* 時間顯示區域 */
+.time-display-container {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.time-display-card {
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    padding: 1rem 2rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    min-width: 200px;
+    text-align: center;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.time-display-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.time-label {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.time-value {
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: var(--primary-color);
+    font-family: 'Courier New', monospace;
+    letter-spacing: 2px;
+}
+
+.time-value-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.time-period {
+    font-size: 1.5rem;
+    cursor: help;
+}
+
+/* Dark mode adjustments for time display */
+[data-theme="dark"] .time-display-card {
+    background: var(--bg-primary);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .time-display-card:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="dark"] .time-value {
+    color: #6bb1f5;
+}
+
 /* 工具列 */
 .toolbar {
     display: flex;
@@ -649,6 +715,19 @@
 @media (max-width: 480px) {
     .page-header h1 {
         font-size: 1.5rem;
+    }
+    
+    .time-display-card {
+        min-width: 150px;
+        padding: 0.75rem 1rem;
+    }
+    
+    .time-value {
+        font-size: 1.4rem;
+    }
+    
+    .time-label {
+        font-size: 0.8rem;
     }
     
     .toolbar-actions {

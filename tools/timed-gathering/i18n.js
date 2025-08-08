@@ -14,6 +14,12 @@ class I18nManager {
                 pageTitle: '特殊採集時間管理器',
                 pageDescription: 'FF14 特殊採集時間管理工具，支援搜尋、多清單管理、巨集匯出功能',
                 
+                // 時間顯示
+                localTimeLabel: '本地時間 (LT)',
+                eorzeaTimeLabel: '艾歐爾傑亞時間 (ET)',
+                dayTime: '白天',
+                nightTime: '夜晚',
+                
                 // 搜尋和篩選
                 searchPlaceholder: '搜尋採集物名稱、地點...',
                 clearButton: '清除',
@@ -144,6 +150,12 @@ class I18nManager {
                 // 頁面標題和標頭
                 pageTitle: 'タイムド採集管理ツール',
                 pageDescription: 'FF14 タイムド採集管理ツール、検索、複数リスト管理、マクロエクスポート機能対応',
+                
+                // 時間顯示
+                localTimeLabel: 'ローカル時間 (LT)',
+                eorzeaTimeLabel: 'エオルゼア時間 (ET)',
+                dayTime: '昼',
+                nightTime: '夜',
                 
                 // 搜尋和篩選
                 searchPlaceholder: 'アイテム名、場所を検索...',
