@@ -166,7 +166,16 @@ class I18nManager {
                 notificationHint: '採集時間到達時發送瀏覽器通知提醒',
                 notificationTitle: 'FF14 採集提醒',
                 notificationBodyTemplate: '${itemName} 現在可以採集了！\n地點：${zone} ${location}\n座標：${coordinates}',
-                testNotificationButton: '🔔 測試'
+                testNotificationButton: '🔔 測試',
+                
+                // 視覺通知文字
+                visualNotificationTitle: '🔔 採集提醒',
+                visualNotificationBody: '${itemName} 現在可以採集了！',
+                visualNotificationTime: '時間',
+                visualNotificationLocation: '地點',
+                testItemName: '測試物品',
+                testZoneName: '測試地區',
+                testNotificationBody: '這是一個測試通知，請確認您是否看到了'
             },
             ja: {
                 // 頁面標題和標頭
@@ -314,7 +323,16 @@ class I18nManager {
                 notificationHint: '採集時間になったらブラウザ通知でお知らせします',
                 notificationTitle: 'FF14 採集リマインダー',
                 notificationBodyTemplate: '${itemName} が採集可能になりました！\n場所：${zone} ${location}\n座標：${coordinates}',
-                testNotificationButton: '🔔 テスト'
+                testNotificationButton: '🔔 テスト',
+                
+                // ビジュアル通知テキスト
+                visualNotificationTitle: '🔔 採集リマインダー',
+                visualNotificationBody: '${itemName} が採集可能になりました！',
+                visualNotificationTime: '時間',
+                visualNotificationLocation: '場所',
+                testItemName: 'テストアイテム',
+                testZoneName: 'テストエリア',
+                testNotificationBody: 'これはテスト通知です。表示されたかご確認ください'
             }
         };
     }

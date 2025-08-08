@@ -139,6 +139,21 @@ class NotificationManager {
      */
     showVisualNotification(item) {
         try {
+            // 獲取當前語言並選擇正確的物品名稱和地區
+            const currentLang = this.getCurrentLanguage();
+            const itemName = currentLang === 'ja' ? 
+                (item.nameJp || item.name || '未知物品') : 
+                (item.name || '未知物品');
+            const zone = currentLang === 'ja' ? 
+                (item.zoneJp || item.zone || '未知地區') : 
+                (item.zone || '未知地區');
+            
+            // 使用 i18n 獲取視覺通知的文字
+            const visualTitle = window.i18n?.getText('visualNotificationTitle') || '🔔 採集提醒';
+            const visualBodyTemplate = window.i18n?.getText('visualNotificationBody') || '${itemName} 現在可以採集了！';
+            const timeLabel = window.i18n?.getText('visualNotificationTime') || '時間';
+            const locationLabel = window.i18n?.getText('visualNotificationLocation') || '地點';
+            
             // 創建頁面內通知元素
             const notification = document.createElement('div');
             notification.className = 'gathering-alert';
@@ -159,15 +174,15 @@ class NotificationManager {
             
             const title = document.createElement('div');
             title.style.cssText = 'font-weight: bold; margin-bottom: 5px; font-size: 16px;';
-            title.textContent = '🔔 採集提醒';
+            title.textContent = visualTitle;
             
             const body = document.createElement('div');
             body.style.cssText = 'font-size: 14px;';
-            body.textContent = `${item.name} 現在可以採集了！`;
+            body.textContent = visualBodyTemplate.replace('${itemName}', itemName);
             
             const time = document.createElement('div');
             time.style.cssText = 'font-size: 12px; margin-top: 5px; opacity: 0.9;';
-            time.textContent = `時間: ${item.time} | 地點: ${item.zone}`;
+            time.textContent = `${timeLabel}: ${item.time} | ${locationLabel}: ${zone}`;
             
             notification.appendChild(title);
             notification.appendChild(body);
@@ -856,8 +871,13 @@ class NotificationManager {
         
         // 測試簡單通知
         try {
-            const simpleNotification = new Notification('測試通知', {
-                body: '這是一個測試通知，請確認您是否看到了',
+            // 使用 i18n 獲取測試通知文字
+            const testTitle = window.i18n?.getText('notificationTitle') || 'FF14 採集提醒';
+            const testBody = window.i18n?.getText('testNotificationBody') || 
+                '這是一個測試通知，請確認您是否看到了';
+            
+            const simpleNotification = new Notification(testTitle, {
+                body: testBody,
                 requireInteraction: false
             });
             
@@ -876,10 +896,17 @@ class NotificationManager {
         
         // 同時測試音效和視覺通知
         this.playNotificationSound();
+        
+        // 使用 i18n 獲取測試文字
+        const testItemName = window.i18n?.getText('testItemName') || '測試物品';
+        const testZoneName = window.i18n?.getText('testZoneName') || '測試地區';
+        
         this.showVisualNotification({
-            name: '測試物品',
+            name: testItemName,
+            nameJp: testItemName,  // 讓日文測試也使用對應的文字
             time: '00:00',
-            zone: '測試地區'
+            zone: testZoneName,
+            zoneJp: testZoneName   // 讓日文測試也使用對應的文字
         });
     }
 }
