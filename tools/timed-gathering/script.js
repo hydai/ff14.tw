@@ -247,6 +247,7 @@ class TimedGatheringManager {
     initializeNotifications() {
         const notificationToggle = document.getElementById('notificationToggle');
         const notificationStatus = document.getElementById('notificationStatus');
+        const testNotificationBtn = document.getElementById('testNotificationBtn');
 
         // 初始化通知狀態
         if (this.notificationManager.enabled) {
@@ -271,6 +272,11 @@ class TimedGatheringManager {
                 this.notificationManager.disableNotifications();
             }
             this.updateNotificationStatus();
+        });
+
+        // 測試通知按鈕事件
+        testNotificationBtn.addEventListener('click', () => {
+            this.notificationManager.testNotification();
         });
     }
 

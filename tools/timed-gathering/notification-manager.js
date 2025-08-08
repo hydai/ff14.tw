@@ -52,8 +52,164 @@ class NotificationManager {
         this.itemWindowStatus = new Map(); // 記錄每個物品是否在採集窗口內
         this.checkInterval = null;
         this.currentList = [];
+        this.audioContext = null;
         
         this.loadSettings();
+    }
+
+    /**
+     * 播放通知音效
+     * 使用 Web Audio API 生成提示音
+     */
+    playNotificationSound() {
+        try {
+            // 創建或重用 AudioContext
+            if (!this.audioContext) {
+                this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            
+            // 如果 AudioContext 被暫停（由於瀏覽器政策），嘗試恢復
+            if (this.audioContext.state === 'suspended') {
+                this.audioContext.resume();
+            }
+            
+            const currentTime = this.audioContext.currentTime;
+            
+            // 創建振盪器（產生音調）
+            const oscillator = this.audioContext.createOscillator();
+            const gainNode = this.audioContext.createGain();
+            
+            // 設定音調頻率（880Hz = A5 音符，比較明顯的高音）
+            oscillator.frequency.setValueAtTime(880, currentTime);
+            oscillator.type = 'sine'; // 使用正弦波，聲音較柔和
+            
+            // 設定音量包絡（淡入淡出效果）
+            gainNode.gain.setValueAtTime(0, currentTime);
+            gainNode.gain.linearRampToValueAtTime(0.3, currentTime + 0.01); // 快速淡入
+            gainNode.gain.linearRampToValueAtTime(0.3, currentTime + 0.15); // 維持音量
+            gainNode.gain.linearRampToValueAtTime(0, currentTime + 0.2); // 淡出
+            
+            // 連接音頻節點
+            oscillator.connect(gainNode);
+            gainNode.connect(this.audioContext.destination);
+            
+            // 播放音效
+            oscillator.start(currentTime);
+            oscillator.stop(currentTime + 0.2); // 0.2秒後停止
+            
+            // 播放第二個嗶聲（間隔0.25秒）
+            const oscillator2 = this.audioContext.createOscillator();
+            const gainNode2 = this.audioContext.createGain();
+            
+            oscillator2.frequency.setValueAtTime(1100, currentTime + 0.25); // 稍高的頻率
+            oscillator2.type = 'sine';
+            
+            gainNode2.gain.setValueAtTime(0, currentTime + 0.25);
+            gainNode2.gain.linearRampToValueAtTime(0.3, currentTime + 0.26);
+            gainNode2.gain.linearRampToValueAtTime(0.3, currentTime + 0.40);
+            gainNode2.gain.linearRampToValueAtTime(0, currentTime + 0.45);
+            
+            oscillator2.connect(gainNode2);
+            gainNode2.connect(this.audioContext.destination);
+            
+            oscillator2.start(currentTime + 0.25);
+            oscillator2.stop(currentTime + 0.45);
+            
+            NotificationManager.log('success', '🔊 通知音效已播放（雙嗶聲）');
+            
+        } catch (error) {
+            NotificationManager.log('error', '播放音效時發生錯誤', error);
+            
+            // 降級方案：嘗試使用簡單的 beep
+            try {
+                const beep = () => {
+                    const snd = new Audio("data:audio/wav;base64,UklGRl4AAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQcAAADAAICAAAAA");
+                    snd.play().catch(e => NotificationManager.log('warning', '備用音效也無法播放', e));
+                };
+                beep();
+            } catch (fallbackError) {
+                NotificationManager.log('error', '所有音效方案都失敗了', fallbackError);
+            }
+        }
+    }
+
+    /**
+     * 顯示頁面內視覺通知
+     * @param {Object} item 採集物項目
+     */
+    showVisualNotification(item) {
+        try {
+            // 創建頁面內通知元素
+            const notification = document.createElement('div');
+            notification.className = 'gathering-alert';
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: linear-gradient(135deg, #4CAF50, #45a049);
+                color: white;
+                padding: 15px 20px;
+                border-radius: 8px;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                z-index: 10000;
+                max-width: 350px;
+                animation: slideIn 0.3s ease-out;
+                cursor: pointer;
+            `;
+            
+            const title = document.createElement('div');
+            title.style.cssText = 'font-weight: bold; margin-bottom: 5px; font-size: 16px;';
+            title.textContent = '🔔 採集提醒';
+            
+            const body = document.createElement('div');
+            body.style.cssText = 'font-size: 14px;';
+            body.textContent = `${item.name} 現在可以採集了！`;
+            
+            const time = document.createElement('div');
+            time.style.cssText = 'font-size: 12px; margin-top: 5px; opacity: 0.9;';
+            time.textContent = `時間: ${item.time} | 地點: ${item.zone}`;
+            
+            notification.appendChild(title);
+            notification.appendChild(body);
+            notification.appendChild(time);
+            
+            // 點擊關閉
+            notification.onclick = () => {
+                notification.style.animation = 'slideOut 0.3s ease-in';
+                setTimeout(() => notification.remove(), 300);
+            };
+            
+            document.body.appendChild(notification);
+            
+            // 自動移除
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.style.animation = 'slideOut 0.3s ease-in';
+                    setTimeout(() => notification.remove(), 300);
+                }
+            }, 8000);
+            
+            // 添加動畫樣式
+            if (!document.getElementById('gathering-alert-styles')) {
+                const style = document.createElement('style');
+                style.id = 'gathering-alert-styles';
+                style.textContent = `
+                    @keyframes slideIn {
+                        from { transform: translateX(400px); opacity: 0; }
+                        to { transform: translateX(0); opacity: 1; }
+                    }
+                    @keyframes slideOut {
+                        from { transform: translateX(0); opacity: 1; }
+                        to { transform: translateX(400px); opacity: 0; }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+            
+            NotificationManager.log('success', '📢 頁面視覺通知已顯示');
+        } catch (error) {
+            NotificationManager.log('error', '顯示視覺通知失敗', error);
+        }
     }
 
     /**
@@ -533,21 +689,57 @@ class NotificationManager {
      * @param {Object} item 採集物項目
      */
     sendNotification(item) {
-        const title = window.i18n?.getText('notificationTitle') || 'FF14 採集提醒';
-        const body = this.formatNotificationBody(item);
+        NotificationManager.log('info', '開始發送通知程序', { item });
         
-        NotificationManager.log('info', `發送通知: ${item.name}`, {
+        // 驗證 item 物件
+        if (!item || typeof item !== 'object') {
+            NotificationManager.log('error', '無效的 item 物件', item);
+            return;
+        }
+        
+        const title = window.i18n?.getText('notificationTitle') || 'FF14 採集提醒';
+        
+        let body;
+        try {
+            body = this.formatNotificationBody(item);
+        } catch (error) {
+            NotificationManager.log('error', '格式化通知內容失敗', error);
+            // 使用簡單的後備訊息
+            body = `${item.name || '未知物品'} 現在可以採集了！`;
+        }
+        
+        NotificationManager.log('info', `準備發送通知: ${item.name}`, {
             標題: title,
             內容: body
         });
         
         try {
-            const notification = new Notification(title, {
+            // 再次檢查通知權限
+            if (Notification.permission !== 'granted') {
+                NotificationManager.log('error', '通知權限未授予', { permission: Notification.permission });
+                return;
+            }
+            
+            NotificationManager.log('info', '創建 Notification 物件...');
+            
+            // 嘗試簡化的通知選項
+            const notificationOptions = {
                 body: body,
-                icon: NotificationManager.CONSTANTS.NOTIFICATION_ICON,
-                tag: `gathering-${item.id}`,
+                tag: `gathering-${item.id || 'unknown'}`,
                 requireInteraction: false,
                 silent: false
+            };
+            
+            // 只在圖標路徑存在時添加
+            if (NotificationManager.CONSTANTS.NOTIFICATION_ICON) {
+                notificationOptions.icon = NotificationManager.CONSTANTS.NOTIFICATION_ICON;
+            }
+            
+            const notification = new Notification(title, notificationOptions);
+            
+            NotificationManager.log('success', 'Notification 物件已創建', {
+                標題: title,
+                選項: notificationOptions
             });
 
             // 點擊通知時聚焦頁面
@@ -556,15 +748,39 @@ class NotificationManager {
                 notification.close();
                 NotificationManager.log('info', '使用者點擊了通知');
             };
+            
+            // 處理錯誤事件
+            notification.onerror = (event) => {
+                NotificationManager.log('error', '通知顯示錯誤', event);
+            };
+            
+            // 處理顯示事件
+            notification.onshow = () => {
+                NotificationManager.log('success', '通知已顯示');
+            };
 
             // 自動關閉通知
             setTimeout(() => {
                 notification.close();
+                NotificationManager.log('info', '通知已自動關閉');
             }, 10000);
             
-            NotificationManager.log('success', '通知發送成功');
+            NotificationManager.log('success', '✅ 通知發送成功完成');
+            
+            // 同時播放音效和顯示視覺通知
+            this.playNotificationSound();
+            this.showVisualNotification(item);
+            
         } catch (error) {
-            NotificationManager.log('error', '通知發送失敗', error);
+            NotificationManager.log('error', '❌ 通知發送失敗', {
+                錯誤訊息: error.message,
+                錯誤堆疊: error.stack,
+                錯誤物件: error
+            });
+            
+            // 即使瀏覽器通知失敗，仍嘗試播放音效和顯示視覺通知
+            this.playNotificationSound();
+            this.showVisualNotification(item);
         }
     }
 
@@ -574,8 +790,15 @@ class NotificationManager {
      * @returns {string} 通知內容
      */
     formatNotificationBody(item) {
-        const itemName = this.getCurrentLanguage() === 'ja' ? item.nameJp : item.name;
-        const zone = this.getCurrentLanguage() === 'ja' ? item.zoneJp : item.zone;
+        // 提供預設值以防屬性不存在
+        const itemName = this.getCurrentLanguage() === 'ja' ? 
+            (item.nameJp || item.name || '未知物品') : 
+            (item.name || '未知物品');
+        const zone = this.getCurrentLanguage() === 'ja' ? 
+            (item.zoneJp || item.zone || '未知地區') : 
+            (item.zone || '未知地區');
+        const location = item.location || '';
+        const coordinates = item.coordinates || '未知座標';
         
         const template = window.i18n?.getText('notificationBodyTemplate') || 
             '${itemName} 現在可以採集了！\n地點：${zone} ${location}\n座標：${coordinates}';
@@ -583,8 +806,8 @@ class NotificationManager {
         return template
             .replace('${itemName}', itemName)
             .replace('${zone}', zone)
-            .replace('${location}', item.location || '')
-            .replace('${coordinates}', item.coordinates);
+            .replace('${location}', location)
+            .replace('${coordinates}', coordinates);
     }
 
     /**
@@ -613,6 +836,51 @@ class NotificationManager {
         }
 
         return window.i18n?.getText('notificationDisabled') || '通知已停用';
+    }
+
+    /**
+     * 測試通知功能
+     * 用於診斷通知問題
+     */
+    testNotification() {
+        NotificationManager.log('info', '🧪 開始測試通知功能');
+        
+        // 檢查環境
+        NotificationManager.log('info', '環境檢查', {
+            瀏覽器支援: 'Notification' in window,
+            權限狀態: Notification.permission,
+            文件協議: window.location.protocol,
+            是否安全上下文: window.isSecureContext,
+            瀏覽器: navigator.userAgent
+        });
+        
+        // 測試簡單通知
+        try {
+            const simpleNotification = new Notification('測試通知', {
+                body: '這是一個測試通知，請確認您是否看到了',
+                requireInteraction: false
+            });
+            
+            simpleNotification.onshow = () => {
+                NotificationManager.log('success', '✅ 測試通知已顯示');
+            };
+            
+            simpleNotification.onerror = (e) => {
+                NotificationManager.log('error', '❌ 測試通知錯誤', e);
+            };
+            
+            NotificationManager.log('success', '測試通知已發送');
+        } catch (error) {
+            NotificationManager.log('error', '測試通知失敗', error);
+        }
+        
+        // 同時測試音效和視覺通知
+        this.playNotificationSound();
+        this.showVisualNotification({
+            name: '測試物品',
+            time: '00:00',
+            zone: '測試地區'
+        });
     }
 }
 
