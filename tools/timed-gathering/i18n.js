@@ -144,7 +144,17 @@ class I18nManager {
                 addedItemsToListUnit: '個項目到目標清單',
                 listMaxItems: '清單最多只能包含',
                 listMaxItemsUnit: '個項目',
-                itemAlreadyInListSimple: '此採集物已在清單中'
+                itemAlreadyInListSimple: '此採集物已在清單中',
+                
+                // 通知功能
+                notificationToggleLabel: '啟用採集通知提醒',
+                notificationDisabled: '通知已停用',
+                notificationEnabled: '通知已啟用',
+                notificationPermissionDenied: '通知權限被拒絕',
+                notificationNotSupported: '瀏覽器不支援通知',
+                notificationHint: '採集時間到達時發送瀏覽器通知提醒',
+                notificationTitle: 'FF14 採集提醒',
+                notificationBodyTemplate: '${itemName} 現在可以採集了！\n地點：${zone} ${location}\n座標：${coordinates}'
             },
             ja: {
                 // 頁面標題和標頭
@@ -281,7 +291,17 @@ class I18nManager {
                 addedItemsToListUnit: '個のアイテム',
                 listMaxItems: 'リストには最大',
                 listMaxItemsUnit: '個のアイテムまで',
-                itemAlreadyInListSimple: 'このアイテムは既にリストに存在します'
+                itemAlreadyInListSimple: 'このアイテムは既にリストに存在します',
+                
+                // 通知機能
+                notificationToggleLabel: '採集通知リマインダーを有効にする',
+                notificationDisabled: '通知は無効です',
+                notificationEnabled: '通知は有効です',
+                notificationPermissionDenied: '通知の許可が拒否されました',
+                notificationNotSupported: 'ブラウザは通知をサポートしていません',
+                notificationHint: '採集時間になったらブラウザ通知でお知らせします',
+                notificationTitle: 'FF14 採集リマインダー',
+                notificationBodyTemplate: '${itemName} が採集可能になりました！\n場所：${zone} ${location}\n座標：${coordinates}'
             }
         };
     }

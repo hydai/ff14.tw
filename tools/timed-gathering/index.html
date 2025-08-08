@@ -51,6 +51,26 @@
                 </div>
             </div>
 
+            <!-- 通知設定區域 -->
+            <div class="notification-settings">
+                <div class="notification-header">
+                    <div class="notification-info">
+                        <div class="notification-title">
+                            <span class="notification-icon">🔔</span>
+                            <span class="notification-label" data-i18n="notificationToggleLabel">啟用採集通知提醒</span>
+                        </div>
+                        <div class="notification-hint" data-i18n="notificationHint">採集時間到達時發送瀏覽器通知提醒</div>
+                    </div>
+                    <div class="notification-control">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="notificationToggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <span class="notification-status" id="notificationStatus" data-i18n="notificationDisabled">通知已停用</span>
+                    </div>
+                </div>
+            </div>
+
             <div class="tool-content">
                 <!-- 頂部工具列 -->
                 <div class="toolbar">
@@ -210,6 +230,7 @@
     <script src="security-utils.js"></script>
     <script src="time-calculator.js"></script>
     <script src="list-manager.js"></script>
+    <script src="notification-manager.js"></script>
     <script src="macro-exporter.js"></script>
     <script src="search-filter.js"></script>
     <script src="script.js"></script>

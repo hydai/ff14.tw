@@ -75,12 +75,19 @@ class TimedGatheringManager {
             this.macroExporter = new MacroExporter();
             this.searchFilter = new SearchFilter();
             this.timeCalculator = new TimeCalculator();
+            this.notificationManager = new NotificationManager();
+            
+            // 將 NotificationManager 實例暴露到全域，以便事件處理器能夠存取
+            window.notificationManager = this.notificationManager;
             
             // 載入資料
             await this.loadData();
             
             // 初始化事件
             this.initializeEvents();
+            
+            // 初始化通知設定
+            this.initializeNotifications();
             
             // 載入清單
             this.loadLists();
@@ -235,6 +242,54 @@ class TimedGatheringManager {
                 this.hideDialog();
             }
         });
+    }
+
+    initializeNotifications() {
+        const notificationToggle = document.getElementById('notificationToggle');
+        const notificationStatus = document.getElementById('notificationStatus');
+
+        // 初始化通知狀態
+        if (this.notificationManager.enabled) {
+            notificationToggle.checked = true;
+        }
+        this.updateNotificationStatus();
+
+        // 通知開關事件
+        notificationToggle.addEventListener('change', async () => {
+            if (notificationToggle.checked) {
+                const enabled = await this.notificationManager.enableNotifications();
+                if (enabled) {
+                    // 更新監控清單
+                    const currentList = this.listManager.getList(this.currentListId);
+                    if (currentList && currentList.items) {
+                        this.notificationManager.updateWatchList(currentList.items);
+                    }
+                } else {
+                    notificationToggle.checked = false;
+                }
+            } else {
+                this.notificationManager.disableNotifications();
+            }
+            this.updateNotificationStatus();
+        });
+    }
+
+    updateNotificationStatus() {
+        const notificationStatus = document.getElementById('notificationStatus');
+        if (notificationStatus) {
+            const status = this.notificationManager.getNotificationStatus();
+            notificationStatus.textContent = status;
+            
+            // 根據狀態設定樣式
+            notificationStatus.classList.remove('status-enabled', 'status-disabled', 'status-denied');
+            if (this.notificationManager.enabled) {
+                notificationStatus.classList.add('status-enabled');
+            } else if (Notification.permission === 'denied') {
+                notificationStatus.classList.add('status-denied');
+            } else {
+                notificationStatus.classList.add('status-disabled');
+            }
+        }
     }
 
     switchLanguage(lang) {
@@ -428,6 +483,11 @@ class TimedGatheringManager {
                 window.i18n.getText('emptyListHint')
             );
             container.appendChild(emptyMessage);
+            
+            // 清空通知監控列表
+            if (this.notificationManager) {
+                this.notificationManager.updateWatchList([]);
+            }
             return;
         }
         
@@ -435,6 +495,11 @@ class TimedGatheringManager {
             const listItem = this.createListItem(item);
             container.appendChild(listItem);
         });
+        
+        // 更新通知監控列表
+        if (this.notificationManager && this.notificationManager.enabled) {
+            this.notificationManager.updateWatchList(list.items);
+        }
     }
 
     createListItem(item) {
