@@ -286,8 +286,10 @@ class TimedGatheringManager {
             const status = this.notificationManager.getNotificationStatus();
             notificationStatus.textContent = status;
             
-            // 根據狀態設定樣式
-            notificationStatus.classList.remove('status-enabled', 'status-disabled', 'status-denied');
+            // 根據狀態設定樣式 - 支援兩種樣式類名
+            const statusClasses = ['status-enabled', 'status-disabled', 'status-denied'];
+            notificationStatus.classList.remove(...statusClasses);
+            
             if (this.notificationManager.enabled) {
                 notificationStatus.classList.add('status-enabled');
             } else if (Notification.permission === 'denied') {

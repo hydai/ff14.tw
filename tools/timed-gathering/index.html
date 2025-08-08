@@ -36,7 +36,7 @@
                 <h1 data-i18n="pageTitle">特殊採集時間管理器</h1>
             </div>
 
-            <!-- 時間顯示區域 -->
+            <!-- 時間與通知顯示區域 -->
             <div class="time-display-container">
                 <div class="time-display-card">
                     <div class="time-label" data-i18n="localTimeLabel">本地時間 (LT)</div>
@@ -49,26 +49,20 @@
                         <span class="time-period" id="etPeriod" title="時段"></span>
                     </div>
                 </div>
-            </div>
-
-            <!-- 通知設定區域 -->
-            <div class="notification-settings">
-                <div class="notification-header">
-                    <div class="notification-info">
-                        <div class="notification-title">
-                            <span class="notification-icon">🔔</span>
-                            <span class="notification-label" data-i18n="notificationToggleLabel">啟用採集通知提醒</span>
-                        </div>
-                        <div class="notification-hint" data-i18n="notificationHint">採集時間到達時發送瀏覽器通知提醒</div>
+                <!-- 通知設定卡片 -->
+                <div class="time-display-card notification-card">
+                    <div class="time-label">
+                        <span class="notification-icon">🔔</span>
+                        <span data-i18n="notificationLabel">採集提醒</span>
                     </div>
-                    <div class="notification-control">
+                    <div class="notification-compact">
                         <label class="toggle-switch">
                             <input type="checkbox" id="notificationToggle">
                             <span class="toggle-slider"></span>
                         </label>
-                        <span class="notification-status" id="notificationStatus" data-i18n="notificationDisabled">通知已停用</span>
-                        <button id="testNotificationBtn" class="btn btn-sm btn-secondary" style="margin-left: 10px;" data-i18n="testNotificationButton">
-                            🔔 測試
+                        <span class="notification-status-compact" id="notificationStatus" data-i18n="notificationDisabled">通知已停用</span>
+                        <button id="testNotificationBtn" class="btn btn-sm btn-secondary" title="測試通知" data-i18n="testNotificationButtonShort" data-i18n-attr="title">
+                            🔔
                         </button>
                     </div>
                 </div>

@@ -85,53 +85,34 @@
     color: #6bb1f5;
 }
 
-/* 通知設定區域 */
-.notification-settings {
-    background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
-    border-radius: 12px;
-    padding: 1.25rem;
-    margin-bottom: 1.5rem;
-    border: 1px solid var(--border);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+/* 通知卡片樣式 */
+.notification-card {
+    min-width: 240px;
 }
 
-.notification-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.notification-info {
-    flex: 1;
-}
-
-.notification-title {
+.notification-compact {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    margin-bottom: 0.5rem;
+    justify-content: center;
+    margin-top: 0.5rem;
 }
 
 .notification-icon {
-    font-size: 1.5rem;
+    font-size: 1rem;
 }
 
-.notification-label {
-    font-weight: 600;
-    font-size: 1.1rem;
-    color: var(--text-primary);
+/* 調整通知卡片內的開關大小 */
+.notification-card .toggle-switch {
+    transform: scale(0.85);
+    margin: 0;
 }
 
-.notification-hint {
+/* 緊湊型測試按鈕 */
+.notification-card #testNotificationBtn {
+    padding: 0.25rem 0.5rem;
     font-size: 0.85rem;
-    color: var(--text-secondary);
-    margin-left: 2.25rem;
-}
-
-.notification-control {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
+    min-width: auto;
 }
 
 /* Toggle Switch 樣式 */
@@ -187,47 +168,43 @@
     box-shadow: 0 0 8px rgba(74, 144, 226, 0.3);
 }
 
-.notification-status {
+/* 緊湊型通知狀態 */
+.notification-status-compact {
     font-size: 0.85rem;
-    padding: 0.35rem 0.75rem;
-    border-radius: 20px;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
     background: var(--bg-primary);
     color: var(--text-secondary);
-    font-weight: 500;
+    min-width: 60px;
+    text-align: center;
     transition: all 0.3s ease;
 }
 
-.notification-status.status-enabled {
+.notification-status-compact.status-enabled {
     background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
     color: white;
 }
 
-.notification-status.status-disabled {
+.notification-status-compact.status-disabled {
     background: var(--bg-primary);
     color: var(--text-secondary);
 }
 
-.notification-status.status-denied {
+.notification-status-compact.status-denied {
     background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
     color: white;
 }
 
-/* Dark mode adjustments for notification settings */
-[data-theme="dark"] .notification-settings {
-    background: linear-gradient(135deg, #2d3142 0%, #1a1d2e 100%);
-    border-color: rgba(255, 255, 255, 0.1);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-}
-
-[data-theme="dark"] .notification-status {
+/* Dark mode adjustments for notification card */
+[data-theme="dark"] .notification-status-compact {
     background: var(--bg-secondary);
 }
 
-[data-theme="dark"] .notification-status.status-enabled {
+[data-theme="dark"] .notification-status-compact.status-enabled {
     background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
 }
 
-[data-theme="dark"] .notification-status.status-denied {
+[data-theme="dark"] .notification-status-compact.status-denied {
     background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
 }
 
@@ -843,17 +820,19 @@
         justify-content: center;
     }
     
-    /* 通知設定平板響應式 */
-    .notification-settings {
-        padding: 1rem;
+    /* 通知卡片平板響應式 */
+    .time-display-container {
+        flex-direction: column;
+        align-items: stretch;
     }
     
-    .notification-label {
-        font-size: 1rem;
+    .time-display-card {
+        width: 100%;
     }
     
-    .notification-icon {
-        font-size: 1.25rem;
+    .notification-compact {
+        flex-wrap: nowrap;
+        gap: 0.5rem;
     }
     
     .filter-label {

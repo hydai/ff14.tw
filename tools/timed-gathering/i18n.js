@@ -158,15 +158,17 @@ class I18nManager {
                 itemAlreadyInListSimple: '此採集物已在清單中',
                 
                 // 通知功能
+                notificationLabel: '採集提醒',
                 notificationToggleLabel: '啟用採集通知提醒',
-                notificationDisabled: '通知已停用',
-                notificationEnabled: '通知已啟用',
+                notificationDisabled: '已停用',
+                notificationEnabled: '已啟用',
                 notificationPermissionDenied: '通知權限被拒絕',
                 notificationNotSupported: '瀏覽器不支援通知',
                 notificationHint: '採集時間到達時發送瀏覽器通知提醒',
                 notificationTitle: 'FF14 採集提醒',
                 notificationBodyTemplate: '${itemName} 現在可以採集了！\n地點：${zone} ${location}\n座標：${coordinates}',
                 testNotificationButton: '🔔 測試',
+                testNotificationButtonShort: '測試通知',
                 
                 // 視覺通知文字
                 visualNotificationTitle: '🔔 採集提醒',
@@ -315,15 +317,17 @@ class I18nManager {
                 itemAlreadyInListSimple: 'このアイテムは既にリストに存在します',
                 
                 // 通知機能
+                notificationLabel: '採集リマインダー',
                 notificationToggleLabel: '採集通知リマインダーを有効にする',
-                notificationDisabled: '通知は無効です',
-                notificationEnabled: '通知は有効です',
+                notificationDisabled: '無効',
+                notificationEnabled: '有効',
                 notificationPermissionDenied: '通知の許可が拒否されました',
                 notificationNotSupported: 'ブラウザは通知をサポートしていません',
                 notificationHint: '採集時間になったらブラウザ通知でお知らせします',
                 notificationTitle: 'FF14 採集リマインダー',
                 notificationBodyTemplate: '${itemName} が採集可能になりました！\n場所：${zone} ${location}\n座標：${coordinates}',
                 testNotificationButton: '🔔 テスト',
+                testNotificationButtonShort: '通知テスト',
                 
                 // ビジュアル通知テキスト
                 visualNotificationTitle: '🔔 採集リマインダー',
