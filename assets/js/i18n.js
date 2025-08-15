@@ -272,24 +272,39 @@ class I18nManager {
             }
         });
 
-        // Update elements with data-i18n-html (preserves HTML structure)
+        // Update elements with data-i18n-html (supports HTML within text)
         document.querySelectorAll('[data-i18n-html]').forEach(element => {
             const key = element.dataset.i18nHtml;
-            const params = element.dataset.i18nParams ? JSON.parse(element.dataset.i18nParams) : {};
             
-            // Preserve any icons or special elements
-            const icons = element.querySelectorAll('.icon, .btn-icon, .tag-icon');
-            const iconHTML = Array.from(icons).map(icon => icon.outerHTML).join('');
-            
-            const text = this.t(key, params);
-            
-            if (icons.length > 0) {
-                // Rebuild with icons
-                element.textContent = '';
-                icons.forEach(icon => element.appendChild(icon));
-                element.appendChild(document.createTextNode(' ' + text));
+            // For elements with parameters
+            if (element.dataset.i18nParams) {
+                try {
+                    const params = JSON.parse(element.dataset.i18nParams);
+                    const text = this.t(key, params);
+                    
+                    // For simple HTML content with known safe tags
+                    if (text && text.includes('<')) {
+                        // Create a temporary container to parse HTML
+                        const temp = document.createElement('div');
+                        temp.innerHTML = text;
+                        
+                        // Clear the element and move parsed content
+                        element.innerHTML = '';
+                        while (temp.firstChild) {
+                            element.appendChild(temp.firstChild);
+                        }
+                    } else {
+                        // Plain text content
+                        element.textContent = text;
+                    }
+                } catch (e) {
+                    console.error('Failed to parse i18n params:', e);
+                    // Fallback to plain text
+                    element.textContent = this.t(key);
+                }
             } else {
-                element.textContent = text;
+                // Simple text content
+                element.textContent = this.t(key);
             }
         });
 

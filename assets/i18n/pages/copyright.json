@@ -1,0 +1,131 @@
+{
+  "zh-TW": {
+    "pageTitle": "版權聲明 - FF14.tw",
+    "metaDescription": "FF14.tw 版權聲明與使用條款",
+    "hero": {
+      "title": "版權聲明",
+      "subtitle": "關於 FF14.tw 網站的版權、商標及使用條款說明"
+    },
+    "sections": {
+      "gameRights": {
+        "title": "遊戲版權聲明",
+        "line1": "<span class=\"highlight\">Final Fantasy XIV</span> 遊戲由 <strong>SQUARE ENIX</strong> 製作。",
+        "line2": "繁體中文版由 <strong>宇峻奧汀</strong> 與 <strong>智寶國際</strong> 聯合代理營運。"
+      },
+      "siteNature": {
+        "title": "網站性質聲明",
+        "line1": "本工具網站為 <span class=\"highlight\">非官方粉絲向作品</span>，不放置廣告、不設置任何盈利手段。",
+        "line2": "所涉及的公司名稱、商標、產品等均為其各自所有者的資產，僅供玩家識別所用。"
+      },
+      "imageUsage": {
+        "title": "圖片使用聲明",
+        "line1": "本網站內使用的遊戲圖片包含但不限於：截圖、圖示等，其版權為 <strong>SQUARE ENIX</strong> 所有。",
+        "line2": "所有遊戲相關圖片僅用於學習、研究和非商業用途，如有侵權請聯繫我們立即移除。"
+      },
+      "iconSource": {
+        "title": "FF14 圖示來源",
+        "line1": "本網站所使用的 <span class=\"highlight\">Final Fantasy XIV</span> 相關圖示來自 <a href=\"https://na.finalfantasyxiv.com/lodestone/special/fankit/icon/\" target=\"_blank\" rel=\"noopener noreferrer\">FFXIV Fan Kit</a>。",
+        "line2": "所有圖示的使用方式皆按照該網站上所載明的版權協議為主，遵循 <strong>SQUARE ENIX</strong> 官方的使用條款與規範。"
+      },
+      "jpCopyright": {
+        "title": "日文版權聲明",
+        "content": "記載されている会社名・製品名・システム名などは、各社の商標、または登録商標です。"
+      },
+      "seStatement": {
+        "title": "SQUARE ENIX 版權聲明",
+        "content": "Copyright (C) 2010 - 2025 SQUARE ENIX CO., LTD. All Rights Reserved."
+      },
+      "contact": {
+        "title": "聯絡方式",
+        "line1": "如對本網站有任何版權相關問題或建議，歡迎透過 <a href=\"https://github.com/hydai/ff14.tw/issues\" target=\"_blank\" rel=\"noopener noreferrer\">GitHub Issues</a> 與我們聯繫。",
+        "line2": "我們承諾會在收到合理要求後，盡快處理相關事宜。"
+      }
+    }
+  },
+  "ja": {
+    "pageTitle": "著作権表示 - FF14.tw",
+    "metaDescription": "FF14.twの著作権表示と利用規約",
+    "hero": {
+      "title": "著作権表示",
+      "subtitle": "FF14.twウェブサイトの著作権、商標、利用規約について"
+    },
+    "sections": {
+      "gameRights": {
+        "title": "ゲーム著作権表示",
+        "line1": "<span class=\"highlight\">Final Fantasy XIV</span> ゲームは<strong>SQUARE ENIX</strong>が制作。",
+        "line2": "繁体字中国語版は<strong>宇峻奧汀</strong>と<strong>智寶國際</strong>が共同運営。"
+      },
+      "siteNature": {
+        "title": "ウェブサイトの性質",
+        "line1": "このツールサイトは<span class=\"highlight\">非公式ファンサイト</span>であり、広告や収益化手段を設けていません。",
+        "line2": "記載されている会社名、商標、製品などは、それぞれの所有者の資産であり、プレイヤーの識別のためにのみ使用されています。"
+      },
+      "imageUsage": {
+        "title": "画像使用に関する声明",
+        "line1": "本ウェブサイトで使用されているゲーム画像（スクリーンショット、アイコンなど）の著作権は<strong>SQUARE ENIX</strong>に帰属します。",
+        "line2": "すべてのゲーム関連画像は学習、研究、非商業目的でのみ使用されており、侵害がある場合は速やかに削除いたします。"
+      },
+      "iconSource": {
+        "title": "FF14アイコンの出典",
+        "line1": "本ウェブサイトで使用されている<span class=\"highlight\">Final Fantasy XIV</span>関連のアイコンは<a href=\"https://na.finalfantasyxiv.com/lodestone/special/fankit/icon/\" target=\"_blank\" rel=\"noopener noreferrer\">FFXIV Fan Kit</a>から取得しています。",
+        "line2": "すべてのアイコンの使用は、サイトに記載されている著作権契約に従い、<strong>SQUARE ENIX</strong>公式の利用規約に準拠しています。"
+      },
+      "jpCopyright": {
+        "title": "日本語著作権表示",
+        "content": "記載されている会社名・製品名・システム名などは、各社の商標、または登録商標です。"
+      },
+      "seStatement": {
+        "title": "SQUARE ENIX著作権表示",
+        "content": "Copyright (C) 2010 - 2025 SQUARE ENIX CO., LTD. All Rights Reserved."
+      },
+      "contact": {
+        "title": "お問い合わせ",
+        "line1": "本ウェブサイトの著作権に関するご質問やご提案がございましたら、<a href=\"https://github.com/hydai/ff14.tw/issues\" target=\"_blank\" rel=\"noopener noreferrer\">GitHub Issues</a>よりお問い合わせください。",
+        "line2": "合理的な要求を受け取り次第、速やかに対応することをお約束します。"
+      }
+    }
+  },
+  "en": {
+    "pageTitle": "Copyright - FF14.tw",
+    "metaDescription": "FF14.tw Copyright Notice and Terms of Use",
+    "hero": {
+      "title": "Copyright Notice",
+      "subtitle": "About FF14.tw's copyright, trademarks, and terms of use"
+    },
+    "sections": {
+      "gameRights": {
+        "title": "Game Copyright Notice",
+        "line1": "<span class=\"highlight\">Final Fantasy XIV</span> is produced by <strong>SQUARE ENIX</strong>.",
+        "line2": "Traditional Chinese version is jointly operated by <strong>Userjoy</strong> and <strong>Smartbook</strong>."
+      },
+      "siteNature": {
+        "title": "Website Nature Statement",
+        "line1": "This tool website is an <span class=\"highlight\">unofficial fan site</span>, with no advertisements or monetization.",
+        "line2": "All company names, trademarks, and products mentioned are the property of their respective owners and are used for identification purposes only."
+      },
+      "imageUsage": {
+        "title": "Image Usage Statement",
+        "line1": "Game images used on this website, including screenshots and icons, are copyrighted by <strong>SQUARE ENIX</strong>.",
+        "line2": "All game-related images are used for educational, research, and non-commercial purposes only. We will remove them immediately upon request if there is any infringement."
+      },
+      "iconSource": {
+        "title": "FF14 Icon Source",
+        "line1": "The <span class=\"highlight\">Final Fantasy XIV</span> related icons used on this website are from <a href=\"https://na.finalfantasyxiv.com/lodestone/special/fankit/icon/\" target=\"_blank\" rel=\"noopener noreferrer\">FFXIV Fan Kit</a>.",
+        "line2": "All icons are used in accordance with the copyright agreement stated on that website, following <strong>SQUARE ENIX</strong>'s official terms and conditions."
+      },
+      "jpCopyright": {
+        "title": "Japanese Copyright Notice",
+        "content": "記載されている会社名・製品名・システム名などは、各社の商標、または登録商標です。"
+      },
+      "seStatement": {
+        "title": "SQUARE ENIX Copyright Statement",
+        "content": "Copyright (C) 2010 - 2025 SQUARE ENIX CO., LTD. All Rights Reserved."
+      },
+      "contact": {
+        "title": "Contact Us",
+        "line1": "If you have any copyright-related questions or suggestions about this website, please contact us through <a href=\"https://github.com/hydai/ff14.tw/issues\" target=\"_blank\" rel=\"noopener noreferrer\">GitHub Issues</a>.",
+        "line2": "We promise to handle relevant matters promptly upon receiving reasonable requests."
+      }
+    }
+  }
+}

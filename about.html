@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>關於我們 - FF14.tw</title>
-    <meta name="description" content="了解 FF14.tw 的理念與貢獻者們">
+    <title data-i18n="pageTitle">關於我們 - FF14.tw</title>
+    <meta name="description" content="了解 FF14.tw 的理念與貢獻者們" data-i18n="metaDescription" data-i18n-attr="content">
     <link rel="icon" type="image/x-icon" href="assets/images/ff14tw.ico">
     <link rel="stylesheet" href="assets/css/common.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/language-switcher.css">
     <style>
         .about-content {
             max-width: 900px;
@@ -204,16 +205,17 @@
         <div class="container">
             <a href="/" class="logo">FF14.tw</a>
             <nav class="nav">
-                <a href="/">首頁</a>
-                <a href="/copyright.html">版權聲明</a>
-                <a href="https://github.com/hydai/ff14.tw" target="_blank">GitHub</a>
+                <a href="/" data-i18n="nav.home">首頁</a>
+                <a href="/copyright.html" data-i18n="nav.copyright">版權聲明</a>
+                <a href="https://github.com/hydai/ff14.tw" target="_blank" data-i18n="nav.github">GitHub</a>
                 <div class="nav-dropdown">
-                    <a href="#" class="active">關於本站</a>
+                    <a href="#" class="active" data-i18n="nav.about">關於本站</a>
                     <div class="nav-dropdown-content">
-                        <a href="/about.html">關於</a>
-                        <a href="/changelog.html">修改紀錄</a>
+                        <a href="/about.html" data-i18n="nav.aboutPage">關於</a>
+                        <a href="/changelog.html" data-i18n="nav.changelog">修改紀錄</a>
                     </div>
                 </div>
+                <div id="languageSwitcher" class="language-switcher" data-language-switcher data-style="buttons" data-show-native="true"></div>
             </nav>
         </div>
     </header>
@@ -221,41 +223,49 @@
     <main class="main">
         <div class="container">
             <section class="hero">
-                <h1>關於 FF14.tw</h1>
-                <p>hydai 和快樂夥伴們一起做的 FF14 小工具集合</p>
+                <h1 data-i18n="hero.title">關於 FF14.tw</h1>
+                <p data-i18n="hero.subtitle">為台灣冒險者打造的 Final Fantasy XIV 工具集合</p>
             </section>
 
             <div class="about-content">
                 <section class="about-section">
-                    <h2>專案由來</h2>
-                    <p>這個專案其實很簡單，就是 hydai 和朋友們在玩 FF14 的時候，覺得一些小工具很方便，但都是英文的，用起來有點不習慣。於是就想說：「不如自己做一個中文版的吧！」</p>
-                    <p>開始做了之後發現還挺有趣的，就慢慢加了更多工具。沒有什麼遠大的理想，純粹就是為了讓自己和朋友們玩遊戲時更開心一點。</p>
+                    <h2 data-i18n="sections.mission.title">🎯 我們的理念</h2>
+                    <p data-i18n="sections.mission.content">FF14.tw 致力於為台灣的 Final Fantasy XIV 玩家提供實用的遊戲工具。我們相信好的工具能夠提升遊戲體驗，讓冒險者們能夠更專注於享受艾歐澤亞的冒險旅程。</p>
                 </section>
 
                 <section class="about-section mission-section">
-                    <h2>我們在做什麼</h2>
-                    <p>說穿了就是把一些實用的 FF14 小工具做成中文版，讓大家用起來順手一點。目標很簡單：好用、免費、中文。</p>
+                    <h2 data-i18n="sections.features.title">✨ 特色功能</h2>
                     <ul class="features-list">
-                        <li>收集各種實用的遊戲小工具</li>
-                        <li>翻譯成繁體中文和台灣玩家習慣的用詞</li>
-                        <li>有 bug 就修，有新想法就加</li>
-                        <li>開源分享，歡迎大家一起玩</li>
-                        <li>順便練習寫程式 😄</li>
+                        <li data-i18n="sections.features.items.opensource">完全開源：所有程式碼都在 GitHub 上公開，歡迎貢獻</li>
+                        <li data-i18n="sections.features.items.free">永久免費：不含廣告，無需付費，純粹為了社群</li>
+                        <li data-i18n="sections.features.items.responsive">響應式設計：支援手機、平板、電腦各種裝置</li>
+                        <li data-i18n="sections.features.items.multilingual">多語言支援：提供繁體中文、日本語、English</li>
                     </ul>
                 </section>
 
                 <section class="about-section vision-section">
-                    <h2>未來的話</h2>
-                    <p>也沒想太多啦，就是繼續把遊戲玩得開心，順便把工具做得更好用一些。如果有人覺得有幫助，那就太好了！</p>
-                    <p>有想到什麼新的工具或是改進的想法，就加進來試試看。反正是開源的，大家都可以一起來玩。</p>
+                    <h2 data-i18n="sections.technology.title">🛠️ 技術架構</h2>
+                    <p data-i18n="sections.technology.content">本站採用純前端技術開發，不需要後端伺服器，確保快速載入與隱私安全：</p>
+                    <ul class="features-list">
+                        <li data-i18n="sections.technology.items.vanilla">Vanilla JavaScript - 無框架依賴，輕量快速</li>
+                        <li data-i18n="sections.technology.items.responsive">響應式 CSS - 適配各種螢幕尺寸</li>
+                        <li data-i18n="sections.technology.items.github">GitHub Pages - 穩定可靠的託管服務</li>
+                        <li data-i18n="sections.technology.items.api">第三方 API 整合 - 即時資料查詢</li>
+                    </ul>
                 </section>
 
                 <section class="about-section contributors-section">
-                    <h2>一起來玩</h2>
-                    <p>這個專案放在 GitHub 上面，程式碼都是開源的。如果你也想加個什麼功能，或是發現哪裡有問題，都歡迎來一起搞！不會寫程式也沒關係，有想法或建議都可以提出來。</p>
+                    <h2 data-i18n="sections.support.title">💖 支持我們</h2>
+                    <p data-i18n="sections.support.content">如果您喜歡這個網站，可以透過以下方式支持我們：</p>
+                    <ul class="features-list">
+                        <li data-i18n="sections.support.star">在 GitHub 上給予星星 ⭐</li>
+                        <li data-i18n="sections.support.share">分享給其他玩家</li>
+                        <li data-i18n="sections.support.contribute">貢獻程式碼或翻譯</li>
+                        <li data-i18n="sections.support.feedback">提供意見與建議</li>
+                    </ul>
                     
                     <div class="contribute-box">
-                        <p>有興趣的話可以到 <a href="https://github.com/hydai/ff14.tw" target="_blank">GitHub</a> 看看，或是直接丟個 issue 跟我們聊聊！</p>
+                        <p data-i18n-html="sections.support.contributeBox" data-i18n-params='{"link": "<a href=\"https://github.com/hydai/ff14.tw\" target=\"_blank\">GitHub</a>"}'>有興趣的話可以到 <a href="https://github.com/hydai/ff14.tw" target="_blank">GitHub</a> 看看！</p>
                     </div>
                 </section>
             </div>
@@ -264,10 +274,29 @@
 
     <footer class="footer">
         <div class="container">
-            <p>&copy; 2024-2025 FF14.tw | 本站非官方網站，與 Square Enix 無關 | Made with ❤️ by hydai</p>
+            <p>
+                <span data-i18n="footer.copyright">&copy; 2024-2025 FF14.tw</span> | 
+                <span data-i18n="footer.disclaimer">本站非官方網站，與 Square Enix 無關</span> | 
+                <span data-i18n="footer.madeWith">Made with ❤️ by hydai</span>
+            </p>
         </div>
     </footer>
 
     <script src="assets/js/common.js"></script>
+    <script src="assets/js/i18n.js"></script>
+    <script src="assets/js/components/language-switcher.js"></script>
+    <script>
+        // Initialize i18n
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Load translations
+            await i18n.init(['common', 'pages/about']);
+            
+            // Initialize language switcher
+            new LanguageSwitcher('languageSwitcher', {
+                style: 'buttons',
+                showNativeName: true
+            });
+        });
+    </script>
 </body>
 </html>

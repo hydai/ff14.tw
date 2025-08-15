@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>版權聲明 - FF14.tw</title>
-    <meta name="description" content="FF14.tw 版權聲明與使用條款">
+    <title data-i18n="pageTitle">版權聲明 - FF14.tw</title>
+    <meta name="description" content="FF14.tw 版權聲明與使用條款" data-i18n="metaDescription" data-i18n-attr="content">
     <link rel="icon" type="image/x-icon" href="assets/images/ff14tw.ico">
     <link rel="stylesheet" href="assets/css/common.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/language-switcher.css">
     <style>
         .copyright-content {
             max-width: 800px;
@@ -185,16 +186,17 @@
         <div class="container">
             <a href="/" class="logo">FF14.tw</a>
             <nav class="nav">
-                <a href="/">首頁</a>
-                <a href="/copyright.html" class="active">版權聲明</a>
-                <a href="https://github.com/hydai/ff14.tw" target="_blank">GitHub</a>
+                <a href="/" data-i18n="nav.home">首頁</a>
+                <a href="/copyright.html" class="active" data-i18n="nav.copyright">版權聲明</a>
+                <a href="https://github.com/hydai/ff14.tw" target="_blank" data-i18n="nav.github">GitHub</a>
                 <div class="nav-dropdown">
-                    <a href="#">關於本站</a>
+                    <a href="#" data-i18n="nav.about">關於本站</a>
                     <div class="nav-dropdown-content">
-                        <a href="/about.html">關於</a>
-                        <a href="/changelog.html">修改紀錄</a>
+                        <a href="/about.html" data-i18n="nav.aboutPage">關於</a>
+                        <a href="/changelog.html" data-i18n="nav.changelog">修改紀錄</a>
                     </div>
                 </div>
+                <div id="languageSwitcher" class="language-switcher" data-language-switcher data-style="buttons" data-show-native="true"></div>
             </nav>
         </div>
     </header>
@@ -202,49 +204,49 @@
     <main class="main">
         <div class="container">
             <section class="hero">
-                <h1>版權聲明</h1>
-                <p>關於 FF14.tw 網站的版權、商標及使用條款說明</p>
+                <h1 data-i18n="hero.title">版權聲明</h1>
+                <p data-i18n="hero.subtitle">關於 FF14.tw 網站的版權、商標及使用條款說明</p>
             </section>
 
             <div class="copyright-content">
                 <section class="copyright-section">
-                    <h2>遊戲版權聲明</h2>
-                    <p><span class="highlight">Final Fantasy XIV</span> 遊戲由 <strong>SQUARE ENIX</strong> 製作。</p>
-                    <p>繁體中文版由 <strong>宇峻奧汀</strong> 與 <strong>智寶國際</strong> 聯合代理營運。</p>
+                    <h2 data-i18n="sections.gameRights.title">遊戲版權聲明</h2>
+                    <p data-i18n-html="sections.gameRights.line1"><span class="highlight">Final Fantasy XIV</span> 遊戲由 <strong>SQUARE ENIX</strong> 製作。</p>
+                    <p data-i18n-html="sections.gameRights.line2">繁體中文版由 <strong>宇峻奧汀</strong> 與 <strong>智寶國際</strong> 聯合代理營運。</p>
                 </section>
 
                 <section class="copyright-section">
-                    <h2>網站性質聲明</h2>
-                    <p>本工具網站為 <span class="highlight">非官方粉絲向作品</span>，不放置廣告、不設置任何盈利手段。</p>
-                    <p>所涉及的公司名稱、商標、產品等均為其各自所有者的資產，僅供玩家識別所用。</p>
+                    <h2 data-i18n="sections.siteNature.title">網站性質聲明</h2>
+                    <p data-i18n-html="sections.siteNature.line1">本工具網站為 <span class="highlight">非官方粉絲向作品</span>，不放置廣告、不設置任何盈利手段。</p>
+                    <p data-i18n="sections.siteNature.line2">所涉及的公司名稱、商標、產品等均為其各自所有者的資產，僅供玩家識別所用。</p>
                 </section>
 
                 <section class="copyright-section">
-                    <h2>圖片使用聲明</h2>
-                    <p>本網站內使用的遊戲圖片包含但不限於：截圖、圖示等，其版權為 <strong>SQUARE ENIX</strong> 所有。</p>
-                    <p>所有遊戲相關圖片僅用於學習、研究和非商業用途，如有侵權請聯繫我們立即移除。</p>
+                    <h2 data-i18n="sections.imageUsage.title">圖片使用聲明</h2>
+                    <p data-i18n-html="sections.imageUsage.line1">本網站內使用的遊戲圖片包含但不限於：截圖、圖示等，其版權為 <strong>SQUARE ENIX</strong> 所有。</p>
+                    <p data-i18n="sections.imageUsage.line2">所有遊戲相關圖片僅用於學習、研究和非商業用途，如有侵權請聯繫我們立即移除。</p>
                 </section>
 
                 <section class="copyright-section">
-                    <h2>FF14 圖示來源</h2>
-                    <p>本網站所使用的 <span class="highlight">Final Fantasy XIV</span> 相關圖示來自 <a href="https://na.finalfantasyxiv.com/lodestone/special/fankit/icon/" target="_blank" rel="noopener noreferrer">FFXIV Fan Kit</a>。</p>
-                    <p>所有圖示的使用方式皆按照該網站上所載明的版權協議為主，遵循 <strong>SQUARE ENIX</strong> 官方的使用條款與規範。</p>
+                    <h2 data-i18n="sections.iconSource.title">FF14 圖示來源</h2>
+                    <p data-i18n-html="sections.iconSource.line1">本網站所使用的 <span class="highlight">Final Fantasy XIV</span> 相關圖示來自 <a href="https://na.finalfantasyxiv.com/lodestone/special/fankit/icon/" target="_blank" rel="noopener noreferrer">FFXIV Fan Kit</a>。</p>
+                    <p data-i18n-html="sections.iconSource.line2">所有圖示的使用方式皆按照該網站上所載明的版權協議為主，遵循 <strong>SQUARE ENIX</strong> 官方的使用條款與規範。</p>
                 </section>
 
                 <section class="copyright-section japanese-section">
-                    <h2>日文版權聲明</h2>
-                    <p>記載されている会社名・製品名・システム名などは、各社の商標、または登録商標です。</p>
+                    <h2 data-i18n="sections.jpCopyright.title">日文版權聲明</h2>
+                    <p data-i18n="sections.jpCopyright.content">記載されている会社名・製品名・システム名などは、各社の商標、または登録商標です。</p>
                 </section>
 
                 <section class="copyright-section square-enix-copyright">
-                    <h2>SQUARE ENIX 版權聲明</h2>
-                    <p><strong>Copyright (C) 2010 - 2025 SQUARE ENIX CO., LTD. All Rights Reserved.</strong></p>
+                    <h2 data-i18n="sections.seStatement.title">SQUARE ENIX 版權聲明</h2>
+                    <p><strong data-i18n="sections.seStatement.content">Copyright (C) 2010 - 2025 SQUARE ENIX CO., LTD. All Rights Reserved.</strong></p>
                 </section>
 
                 <section class="copyright-section">
-                    <h2>聯絡方式</h2>
-                    <p>如對本網站有任何版權相關問題或建議，歡迎透過 <a href="https://github.com/hydai/ff14.tw/issues" target="_blank" rel="noopener noreferrer">GitHub Issues</a> 與我們聯繫。</p>
-                    <p>我們承諾會在收到合理要求後，盡快處理相關事宜。</p>
+                    <h2 data-i18n="sections.contact.title">聯絡方式</h2>
+                    <p data-i18n-html="sections.contact.line1">如對本網站有任何版權相關問題或建議，歡迎透過 <a href="https://github.com/hydai/ff14.tw/issues" target="_blank" rel="noopener noreferrer">GitHub Issues</a> 與我們聯繫。</p>
+                    <p data-i18n="sections.contact.line2">我們承諾會在收到合理要求後，盡快處理相關事宜。</p>
                 </section>
             </div>
         </div>
@@ -252,10 +254,29 @@
 
     <footer class="footer">
         <div class="container">
-            <p>&copy; 2024-2025 FF14.tw | 本站非官方網站，與 Square Enix 無關 | Made with ❤️ by hydai</p>
+            <p>
+                <span data-i18n="footer.copyright">&copy; 2024-2025 FF14.tw</span> | 
+                <span data-i18n="footer.disclaimer">本站非官方網站，與 Square Enix 無關</span> | 
+                <span data-i18n="footer.madeWith">Made with ❤️ by hydai</span>
+            </p>
         </div>
     </footer>
 
     <script src="assets/js/common.js"></script>
+    <script src="assets/js/i18n.js"></script>
+    <script src="assets/js/components/language-switcher.js"></script>
+    <script>
+        // Initialize i18n
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Load translations
+            await i18n.init(['common', 'pages/copyright']);
+            
+            // Initialize language switcher
+            new LanguageSwitcher('languageSwitcher', {
+                style: 'buttons',
+                showNativeName: true
+            });
+        });
+    </script>
 </body>
 </html>
