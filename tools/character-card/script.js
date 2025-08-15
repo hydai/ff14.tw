@@ -1,6 +1,11 @@
 // 角色卡產生器 JavaScript
 
-document.addEventListener('DOMContentLoaded', function() {
+class CharacterCardGenerator {
+    constructor() {
+        this.init();
+    }
+
+    init() {
     // 獲取所有輸入元素
     const inputs = {
         characterName: document.getElementById('characterName'),
@@ -276,19 +281,22 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('generateCard').addEventListener('click', function() {
         // 驗證必填欄位
         if (!inputs.characterName.value.trim()) {
-            FF14Utils.showToast('請輸入角色名稱', 'error');
+            const msg = window.i18n?.t('messages.nameRequired') || '請輸入角色名稱';
+            FF14Utils.showToast(msg, 'error');
             inputs.characterName.focus();
             return;
         }
 
         if (!inputs.jobName.value) {
-            FF14Utils.showToast('請選擇職業', 'error');
+            const msg = window.i18n?.t('messages.jobRequired') || '請選擇職業';
+            FF14Utils.showToast(msg, 'error');
             return;
         }
 
         // 更新角色卡並顯示成功訊息
         updateCharacterCard();
-        FF14Utils.showToast('角色卡已生成！');
+        const msg = window.i18n?.t('messages.cardGenerated') || '角色卡已生成！';
+        FF14Utils.showToast(msg);
 
         // 滾動到預覽區域
         document.querySelector('.preview-section').scrollIntoView({
@@ -301,12 +309,14 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('downloadCard').addEventListener('click', function() {
         // 檢查是否有有效的角色卡內容
         if (!inputs.characterName.value.trim()) {
-            FF14Utils.showToast('請先產生角色卡', 'error');
+            const msg = window.i18n?.t('messages.generateFirst') || '請先產生角色卡';
+            FF14Utils.showToast(msg, 'error');
             return;
         }
 
         // 使用 html2canvas 或類似功能（這裡先顯示提示）
-        FF14Utils.showToast('下載功能開發中，敬請期待！');
+        const msg = window.i18n?.t('messages.downloadInDevelopment') || '下載功能開發中，敬請期待！';
+        FF14Utils.showToast(msg);
         
         // TODO: 實作圖片下載功能
         // 可以使用 html2canvas 或 canvas API 來將角色卡轉換成圖片
@@ -318,13 +328,15 @@ document.addEventListener('DOMContentLoaded', function() {
         if (file) {
             // 檢查檔案大小 (5MB 限制)
             if (file.size > 5 * 1024 * 1024) {
-                FF14Utils.showToast('圖片檔案過大，請選擇小於 5MB 的圖片', 'error');
+                const msg = window.i18n?.t('messages.imageTooLarge') || '圖片檔案過大，請選擇小於 5MB 的圖片';
+                FF14Utils.showToast(msg, 'error');
                 return;
             }
 
             // 檢查檔案類型
             if (!file.type.startsWith('image/')) {
-                FF14Utils.showToast('請選擇有效的圖片檔案', 'error');
+                const msg = window.i18n?.t('messages.invalidImage') || '請選擇有效的圖片檔案';
+                FF14Utils.showToast(msg, 'error');
                 return;
             }
 
@@ -346,7 +358,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 resetImageTransform();
                 // 立即應用背景透明度
                 updateBackgroundOpacity();
-                FF14Utils.showToast('圖片上傳成功！');
+                const msg = window.i18n?.t('messages.imageUploaded') || '圖片上傳成功！';
+                FF14Utils.showToast(msg);
             };
             reader.readAsDataURL(file);
         }
@@ -425,7 +438,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // 重置圖片
     imageElements.resetImage.addEventListener('click', function() {
         resetImageTransform();
-        FF14Utils.showToast('圖片已重置');
+        const msg = window.i18n?.t('messages.imageReset') || '圖片已重置';
+        FF14Utils.showToast(msg);
     });
 
     // 移除圖片
@@ -450,7 +464,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         resetImageTransform();
-        FF14Utils.showToast('圖片已移除');
+        const msg = window.i18n?.t('messages.imageRemoved') || '圖片已移除';
+        FF14Utils.showToast(msg);
     });
 
     // 拖拉功能 (滑鼠/觸控)
@@ -818,4 +833,25 @@ document.addEventListener('DOMContentLoaded', function() {
             this.value = this.value.substring(0, 25);
         }
     });
+    }
+    
+    updateMessages() {
+        // Update any dynamic text when language changes
+        // Most text is handled by HTML i18n attributes
+        // Only need to update dynamically generated content if any
+    }
+}
+
+// Initialize when DOM is ready
+let characterCardGenerator;
+document.addEventListener('DOMContentLoaded', function() {
+    characterCardGenerator = new CharacterCardGenerator();
+    window.characterCardGenerator = characterCardGenerator;
+});
+
+// Listen for language changes
+document.addEventListener('i18n:languageChanged', () => {
+    if (characterCardGenerator) {
+        characterCardGenerator.updateMessages();
+    }
 });

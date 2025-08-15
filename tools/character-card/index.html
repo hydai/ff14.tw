@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>角色卡產生器 - FF14.tw</title>
-    <meta name="description" content="快速生成你的FF14角色資訊卡片，支援多種樣式和自訂選項。">
+    <title data-i18n="pageTitle">角色卡產生器 - FF14.tw</title>
+    <meta name="description" content="快速生成你的FF14角色資訊卡片，支援多種樣式和自訂選項。" data-i18n="metaDescription" data-i18n-attr="content">
     <link rel="icon" type="image/x-icon" href="../../assets/images/ff14tw.ico">
     <link rel="stylesheet" href="../../assets/css/common.css">
     <link rel="stylesheet" href="../../assets/css/dark-mode-tools.css">
@@ -12,23 +12,25 @@
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../assets/css/language-switcher.css">
 </head>
 <body>
     <header class="header">
         <div class="container">
             <a href="/" class="logo">FF14.tw</a>
             <nav class="nav">
-                <a href="/">首頁</a>
-                <a href="/copyright.html">版權聲明</a>
-                <a href="https://github.com/hydai/ff14.tw" target="_blank">GitHub</a>
+                <a href="/" data-i18n="nav.home">首頁</a>
+                <a href="/copyright.html" data-i18n="nav.copyright">版權聲明</a>
+                <a href="https://github.com/hydai/ff14.tw" target="_blank" data-i18n="nav.github">GitHub</a>
                 <div class="nav-dropdown">
-                    <a href="#">關於本站</a>
+                    <a href="#" data-i18n="nav.about">關於本站</a>
                     <div class="nav-dropdown-content">
-                        <a href="/about.html">關於</a>
-                        <a href="/changelog.html">修改紀錄</a>
+                        <a href="/about.html" data-i18n="nav.aboutPage">關於</a>
+                        <a href="/changelog.html" data-i18n="nav.changelog">修改紀錄</a>
                     </div>
                 </div>
+                <div id="languageSwitcher" class="language-switcher" data-language-switcher data-style="buttons" data-show-native="true"></div>
             </nav>
         </div>
     </header>
@@ -36,7 +38,7 @@
     <main class="main">
         <div class="container">
             <section class="hero">
-                <h1>角色卡產生器</h1>
+                <h1 data-i18n="title">角色卡產生器</h1>
             </section>
 
             <div class="tool-container">
@@ -52,14 +54,14 @@
                                     <div class="character-section">
                                         <div class="name-row">
                                             <div class="name-info">
-                                                <h2 class="character-name">角色名稱</h2>
-                                                <span class="job-name">職業</span>
+                                                <h2 class="character-name" data-i18n="preview.characterName">角色名稱</h2>
+                                                <span class="job-name" data-i18n="preview.job">職業</span>
                                                 <div class="info-line">
-                                                    <span class="character-title">稱號</span>
+                                                    <span class="character-title" data-i18n="preview.title">稱號</span>
                                                     <span class="separator">•</span>
-                                                    <span class="company-name">---</span>
+                                                    <span class="company-name" data-i18n="preview.freeCompany">---</span>
                                                     <span class="separator">•</span>
-                                                    <span class="server-name">伺服器</span>
+                                                    <span class="server-name" data-i18n="preview.server">伺服器</span>
                                                 </div>
                                             </div>
                                             <div class="job-icon">⚔️</div>
@@ -74,14 +76,14 @@
                                     <div class="character-section">
                                         <div class="name-row">
                                             <div class="name-info">
-                                                <h2 class="character-name">角色名稱</h2>
-                                                <span class="job-name">職業</span>
+                                                <h2 class="character-name" data-i18n="preview.characterName">角色名稱</h2>
+                                                <span class="job-name" data-i18n="preview.job">職業</span>
                                                 <div class="info-line">
-                                                    <span class="character-title">稱號</span>
+                                                    <span class="character-title" data-i18n="preview.title">稱號</span>
                                                     <span class="separator">•</span>
-                                                    <span class="company-name">---</span>
+                                                    <span class="company-name" data-i18n="preview.freeCompany">---</span>
                                                     <span class="separator">•</span>
-                                                    <span class="server-name">伺服器</span>
+                                                    <span class="server-name" data-i18n="preview.server">伺服器</span>
                                                 </div>
                                             </div>
                                             <div class="job-icon">⚔️</div>
@@ -94,15 +96,15 @@
                 </div>
 
                 <div class="image-controls">
-                    <h3>圖片設定</h3>
+                    <h3 data-i18n="imageSettings.title">圖片設定</h3>
                     <div class="controls-row">
                         <div class="control-group">
-                            <label>上傳圖片</label>
+                            <label data-i18n="imageSettings.upload">上傳圖片</label>
                             <input type="file" id="characterImage" accept="image/*" class="file-input">
-                            <small class="form-hint">JPG、PNG、GIF</small>
+                            <small class="form-hint" data-i18n="imageSettings.uploadHint">JPG、PNG、GIF</small>
                         </div>
                         <div class="control-group" id="positionGroup" style="display: none;">
-                            <label>位置</label>
+                            <label data-i18n="imageSettings.position">位置</label>
                             <div class="position-controls">
                                 <button type="button" class="control-btn" id="moveUp">↑</button>
                                 <button type="button" class="control-btn" id="moveDown">↓</button>
@@ -111,25 +113,25 @@
                             </div>
                         </div>
                         <div class="control-group" id="scaleGroup" style="display: none;">
-                            <label>縮放</label>
+                            <label data-i18n="imageSettings.scale">縮放</label>
                             <input type="range" id="scaleSlider" min="0.5" max="2" step="0.1" value="1">
                             <span id="scaleValue">100%</span>
                         </div>
                         <div class="control-group" id="rotateGroup" style="display: none;">
-                            <label>旋轉</label>
+                            <label data-i18n="imageSettings.rotate">旋轉</label>
                             <input type="range" id="rotateSlider" min="0" max="360" step="1" value="0">
                             <span id="rotateValue">0°</span>
                         </div>
                         <div class="control-group" id="opacityGroup" style="display: none;">
-                            <label>背景透明度</label>
+                            <label data-i18n="imageSettings.opacity">背景透明度</label>
                             <input type="range" id="opacitySlider" min="0" max="100" step="5" value="40">
                             <span id="opacityValue">40%</span>
                         </div>
                         <div class="control-group" id="actionGroup" style="display: none;">
-                            <label>操作</label>
+                            <label data-i18n="imageSettings.actions">操作</label>
                             <div class="action-buttons">
-                                <button type="button" class="btn btn-secondary" id="resetImage">重置</button>
-                                <button type="button" class="btn btn-secondary" id="removeImage">移除</button>
+                                <button type="button" class="btn btn-secondary" id="resetImage" data-i18n="imageSettings.reset">重置</button>
+                                <button type="button" class="btn btn-secondary" id="removeImage" data-i18n="imageSettings.remove">移除</button>
                             </div>
                         </div>
                     </div>
@@ -137,13 +139,13 @@
 
                 <div class="input-section">
                     <div class="form-group">
-                        <label for="characterName">角色名稱</label>
-                        <input type="text" id="characterName" placeholder="輸入角色名稱">
+                        <label for="characterName" data-i18n="form.characterName">角色名稱</label>
+                        <input type="text" id="characterName" placeholder="輸入角色名稱" data-i18n="form.characterNamePlaceholder" data-i18n-attr="placeholder">
                     </div>
 
                     <div class="form-group">
                         <div class="collapsible-header" id="serverCollapsibleHeader">
-                            <label>伺服器選擇</label>
+                            <label data-i18n="form.serverSelection">伺服器選擇</label>
                             <button type="button" class="collapse-toggle" id="serverCollapseToggle">
                                 <span class="toggle-icon">▼</span>
                             </button>
@@ -151,9 +153,9 @@
                         
                         <!-- 已選擇的伺服器顯示 -->
                         <div class="selected-server" id="selectedServer" style="display: none;">
-                            <span class="selected-label">已選擇：</span>
+                            <span class="selected-label" data-i18n="form.selected">已選擇</span>：
                             <span class="selected-value" id="selectedServerName"></span>
-                            <button type="button" class="clear-btn" id="clearServer">重新選擇</button>
+                            <button type="button" class="clear-btn" id="clearServer" data-i18n="form.reselect">重新選擇</button>
                         </div>
 
                         <div class="collapsible-content" id="serverCollapsibleContent">
@@ -189,7 +191,7 @@
 
                     <div class="form-group">
                         <div class="collapsible-header" id="jobCollapsibleHeader">
-                            <label>職業選擇</label>
+                            <label data-i18n="form.jobSelection">職業選擇</label>
                             <button type="button" class="collapse-toggle" id="jobCollapseToggle">
                                 <span class="toggle-icon">▼</span>
                             </button>
@@ -197,9 +199,9 @@
                         
                         <!-- 已選擇的職業顯示 -->
                         <div class="selected-server" id="selectedJob" style="display: none;">
-                            <span class="selected-label">已選擇職業：</span>
+                            <span class="selected-label" data-i18n="form.selectedJob">已選擇職業</span>：
                             <span class="selected-value" id="selectedJobName"></span>
-                            <button type="button" class="clear-btn" id="clearJob">重新選擇</button>
+                            <button type="button" class="clear-btn" id="clearJob" data-i18n="form.reselect">重新選擇</button>
                         </div>
 
                         <div class="collapsible-content" id="jobCollapsibleContent">
@@ -207,7 +209,7 @@
                             <div class="job-category">
                                 <h4 class="job-category-title">
                                     <span class="job-category-icon">🛡️</span>
-                                    坦克
+                                    <span data-i18n="jobs.categories.tank">坦克</span>
                                 </h4>
                                 <div class="selection-grid">
                                     <button type="button" class="selection-btn job-btn" data-job="騎士" data-category="坦克">騎士</button>
@@ -221,7 +223,7 @@
                             <div class="job-category">
                                 <h4 class="job-category-title">
                                     <span class="job-category-icon">💚</span>
-                                    治療
+                                    <span data-i18n="jobs.categories.healer">治療</span>
                                 </h4>
                                 <div class="selection-grid">
                                     <button type="button" class="selection-btn job-btn" data-job="白魔法師" data-category="治療">白魔法師</button>
@@ -235,7 +237,7 @@
                             <div class="job-category">
                                 <h4 class="job-category-title">
                                     <span class="job-category-icon">⚔️</span>
-                                    近戰
+                                    <span data-i18n="jobs.categories.melee">近戰</span>
                                 </h4>
                                 <div class="selection-grid">
                                     <button type="button" class="selection-btn job-btn" data-job="武僧" data-category="近戰">武僧</button>
@@ -250,7 +252,7 @@
                             <div class="job-category">
                                 <h4 class="job-category-title">
                                     <span class="job-category-icon">🏹</span>
-                                    遠程
+                                    <span data-i18n="jobs.categories.ranged">遠程</span>
                                 </h4>
                                 <div class="selection-grid">
                                     <button type="button" class="selection-btn job-btn" data-job="詩人" data-category="遠程">詩人</button>
@@ -263,7 +265,7 @@
                             <div class="job-category">
                                 <h4 class="job-category-title">
                                     <span class="job-category-icon">🔮</span>
-                                    魔法
+                                    <span data-i18n="jobs.categories.magic">魔法</span>
                                 </h4>
                                 <div class="selection-grid">
                                     <button type="button" class="selection-btn job-btn" data-job="黑魔法師" data-category="魔法">黑魔法師</button>
@@ -279,25 +281,25 @@
 
 
                     <div class="form-group">
-                        <label for="characterTitle">稱號</label>
-                        <input type="text" id="characterTitle" placeholder="角色稱號（可選）">
+                        <label for="characterTitle" data-i18n="form.characterTitle">稱號</label>
+                        <input type="text" id="characterTitle" placeholder="角色稱號（可選）" data-i18n="form.characterTitlePlaceholder" data-i18n-attr="placeholder">
                     </div>
 
                     <div class="form-group">
-                        <label for="freeCompany">部隊名稱</label>
-                        <input type="text" id="freeCompany" placeholder="部隊名稱（可選）">
+                        <label for="freeCompany" data-i18n="form.freeCompany">部隊名稱</label>
+                        <input type="text" id="freeCompany" placeholder="部隊名稱（可選）" data-i18n="form.freeCompanyPlaceholder" data-i18n-attr="placeholder">
                     </div>
 
                     <div class="form-group">
-                        <label for="cardLayout">卡片版型</label>
+                        <label for="cardLayout" data-i18n="form.cardLayout">卡片版型</label>
                         <select id="cardLayout">
-                            <option value="horizontal">橫版 (800x600)</option>
-                            <option value="vertical">直版 (600x800)</option>
+                            <option value="horizontal" data-i18n="form.layoutHorizontal">橫版 (800x600)</option>
+                            <option value="vertical" data-i18n="form.layoutVertical">直版 (600x800)</option>
                         </select>
                     </div>
 
                     <div class="form-group">
-                        <label for="nameColor">角色名稱顏色</label>
+                        <label for="nameColor" data-i18n="form.nameColor">角色名稱顏色</label>
                         <div class="color-input-wrapper">
                             <input type="color" id="nameColor" value="#FFFFFF">
                             <input type="text" id="nameColorText" value="#FFFFFF" placeholder="#FFFFFF">
@@ -306,8 +308,8 @@
 
 
                     <div class="button-group">
-                        <button id="generateCard" class="btn">產生角色卡</button>
-                        <button id="downloadCard" class="btn btn-secondary">下載圖片</button>
+                        <button id="generateCard" class="btn" data-i18n="buttons.generate">產生角色卡</button>
+                        <button id="downloadCard" class="btn btn-secondary" data-i18n="buttons.download">下載圖片</button>
                     </div>
                 </div>
             </div>
@@ -316,12 +318,36 @@
 
     <footer class="footer">
         <div class="container">
-            <p>&copy; 2024-2025 FF14.tw | 本站非官方網站，與 Square Enix 無關 | Made with ❤️ by hydai</p>
+            <p>
+                <span data-i18n="footer.copyright">&copy; 2024-2025 FF14.tw</span> | 
+                <span data-i18n="footer.disclaimer">本站非官方網站，與 Square Enix 無關</span> | 
+                <span data-i18n="footer.madeWith">Made with ❤️ by hydai</span>
+            </p>
         </div>
     </footer>
 
     <script src="../../assets/js/common.js"></script>
     <script src="../../assets/js/security-utils.js"></script>
+    <script src="../../assets/js/i18n.js"></script>
+    <script src="../../assets/js/components/language-switcher.js"></script>
     <script src="script.js"></script>
+    <script>
+        // Initialize i18n
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Load translations
+            await i18n.init(['common', 'tools/character-card']);
+            
+            // Initialize language switcher
+            new LanguageSwitcher('languageSwitcher', {
+                style: 'buttons',
+                showNativeName: true
+            });
+            
+            // Reinitialize with i18n if needed
+            if (window.characterCardGenerator) {
+                window.characterCardGenerator.updateMessages();
+            }
+        });
+    </script>
 </body>
 </html>

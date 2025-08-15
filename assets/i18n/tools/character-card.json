@@ -1,0 +1,263 @@
+{
+  "zh-TW": {
+    "pageTitle": "角色卡產生器 - FF14.tw",
+    "metaDescription": "快速生成你的FF14角色資訊卡片，支援多種樣式和自訂選項。",
+    "title": "角色卡產生器",
+    "preview": {
+      "characterName": "角色名稱",
+      "job": "職業",
+      "title": "稱號",
+      "server": "伺服器",
+      "freeCompany": "---"
+    },
+    "imageSettings": {
+      "title": "圖片設定",
+      "upload": "上傳圖片",
+      "uploadHint": "JPG、PNG、GIF",
+      "position": "位置",
+      "scale": "縮放",
+      "rotate": "旋轉",
+      "opacity": "背景透明度",
+      "actions": "操作",
+      "reset": "重置",
+      "remove": "移除"
+    },
+    "form": {
+      "characterName": "角色名稱",
+      "characterNamePlaceholder": "輸入角色名稱",
+      "serverSelection": "伺服器選擇",
+      "selected": "已選擇",
+      "reselect": "重新選擇",
+      "jobSelection": "職業選擇",
+      "selectedJob": "已選擇職業",
+      "characterTitle": "稱號",
+      "characterTitlePlaceholder": "角色稱號（可選）",
+      "freeCompany": "部隊名稱",
+      "freeCompanyPlaceholder": "部隊名稱（可選）",
+      "cardLayout": "卡片版型",
+      "layoutHorizontal": "橫版 (800x600)",
+      "layoutVertical": "直版 (600x800)",
+      "nameColor": "角色名稱顏色"
+    },
+    "jobs": {
+      "categories": {
+        "tank": "坦克",
+        "healer": "治療",
+        "melee": "近戰",
+        "ranged": "遠程",
+        "magic": "魔法"
+      },
+      "names": {
+        "paladin": "騎士",
+        "warrior": "戰士",
+        "darkKnight": "暗黑騎士",
+        "gunbreaker": "絕槍戰士",
+        "whiteMage": "白魔法師",
+        "scholar": "學者",
+        "astrologian": "占星術士",
+        "sage": "賢者",
+        "monk": "武僧",
+        "dragoon": "龍騎士",
+        "ninja": "忍者",
+        "samurai": "武士",
+        "reaper": "鐮刀",
+        "bard": "詩人",
+        "machinist": "機工士",
+        "dancer": "舞者",
+        "blackMage": "黑魔法師",
+        "summoner": "召喚師",
+        "redMage": "赤魔法師"
+      }
+    },
+    "buttons": {
+      "generate": "產生角色卡",
+      "download": "下載圖片"
+    },
+    "messages": {
+      "nameRequired": "請輸入角色名稱",
+      "jobRequired": "請選擇職業",
+      "cardGenerated": "角色卡已生成！",
+      "generateFirst": "請先產生角色卡",
+      "downloadInDevelopment": "下載功能開發中，敬請期待！",
+      "imageTooLarge": "圖片檔案過大，請選擇小於 5MB 的圖片",
+      "invalidImage": "請選擇有效的圖片檔案",
+      "imageUploaded": "圖片上傳成功！",
+      "imageReset": "圖片已重置",
+      "imageRemoved": "圖片已移除"
+    }
+  },
+  "ja": {
+    "pageTitle": "キャラクターカードジェネレーター - FF14.tw",
+    "metaDescription": "FF14キャラクター情報カードを素早く生成。複数のスタイルとカスタマイズオプションをサポート。",
+    "title": "キャラクターカードジェネレーター",
+    "preview": {
+      "characterName": "キャラクター名",
+      "job": "ジョブ",
+      "title": "称号",
+      "server": "サーバー",
+      "freeCompany": "---"
+    },
+    "imageSettings": {
+      "title": "画像設定",
+      "upload": "画像アップロード",
+      "uploadHint": "JPG、PNG、GIF",
+      "position": "位置",
+      "scale": "拡大縮小",
+      "rotate": "回転",
+      "opacity": "背景透明度",
+      "actions": "操作",
+      "reset": "リセット",
+      "remove": "削除"
+    },
+    "form": {
+      "characterName": "キャラクター名",
+      "characterNamePlaceholder": "キャラクター名を入力",
+      "serverSelection": "サーバー選択",
+      "selected": "選択済み",
+      "reselect": "再選択",
+      "jobSelection": "ジョブ選択",
+      "selectedJob": "選択済みジョブ",
+      "characterTitle": "称号",
+      "characterTitlePlaceholder": "キャラクター称号（オプション）",
+      "freeCompany": "フリーカンパニー名",
+      "freeCompanyPlaceholder": "フリーカンパニー名（オプション）",
+      "cardLayout": "カードレイアウト",
+      "layoutHorizontal": "横型 (800x600)",
+      "layoutVertical": "縦型 (600x800)",
+      "nameColor": "キャラクター名の色"
+    },
+    "jobs": {
+      "categories": {
+        "tank": "タンク",
+        "healer": "ヒーラー",
+        "melee": "メレー",
+        "ranged": "レンジ",
+        "magic": "キャスター"
+      },
+      "names": {
+        "paladin": "ナイト",
+        "warrior": "戦士",
+        "darkKnight": "暗黒騎士",
+        "gunbreaker": "ガンブレイカー",
+        "whiteMage": "白魔道士",
+        "scholar": "学者",
+        "astrologian": "占星術師",
+        "sage": "賢者",
+        "monk": "モンク",
+        "dragoon": "竜騎士",
+        "ninja": "忍者",
+        "samurai": "侍",
+        "reaper": "リーパー",
+        "bard": "吟遊詩人",
+        "machinist": "機工士",
+        "dancer": "踊り子",
+        "blackMage": "黒魔道士",
+        "summoner": "召喚士",
+        "redMage": "赤魔道士"
+      }
+    },
+    "buttons": {
+      "generate": "カード生成",
+      "download": "画像ダウンロード"
+    },
+    "messages": {
+      "nameRequired": "キャラクター名を入力してください",
+      "jobRequired": "ジョブを選択してください",
+      "cardGenerated": "キャラクターカードが生成されました！",
+      "generateFirst": "先にカードを生成してください",
+      "downloadInDevelopment": "ダウンロード機能は開発中です。お待ちください！",
+      "imageTooLarge": "画像ファイルが大きすぎます。5MB以下の画像を選択してください",
+      "invalidImage": "有効な画像ファイルを選択してください",
+      "imageUploaded": "画像がアップロードされました！",
+      "imageReset": "画像がリセットされました",
+      "imageRemoved": "画像が削除されました"
+    }
+  },
+  "en": {
+    "pageTitle": "Character Card Generator - FF14.tw",
+    "metaDescription": "Quickly generate your FF14 character info card with multiple styles and customization options.",
+    "title": "Character Card Generator",
+    "preview": {
+      "characterName": "Character Name",
+      "job": "Job",
+      "title": "Title",
+      "server": "Server",
+      "freeCompany": "---"
+    },
+    "imageSettings": {
+      "title": "Image Settings",
+      "upload": "Upload Image",
+      "uploadHint": "JPG, PNG, GIF",
+      "position": "Position",
+      "scale": "Scale",
+      "rotate": "Rotate",
+      "opacity": "Background Opacity",
+      "actions": "Actions",
+      "reset": "Reset",
+      "remove": "Remove"
+    },
+    "form": {
+      "characterName": "Character Name",
+      "characterNamePlaceholder": "Enter character name",
+      "serverSelection": "Server Selection",
+      "selected": "Selected",
+      "reselect": "Reselect",
+      "jobSelection": "Job Selection",
+      "selectedJob": "Selected Job",
+      "characterTitle": "Title",
+      "characterTitlePlaceholder": "Character title (optional)",
+      "freeCompany": "Free Company",
+      "freeCompanyPlaceholder": "Free company name (optional)",
+      "cardLayout": "Card Layout",
+      "layoutHorizontal": "Horizontal (800x600)",
+      "layoutVertical": "Vertical (600x800)",
+      "nameColor": "Character Name Color"
+    },
+    "jobs": {
+      "categories": {
+        "tank": "Tank",
+        "healer": "Healer",
+        "melee": "Melee",
+        "ranged": "Ranged",
+        "magic": "Magic"
+      },
+      "names": {
+        "paladin": "Paladin",
+        "warrior": "Warrior",
+        "darkKnight": "Dark Knight",
+        "gunbreaker": "Gunbreaker",
+        "whiteMage": "White Mage",
+        "scholar": "Scholar",
+        "astrologian": "Astrologian",
+        "sage": "Sage",
+        "monk": "Monk",
+        "dragoon": "Dragoon",
+        "ninja": "Ninja",
+        "samurai": "Samurai",
+        "reaper": "Reaper",
+        "bard": "Bard",
+        "machinist": "Machinist",
+        "dancer": "Dancer",
+        "blackMage": "Black Mage",
+        "summoner": "Summoner",
+        "redMage": "Red Mage"
+      }
+    },
+    "buttons": {
+      "generate": "Generate Card",
+      "download": "Download Image"
+    },
+    "messages": {
+      "nameRequired": "Please enter character name",
+      "jobRequired": "Please select a job",
+      "cardGenerated": "Character card generated!",
+      "generateFirst": "Please generate a card first",
+      "downloadInDevelopment": "Download feature is under development. Please wait!",
+      "imageTooLarge": "Image file is too large. Please select an image under 5MB",
+      "invalidImage": "Please select a valid image file",
+      "imageUploaded": "Image uploaded successfully!",
+      "imageReset": "Image has been reset",
+      "imageRemoved": "Image has been removed"
+    }
+  }
+}
