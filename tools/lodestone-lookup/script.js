@@ -1452,9 +1452,33 @@ class LodestoneCharacterLookup {
         
         overviewTab.appendChild(overviewGrid);
     }
+    
+    updateMessages() {
+        // Update any dynamic text when language changes
+        // Most text is handled by HTML i18n attributes
+        // Only need to update dynamically generated content if any
+        
+        // Update error messages if they're currently displayed
+        if (!this.elements.errorMessage.classList.contains('hidden')) {
+            const currentMessage = this.elements.errorMessage.textContent;
+            // Re-translate current error message if needed
+            if (currentMessage.includes('查詢失敗') || currentMessage.includes('Query failed')) {
+                this.elements.errorMessage.textContent = window.i18n?.t('messages.queryFailed') || currentMessage;
+            }
+        }
+    }
 }
 
 // Initialize the tool
+let lodestoneLookup;
 document.addEventListener('DOMContentLoaded', () => {
-    new LodestoneCharacterLookup();
+    lodestoneLookup = new LodestoneCharacterLookup();
+    window.lodestoneLookup = lodestoneLookup;
+});
+
+// Listen for language changes
+document.addEventListener('i18n:languageChanged', () => {
+    if (lodestoneLookup) {
+        lodestoneLookup.updateMessages();
+    }
 });

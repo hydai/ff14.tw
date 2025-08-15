@@ -1,0 +1,254 @@
+{
+  "zh-TW": {
+    "pageTitle": "Lodestone 角色查詢 - FF14.tw",
+    "metaDescription": "使用 Lodestone ID 查詢 Final Fantasy XIV 角色資訊。快速查看角色基本資料、職業等級、成就等資訊。",
+    "title": "Lodestone 角色查詢",
+    "description": "輸入角色的 Lodestone ID 來查詢詳細資訊",
+    "search": {
+      "placeholder": "請輸入 Lodestone ID (例如：12345678)",
+      "datacenters": {
+        "na": "北美資料中心",
+        "jp": "日本資料中心"
+      },
+      "button": "查詢",
+      "hint": "提示：您可以在 Lodestone 官方網站的角色頁面 URL 中找到角色 ID",
+      "hintExample": "例如：https://na.finalfantasyxiv.com/lodestone/character/"
+    },
+    "loading": "正在查詢角色資訊...",
+    "sections": {
+      "basicInfo": "基本資訊",
+      "jobLevels": "職業等級",
+      "specialContent": "特殊內容",
+      "equipment": "裝備資訊",
+      "attributes": "角色屬性",
+      "subAttributes": "副屬性",
+      "otherInfo": "其他資訊",
+      "achievements": "成就"
+    },
+    "labels": {
+      "deity": "守護神",
+      "startingCity": "開始城市",
+      "hp": "生命值",
+      "mpGpCp": "MP/GP/CP",
+      "attackPower": "物理攻擊力",
+      "defense": "物理防禦力",
+      "magicAttackPower": "魔法攻擊力",
+      "magicDefense": "魔法防禦力",
+      "strength": "力量",
+      "dexterity": "靈巧",
+      "vitality": "耐力",
+      "intelligence": "智力",
+      "mind": "精神",
+      "criticalHit": "爆擊",
+      "determination": "意志",
+      "directHit": "直擊",
+      "skillSpeed": "技巧速度",
+      "spellSpeed": "咏唱速度",
+      "piety": "信仰",
+      "tenacity": "堅韌",
+      "grandCompany": "大國防軍",
+      "nameday": "生日",
+      "bio": "個人簡介"
+    },
+    "tabs": {
+      "overview": "總覽",
+      "achievements": "成就",
+      "mounts": "坐騎",
+      "minions": "寵物",
+      "freecompany": "公會"
+    },
+    "messages": {
+      "unknown": "未知",
+      "noTitle": "無稱號",
+      "none": "無",
+      "currentJob": "當前職業",
+      "loadingFC": "載入公會資訊中...",
+      "queryFailed": "查詢失敗",
+      "serverError": "伺服器回應格式錯誤",
+      "dataError": "資料格式錯誤或資料為空",
+      "error": "錯誤",
+      "invalidId": "角色 ID 必須是數字",
+      "notFound": "找不到此角色，請確認 ID 是否正確"
+    },
+    "lodestoneLink": "在 Lodestone 查看完整資訊 →",
+    "dataUpdateTime": "資料更新時間",
+    "usageNotes": {
+      "title": "使用說明",
+      "note1": "本工具使用 FFXIV Lodestone 官方資料",
+      "note2": "查詢結果會快取 24 小時以提升效能",
+      "note3": "支援查詢角色資訊、職業等級、成就、坐騎和寵物收藏",
+      "note4": "成就資料支援分頁瀏覽",
+      "note5": "支援北美和日本資料中心的角色查詢",
+      "note6": "請選擇正確的資料中心以確保查詢成功",
+      "note7": "更多詳細資訊請前往官方 Lodestone 頁面查看"
+    }
+  },
+  "ja": {
+    "pageTitle": "Lodestone キャラクター検索 - FF14.tw",
+    "metaDescription": "Lodestone IDを使用してFinal Fantasy XIVのキャラクター情報を検索。キャラクターの基本データ、ジョブレベル、アチーブメントなどの情報を素早く確認。",
+    "title": "Lodestone キャラクター検索",
+    "description": "キャラクターのLodestone IDを入力して詳細情報を検索",
+    "search": {
+      "placeholder": "Lodestone IDを入力してください（例：12345678）",
+      "datacenters": {
+        "na": "北米データセンター",
+        "jp": "日本データセンター"
+      },
+      "button": "検索",
+      "hint": "ヒント：Lodestone公式サイトのキャラクターページURLでキャラクターIDを確認できます",
+      "hintExample": "例：https://na.finalfantasyxiv.com/lodestone/character/"
+    },
+    "loading": "キャラクター情報を検索中...",
+    "sections": {
+      "basicInfo": "基本情報",
+      "jobLevels": "ジョブレベル",
+      "specialContent": "特殊コンテンツ",
+      "equipment": "装備情報",
+      "attributes": "キャラクター属性",
+      "subAttributes": "サブステータス",
+      "otherInfo": "その他の情報",
+      "achievements": "アチーブメント"
+    },
+    "labels": {
+      "deity": "守護神",
+      "startingCity": "開始都市",
+      "hp": "HP",
+      "mpGpCp": "MP/GP/CP",
+      "attackPower": "物理攻撃力",
+      "defense": "物理防御力",
+      "magicAttackPower": "魔法攻撃力",
+      "magicDefense": "魔法防御力",
+      "strength": "STR",
+      "dexterity": "DEX",
+      "vitality": "VIT",
+      "intelligence": "INT",
+      "mind": "MND",
+      "criticalHit": "クリティカル",
+      "determination": "意思力",
+      "directHit": "ダイレクトヒット",
+      "skillSpeed": "スキルスピード",
+      "spellSpeed": "スペルスピード",
+      "piety": "信仰",
+      "tenacity": "不屈",
+      "grandCompany": "グランドカンパニー",
+      "nameday": "誕生日",
+      "bio": "自己紹介"
+    },
+    "tabs": {
+      "overview": "概要",
+      "achievements": "アチーブメント",
+      "mounts": "マウント",
+      "minions": "ミニオン",
+      "freecompany": "フリーカンパニー"
+    },
+    "messages": {
+      "unknown": "不明",
+      "noTitle": "称号なし",
+      "none": "なし",
+      "currentJob": "現在のジョブ",
+      "loadingFC": "フリーカンパニー情報を読み込み中...",
+      "queryFailed": "検索失敗",
+      "serverError": "サーバー応答形式エラー",
+      "dataError": "データ形式エラーまたはデータが空です",
+      "error": "エラー",
+      "invalidId": "キャラクターIDは数字でなければなりません",
+      "notFound": "このキャラクターは見つかりません。IDが正しいか確認してください"
+    },
+    "lodestoneLink": "Lodestoneで詳細を見る →",
+    "dataUpdateTime": "データ更新時刻",
+    "usageNotes": {
+      "title": "使用方法",
+      "note1": "このツールはFFXIV Lodestoneの公式データを使用しています",
+      "note2": "パフォーマンス向上のため、検索結果は24時間キャッシュされます",
+      "note3": "キャラクター情報、ジョブレベル、アチーブメント、マウント、ミニオンコレクションの検索をサポート",
+      "note4": "アチーブメントデータはページ分けで表示されます",
+      "note5": "北米と日本のデータセンターのキャラクター検索をサポート",
+      "note6": "検索を成功させるため、正しいデータセンターを選択してください",
+      "note7": "詳細は公式Lodestoneページをご覧ください"
+    }
+  },
+  "en": {
+    "pageTitle": "Lodestone Character Lookup - FF14.tw",
+    "metaDescription": "Search Final Fantasy XIV character information using Lodestone ID. Quickly view character profile, job levels, achievements and more.",
+    "title": "Lodestone Character Lookup",
+    "description": "Enter a character's Lodestone ID to search detailed information",
+    "search": {
+      "placeholder": "Enter Lodestone ID (e.g., 12345678)",
+      "datacenters": {
+        "na": "North America Data Center",
+        "jp": "Japan Data Center"
+      },
+      "button": "Search",
+      "hint": "Tip: You can find the character ID in the Lodestone official website character page URL",
+      "hintExample": "Example: https://na.finalfantasyxiv.com/lodestone/character/"
+    },
+    "loading": "Searching character information...",
+    "sections": {
+      "basicInfo": "Basic Information",
+      "jobLevels": "Job Levels",
+      "specialContent": "Special Content",
+      "equipment": "Equipment",
+      "attributes": "Character Attributes",
+      "subAttributes": "Sub Attributes",
+      "otherInfo": "Other Information",
+      "achievements": "Achievements"
+    },
+    "labels": {
+      "deity": "Guardian Deity",
+      "startingCity": "Starting City",
+      "hp": "HP",
+      "mpGpCp": "MP/GP/CP",
+      "attackPower": "Attack Power",
+      "defense": "Defense",
+      "magicAttackPower": "Magic Attack Power",
+      "magicDefense": "Magic Defense",
+      "strength": "Strength",
+      "dexterity": "Dexterity",
+      "vitality": "Vitality",
+      "intelligence": "Intelligence",
+      "mind": "Mind",
+      "criticalHit": "Critical Hit",
+      "determination": "Determination",
+      "directHit": "Direct Hit",
+      "skillSpeed": "Skill Speed",
+      "spellSpeed": "Spell Speed",
+      "piety": "Piety",
+      "tenacity": "Tenacity",
+      "grandCompany": "Grand Company",
+      "nameday": "Nameday",
+      "bio": "Bio"
+    },
+    "tabs": {
+      "overview": "Overview",
+      "achievements": "Achievements",
+      "mounts": "Mounts",
+      "minions": "Minions",
+      "freecompany": "Free Company"
+    },
+    "messages": {
+      "unknown": "Unknown",
+      "noTitle": "No Title",
+      "none": "None",
+      "currentJob": "Current Job",
+      "loadingFC": "Loading Free Company info...",
+      "queryFailed": "Query failed",
+      "serverError": "Server response format error",
+      "dataError": "Data format error or data is empty",
+      "error": "Error",
+      "invalidId": "Character ID must be a number",
+      "notFound": "Character not found. Please verify the ID is correct"
+    },
+    "lodestoneLink": "View full info on Lodestone →",
+    "dataUpdateTime": "Data Update Time",
+    "usageNotes": {
+      "title": "Usage Notes",
+      "note1": "This tool uses official FFXIV Lodestone data",
+      "note2": "Query results are cached for 24 hours for better performance",
+      "note3": "Supports character info, job levels, achievements, mounts and minion collections",
+      "note4": "Achievement data supports pagination",
+      "note5": "Supports character queries from North America and Japan data centers",
+      "note6": "Please select the correct data center to ensure successful queries",
+      "note7": "For more details, please visit the official Lodestone page"
+    }
+  }
+}
