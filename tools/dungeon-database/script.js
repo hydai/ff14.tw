@@ -65,7 +65,8 @@ class DungeonDatabase {
             
         } catch (error) {
             console.error('載入副本資料失敗:', error);
-            this.showError('載入副本資料失敗，請重新整理頁面再試。');
+            const msg = window.i18n?.t('messages.error') || '載入副本資料失敗，請重新整理頁面再試。';
+            this.showError(msg);
         } finally {
             this.showLoading(false);
         }
@@ -666,11 +667,42 @@ class DungeonDatabase {
 
     showDungeonDetail(dungeon) {
         // 未來可以實作詳細頁面或彈窗
-        FF14Utils.showToast(`點擊了 ${dungeon.name}，詳細攻略功能開發中`, 'info');
+        const msg = window.i18n?.t('messages.clickedDungeon') || `點擊了 ${dungeon.name}，詳細攻略功能開發中`;
+        const formattedMsg = msg.replace('${name}', dungeon.name);
+        FF14Utils.showToast(formattedMsg, 'info');
+    }
+    
+    updateMessages() {
+        // Update any dynamic text when language changes
+        // Most text is handled by HTML i18n attributes
+        // Only need to update dynamically generated content if any
+        
+        // Re-render dungeons if they're currently displayed
+        if (this.filteredDungeons.length > 0) {
+            this.renderDungeons();
+        }
+        
+        // Update error message if currently displayed
+        if (this.elements.noResults.style.display !== 'none') {
+            const hasError = this.elements.noResults.querySelector('p')?.style.color === 'var(--accent-color)';
+            if (hasError) {
+                const msg = window.i18n?.t('messages.error') || '載入資料失敗，請重新整理頁面再試。';
+                this.showError(msg);
+            }
+        }
     }
 }
 
 // 初始化副本資料庫
+let dungeonDatabase;
 document.addEventListener('DOMContentLoaded', () => {
-    const dungeonDb = new DungeonDatabase();
+    dungeonDatabase = new DungeonDatabase();
+    window.dungeonDatabase = dungeonDatabase;
+});
+
+// Listen for language changes
+document.addEventListener('i18n:languageChanged', () => {
+    if (dungeonDatabase) {
+        dungeonDatabase.updateMessages();
+    }
 });

@@ -1,0 +1,206 @@
+{
+  "zh-TW": {
+    "pageTitle": "副本資料庫 - FF14.tw",
+    "metaDescription": "Final Fantasy XIV 副本資料庫，包含所有副本、討伐戰、團隊戰的詳細資訊。支援多重篩選與搜尋功能。",
+    "title": "副本資料庫",
+    "description": "搜尋和瀏覽所有 FF14 副本資訊",
+    "search": {
+      "placeholder": "搜尋副本名稱...",
+      "button": "搜尋",
+      "clear": "清除",
+      "noResults": "找不到符合的副本"
+    },
+    "filters": {
+      "type": "類型過濾",
+      "expansion": "資料片過濾",
+      "level": "等級過濾",
+      "itemLevel": "裝等過濾",
+      "clearAll": "清除所有過濾",
+      "selectedCount": "已選擇 ${count} 個過濾條件"
+    },
+    "types": {
+      "四人迷宮": "四人迷宮",
+      "公會令": "公會令",
+      "討伐殲滅戰": "討伐殲滅戰",
+      "大型任務": "大型任務",
+      "PVP": "PVP",
+      "尋寶": "尋寶",
+      "深層迷宮": "深層迷宮",
+      "幻巧戰": "幻巧戰",
+      "絕境戰": "絕境戰",
+      "其他": "其他"
+    },
+    "expansions": {
+      "新生艾奧傑亞": "新生艾奧傑亞",
+      "蒼穹之禁城": "蒼穹之禁城",
+      "紅蓮之狂潮": "紅蓮之狂潮",
+      "暗影之逆焰": "暗影之逆焰",
+      "曉月之終途": "曉月之終途",
+      "黃金之遺產": "黃金之遺產"
+    },
+    "sort": {
+      "label": "排序方式",
+      "levelAsc": "等級 (低到高)",
+      "levelDesc": "等級 (高到低)",
+      "nameAsc": "名稱 (A-Z)",
+      "nameDesc": "名稱 (Z-A)",
+      "itemLevelAsc": "裝等 (低到高)",
+      "itemLevelDesc": "裝等 (高到低)"
+    },
+    "labels": {
+      "level": "等級",
+      "itemLevel": "裝等",
+      "sync": "同步",
+      "players": "人數",
+      "timeLimit": "時限"
+    },
+    "messages": {
+      "loading": "載入中...",
+      "error": "載入資料失敗，請重新整理頁面再試。",
+      "showingResults": "顯示 ${count} 個結果",
+      "totalDungeons": "共 ${total} 個副本",
+      "clickedDungeon": "點擊了 ${name}，詳細攻略功能開發中"
+    },
+    "dataSource": {
+      "title": "資料來源",
+      "description": "本工具的副本資料來自 <a href=\"https://ff14.huijiwiki.com/wiki/%E5%89%AF%E6%9C%AC\" target=\"_blank\" rel=\"noopener noreferrer\">灰機Wiki</a>，經過繁體中文化處理並使用台灣用語，提供更符合台灣玩家習慣的資訊呈現。",
+      "content": "資料包含362個副本，涵蓋從重生之境（2.x）到黃金之遺產（7.x）的完整內容。感謝灰機Wiki社群的貢獻。"
+    }
+  },
+  "ja": {
+    "pageTitle": "ダンジョンデータベース - FF14.tw",
+    "metaDescription": "Final Fantasy XIVのダンジョンデータベース。すべてのダンジョン、討伐戦、レイドの詳細情報を収録。複数フィルタと検索機能対応。",
+    "title": "ダンジョンデータベース",
+    "description": "FF14のすべてのダンジョン情報を検索・閲覧",
+    "search": {
+      "placeholder": "ダンジョン名で検索...",
+      "button": "検索",
+      "clear": "クリア",
+      "noResults": "該当するダンジョンが見つかりません"
+    },
+    "filters": {
+      "type": "タイプフィルタ",
+      "expansion": "拡張パックフィルタ",
+      "level": "レベルフィルタ",
+      "itemLevel": "アイテムレベルフィルタ",
+      "clearAll": "すべてのフィルタをクリア",
+      "selectedCount": "${count} 個のフィルタを選択中"
+    },
+    "types": {
+      "四人迷宮": "4人ID",
+      "公會令": "ギルドオーダー",
+      "討伐殲滅戰": "討伐・討滅戦",
+      "大型任務": "レイド",
+      "PVP": "PVP",
+      "尋寶": "トレジャーハント",
+      "深層迷宮": "ディープダンジョン",
+      "幻巧戰": "幻討滅戦",
+      "絕境戰": "絶",
+      "其他": "その他"
+    },
+    "expansions": {
+      "新生艾奧傑亞": "新生エオルゼア",
+      "蒼穹之禁城": "蒼天のイシュガルド",
+      "紅蓮之狂潮": "紅蓮のリベレーター",
+      "暗影之逆焰": "漆黒のヴィランズ",
+      "曉月之終途": "暁月のフィナーレ",
+      "黃金之遺產": "黄金のレガシー"
+    },
+    "sort": {
+      "label": "並び替え",
+      "levelAsc": "レベル (昇順)",
+      "levelDesc": "レベル (降順)",
+      "nameAsc": "名前 (A-Z)",
+      "nameDesc": "名前 (Z-A)",
+      "itemLevelAsc": "アイテムレベル (昇順)",
+      "itemLevelDesc": "アイテムレベル (降順)"
+    },
+    "labels": {
+      "level": "レベル",
+      "itemLevel": "アイテムレベル",
+      "sync": "シンク",
+      "players": "人数",
+      "timeLimit": "制限時間"
+    },
+    "messages": {
+      "loading": "読み込み中...",
+      "error": "データの読み込みに失敗しました。ページを更新してください。",
+      "showingResults": "${count} 件の結果を表示",
+      "totalDungeons": "全 ${total} ダンジョン",
+      "clickedDungeon": "${name} をクリックしました。詳細攻略機能は開発中です"
+    },
+    "dataSource": {
+      "title": "データソース",
+      "description": "このツールのダンジョンデータは<a href=\"https://ff14.huijiwiki.com/wiki/%E5%89%AF%E6%9C%AC\" target=\"_blank\" rel=\"noopener noreferrer\">灰機Wiki</a>から取得し、繁体字中国語処理と台湾用語を使用して、台湾プレイヤーの習慣に合った情報表示を提供しています。",
+      "content": "データには362のダンジョンが含まれ、新生エオルゼア（2.x）から黄金のレガシー（7.x）までの完全なコンテンツをカバーしています。灰機Wikiコミュニティの貢献に感謝します。"
+    }
+  },
+  "en": {
+    "pageTitle": "Dungeon Database - FF14.tw",
+    "metaDescription": "Final Fantasy XIV dungeon database containing detailed information about all dungeons, trials, and raids. Supports multiple filters and search.",
+    "title": "Dungeon Database",
+    "description": "Search and browse all FF14 dungeon information",
+    "search": {
+      "placeholder": "Search dungeon name...",
+      "button": "Search",
+      "clear": "Clear",
+      "noResults": "No matching dungeons found"
+    },
+    "filters": {
+      "type": "Type Filter",
+      "expansion": "Expansion Filter",
+      "level": "Level Filter",
+      "itemLevel": "Item Level Filter",
+      "clearAll": "Clear All Filters",
+      "selectedCount": "${count} filters selected"
+    },
+    "types": {
+      "四人迷宮": "4-person Dungeon",
+      "公會令": "Guildhest",
+      "討伐殲滅戰": "Trial",
+      "大型任務": "Raid",
+      "PVP": "PVP",
+      "尋寶": "Treasure Hunt",
+      "深層迷宮": "Deep Dungeon",
+      "幻巧戰": "Unreal Trial",
+      "絕境戰": "Ultimate",
+      "其他": "Other"
+    },
+    "expansions": {
+      "新生艾奧傑亞": "A Realm Reborn",
+      "蒼穹之禁城": "Heavensward",
+      "紅蓮之狂潮": "Stormblood",
+      "暗影之逆焰": "Shadowbringers",
+      "曉月之終途": "Endwalker",
+      "黃金之遺產": "Dawntrail"
+    },
+    "sort": {
+      "label": "Sort By",
+      "levelAsc": "Level (Low to High)",
+      "levelDesc": "Level (High to Low)",
+      "nameAsc": "Name (A-Z)",
+      "nameDesc": "Name (Z-A)",
+      "itemLevelAsc": "Item Level (Low to High)",
+      "itemLevelDesc": "Item Level (High to Low)"
+    },
+    "labels": {
+      "level": "Level",
+      "itemLevel": "Item Level",
+      "sync": "Sync",
+      "players": "Players",
+      "timeLimit": "Time Limit"
+    },
+    "messages": {
+      "loading": "Loading...",
+      "error": "Failed to load data. Please refresh the page and try again.",
+      "showingResults": "Showing ${count} results",
+      "totalDungeons": "Total ${total} dungeons",
+      "clickedDungeon": "Clicked ${name}, detailed strategy feature is under development"
+    },
+    "dataSource": {
+      "title": "Data Source",
+      "description": "The dungeon data for this tool comes from <a href=\"https://ff14.huijiwiki.com/wiki/%E5%89%AF%E6%9C%AC\" target=\"_blank\" rel=\"noopener noreferrer\">Huiji Wiki</a>, processed with Traditional Chinese and Taiwan terminology to provide information presentation more suitable for Taiwan players.",
+      "content": "The data includes 362 dungeons, covering complete content from A Realm Reborn (2.x) to Dawntrail (7.x). Thanks to the Huiji Wiki community for their contribution."
+    }
+  }
+}

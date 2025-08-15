@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>副本資料庫 - FF14.tw</title>
-    <meta name="description" content="FF14副本完整資料庫，包含所有副本資訊、獎勵和攻略指南。">
+    <title data-i18n="pageTitle">副本資料庫 - FF14.tw</title>
+    <meta name="description" content="FF14副本完整資料庫，包含所有副本資訊、獎勵和攻略指南。" data-i18n="metaDescription" data-i18n-attr="content">
     <link rel="icon" type="image/x-icon" href="../../assets/images/ff14tw.ico">
     <link rel="stylesheet" href="../../assets/css/common.css">
     <link rel="stylesheet" href="../../assets/css/dark-mode-tools.css">
@@ -12,23 +12,25 @@
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../assets/css/language-switcher.css">
 </head>
 <body>
     <header class="header">
         <div class="container">
             <a href="/" class="logo">FF14.tw</a>
             <nav class="nav">
-                <a href="/">首頁</a>
-                <a href="/copyright.html">版權聲明</a>
-                <a href="https://github.com/hydai/ff14.tw" target="_blank">GitHub</a>
+                <a href="/" data-i18n="nav.home">首頁</a>
+                <a href="/copyright.html" data-i18n="nav.copyright">版權聲明</a>
+                <a href="https://github.com/hydai/ff14.tw" target="_blank" data-i18n="nav.github">GitHub</a>
                 <div class="nav-dropdown">
-                    <a href="#">關於本站</a>
+                    <a href="#" data-i18n="nav.about">關於本站</a>
                     <div class="nav-dropdown-content">
-                        <a href="/about.html">關於</a>
-                        <a href="/changelog.html">修改紀錄</a>
+                        <a href="/about.html" data-i18n="nav.aboutPage">關於</a>
+                        <a href="/changelog.html" data-i18n="nav.changelog">修改紀錄</a>
                     </div>
                 </div>
+                <div id="languageSwitcher" class="language-switcher" data-language-switcher data-style="buttons" data-show-native="true"></div>
             </nav>
         </div>
     </header>
@@ -36,19 +38,19 @@
     <main class="main">
         <div class="container">
             <section class="hero">
-                <h1>副本資料庫</h1>
+                <h1 data-i18n="title">副本資料庫</h1>
             </section>
 
             <div class="tool-container">
                 <!-- 搜尋和過濾器 -->
                 <div class="filter-section">
                     <div class="search-box">
-                        <input type="text" id="searchInput" class="form-control form-control-lg" placeholder="搜尋副本名稱、機制說明或掉落物... (支援上下鍵導航，Enter選取)">
+                        <input type="text" id="searchInput" class="form-control form-control-lg" placeholder="搜尋副本名稱、機制說明或掉落物... (支援上下鍵導航，Enter選取)" data-i18n="search.placeholder" data-i18n-attr="placeholder">
                     </div>
                     
                     <div class="filter-controls">
                         <div class="filter-group type-filter-group">
-                            <label>類型過濾：</label>
+                            <label data-i18n="filters.type">類型過濾：</label>
                             <div class="type-tags" id="typeTags">
                                 <button class="type-tag" data-type="四人迷宮">四人迷宮</button>
                                 <button class="type-tag" data-type="公會令">公會令</button>
@@ -64,7 +66,7 @@
                         </div>
                         
                         <div class="filter-group expansion-filter-group">
-                            <label>版本過濾：</label>
+                            <label data-i18n="filters.expansion">版本過濾：</label>
                             <div class="expansion-tags" id="expansionTags">
                                 <button class="expansion-tag" data-expansion="2.x">2.x (重生之境)</button>
                                 <button class="expansion-tag" data-expansion="3.x">3.x (蒼穹之禁城)</button>
@@ -76,7 +78,7 @@
                         </div>
                         
                         <div class="filter-group level-filter-group">
-                            <label>等級過濾：</label>
+                            <label data-i18n="filters.level">等級過濾：</label>
                             <div class="level-tags" id="levelTags">
                                 <button class="level-tag" data-level="1-50">1-50</button>
                                 <button class="level-tag" data-level="51-60">51-60</button>
@@ -87,7 +89,7 @@
                             </div>
                         </div>
                         
-                        <button id="resetFilters" class="btn btn-secondary">重置過濾</button>
+                        <button id="resetFilters" class="btn btn-secondary" data-i18n="filters.clearAll">重置過濾</button>
                     </div>
                 </div>
 
@@ -98,21 +100,21 @@
                 
                 <!-- 載入中提示 -->
                 <div class="loading" id="loading" style="display: none;">
-                    <p>載入中...</p>
+                    <p data-i18n="messages.loading">載入中...</p>
                 </div>
                 
                 <!-- 無結果提示 -->
                 <div class="no-results" id="noResults" style="display: none;">
-                    <p>找不到符合條件的副本</p>
+                    <p data-i18n="search.noResults">找不到符合條件的副本</p>
                 </div>
             </div>
 
             <!-- 資料來源說明 -->
             <section class="data-source">
                 <div class="data-source-content">
-                    <h3>資料來源</h3>
-                    <p>本工具的副本資料來自 <a href="https://ff14.huijiwiki.com/wiki/%E5%89%AF%E6%9C%AC" target="_blank" rel="noopener noreferrer">灰機Wiki</a>，經過繁體中文化處理並使用台灣用語，提供更符合台灣玩家習慣的資訊呈現。</p>
-                    <p>資料包含362個副本，涵蓋從重生之境（2.x）到黃金之遺產（7.x）的完整內容。感謝灰機Wiki社群的貢獻。</p>
+                    <h3 data-i18n="dataSource.title">資料來源</h3>
+                    <p data-i18n-html="dataSource.description">本工具的副本資料來自 <a href="https://ff14.huijiwiki.com/wiki/%E5%89%AF%E6%9C%AC" target="_blank" rel="noopener noreferrer">灰機Wiki</a>，經過繁體中文化處理並使用台灣用語，提供更符合台灣玩家習慣的資訊呈現。</p>
+                    <p data-i18n="dataSource.content">資料包含362個副本，涵蓋從重生之境（2.x）到黃金之遺產（7.x）的完整內容。感謝灰機Wiki社群的貢獻。</p>
                 </div>
             </section>
         </div>
@@ -120,12 +122,36 @@
 
     <footer class="footer">
         <div class="container">
-            <p>&copy; 2024-2025 FF14.tw | 本站非官方網站，與 Square Enix 無關 | Made with ❤️ by hydai</p>
+            <p>
+                <span data-i18n="footer.copyright">&copy; 2024-2025 FF14.tw</span> | 
+                <span data-i18n="footer.disclaimer">本站非官方網站，與 Square Enix 無關</span> | 
+                <span data-i18n="footer.madeWith">Made with ❤️ by hydai</span>
+            </p>
         </div>
     </footer>
 
     <script src="../../assets/js/common.js"></script>
     <script src="../../assets/js/security-utils.js"></script>
+    <script src="../../assets/js/i18n.js"></script>
+    <script src="../../assets/js/components/language-switcher.js"></script>
     <script src="script.js"></script>
+    <script>
+        // Initialize i18n
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Load translations
+            await i18n.init(['common', 'tools/dungeon-database']);
+            
+            // Initialize language switcher
+            new LanguageSwitcher('languageSwitcher', {
+                style: 'buttons',
+                showNativeName: true
+            });
+            
+            // Reinitialize with i18n if needed
+            if (window.dungeonDatabase) {
+                window.dungeonDatabase.updateMessages();
+            }
+        });
+    </script>
 </body>
 </html>
