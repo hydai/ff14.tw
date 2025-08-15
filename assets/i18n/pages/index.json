@@ -1,0 +1,200 @@
+{
+  "zh-TW": {
+    "hero": {
+      "title": "FF14 工具箱",
+      "subtitle": "為台灣冒險者打造的實用工具集合"
+    },
+    "tools": {
+      "sectionTitle": "可用工具",
+      "characterCard": {
+        "title": "角色卡產生器",
+        "description": "快速生成你的FF14角色資訊卡片"
+      },
+      "dungeonDatabase": {
+        "title": "副本資料庫",
+        "description": "完整的副本資訊查詢系統"
+      },
+      "miniCactpot": {
+        "title": "Mini Cactpot 計算機",
+        "description": "計算最佳選擇策略"
+      },
+      "wondrousTails": {
+        "title": "Wondrous Tails 預測器",
+        "description": "預測最佳貼紙放置策略"
+      },
+      "fauxHollows": {
+        "title": "Faux Hollows 計算機",
+        "description": "找出最佳寶箱位置"
+      },
+      "treasureMap": {
+        "title": "寶圖搜尋器",
+        "description": "快速查找寶藏地圖座標"
+      },
+      "timedGathering": {
+        "title": "特殊採集時間管理器",
+        "description": "管理限時採集點時間表"
+      },
+      "lodestoneLookup": {
+        "title": "Lodestone 角色查詢",
+        "description": "查詢角色詳細資訊"
+      }
+    },
+    "features": {
+      "sectionTitle": "功能特色",
+      "responsive": {
+        "title": "響應式設計",
+        "description": "完美支援各種裝置瀏覽"
+      },
+      "darkMode": {
+        "title": "深色模式",
+        "description": "保護您的眼睛，適合夜間使用"
+      },
+      "noAds": {
+        "title": "無廣告",
+        "description": "乾淨簡潔的使用體驗"
+      },
+      "openSource": {
+        "title": "開源專案",
+        "description": "歡迎貢獻與改進"
+      }
+    },
+    "cta": {
+      "viewAllTools": "查看所有工具",
+      "getStarted": "開始使用",
+      "learnMore": "了解更多",
+      "contribute": "貢獻專案"
+    }
+  },
+  "ja": {
+    "hero": {
+      "title": "FF14 ツールボックス",
+      "subtitle": "台湾の冒険者のための実用的なツールコレクション"
+    },
+    "tools": {
+      "sectionTitle": "利用可能なツール",
+      "characterCard": {
+        "title": "キャラクターカードジェネレーター",
+        "description": "FF14キャラクター情報カードを素早く生成"
+      },
+      "dungeonDatabase": {
+        "title": "ダンジョンデータベース",
+        "description": "完全なダンジョン情報検索システム"
+      },
+      "miniCactpot": {
+        "title": "ミニカクトポット計算機",
+        "description": "最適な選択戦略を計算"
+      },
+      "wondrousTails": {
+        "title": "ワンダラステイル予測器",
+        "description": "最適なステッカー配置戦略を予測"
+      },
+      "fauxHollows": {
+        "title": "フォーホロウズ計算機",
+        "description": "最適な宝箱の位置を見つける"
+      },
+      "treasureMap": {
+        "title": "トレジャーマップ検索",
+        "description": "宝の地図の座標を素早く検索"
+      },
+      "timedGathering": {
+        "title": "タイムド採集管理ツール",
+        "description": "時限採集ポイントのスケジュール管理"
+      },
+      "lodestoneLookup": {
+        "title": "Lodestone キャラクター検索",
+        "description": "キャラクターの詳細情報を検索"
+      }
+    },
+    "features": {
+      "sectionTitle": "機能特徴",
+      "responsive": {
+        "title": "レスポンシブデザイン",
+        "description": "あらゆるデバイスに完璧に対応"
+      },
+      "darkMode": {
+        "title": "ダークモード",
+        "description": "目を保護し、夜間使用に適しています"
+      },
+      "noAds": {
+        "title": "広告なし",
+        "description": "クリーンでシンプルな使用体験"
+      },
+      "openSource": {
+        "title": "オープンソース",
+        "description": "貢献と改善を歓迎します"
+      }
+    },
+    "cta": {
+      "viewAllTools": "すべてのツールを見る",
+      "getStarted": "始める",
+      "learnMore": "詳細を見る",
+      "contribute": "プロジェクトに貢献"
+    }
+  },
+  "en": {
+    "hero": {
+      "title": "FF14 Toolbox",
+      "subtitle": "Practical tool collection for Taiwan adventurers"
+    },
+    "tools": {
+      "sectionTitle": "Available Tools",
+      "characterCard": {
+        "title": "Character Card Generator",
+        "description": "Quickly generate your FF14 character info card"
+      },
+      "dungeonDatabase": {
+        "title": "Dungeon Database",
+        "description": "Complete dungeon information search system"
+      },
+      "miniCactpot": {
+        "title": "Mini Cactpot Calculator",
+        "description": "Calculate the best choice strategy"
+      },
+      "wondrousTails": {
+        "title": "Wondrous Tails Predictor",
+        "description": "Predict optimal sticker placement strategy"
+      },
+      "fauxHollows": {
+        "title": "Faux Hollows Calculator",
+        "description": "Find the best treasure chest locations"
+      },
+      "treasureMap": {
+        "title": "Treasure Map Finder",
+        "description": "Quickly find treasure map coordinates"
+      },
+      "timedGathering": {
+        "title": "Timed Gathering Manager",
+        "description": "Manage timed gathering node schedules"
+      },
+      "lodestoneLookup": {
+        "title": "Lodestone Character Lookup",
+        "description": "Search character detailed information"
+      }
+    },
+    "features": {
+      "sectionTitle": "Features",
+      "responsive": {
+        "title": "Responsive Design",
+        "description": "Perfect support for all devices"
+      },
+      "darkMode": {
+        "title": "Dark Mode",
+        "description": "Protect your eyes, suitable for night use"
+      },
+      "noAds": {
+        "title": "Ad-Free",
+        "description": "Clean and simple user experience"
+      },
+      "openSource": {
+        "title": "Open Source",
+        "description": "Contributions and improvements welcome"
+      }
+    },
+    "cta": {
+      "viewAllTools": "View All Tools",
+      "getStarted": "Get Started",
+      "learnMore": "Learn More",
+      "contribute": "Contribute"
+    }
+  }
+}
