@@ -106,17 +106,17 @@
                 <div class="filter-section">
                     <!-- 篩選標題欄 -->
                     <div class="filter-header">
-                        <h2 class="section-title">篩選條件</h2>
+                        <h2 class="section-title" data-i18n="filters.title">篩選條件</h2>
                         <button class="btn btn-secondary" id="resetFilters">
-                            <span class="btn-icon">↻</span> 重置篩選
+                            <span class="btn-icon">↻</span> <span data-i18n="filters.clearFilters">重置篩選</span>
                         </button>
                     </div>
                     
                     <!-- 等級篩選 -->
                     <div class="filter-group level-filter-group">
                         <div class="filter-group-header">
-                            <label><span class="filter-icon">🏷️</span> 寶圖等級</label>
-                            <span class="filter-hint">可多選</span>
+                            <label><span class="filter-icon">🏷️</span> <span data-i18n="filters.mapLevel">寶圖等級</span></label>
+                            <span class="filter-hint" data-i18n="filters.multiSelect">可多選</span>
                         </div>
                         <div class="filter-tags" id="levelTags">
                             <button class="filter-tag hidden" data-level="g1">G1 鞣革</button>
@@ -142,8 +142,8 @@
                     <!-- 地圖篩選 -->
                     <div class="filter-group map-filter-group">
                         <div class="filter-group-header collapsible-header" data-collapse="mapTags" data-expanded="false">
-                            <label><span class="filter-icon">🗺️</span> 地圖</label>
-                            <span class="filter-hint">可多選</span>
+                            <label><span class="filter-icon">🗺️</span> <span data-i18n="filters.zone">地圖</span></label>
+                            <span class="filter-hint" data-i18n="filters.multiSelect">可多選</span>
                             <span class="collapse-indicator">▼</span>
                         </div>
                         <div class="filter-tags map-tags-grid collapsed" id="mapTags">
@@ -300,20 +300,20 @@
                 <!-- 搜尋結果 -->
                 <div class="results-section">
                     <div class="results-header">
-                        <span id="resultCount">顯示 0 個結果</span>
+                        <span id="resultCount" data-i18n="messages.showingResults" data-i18n-options='{"count":"0"}'>顯示 0 個結果</span>
                     </div>
                     <div class="treasure-grid" id="treasureGrid">
                         <!-- 寶圖卡片將由 JavaScript 動態生成 -->
                     </div>
                     <div class="load-more hidden" id="loadMore">
-                        <button class="btn btn-secondary">載入更多</button>
+                        <button class="btn btn-secondary" data-i18n="labels.loadMore">載入更多</button>
                     </div>
                 </div>
             </div>
 
             <!-- 資料來源說明 -->
             <div class="source-section">
-                <h3>資料來源</h3>
+                <h3 data-i18n="dataSource.title">資料來源</h3>
                 <p>本工具的座標資料來源於 <a href="https://game8.jp/" target="_blank" rel="noopener noreferrer">Game8</a>：</p>
                 <ul class="source-list">
                     <li>G8 巨龍革地圖：<a href="https://game8.jp/ff14/287783" target="_blank" rel="noopener noreferrer">https://game8.jp/ff14/287783</a></li>
@@ -344,7 +344,7 @@
                 <button class="btn btn-danger btn-sm" id="clearAllBtn" title="清空全部">
                     <span class="btn-icon">🗑️</span> 清空
                 </button>
-                <button class="btn btn-close" id="closePanelBtn" title="關閉">×</button>
+                <button class="btn btn-close" id="closePanelBtn" data-i18n-attr='{"title":"labels.close"}'>×</button>
             </div>
         </div>
         <div class="panel-tabs hidden" id="panelTabs">
@@ -407,7 +407,7 @@
                 <h4>傳送點格式</h4>
                 <textarea id="teleportFormat" class="format-input" rows="3">/p 傳送至 &lt;傳送點&gt; &lt;座標&gt;</textarea>
                 <div class="format-help">
-                    可用變數：
+                    <span data-i18n="format.availableVariables">可用變數</span>：
                     <span class="format-var">&lt;傳送點&gt;</span>
                     <span class="format-var">&lt;傳送點_en&gt;</span>
                     <span class="format-var">&lt;傳送點_ja&gt;</span>
@@ -421,7 +421,7 @@
                 <h4>寶圖格式</h4>
                 <textarea id="mapFormat" class="format-input" rows="3">/p 下一個 &lt;寶圖等級&gt; - &lt;地區&gt; &lt;座標&gt;</textarea>
                 <div class="format-help">
-                    可用變數：
+                    <span data-i18n="format.availableVariables">可用變數</span>：
                     <span class="format-var">&lt;寶圖等級&gt;</span>
                     <span class="format-var">&lt;地區&gt;</span>
                     <span class="format-var">&lt;地區_en&gt;</span>
@@ -450,17 +450,17 @@
     <div class="modal hidden" id="joinRoomModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>加入隊伍</h3>
+                <h3 data-i18n="team.joinRoom">加入隊伍</h3>
                 <button class="btn-close" id="closeJoinModalBtn">×</button>
             </div>
             <div class="modal-body">
-                <label for="roomCodeInput">請輸入隊伍代號：</label>
-                <input type="text" id="roomCodeInput" class="input-field" placeholder="例如：A3B7K9" maxlength="6" style="text-transform: uppercase;">
-                <div class="modal-hint">請向隊長取得 6 位英數字代號</div>
+                <label for="roomCodeInput" data-i18n="team.enterCode">請輸入隊伍代號：</label>
+                <input type="text" id="roomCodeInput" class="input-field" data-i18n-attr='{"placeholder":"team.codePlaceholder"}' placeholder="例如：A3B7K9" maxlength="6" style="text-transform: uppercase;">
+                <div class="modal-hint" data-i18n="team.codeHint">請向隊長取得 6 位英數字代號</div>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" id="cancelJoinBtn">取消</button>
-                <button class="btn btn-primary" id="confirmJoinBtn">加入</button>
+                <button class="btn btn-secondary" id="cancelJoinBtn" data-i18n="labels.cancel">取消</button>
+                <button class="btn btn-primary" id="confirmJoinBtn" data-i18n="labels.join">加入</button>
             </div>
         </div>
     </div>
@@ -469,17 +469,17 @@
     <div class="modal hidden" id="editNicknameModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>編輯暱稱</h3>
+                <h3 data-i18n="team.editNickname">編輯暱稱</h3>
                 <button class="btn-close" id="closeNicknameModalBtn">×</button>
             </div>
             <div class="modal-body">
-                <label for="nicknameInput">您的暱稱：</label>
-                <input type="text" id="nicknameInput" class="input-field" placeholder="請輸入暱稱" maxlength="20">
-                <div class="modal-hint">其他成員將看到您的暱稱</div>
+                <label for="nicknameInput" data-i18n="team.yourNickname">您的暱稱：</label>
+                <input type="text" id="nicknameInput" class="input-field" data-i18n-attr='{"placeholder":"team.nicknamePlaceholder"}' placeholder="請輸入暱稱" maxlength="20">
+                <div class="modal-hint" data-i18n="team.nicknameHint">其他成員將看到您的暱稱</div>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" id="cancelNicknameBtn">取消</button>
-                <button class="btn btn-primary" id="confirmNicknameBtn">確認</button>
+                <button class="btn btn-secondary" id="cancelNicknameBtn" data-i18n="labels.cancel">取消</button>
+                <button class="btn btn-primary" id="confirmNicknameBtn" data-i18n="labels.confirm">確認</button>
             </div>
         </div>
     </div>
@@ -488,17 +488,17 @@
     <div class="modal hidden" id="leaveRoomModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>離開隊伍</h3>
+                <h3 data-i18n="team.leaveRoom">離開隊伍</h3>
                 <button class="btn-close" id="closeLeaveModalBtn">×</button>
             </div>
             <div class="modal-body">
-                <p>您確定要離開隊伍嗎？</p>
-                <p>是否保留本地寶圖清單？</p>
+                <p data-i18n="team.confirmLeave">您確定要離開隊伍嗎？</p>
+                <p data-i18n="team.keepListPrompt">是否保留本地寶圖清單？</p>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" id="leaveKeepListBtn">保留清單並離開</button>
-                <button class="btn btn-danger" id="leaveClearListBtn">清空清單並離開</button>
-                <button class="btn btn-primary" id="cancelLeaveBtn">取消</button>
+                <button class="btn btn-secondary" id="leaveKeepListBtn" data-i18n="team.keepAndLeave">保留清單並離開</button>
+                <button class="btn btn-danger" id="leaveClearListBtn" data-i18n="team.clearAndLeave">清空清單並離開</button>
+                <button class="btn btn-primary" id="cancelLeaveBtn" data-i18n="labels.cancel">取消</button>
             </div>
         </div>
     </div>
@@ -508,7 +508,7 @@
     <div class="map-detail-modal" id="mapDetailModal" style="display: none;">
         <div class="map-detail-overlay" id="mapDetailOverlay"></div>
         <div class="map-detail-content">
-            <button class="map-detail-close" id="mapDetailClose" title="關閉">×</button>
+            <button class="map-detail-close" id="mapDetailClose" data-i18n-attr='{"title":"labels.close"}'>×</button>
             <div class="map-detail-image-container">
                 <img id="mapDetailImage" src="" alt="詳細地圖" />
                 <canvas id="mapDetailCanvas" class="map-detail-canvas"></canvas>
@@ -522,12 +522,18 @@
 
     <footer class="footer">
         <div class="container">
-            <p>&copy; 2024-2025 FF14.tw | 本站非官方網站，與 Square Enix 無關 | Made with ❤️ by hydai</p>
+            <p>
+                <span data-i18n="footer.copyright">&copy; 2024-2025 FF14.tw</span> | 
+                <span data-i18n="footer.disclaimer">本站非官方網站，與 Square Enix 無關</span> | 
+                <span data-i18n="footer.madeWith">Made with ❤️ by hydai</span>
+            </p>
         </div>
     </footer>
 
     <script src="../../assets/js/common.js"></script>
     <script src="../../assets/js/security-utils.js"></script>
+    <script src="../../assets/js/i18n.js"></script>
+    <script src="../../assets/js/components/language-switcher.js"></script>
     <script src="coordinate-utils.js"></script>
     <script src="list-manager.js"></script>
     <script src="filter-manager.js"></script>
@@ -535,5 +541,23 @@
     <script src="zone-manager.js"></script>
     <script src="room-collaboration.js"></script>
     <script src="script.js"></script>
+    <script>
+        // Initialize i18n
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Load translations
+            await i18n.init(['common', 'tools/treasure-map-finder']);
+            
+            // Initialize language switcher
+            new LanguageSwitcher('languageSwitcher', {
+                style: 'buttons',
+                showNativeName: true
+            });
+            
+            // Reinitialize with i18n if needed
+            if (window.treasureMapFinder) {
+                window.treasureMapFinder.updateMessages();
+            }
+        });
+    </script>
 </body>
 </html>
