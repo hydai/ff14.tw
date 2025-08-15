@@ -15,11 +15,7 @@ class MiniCactpotCalculator {
             [0, 3, 6], [1, 4, 7], [2, 5, 8], // 直行
             [0, 4, 8], [2, 4, 6]             // 斜線
         ];
-        this.lineNames = [
-            '上橫列', '中橫列', '下橫列',
-            '左直行', '中直行', '右直行',
-            '左斜線', '右斜線'
-        ];
+        this.lineNames = this.getLineNames();
         
         // DOM 元素快取
         this.elements = {
@@ -31,6 +27,34 @@ class MiniCactpotCalculator {
         };
         
         this.initializeGrid();
+    }
+
+    getLineNames() {
+        if (window.i18n?.isInitialized) {
+            return [
+                window.i18n.t('lines.topRow'),
+                window.i18n.t('lines.middleRow'),
+                window.i18n.t('lines.bottomRow'),
+                window.i18n.t('lines.leftColumn'),
+                window.i18n.t('lines.middleColumn'),
+                window.i18n.t('lines.rightColumn'),
+                window.i18n.t('lines.leftDiagonal'),
+                window.i18n.t('lines.rightDiagonal')
+            ];
+        }
+        // Default Chinese names
+        return [
+            '上橫列', '中橫列', '下橫列',
+            '左直行', '中直行', '右直行',
+            '左斜線', '右斜線'
+        ];
+    }
+    
+    updateLineNames() {
+        this.lineNames = this.getLineNames();
+        if (this.selectedCells.length === 4) {
+            this.updateUI();
+        }
     }
 
     initializeGrid() {
@@ -128,7 +152,8 @@ class MiniCactpotCalculator {
             // 選擇格子
             this.selectCell(position);
         } else {
-            FF14Utils.showToast('最多只能選擇 4 個格子', 'error');
+            const msg = window.i18n?.t('messages.maxCells') || '最多只能選擇 4 個格子';
+            FF14Utils.showToast(msg, 'error');
         }
     }
 
@@ -180,7 +205,8 @@ class MiniCactpotCalculator {
         if (value >= 1 && value <= 9) {
             // 檢查數字是否已被使用
             if (this.grid.includes(value)) {
-                FF14Utils.showToast(`數字 ${value} 已被使用`, 'error');
+                const msg = window.i18n?.t('messages.duplicateNumber', { num: value }) || `數字 ${value} 已被使用`;
+                FF14Utils.showToast(msg, 'error');
                 return;
             }
             
@@ -333,14 +359,18 @@ class MiniCactpotCalculator {
         // Clear existing content
         SecurityUtils.clearElement(this.elements.bestLineSummary);
         
+        // Get translated text
+        const expectedValueText = window.i18n?.t('bestChoice.expectedValue') || '期望值';
+        const mgpText = window.i18n?.t('bestChoice.mgp') || 'MGP';
+        
         // Create the card using SecurityUtils
         const card = SecurityUtils.createCard({
             className: '',
             title: bestResult.name,
             titleClass: 'best-choice-title',
-            value: `期望值：${FF14Utils.formatNumber(Math.round(bestResult.expectedValue))} MGP`,
+            value: `${expectedValueText}：${FF14Utils.formatNumber(Math.round(bestResult.expectedValue))} ${mgpText}`,
             valueClass: 'best-choice-value',
-            range: `範圍：${FF14Utils.formatNumber(bestResult.minMGP)} - ${FF14Utils.formatNumber(bestResult.maxMGP)} MGP`,
+            range: `${FF14Utils.formatNumber(bestResult.minMGP)} - ${FF14Utils.formatNumber(bestResult.maxMGP)} ${mgpText}`,
             rangeClass: 'best-choice-range'
         });
         
@@ -416,4 +446,12 @@ function undoLastStep() {
 let calculator;
 document.addEventListener('DOMContentLoaded', () => {
     calculator = new MiniCactpotCalculator();
+    window.calculator = calculator; // Expose for i18n updates
+});
+
+// Listen for language changes
+document.addEventListener('i18n:languageChanged', () => {
+    if (calculator) {
+        calculator.updateLineNames();
+    }
 });
