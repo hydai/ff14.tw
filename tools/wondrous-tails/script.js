@@ -57,7 +57,8 @@ class WondrousTailsCalculator {
                 this.grid[position] = true;
                 this.placedCount++;
             } else {
-                FF14Utils.showToast('最多只能放置 9 個物件', 'error');
+                const msg = window.i18n?.t('messages.maxObjects') || '最多只能放置 9 個物件';
+                FF14Utils.showToast(msg, 'error');
                 return;
             }
         }
@@ -88,7 +89,8 @@ class WondrousTailsCalculator {
         this.grid = Array(16).fill(false);
         this.placedCount = 0;
         this.updateDisplay();
-        FF14Utils.showToast('盤面已重置');
+        const msg = window.i18n?.t('messages.boardReset') || '盤面已重置';
+        FF14Utils.showToast(msg);
     }
     
     // Check if a line (4 consecutive positions) has all objects placed
@@ -269,22 +271,29 @@ class WondrousTailsCalculator {
         
         if (remainingObjects === 0) {
             if (prob1 >= 80) {
-                return '很好的盤面！建議保留，有很高機率獲得獎勵。';
+                return window.i18n?.t('recommendation.completed.good') || '很好的盤面！建議保留，有很高機率獲得獎勵。';
             } else if (prob1 >= 50) {
-                return '中等盤面，可以考慮保留或重置。';
+                return window.i18n?.t('recommendation.completed.medium') || '中等盤面，可以考慮保留或重置。';
             } else {
-                return '建議重置盤面，當前獲得獎勵的機率較低。';
+                return window.i18n?.t('recommendation.completed.poor') || '建議重置盤面，當前獲得獎勵的機率較低。';
             }
         }
         
         if (prob3 >= 20) {
-            return `極佳盤面！有 ${prob3}% 機率獲得 3+ 條線獎勵，強烈建議繼續。`;
+            return window.i18n?.t('recommendation.excellent3', { prob: prob3 }) || `極佳盤面！有 ${prob3}% 機率獲得 3+ 條線獎勵，強烈建議繼續。`;
         } else if (prob2 >= 40) {
-            return `良好盤面！有 ${prob2}% 機率獲得 2+ 條線獎勵，建議繼續。`;
+            return window.i18n?.t('recommendation.good2', { prob: prob2 }) || `良好盤面！有 ${prob2}% 機率獲得 2+ 條線獎勵，建議繼續。`;
         } else if (prob1 >= 60) {
-            return `尚可盤面，有 ${prob1}% 機率獲得至少 1 條線獎勵。`;
+            return window.i18n?.t('recommendation.okay1', { prob: prob1 }) || `尚可盤面，有 ${prob1}% 機率獲得至少 1 條線獎勵。`;
         } else {
-            return `當前盤面獲得獎勵機率較低，建議考慮重置。還有 ${remainingObjects} 個物件待放置。`;
+            return window.i18n?.t('recommendation.poor', { remaining: remainingObjects }) || `當前盤面獲得獎勵機率較低，建議考慮重置。還有 ${remainingObjects} 個物件待放置。`;
+        }
+    }
+    
+    updateMessages() {
+        // Update UI if language changed while objects are placed
+        if (this.placedCount > 0) {
+            this.calculateProbabilities();
         }
     }
 }
@@ -294,6 +303,14 @@ let calculator;
 
 document.addEventListener('DOMContentLoaded', function() {
     calculator = new WondrousTailsCalculator();
+    window.wondrousTails = calculator; // Expose for i18n updates
+});
+
+// Listen for language changes
+document.addEventListener('i18n:languageChanged', () => {
+    if (calculator) {
+        calculator.updateMessages();
+    }
 });
 
 // Reset function for reset button
