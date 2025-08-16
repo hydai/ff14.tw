@@ -291,11 +291,7 @@
             // Load translations
             await i18n.init(['common', 'pages/about']);
             
-            // Initialize language switcher
-            new LanguageSwitcher('languageSwitcher', {
-                style: 'buttons',
-                showNativeName: true
-            });
+            // Language switcher is auto-initialized by its script.
         });
     </script>
 </body>

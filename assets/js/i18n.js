@@ -288,6 +288,7 @@ class I18nManager {
      */
     _sanitizeAndAppendNodes(sourceNode, targetNode) {
         const allowedTags = ['a', 'b', 'strong', 'i', 'em', 'u', 'span', 'br', 'p', 'div'];
+        const disallowedTags = ['script', 'style', 'iframe', 'object', 'embed', 'form'];
         const allowedAttributes = {
             'a': ['href', 'target', 'rel'],
             'span': ['class'],
@@ -302,9 +303,14 @@ class I18nManager {
             } else if (node.nodeType === Node.ELEMENT_NODE) {
                 const tagName = node.tagName.toLowerCase();
                 
+                // Completely remove disallowed tags and their content
+                if (disallowedTags.includes(tagName)) {
+                    return;
+                }
+                
                 // Only allow whitelisted tags
                 if (!allowedTags.includes(tagName)) {
-                    // Skip disallowed tags but process their children
+                    // Skip other disallowed tags but process their children
                     this._sanitizeAndAppendNodes(node, targetNode);
                     return;
                 }

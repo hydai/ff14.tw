@@ -141,11 +141,7 @@
             // Load translations
             await i18n.init(['common', 'tools/dungeon-database']);
             
-            // Initialize language switcher
-            new LanguageSwitcher('languageSwitcher', {
-                style: 'buttons',
-                showNativeName: true
-            });
+            // Language switcher is auto-initialized by its script.
             
             // Reinitialize with i18n if needed
             if (window.dungeonDatabase) {
