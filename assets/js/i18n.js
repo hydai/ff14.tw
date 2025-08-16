@@ -256,6 +256,37 @@ class I18nManager {
     }
 
     /**
+     * Helper method to set HTML content safely in an element
+     * @param {HTMLElement} element - The element to update
+     * @param {string} htmlString - The HTML string to set
+     */
+    _setElementHtml(element, htmlString) {
+        if (htmlString && htmlString.includes('<')) {
+            // Parse HTML safely using DOMParser
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(htmlString, 'text/html');
+            
+            // Clear the element
+            while (element.firstChild) {
+                element.removeChild(element.firstChild);
+            }
+            
+            // Move parsed content safely with basic sanitization
+            const fragment = document.createDocumentFragment();
+            Array.from(doc.body.childNodes).forEach(node => {
+                // Basic sanitization to prevent script execution
+                if (node.nodeName.toLowerCase() !== 'script') {
+                    fragment.appendChild(node.cloneNode(true));
+                }
+            });
+            element.appendChild(fragment);
+        } else {
+            // Plain text content
+            element.textContent = htmlString;
+        }
+    }
+
+    /**
      * Update all elements on the page with translations
      */
     updatePageLanguage() {
@@ -285,63 +316,23 @@ class I18nManager {
         // Update elements with data-i18n-html (supports HTML within text)
         document.querySelectorAll('[data-i18n-html]').forEach(element => {
             const key = element.dataset.i18nHtml;
+            let text;
             
             // For elements with parameters
             if (element.dataset.i18nParams) {
                 try {
                     const params = JSON.parse(element.dataset.i18nParams);
-                    const text = this.t(key, params);
-                    
-                    // For simple HTML content with known safe tags
-                    if (text && text.includes('<')) {
-                        // Parse HTML safely using DOMParser
-                        const parser = new DOMParser();
-                        const doc = parser.parseFromString(text, 'text/html');
-                        
-                        // Clear the element
-                        while (element.firstChild) {
-                            element.removeChild(element.firstChild);
-                        }
-                        
-                        // Move parsed content safely
-                        const fragment = document.createDocumentFragment();
-                        Array.from(doc.body.childNodes).forEach(node => {
-                            fragment.appendChild(node.cloneNode(true));
-                        });
-                        element.appendChild(fragment);
-                    } else {
-                        // Plain text content
-                        element.textContent = text;
-                    }
+                    text = this.t(key, params);
                 } catch (e) {
                     console.error('Failed to parse i18n params:', e);
-                    // Fallback to plain text
-                    element.textContent = this.t(key);
+                    text = this.t(key); // Fallback
                 }
             } else {
-                // Check if content contains HTML
-                const text = this.t(key);
-                if (text && text.includes('<')) {
-                    // Parse HTML safely using DOMParser
-                    const parser = new DOMParser();
-                    const doc = parser.parseFromString(text, 'text/html');
-                    
-                    // Clear the element
-                    while (element.firstChild) {
-                        element.removeChild(element.firstChild);
-                    }
-                    
-                    // Move parsed content safely
-                    const fragment = document.createDocumentFragment();
-                    Array.from(doc.body.childNodes).forEach(node => {
-                        fragment.appendChild(node.cloneNode(true));
-                    });
-                    element.appendChild(fragment);
-                } else {
-                    // Use textContent for plain text
-                    element.textContent = text;
-                }
+                text = this.t(key);
             }
+            
+            // Set element content using helper method
+            this._setElementHtml(element, text);
         });
 
         // Update any dynamic content that might have been added

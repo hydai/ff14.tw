@@ -44,13 +44,17 @@ class ChangelogI18n {
                     header.textContent = new Intl.DateTimeFormat(locale, options).format(date);
                 } catch (e) {
                     console.error('Error formatting date:', e);
-                    // Fallback to original logic if Intl fails
+                    // Fallback to using translation files if Intl fails
+                    const monthNames = ['january', 'february', 'march', 'april', 'may', 'june', 
+                                       'july', 'august', 'september', 'october', 'november', 'december'];
+                    const monthKey = `months.${monthNames[month - 1]}`;
+                    const monthTranslation = window.i18n?.t(monthKey) || monthNames[month - 1];
+                    
                     if (currentLang === 'en') {
-                        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
-                                           'July', 'August', 'September', 'October', 'November', 'December'];
-                        header.textContent = `${monthNames[month - 1]} ${year}`;
+                        header.textContent = `${monthTranslation} ${year}`;
                     } else {
-                        header.textContent = `${year}年${month}月`;
+                        const yearText = window.i18n?.t('dateFormat.year') || '年';
+                        header.textContent = `${year}${yearText}${monthTranslation}`;
                     }
                 }
             }

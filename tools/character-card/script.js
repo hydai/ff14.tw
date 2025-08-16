@@ -63,26 +63,27 @@ class CharacterCardGenerator {
     };
 
     // 職業圖示對應 - 使用官方 SE 圖示
+    // Using language-agnostic keys for maintainability
     const jobIcons = {
-        '騎士': 'assets/images/se/FFXIVJobIcons/01_TANK/Job/Paladin.png',
-        '戰士': 'assets/images/se/FFXIVJobIcons/01_TANK/Job/Warrior.png',
-        '暗黑騎士': 'assets/images/se/FFXIVJobIcons/01_TANK/Job/DarkKnight.png',
-        '絕槍戰士': 'assets/images/se/FFXIVJobIcons/01_TANK/Job/Gunbreaker.png',
-        '白魔法師': 'assets/images/se/FFXIVJobIcons/02_HEALER/Job/WhiteMage.png',
-        '學者': 'assets/images/se/FFXIVJobIcons/02_HEALER/Job/Scholar.png',
-        '占星術士': 'assets/images/se/FFXIVJobIcons/02_HEALER/Job/Astrologian.png',
-        '賢者': 'assets/images/se/FFXIVJobIcons/02_HEALER/Job/Sage.png',
-        '武僧': 'assets/images/se/FFXIVJobIcons/03_DPS/Job/Monk.png',
-        '龍騎士': 'assets/images/se/FFXIVJobIcons/03_DPS/Job/Dragoon.png',
-        '忍者': 'assets/images/se/FFXIVJobIcons/03_DPS/Job/Ninja.png',
-        '武士': 'assets/images/se/FFXIVJobIcons/03_DPS/Job/Samurai.png',
-        '鐮刀': 'assets/images/se/FFXIVJobIcons/03_DPS/Job/Reaper.png',
-        '詩人': 'assets/images/se/FFXIVJobIcons/03_DPS/Job/Bard.png',
-        '機工士': 'assets/images/se/FFXIVJobIcons/03_DPS/Job/Machinist.png',
-        '舞者': 'assets/images/se/FFXIVJobIcons/03_DPS/Job/Dancer.png',
-        '黑魔法師': 'assets/images/se/FFXIVJobIcons/03_DPS/Job/BlackMage.png',
-        '召喚師': 'assets/images/se/FFXIVJobIcons/03_DPS/Job/Summoner.png',
-        '赤魔法師': 'assets/images/se/FFXIVJobIcons/03_DPS/Job/RedMage.png'
+        'paladin': 'assets/images/se/FFXIVJobIcons/01_TANK/Job/Paladin.png',
+        'warrior': 'assets/images/se/FFXIVJobIcons/01_TANK/Job/Warrior.png',
+        'darkKnight': 'assets/images/se/FFXIVJobIcons/01_TANK/Job/DarkKnight.png',
+        'gunbreaker': 'assets/images/se/FFXIVJobIcons/01_TANK/Job/Gunbreaker.png',
+        'whiteMage': 'assets/images/se/FFXIVJobIcons/02_HEALER/Job/WhiteMage.png',
+        'scholar': 'assets/images/se/FFXIVJobIcons/02_HEALER/Job/Scholar.png',
+        'astrologian': 'assets/images/se/FFXIVJobIcons/02_HEALER/Job/Astrologian.png',
+        'sage': 'assets/images/se/FFXIVJobIcons/02_HEALER/Job/Sage.png',
+        'monk': 'assets/images/se/FFXIVJobIcons/03_DPS/Job/Monk.png',
+        'dragoon': 'assets/images/se/FFXIVJobIcons/03_DPS/Job/Dragoon.png',
+        'ninja': 'assets/images/se/FFXIVJobIcons/03_DPS/Job/Ninja.png',
+        'samurai': 'assets/images/se/FFXIVJobIcons/03_DPS/Job/Samurai.png',
+        'reaper': 'assets/images/se/FFXIVJobIcons/03_DPS/Job/Reaper.png',
+        'bard': 'assets/images/se/FFXIVJobIcons/03_DPS/Job/Bard.png',
+        'machinist': 'assets/images/se/FFXIVJobIcons/03_DPS/Job/Machinist.png',
+        'dancer': 'assets/images/se/FFXIVJobIcons/03_DPS/Job/Dancer.png',
+        'blackMage': 'assets/images/se/FFXIVJobIcons/03_DPS/Job/BlackMage.png',
+        'summoner': 'assets/images/se/FFXIVJobIcons/03_DPS/Job/Summoner.png',
+        'redMage': 'assets/images/se/FFXIVJobIcons/03_DPS/Job/RedMage.png'
     };
 
     // 圖片編輯相關元素
@@ -212,11 +213,12 @@ class CharacterCardGenerator {
         });
 
         // 更新職業
-        const jobName = inputs.jobName.value || '職業';
+        const jobKey = inputs.jobName.value;
+        const jobName = jobKey ? (window.i18n?.t(`jobs.names.${jobKey}`) || jobKey) : '職業';
         cardElements.jobName.forEach(el => el.textContent = jobName);
 
         // 更新職業圖示
-        const jobIconPath = jobIcons[jobName];
+        const jobIconPath = jobIcons[jobKey];
         cardElements.jobIcon.forEach(el => {
             if (jobIconPath) {
                 // 清除舊內容並添加圖片
@@ -713,7 +715,14 @@ class CharacterCardGenerator {
 
     // 顯示已選擇的職業
     function showSelectedJob(job, category) {
-        const displayText = `${category} - ${job}`;
+        // Get translated names for display
+        const jobKey = `jobs.names.${job}`;
+        const categoryKey = `jobs.categories.${category}`;
+        
+        const jobName = window.i18n?.t(jobKey) || job;
+        const categoryName = window.i18n?.t(categoryKey) || category;
+        
+        const displayText = `${categoryName} - ${jobName}`;
         jobSelectionElements.selectedJobName.textContent = displayText;
         jobSelectionElements.selectedJob.style.display = 'flex';
     }
