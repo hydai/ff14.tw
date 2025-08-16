@@ -1,5 +1,11 @@
 class LodestoneCharacterLookup {
     constructor() {
+        // Store current data for re-rendering on language change
+        this.currentCharacterData = null;
+        this.currentJobData = null;
+        this.currentAchievements = null;
+        this.currentFreeCompanyData = null;
+        
         this.elements = {
             characterId: document.getElementById('characterId'),
             datacenterSelect: document.getElementById('datacenterSelect'),
@@ -196,7 +202,7 @@ class LodestoneCharacterLookup {
                 console.log('解析後的角色 JSON 資料:', characterData);
             } catch (parseError) {
                 console.error('角色 JSON 解析錯誤:', parseError);
-                console.error('無法解析的內容:', characterText);
+                console.error(window.i18n?.t('messages.cannotParseContent') || 'Cannot parse content:', characterText);
                 throw new Error('伺服器回應格式錯誤');
             }
             
@@ -217,11 +223,11 @@ class LodestoneCharacterLookup {
                     console.log('解析後的職業 JSON 資料:', jobData);
                 } catch (parseError) {
                     console.error('職業 JSON 解析錯誤:', parseError);
-                    console.error('無法解析的內容:', jobText);
+                    console.error(window.i18n?.t('messages.cannotParseContent') || 'Cannot parse content:', jobText);
                     // 職業資料解析失敗不影響主要功能
                 }
             } else {
-                console.warn('無法取得職業資料:', jobResponse.status);
+                console.warn(window.i18n?.t('messages.cannotGetJobData') || 'Cannot get job data:', jobResponse.status);
             }
             
             // 處理成就資料
@@ -259,10 +265,14 @@ class LodestoneCharacterLookup {
             
             if (characterData && characterData.Character) {
                 console.log('準備顯示角色資料...');
+                // Store data for re-rendering on language change
+                this.currentCharacterData = characterData.Character;
+                this.currentJobData = jobData;
                 this.displayCharacterInfo(characterData.Character, jobData);
                 
                 // 顯示額外資料
                 if (achievementsData) {
+                    this.currentAchievements = achievementsData;
                     this.displayAchievements(achievementsData);
                 }
                 if (mountsData) {
@@ -286,7 +296,7 @@ class LodestoneCharacterLookup {
             } else {
                 console.error('資料格式錯誤或資料為空');
                 console.error('預期格式: {Character: {...}}');
-                throw new Error('無法取得角色資料');
+                throw new Error(window.i18n?.t('messages.cannotGetCharacterData') || 'Cannot get character data');
             }
         } catch (error) {
             console.error('查詢過程發生錯誤:', error);
@@ -315,10 +325,10 @@ class LodestoneCharacterLookup {
         this.elements.characterAvatar.alt = character.Name || '';
         
         console.log('設定名稱:', character.Name);
-        this.elements.characterName.textContent = character.Name || '未知';
+        this.elements.characterName.textContent = character.Name || (window.i18n?.t('messages.unknown') || 'Unknown');
         
         console.log('設定稱號:', character.Title);
-        this.elements.characterTitle.textContent = character.Title || '無稱號';
+        this.elements.characterTitle.textContent = character.Title || (window.i18n?.t('messages.noTitle') || 'No Title');
         
         // Portrait (立繪)
         if (character.Portrait) {
@@ -334,9 +344,9 @@ class LodestoneCharacterLookup {
         const serverInfo = character.Server;
         console.log('伺服器資訊:', serverInfo);
         if (serverInfo && serverInfo.World) {
-            this.elements.characterServer.textContent = `${serverInfo.World} (${serverInfo.DC || '未知'})`;
+            this.elements.characterServer.textContent = `${serverInfo.World} (${serverInfo.DC || (window.i18n?.t('messages.unknown') || 'Unknown')})`;
         } else {
-            this.elements.characterServer.textContent = '未知';
+            this.elements.characterServer.textContent = window.i18n?.t('messages.unknown') || 'Unknown';
         }
         
         // Additional character info
@@ -344,19 +354,19 @@ class LodestoneCharacterLookup {
         if (character.GuardianDeity && character.GuardianDeity.Name) {
             this.elements.characterDeity.textContent = character.GuardianDeity.Name;
         } else {
-            this.elements.characterDeity.textContent = '未知';
+            this.elements.characterDeity.textContent = window.i18n?.t('messages.unknown') || 'Unknown';
         }
         
         if (character.Town && character.Town.Name) {
             this.elements.characterCity.textContent = character.Town.Name;
         } else {
-            this.elements.characterCity.textContent = '未知';
+            this.elements.characterCity.textContent = window.i18n?.t('messages.unknown') || 'Unknown';
         }
         
         // Free Company
         if (character.FreeCompany && character.FreeCompany.Name && character.FreeCompany.Name.ID) {
             const fcId = character.FreeCompany.Name.ID;
-            this.elements.fcName.textContent = '載入公會資訊中...';
+            this.elements.fcName.textContent = window.i18n?.t('messages.loadingFC') || 'Loading FC...';
             this.elements.fcName.dataset.fcId = fcId;
             
             // 查詢公會詳細資訊
@@ -373,7 +383,7 @@ class LodestoneCharacterLookup {
                 }
             }
         } else {
-            this.elements.fcName.textContent = '無';
+            this.elements.fcName.textContent = window.i18n?.t('messages.none') || 'None';
             this.elements.fcIcon.style.display = 'none';
         }
         
@@ -460,11 +470,11 @@ class LodestoneCharacterLookup {
         if (character.GrandCompany && character.GrandCompany.Name) {
             this.elements.grandCompany.textContent = `${character.GrandCompany.Name}${character.GrandCompany.Rank ? ' - ' + character.GrandCompany.Rank : ''}`;
         } else {
-            this.elements.grandCompany.textContent = '無';
+            this.elements.grandCompany.textContent = window.i18n?.t('messages.none') || 'None';
         }
         
-        this.elements.nameday.textContent = character.Nameday || '未知';
-        this.elements.bio.textContent = character.Bio || '無';
+        this.elements.nameday.textContent = character.Nameday || (window.i18n?.t('messages.unknown') || 'Unknown');
+        this.elements.bio.textContent = character.Bio || (window.i18n?.t('messages.none') || 'None');
         
         // Equipment Info
         this.displayEquipment(character);
@@ -554,41 +564,10 @@ class LodestoneCharacterLookup {
         const jobGrid = document.createElement('div');
         jobGrid.className = 'job-levels-grid-unified';
 
-        // 職業中文名稱對照
-        const jobNames = {
-            'Paladin': '騎士',
-            'Warrior': '戰士',
-            'Dark Knight': '暗黑騎士',
-            'Gunbreaker': '絕槍戰士',
-            'White Mage': '白魔道士',
-            'Scholar': '學者',
-            'Astrologian': '占星術士',
-            'Sage': '賢者',
-            'Monk': '武僧',
-            'Dragoon': '龍騎士',
-            'Ninja': '忍者',
-            'Samurai': '武士',
-            'Reaper': '鐮刀師',
-            'Viper': '毒蛇使',
-            'Bard': '吟遊詩人',
-            'Machinist': '機工士',
-            'Dancer': '舞者',
-            'Black Mage': '黑魔道士',
-            'Summoner': '召喚士',
-            'Red Mage': '赤魔道士',
-            'Pictomancer': '繪靈法師',
-            'Blue Mage': '青魔道士',
-            'Carpenter': '刻木匠',
-            'Blacksmith': '鍛鐵匠',
-            'Armorer': '鎧甲匠',
-            'Goldsmith': '雕金匠',
-            'Leatherworker': '製革匠',
-            'Weaver': '裁縫匠',
-            'Alchemist': '煉金術士',
-            'Culinarian': '烹調師',
-            'Miner': '採礦工',
-            'Botanist': '園藝工',
-            'Fisher': '捕魚人'
+        // Get job names from i18n
+        const getJobName = (englishName) => {
+            const key = englishName.replace(/ /g, '');
+            return window.i18n?.t(`jobs.${key}`) || englishName;
         };
 
         // 處理戰鬥職業 - 依照原本的分類順序，但不顯示分類標題
@@ -640,7 +619,7 @@ class LodestoneCharacterLookup {
             const jobIcon = document.createElement('img');
             jobIcon.className = 'job-icon';
             const displayName = job.UnlockState || jobKey;
-            const chineseName = jobNames[displayName] || displayName;
+            const chineseName = getJobName(displayName);
             
             // 根據職業名稱找到對應的圖標路徑
             jobIcon.src = this.getJobIconPath(displayName);
@@ -1001,7 +980,7 @@ class LodestoneCharacterLookup {
                 if (minion.Icon) {
                     const icon = document.createElement('img');
                     icon.src = minion.Icon;
-                    icon.alt = minion.Name || '未知寵物';
+                    icon.alt = minion.Name || (window.i18n?.t('messages.unknownMinion') || 'Unknown minion');
                     icon.className = 'minion-icon';
                     minionItem.appendChild(icon);
                 }
@@ -1015,7 +994,7 @@ class LodestoneCharacterLookup {
             });
         } else {
             const noData = document.createElement('p');
-            noData.textContent = '暫無寵物資料';
+            noData.textContent = window.i18n?.t('messages.noMinionData') || 'No minion data';
             this.elements.minionsList.appendChild(noData);
         }
     }
@@ -1037,9 +1016,10 @@ class LodestoneCharacterLookup {
                 const data = await fcResponse.json();
                 console.log('公會資料:', data);
                 if (data.FreeCompany) {
+                    this.currentFreeCompanyData = data.FreeCompany;
                     this.displayFreeCompanyInfo(data.FreeCompany);
                     // 更新頂部的公會名稱為可點擊連結
-                    this.elements.fcName.textContent = data.FreeCompany.Name || '未知公會';
+                    this.elements.fcName.textContent = data.FreeCompany.Name || (window.i18n?.t('messages.unknownFreeCompany') || 'Unknown Free Company');
                     this.elements.fcName.style.cursor = 'pointer';
                     this.elements.fcName.style.color = 'var(--primary-color)';
                     this.elements.fcName.onclick = () => {
@@ -1074,8 +1054,8 @@ class LodestoneCharacterLookup {
         }
         
         // 基本資訊
-        this.elements.fcDetailName.textContent = fc.Name || '未知公會';
-        this.elements.fcSlogan.textContent = fc.Slogan || '無標語';
+        this.elements.fcDetailName.textContent = fc.Name || (window.i18n?.t('messages.unknownFreeCompany') || 'Unknown Free Company');
+        this.elements.fcSlogan.textContent = fc.Slogan || (window.i18n?.t('messages.noSlogan') || 'No slogan');
         this.elements.fcMemberCount.textContent = fc.ActiveMemberCount || '0';
         this.elements.fcRank.textContent = fc.Rank || '--';
         this.elements.fcRecruitment.textContent = fc.Recruitment === 'Open' ? '開放' : '關閉';
@@ -1084,7 +1064,7 @@ class LodestoneCharacterLookup {
         if (fc.Estate && fc.Estate.Plot) {
             this.elements.fcEstateName.textContent = fc.Estate.Name || '未命名';
             this.elements.fcEstatePlot.textContent = fc.Estate.Plot;
-            this.elements.fcEstateGreeting.textContent = fc.Estate.Greeting || '無歡迎詞';
+            this.elements.fcEstateGreeting.textContent = fc.Estate.Greeting || (window.i18n?.t('messages.noEstateGreeting') || 'No greeting');
             this.elements.fcEstateInfo.style.display = 'block';
         }
         
@@ -1124,31 +1104,11 @@ class LodestoneCharacterLookup {
     }
     
     translateFocusTag(tag) {
-        const translations = {
-            'Casual': '休閒',
-            'Dungeons': '副本',
-            'Leveling': '練級',
-            'Raids': '團隊戰',
-            'Trials': '討伐戰',
-            'Guildhests': '公會令',
-            'Role-playing': '角色扮演',
-            'Questing': '任務',
-            'Crafting': '生產',
-            'Gathering': '採集',
-            'PvP': 'PvP'
-        };
-        return translations[tag] || tag;
+        return window.i18n?.t(`freeCompany.focusTags.${tag}`) || tag;
     }
     
     translateSeekingTag(tag) {
-        const translations = {
-            'Tank': '坦克',
-            'Healer': '治療',
-            'DPS': 'DPS',
-            'Crafter': '生產職',
-            'Gatherer': '採集職'
-        };
-        return translations[tag] || tag;
+        return window.i18n?.t(`freeCompany.seekingTags.${tag}`) || tag;
     }
     
     createReputationItem(rep) {
@@ -1180,24 +1140,11 @@ class LodestoneCharacterLookup {
     }
     
     translateGrandCompany(name) {
-        const translations = {
-            'Order of the Twin Adder': '雙蛇黨',
-            'Immortal Flames': '恆輝隊',
-            'Maelstrom': '黑渦團'
-        };
-        return translations[name] || name;
+        return window.i18n?.t(`freeCompany.grandCompanies.${name}`) || name;
     }
     
     translateReputationRank(rank) {
-        const translations = {
-            'Neutral': '中立',
-            'Friendly': '友好',
-            'Trusted': '信賴',
-            'Respected': '敬重',
-            'Honored': '崇敬',
-            'Allied': '同盟'
-        };
-        return translations[rank] || rank;
+        return window.i18n?.t(`freeCompany.reputationRanks.${rank}`) || rank;
     }
     
     displayFreeCompanyMembers(data) {
@@ -1282,7 +1229,7 @@ class LodestoneCharacterLookup {
             }
         } else {
             const noData = document.createElement('p');
-            noData.textContent = '暫無成員資料';
+            noData.textContent = window.i18n?.t('messages.noMemberData') || 'No member data';
             this.elements.fcMembersList.appendChild(noData);
         }
     }
@@ -1465,6 +1412,21 @@ class LodestoneCharacterLookup {
             if (currentMessage.includes('查詢失敗') || currentMessage.includes('Query failed')) {
                 this.elements.errorMessage.textContent = window.i18n?.t('messages.queryFailed') || currentMessage;
             }
+        }
+        
+        // Re-render the current character data if loaded
+        if (this.currentCharacterData) {
+            this.displayCharacterInfo(this.currentCharacterData, this.currentJobData);
+        }
+        
+        // Re-render achievements if loaded
+        if (this.currentAchievements) {
+            this.displayAchievements(this.currentAchievements);
+        }
+        
+        // Re-render free company info if loaded
+        if (this.currentFreeCompanyData) {
+            this.displayFreeCompanyInfo(this.currentFreeCompanyData);
         }
     }
 }

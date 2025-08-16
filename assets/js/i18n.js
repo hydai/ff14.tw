@@ -271,19 +271,84 @@ class I18nManager {
                 element.removeChild(element.firstChild);
             }
             
-            // Move parsed content safely with basic sanitization
+            // Move parsed content with comprehensive sanitization
             const fragment = document.createDocumentFragment();
-            Array.from(doc.body.childNodes).forEach(node => {
-                // Basic sanitization to prevent script execution
-                if (node.nodeName.toLowerCase() !== 'script') {
-                    fragment.appendChild(node.cloneNode(true));
-                }
-            });
+            this._sanitizeAndAppendNodes(doc.body, fragment);
             element.appendChild(fragment);
         } else {
             // Plain text content
             element.textContent = htmlString;
         }
+    }
+
+    /**
+     * Recursively sanitize and append nodes to prevent XSS attacks
+     * @param {Node} sourceNode - The source node to sanitize
+     * @param {Node} targetNode - The target node to append sanitized content to
+     */
+    _sanitizeAndAppendNodes(sourceNode, targetNode) {
+        const allowedTags = ['a', 'b', 'strong', 'i', 'em', 'u', 'span', 'br', 'p', 'div'];
+        const allowedAttributes = {
+            'a': ['href', 'target', 'rel'],
+            'span': ['class'],
+            'div': ['class'],
+            'p': ['class']
+        };
+
+        Array.from(sourceNode.childNodes).forEach(node => {
+            if (node.nodeType === Node.TEXT_NODE) {
+                // Text nodes are safe
+                targetNode.appendChild(node.cloneNode(true));
+            } else if (node.nodeType === Node.ELEMENT_NODE) {
+                const tagName = node.tagName.toLowerCase();
+                
+                // Only allow whitelisted tags
+                if (!allowedTags.includes(tagName)) {
+                    // Skip disallowed tags but process their children
+                    this._sanitizeAndAppendNodes(node, targetNode);
+                    return;
+                }
+                
+                // Create a clean element
+                const cleanElement = document.createElement(tagName);
+                
+                // Only copy whitelisted attributes for this tag
+                const allowedAttrs = allowedAttributes[tagName] || [];
+                allowedAttrs.forEach(attr => {
+                    if (node.hasAttribute(attr)) {
+                        let attrValue = node.getAttribute(attr);
+                        
+                        // Sanitize href to prevent javascript: and data: URLs
+                        if (attr === 'href') {
+                            if (attrValue.startsWith('javascript:') || 
+                                attrValue.startsWith('data:') || 
+                                attrValue.startsWith('vbscript:')) {
+                                attrValue = '#';
+                            }
+                        }
+                        
+                        // Ensure external links have proper security attributes
+                        if (attr === 'target' && attrValue === '_blank') {
+                            cleanElement.setAttribute('rel', 'noopener noreferrer');
+                        }
+                        
+                        cleanElement.setAttribute(attr, attrValue);
+                    }
+                });
+                
+                // Check for event handler attributes (onclick, onerror, etc.)
+                Array.from(node.attributes).forEach(attr => {
+                    if (attr.name.startsWith('on')) {
+                        // Skip all event handlers
+                        return;
+                    }
+                });
+                
+                // Recursively sanitize children
+                this._sanitizeAndAppendNodes(node, cleanElement);
+                targetNode.appendChild(cleanElement);
+            }
+        });
     }
 
     /**
