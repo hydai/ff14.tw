@@ -204,6 +204,16 @@ class I18nManager {
     }
 
     /**
+     * Alias for t() method for backward compatibility
+     * Used by timed-gathering tool
+     * @param {string} key - Translation key
+     * @param {Object} params - Parameters for template replacement
+     */
+    getText(key, params = {}) {
+        return this.t(key, params);
+    }
+
+    /**
      * Get nested property from object using dot notation
      * @param {Object} obj - Object to search
      * @param {string} path - Dot-separated path
@@ -303,8 +313,15 @@ class I18nManager {
                     element.textContent = this.t(key);
                 }
             } else {
-                // Simple text content
-                element.textContent = this.t(key);
+                // Check if content contains HTML
+                const text = this.t(key);
+                if (text && text.includes('<')) {
+                    // Use innerHTML for HTML content
+                    element.innerHTML = text;
+                } else {
+                    // Use textContent for plain text
+                    element.textContent = text;
+                }
             }
         });
 

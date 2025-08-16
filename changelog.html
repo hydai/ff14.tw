@@ -55,6 +55,43 @@
                     
                     <article class="changelog-entry">
                         <div class="changelog-header">
+                            <h3 class="changelog-version">v2.5.7</h3>
+                            <time class="changelog-date" datetime="2025-01-16">2025年1月16日</time>
+                        </div>
+                        <div class="changelog-content">
+                            <ul>
+                                <li><span class="tag tag-danger" data-i18n="tags.fix">修復</span> i18n 系統：HTML 標籤渲染問題
+                                    <ul>
+                                        <li>修復 data-i18n-html 屬性的元素中 HTML 標籤顯示為純文字的問題</li>
+                                        <li>影響頁面：版權聲明、關於頁面、副本資料庫</li>
+                                        <li>確保含有 HTML 的翻譯文字正確渲染</li>
+                                    </ul>
+                                </li>
+                                <li><span class="tag tag-success" data-i18n="tags.new">新增</span> 限時採集器：完整多語言支援
+                                    <ul>
+                                        <li>創建 timed-gathering.json 翻譯檔案</li>
+                                        <li>支援繁體中文、日文、英文三種語言</li>
+                                        <li>包含所有介面元素、錯誤訊息、提示文字的翻譯</li>
+                                    </ul>
+                                </li>
+                                <li><span class="tag tag-primary" data-i18n="tags.improve">改進</span> 角色卡產生器：職業名稱 i18n 支援
+                                    <ul>
+                                        <li>為所有 19 個職業按鈕添加多語言支援</li>
+                                        <li>職業名稱會根據選擇的語言自動切換</li>
+                                    </ul>
+                                </li>
+                                <li><span class="tag tag-danger" data-i18n="tags.fix">修復</span> i18n 系統：向後兼容性
+                                    <ul>
+                                        <li>添加 getText() 別名方法確保舊版工具正常運作</li>
+                                        <li>修復 timed-gathering 工具的 JavaScript 錯誤</li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </div>
+                    </article>
+                    
+                    <article class="changelog-entry">
+                        <div class="changelog-header">
                             <h3 class="changelog-version">v2.5.6</h3>
                             <time class="changelog-date" datetime="2025-01-15">2025年1月15日</time>
                         </div>
