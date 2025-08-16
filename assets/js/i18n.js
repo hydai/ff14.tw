@@ -294,15 +294,21 @@ class I18nManager {
                     
                     // For simple HTML content with known safe tags
                     if (text && text.includes('<')) {
-                        // Create a temporary container to parse HTML
-                        const temp = document.createElement('div');
-                        temp.innerHTML = text;
+                        // Parse HTML safely using DOMParser
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(text, 'text/html');
                         
-                        // Clear the element and move parsed content
-                        element.innerHTML = '';
-                        while (temp.firstChild) {
-                            element.appendChild(temp.firstChild);
+                        // Clear the element
+                        while (element.firstChild) {
+                            element.removeChild(element.firstChild);
                         }
+                        
+                        // Move parsed content safely
+                        const fragment = document.createDocumentFragment();
+                        Array.from(doc.body.childNodes).forEach(node => {
+                            fragment.appendChild(node.cloneNode(true));
+                        });
+                        element.appendChild(fragment);
                     } else {
                         // Plain text content
                         element.textContent = text;
@@ -316,8 +322,21 @@ class I18nManager {
                 // Check if content contains HTML
                 const text = this.t(key);
                 if (text && text.includes('<')) {
-                    // Use innerHTML for HTML content
-                    element.innerHTML = text;
+                    // Parse HTML safely using DOMParser
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(text, 'text/html');
+                    
+                    // Clear the element
+                    while (element.firstChild) {
+                        element.removeChild(element.firstChild);
+                    }
+                    
+                    // Move parsed content safely
+                    const fragment = document.createDocumentFragment();
+                    Array.from(doc.body.childNodes).forEach(node => {
+                        fragment.appendChild(node.cloneNode(true));
+                    });
+                    element.appendChild(fragment);
                 } else {
                     // Use textContent for plain text
                     element.textContent = text;

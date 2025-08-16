@@ -36,16 +36,22 @@ class ChangelogI18n {
             
             if (year && month) {
                 const currentLang = window.i18n?.currentLanguage || 'zh-TW';
+                const locale = currentLang === 'zh-TW' ? 'zh-TW' : currentLang;
+                const date = new Date(year, month - 1);
                 
-                if (currentLang === 'en') {
-                    // English format: "January 2025"
-                    const monthName = this.getMonthName(parseInt(month), currentLang);
-                    header.textContent = `${monthName} ${year}`;
-                } else {
-                    // Chinese/Japanese format: "2025年1月"
-                    const yearText = window.i18n?.t('dateFormat.year') || '年';
-                    const monthText = window.i18n?.t('dateFormat.month') || '月';
-                    header.textContent = `${year}${yearText}${month}${monthText}`;
+                try {
+                    const options = { year: 'numeric', month: 'long' };
+                    header.textContent = new Intl.DateTimeFormat(locale, options).format(date);
+                } catch (e) {
+                    console.error('Error formatting date:', e);
+                    // Fallback to original logic if Intl fails
+                    if (currentLang === 'en') {
+                        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+                                           'July', 'August', 'September', 'October', 'November', 'December'];
+                        header.textContent = `${monthNames[month - 1]} ${year}`;
+                    } else {
+                        header.textContent = `${year}年${month}月`;
+                    }
                 }
             }
         });
@@ -68,40 +74,20 @@ class ChangelogI18n {
             if (datetime) {
                 const date = new Date(datetime);
                 const currentLang = window.i18n?.currentLanguage || 'zh-TW';
+                const locale = currentLang === 'zh-TW' ? 'zh-TW' : currentLang;
                 
-                if (currentLang === 'en') {
-                    // English format: "January 9, 2025"
+                try {
                     const options = { year: 'numeric', month: 'long', day: 'numeric' };
-                    dateElement.textContent = date.toLocaleDateString('en-US', options);
-                } else if (currentLang === 'ja') {
-                    // Japanese format: "2025年1月9日"
-                    const year = date.getFullYear();
-                    const month = date.getMonth() + 1;
-                    const day = date.getDate();
-                    dateElement.textContent = `${year}年${month}月${day}日`;
-                } else {
-                    // Traditional Chinese format: "2025年1月9日"
-                    const year = date.getFullYear();
-                    const month = date.getMonth() + 1;
-                    const day = date.getDate();
-                    dateElement.textContent = `${year}年${month}月${day}日`;
+                    dateElement.textContent = new Intl.DateTimeFormat(locale, options).format(date);
+                } catch (e) {
+                    console.error('Error formatting date:', e);
+                    // Fallback for safety
+                    dateElement.textContent = date.toLocaleDateString();
                 }
             }
         });
     }
 
-    getMonthName(monthIndex, lang) {
-        const monthNames = {
-            'en': ['January', 'February', 'March', 'April', 'May', 'June', 
-                   'July', 'August', 'September', 'October', 'November', 'December'],
-            'ja': ['1月', '2月', '3月', '4月', '5月', '6月', 
-                   '7月', '8月', '9月', '10月', '11月', '12月'],
-            'zh-TW': ['1月', '2月', '3月', '4月', '5月', '6月', 
-                      '7月', '8月', '9月', '10月', '11月', '12月']
-        };
-        
-        return monthNames[lang]?.[monthIndex - 1] || monthIndex + '月';
-    }
 }
 
 // Initialize when DOM is ready
