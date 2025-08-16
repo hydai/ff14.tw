@@ -34,6 +34,25 @@ class DungeonDatabase {
         this.selectedExpansions = new Set();
         this.selectedLevels = new Set();
         
+        // Map Chinese type names to language-agnostic keys
+        this.typeKeyMap = {
+            '四人迷宮': 'dungeon_4',
+            '公會令': 'guildhest',
+            '8人大型任務': 'raid_8',
+            '8人討伐殲滅戰': 'trial_8',
+            '24人大型任務': 'raid_24',
+            '絕境戰': 'ultimate',
+            '誅滅戰': 'extreme',
+            '幻巧戰': 'unreal',
+            '異聞迷宮': 'variant',
+            '深層迷宮': 'deep'
+        };
+        
+        // Reverse map for filtering
+        this.typeChineseMap = Object.fromEntries(
+            Object.entries(this.typeKeyMap).map(([k, v]) => [v, k])
+        );
+        
         this.elements = {
             searchInput: document.getElementById('searchInput'),
             typeTags: document.getElementById('typeTags'),
@@ -296,8 +315,12 @@ class DungeonDatabase {
         if (this.selectedTypes.size === 0) {
             return true;
         }
-        // 檢查副本類型是否在選中的類型中
-        return this.selectedTypes.has(dungeon.type);
+        
+        // Convert dungeon's Chinese type to language-agnostic key
+        const dungeonTypeKey = this.typeKeyMap[dungeon.type];
+        
+        // Check if the dungeon's type key is in the selected types
+        return dungeonTypeKey && this.selectedTypes.has(dungeonTypeKey);
     }
 
     matchesExpansions(dungeon) {

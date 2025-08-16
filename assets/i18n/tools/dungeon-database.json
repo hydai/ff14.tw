@@ -19,16 +19,16 @@
       "selectedCount": "已選擇 ${count} 個過濾條件"
     },
     "types": {
-      "四人迷宮": "四人迷宮",
-      "公會令": "公會令",
-      "討伐殲滅戰": "討伐殲滅戰",
-      "大型任務": "大型任務",
-      "PVP": "PVP",
-      "尋寶": "尋寶",
-      "深層迷宮": "深層迷宮",
-      "幻巧戰": "幻巧戰",
-      "絕境戰": "絕境戰",
-      "其他": "其他"
+      "dungeon4": "四人迷宮",
+      "guildhest": "公會令",
+      "raid8": "8人大型任務",
+      "trial8": "8人討伐殲滅戰",
+      "raid24": "24人大型任務",
+      "ultimate": "絕境戰",
+      "extreme": "誅滅戰",
+      "unreal": "幻巧戰",
+      "variant": "異聞迷宮",
+      "deep": "深層迷宮"
     },
     "expansions": {
       "新生艾奧傑亞": "新生艾奧傑亞",
@@ -87,16 +87,16 @@
       "selectedCount": "${count} 個のフィルタを選択中"
     },
     "types": {
-      "四人迷宮": "4人ID",
-      "公會令": "ギルドオーダー",
-      "討伐殲滅戰": "討伐・討滅戦",
-      "大型任務": "レイド",
-      "PVP": "PVP",
-      "尋寶": "トレジャーハント",
-      "深層迷宮": "ディープダンジョン",
-      "幻巧戰": "幻討滅戦",
-      "絕境戰": "絶",
-      "其他": "その他"
+      "dungeon4": "4人ID",
+      "guildhest": "ギルドオーダー",
+      "raid8": "8人レイド",
+      "trial8": "8人討伐・討滅戦",
+      "raid24": "24人レイド",
+      "ultimate": "絶",
+      "extreme": "極",
+      "unreal": "幻討滅戦",
+      "variant": "ヴァリアントダンジョン",
+      "deep": "ディープダンジョン"
     },
     "expansions": {
       "新生艾奧傑亞": "新生エオルゼア",
@@ -155,16 +155,16 @@
       "selectedCount": "${count} filters selected"
     },
     "types": {
-      "四人迷宮": "4-person Dungeon",
-      "公會令": "Guildhest",
-      "討伐殲滅戰": "Trial",
-      "大型任務": "Raid",
-      "PVP": "PVP",
-      "尋寶": "Treasure Hunt",
-      "深層迷宮": "Deep Dungeon",
-      "幻巧戰": "Unreal Trial",
-      "絕境戰": "Ultimate",
-      "其他": "Other"
+      "dungeon4": "4-person Dungeon",
+      "guildhest": "Guildhest",
+      "raid8": "8-person Raid",
+      "trial8": "8-person Trial",
+      "raid24": "24-person Raid",
+      "ultimate": "Ultimate",
+      "extreme": "Extreme",
+      "unreal": "Unreal Trial",
+      "variant": "Variant Dungeon",
+      "deep": "Deep Dungeon"
     },
     "expansions": {
       "新生艾奧傑亞": "A Realm Reborn",
