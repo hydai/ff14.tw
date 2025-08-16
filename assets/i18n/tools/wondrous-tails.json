@@ -1,0 +1,110 @@
+{
+  "zh-TW": {
+    "pageTitle": "Wondrous Tails 預測器 - FF14.tw",
+    "metaDescription": "FF14 天書奇談 Wondrous Tails 機率預測工具，計算連線成功機率",
+    "title": "Wondrous Tails 預測器",
+    "description": "點選格子來標記已放置的物件，機率將即時更新並提供建議",
+    "gridInfo": {
+      "placed": "已放置物件",
+      "objects": "個"
+    },
+    "buttons": {
+      "reset": "重置盤面"
+    },
+    "results": {
+      "title": "🎯 連線機率預測",
+      "line1": "1條線",
+      "line2": "2條線",
+      "line3": "3條線"
+    },
+    "recommendation": {
+      "title": "💡 建議",
+      "start": "開始放置物件來獲得機率分析和建議",
+      "excellent3": "極佳盤面！有 ${prob}% 機率獲得 3+ 條線獎勵，強烈建議繼續。",
+      "good2": "良好盤面！有 ${prob}% 機率獲得 2+ 條線獎勵，建議繼續。",
+      "okay1": "尚可盤面，有 ${prob}% 機率獲得至少 1 條線獎勵。",
+      "poor": "當前盤面獲得獎勵機率較低，建議考慮重置。還有 ${remaining} 個物件待放置。",
+      "completed": {
+        "good": "很好的盤面！建議保留，有很高機率獲得獎勵。",
+        "medium": "中等盤面，可以考慮保留或重置。",
+        "poor": "建議重置盤面，當前獲得獎勵的機率較低。"
+      }
+    },
+    "messages": {
+      "maxObjects": "最多只能放置 9 個物件",
+      "boardReset": "盤面已重置"
+    }
+  },
+  "ja": {
+    "pageTitle": "ワンダラステイル予測器 - FF14.tw",
+    "metaDescription": "FF14 ワンダラステイル確率予測ツール、ライン成功確率を計算",
+    "title": "ワンダラステイル予測器",
+    "description": "マスをクリックして配置済みのアイテムをマークすると、確率がリアルタイムで更新され、アドバイスが表示されます",
+    "gridInfo": {
+      "placed": "配置済みアイテム",
+      "objects": "個"
+    },
+    "buttons": {
+      "reset": "ボードをリセット"
+    },
+    "results": {
+      "title": "🎯 ライン確率予測",
+      "line1": "1ライン",
+      "line2": "2ライン",
+      "line3": "3ライン"
+    },
+    "recommendation": {
+      "title": "💡 アドバイス",
+      "start": "アイテムを配置して確率分析とアドバイスを取得",
+      "excellent3": "素晴らしいボード！${prob}%の確率で3+ライン報酬を獲得できます。強く続行をお勧めします。",
+      "good2": "良いボード！${prob}%の確率で2+ライン報酬を獲得できます。続行をお勧めします。",
+      "okay1": "まずまずのボード、${prob}%の確率で少なくとも1ライン報酬を獲得できます。",
+      "poor": "現在のボードは報酬獲得確率が低いです。リセットを検討してください。残り${remaining}個のアイテムが配置待ちです。",
+      "completed": {
+        "good": "とても良いボード！報酬を獲得する確率が高いので、保持することをお勧めします。",
+        "medium": "中程度のボード、保持またはリセットを検討できます。",
+        "poor": "ボードのリセットをお勧めします。現在の報酬獲得確率は低いです。"
+      }
+    },
+    "messages": {
+      "maxObjects": "最大9個のアイテムまで配置できます",
+      "boardReset": "ボードがリセットされました"
+    }
+  },
+  "en": {
+    "pageTitle": "Wondrous Tails Predictor - FF14.tw",
+    "metaDescription": "FF14 Wondrous Tails probability prediction tool, calculates line completion chances",
+    "title": "Wondrous Tails Predictor",
+    "description": "Click cells to mark placed objects, probabilities will update in real-time with recommendations",
+    "gridInfo": {
+      "placed": "Objects placed",
+      "objects": ""
+    },
+    "buttons": {
+      "reset": "Reset Board"
+    },
+    "results": {
+      "title": "🎯 Line Probability Prediction",
+      "line1": "1 Line",
+      "line2": "2 Lines",
+      "line3": "3 Lines"
+    },
+    "recommendation": {
+      "title": "💡 Recommendation",
+      "start": "Start placing objects to get probability analysis and recommendations",
+      "excellent3": "Excellent board! ${prob}% chance to get 3+ lines reward, strongly recommend continuing.",
+      "good2": "Good board! ${prob}% chance to get 2+ lines reward, recommend continuing.",
+      "okay1": "Decent board, ${prob}% chance to get at least 1 line reward.",
+      "poor": "Current board has low reward probability, consider resetting. ${remaining} objects remaining to place.",
+      "completed": {
+        "good": "Very good board! Recommend keeping it, high chance of getting rewards.",
+        "medium": "Average board, can consider keeping or resetting.",
+        "poor": "Recommend resetting the board, current reward probability is low."
+      }
+    },
+    "messages": {
+      "maxObjects": "Can only place up to 9 objects",
+      "boardReset": "Board has been reset"
+    }
+  }
+}

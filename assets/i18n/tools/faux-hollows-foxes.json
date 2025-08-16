@@ -1,0 +1,149 @@
+{
+  "zh-TW": {
+    "pageTitle": "Faux Hollows Foxes 計算機 - FF14.tw",
+    "metaDescription": "計算 FF14 Faux Hollows Foxes 活動的最佳點擊策略",
+    "title": "Faux Hollows Foxes 計算機",
+    "hint": "💡 提示：請先點擊兩個格子設定為障礙物，系統將自動判斷並填充剩餘的障礙物位置",
+    "gameInfo": {
+      "remainingClicks": "剩餘點擊次數",
+      "matchingBoards": "符合盤面",
+      "unit": "種"
+    },
+    "buttons": {
+      "reset": "重置遊戲",
+      "undo": "回到上一步",
+      "showProbabilities": "顯示機率",
+      "hideProbabilities": "隱藏機率",
+      "autoCalculate": "計算最佳策略"
+    },
+    "result": {
+      "title": "遊戲結果",
+      "finalScore": "最終得分"
+    },
+    "popup": {
+      "title": "選擇此格類型",
+      "obstacle": "🚫 障礙物",
+      "sword": "⚔️ 劍 (2x3)",
+      "chest": "📦 寶箱 (2x2)",
+      "fox": "🦊 宗長 (1x1)",
+      "empty": "✅ 空格",
+      "clear": "🗑️ 清除",
+      "cancel": "取消"
+    },
+    "dataSource": "盤面資料來源",
+    "messages": {
+      "obstaclesConfirmed": "障礙物位置已確認！現在顯示寶物機率，點擊格子可填寫實際發現的寶物",
+      "allObstaclesConfirmed": "所有障礙物位置已確定！現在顯示寶物機率，點擊格子可填寫實際發現的寶物",
+      "autoFilled": "已自動填充 ${count} 個確定的障礙物位置",
+      "maxClicksReached": "已達到最大點擊次數！",
+      "cannotModifyCell": "此格子無法修改！",
+      "cellOccupied": "此格子已被佔用！",
+      "foxLimit": "宗長只能放置 1 格！",
+      "swordLimit": "劍最多只能放置 6 格！",
+      "chestLimit": "寶箱最多只能放置 4 格！",
+      "errorFoxCount": "錯誤：宗長只能有 0 或 1 格！",
+      "errorSwordCount": "錯誤：劍最多只能有 6 格！",
+      "errorSwordShape": "錯誤：6 格劍必須形成 2x3 或 3x2 的形狀！",
+      "errorChestCount": "錯誤：寶箱最多只能有 4 格！",
+      "errorChestShape": "錯誤：4 格寶箱必須形成 2x2 的形狀！"
+    }
+  },
+  "ja": {
+    "pageTitle": "Faux Hollows Foxes 計算機 - FF14.tw",
+    "metaDescription": "FF14 Faux Hollows Foxesイベントの最適なクリック戦略を計算",
+    "title": "Faux Hollows Foxes 計算機",
+    "hint": "💡 ヒント：まず2つのマスをクリックして障害物として設定し、システムが残りの障害物の位置を自動判定して埋めます",
+    "gameInfo": {
+      "remainingClicks": "残りクリック回数",
+      "matchingBoards": "一致する盤面",
+      "unit": "種類"
+    },
+    "buttons": {
+      "reset": "ゲームリセット",
+      "undo": "元に戻す",
+      "showProbabilities": "確率を表示",
+      "hideProbabilities": "確率を非表示",
+      "autoCalculate": "最適戦略を計算"
+    },
+    "result": {
+      "title": "ゲーム結果",
+      "finalScore": "最終スコア"
+    },
+    "popup": {
+      "title": "このマスのタイプを選択",
+      "obstacle": "🚫 障害物",
+      "sword": "⚔️ 剣 (2x3)",
+      "chest": "📦 宝箱 (2x2)",
+      "fox": "🦊 キツネ (1x1)",
+      "empty": "✅ 空欄",
+      "clear": "🗑️ クリア",
+      "cancel": "キャンセル"
+    },
+    "dataSource": "盤面データソース",
+    "messages": {
+      "obstaclesConfirmed": "障害物の位置が確認されました！宝物の確率が表示されます。マスをクリックして実際に見つけた宝物を入力できます",
+      "allObstaclesConfirmed": "すべての障害物の位置が確定しました！宝物の確率が表示されます。マスをクリックして実際に見つけた宝物を入力できます",
+      "autoFilled": "${count} 個の確定した障害物の位置を自動で埋めました",
+      "maxClicksReached": "最大クリック数に達しました！",
+      "cannotModifyCell": "このマスは変更できません！",
+      "cellOccupied": "このマスはすでに使用されています！",
+      "foxLimit": "キツネは1マスしか配置できません！",
+      "swordLimit": "剣は最大6マスまで配置できます！",
+      "chestLimit": "宝箱は最大4マスまで配置できます！",
+      "errorFoxCount": "エラー：キツネは0または1マスのみです！",
+      "errorSwordCount": "エラー：剣は最大6マスまでです！",
+      "errorSwordShape": "エラー：6マスの剣は2x3または3x2の形を作る必要があります！",
+      "errorChestCount": "エラー：宝箱は最大4マスまでです！",
+      "errorChestShape": "エラー：4マスの宝箱は2x2の形を作る必要があります！"
+    }
+  },
+  "en": {
+    "pageTitle": "Faux Hollows Foxes Calculator - FF14.tw",
+    "metaDescription": "Calculate optimal click strategy for FF14 Faux Hollows Foxes event",
+    "title": "Faux Hollows Foxes Calculator",
+    "hint": "💡 Tip: Click two cells to set as obstacles first, the system will automatically determine and fill the remaining obstacle positions",
+    "gameInfo": {
+      "remainingClicks": "Remaining Clicks",
+      "matchingBoards": "Matching Boards",
+      "unit": "types"
+    },
+    "buttons": {
+      "reset": "Reset Game",
+      "undo": "Undo",
+      "showProbabilities": "Show Probabilities",
+      "hideProbabilities": "Hide Probabilities",
+      "autoCalculate": "Calculate Best Strategy"
+    },
+    "result": {
+      "title": "Game Results",
+      "finalScore": "Final Score"
+    },
+    "popup": {
+      "title": "Select Cell Type",
+      "obstacle": "🚫 Obstacle",
+      "sword": "⚔️ Sword (2x3)",
+      "chest": "📦 Chest (2x2)",
+      "fox": "🦊 Fox (1x1)",
+      "empty": "✅ Empty",
+      "clear": "🗑️ Clear",
+      "cancel": "Cancel"
+    },
+    "dataSource": "Board Data Source",
+    "messages": {
+      "obstaclesConfirmed": "Obstacle positions confirmed! Now showing treasure probabilities, click cells to fill in actual treasures found",
+      "allObstaclesConfirmed": "All obstacle positions determined! Now showing treasure probabilities, click cells to fill in actual treasures found",
+      "autoFilled": "Auto-filled ${count} confirmed obstacle positions",
+      "maxClicksReached": "Maximum clicks reached!",
+      "cannotModifyCell": "This cell cannot be modified!",
+      "cellOccupied": "This cell is already occupied!",
+      "foxLimit": "Fox can only be placed on 1 cell!",
+      "swordLimit": "Sword can be placed on maximum 6 cells!",
+      "chestLimit": "Chest can be placed on maximum 4 cells!",
+      "errorFoxCount": "Error: Fox can only be 0 or 1 cell!",
+      "errorSwordCount": "Error: Sword can be maximum 6 cells!",
+      "errorSwordShape": "Error: 6 sword cells must form a 2x3 or 3x2 shape!",
+      "errorChestCount": "Error: Chest can be maximum 4 cells!",
+      "errorChestShape": "Error: 4 chest cells must form a 2x2 shape!"
+    }
+  }
+}

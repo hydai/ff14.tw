@@ -1,0 +1,107 @@
+{
+  "zh-TW": {
+    "pageTitle": "修改紀錄 - FF14.tw",
+    "metaDescription": "FF14.tw 網站功能更新與修改紀錄",
+    "title": "修改紀錄",
+    "subtitle": "記錄 FF14.tw 的功能更新與改進",
+    "toc": {
+      "title": "快速導覽"
+    },
+    "tags": {
+      "new": "新增",
+      "fix": "修正",
+      "update": "更新",
+      "optimize": "優化",
+      "remove": "移除"
+    },
+    "months": {
+      "january": "1月",
+      "february": "2月",
+      "march": "3月",
+      "april": "4月",
+      "may": "5月",
+      "june": "6月",
+      "july": "7月",
+      "august": "8月",
+      "september": "9月",
+      "october": "10月",
+      "november": "11月",
+      "december": "12月"
+    },
+    "dateFormat": {
+      "year": "年",
+      "month": "月",
+      "day": "日"
+    }
+  },
+  "ja": {
+    "pageTitle": "更新履歴 - FF14.tw",
+    "metaDescription": "FF14.twウェブサイトの機能更新と変更履歴",
+    "title": "更新履歴",
+    "subtitle": "FF14.twの機能更新と改善の記録",
+    "toc": {
+      "title": "クイックナビゲーション"
+    },
+    "tags": {
+      "new": "新規",
+      "fix": "修正",
+      "update": "更新",
+      "optimize": "最適化",
+      "remove": "削除"
+    },
+    "months": {
+      "january": "1月",
+      "february": "2月",
+      "march": "3月",
+      "april": "4月",
+      "may": "5月",
+      "june": "6月",
+      "july": "7月",
+      "august": "8月",
+      "september": "9月",
+      "october": "10月",
+      "november": "11月",
+      "december": "12月"
+    },
+    "dateFormat": {
+      "year": "年",
+      "month": "月",
+      "day": "日"
+    }
+  },
+  "en": {
+    "pageTitle": "Changelog - FF14.tw",
+    "metaDescription": "FF14.tw website feature updates and changelog",
+    "title": "Changelog",
+    "subtitle": "Recording FF14.tw's feature updates and improvements",
+    "toc": {
+      "title": "Quick Navigation"
+    },
+    "tags": {
+      "new": "New",
+      "fix": "Fix",
+      "update": "Update",
+      "optimize": "Optimize",
+      "remove": "Remove"
+    },
+    "months": {
+      "january": "January",
+      "february": "February",
+      "march": "March",
+      "april": "April",
+      "may": "May",
+      "june": "June",
+      "july": "July",
+      "august": "August",
+      "september": "September",
+      "october": "October",
+      "november": "November",
+      "december": "December"
+    },
+    "dateFormat": {
+      "year": "",
+      "month": "",
+      "day": ""
+    }
+  }
+}

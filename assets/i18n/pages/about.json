@@ -1,0 +1,176 @@
+{
+  "zh-TW": {
+    "pageTitle": "關於我們 - FF14.tw",
+    "metaDescription": "了解 FF14.tw 的理念與貢獻者們",
+    "hero": {
+      "title": "關於 FF14.tw",
+      "subtitle": "為台灣冒險者打造的 Final Fantasy XIV 工具集合"
+    },
+    "sections": {
+      "mission": {
+        "title": "🎯 我們的理念",
+        "content": "FF14.tw 致力於為台灣的 Final Fantasy XIV 玩家提供實用的遊戲工具。我們相信好的工具能夠提升遊戲體驗，讓冒險者們能夠更專注於享受艾歐澤亞的冒險旅程。"
+      },
+      "features": {
+        "title": "✨ 特色功能",
+        "items": {
+          "opensource": "完全開源：所有程式碼都在 GitHub 上公開，歡迎貢獻",
+          "free": "永久免費：不含廣告，無需付費，純粹為了社群",
+          "responsive": "響應式設計：支援手機、平板、電腦各種裝置",
+          "multilingual": "多語言支援：提供繁體中文、日本語、English"
+        }
+      },
+      "technology": {
+        "title": "🛠️ 技術架構",
+        "content": "本站採用純前端技術開發，不需要後端伺服器，確保快速載入與隱私安全：",
+        "items": {
+          "vanilla": "Vanilla JavaScript - 無框架依賴，輕量快速",
+          "responsive": "響應式 CSS - 適配各種螢幕尺寸",
+          "github": "GitHub Pages - 穩定可靠的託管服務",
+          "api": "第三方 API 整合 - 即時資料查詢"
+        }
+      },
+      "contributors": {
+        "title": "👥 貢獻者",
+        "leadDeveloper": "主要開發者",
+        "leadDeveloperName": "hydai",
+        "leadDeveloperDesc": "網站架構設計與主要功能開發",
+        "specialThanks": "特別感謝",
+        "community": "FF14 台灣社群 - 提供寶貴的意見與回饋",
+        "testers": "測試玩家們 - 協助找出問題並提供改進建議",
+        "translators": "翻譯貢獻者 - 協助多語言化工作"
+      },
+      "contact": {
+        "title": "📬 聯絡我們",
+        "github": "GitHub Issues - 錯誤回報與功能建議",
+        "email": "電子郵件",
+        "discord": "Discord 社群 - 即時討論與交流"
+      },
+      "support": {
+        "title": "💖 支持我們",
+        "content": "如果您喜歡這個網站，可以透過以下方式支持我們：",
+        "star": "在 GitHub 上給予星星 ⭐",
+        "share": "分享給其他玩家",
+        "contribute": "貢獻程式碼或翻譯",
+        "feedback": "提供意見與建議",
+        "contributeBox": "有興趣的話可以到 ${link} 看看！"
+      }
+    }
+  },
+  "ja": {
+    "pageTitle": "私たちについて - FF14.tw",
+    "metaDescription": "FF14.twの理念と貢献者について",
+    "hero": {
+      "title": "FF14.twについて",
+      "subtitle": "台湾の冒険者のためのFinal Fantasy XIVツールコレクション"
+    },
+    "sections": {
+      "mission": {
+        "title": "🎯 私たちの理念",
+        "content": "FF14.twは台湾のFinal Fantasy XIVプレイヤーに実用的なゲームツールを提供することに専念しています。良いツールがゲーム体験を向上させ、冒険者がエオルゼアの冒険をより楽しめると信じています。"
+      },
+      "features": {
+        "title": "✨ 特徴",
+        "items": {
+          "opensource": "完全オープンソース：すべてのコードはGitHubで公開、貢献歓迎",
+          "free": "永久無料：広告なし、課金なし、純粋にコミュニティのため",
+          "responsive": "レスポンシブデザイン：スマホ、タブレット、PCに対応",
+          "multilingual": "多言語対応：繁体字中国語、日本語、英語をサポート"
+        }
+      },
+      "technology": {
+        "title": "🛠️ 技術スタック",
+        "content": "このサイトは純粋なフロントエンド技術で開発され、バックエンドサーバーは不要で、高速読み込みとプライバシーセキュリティを確保します：",
+        "items": {
+          "vanilla": "Vanilla JavaScript - フレームワーク依存なし、軽量で高速",
+          "responsive": "レスポンシブCSS - あらゆる画面サイズに対応",
+          "github": "GitHub Pages - 安定した信頼性の高いホスティングサービス",
+          "api": "サードパーティAPI統合 - リアルタイムデータ検索"
+        }
+      },
+      "contributors": {
+        "title": "👥 貢献者",
+        "leadDeveloper": "主要開発者",
+        "leadDeveloperName": "hydai",
+        "leadDeveloperDesc": "ウェブサイトアーキテクチャ設計と主要機能開発",
+        "specialThanks": "特別な感謝",
+        "community": "FF14台湾コミュニティ - 貴重な意見とフィードバックの提供",
+        "testers": "テストプレイヤー - 問題の発見と改善提案への協力",
+        "translators": "翻訳貢献者 - 多言語化作業への協力"
+      },
+      "contact": {
+        "title": "📬 お問い合わせ",
+        "github": "GitHub Issues - バグ報告と機能提案",
+        "email": "メール",
+        "discord": "Discordコミュニティ - リアルタイムディスカッション"
+      },
+      "support": {
+        "title": "💖 サポート",
+        "content": "このウェブサイトが気に入ったら、以下の方法でサポートしてください：",
+        "star": "GitHubでスターを付ける ⭐",
+        "share": "他のプレイヤーと共有",
+        "contribute": "コードや翻訳を貢献",
+        "feedback": "意見や提案を提供",
+        "contributeBox": "興味があれば${link}をご覧ください！"
+      }
+    }
+  },
+  "en": {
+    "pageTitle": "About Us - FF14.tw",
+    "metaDescription": "Learn about FF14.tw's mission and contributors",
+    "hero": {
+      "title": "About FF14.tw",
+      "subtitle": "A Final Fantasy XIV tool collection for Taiwan adventurers"
+    },
+    "sections": {
+      "mission": {
+        "title": "🎯 Our Mission",
+        "content": "FF14.tw is dedicated to providing practical game tools for Final Fantasy XIV players in Taiwan. We believe good tools can enhance the gaming experience, allowing adventurers to focus more on enjoying their journey in Eorzea."
+      },
+      "features": {
+        "title": "✨ Features",
+        "items": {
+          "opensource": "Fully Open Source: All code is public on GitHub, contributions welcome",
+          "free": "Forever Free: No ads, no payments, purely for the community",
+          "responsive": "Responsive Design: Supports phones, tablets, and computers",
+          "multilingual": "Multi-language Support: Traditional Chinese, Japanese, English"
+        }
+      },
+      "technology": {
+        "title": "🛠️ Technology Stack",
+        "content": "This site is developed with pure frontend technology, requiring no backend server, ensuring fast loading and privacy security:",
+        "items": {
+          "vanilla": "Vanilla JavaScript - No framework dependencies, lightweight and fast",
+          "responsive": "Responsive CSS - Adapts to all screen sizes",
+          "github": "GitHub Pages - Stable and reliable hosting service",
+          "api": "Third-party API Integration - Real-time data queries"
+        }
+      },
+      "contributors": {
+        "title": "👥 Contributors",
+        "leadDeveloper": "Lead Developer",
+        "leadDeveloperName": "hydai",
+        "leadDeveloperDesc": "Website architecture design and main feature development",
+        "specialThanks": "Special Thanks",
+        "community": "FF14 Taiwan Community - Providing valuable feedback and suggestions",
+        "testers": "Test Players - Helping find issues and provide improvement suggestions",
+        "translators": "Translation Contributors - Assisting with localization work"
+      },
+      "contact": {
+        "title": "📬 Contact Us",
+        "github": "GitHub Issues - Bug reports and feature requests",
+        "email": "Email",
+        "discord": "Discord Community - Real-time discussion and exchange"
+      },
+      "support": {
+        "title": "💖 Support Us",
+        "content": "If you like this website, you can support us through:",
+        "star": "Give a star on GitHub ⭐",
+        "share": "Share with other players",
+        "contribute": "Contribute code or translations",
+        "feedback": "Provide feedback and suggestions",
+        "contributeBox": "If interested, check out ${link}!"
+      }
+    }
+  }
+}

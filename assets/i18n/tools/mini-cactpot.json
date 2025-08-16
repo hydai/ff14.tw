@@ -1,0 +1,113 @@
+{
+  "zh-TW": {
+    "pageTitle": "Mini Cactpot 計算機 - FF14.tw",
+    "metaDescription": "FF14 Mini Cactpot 最佳策略計算工具，分析期望值並推薦最佳選擇",
+    "title": "Mini Cactpot 計算機",
+    "description": "點選四個格子並輸入對應數字 (1-9)，期望值將自動顯示在對應位置並推薦最佳線條",
+    "gridInfo": {
+      "selected": "已選擇",
+      "cells": "個格子"
+    },
+    "buttons": {
+      "undo": "回到上一步",
+      "reset": "重置"
+    },
+    "bestChoice": {
+      "title": "🏆 最佳選擇",
+      "line": "選擇${lineName}",
+      "expectedValue": "期望值",
+      "mgp": "MGP"
+    },
+    "lines": {
+      "topRow": "上橫列",
+      "middleRow": "中橫列",
+      "bottomRow": "下橫列",
+      "leftColumn": "左直行",
+      "middleColumn": "中直行",
+      "rightColumn": "右直行",
+      "leftDiagonal": "左斜線",
+      "rightDiagonal": "右斜線"
+    },
+    "messages": {
+      "maxCells": "最多只能選擇 4 個格子",
+      "alreadyRevealed": "該格子已經顯示數字",
+      "invalidInput": "請輸入 1-9 的數字",
+      "duplicateNumber": "數字 ${num} 已經存在",
+      "selectFourCells": "請先選擇 4 個格子"
+    }
+  },
+  "ja": {
+    "pageTitle": "ミニ・カクタポット計算機 - FF14.tw",
+    "metaDescription": "FF14 ミニ・カクタポット最適戦略計算ツール、期待値を分析して最適な選択を推奨",
+    "title": "ミニ・カクタポット計算機",
+    "description": "4つのマスを選択して対応する数字（1-9）を入力すると、期待値が自動的に表示され、最適なラインを推奨します",
+    "gridInfo": {
+      "selected": "選択済み",
+      "cells": "マス"
+    },
+    "buttons": {
+      "undo": "元に戻す",
+      "reset": "リセット"
+    },
+    "bestChoice": {
+      "title": "🏆 最適な選択",
+      "line": "${lineName}を選択",
+      "expectedValue": "期待値",
+      "mgp": "MGP"
+    },
+    "lines": {
+      "topRow": "上横列",
+      "middleRow": "中横列",
+      "bottomRow": "下横列",
+      "leftColumn": "左縦列",
+      "middleColumn": "中縦列",
+      "rightColumn": "右縦列",
+      "leftDiagonal": "左斜線",
+      "rightDiagonal": "右斜線"
+    },
+    "messages": {
+      "maxCells": "最大4つのマスまで選択できます",
+      "alreadyRevealed": "このマスはすでに数字が表示されています",
+      "invalidInput": "1-9の数字を入力してください",
+      "duplicateNumber": "数字 ${num} はすでに存在します",
+      "selectFourCells": "まず4つのマスを選択してください"
+    }
+  },
+  "en": {
+    "pageTitle": "Mini Cactpot Calculator - FF14.tw",
+    "metaDescription": "FF14 Mini Cactpot optimal strategy calculator, analyzes expected values and recommends best choices",
+    "title": "Mini Cactpot Calculator",
+    "description": "Select four cells and enter corresponding numbers (1-9), expected values will be displayed automatically with best line recommendation",
+    "gridInfo": {
+      "selected": "Selected",
+      "cells": "cells"
+    },
+    "buttons": {
+      "undo": "Undo",
+      "reset": "Reset"
+    },
+    "bestChoice": {
+      "title": "🏆 Best Choice",
+      "line": "Choose ${lineName}",
+      "expectedValue": "Expected Value",
+      "mgp": "MGP"
+    },
+    "lines": {
+      "topRow": "Top Row",
+      "middleRow": "Middle Row",
+      "bottomRow": "Bottom Row",
+      "leftColumn": "Left Column",
+      "middleColumn": "Middle Column",
+      "rightColumn": "Right Column",
+      "leftDiagonal": "Left Diagonal",
+      "rightDiagonal": "Right Diagonal"
+    },
+    "messages": {
+      "maxCells": "You can only select up to 4 cells",
+      "alreadyRevealed": "This cell already has a number",
+      "invalidInput": "Please enter a number from 1-9",
+      "duplicateNumber": "Number ${num} already exists",
+      "selectFourCells": "Please select 4 cells first"
+    }
+  }
+}

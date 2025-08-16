@@ -1471,6 +1471,28 @@ class TreasureMapFinder {
         this.updateCardButtons();
         this.renderMyList();
     }
+    
+    updateMessages() {
+        // Update any dynamic text when language changes
+        // Most text is handled by HTML i18n attributes
+        // Only need to update dynamically generated content if any
+        
+        // Update result count
+        this.updateResultCount();
+        
+        // Re-render the treasure grid if needed
+        if (this.filteredMaps.length > 0) {
+            this.currentDisplayCount = 0;
+            this.displayMaps();
+        }
+        
+        // Update any error messages
+        const errorDiv = this.elements.treasureGrid.querySelector('.error-message');
+        if (errorDiv) {
+            const msg = window.i18n?.t('messages.error') || '載入寶圖資料失敗，請重新整理頁面再試。';
+            this.showError(msg);
+        }
+    }
 }
 
 // 路線計算器類別
