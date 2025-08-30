@@ -79,6 +79,21 @@
             "mehwahjaxas",
             "xagjhalyokawak"
           ]
+        },
+        {
+          "id": "livingmemory",
+          "names": {
+            "en": "Living Memory",
+            "zh": "永生記憶",
+            "ja": "リビングメモリー"
+          },
+          "normalizedName": "livingmemory",
+          "filePrefix": "livingmemory",
+          "aetherytes": [
+            "electrope_strike",
+            "leynode_lemniscate",
+            "leynode_mnemo"
+          ]
         }
       ]
     },

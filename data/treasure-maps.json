@@ -84,6 +84,11 @@
       "id": "g17",
       "name": "G17 獰豹革地圖",
       "minLevel": 90
+    },
+    {
+      "id": "g18",
+      "name": "G18 巨獸革地圖",
+      "minLevel": 100
     }
   ],
   "zones": [
@@ -2614,6 +2619,94 @@
         "x": 37,
         "y": 17,
         "z": 0
+      }
+    },
+    {
+      "id": "tm_226",
+      "level": "g18",
+      "zoneId": "livingmemory",
+      "index": 1,
+      "coords": {
+        "x": 9.3,
+        "y": 10.7,
+        "z": 0.1
+      }
+    },
+    {
+      "id": "tm_227",
+      "level": "g18",
+      "zoneId": "livingmemory",
+      "index": 2,
+      "coords": {
+        "x": 10.4,
+        "y": 36.0,
+        "z": 0.1
+      }
+    },
+    {
+      "id": "tm_228",
+      "level": "g18",
+      "zoneId": "livingmemory",
+      "index": 3,
+      "coords": {
+        "x": 18.5,
+        "y": 15.8,
+        "z": 0.5
+      }
+    },
+    {
+      "id": "tm_229",
+      "level": "g18",
+      "zoneId": "livingmemory",
+      "index": 4,
+      "coords": {
+        "x": 20.2,
+        "y": 23.0,
+        "z": 0.5
+      }
+    },
+    {
+      "id": "tm_230",
+      "level": "g18",
+      "zoneId": "livingmemory",
+      "index": 5,
+      "coords": {
+        "x": 25.0,
+        "y": 6.9,
+        "z": 0.5
+      }
+    },
+    {
+      "id": "tm_231",
+      "level": "g18",
+      "zoneId": "livingmemory",
+      "index": 6,
+      "coords": {
+        "x": 31.0,
+        "y": 18.1,
+        "z": 0.4
+      }
+    },
+    {
+      "id": "tm_232",
+      "level": "g18",
+      "zoneId": "livingmemory",
+      "index": 7,
+      "coords": {
+        "x": 38.5,
+        "y": 28.1,
+        "z": 0.6
+      }
+    },
+    {
+      "id": "tm_233",
+      "level": "g18",
+      "zoneId": "livingmemory",
+      "index": 8,
+      "coords": {
+        "x": 35.0,
+        "y": 35.3,
+        "z": 0.2
       }
     }
   ]
