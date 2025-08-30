@@ -503,7 +503,7 @@ class TreasureMapFinder {
             'ultimathule': ['reah_tahra', 'base_omicron', 'ostrakon_deka_hexi']
         };
         
-        // Tural 地區的特殊傳送點對應表 (G17)
+        // Tural 地區的特殊傳送點對應表 (G17 & G18)
         const turalZoneAetherytes = {
             'urqopacha': ['wachunpelo', 'worqor_zormor'],
             'kozama\'uka': ['ok_hanu', 'earthenshire', 'many_fires', 'dock_poga'],
@@ -512,7 +512,9 @@ class TreasureMapFinder {
             'yaktel': ['iq_br_aak', 'mamook'],
             'shaaloani': ['hhusatahwi', 'meyhane', 'sheshenewezi_springs'],
             'heritage_found': ['the_outskirts', 'electrope_strike', 'yyasulani_station'],
-            'heritagefound': ['the_outskirts', 'electrope_strike', 'yyasulani_station']
+            'heritagefound': ['the_outskirts', 'electrope_strike', 'yyasulani_station'],
+            'living_memory': ['leynode_mnemes', 'leynode_aero', 'leynode_pyro'],
+            'livingmemory': ['leynode_mnemes', 'leynode_aero', 'leynode_pyro']
         };
         
         // 建立地區名稱對應表

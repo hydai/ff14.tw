@@ -593,6 +593,161 @@
         },
         "coords": { "x": 32, "y": 26, "z": 0 }
       }
+    ],
+    "tural": [
+      {
+        "id": "tuliyollal",
+        "name": {
+          "zh": "圖萊伊約拉爾",
+          "ja": "トライヨラ",
+          "en": "Tuliyollal"
+        },
+        "coords": { "x": 13, "y": 21, "z": 0 }
+      },
+      {
+        "id": "wachunpelo",
+        "name": {
+          "zh": "瓦群佩洛",
+          "ja": "ワチュンペロ",
+          "en": "Wachunpelo"
+        },
+        "coords": { "x": 30, "y": 22, "z": 0 }
+      },
+      {
+        "id": "worqor_zormor",
+        "name": {
+          "zh": "沃克爾·佐莫爾",
+          "ja": "ウォルコルゾルモル",
+          "en": "Worqor Zormor"
+        },
+        "coords": { "x": 27, "y": 15, "z": 0 }
+      },
+      {
+        "id": "many_fires",
+        "name": {
+          "zh": "朋友之燈火",
+          "ja": "朋友の灯火",
+          "en": "Many Fires"
+        },
+        "coords": { "x": 32, "y": 26, "z": 0 }
+      },
+      {
+        "id": "earthenshire",
+        "name": {
+          "zh": "土陶郡",
+          "ja": "アースンシャイア",
+          "en": "Earthenshire"
+        },
+        "coords": { "x": 12, "y": 28, "z": 0 }
+      },
+      {
+        "id": "dock_poga",
+        "name": {
+          "zh": "波加停船所",
+          "ja": "ポガ停船所",
+          "en": "Dock Poga"
+        },
+        "coords": { "x": 37, "y": 17, "z": 0 }
+      },
+      {
+        "id": "iq_br_aak",
+        "name": {
+          "zh": "伊克布拉賈",
+          "ja": "イクブラージャ",
+          "en": "Iq Br'aak"
+        },
+        "coords": { "x": 14, "y": 13, "z": 0 }
+      },
+      {
+        "id": "mamook",
+        "name": {
+          "zh": "馬穆克",
+          "ja": "マムーク",
+          "en": "Mamook"
+        },
+        "coords": { "x": 36, "y": 32, "z": 0 }
+      },
+      {
+        "id": "meyhane",
+        "name": {
+          "zh": "梅瓦海索恩",
+          "ja": "メワヘイゾーン",
+          "en": "Meyhane"
+        },
+        "coords": { "x": 28, "y": 10, "z": 0 }
+      },
+      {
+        "id": "sheshenewezi_springs",
+        "name": {
+          "zh": "謝謝內青燐泉",
+          "ja": "シェシェネ青燐泉",
+          "en": "Sheshenewezi Springs"
+        },
+        "coords": { "x": 16, "y": 19, "z": 0 }
+      },
+      {
+        "id": "hhusatahwi",
+        "name": {
+          "zh": "胡薩塔維宿場町",
+          "ja": "フーサタイ宿場町",
+          "en": "Hhusatahwi"
+        },
+        "coords": { "x": 29, "y": 31, "z": 0 }
+      },
+      {
+        "id": "the_outskirts",
+        "name": {
+          "zh": "郊外",
+          "ja": "アウトスカーツ",
+          "en": "The Outskirts"
+        },
+        "coords": { "x": 17, "y": 10, "z": 0 }
+      },
+      {
+        "id": "electrope_strike",
+        "name": {
+          "zh": "電氣石採石場",
+          "ja": "エレクトロープ採石場",
+          "en": "Electrope Strike"
+        },
+        "coords": { "x": 17, "y": 24, "z": 0 }
+      },
+      {
+        "id": "yyasulani_station",
+        "name": {
+          "zh": "雅斯拉尼站",
+          "ja": "ヤースラニ駅",
+          "en": "Yyasulani Station"
+        },
+        "coords": { "x": 32, "y": 26, "z": 0 }
+      },
+      {
+        "id": "leynode_mnemes",
+        "name": {
+          "zh": "靈脈·記憶",
+          "ja": "レイノード・メモリス",
+          "en": "Leynode Mnemes"
+        },
+        "coords": { "x": 21.4, "y": 37.4, "z": 0 }
+      },
+      {
+        "id": "leynode_aero",
+        "name": {
+          "zh": "靈脈·風",
+          "ja": "レイノード・ウィンド",
+          "en": "Leynode Aero"
+        },
+        "coords": { "x": 16.3, "y": 13.5, "z": 0 }
+      },
+      {
+        "id": "leynode_pyro",
+        "name": {
+          "zh": "靈脈·火",
+          "ja": "レイノード・ファイア",
+          "en": "Leynode Pyro"
+        },
+        "coords": { "x": 34.6, "y": 15.8, "z": 0 }
+      }
     ]
   }
 }
