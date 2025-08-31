@@ -468,134 +468,6 @@
     ],
     "tural": [
       {
-        "id": "wachunpelo",
-        "name": {
-          "zh": "瓦春佩洛",
-          "ja": "ワチュン・ペロ",
-          "en": "Wachunpelo"
-        },
-        "coords": { "x": 28, "y": 13, "z": 0 }
-      },
-      {
-        "id": "worqor_zormor",
-        "name": {
-          "zh": "沃拉的殘響",
-          "ja": "ウォーラーの残響",
-          "en": "Worqor Zormor"
-        },
-        "coords": { "x": 31, "y": 34, "z": 0 }
-      },
-      {
-        "id": "ok_hanu",
-        "name": {
-          "zh": "奧克哈努",
-          "ja": "オック・ハヌ",
-          "en": "Ok' Hanu"
-        },
-        "coords": { "x": 18, "y": 12, "z": 0 }
-      },
-      {
-        "id": "earthenshire",
-        "name": {
-          "zh": "土陶郡",
-          "ja": "アースンシャイア",
-          "en": "Earthenshire"
-        },
-        "coords": { "x": 12, "y": 28, "z": 0 }
-      },
-      {
-        "id": "many_fires",
-        "name": {
-          "zh": "朋友之燈火",
-          "ja": "朋友の灯火",
-          "en": "Many Fires"
-        },
-        "coords": { "x": 32, "y": 26, "z": 0 }
-      },
-      {
-        "id": "dock_poga",
-        "name": {
-          "zh": "波加停船所",
-          "ja": "ポガ停船所",
-          "en": "Dock Poga"
-        },
-        "coords": { "x": 37, "y": 17, "z": 0 }
-      },
-      {
-        "id": "iq_br_aak",
-        "name": {
-          "zh": "伊克布拉賈",
-          "ja": "イクブラージャ",
-          "en": "Iq Br'aak"
-        },
-        "coords": { "x": 14, "y": 13, "z": 0 }
-      },
-      {
-        "id": "mamook",
-        "name": {
-          "zh": "馬穆克",
-          "ja": "マムーク",
-          "en": "Mamook"
-        },
-        "coords": { "x": 36, "y": 32, "z": 0 }
-      },
-      {
-        "id": "meyhane",
-        "name": {
-          "zh": "梅瓦海索恩",
-          "ja": "メワヘイゾーン",
-          "en": "Meyhane"
-        },
-        "coords": { "x": 28, "y": 10, "z": 0 }
-      },
-      {
-        "id": "sheshenewezi_springs",
-        "name": {
-          "zh": "謝謝內青燐泉",
-          "ja": "シェシェネ青燐泉",
-          "en": "Sheshenewezi Springs"
-        },
-        "coords": { "x": 16, "y": 19, "z": 0 }
-      },
-      {
-        "id": "hhusatahwi",
-        "name": {
-          "zh": "胡薩塔維宿場町",
-          "ja": "フーサタイ宿場町",
-          "en": "Hhusatahwi"
-        },
-        "coords": { "x": 29, "y": 31, "z": 0 }
-      },
-      {
-        "id": "the_outskirts",
-        "name": {
-          "zh": "郊外",
-          "ja": "アウトスカーツ",
-          "en": "The Outskirts"
-        },
-        "coords": { "x": 17, "y": 10, "z": 0 }
-      },
-      {
-        "id": "electrope_strike",
-        "name": {
-          "zh": "電氣石採石場",
-          "ja": "エレクトロープ採石場",
-          "en": "Electrope Strike"
-        },
-        "coords": { "x": 17, "y": 24, "z": 0 }
-      },
-      {
-        "id": "yyasulani_station",
-        "name": {
-          "zh": "雅斯拉尼站",
-          "ja": "ヤースラニ駅",
-          "en": "Yyasulani Station"
-        },
-        "coords": { "x": 32, "y": 26, "z": 0 }
-      }
-    ],
-    "tural": [
-      {
         "id": "tuliyollal",
         "name": {
           "zh": "圖萊伊約拉爾",
@@ -611,7 +483,7 @@
           "ja": "ワチュンペロ",
           "en": "Wachunpelo"
         },
-        "coords": { "x": 30, "y": 22, "z": 0 }
+        "coords": { "x": 28.1, "y": 13.1, "z": 0 }
       },
       {
         "id": "worqor_zormor",
@@ -620,7 +492,16 @@
           "ja": "ウォルコルゾルモル",
           "en": "Worqor Zormor"
         },
-        "coords": { "x": 27, "y": 15, "z": 0 }
+        "coords": { "x": 30.8, "y": 34.1, "z": 0 }
+      },
+      {
+        "id": "ok_hanu",
+        "name": {
+          "zh": "奧克哈努",
+          "ja": "オック・ハヌ",
+          "en": "Ok' Hanu"
+        },
+        "coords": { "x": 18.0, "y": 11.9, "z": 0 }
       },
       {
         "id": "many_fires",
@@ -629,7 +510,7 @@
           "ja": "朋友の灯火",
           "en": "Many Fires"
         },
-        "coords": { "x": 32, "y": 26, "z": 0 }
+        "coords": { "x": 32.4, "y": 25.5, "z": 0 }
       },
       {
         "id": "earthenshire",
@@ -638,7 +519,7 @@
           "ja": "アースンシャイア",
           "en": "Earthenshire"
         },
-        "coords": { "x": 12, "y": 28, "z": 0 }
+        "coords": { "x": 11.8, "y": 27.6, "z": 0 }
       },
       {
         "id": "dock_poga",
@@ -647,7 +528,7 @@
           "ja": "ポガ停船所",
           "en": "Dock Poga"
         },
-        "coords": { "x": 37, "y": 17, "z": 0 }
+        "coords": { "x": 37.0, "y": 16.8, "z": 0 }
       },
       {
         "id": "iq_br_aak",
@@ -656,7 +537,7 @@
           "ja": "イクブラージャ",
           "en": "Iq Br'aak"
         },
-        "coords": { "x": 14, "y": 13, "z": 0 }
+        "coords": { "x": 13.4, "y": 12.8, "z": 0 }
       },
       {
         "id": "mamook",
@@ -665,7 +546,7 @@
           "ja": "マムーク",
           "en": "Mamook"
         },
-        "coords": { "x": 36, "y": 32, "z": 0 }
+        "coords": { "x": 35.9, "y": 32.1, "z": 0 }
       },
       {
         "id": "meyhane",
@@ -674,7 +555,7 @@
           "ja": "メワヘイゾーン",
           "en": "Meyhane"
         },
-        "coords": { "x": 28, "y": 10, "z": 0 }
+        "coords": { "x": 27.7, "y": 10.0, "z": 0 }
       },
       {
         "id": "sheshenewezi_springs",
@@ -683,7 +564,7 @@
           "ja": "シェシェネ青燐泉",
           "en": "Sheshenewezi Springs"
         },
-        "coords": { "x": 16, "y": 19, "z": 0 }
+        "coords": { "x": 15.4, "y": 19.4, "z": 0 }
       },
       {
         "id": "hhusatahwi",
@@ -692,7 +573,7 @@
           "ja": "フーサタイ宿場町",
           "en": "Hhusatahwi"
         },
-        "coords": { "x": 29, "y": 31, "z": 0 }
+        "coords": { "x": 29.1, "y": 30.8, "z": 0 }
       },
       {
         "id": "the_outskirts",
@@ -701,7 +582,7 @@
           "ja": "アウトスカーツ",
           "en": "The Outskirts"
         },
-        "coords": { "x": 17, "y": 10, "z": 0 }
+        "coords": { "x": 17.1, "y": 9.8, "z": 0 }
       },
       {
         "id": "electrope_strike",
@@ -710,7 +591,7 @@
           "ja": "エレクトロープ採石場",
           "en": "Electrope Strike"
         },
-        "coords": { "x": 17, "y": 24, "z": 0 }
+        "coords": { "x": 16.9, "y": 23.7, "z": 0 }
       },
       {
         "id": "yyasulani_station",
@@ -719,7 +600,7 @@
           "ja": "ヤースラニ駅",
           "en": "Yyasulani Station"
         },
-        "coords": { "x": 32, "y": 26, "z": 0 }
+        "coords": { "x": 31.5, "y": 25.5, "z": 0 }
       },
       {
         "id": "leynode_mnemes",
