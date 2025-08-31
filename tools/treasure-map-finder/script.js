@@ -85,12 +85,8 @@ class TreasureMapFinder {
             }
             this.data = await response.json();
             
-            // 暫時隱藏 G8, G10, G12 三種類型的藏寶圖
-            const hiddenLevels = ['g8', 'g10', 'g12'];
-            
-            // 為每個寶圖添加衍生資料，並過濾掉隱藏的等級
+            // 為每個寶圖添加衍生資料
             this.maps = this.data.maps
-                .filter(map => !hiddenLevels.includes(map.level))
                 .map(map => {
                     const zoneNames = zoneManager.getZoneNames(map.zoneId);
                     const levelInfo = this.data.mapLevels.find(level => level.id === map.level);
