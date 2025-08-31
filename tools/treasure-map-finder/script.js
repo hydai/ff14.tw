@@ -85,20 +85,25 @@ class TreasureMapFinder {
             }
             this.data = await response.json();
             
-            // 為每個寶圖添加衍生資料
-            this.maps = this.data.maps.map(map => {
-                const zoneNames = zoneManager.getZoneNames(map.zoneId);
-                const levelInfo = this.data.mapLevels.find(level => level.id === map.level);
-                
-                return {
-                    ...map,
-                    zone: zoneNames.en,
-                    zoneName: zoneNames.zh,
-                    levelName: levelInfo ? levelInfo.name : map.level,
-                    thumbnail: `images/treasures/${zoneManager.generateImageFileName(map.level, map.zoneId, map.index)}`,
-                    fullImage: `images/treasures/${zoneManager.generateFullImageFileName(map.level, map.zoneId, map.index)}`
-                };
-            });
+            // 暫時隱藏 G8, G10, G12 三種類型的藏寶圖
+            const hiddenLevels = ['g8', 'g10', 'g12'];
+            
+            // 為每個寶圖添加衍生資料，並過濾掉隱藏的等級
+            this.maps = this.data.maps
+                .filter(map => !hiddenLevels.includes(map.level))
+                .map(map => {
+                    const zoneNames = zoneManager.getZoneNames(map.zoneId);
+                    const levelInfo = this.data.mapLevels.find(level => level.id === map.level);
+                    
+                    return {
+                        ...map,
+                        zone: zoneNames.en,
+                        zoneName: zoneNames.zh,
+                        levelName: levelInfo ? levelInfo.name : map.level,
+                        thumbnail: `images/treasures/${zoneManager.generateImageFileName(map.level, map.zoneId, map.index)}`,
+                        fullImage: `images/treasures/${zoneManager.generateFullImageFileName(map.level, map.zoneId, map.index)}`
+                    };
+                });
         } catch (error) {
             console.error('載入資料失敗:', error);
             throw error;
