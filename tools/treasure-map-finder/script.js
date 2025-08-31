@@ -499,8 +499,8 @@ class TreasureMapFinder {
             'garlemald': ['camp_broken_glass', 'tertium'],
             'mare_lamentorum': ['sinus_lacrimarum', 'bestways_burrow'],
             'marelamentorum': ['sinus_lacrimarum', 'bestways_burrow'],
-            'ultima_thule': ['reah_tahra', 'base_omicron', 'ostrakon_deka_hexi'],
-            'ultimathule': ['reah_tahra', 'base_omicron', 'ostrakon_deka_hexi']
+            'ultima_thule': ['reahs_tahra', 'base_omicron', 'ostrakon_deka_hexi'],
+            'ultimathule': ['reahs_tahra', 'base_omicron', 'ostrakon_deka_hexi']
         };
         
         // Tural 地區的特殊傳送點對應表 (G17 & G18)

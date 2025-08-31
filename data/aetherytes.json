@@ -326,7 +326,7 @@
           "ja": "アルケイオン保管院",
           "en": "The Archeion"
         },
-        "coords": { "x": 30, "y": 12, "z": 0 }
+        "coords": { "x": 30.2, "y": 12.0, "z": 0 }
       },
       {
         "id": "sharlayan_hamlet",
@@ -335,7 +335,7 @@
           "ja": "リトルシャーレアン",
           "en": "Sharlayan Hamlet"
         },
-        "coords": { "x": 22, "y": 21, "z": 0 }
+        "coords": { "x": 21.5, "y": 20.5, "z": 0 }
       },
       {
         "id": "aporia",
@@ -344,7 +344,7 @@
           "ja": "アポリア本部",
           "en": "Aporia"
         },
-        "coords": { "x": 7, "y": 28, "z": 0 }
+        "coords": { "x": 6.9, "y": 27.4, "z": 0 }
       },
       {
         "id": "yedlihmad",
@@ -353,7 +353,7 @@
           "ja": "イェドリマン",
           "en": "Yedlihmad"
         },
-        "coords": { "x": 25, "y": 34, "z": 0 }
+        "coords": { "x": 25.3, "y": 34.2, "z": 0 }
       },
       {
         "id": "great_work",
@@ -362,7 +362,7 @@
           "ja": "デミールの遺烈郷",
           "en": "The Great Work"
         },
-        "coords": { "x": 11, "y": 22, "z": 0 }
+        "coords": { "x": 10.9, "y": 22.1, "z": 0 }
       },
       {
         "id": "palaka_stand",
@@ -371,7 +371,7 @@
           "ja": "パーラカの里",
           "en": "Palaka's Stand"
         },
-        "coords": { "x": 30, "y": 16, "z": 0 }
+        "coords": { "x": 29.6, "y": 16.5, "z": 0 }
       },
       {
         "id": "camp_broken_glass",
@@ -380,7 +380,7 @@
           "ja": "キャンプ・ブロークングラス",
           "en": "Camp Broken Glass"
         },
-        "coords": { "x": 13, "y": 31, "z": 0 }
+        "coords": { "x": 13.2, "y": 31.0, "z": 0 }
       },
       {
         "id": "tertium",
@@ -389,7 +389,7 @@
           "ja": "テルティウム駅",
           "en": "Tertium"
         },
-        "coords": { "x": 32, "y": 18, "z": 0 }
+        "coords": { "x": 31.9, "y": 17.6, "z": 0 }
       },
       {
         "id": "sinus_lacrimarum",
@@ -398,7 +398,7 @@
           "ja": "涙の入江",
           "en": "Sinus Lacrimarum"
         },
-        "coords": { "x": 10, "y": 34, "z": 0 }
+        "coords": { "x": 10.1, "y": 34.6, "z": 0 }
       },
       {
         "id": "bestways_burrow",
@@ -407,7 +407,7 @@
           "ja": "ベストウェイ・バロー",
           "en": "Bestways Burrow"
         },
-        "coords": { "x": 21, "y": 11, "z": 0 }
+        "coords": { "x": 21.5, "y": 11.1, "z": 0 }
       },
       {
         "id": "reahs_tahra",
@@ -416,7 +416,7 @@
           "ja": "リア・ターラ",
           "en": "Reah Tahra"
         },
-        "coords": { "x": 11, "y": 27, "z": 0 }
+        "coords": { "x": 10.6, "y": 26.6, "z": 0 }
       },
       {
         "id": "base_omicron",
@@ -425,7 +425,7 @@
           "ja": "オミクロンベース",
           "en": "Base Omicron"
         },
-        "coords": { "x": 31, "y": 28, "z": 0 }
+        "coords": { "x": 31.2, "y": 27.9, "z": 0 }
       },
       {
         "id": "ostrakon_deka_hexi",
@@ -434,7 +434,7 @@
           "ja": "イーアの里",
           "en": "Ostrakon Deka-hexi"
         },
-        "coords": { "x": 23, "y": 8, "z": 0 }
+        "coords": { "x": 22.6, "y": 8.2, "z": 0 }
       }
     ],
     "elpis": [
