@@ -445,7 +445,7 @@
           "ja": "十二節の園",
           "en": "The Twelve Wonders"
         },
-        "coords": { "x": 9, "y": 32, "z": 0 }
+        "coords": { "x": 8.6, "y": 32.3, "z": 0 }
       },
       {
         "id": "anagnorisis",
@@ -454,7 +454,7 @@
           "ja": "アナグノリシス天測園",
           "en": "Anagnorisis"
         },
-        "coords": { "x": 25, "y": 24, "z": 0 }
+        "coords": { "x": 24.6, "y": 24.1, "z": 0 }
       },
       {
         "id": "poieten_oikos",
@@ -463,7 +463,7 @@
           "ja": "ポイエテーン・オイコス",
           "en": "Poieten Oikos"
         },
-        "coords": { "x": 11, "y": 17, "z": 0 }
+        "coords": { "x": 10.8, "y": 17.0, "z": 0 }
       }
     ],
     "tural": [
