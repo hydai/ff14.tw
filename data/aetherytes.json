@@ -198,7 +198,7 @@
           "ja": "オスタル厳命城",
           "en": "The Ostall Imperative"
         },
-        "coords": { "x": 7, "y": 17, "z": 0 }
+        "coords": { "x": 6.9, "y": 16.5, "z": 0 }
       },
       {
         "id": "fort_jobb",
@@ -207,7 +207,7 @@
           "ja": "ジョッブ砦",
           "en": "Fort Jobb"
         },
-        "coords": { "x": 37, "y": 21, "z": 0 }
+        "coords": { "x": 36.4, "y": 20.8, "z": 0 }
       },
       {
         "id": "tomra",
@@ -216,7 +216,7 @@
           "ja": "トメラの村",
           "en": "Tomra"
         },
-        "coords": { "x": 13, "y": 9, "z": 0 }
+        "coords": { "x": 13.0, "y": 8.8, "z": 0 }
       },
       {
         "id": "stilltide",
@@ -225,7 +225,7 @@
           "ja": "スティルタイド",
           "en": "Stilltide"
         },
-        "coords": { "x": 35, "y": 27, "z": 0 }
+        "coords": { "x": 34.8, "y": 27.1, "z": 0 }
       },
       {
         "id": "twine",
@@ -234,7 +234,7 @@
           "ja": "トゥワイン",
           "en": "Twine"
         },
-        "coords": { "x": 11, "y": 17, "z": 0 }
+        "coords": { "x": 11.3, "y": 17.0, "z": 0 }
       },
       {
         "id": "mord_souq",
@@ -243,7 +243,7 @@
           "ja": "モルド・スーク",
           "en": "Mord Souq"
         },
-        "coords": { "x": 26, "y": 17, "z": 0 }
+        "coords": { "x": 26.3, "y": 16.7, "z": 0 }
       },
       {
         "id": "inn_at_journeys_head",
@@ -252,7 +252,7 @@
           "ja": "旅立ちの宿",
           "en": "The Inn at Journey's Head"
         },
-        "coords": { "x": 30, "y": 28, "z": 0 }
+        "coords": { "x": 29.4, "y": 27.5, "z": 0 }
       },
       {
         "id": "lydha_lran",
@@ -261,7 +261,7 @@
           "ja": "リダ・ラーン",
           "en": "Lydha Lran"
         },
-        "coords": { "x": 15, "y": 32, "z": 0 }
+        "coords": { "x": 14.5, "y": 31.6, "z": 0 }
       },
       {
         "id": "pla_enni",
@@ -270,7 +270,7 @@
           "ja": "プラ・エンニ茸窟",
           "en": "Pla Enni"
         },
-        "coords": { "x": 20, "y": 4, "z": 0 }
+        "coords": { "x": 20.0, "y": 4.1, "z": 0 }
       },
       {
         "id": "wolekdorf",
@@ -279,7 +279,7 @@
           "ja": "ヴォレクドルフ",
           "en": "Wolekdorf"
         },
-        "coords": { "x": 29, "y": 8, "z": 0 }
+        "coords": { "x": 29.1, "y": 7.5, "z": 0 }
       },
       {
         "id": "slitherbough",
@@ -288,7 +288,7 @@
           "ja": "スリザーバウ",
           "en": "Slitherbough"
         },
-        "coords": { "x": 20, "y": 27, "z": 0 }
+        "coords": { "x": 19.3, "y": 27.3, "z": 0 }
       },
       {
         "id": "fanow",
@@ -297,7 +297,7 @@
           "ja": "ファノヴの里",
           "en": "Fanow"
         },
-        "coords": { "x": 29, "y": 18, "z": 0 }
+        "coords": { "x": 29.1, "y": 17.4, "z": 0 }
       },
       {
         "id": "the_ondo_cups",
@@ -306,7 +306,7 @@
           "ja": "オンドの潮溜まり",
           "en": "The Ondo Cups"
         },
-        "coords": { "x": 33, "y": 18, "z": 0 }
+        "coords": { "x": 32.6, "y": 17.2, "z": 0 }
       },
       {
         "id": "the_macarenses_angle",
@@ -315,7 +315,7 @@
           "ja": "マカレンサス広場",
           "en": "The Macarenses Angle"
         },
-        "coords": { "x": 19, "y": 26, "z": 0 }
+        "coords": { "x": 18.6, "y": 25.8, "z": 0 }
       }
     ],
     "ilsabard": [
