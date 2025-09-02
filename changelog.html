@@ -52,6 +52,25 @@
                     
                     <article class="changelog-entry">
                         <div class="changelog-header">
+                            <h3 class="changelog-version">v2.5.22</h3>
+                            <time class="changelog-date" datetime="2025-09-02">2025年9月2日</time>
+                        </div>
+                        <div class="changelog-content">
+                            <ul>
+                                <li><span class="tag tag-fix">修正</span> 寶圖搜尋器：修正 i18n 模組 applyTextContent 函式處理邏輯
+                                    <ul>
+                                        <li>修正當元素包含子元素和空白文字節點時，翻譯文字可能出現在錯誤位置的問題</li>
+                                        <li>改為尋找第一個非空白的文字節點進行更新，避免新舊文字同時出現</li>
+                                        <li>優化處理順序：優先處理無子元素的情況，提升執行效率</li>
+                                        <li>增強對各種 HTML 結構的相容性，確保翻譯功能更加穩健</li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </div>
+                    </article>
+                    
+                    <article class="changelog-entry">
+                        <div class="changelog-header">
                             <h3 class="changelog-version">v2.5.21</h3>
                             <time class="changelog-date" datetime="2025-09-02">2025年9月2日</time>
                         </div>

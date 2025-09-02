@@ -255,23 +255,23 @@ class I18n {
         // 可能需要更精確的定位方式。目前的實作適用於當前的 HTML 結構。
         // 未來若需處理複雜結構，建議為需要翻譯的文字包裹特定的 <span> 標籤。
         const applyTextContent = (el, text) => {
-            // 尋找第一個文字節點（不論是否為空白）並更新它
+            // 如果元素沒有子元素，可以安全地替換整個內容
+            if (el.children.length === 0) {
+                el.textContent = text;
+                return;
+            }
+
+            // 如果有子元素，尋找第一個非空白的文字節點並替換它
             for (const node of el.childNodes) {
-                if (node.nodeType === Node.TEXT_NODE) {
+                if (node.nodeType === Node.TEXT_NODE && node.textContent.trim()) {
                     node.textContent = text;
-                    return; // 找到並更新後即可返回
+                    return;
                 }
             }
 
-            // 若未找到任何文字節點
-            if (el.children.length === 0) {
-                // 如果元素沒有子元素，則可以安全地設置 textContent
-                el.textContent = text;
-            } else {
-                // 如果有子元素但沒有文字節點，在最後面附加一個新的文字節點
-                const newTextNode = document.createTextNode(text);
-                el.appendChild(newTextNode);
-            }
+            // 如果沒有找到非空白的文字節點，附加新的文字節點
+            // 這是一個安全的備用方案
+            el.appendChild(document.createTextNode(text));
         };
 
         const key = node.getAttribute?.(I18n.CONSTANTS.DATA_ATTRIBUTE);
