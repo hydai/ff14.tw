@@ -1074,6 +1074,11 @@
     box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2);
 }
 
+/* 大寫輸入框 */
+.uppercase-input {
+    text-transform: uppercase;
+}
+
 .modal-hint {
     margin-top: 0.5rem;
     font-size: 0.875rem;
@@ -1663,4 +1668,35 @@ body > div[class~="toast-warning"] {
 
 [data-theme="dark"] .list-content {
     background: var(--card-bg);
+}
+
+/* 語言切換器樣式 */
+.language-switcher {
+    display: flex;
+    align-items: center;
+    margin-left: 20px;
+}
+
+.language-switcher select {
+    padding: 5px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: var(--card-bg);
+    color: var(--text-primary);
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.language-switcher select:hover {
+    border-color: var(--primary);
+}
+
+@media (max-width: 768px) {
+    .language-switcher {
+        margin-left: 10px;
+    }
+    .language-switcher select {
+        padding: 3px 6px;
+        font-size: 12px;
+    }
 }

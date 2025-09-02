@@ -1,0 +1,534 @@
+{
+  "zh-TW": {
+    "page": {
+      "title": "寶圖搜尋器 - FF14.tw",
+      "header": "寶圖搜尋器"
+    },
+    "buttons": {
+      "myList": "我的清單",
+      "createRoom": "建立組隊",
+      "joinRoom": "加入隊伍",
+      "resetFilters": "重置篩選",
+      "export": "匯出",
+      "import": "匯入",
+      "clearAll": "清空",
+      "generateRoute": "生成路線",
+      "copyRoute": "複製路線",
+      "customFormat": "自訂格式",
+      "loadMore": "載入更多",
+      "close": "關閉",
+      "cancel": "取消",
+      "confirm": "確認",
+      "save": "儲存設定",
+      "reset": "重置為預設值",
+      "reload": "重新載入",
+      "copyRoomCode": "複製隊伍代號",
+      "editNickname": "編輯暱稱",
+      "leaveRoom": "離開隊伍",
+      "add": "加入",
+      "remove": "移除",
+      "addToList": "加入清單",
+      "added": "✓ 已加入",
+      "viewDetailMap": "查看詳細地圖"
+    },
+    "filters": {
+      "title": "篩選條件",
+      "levelLabel": "寶圖等級",
+      "mapLabel": "地圖",
+      "hint": "可多選"
+    },
+    "list": {
+      "title": "我的清單",
+      "empty": "清單是空的",
+      "emptyHint": "點擊寶圖卡片上的「加入清單」開始建立",
+      "total": "總計",
+      "maps": "張寶圖",
+      "totalLabel": "總計：{count} 張寶圖",
+      "tabs": {
+        "list": "清單",
+        "history": "歷史"
+      }
+    },
+    "room": {
+      "title": "隊伍資訊",
+      "codeLabel": "隊伍代號",
+      "membersLabel": "隊伍成員",
+      "memberCount": "{current}/{max}人",
+      "lastActivity": "最後更新",
+      "ttl": "剩餘",
+      "yourNickname": "您的暱稱",
+      "leader": "隊長",
+      "justNow": "剛剛",
+      "minutesAgo": "{minutes}分鐘前",
+      "minutesRemaining": "{minutes}分鐘",
+      "hoursAgo": "{hours}小時前",
+      "overDayAgo": "超過1天前",
+      "expired": "已過期",
+      "hoursMinutes": "{hours}小時{minutes}分"
+    },
+    "modals": {
+      "joinRoom": {
+        "title": "加入隊伍",
+        "label": "請輸入隊伍代號：",
+        "placeholder": "例如：A3B7K9",
+        "hint": "請向隊長取得 6 位英數字代號"
+      },
+      "editNickname": {
+        "title": "編輯暱稱",
+        "label": "您的暱稱：",
+        "placeholder": "請輸入暱稱",
+        "hint": "其他成員將看到您的暱稱"
+      },
+      "leaveRoom": {
+        "title": "離開隊伍",
+        "message": "您確定要離開隊伍嗎？",
+        "keepList": "是否保留本地寶圖清單？",
+        "keepButton": "保留清單並離開",
+        "clearButton": "清空清單並離開"
+      }
+    },
+    "route": {
+      "title": "最佳路線",
+      "summary": "路線摘要",
+      "summaryTitle": "路線摘要：",
+      "regionOrder": "地區順序：{regions}",
+      "totalTeleports": "總傳送次數：{count}",
+      "totalMaps": "總寶圖數量：{count}",
+      "steps": "路線步驟",
+      "teleport": "傳送至",
+      "teleportTo": "傳送至 {location}",
+      "nextMap": "下一個",
+      "coordinate": "座標",
+      "coordsFormat": "座標：{coords}"
+    },
+    "format": {
+      "title": "自訂輸出格式",
+      "quickSwitch": "快速切換語言模板：",
+      "chinese": "中文",
+      "english": "英文",
+      "japanese": "日文",
+      "teleportFormat": "傳送點格式",
+      "mapFormat": "寶圖格式",
+      "preview": "預覽",
+      "variables": "可用變數"
+    },
+    "results": {
+      "showing": "顯示 {showing} / {total} 個結果",
+      "loading": "載入中...",
+      "noResults": "沒有符合的結果"
+    },
+    "messages": {
+      "success": {
+        "copied": "已複製到剪貼簿",
+        "roomCreated": "隊伍 {code} 建立成功！",
+        "roomJoined": "成功加入隊伍 {code}",
+        "nicknameUpdated": "暱稱已更新",
+        "leftRoom": "已離開隊伍",
+        "roomCodeCopied": "隊伍代號已複製",
+        "routeCopied": "路線已複製",
+        "listExported": "清單已匯出",
+        "listImported": "清單已匯入",
+        "listCleared": "清單已清空",
+        "mapAdded": "已加入清單",
+        "mapRemoved": "已從清單移除",
+        "filterReset": "已重置所有篩選條件",
+        "coordinateCopied": "座標指令已複製",
+        "listCopiedWithCount": "已複製 {count} 張寶圖清單到剪貼簿",
+        "routeCopiedWithCount": "已複製 {count} 個地點"
+      },
+      "warning": {
+        "alreadyInRoom": "您已在隊伍中，請先離開現有隊伍",
+        "browserHasRoom": "此瀏覽器已有隊伍記錄，請先清除或使用其他瀏覽器",
+        "invalidRoomCode": "請輸入有效的 6 位隊伍代號",
+        "emptyNickname": "請輸入暱稱",
+        "nicknameTooLong": "暱稱不能超過 20 個字元",
+        "alreadyInList": "此寶圖已在清單中",
+        "listFull": "清單已滿（{max}/{max}）",
+        "emptyList": "清單是空的",
+        "localListNotEmpty": "您有本地清單，建議清空以確保協作資料準確性",
+        "listAlreadyEmpty": "清單已經是空的",
+        "emptyListExport": "清單是空的，無法匯出",
+        "pasteContent": "請貼上清單內容",
+        "needTwoMaps": "至少需要 2 張寶圖才能生成路線"
+      },
+      "error": {
+        "loadFailed": "載入資料失敗，請重新整理頁面再試",
+        "saveFailed": "儲存失敗",
+        "roomCreateFailed": "建立隊伍失敗，請稍後再試",
+        "roomJoinFailed": "加入隊伍失敗，請確認隊伍代號是否正確",
+        "roomNotFound": "房間不存在或已過期",
+        "roomFull": "房間已滿",
+        "syncFailed": "同步失敗，請檢查網路連線",
+        "updateFailed": "更新失敗，請稍後再試",
+        "copyFailed": "複製失敗",
+        "invalidFileFormat": "檔案格式錯誤",
+        "importFailed": "匯入失敗：{error}",
+        "readFileFailed": "讀取檔案失敗"
+      },
+      "confirm": {
+        "clearAll": "確定要清空所有寶圖嗎？",
+        "clearLocalList": "要清空本地清單嗎？"
+      }
+    },
+    "dataSource": {
+      "title": "資料來源",
+      "description": "本工具的座標資料來源於 Game8："
+    }
+  },
+  "ja": {
+    "page": {
+      "title": "トレジャーマップ検索 - FF14.tw",
+      "header": "トレジャーマップ検索"
+    },
+    "buttons": {
+      "myList": "マイリスト",
+      "createRoom": "パーティ作成",
+      "joinRoom": "パーティ参加",
+      "resetFilters": "フィルタリセット",
+      "export": "エクスポート",
+      "import": "インポート",
+      "clearAll": "クリア",
+      "generateRoute": "ルート生成",
+      "copyRoute": "ルートコピー",
+      "customFormat": "カスタム形式",
+      "loadMore": "もっと見る",
+      "close": "閉じる",
+      "cancel": "キャンセル",
+      "confirm": "確認",
+      "save": "設定を保存",
+      "reset": "デフォルトに戻す",
+      "reload": "リロード",
+      "copyRoomCode": "パーティコードをコピー",
+      "editNickname": "ニックネーム編集",
+      "leaveRoom": "パーティから退出",
+      "add": "追加",
+      "remove": "削除",
+      "addToList": "リストに追加",
+      "added": "✓ 追加済み",
+      "viewDetailMap": "詳細地図を表示"
+    },
+    "filters": {
+      "title": "フィルタ条件",
+      "levelLabel": "マップレベル",
+      "mapLabel": "マップ",
+      "hint": "複数選択可"
+    },
+    "list": {
+      "title": "マイリスト",
+      "empty": "リストは空です",
+      "emptyHint": "宝の地図カードの「リストに追加」をクリックして開始",
+      "total": "合計",
+      "maps": "枚のマップ",
+      "totalLabel": "合計：{count} 枚のマップ",
+      "tabs": {
+        "list": "リスト",
+        "history": "履歴"
+      }
+    },
+    "room": {
+      "title": "パーティ情報",
+      "codeLabel": "パーティコード",
+      "membersLabel": "パーティメンバー",
+      "memberCount": "{current}/{max}人",
+      "lastActivity": "最終更新",
+      "ttl": "残り時間",
+      "yourNickname": "あなたのニックネーム",
+      "leader": "リーダー",
+      "justNow": "たった今",
+      "minutesAgo": "{minutes}分前",
+      "minutesRemaining": "{minutes}分",
+      "hoursAgo": "{hours}時間前",
+      "overDayAgo": "1日以上前",
+      "expired": "期限切れ",
+      "hoursMinutes": "{hours}時間{minutes}分"
+    },
+    "modals": {
+      "joinRoom": {
+        "title": "パーティ参加",
+        "label": "パーティコードを入力：",
+        "placeholder": "例：A3B7K9",
+        "hint": "リーダーから6桁のコードを取得してください"
+      },
+      "editNickname": {
+        "title": "ニックネーム編集",
+        "label": "ニックネーム：",
+        "placeholder": "ニックネームを入力",
+        "hint": "他のメンバーに表示されます"
+      },
+      "leaveRoom": {
+        "title": "パーティ退出",
+        "message": "パーティから退出しますか？",
+        "keepList": "ローカルマップリストを保持しますか？",
+        "keepButton": "リストを保持して退出",
+        "clearButton": "リストをクリアして退出"
+      }
+    },
+    "route": {
+      "title": "最適ルート",
+      "summary": "ルート概要",
+      "summaryTitle": "ルート概要：",
+      "regionOrder": "エリア順序：{regions}",
+      "totalTeleports": "総テレポート回数：{count}",
+      "totalMaps": "総マップ数：{count}",
+      "steps": "ルートステップ",
+      "teleport": "テレポート先",
+      "teleportTo": "{location}へテレポート",
+      "nextMap": "次のマップ",
+      "coordinate": "座標",
+      "coordsFormat": "座標：{coords}"
+    },
+    "format": {
+      "title": "カスタム出力形式",
+      "quickSwitch": "言語テンプレート切替：",
+      "chinese": "中国語",
+      "english": "英語",
+      "japanese": "日本語",
+      "teleportFormat": "テレポート形式",
+      "mapFormat": "マップ形式",
+      "preview": "プレビュー",
+      "variables": "使用可能な変数"
+    },
+    "results": {
+      "showing": "全{total}件中{showing}件を表示",
+      "loading": "読み込み中...",
+      "noResults": "該当する結果がありません"
+    },
+    "messages": {
+      "success": {
+        "copied": "クリップボードにコピーしました",
+        "roomCreated": "パーティ {code} を作成しました！",
+        "roomJoined": "パーティ {code} に参加しました",
+        "nicknameUpdated": "ニックネームを更新しました",
+        "leftRoom": "パーティから退出しました",
+        "roomCodeCopied": "パーティコードをコピーしました",
+        "routeCopied": "ルートをコピーしました",
+        "listExported": "リストをエクスポートしました",
+        "listImported": "リストをインポートしました",
+        "listCleared": "リストをクリアしました",
+        "mapAdded": "リストに追加しました",
+        "mapRemoved": "リストから削除しました",
+        "filterReset": "すべてのフィルタをリセットしました",
+        "coordinateCopied": "座標コマンドをコピーしました",
+        "listCopiedWithCount": "{count} 枚のマップリストをクリップボードにコピーしました",
+        "routeCopiedWithCount": "{count} 箇所の場所をコピーしました"
+      },
+      "warning": {
+        "alreadyInRoom": "既にパーティに参加しています。先に退出してください",
+        "browserHasRoom": "このブラウザには既にパーティ記録があります。クリアするか他のブラウザを使用してください",
+        "invalidRoomCode": "有効な6桁のパーティコードを入力してください",
+        "emptyNickname": "ニックネームを入力してください",
+        "nicknameTooLong": "ニックネームは20文字以内にしてください",
+        "alreadyInList": "このマップは既にリストにあります",
+        "listFull": "リストがいっぱいです（{max}/{max}）",
+        "emptyList": "リストは空です",
+        "localListNotEmpty": "ローカルリストがあります。協力データの正確性のためクリアすることをお勧めします",
+        "listAlreadyEmpty": "リストは既に空です",
+        "emptyListExport": "リストが空のためエクスポートできません",
+        "pasteContent": "リスト内容を貼り付けてください",
+        "needTwoMaps": "ルート生成には最低2つの地図が必要です"
+      },
+      "error": {
+        "loadFailed": "データの読み込みに失敗しました。ページを更新してください",
+        "saveFailed": "保存に失敗しました",
+        "roomCreateFailed": "パーティ作成に失敗しました。後でお試しください",
+        "roomJoinFailed": "パーティ参加に失敗しました。コードを確認してください",
+        "roomNotFound": "ルームが存在しないか期限切れです",
+        "roomFull": "ルームが満員です",
+        "syncFailed": "同期に失敗しました。ネットワーク接続を確認してください",
+        "updateFailed": "更新に失敗しました。後でお試しください",
+        "copyFailed": "コピーに失敗しました",
+        "invalidFileFormat": "ファイル形式が無効です",
+        "importFailed": "インポートに失敗しました：{error}",
+        "readFileFailed": "ファイルの読み込みに失敗しました"
+      },
+      "confirm": {
+        "clearAll": "すべてのマップをクリアしますか？",
+        "clearLocalList": "ローカルリストをクリアしますか？"
+      }
+    },
+    "dataSource": {
+      "title": "データソース",
+      "description": "このツールの座標データは Game8 から取得しています："
+    }
+  },
+  "en": {
+    "page": {
+      "title": "Treasure Map Finder - FF14.tw",
+      "header": "Treasure Map Finder"
+    },
+    "buttons": {
+      "myList": "My List",
+      "createRoom": "Create Party",
+      "joinRoom": "Join Party",
+      "resetFilters": "Reset Filters",
+      "export": "Export",
+      "import": "Import",
+      "clearAll": "Clear All",
+      "generateRoute": "Generate Route",
+      "copyRoute": "Copy Route",
+      "customFormat": "Custom Format",
+      "loadMore": "Load More",
+      "close": "Close",
+      "cancel": "Cancel",
+      "confirm": "Confirm",
+      "save": "Save Settings",
+      "reset": "Reset to Default",
+      "reload": "Reload",
+      "copyRoomCode": "Copy Party Code",
+      "editNickname": "Edit Nickname",
+      "leaveRoom": "Leave Party",
+      "add": "Add",
+      "remove": "Remove",
+      "addToList": "Add to List",
+      "added": "✓ Added",
+      "viewDetailMap": "View Detailed Map"
+    },
+    "filters": {
+      "title": "Filter Options",
+      "levelLabel": "Map Level",
+      "mapLabel": "Map",
+      "hint": "Multiple selection"
+    },
+    "list": {
+      "title": "My List",
+      "empty": "List is empty",
+      "emptyHint": "Click \"Add to List\" on treasure map cards to start",
+      "total": "Total",
+      "maps": "maps",
+      "totalLabel_one": "Total: 1 map",
+      "totalLabel_other": "Total: {count} maps",
+      "tabs": {
+        "list": "List",
+        "history": "History"
+      }
+    },
+    "room": {
+      "title": "Party Info",
+      "codeLabel": "Party Code",
+      "membersLabel": "Party Members",
+      "memberCount": "{current}/{max} members",
+      "lastActivity": "Last Update",
+      "ttl": "Time Remaining",
+      "yourNickname": "Your Nickname",
+      "leader": "Leader",
+      "justNow": "Just now",
+      "minutesAgo_one": "{minutes} minute ago",
+      "minutesAgo_other": "{minutes} minutes ago",
+      "minutesRemaining_one": "{minutes} minute",
+      "minutesRemaining_other": "{minutes} minutes",
+      "hoursAgo_one": "{hours} hour ago",
+      "hoursAgo_other": "{hours} hours ago",
+      "overDayAgo": "Over 1 day ago",
+      "expired": "Expired",
+      "hoursMinutes": "{hours}h {minutes}m"
+    },
+    "modals": {
+      "joinRoom": {
+        "title": "Join Party",
+        "label": "Enter party code:",
+        "placeholder": "e.g., A3B7K9",
+        "hint": "Get the 6-character code from the party leader"
+      },
+      "editNickname": {
+        "title": "Edit Nickname",
+        "label": "Your nickname:",
+        "placeholder": "Enter nickname",
+        "hint": "Other members will see your nickname"
+      },
+      "leaveRoom": {
+        "title": "Leave Party",
+        "message": "Are you sure you want to leave the party?",
+        "keepList": "Keep local treasure map list?",
+        "keepButton": "Keep list and leave",
+        "clearButton": "Clear list and leave"
+      }
+    },
+    "route": {
+      "title": "Optimal Route",
+      "summary": "Route Summary",
+      "summaryTitle": "Route Summary:",
+      "regionOrder": "Region Order: {regions}",
+      "totalTeleports": "Total Teleports: {count}",
+      "totalMaps": "Total Maps: {count}",
+      "steps": "Route Steps",
+      "teleport": "Teleport to",
+      "teleportTo": "Teleport to {location}",
+      "nextMap": "Next map",
+      "coordinate": "Coordinate",
+      "coordsFormat": "Coordinates: {coords}"
+    },
+    "format": {
+      "title": "Custom Output Format",
+      "quickSwitch": "Quick language template:",
+      "chinese": "Chinese",
+      "english": "English",
+      "japanese": "Japanese",
+      "teleportFormat": "Teleport Format",
+      "mapFormat": "Map Format",
+      "preview": "Preview",
+      "variables": "Available Variables"
+    },
+    "results": {
+      "showing": "Showing {showing} of {total} results",
+      "loading": "Loading...",
+      "noResults": "No matching results"
+    },
+    "messages": {
+      "success": {
+        "copied": "Copied to clipboard",
+        "roomCreated": "Party {code} created successfully!",
+        "roomJoined": "Successfully joined party {code}",
+        "nicknameUpdated": "Nickname updated",
+        "leftRoom": "Left the party",
+        "roomCodeCopied": "Party code copied",
+        "routeCopied": "Route copied",
+        "listExported": "List exported",
+        "listImported": "List imported",
+        "listCleared": "List cleared",
+        "mapAdded": "Added to list",
+        "mapRemoved": "Removed from list",
+        "filterReset": "All filters have been reset",
+        "coordinateCopied": "Coordinate command copied",
+        "listCopiedWithCount": "Copied {count} treasure map list to clipboard",
+        "routeCopiedWithCount": "Copied {count} locations"
+      },
+      "warning": {
+        "alreadyInRoom": "You are already in a party. Please leave first",
+        "browserHasRoom": "This browser already has a party record. Please clear it or use another browser",
+        "invalidRoomCode": "Please enter a valid 6-character party code",
+        "emptyNickname": "Please enter a nickname",
+        "nicknameTooLong": "Nickname cannot exceed 20 characters",
+        "alreadyInList": "This map is already in the list",
+        "listFull": "List is full ({max}/{max})",
+        "emptyList": "List is empty",
+        "localListNotEmpty": "You have a local list. Clear it to ensure collaboration data accuracy",
+        "listAlreadyEmpty": "List is already empty",
+        "emptyListExport": "Cannot export empty list",
+        "pasteContent": "Please paste list content",
+        "needTwoMaps": "At least 2 maps are needed to generate a route"
+      },
+      "error": {
+        "loadFailed": "Failed to load data. Please refresh the page",
+        "saveFailed": "Failed to save",
+        "roomCreateFailed": "Failed to create party. Please try again later",
+        "roomJoinFailed": "Failed to join party. Please check the party code",
+        "roomNotFound": "Room does not exist or has expired",
+        "roomFull": "Room is full",
+        "syncFailed": "Sync failed. Please check your network connection",
+        "updateFailed": "Update failed. Please try again later",
+        "copyFailed": "Copy failed",
+        "invalidFileFormat": "Invalid file format",
+        "importFailed": "Import failed: {error}",
+        "readFileFailed": "Failed to read file"
+      },
+      "confirm": {
+        "clearAll": "Clear all maps?",
+        "clearLocalList": "Clear local list?"
+      }
+    },
+    "dataSource": {
+      "title": "Data Source",
+      "description": "Coordinate data for this tool is sourced from Game8:"
+    }
+  }
+}

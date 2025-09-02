@@ -48,6 +48,137 @@
                 <div class="changelog-container">
                 <!-- 2025年8月 -->
                 <section class="changelog-section">
+                    <h2 class="changelog-year">2025年9月</h2>
+                    
+                    <article class="changelog-entry">
+                        <div class="changelog-header">
+                            <h3 class="changelog-version">v2.5.20</h3>
+                            <time class="changelog-date" datetime="2025-09-02">2025年9月2日</time>
+                        </div>
+                        <div class="changelog-content">
+                            <ul>
+                                <li><span class="tag tag-enhance">重構</span> 寶圖搜尋器：重構 i18n 模組翻譯查找邏輯
+                                    <ul>
+                                        <li>新增私有方法 _getTranslation() 集中處理翻譯物件遍歷邏輯</li>
+                                        <li>重構 t()、getFallback() 和 hasTranslationKey() 方法以使用共用邏輯</li>
+                                        <li>消除程式碼重複，提升可維護性並降低維護成本</li>
+                                        <li>遵循 DRY (Don't Repeat Yourself) 原則，使程式碼更簡潔</li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </div>
+                    </article>
+                    
+                    <article class="changelog-entry">
+                        <div class="changelog-header">
+                            <h3 class="changelog-version">v2.5.19</h3>
+                            <time class="changelog-date" datetime="2025-09-02">2025年9月2日</time>
+                        </div>
+                        <div class="changelog-content">
+                            <ul>
+                                <li><span class="tag tag-enhance">優化</span> 寶圖搜尋器：優化 i18n 模組 DOM 操作效能
+                                    <ul>
+                                        <li>將 Array.from(el.childNodes).some() 替換為 el.children.length，避免建立暫存陣列</li>
+                                        <li>直接使用 HTMLCollection 屬性檢查，提升判斷元素節點的執行效率</li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </div>
+                    </article>
+                    
+                    <article class="changelog-entry">
+                        <div class="changelog-header">
+                            <h3 class="changelog-version">v2.5.18</h3>
+                            <time class="changelog-date" datetime="2025-09-01">2025年9月1日</time>
+                        </div>
+                        <div class="changelog-content">
+                            <ul>
+                                <li><span class="tag tag-enhance">優化</span> 寶圖搜尋器：國際化模組效能與穩健性改進
+                                    <ul>
+                                        <li>優化參數替換邏輯，使用單一 replace 呼叫避免重複建立 RegExp 物件</li>
+                                        <li>修正文字節點處理邏輯，正確處理包含純空白的文字節點</li>
+                                        <li>簡化 DOM 操作判斷邏輯，提升程式碼可讀性</li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </div>
+                    </article>
+                    
+                    <article class="changelog-entry">
+                        <div class="changelog-header">
+                            <h3 class="changelog-version">v2.5.17</h3>
+                            <time class="changelog-date" datetime="2025-09-01">2025年9月1日</time>
+                        </div>
+                        <div class="changelog-content">
+                            <ul>
+                                <li><span class="tag tag-fix">修正</span> 寶圖搜尋器：國際化細節改進
+                                    <ul>
+                                        <li>調整語言偵測優先級，優先支援中文語系使用者</li>
+                                        <li>新增英文單複數文法支援（1 map / 2 maps）</li>
+                                        <li>修正語言切換時「我的清單」面板內容未更新的問題</li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </div>
+                    </article>
+                    
+                    <article class="changelog-entry">
+                        <div class="changelog-header">
+                            <h3 class="changelog-version">v2.5.16</h3>
+                            <time class="changelog-date" datetime="2025-09-01">2025年9月1日</time>
+                        </div>
+                        <div class="changelog-content">
+                            <ul>
+                                <li><span class="tag tag-fix">修正</span> 寶圖搜尋器：程式碼優化
+                                    <ul>
+                                        <li>重構瀏覽器語言偵測為資料驅動模式，提升可擴充性</li>
+                                        <li>優化 DOM 元素快取機制，改善 updateListCount 效能</li>
+                                        <li>國際化協作功能時間顯示，消除硬編碼字串</li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </div>
+                    </article>
+                    
+                    <article class="changelog-entry">
+                        <div class="changelog-header">
+                            <h3 class="changelog-version">v2.5.15</h3>
+                            <time class="changelog-date" datetime="2025-09-01">2025年9月1日</time>
+                        </div>
+                        <div class="changelog-content">
+                            <ul>
+                                <li><span class="tag tag-warning">修正</span> 寶圖搜尋器：修正國際化功能的語意錯誤與動態內容問題
+                                    <ul>
+                                        <li>修正隊伍剩餘時間顯示使用錯誤翻譯鍵的問題（minutesAgo 改為 minutesRemaining）</li>
+                                        <li>新增動態內容的國際化支援（按鈕文字、提示訊息、錯誤訊息等）</li>
+                                        <li>修正所有硬編碼的中文字串，改為使用 i18n 系統</li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </div>
+                    </article>
+                    
+                    <article class="changelog-entry">
+                        <div class="changelog-header">
+                            <h3 class="changelog-version">v2.5.14</h3>
+                            <time class="changelog-date" datetime="2025-09-01">2025年9月1日</time>
+                        </div>
+                        <div class="changelog-content">
+                            <ul>
+                                <li><span class="tag tag-warning">修正</span> 寶圖搜尋器：國際化功能改進
+                                    <ul>
+                                        <li>修正語言切換時 renderResults() 函式不存在的錯誤</li>
+                                        <li>移除 translateElement 函式中的冗餘子元素翻譯邏輯，提升效能</li>
+                                        <li>將語言切換器的內嵌 CSS 移至外部 style.css 檔案</li>
+                                        <li>重構總計文字顯示，使用單一翻譯鍵搭配參數替換，改善不同語言的語法支援</li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </div>
+                    </article>
+                </section>
+                
+                <section class="changelog-section">
                     <h2 class="changelog-year">2025年8月</h2>
                     
                     <article class="changelog-entry">

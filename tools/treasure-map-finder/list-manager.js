@@ -93,12 +93,12 @@ class ListManager {
 
         // 檢查是否已存在
         if (this.has(map.id)) {
-            return { success: false, message: '此寶圖已在清單中' };
+            return { success: false, message: i18n.t('messages.warning.alreadyInList') };
         }
 
         // 檢查數量限制
         if (this.list.length >= maxItems) {
-            return { success: false, message: `清單已滿（${maxItems}/${maxItems}）` };
+            return { success: false, message: i18n.t('messages.warning.listFull', { max: maxItems }) };
         }
 
         // 準備資料
@@ -113,7 +113,7 @@ class ListManager {
         this.listIds.add(map.id);
         this.saveToStorage();
 
-        return { success: true, message: '已加入清單' };
+        return { success: true, message: i18n.t('messages.success.mapAdded') };
     }
 
     /**
@@ -134,7 +134,7 @@ class ListManager {
         this.listIds.delete(id);
         this.saveToStorage();
 
-        return { success: true, message: '已從清單移除', removedItem };
+        return { success: true, message: i18n.t('messages.success.mapRemoved'), removedItem };
     }
 
     /**
@@ -152,7 +152,7 @@ class ListManager {
         this.listIds.clear();
         this.saveToStorage();
 
-        return { success: true, message: '已清空清單', count };
+        return { success: true, message: i18n.t('messages.success.listCleared'), count };
     }
 
     /**

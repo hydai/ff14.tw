@@ -18,12 +18,12 @@ class TreasureMapFinder {
             treasureGrid: document.getElementById('treasureGrid'),
             resultCount: document.getElementById('resultCount'),
             listCount: document.getElementById('listCount'),
-            totalCount: document.getElementById('totalCount'),
             myListToggle: document.getElementById('myListToggle'),
             myListPanel: document.getElementById('myListPanel'),
             listContent: document.getElementById('listContent'),
             clearAllBtn: document.getElementById('clearAllBtn'),
-            loadMore: document.getElementById('loadMore')
+            loadMore: document.getElementById('loadMore'),
+            totalCountText: document.getElementById('totalCountText')
         };
         
         this.init();
@@ -31,6 +31,9 @@ class TreasureMapFinder {
     
     async init() {
         try {
+            // 初始化 i18n
+            await i18n.init();
+            
             await Promise.all([
                 zoneManager.init(),
                 this.loadData(),
@@ -40,9 +43,14 @@ class TreasureMapFinder {
             this.setupEventListeners();
             this.updateListCount();
             this.updateFilteredMaps();
+            
+            // 監聽語言變更事件
+            window.addEventListener('languageChanged', () => {
+                this.updateDynamicText();
+            });
         } catch (error) {
             console.error('初始化失敗:', error);
-            this.showError('載入寶圖資料失敗，請重新整理頁面再試。');
+            this.showError(i18n.t('messages.error.loadFailed'));
         }
     }
     
@@ -231,7 +239,7 @@ class TreasureMapFinder {
         
         // 如果有重置訊息需求
         if (!this.filterManager.hasActiveFilters() && this.lastFilterState?.hadFilters) {
-            FF14Utils.showToast('已重置所有篩選條件', 'info');
+            FF14Utils.showToast(i18n.t('messages.success.filterReset'), 'info');
         }
         
         // 記錄過濾器狀態
@@ -344,8 +352,18 @@ class TreasureMapFinder {
         // 詳細地圖按鈕
         const detailBtn = document.createElement('button');
         detailBtn.className = 'btn btn-secondary btn-sm btn-view-detail';
-        detailBtn.title = '查看詳細地圖';
-        SecurityUtils.updateButtonContent(detailBtn, '🗺️', '詳細地圖');
+        detailBtn.setAttribute('data-i18n-title', 'buttons.viewDetailMap');
+        detailBtn.title = i18n.t('buttons.viewDetailMap');
+        
+        const detailIcon = document.createElement('span');
+        detailIcon.textContent = '🗺️';
+        detailBtn.appendChild(detailIcon);
+        
+        const detailText = document.createElement('span');
+        detailText.setAttribute('data-i18n', 'buttons.viewDetailMap');
+        detailText.textContent = i18n.t('buttons.viewDetailMap');
+        detailBtn.appendChild(detailText);
+        
         detailBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             this.uiDialogManager.showMapDetail(map, {
@@ -361,12 +379,13 @@ class TreasureMapFinder {
         const addBtn = document.createElement('button');
         addBtn.className = `btn ${isInList ? 'btn-success' : 'btn-primary'} btn-sm btn-add-to-list`;
         addBtn.dataset.state = isInList ? 'added' : 'default';
-        const btnText = isInList ? '✓ 已加入' : '加入清單';
+        
         const span = document.createElement('span');
         span.className = 'btn-text';
-        span.textContent = btnText;
-        SecurityUtils.clearElement(addBtn);
+        span.setAttribute('data-i18n', isInList ? 'buttons.added' : 'buttons.addToList');
+        span.textContent = isInList ? i18n.t('buttons.added') : i18n.t('buttons.addToList');
         addBtn.appendChild(span);
+        
         addBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             this.toggleMapInList(map);
@@ -429,20 +448,25 @@ class TreasureMapFinder {
         document.querySelectorAll('.treasure-card').forEach(card => {
             const mapId = card.dataset.mapId;
             const button = card.querySelector('.btn-add-to-list');
+            const btnText = button.querySelector('.btn-text');
             const isInList = this.listManager.has(mapId);
             
             button.dataset.state = isInList ? 'added' : 'default';
             button.className = `btn ${isInList ? 'btn-success' : 'btn-primary'} btn-sm btn-add-to-list`;
-            button.querySelector('.btn-text').textContent = isInList ? '✓ 已加入' : '加入清單';
+            
+            // 更新 data-i18n 屬性和文字內容
+            const i18nKey = isInList ? 'buttons.added' : 'buttons.addToList';
+            btnText.setAttribute('data-i18n', i18nKey);
+            btnText.textContent = i18n.t(i18nKey);
         });
     }
     
     copyCoordinates(map) {
         CoordinateUtils.copyCoordinatesToClipboard(map.coords).then(() => {
-            FF14Utils.showToast('座標指令已複製', 'success');
+            FF14Utils.showToast(i18n.t('messages.success.coordinateCopied'), 'success');
         }).catch(err => {
             console.error('複製失敗:', err);
-            FF14Utils.showToast('複製失敗', 'error');
+            FF14Utils.showToast(i18n.t('messages.error.copyFailed'), 'error');
         });
     }
     
@@ -876,12 +900,14 @@ class TreasureMapFinder {
             emptyState.className = 'empty-state';
             
             const emptyText = document.createElement('p');
-            emptyText.textContent = '清單是空的';
+            emptyText.setAttribute('data-i18n', 'list.empty');
+            emptyText.textContent = i18n.t('list.empty');
             emptyState.appendChild(emptyText);
             
             const hintText = document.createElement('p');
             hintText.className = 'text-secondary';
-            hintText.textContent = '點擊寶圖卡片上的「加入清單」開始建立';
+            hintText.setAttribute('data-i18n', 'list.emptyHint');
+            hintText.textContent = i18n.t('list.emptyHint');
             emptyState.appendChild(hintText);
             
             this.elements.listContent.appendChild(emptyState);
@@ -984,7 +1010,7 @@ class TreasureMapFinder {
         const currentLength = this.listManager.getLength();
         
         if (currentLength === 0) {
-            FF14Utils.showToast('清單已經是空的', 'info');
+            FF14Utils.showToast(i18n.t('messages.warning.listAlreadyEmpty'), 'info');
             return;
         }
         
@@ -1019,14 +1045,21 @@ class TreasureMapFinder {
     }
     
     updateResultCount() {
-        this.elements.resultCount.textContent = 
-            `顯示 ${this.currentDisplayCount} / ${this.filteredMaps.length} 個結果`;
+        const showing = i18n.t('results.showing', { 
+            showing: this.currentDisplayCount,
+            total: this.filteredMaps.length
+        });
+        this.elements.resultCount.textContent = showing;
     }
     
     updateListCount() {
         const count = this.listManager.getLength();
         this.elements.listCount.textContent = `(${count})`;
-        this.elements.totalCount.textContent = count;
+        
+        // 使用 i18n 翻譯更新總計文字
+        if (this.elements.totalCountText) {
+            this.elements.totalCountText.textContent = i18n.plural('list.totalLabel', count, { count });
+        }
         
         // 更新生成路線按鈕狀態
         const generateRouteBtn = document.getElementById('generateRouteBtn');
@@ -1035,12 +1068,44 @@ class TreasureMapFinder {
         }
     }
     
+    /**
+     * 更新動態文字（語言切換時呼叫）
+     */
+    updateDynamicText() {
+        // 更新結果計數
+        this.updateResultCount();
+        
+        // 更新清單計數
+        this.updateListCount();
+        
+        // 使用 i18n 的 translatePage 功能更新所有帶有 data-i18n 屬性的元素
+        // 這會自動更新已存在的寶圖卡片和清單項目的文字，避免重新建立 DOM
+        i18n.translatePage();
+        
+        // 如果有路線面板開啟，更新路線資訊
+        const routePanel = document.getElementById('routePanel');
+        if (routePanel && routePanel.classList.contains('active')) {
+            const routeResult = this.currentRouteResult;
+            if (routeResult) {
+                this.uiDialogManager.showRouteResult(routeResult, {
+                    onStepCopy: (step, index, total) => {
+                        const formattedText = this.formatStepForCopy(step, index + 1, total);
+                        navigator.clipboard.writeText(formattedText).then(() => {
+                            FF14Utils.showToast(i18n.t('messages.success.copied'), 'success');
+                        });
+                    },
+                    getZoneName: (zoneId) => this.getZoneName(zoneId)
+                });
+            }
+        }
+    }
+    
     showLoading(show) {
         if (show) {
             SecurityUtils.clearElement(this.elements.treasureGrid);
             const loadingDiv = document.createElement('div');
             loadingDiv.className = 'loading';
-            loadingDiv.textContent = '載入中...';
+            loadingDiv.textContent = i18n.t('results.loading');
             this.elements.treasureGrid.appendChild(loadingDiv);
         }
     }
@@ -1054,7 +1119,7 @@ class TreasureMapFinder {
         
         const reloadBtn = document.createElement('button');
         reloadBtn.className = 'btn btn-primary';
-        reloadBtn.textContent = '重新載入';
+        reloadBtn.textContent = i18n.t('buttons.reload');
         reloadBtn.addEventListener('click', () => location.reload());
         
         errorDiv.appendChild(document.createElement('br'));
@@ -1065,7 +1130,7 @@ class TreasureMapFinder {
     // 匯出清單功能（複製到剪貼簿）
     exportList() {
         if (this.listManager.getLength() === 0) {
-            FF14Utils.showToast('清單是空的，無法匯出', 'warning');
+            FF14Utils.showToast(i18n.t('messages.warning.emptyListExport'), 'warning');
             return;
         }
         
@@ -1074,7 +1139,7 @@ class TreasureMapFinder {
         
         // 複製到剪貼簿
         navigator.clipboard.writeText(jsonString).then(() => {
-            FF14Utils.showToast(`已複製 ${this.listManager.getLength()} 張寶圖清單到剪貼簿`, 'success');
+            FF14Utils.showToast(i18n.t('messages.success.listCopiedWithCount', { count: this.listManager.getLength() }), 'success');
         }).catch(err => {
             console.error('複製失敗:', err);
             // 備用方案：顯示可複製的文字框
@@ -1085,7 +1150,7 @@ class TreasureMapFinder {
     // 從文字匯入清單
     async importFromText(text) {
         if (!text.trim()) {
-            FF14Utils.showToast('請貼上清單內容', 'warning');
+            FF14Utils.showToast(i18n.t('messages.warning.pasteContent'), 'warning');
             return;
         }
         
@@ -1097,7 +1162,7 @@ class TreasureMapFinder {
                 // 先解析資料以獲取數量
                 const parseResult = SecurityUtils.safeJSONParse(text);
                 if (!parseResult.success) {
-                    FF14Utils.showToast('檔案格式錯誤', 'error');
+                    FF14Utils.showToast(i18n.t('messages.error.invalidFileFormat'), 'error');
                     return;
                 }
                 const previewData = parseResult.data;
@@ -1123,7 +1188,7 @@ class TreasureMapFinder {
             
         } catch (error) {
             console.error('匯入失敗:', error);
-            FF14Utils.showToast('匯入失敗：' + error.message, 'error');
+            FF14Utils.showToast(i18n.t('messages.error.importFailed', { error: error.message }), 'error');
         }
     }
     
@@ -1137,7 +1202,7 @@ class TreasureMapFinder {
             this.importFromText(text);
         } catch (error) {
             console.error('讀取檔案失敗:', error);
-            FF14Utils.showToast('讀取檔案失敗', 'error');
+            FF14Utils.showToast(i18n.t('messages.error.readFileFailed'), 'error');
         }
         
         // 清空檔案輸入
@@ -1149,7 +1214,7 @@ class TreasureMapFinder {
         const myList = this.listManager.getList();
         
         if (myList.length < 2) {
-            FF14Utils.showToast('至少需要 2 張寶圖才能生成路線', 'error');
+            FF14Utils.showToast(i18n.t('messages.warning.needTwoMaps'), 'error');
             return;
         }
         
@@ -1173,8 +1238,9 @@ class TreasureMapFinder {
             return;
         }
         
-        // 儲存路線資料供複製使用
+        // 儲存完整路線結果供複製和語言切換使用
         this.currentRoute = result.route;
+        this.currentRouteResult = result;
         
         // 顯示路線結果
         this.uiDialogManager.showRouteResult(result, {
@@ -1223,7 +1289,7 @@ class TreasureMapFinder {
         
         // 複製到剪貼簿
         navigator.clipboard.writeText(routeText).then(() => {
-            FF14Utils.showToast(`已複製 ${this.currentRoute.length} 個地點`, 'success');
+            FF14Utils.showToast(i18n.t('messages.success.routeCopiedWithCount', { count: this.currentRoute.length }), 'success');
         }).catch(() => {
             FF14Utils.showToast('複製失敗，請再試一次', 'error');
         });

@@ -27,13 +27,20 @@
                     </div>
                 </div>
             </nav>
+            <div class="language-switcher">
+                <select id="languageSwitcher">
+                    <option value="zh-TW">繁體中文</option>
+                    <option value="ja">日本語</option>
+                    <option value="en">English</option>
+                </select>
+            </div>
         </div>
     </header>
 
     <main class="main">
         <div class="container">
             <div class="page-header">
-                <h1>寶圖搜尋器</h1>
+                <h1 data-i18n="page.header">寶圖搜尋器</h1>
             </div>
 
             <div class="tool-content">
@@ -44,15 +51,15 @@
                     </div>
                     <div class="action-bar-right">
                         <button class="btn btn-primary my-list-toggle" id="myListToggle">
-                            <span class="btn-icon">📋</span> 我的清單 <span class="list-count" id="listCount">(0)</span>
+                            <span class="btn-icon">📋</span> <span data-i18n="buttons.myList">我的清單</span> <span class="list-count" id="listCount">(0)</span>
                         </button>
                         <!-- 組隊操作按鈕 -->
                         <div class="team-actions" id="teamActions">
                             <button class="btn btn-primary" id="createRoomBtn">
-                                <span class="btn-icon">🏠</span> 建立組隊
+                                <span class="btn-icon">🏠</span> <span data-i18n="buttons.createRoom">建立組隊</span>
                             </button>
                             <button class="btn btn-secondary" id="joinRoomBtn">
-                                <span class="btn-icon">🚪</span> 加入隊伍
+                                <span class="btn-icon">🚪</span> <span data-i18n="buttons.joinRoom">加入隊伍</span>
                             </button>
                         </div>
                     </div>
@@ -63,9 +70,9 @@
                     <!-- 已加入隊伍時顯示 -->
                     <div class="room-status hidden" id="roomStatus">
                         <div class="room-info">
-                            <span class="room-label">隊伍代號：</span>
+                            <span class="room-label" data-i18n="room.codeLabel">隊伍代號：</span>
                             <span class="room-code" id="roomCode">A3B7K9</span>
-                            <button class="btn btn-sm" id="copyRoomCodeBtn" title="複製隊伍代號">
+                            <button class="btn btn-sm" id="copyRoomCodeBtn" data-i18n-title="buttons.copyRoomCode" title="複製隊伍代號">
                                 <span class="btn-icon">📋</span>
                             </button>
                         </div>
@@ -84,17 +91,17 @@
                             </span>
                         </div>
                         <div class="room-user">
-                            <span class="user-label">您的暱稱：</span>
+                            <span class="user-label" data-i18n="room.yourNickname">您的暱稱：</span>
                             <span class="user-nickname" id="userNickname">光之戰士1</span>
-                            <button class="btn btn-sm" id="editNicknameBtn" title="編輯暱稱">
+                            <button class="btn btn-sm" id="editNicknameBtn" data-i18n-title="buttons.editNickname" title="編輯暱稱">
                                 <span class="btn-icon">✏️</span>
                             </button>
                             <button class="btn btn-danger btn-sm" id="leaveRoomBtn">
-                                <span class="btn-icon">🚪</span> 離開隊伍
+                                <span class="btn-icon">🚪</span> <span data-i18n="buttons.leaveRoom">離開隊伍</span>
                             </button>
                         </div>
                         <div class="room-members" id="roomMembersList">
-                            <div class="members-label">隊伍成員：</div>
+                            <div class="members-label" data-i18n="room.membersLabel">隊伍成員：</div>
                             <div class="members-list" id="membersList">
                                 <!-- 成員列表將由 JavaScript 動態生成 -->
                             </div>
@@ -106,17 +113,17 @@
                 <div class="filter-section">
                     <!-- 篩選標題欄 -->
                     <div class="filter-header">
-                        <h2 class="section-title">篩選條件</h2>
+                        <h2 class="section-title" data-i18n="filters.title">篩選條件</h2>
                         <button class="btn btn-secondary" id="resetFilters">
-                            <span class="btn-icon">↻</span> 重置篩選
+                            <span class="btn-icon">↻</span> <span data-i18n="buttons.resetFilters">重置篩選</span>
                         </button>
                     </div>
                     
                     <!-- 等級篩選 -->
                     <div class="filter-group level-filter-group">
                         <div class="filter-group-header">
-                            <label><span class="filter-icon">🏷️</span> 寶圖等級</label>
-                            <span class="filter-hint">可多選</span>
+                            <label><span class="filter-icon">🏷️</span> <span data-i18n="filters.levelLabel">寶圖等級</span></label>
+                            <span class="filter-hint" data-i18n="filters.hint">可多選</span>
                         </div>
                         <div class="filter-tags" id="levelTags">
                             <button class="filter-tag hidden" data-level="g1">G1 鞣革</button>
@@ -143,8 +150,8 @@
                     <!-- 地圖篩選 -->
                     <div class="filter-group map-filter-group">
                         <div class="filter-group-header collapsible-header" data-collapse="mapTags" data-expanded="false">
-                            <label><span class="filter-icon">🗺️</span> 地圖</label>
-                            <span class="filter-hint">可多選</span>
+                            <label><span class="filter-icon">🗺️</span> <span data-i18n="filters.mapLabel">地圖</span></label>
+                            <span class="filter-hint" data-i18n="filters.hint">可多選</span>
                             <span class="collapse-indicator">▼</span>
                         </div>
                         <div class="filter-tags map-tags-grid collapsed" id="mapTags">
@@ -314,15 +321,15 @@
                         <!-- 寶圖卡片將由 JavaScript 動態生成 -->
                     </div>
                     <div class="load-more hidden" id="loadMore">
-                        <button class="btn btn-secondary">載入更多</button>
+                        <button class="btn btn-secondary" data-i18n="buttons.loadMore">載入更多</button>
                     </div>
                 </div>
             </div>
 
             <!-- 資料來源說明 -->
             <div class="source-section">
-                <h3>資料來源</h3>
-                <p>本工具的座標資料來源於 <a href="https://game8.jp/" target="_blank" rel="noopener noreferrer">Game8</a>：</p>
+                <h3 data-i18n="dataSource.title">資料來源</h3>
+                <p><span data-i18n="dataSource.description">本工具的座標資料來源於</span> <a href="https://game8.jp/" target="_blank" rel="noopener noreferrer">Game8</a></p>
                 <ul class="source-list">
                     <li>G8 巨龍革地圖：<a href="https://game8.jp/ff14/287783" target="_blank" rel="noopener noreferrer">https://game8.jp/ff14/287783</a></li>
                     <li>G10 瞪羚革地圖：<a href="https://game8.jp/ff14/303477" target="_blank" rel="noopener noreferrer">https://game8.jp/ff14/303477</a></li>
@@ -342,22 +349,22 @@
     <div class="my-list-panel" id="myListPanel">
         <div class="panel-header">
             <div class="panel-header-actions">
-                <button class="btn btn-secondary btn-sm" id="exportListBtn" title="匯出清單">
-                    <span class="btn-icon">📤</span> 匯出
+                <button class="btn btn-secondary btn-sm" id="exportListBtn" data-i18n-title="buttons.export" title="匯出清單">
+                    <span class="btn-icon">📤</span> <span data-i18n="buttons.export">匯出</span>
                 </button>
-                <button class="btn btn-secondary btn-sm" id="importListBtn" title="匯入清單">
-                    <span class="btn-icon">📥</span> 匯入
+                <button class="btn btn-secondary btn-sm" id="importListBtn" data-i18n-title="buttons.import" title="匯入清單">
+                    <span class="btn-icon">📥</span> <span data-i18n="buttons.import">匯入</span>
                 </button>
                 <input type="file" id="importFileInput" accept=".json,.txt" class="hidden">
-                <button class="btn btn-danger btn-sm" id="clearAllBtn" title="清空全部">
-                    <span class="btn-icon">🗑️</span> 清空
+                <button class="btn btn-danger btn-sm" id="clearAllBtn" data-i18n-title="buttons.clearAll" title="清空全部">
+                    <span class="btn-icon">🗑️</span> <span data-i18n="buttons.clearAll">清空</span>
                 </button>
-                <button class="btn btn-close" id="closePanelBtn" title="關閉">×</button>
+                <button class="btn btn-close" id="closePanelBtn" data-i18n-title="buttons.close" title="關閉">×</button>
             </div>
         </div>
         <div class="panel-tabs hidden" id="panelTabs">
-            <button class="tab-btn active" data-tab="list">清單</button>
-            <button class="tab-btn" data-tab="history">歷史</button>
+            <button class="tab-btn active" data-tab="list" data-i18n="list.tabs.list">清單</button>
+            <button class="tab-btn" data-tab="history" data-i18n="list.tabs.history">歷史</button>
         </div>
         <div class="list-content" id="listContent">
             <!-- 清單項目將由 JavaScript 動態生成 -->
@@ -366,9 +373,9 @@
             <!-- 操作歷史將由 JavaScript 動態生成 -->
         </div>
         <div class="panel-footer">
-            <p>總計：<span id="totalCount">0</span> 張寶圖</p>
+            <p id="totalCountText">總計：0 張寶圖</p>
             <button class="btn btn-primary" id="generateRouteBtn" disabled>
-                <span class="btn-icon">🗺️</span> 生成路線
+                <span class="btn-icon">🗺️</span> <span data-i18n="buttons.generateRoute">生成路線</span>
             </button>
         </div>
     </div>
@@ -376,18 +383,18 @@
     <!-- 路線結果面板 -->
     <div class="route-panel" id="routePanel">
         <div class="panel-header">
-            <h3>最佳路線</h3>
-            <button class="btn-close" id="closeRoutePanelBtn" title="關閉">×</button>
+            <h3 data-i18n="route.title">最佳路線</h3>
+            <button class="btn-close" id="closeRoutePanelBtn" data-i18n-title="buttons.close" title="關閉">×</button>
         </div>
         <div class="route-summary" id="routeSummary">
             <!-- 路線摘要將由 JavaScript 動態生成 -->
         </div>
         <div class="route-actions">
             <button class="btn btn-primary" id="copyRouteBtn">
-                <span class="btn-icon">📋</span> 複製路線
+                <span class="btn-icon">📋</span> <span data-i18n="buttons.copyRoute">複製路線</span>
             </button>
             <button class="btn btn-secondary" id="customFormatBtn">
-                <span class="btn-icon">⚙️</span> 自訂格式
+                <span class="btn-icon">⚙️</span> <span data-i18n="buttons.customFormat">自訂格式</span>
             </button>
         </div>
         <div class="route-steps" id="routeSteps">
@@ -398,16 +405,16 @@
     <!-- 自訂格式設定面板 -->
     <div class="format-panel" id="formatPanel">
         <div class="panel-header">
-            <h3>自訂輸出格式</h3>
+            <h3 data-i18n="format.title">自訂輸出格式</h3>
             <button class="btn-close" id="closeFormatPanelBtn" title="關閉">×</button>
         </div>
         <div class="format-content">
             <div class="format-lang-switcher">
-                <label>快速切換語言模板：</label>
+                <label data-i18n="format.quickSwitch">快速切換語言模板：</label>
                 <div class="lang-buttons">
-                    <button class="btn btn-sm" id="langZhBtn">中文</button>
-                    <button class="btn btn-sm" id="langEnBtn">英文</button>
-                    <button class="btn btn-sm" id="langJaBtn">日文</button>
+                    <button class="btn btn-sm" id="langZhBtn" data-i18n="format.chinese">中文</button>
+                    <button class="btn btn-sm" id="langEnBtn" data-i18n="format.english">英文</button>
+                    <button class="btn btn-sm" id="langJaBtn" data-i18n="format.japanese">日文</button>
                 </div>
             </div>
             
@@ -448,8 +455,8 @@
             </div>
             
             <div class="format-actions">
-                <button class="btn btn-secondary" id="resetFormatBtn">重置為預設值</button>
-                <button class="btn btn-primary" id="saveFormatBtn">儲存設定</button>
+                <button class="btn btn-secondary" id="resetFormatBtn" data-i18n="buttons.reset">重置為預設值</button>
+                <button class="btn btn-primary" id="saveFormatBtn" data-i18n="buttons.save">儲存設定</button>
             </div>
         </div>
     </div>
@@ -458,17 +465,17 @@
     <div class="modal hidden" id="joinRoomModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>加入隊伍</h3>
+                <h3 data-i18n="modals.joinRoom.title">加入隊伍</h3>
                 <button class="btn-close" id="closeJoinModalBtn">×</button>
             </div>
             <div class="modal-body">
-                <label for="roomCodeInput">請輸入隊伍代號：</label>
-                <input type="text" id="roomCodeInput" class="input-field" placeholder="例如：A3B7K9" maxlength="6" style="text-transform: uppercase;">
-                <div class="modal-hint">請向隊長取得 6 位英數字代號</div>
+                <label for="roomCodeInput" data-i18n="modals.joinRoom.label">請輸入隊伍代號：</label>
+                <input type="text" id="roomCodeInput" class="input-field uppercase-input" data-i18n-placeholder="modals.joinRoom.placeholder" placeholder="例如：A3B7K9" maxlength="6">
+                <div class="modal-hint" data-i18n="modals.joinRoom.hint">請向隊長取得 6 位英數字代號</div>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" id="cancelJoinBtn">取消</button>
-                <button class="btn btn-primary" id="confirmJoinBtn">加入</button>
+                <button class="btn btn-secondary" id="cancelJoinBtn" data-i18n="buttons.cancel">取消</button>
+                <button class="btn btn-primary" id="confirmJoinBtn" data-i18n="buttons.joinRoom">加入</button>
             </div>
         </div>
     </div>
@@ -477,17 +484,17 @@
     <div class="modal hidden" id="editNicknameModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>編輯暱稱</h3>
+                <h3 data-i18n="modals.editNickname.title">編輯暱稱</h3>
                 <button class="btn-close" id="closeNicknameModalBtn">×</button>
             </div>
             <div class="modal-body">
-                <label for="nicknameInput">您的暱稱：</label>
-                <input type="text" id="nicknameInput" class="input-field" placeholder="請輸入暱稱" maxlength="20">
-                <div class="modal-hint">其他成員將看到您的暱稱</div>
+                <label for="nicknameInput" data-i18n="modals.editNickname.label">您的暱稱：</label>
+                <input type="text" id="nicknameInput" class="input-field" data-i18n-placeholder="modals.editNickname.placeholder" placeholder="請輸入暱稱" maxlength="20">
+                <div class="modal-hint" data-i18n="modals.editNickname.hint">其他成員將看到您的暱稱</div>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" id="cancelNicknameBtn">取消</button>
-                <button class="btn btn-primary" id="confirmNicknameBtn">確認</button>
+                <button class="btn btn-secondary" id="cancelNicknameBtn" data-i18n="buttons.cancel">取消</button>
+                <button class="btn btn-primary" id="confirmNicknameBtn" data-i18n="buttons.confirm">確認</button>
             </div>
         </div>
     </div>
@@ -496,17 +503,17 @@
     <div class="modal hidden" id="leaveRoomModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>離開隊伍</h3>
+                <h3 data-i18n="modals.leaveRoom.title">離開隊伍</h3>
                 <button class="btn-close" id="closeLeaveModalBtn">×</button>
             </div>
             <div class="modal-body">
-                <p>您確定要離開隊伍嗎？</p>
-                <p>是否保留本地寶圖清單？</p>
+                <p data-i18n="modals.leaveRoom.message">您確定要離開隊伍嗎？</p>
+                <p data-i18n="modals.leaveRoom.keepList">是否保留本地寶圖清單？</p>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" id="leaveKeepListBtn">保留清單並離開</button>
-                <button class="btn btn-danger" id="leaveClearListBtn">清空清單並離開</button>
-                <button class="btn btn-primary" id="cancelLeaveBtn">取消</button>
+                <button class="btn btn-secondary" id="leaveKeepListBtn" data-i18n="modals.leaveRoom.keepButton">保留清單並離開</button>
+                <button class="btn btn-danger" id="leaveClearListBtn" data-i18n="modals.leaveRoom.clearButton">清空清單並離開</button>
+                <button class="btn btn-primary" id="cancelLeaveBtn" data-i18n="buttons.cancel">取消</button>
             </div>
         </div>
     </div>
@@ -536,6 +543,7 @@
 
     <script src="../../assets/js/common.js"></script>
     <script src="../../assets/js/security-utils.js"></script>
+    <script src="i18n.js"></script>
     <script src="coordinate-utils.js"></script>
     <script src="list-manager.js"></script>
     <script src="filter-manager.js"></script>
