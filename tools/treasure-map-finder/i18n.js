@@ -121,7 +121,7 @@ class I18n {
 
         this.currentLang = lang;
         this.saveLanguagePreference(lang);
-        this.translatePage();
+        // 由 'languageChanged' 事件觸發頁面翻譯，避免重複執行
         
         // 觸發自訂事件，讓其他模組知道語言已變更
         window.dispatchEvent(new CustomEvent('languageChanged', { detail: { lang } }));
