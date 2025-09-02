@@ -188,14 +188,14 @@ class RoomCollaboration {
     async createRoom() {
         // 檢查是否已有隊伍
         if (this.currentRoom) {
-            this.showToast('您已在隊伍中，請先離開現有隊伍', 'warning');
+            this.showToast(i18n.t('messages.warning.alreadyInRoom'), 'warning');
             return;
         }
 
         // 檢查瀏覽器限制
         const browserLimit = localStorage.getItem('ff14tw_room_created');
         if (browserLimit) {
-            this.showToast('此瀏覽器已有隊伍記錄，請先清除或使用其他瀏覽器', 'warning');
+            this.showToast(i18n.t('messages.warning.browserHasRoom'), 'warning');
             return;
         }
 
@@ -265,18 +265,18 @@ class RoomCollaboration {
             });
 
             // 顯示成功訊息
-            this.showToast(`隊伍 ${room.roomCode} 建立成功！`);
+            this.showToast(i18n.t('messages.success.roomCreated', { code: room.roomCode }));
 
         } catch (error) {
             console.error('建立隊伍失敗:', error);
-            this.showToast(error.message || '建立隊伍失敗，請稍後再試', 'error');
+            this.showToast(error.message || i18n.t('messages.error.roomCreateFailed'), 'error');
         }
     }
 
     // 顯示加入隊伍對話框
     showJoinRoomDialog() {
         if (this.currentRoom) {
-            this.showToast('您已在隊伍中，請先離開現有隊伍', 'warning');
+            this.showToast(i18n.t('messages.warning.alreadyInRoom'), 'warning');
             return;
         }
 
@@ -290,7 +290,7 @@ class RoomCollaboration {
         const roomCode = document.getElementById('roomCodeInput').value.trim().toUpperCase();
 
         if (!roomCode || roomCode.length !== RoomCollaboration.CONSTANTS.ROOM_CODE_LENGTH) {
-            this.showToast('請輸入有效的 6 位隊伍代號', 'warning');
+            this.showToast(i18n.t('messages.warning.invalidRoomCode'), 'warning');
             return;
         }
 
@@ -379,11 +379,11 @@ class RoomCollaboration {
             // 同步現有的寶圖清單
             this.syncTreasureMaps();
 
-            this.showToast(`成功加入隊伍 ${roomCode}`);
+            this.showToast(i18n.t('messages.success.roomJoined', { code: roomCode }));
 
         } catch (error) {
             console.error('加入隊伍失敗:', error);
-            this.showToast(error.message || '加入隊伍失敗，請確認隊伍代號是否正確', 'error');
+            this.showToast(error.message || i18n.t('messages.error.roomJoinFailed'), 'error');
         }
     }
 
@@ -401,12 +401,12 @@ class RoomCollaboration {
         const newNickname = document.getElementById('nicknameInput').value.trim();
 
         if (!newNickname) {
-            this.showToast('請輸入暱稱', 'warning');
+            this.showToast(i18n.t('messages.warning.emptyNickname'), 'warning');
             return;
         }
 
         if (newNickname.length > 20) {
-            this.showToast('暱稱不能超過 20 個字元', 'warning');
+            this.showToast(i18n.t('messages.warning.nicknameTooLong'), 'warning');
             return;
         }
 
@@ -453,7 +453,7 @@ class RoomCollaboration {
             }));
 
             this.hideModal('editNickname');
-            this.showToast('暱稱已更新');
+            this.showToast(i18n.t('messages.success.nicknameUpdated'));
 
             // 記錄操作歷史
             this.addOperationHistory({
@@ -464,7 +464,7 @@ class RoomCollaboration {
 
         } catch (error) {
             console.error('更新暱稱失敗:', error);
-            this.showToast('更新暱稱失敗，請稍後再試', 'error');
+            this.showToast(i18n.t('messages.error.updateFailed'), 'error');
         }
     }
 
@@ -525,11 +525,11 @@ class RoomCollaboration {
             this.hideModal('leaveRoom');
             this.updateRoomUI();
 
-            this.showToast('已離開隊伍');
+            this.showToast(i18n.t('messages.success.leftRoom'));
 
         } catch (error) {
             console.error('離開隊伍失敗:', error);
-            this.showToast('離開隊伍失敗，請稍後再試', 'error');
+            this.showToast(i18n.t('messages.error.updateFailed'), 'error');
         }
     }
 
@@ -538,7 +538,7 @@ class RoomCollaboration {
         const code = this.currentRoom.roomCode;
         if (navigator.clipboard) {
             navigator.clipboard.writeText(code).then(() => {
-                this.showToast('隊伍代號已複製');
+                this.showToast(i18n.t('messages.success.roomCodeCopied'));
             }).catch(() => {
                 this.fallbackCopy(code);
             });
@@ -571,15 +571,15 @@ class RoomCollaboration {
 
         let text;
         if (diff < 60000) { // 1分鐘內
-            text = '剛剛';
+            text = i18n.t('room.justNow');
         } else if (diff < 3600000) { // 1小時內
             const minutes = Math.floor(diff / 60000);
-            text = `${minutes}分鐘前`;
+            text = i18n.plural('room.minutesAgo', minutes, { minutes });
         } else if (diff < 86400000) { // 1天內
             const hours = Math.floor(diff / 3600000);
-            text = `${hours}小時前`;
+            text = i18n.plural('room.hoursAgo', hours, { hours });
         } else {
-            text = '超過1天前';
+            text = i18n.t('room.overDayAgo');
         }
 
         this.elements.lastActivity.textContent = text;
@@ -595,7 +595,7 @@ class RoomCollaboration {
         const remaining = expireTime - now;
 
         if (remaining <= 0) {
-            this.elements.roomTTL.textContent = '已過期';
+            this.elements.roomTTL.textContent = i18n.t('room.expired');
             return;
         }
 
@@ -603,9 +603,9 @@ class RoomCollaboration {
         const minutes = Math.floor((remaining % 3600000) / 60000);
 
         if (hours > 0) {
-            this.elements.roomTTL.textContent = `${hours}小時${minutes}分`;
+            this.elements.roomTTL.textContent = i18n.t('room.hoursMinutes', { hours, minutes });
         } else {
-            this.elements.roomTTL.textContent = `${minutes}分鐘`;
+            this.elements.roomTTL.textContent = i18n.plural('room.minutesRemaining', minutes, { minutes });
         }
     }
 
