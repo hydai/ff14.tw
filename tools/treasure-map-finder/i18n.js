@@ -268,9 +268,9 @@ class I18n {
                 // 如果元素沒有子元素，則可以安全地設置 textContent
                 el.textContent = text;
             } else {
-                // 如果有子元素但沒有文字節點，在最前面插入一個新的文字節點
+                // 如果有子元素但沒有文字節點，在最後面附加一個新的文字節點
                 const newTextNode = document.createTextNode(text);
-                el.insertBefore(newTextNode, el.firstChild);
+                el.appendChild(newTextNode);
             }
         };
 
