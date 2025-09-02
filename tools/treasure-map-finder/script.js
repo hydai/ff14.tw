@@ -1114,7 +1114,7 @@ class TreasureMapFinder {
             const loadingDiv = document.createElement('div');
             loadingDiv.className = 'loading';
             loadingDiv.setAttribute('data-i18n', 'results.loading');
-            loadingDiv.textContent = i18n.t('results.loading');
+            i18n.translateNode(loadingDiv);
             this.elements.treasureGrid.appendChild(loadingDiv);
         }
     }
@@ -1129,7 +1129,7 @@ class TreasureMapFinder {
         const reloadBtn = document.createElement('button');
         reloadBtn.className = 'btn btn-primary';
         reloadBtn.setAttribute('data-i18n', 'buttons.reload');
-        reloadBtn.textContent = i18n.t('buttons.reload');
+        i18n.translateNode(reloadBtn);
         reloadBtn.addEventListener('click', () => location.reload());
         
         errorDiv.appendChild(document.createElement('br'));
