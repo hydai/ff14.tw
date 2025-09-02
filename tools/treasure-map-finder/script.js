@@ -1301,7 +1301,7 @@ class TreasureMapFinder {
         navigator.clipboard.writeText(routeText).then(() => {
             FF14Utils.showToast(i18n.t('messages.success.routeCopiedWithCount', { count: this.currentRoute.length }), 'success');
         }).catch(() => {
-            FF14Utils.showToast('複製失敗，請再試一次', 'error');
+            FF14Utils.showToast(i18n.t('messages.error.copyFailed'), 'error');
         });
     }
     
