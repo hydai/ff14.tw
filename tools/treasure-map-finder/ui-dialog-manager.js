@@ -410,7 +410,7 @@ class UIDialogManager {
             const textSpan = document.createElement('span');
             textSpan.className = 'step-text';
             const currentLang = i18n.getCurrentLanguage();
-            const aetheryteName = aetheryteNames[currentLang] || aetheryteNames.zh || aetheryteNames;
+            const aetheryteName = aetheryteNames[currentLang] || aetheryteNames.zh || aetheryteNames.en || '';
             textSpan.textContent = i18n.t('route.teleportTo', { location: aetheryteName });
             
             const coordsSpan = document.createElement('span');

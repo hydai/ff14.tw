@@ -377,14 +377,14 @@ class TreasureMapFinder {
         
         // 加入清單按鈕
         const addBtn = document.createElement('button');
-        addBtn.className = `btn ${isInList ? 'btn-success' : 'btn-primary'} btn-sm btn-add-to-list`;
-        addBtn.dataset.state = isInList ? 'added' : 'default';
+        addBtn.className = 'btn btn-sm btn-add-to-list';
         
         const span = document.createElement('span');
         span.className = 'btn-text';
-        span.setAttribute('data-i18n', isInList ? 'buttons.added' : 'buttons.addToList');
-        span.textContent = isInList ? i18n.t('buttons.added') : i18n.t('buttons.addToList');
         addBtn.appendChild(span);
+        
+        // 使用輔助函式更新按鈕狀態
+        this.updateAddToListButton(addBtn, isInList);
         
         addBtn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -448,17 +448,25 @@ class TreasureMapFinder {
         document.querySelectorAll('.treasure-card').forEach(card => {
             const mapId = card.dataset.mapId;
             const button = card.querySelector('.btn-add-to-list');
-            const btnText = button.querySelector('.btn-text');
             const isInList = this.listManager.has(mapId);
             
-            button.dataset.state = isInList ? 'added' : 'default';
-            button.className = `btn ${isInList ? 'btn-success' : 'btn-primary'} btn-sm btn-add-to-list`;
-            
-            // 更新 data-i18n 屬性和文字內容
-            const i18nKey = isInList ? 'buttons.added' : 'buttons.addToList';
-            btnText.setAttribute('data-i18n', i18nKey);
-            btnText.textContent = i18n.t(i18nKey);
+            // 使用輔助函式更新按鈕狀態
+            this.updateAddToListButton(button, isInList);
         });
+    }
+    
+    // 輔助函式：更新加入清單按鈕的狀態
+    updateAddToListButton(button, isInList) {
+        const btnText = button.querySelector('.btn-text');
+        
+        // 更新按鈕狀態和樣式
+        button.dataset.state = isInList ? 'added' : 'default';
+        button.className = `btn ${isInList ? 'btn-success' : 'btn-primary'} btn-sm btn-add-to-list`;
+        
+        // 更新 data-i18n 屬性和文字內容
+        const i18nKey = isInList ? 'buttons.added' : 'buttons.addToList';
+        btnText.setAttribute('data-i18n', i18nKey);
+        btnText.textContent = i18n.t(i18nKey);
     }
     
     copyCoordinates(map) {
