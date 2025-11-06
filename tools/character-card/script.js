@@ -5,6 +5,7 @@ class CharacterCardGenerator {
         // 預設值
         DEFAULT_CHARACTER_NAME: '角色名稱',
         DEFAULT_JOB_NAME: '職業',
+        DEFAULT_JOB_ICON: '⚔️',
         DEFAULT_OPACITY: 40,
         DEFAULT_LAYOUT: 'horizontal',
 
@@ -450,7 +451,8 @@ class CharacterCardGenerator {
                 img.className = 'job-icon-img';
                 el.appendChild(img);
             } else {
-                el.textContent = '⚔️';
+                // 回退到預設圖示
+                el.textContent = CharacterCardGenerator.CONSTANTS.DEFAULT_JOB_ICON;
             }
         });
 
