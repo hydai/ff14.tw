@@ -389,26 +389,19 @@ class CharacterCardGenerator {
     }
 
     initializeValidation() {
-        // 角色名稱長度限制
-        this.inputs.characterName.addEventListener('input', () => {
-            if (this.inputs.characterName.value.length > CharacterCardGenerator.CONSTANTS.MAX_NAME_LENGTH) {
-                this.inputs.characterName.value = this.inputs.characterName.value.substring(0, CharacterCardGenerator.CONSTANTS.MAX_NAME_LENGTH);
-            }
-        });
+        // 輔助函數：為輸入框添加長度驗證
+        const addValidation = (input, maxLength) => {
+            input.addEventListener('input', () => {
+                if (input.value.length > maxLength) {
+                    input.value = input.value.substring(0, maxLength);
+                }
+            });
+        };
 
-        // 稱號長度限制
-        this.inputs.characterTitle.addEventListener('input', () => {
-            if (this.inputs.characterTitle.value.length > CharacterCardGenerator.CONSTANTS.MAX_TITLE_LENGTH) {
-                this.inputs.characterTitle.value = this.inputs.characterTitle.value.substring(0, CharacterCardGenerator.CONSTANTS.MAX_TITLE_LENGTH);
-            }
-        });
-
-        // 部隊名稱長度限制
-        this.inputs.freeCompany.addEventListener('input', () => {
-            if (this.inputs.freeCompany.value.length > CharacterCardGenerator.CONSTANTS.MAX_COMPANY_LENGTH) {
-                this.inputs.freeCompany.value = this.inputs.freeCompany.value.substring(0, CharacterCardGenerator.CONSTANTS.MAX_COMPANY_LENGTH);
-            }
-        });
+        // 應用長度驗證
+        addValidation(this.inputs.characterName, CharacterCardGenerator.CONSTANTS.MAX_NAME_LENGTH);
+        addValidation(this.inputs.characterTitle, CharacterCardGenerator.CONSTANTS.MAX_TITLE_LENGTH);
+        addValidation(this.inputs.freeCompany, CharacterCardGenerator.CONSTANTS.MAX_COMPANY_LENGTH);
     }
 
     // ===== 角色卡更新方法 =====
