@@ -16,6 +16,9 @@ class CharacterCardGenerator {
         MAX_COMPANY_LENGTH: 25,
         MAX_IMAGE_SIZE: 5 * 1024 * 1024, // 5MB
 
+        // 驗證規則
+        COLOR_REGEX: /^#([0-9a-f]{3}){1,2}$/i, // 支援 3 位 (#FFF) 和 6 位 (#FFFFFF) 色碼
+
         // 圖片控制
         IMAGE_MOVE_STEP: 10,
         AUTO_COLLAPSE_DELAY: 500,
@@ -204,7 +207,7 @@ class CharacterCardGenerator {
 
         this.inputs.nameColorText.addEventListener('input', () => {
             const color = this.inputs.nameColorText.value.trim();
-            if (/^#[0-9A-Fa-f]{6}$/.test(color)) {
+            if (CharacterCardGenerator.CONSTANTS.COLOR_REGEX.test(color)) {
                 this.inputs.nameColor.value = color;
                 this.updateCharacterCard();
             }
