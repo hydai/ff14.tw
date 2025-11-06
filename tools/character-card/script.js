@@ -188,19 +188,14 @@ class CharacterCardGenerator {
     // ===== 初始化方法 =====
 
     initializeEvents() {
-        // 輸入欄位監聽（除了 jobName 和 serverName）
-        Object.keys(this.inputs).forEach(key => {
-            if (this.inputs[key] && key !== 'jobName' && key !== 'serverName') {
-                this.inputs[key].addEventListener('input', () => this.updateCharacterCard());
-                this.inputs[key].addEventListener('change', () => this.updateCharacterCard());
-            }
-        });
-
-        // 版型切換
+        // 為各個輸入欄位明確地綁定事件
+        this.inputs.characterName.addEventListener('input', () => this.updateCharacterCard());
+        this.inputs.characterTitle.addEventListener('input', () => this.updateCharacterCard());
+        this.inputs.freeCompany.addEventListener('input', () => this.updateCharacterCard());
         this.inputs.cardLayout.addEventListener('change', () => this.updateCharacterCard());
 
         // 顏色選擇器同步
-        this.inputs.nameColor.addEventListener('change', () => {
+        this.inputs.nameColor.addEventListener('input', () => { // 使用 'input' 事件以獲得即時預覽
             this.inputs.nameColorText.value = this.inputs.nameColor.value;
             this.updateCharacterCard();
         });
