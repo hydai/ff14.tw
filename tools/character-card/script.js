@@ -540,42 +540,46 @@ class CharacterCardGenerator {
     }
 
     reorganizeInfoLine() {
-        const infoLines = document.querySelectorAll('.info-line');
-        infoLines.forEach(infoLine => {
-            const titleElement = infoLine.querySelector('.character-title');
-            const companyElement = infoLine.querySelector('.company-name');
-            const serverElement = infoLine.querySelector('.server-name');
-            const separators = infoLine.querySelectorAll('.separator');
+        const layoutSelector = this.characterCard.classList.contains('layout-horizontal')
+            ? '.horizontal-layout'
+            : '.vertical-layout';
+        const infoLine = this.characterCard.querySelector(`${layoutSelector} .info-line`);
 
-            // 檢查哪些元素有內容
-            const hasTitle = titleElement && titleElement.style.display !== 'none' &&
-                           titleElement.textContent.trim() && titleElement.textContent.trim() !== '---';
-            const hasCompany = companyElement && companyElement.style.display !== 'none' &&
-                             companyElement.textContent.trim() && companyElement.textContent.trim() !== '---';
-            const hasServer = serverElement && serverElement.style.display !== 'none' &&
-                            serverElement.textContent.trim() &&
-                            serverElement.textContent.trim() !== '伺服器';
+        if (!infoLine) return;
 
-            // 創建可見元素的數組
-            const visibleElements = [];
-            if (hasTitle) visibleElements.push('title');
-            if (hasCompany) visibleElements.push('company');
-            if (hasServer) visibleElements.push('server');
+        const titleElement = infoLine.querySelector('.character-title');
+        const companyElement = infoLine.querySelector('.company-name');
+        const serverElement = infoLine.querySelector('.server-name');
+        const separators = infoLine.querySelectorAll('.separator');
 
-            // 隱藏所有分隔符號
-            separators.forEach(sep => sep.style.display = 'none');
+        // 檢查哪些元素有內容
+        const hasTitle = titleElement && titleElement.style.display !== 'none' &&
+                       titleElement.textContent.trim() && titleElement.textContent.trim() !== '---';
+        const hasCompany = companyElement && companyElement.style.display !== 'none' &&
+                         companyElement.textContent.trim() && companyElement.textContent.trim() !== '---';
+        const hasServer = serverElement && serverElement.style.display !== 'none' &&
+                        serverElement.textContent.trim() &&
+                        serverElement.textContent.trim() !== '伺服器';
 
-            // 如果只有一個或沒有元素，不需要分隔符號
-            if (visibleElements.length <= 1) return;
+        // 創建可見元素的數組
+        const visibleElements = [];
+        if (hasTitle) visibleElements.push('title');
+        if (hasCompany) visibleElements.push('company');
+        if (hasServer) visibleElements.push('server');
 
-            // 根據可見元素重新顯示相應的分隔符號
-            if (visibleElements.length >= 2) {
-                if (separators[0]) separators[0].style.display = 'inline';
-            }
-            if (visibleElements.length >= 3) {
-                if (separators[1]) separators[1].style.display = 'inline';
-            }
-        });
+        // 隱藏所有分隔符號
+        separators.forEach(sep => sep.style.display = 'none');
+
+        // 如果只有一個或沒有元素，不需要分隔符號
+        if (visibleElements.length <= 1) return;
+
+        // 根據可見元素重新顯示相應的分隔符號
+        if (visibleElements.length >= 2) {
+            if (separators[0]) separators[0].style.display = 'inline';
+        }
+        if (visibleElements.length >= 3) {
+            if (separators[1]) separators[1].style.display = 'inline';
+        }
     }
 
     // ===== 圖片處理方法 =====
