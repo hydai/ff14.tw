@@ -290,20 +290,15 @@ class CharacterCardGenerator {
     }
 
     initializeDragFeature() {
-        // 綁定拖拉事件處理器
+        // 綁定拖拉事件處理器（保持 this 上下文）
         this.handleStartDrag = (e) => this.startDrag(e);
         this.handleDoDrag = (e) => this.doDrag(e);
         this.handleEndDrag = () => this.endDrag();
 
-        // 滑鼠事件
+        // 只附加開始拖拉的監聽器
+        // move 和 end 監聽器會在 startDrag 中動態附加，在 endDrag 中移除
         this.characterCard.addEventListener('mousedown', this.handleStartDrag);
-        document.addEventListener('mousemove', this.handleDoDrag);
-        document.addEventListener('mouseup', this.handleEndDrag);
-
-        // 觸控事件
         this.characterCard.addEventListener('touchstart', this.handleStartDrag);
-        document.addEventListener('touchmove', this.handleDoDrag);
-        document.addEventListener('touchend', this.handleEndDrag);
     }
 
     initializeServerSelection() {
@@ -671,6 +666,13 @@ class CharacterCardGenerator {
         this.state.dragging.lastY = clientY;
 
         this.characterCard.style.cursor = 'grabbing';
+
+        // 動態附加 move 和 end 監聽器（只在拖拉期間）
+        document.addEventListener('mousemove', this.handleDoDrag);
+        document.addEventListener('mouseup', this.handleEndDrag);
+        document.addEventListener('touchmove', this.handleDoDrag);
+        document.addEventListener('touchend', this.handleEndDrag);
+
         e.preventDefault();
     }
 
@@ -696,6 +698,12 @@ class CharacterCardGenerator {
     endDrag() {
         this.state.dragging.isDragging = false;
         this.characterCard.style.cursor = 'default';
+
+        // 移除 move 和 end 監聽器（拖拉結束，不再需要）
+        document.removeEventListener('mousemove', this.handleDoDrag);
+        document.removeEventListener('mouseup', this.handleEndDrag);
+        document.removeEventListener('touchmove', this.handleDoDrag);
+        document.removeEventListener('touchend', this.handleEndDrag);
     }
 
     // ===== 伺服器選擇方法 =====
