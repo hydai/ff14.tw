@@ -348,8 +348,8 @@ class TimedGatheringManager {
 
     renderItems() {
         const container = this.elements.itemsContainer;
-        container.innerHTML = '';
-        
+        SecurityUtils.clearElement(container);
+
         if (this.filteredData.length === 0) {
             const emptyMessage = document.createElement('div');
             emptyMessage.className = 'empty-message';
@@ -483,8 +483,8 @@ class TimedGatheringManager {
     updateListDisplay() {
         const list = this.listManager.getList(this.currentListId);
         const container = this.elements.listItems;
-        container.innerHTML = '';
-        
+        SecurityUtils.clearElement(container);
+
         if (!list || list.items.length === 0) {
             // Use safe DOM manipulation instead of innerHTML
             const emptyMessage = SecurityUtils.createEmptyMessage(
@@ -574,8 +574,8 @@ class TimedGatheringManager {
 
     renderListTabs(lists) {
         const container = this.elements.listTabs;
-        container.innerHTML = '';
-        
+        SecurityUtils.clearElement(container);
+
         lists.forEach(list => {
             const tab = document.createElement('button');
             tab.className = 'list-tab';
