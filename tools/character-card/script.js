@@ -366,31 +366,29 @@ class CharacterCardGenerator {
     }
 
     initializeCollapsible() {
-        // 伺服器折疊按鈕事件
-        this.collapsibleElements.serverHeader.addEventListener('click', (e) => {
-            if (e.target.classList.contains('collapse-toggle') || e.target.classList.contains('toggle-icon')) {
-                return;
-            }
-            this.toggleCollapsible('server');
-        });
+        // 輔助函數：設定折疊功能
+        const setupCollapsible = (section) => {
+            const header = this.collapsibleElements[`${section}Header`];
+            const toggle = this.collapsibleElements[`${section}Toggle`];
 
-        this.collapsibleElements.serverToggle.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.toggleCollapsible('server');
-        });
+            // 標頭點擊事件
+            header.addEventListener('click', (e) => {
+                // 如果點擊的是切換按鈕或其子元素，則由按鈕自己的事件處理器處理
+                if (toggle.contains(e.target)) {
+                    return;
+                }
+                this.toggleCollapsible(section);
+            });
 
-        // 職業折疊按鈕事件
-        this.collapsibleElements.jobHeader.addEventListener('click', (e) => {
-            if (e.target.classList.contains('collapse-toggle') || e.target.classList.contains('toggle-icon')) {
-                return;
-            }
-            this.toggleCollapsible('job');
-        });
+            // 切換按鈕點擊事件
+            toggle.addEventListener('click', () => {
+                this.toggleCollapsible(section);
+            });
+        };
 
-        this.collapsibleElements.jobToggle.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.toggleCollapsible('job');
-        });
+        // 設定伺服器和職業的折疊功能
+        setupCollapsible('server');
+        setupCollapsible('job');
     }
 
     initializeValidation() {
