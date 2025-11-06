@@ -301,9 +301,13 @@ class CharacterCardGenerator {
     }
 
     initializeServerSelection() {
-        // 區域選擇
-        this.serverSelectionElements.regionButtons.forEach(button => {
-            button.addEventListener('click', () => {
+        // 使用事件委派處理所有伺服器相關按鈕（區域、資料中心、伺服器）
+        this.collapsibleElements.serverContent.addEventListener('click', (e) => {
+            const button = e.target.closest('.selection-btn');
+            if (!button) return;
+
+            // 區域選擇
+            if (button.dataset.region) {
                 const region = button.dataset.region;
 
                 // 更新選擇狀態
@@ -321,7 +325,48 @@ class CharacterCardGenerator {
                 // 隱藏伺服器選擇和結果
                 this.serverSelectionElements.serverStep.style.display = 'none';
                 this.serverSelectionElements.selectedServer.style.display = 'none';
-            });
+            }
+            // 資料中心選擇
+            else if (button.dataset.datacenter) {
+                const datacenter = button.dataset.datacenter;
+
+                // 更新選擇狀態
+                this.state.serverSelection.datacenter = datacenter;
+                this.state.serverSelection.server = null;
+
+                // 更新按鈕狀態
+                this.serverSelectionElements.datacenterGrid.querySelectorAll('.selection-btn').forEach(btn => btn.classList.remove('selected'));
+                button.classList.add('selected');
+
+                // 顯示伺服器選擇
+                this.showServerSelection(this.state.serverSelection.region, datacenter);
+
+                // 隱藏結果
+                this.serverSelectionElements.selectedServer.style.display = 'none';
+            }
+            // 伺服器選擇
+            else if (button.dataset.server) {
+                const server = button.dataset.server;
+
+                // 更新選擇狀態
+                this.state.serverSelection.server = server;
+
+                // 更新按鈕狀態
+                this.serverSelectionElements.serverGrid.querySelectorAll('.selection-btn').forEach(btn => btn.classList.remove('selected'));
+                button.classList.add('selected');
+
+                // 顯示選擇結果
+                this.showSelectedServer(this.state.serverSelection.region, this.state.serverSelection.datacenter, server);
+
+                // 更新隱藏的input值
+                this.serverSelectionElements.hiddenInput.value = server;
+
+                // 更新角色卡
+                this.updateCharacterCard();
+
+                // 自動折疊伺服器選擇區域
+                this.autoCollapse('server');
+            }
         });
 
         // 重新選擇按鈕
@@ -329,30 +374,31 @@ class CharacterCardGenerator {
     }
 
     initializeJobSelection() {
-        // 職業選擇
-        this.jobSelectionElements.jobButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                const job = button.dataset.job;
-                const category = button.dataset.category;
+        // 使用事件委派處理職業選擇
+        this.collapsibleElements.jobContent.addEventListener('click', (e) => {
+            const button = e.target.closest('.job-btn');
+            if (!button) return;
 
-                // 清除所有職業按鈕的選中狀態
-                this.jobSelectionElements.jobButtons.forEach(btn => btn.classList.remove('selected'));
+            const job = button.dataset.job;
+            const category = button.dataset.category;
 
-                // 設置當前按鈕為選中狀態
-                button.classList.add('selected');
+            // 清除所有職業按鈕的選中狀態
+            this.jobSelectionElements.jobButtons.forEach(btn => btn.classList.remove('selected'));
 
-                // 顯示選擇結果
-                this.showSelectedJob(job, category);
+            // 設置當前按鈕為選中狀態
+            button.classList.add('selected');
 
-                // 更新隱藏的input值
-                this.jobSelectionElements.hiddenJobInput.value = job;
+            // 顯示選擇結果
+            this.showSelectedJob(job, category);
 
-                // 更新角色卡
-                this.updateCharacterCard();
+            // 更新隱藏的input值
+            this.jobSelectionElements.hiddenJobInput.value = job;
 
-                // 自動折疊職業選擇區域
-                this.autoCollapse('job');
-            });
+            // 更新角色卡
+            this.updateCharacterCard();
+
+            // 自動折疊職業選擇區域
+            this.autoCollapse('job');
         });
 
         // 重新選擇職業按鈕
@@ -717,22 +763,6 @@ class CharacterCardGenerator {
             button.dataset.datacenter = datacenter;
             button.textContent = datacenter;
 
-            button.addEventListener('click', () => {
-                // 更新選擇狀態
-                this.state.serverSelection.datacenter = datacenter;
-                this.state.serverSelection.server = null;
-
-                // 更新按鈕狀態
-                this.serverSelectionElements.datacenterGrid.querySelectorAll('.selection-btn').forEach(btn => btn.classList.remove('selected'));
-                button.classList.add('selected');
-
-                // 顯示伺服器選擇
-                this.showServerSelection(region, datacenter);
-
-                // 隱藏結果
-                this.serverSelectionElements.selectedServer.style.display = 'none';
-            });
-
             this.serverSelectionElements.datacenterGrid.appendChild(button);
         });
 
@@ -753,27 +783,6 @@ class CharacterCardGenerator {
             button.className = 'selection-btn';
             button.dataset.server = server;
             button.textContent = server;
-
-            button.addEventListener('click', () => {
-                // 更新選擇狀態
-                this.state.serverSelection.server = server;
-
-                // 更新按鈕狀態
-                this.serverSelectionElements.serverGrid.querySelectorAll('.selection-btn').forEach(btn => btn.classList.remove('selected'));
-                button.classList.add('selected');
-
-                // 顯示選擇結果
-                this.showSelectedServer(region, datacenter, server);
-
-                // 更新隱藏的input值
-                this.serverSelectionElements.hiddenInput.value = server;
-
-                // 更新角色卡
-                this.updateCharacterCard();
-
-                // 自動折疊伺服器選擇區域
-                this.autoCollapse('server');
-            });
 
             this.serverSelectionElements.serverGrid.appendChild(button);
         });
