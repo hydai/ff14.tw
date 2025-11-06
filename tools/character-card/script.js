@@ -6,6 +6,7 @@ class CharacterCardGenerator {
         DEFAULT_CHARACTER_NAME: '角色名稱',
         DEFAULT_JOB_NAME: '職業',
         DEFAULT_JOB_ICON: '⚔️',
+        DEFAULT_NAME_COLOR: '#FFFFFF',
         DEFAULT_OPACITY: 40,
         DEFAULT_LAYOUT: 'horizontal',
 
@@ -478,7 +479,7 @@ class CharacterCardGenerator {
         }
 
         // 更新角色名稱顏色
-        const nameColor = this.inputs.nameColor.value || '#FFFFFF';
+        const nameColor = this.inputs.nameColor.value || CharacterCardGenerator.CONSTANTS.DEFAULT_NAME_COLOR;
         cardElements.characterName.forEach(el => {
             el.style.color = nameColor;
         });
