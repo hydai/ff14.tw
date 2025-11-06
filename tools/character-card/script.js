@@ -243,24 +243,18 @@ class CharacterCardGenerator {
 
     initializeImageControls() {
         // 位置控制
-        this.imageElements.moveUp.addEventListener('click', () => {
-            this.state.imageTransform.y -= CharacterCardGenerator.CONSTANTS.IMAGE_MOVE_STEP;
-            this.updateImageTransform();
-        });
+        const moveActions = {
+            moveUp: { axis: 'y', delta: -1 },
+            moveDown: { axis: 'y', delta: 1 },
+            moveLeft: { axis: 'x', delta: -1 },
+            moveRight: { axis: 'x', delta: 1 },
+        };
 
-        this.imageElements.moveDown.addEventListener('click', () => {
-            this.state.imageTransform.y += CharacterCardGenerator.CONSTANTS.IMAGE_MOVE_STEP;
-            this.updateImageTransform();
-        });
-
-        this.imageElements.moveLeft.addEventListener('click', () => {
-            this.state.imageTransform.x -= CharacterCardGenerator.CONSTANTS.IMAGE_MOVE_STEP;
-            this.updateImageTransform();
-        });
-
-        this.imageElements.moveRight.addEventListener('click', () => {
-            this.state.imageTransform.x += CharacterCardGenerator.CONSTANTS.IMAGE_MOVE_STEP;
-            this.updateImageTransform();
+        Object.entries(moveActions).forEach(([action, { axis, delta }]) => {
+            this.imageElements[action].addEventListener('click', () => {
+                this.state.imageTransform[axis] += delta * CharacterCardGenerator.CONSTANTS.IMAGE_MOVE_STEP;
+                this.updateImageTransform();
+            });
         });
 
         // 縮放控制
