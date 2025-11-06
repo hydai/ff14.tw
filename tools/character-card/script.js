@@ -197,7 +197,7 @@ class CharacterCardGenerator {
         });
 
         // 版型切換
-        this.inputs.cardLayout.addEventListener('change', () => this.switchLayout());
+        this.inputs.cardLayout.addEventListener('change', () => this.updateCharacterCard());
 
         // 顏色選擇器同步
         this.inputs.nameColor.addEventListener('change', () => {
@@ -502,7 +502,8 @@ class CharacterCardGenerator {
 
         // 更新版型
         const layout = this.inputs.cardLayout.value || CharacterCardGenerator.CONSTANTS.DEFAULT_LAYOUT;
-        this.characterCard.className = `character-card layout-${layout}`;
+        this.characterCard.classList.remove('layout-horizontal', 'layout-vertical');
+        this.characterCard.classList.add(`layout-${layout}`);
 
         // 根據背景圖片的實際狀態設定 has-background 類別
         if (this.imageElements.backgroundImage.src) {
@@ -569,19 +570,6 @@ class CharacterCardGenerator {
                 if (separators[1]) separators[1].style.display = 'inline';
             }
         });
-    }
-
-    switchLayout() {
-        const layout = this.inputs.cardLayout.value || CharacterCardGenerator.CONSTANTS.DEFAULT_LAYOUT;
-
-        // 移除舊的版型class
-        this.characterCard.classList.remove('layout-horizontal', 'layout-vertical');
-
-        // 添加新的版型class
-        this.characterCard.classList.add(`layout-${layout}`);
-
-        // 更新角色卡內容
-        this.updateCharacterCard();
     }
 
     // ===== 圖片處理方法 =====
