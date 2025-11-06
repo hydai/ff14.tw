@@ -475,8 +475,12 @@ class CharacterCardGenerator {
         // 更新版型
         const layout = this.inputs.cardLayout.value || CharacterCardGenerator.CONSTANTS.DEFAULT_LAYOUT;
         this.characterCard.className = `character-card layout-${layout}`;
-        if (this.characterCard.classList.contains('has-background')) {
+
+        // 根據背景圖片的實際狀態設定 has-background 類別
+        if (this.imageElements.backgroundImage.src) {
             this.characterCard.classList.add('has-background');
+        } else {
+            this.characterCard.classList.remove('has-background');
         }
 
         // 更新角色名稱顏色
