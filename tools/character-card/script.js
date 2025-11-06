@@ -409,19 +409,7 @@ class CharacterCardGenerator {
         // 輔助函數：設定折疊功能
         const setupCollapsible = (section) => {
             const header = this.collapsibleElements[`${section}Header`];
-            const toggle = this.collapsibleElements[`${section}Toggle`];
-
-            // 標頭點擊事件
-            header.addEventListener('click', (e) => {
-                // 如果點擊的是切換按鈕或其子元素，則由按鈕自己的事件處理器處理
-                if (toggle.contains(e.target)) {
-                    return;
-                }
-                this.toggleCollapsible(section);
-            });
-
-            // 切換按鈕點擊事件
-            toggle.addEventListener('click', () => {
+            header.addEventListener('click', () => {
                 this.toggleCollapsible(section);
             });
         };
