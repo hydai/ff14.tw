@@ -155,6 +155,26 @@ class CharacterCardGenerator {
             preview: document.querySelector('.preview-section')
         };
 
+        // 快取角色卡內的 DOM 元素（按版型分類）
+        this.cardElements = {
+            horizontal: {
+                characterName: this.characterCard.querySelectorAll('.horizontal-layout .character-name'),
+                characterTitle: this.characterCard.querySelectorAll('.horizontal-layout .character-title'),
+                serverName: this.characterCard.querySelectorAll('.horizontal-layout .server-name'),
+                jobName: this.characterCard.querySelectorAll('.horizontal-layout .job-name'),
+                jobIcon: this.characterCard.querySelectorAll('.horizontal-layout .job-icon'),
+                freeCompany: this.characterCard.querySelectorAll('.horizontal-layout .company-name')
+            },
+            vertical: {
+                characterName: this.characterCard.querySelectorAll('.vertical-layout .character-name'),
+                characterTitle: this.characterCard.querySelectorAll('.vertical-layout .character-title'),
+                serverName: this.characterCard.querySelectorAll('.vertical-layout .server-name'),
+                jobName: this.characterCard.querySelectorAll('.vertical-layout .job-name'),
+                jobIcon: this.characterCard.querySelectorAll('.vertical-layout .job-icon'),
+                freeCompany: this.characterCard.querySelectorAll('.vertical-layout .company-name')
+            }
+        };
+
         // 狀態管理
         this.state = {
             imageTransform: {
@@ -516,16 +536,7 @@ class CharacterCardGenerator {
 
     getCardElements() {
         const isHorizontal = this.characterCard.classList.contains('layout-horizontal');
-        const layoutSelector = isHorizontal ? '.horizontal-layout' : '.vertical-layout';
-
-        return {
-            characterName: this.characterCard.querySelectorAll(`${layoutSelector} .character-name`),
-            characterTitle: this.characterCard.querySelectorAll(`${layoutSelector} .character-title`),
-            serverName: this.characterCard.querySelectorAll(`${layoutSelector} .server-name`),
-            jobName: this.characterCard.querySelectorAll(`${layoutSelector} .job-name`),
-            jobIcon: this.characterCard.querySelectorAll(`${layoutSelector} .job-icon`),
-            freeCompany: this.characterCard.querySelectorAll(`${layoutSelector} .company-name`)
-        };
+        return isHorizontal ? this.cardElements.horizontal : this.cardElements.vertical;
     }
 
     reorganizeInfoLine() {
