@@ -139,6 +139,17 @@ class CharacterCardGenerator {
             jobContent: document.getElementById('jobCollapsibleContent')
         };
 
+        // 按鈕元素
+        this.buttons = {
+            generateCard: document.getElementById('generateCard'),
+            downloadCard: document.getElementById('downloadCard')
+        };
+
+        // 區域元素
+        this.sections = {
+            preview: document.querySelector('.preview-section')
+        };
+
         // 狀態管理
         this.state = {
             imageTransform: {
@@ -198,10 +209,10 @@ class CharacterCardGenerator {
         });
 
         // 產生角色卡按鈕
-        document.getElementById('generateCard').addEventListener('click', () => this.generateCard());
+        this.buttons.generateCard.addEventListener('click', () => this.generateCard());
 
         // 下載圖片按鈕
-        document.getElementById('downloadCard').addEventListener('click', () => this.downloadCard());
+        this.buttons.downloadCard.addEventListener('click', () => this.downloadCard());
 
         // 圖片上傳
         this.inputs.characterImage.addEventListener('change', (e) => this.handleImageUpload(e));
@@ -873,10 +884,12 @@ class CharacterCardGenerator {
         FF14Utils.showToast('角色卡已生成！');
 
         // 滾動到預覽區域
-        document.querySelector('.preview-section').scrollIntoView({
-            behavior: 'smooth',
-            block: 'center'
-        });
+        if (this.sections.preview) {
+            this.sections.preview.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
+            });
+        }
     }
 
     downloadCard() {
