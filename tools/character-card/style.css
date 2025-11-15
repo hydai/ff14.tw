@@ -888,7 +888,9 @@
 .collapsible-content {
     overflow: hidden;
     transition: max-height 0.4s var(--ease-quint), opacity 0.4s var(--ease-quint);
-    max-height: 2000px;
+    /* Set to a value larger than expected content height for smooth collapse animation
+     * Current content (server/job selection grids) fits well within 1000px */
+    max-height: 1000px;
     opacity: 1;
 }
 
