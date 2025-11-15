@@ -318,7 +318,6 @@
     .character-name {
         background: none;
         -webkit-text-fill-color: var(--editorial-text);
-        color: var(--editorial-text);
     }
 }
 
@@ -737,6 +736,7 @@
     background: linear-gradient(90deg, var(--border-light) 0%, var(--editorial-accent) 100%);
     outline: none;
     -webkit-appearance: none;
+    appearance: none;
 }
 
 .control-group input[type="range"]::-webkit-slider-thumb {
@@ -753,6 +753,14 @@
 .control-group input[type="range"]::-webkit-slider-thumb:hover {
     transform: scale(1.2);
     box-shadow: 0 4px 12px rgba(201, 169, 97, 0.6);
+}
+
+.control-group input[type="range"]::-moz-range-track {
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: linear-gradient(90deg, var(--border-light) 0%, var(--editorial-accent) 100%);
+    border: none;
 }
 
 .control-group input[type="range"]::-moz-range-thumb {
@@ -1134,6 +1142,12 @@
     background: var(--editorial-primary);
     color: var(--editorial-text);
     border-color: var(--editorial-accent);
+}
+
+[data-theme="dark"] .form-group input[type="text"]:focus,
+[data-theme="dark"] .form-group select:focus {
+    border-color: var(--editorial-gold);
+    box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.25);
 }
 
 [data-theme="dark"] .selection-btn {
