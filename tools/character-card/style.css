@@ -311,10 +311,10 @@
 
 /*
  * Fallback for browsers that don't support background-clip: text
- * The @supports rule below provides the actual fallback mechanism,
- * reverting to solid color text when gradient clipping is not supported
+ * Uses 'and' to ensure fallback only applies when BOTH properties are unsupported
+ * Modern browsers support either the standard or prefixed version
  */
-@supports not (background-clip: text) or not (-webkit-background-clip: text) {
+@supports not (background-clip: text) and not (-webkit-background-clip: text) {
     .character-name {
         background: none;
         -webkit-text-fill-color: var(--editorial-text);
@@ -771,6 +771,11 @@
     cursor: pointer;
     border: none;
     box-shadow: 0 2px 8px rgba(201, 169, 97, 0.5);
+    transition: box-shadow 0.3s var(--ease-quint);
+}
+
+.control-group input[type="range"]::-moz-range-thumb:hover {
+    box-shadow: 0 4px 12px rgba(201, 169, 97, 0.6);
 }
 
 .control-group span {
@@ -1165,6 +1170,14 @@
 
 [data-theme="dark"] .image-controls {
     background: linear-gradient(135deg, var(--editorial-secondary) 0%, var(--editorial-primary) 100%);
+}
+
+/* Dark mode text contrast fixes for readability */
+[data-theme="dark"] .selected-label,
+[data-theme="dark"] .job-category-title,
+[data-theme="dark"] .image-controls h3,
+[data-theme="dark"] .control-group label {
+    color: var(--editorial-text);
 }
 
 /* Print Styles */
