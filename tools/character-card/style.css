@@ -295,6 +295,7 @@
     margin: 0;
     letter-spacing: 0.02em;
     text-transform: uppercase;
+    color: var(--editorial-text); /* Fallback for browsers without gradient text support */
     background: linear-gradient(135deg, var(--light-bg) 0%, var(--editorial-gold) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -302,6 +303,15 @@
     text-shadow: 0 4px 20px rgba(212, 175, 55, 0.3);
     position: relative;
     animation: fadeInUp 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.1s backwards;
+}
+
+/* Fallback for browsers that don't support background-clip: text */
+@supports not (background-clip: text) or not (-webkit-background-clip: text) {
+    .character-name {
+        background: none;
+        -webkit-text-fill-color: var(--editorial-text);
+        color: var(--editorial-text);
+    }
 }
 
 .character-name::after {
