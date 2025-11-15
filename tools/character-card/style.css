@@ -295,7 +295,7 @@
     margin: 0;
     letter-spacing: 0.02em;
     text-transform: uppercase;
-    color: var(--editorial-text); /* Fallback for browsers without gradient text support */
+    color: var(--editorial-text);
     background: linear-gradient(135deg, var(--light-bg) 0%, var(--editorial-gold) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -305,7 +305,11 @@
     animation: fadeInUp 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.1s backwards;
 }
 
-/* Fallback for browsers that don't support background-clip: text */
+/*
+ * Fallback for browsers that don't support background-clip: text
+ * The @supports rule below provides the actual fallback mechanism,
+ * reverting to solid color text when gradient clipping is not supported
+ */
 @supports not (background-clip: text) or not (-webkit-background-clip: text) {
     .character-name {
         background: none;
@@ -942,7 +946,12 @@
     font-weight: bold;
 }
 
-/* Selected Display - Elegant Card */
+/*
+ * Selected Display - Elegant Card
+ * Note: display is controlled by JavaScript (script.js lines 636, 650)
+ * - Hidden by default: display: none
+ * - Shown when selected: style.display = 'flex' (via JavaScript)
+ */
 .selected-server {
     display: none;
     align-items: center;
@@ -1164,9 +1173,9 @@
     *,
     *::before,
     *::after {
-        animation-duration: 0.01ms !important;
+        animation-duration: 0s !important;
         animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
+        transition-duration: 0s !important;
         scroll-behavior: auto !important;
     }
 }
