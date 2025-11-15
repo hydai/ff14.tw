@@ -968,9 +968,9 @@
 
 /*
  * Selected Display - Elegant Card
- * Note: display is controlled by JavaScript (script.js lines 636, 650)
+ * Note: Visibility is dynamically controlled by JavaScript selection handlers
  * - Hidden by default: display: none
- * - Shown when selected: style.display = 'flex' (via JavaScript)
+ * - Shown when user selects a server/job: display = 'flex'
  */
 .selected-server {
     display: none;
@@ -1199,6 +1199,29 @@
 
     .character-card {
         box-shadow: none;
+    }
+
+    /* Reset all animated elements to ensure visibility when printing */
+    .character-name,
+    .job-name,
+    .info-line,
+    .job-icon {
+        animation: none !important;
+        opacity: 1 !important;
+        transform: none !important;
+    }
+
+    .character-name::after {
+        animation: none !important;
+        width: 80px !important;
+    }
+
+    /* Globally disable all animations and transitions for print */
+    *,
+    *::before,
+    *::after {
+        animation: none !important;
+        transition: none !important;
     }
 }
 
