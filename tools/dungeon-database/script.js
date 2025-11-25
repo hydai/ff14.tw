@@ -224,9 +224,12 @@ class DungeonDatabase {
      */
     toggleTag(tagElement, selectedSet, dataAttribute) {
         const value = tagElement.dataset[dataAttribute];
-        const isActive = tagElement.classList.toggle('active');
+        if (value === undefined) {
+            console.warn(`Data attribute 'data-${dataAttribute}' not found on element`, tagElement);
+            return;
+        }
 
-        if (isActive) {
+        if (tagElement.classList.toggle('active')) {
             selectedSet.add(value);
         } else {
             selectedSet.delete(value);
