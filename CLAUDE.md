@@ -36,6 +36,7 @@ Tools that fetch JSON data require a local server:
 - 副本資料庫 (`dungeon-database/`) - loads `/data/dungeons.json`
 - 寶圖搜尋器 (`treasure-map-finder/`) - loads `/data/treasure-maps.json` and `/data/zone-translations.json`
 - Lodestone 角色查詢 (`lodestone-lookup/`) - uses logstone API
+- 特殊採集時間管理器 (`timed-gathering/`) - loads `/data/timed-gathering.json`
 
 Tools that work without server (can open HTML directly):
 - Mini Cactpot 計算機
@@ -552,6 +553,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 5. **Faux Hollows Foxes** (`faux-hollows-foxes/`): 6x6 treasure hunting puzzle solver
 6. **Treasure Map Finder** (`treasure-map-finder/`): 219 treasure map coordinates with route planning (G8/G10/G12/G14/G15/G17)
 7. **Lodestone Lookup** (`lodestone-lookup/`): Character information lookup using Lodestone ID with complete stats, jobs, and equipment display
+8. **Timed Gathering Manager** (`timed-gathering/`): Eorzea time-based gathering node tracker with multi-list management and macro export
 
 ## Development Memories
 
@@ -562,6 +564,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
   - `faux-hollows-foxes` 為宗長計算機
   - `treasure-map-finder` 為寶圖搜尋器
   - `lodestone-lookup` 為 Lodestone 角色查詢
+  - `timed-gathering` 為特殊採集時間管理器
   - 請記住他們的對應關係，避免改錯工具
 - 永遠使用 DOM 操作來取代 innerHTML
 

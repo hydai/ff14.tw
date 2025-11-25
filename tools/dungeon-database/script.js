@@ -217,46 +217,36 @@ class DungeonDatabase {
         this.focusedCardIndex = -1;
     }
 
-    toggleTypeTag(tagElement) {
-        const type = tagElement.dataset.type;
-        
-        if (this.selectedTypes.has(type)) {
-            this.selectedTypes.delete(type);
+    /**
+     * Generic tag toggle method to reduce code duplication
+     * @param {HTMLElement} tagElement - The tag element to toggle
+     * @param {Set} selectedSet - The Set to store selected values
+     * @param {string} dataAttribute - The data attribute name to get the value from
+     */
+    toggleTag(tagElement, selectedSet, dataAttribute) {
+        const value = tagElement.dataset[dataAttribute];
+
+        if (selectedSet.has(value)) {
+            selectedSet.delete(value);
             tagElement.classList.remove('active');
         } else {
-            this.selectedTypes.add(type);
+            selectedSet.add(value);
             tagElement.classList.add('active');
         }
-        
+
         this.applyFilters();
+    }
+
+    toggleTypeTag(tagElement) {
+        this.toggleTag(tagElement, this.selectedTypes, 'type');
     }
 
     toggleExpansionTag(tagElement) {
-        const expansion = tagElement.dataset.expansion;
-        
-        if (this.selectedExpansions.has(expansion)) {
-            this.selectedExpansions.delete(expansion);
-            tagElement.classList.remove('active');
-        } else {
-            this.selectedExpansions.add(expansion);
-            tagElement.classList.add('active');
-        }
-        
-        this.applyFilters();
+        this.toggleTag(tagElement, this.selectedExpansions, 'expansion');
     }
 
     toggleLevelTag(tagElement) {
-        const level = tagElement.dataset.level;
-        
-        if (this.selectedLevels.has(level)) {
-            this.selectedLevels.delete(level);
-            tagElement.classList.remove('active');
-        } else {
-            this.selectedLevels.add(level);
-            tagElement.classList.add('active');
-        }
-        
-        this.applyFilters();
+        this.toggleTag(tagElement, this.selectedLevels, 'level');
     }
 
     applyFilters() {
@@ -355,15 +345,11 @@ class DungeonDatabase {
 
     highlightSearchTerms(text, searchTerm) {
         if (!searchTerm || !text) return text;
-        
-        const { HIGHLIGHT } = DungeonDatabase.CONSTANTS.CSS_CLASSES;
-        const regex = new RegExp(`(${this.escapeRegex(searchTerm)})`, 'gi');
-        
-        return text.replace(regex, `<span class="${HIGHLIGHT}">$1</span>`);
-    }
 
-    escapeRegex(string) {
-        return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const { HIGHLIGHT } = DungeonDatabase.CONSTANTS.CSS_CLASSES;
+        const regex = new RegExp(`(${SecurityUtils.escapeRegex(searchTerm)})`, 'gi');
+
+        return text.replace(regex, `<span class="${HIGHLIGHT}">$1</span>`);
     }
 
     renderDungeons() {

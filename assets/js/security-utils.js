@@ -537,6 +537,16 @@ class SecurityUtils {
             return entities[char];
         });
     }
+
+    /**
+     * Escapes special regex characters in a string
+     * @param {string} string - String to escape
+     * @returns {string} - Escaped string safe for use in RegExp
+     */
+    static escapeRegex(string) {
+        if (typeof string !== 'string') return '';
+        return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
 }
 
 // Export for use in other modules
