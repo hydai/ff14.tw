@@ -224,13 +224,12 @@ class DungeonDatabase {
      */
     toggleTag(tagElement, selectedSet, dataAttribute) {
         const value = tagElement.dataset[dataAttribute];
+        const isActive = tagElement.classList.toggle('active');
 
-        if (selectedSet.has(value)) {
-            selectedSet.delete(value);
-            tagElement.classList.remove('active');
-        } else {
+        if (isActive) {
             selectedSet.add(value);
-            tagElement.classList.add('active');
+        } else {
+            selectedSet.delete(value);
         }
 
         this.applyFilters();
