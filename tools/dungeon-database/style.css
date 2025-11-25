@@ -331,7 +331,7 @@
 }
 
 /* 搜尋高亮 */
-.search-highlight {
+mark {
     background-color: var(--highlight-bg);
     color: var(--highlight-text);
     padding: var(--spacing-xs);

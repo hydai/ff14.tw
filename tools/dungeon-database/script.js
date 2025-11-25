@@ -13,7 +13,6 @@ class DungeonDatabase {
             DUNGEON_CARD: 'dungeon-card',
             SPECIAL_DROPS: 'special-drops',
             DROP_ITEM: 'drop-item',
-            HIGHLIGHT: 'search-highlight',
             FOCUSED: 'card-focused'
         },
         KEYBOARD_KEYS: {
@@ -343,15 +342,6 @@ class DungeonDatabase {
         FF14Utils.showToast('已重置所有過濾條件', 'success');
     }
 
-    highlightSearchTerms(text, searchTerm) {
-        if (!searchTerm || !text) return text;
-
-        const { HIGHLIGHT } = DungeonDatabase.CONSTANTS.CSS_CLASSES;
-        const regex = new RegExp(`(${SecurityUtils.escapeRegex(searchTerm)})`, 'gi');
-
-        return text.replace(regex, `<span class="${HIGHLIGHT}">$1</span>`);
-    }
-
     renderDungeons() {
         const container = this.elements.dungeonList;
         const { BLOCK, NONE, GRID } = DungeonDatabase.CONSTANTS.DISPLAY_STATES;
@@ -529,13 +519,14 @@ class DungeonDatabase {
     
     highlightSearchTermsDOM(text, searchTerm) {
         const container = document.createDocumentFragment();
-        
+
         if (!searchTerm || searchTerm.length < 2) {
             container.appendChild(document.createTextNode(text));
             return container;
         }
-        
-        const regex = new RegExp(`(${searchTerm})`, 'gi');
+
+        const escapedSearchTerm = SecurityUtils.escapeRegex(searchTerm);
+        const regex = new RegExp(`(${escapedSearchTerm})`, 'gi');
         const parts = text.split(regex);
         
         parts.forEach(part => {
@@ -549,105 +540,6 @@ class DungeonDatabase {
         });
         
         return container;
-    }
-
-    attachCardEvents(container) {
-        // This method is no longer needed as we add events in displayDungeons
-    }
-
-    createDungeonCard(dungeon) {
-        const specialDropsHtml = this.createSpecialDropsHtml(dungeon.specialDrops);
-        const { DUNGEON_CARD } = DungeonDatabase.CONSTANTS.CSS_CLASSES;
-
-        return `
-            <div class="${DUNGEON_CARD}" data-id="${dungeon.id}">
-                <div class="dungeon-image">
-                    ${this.createImageHtml(dungeon.image, dungeon.name)}
-                </div>
-                <div class="dungeon-content">
-                    ${this.createDungeonHeader(dungeon)}
-                    ${this.createDungeonMeta(dungeon)}
-                    ${this.createDungeonRewards(dungeon)}
-                    ${specialDropsHtml}
-                    ${this.createDungeonDescription(dungeon)}
-                </div>
-            </div>
-        `;
-    }
-
-    createSpecialDropsHtml(specialDrops) {
-        if (specialDrops.length === 0) return '';
-        
-        const { SPECIAL_DROPS, DROP_ITEM } = DungeonDatabase.CONSTANTS.CSS_CLASSES;
-        
-        return `
-            <div class="${SPECIAL_DROPS}">
-                <h4>特殊掉落物</h4>
-                <div class="drops-list">
-                    ${specialDrops.map(drop => 
-                        `<span class="${DROP_ITEM}">${drop}</span>`
-                    ).join('')}
-                </div>
-            </div>
-        `;
-    }
-
-    createImageHtml(image, name) {
-        if (!image) return '圖片準備中';
-        
-        return `<img src="${image}" 
-                     alt="${name}" 
-                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
-                     onload="this.style.display='block'; this.nextElementSibling.style.display='none';">
-                <div class="image-placeholder" style="display:none;">
-                    <span>圖片載入中...</span>
-                </div>`;
-    }
-
-    createDungeonHeader(dungeon) {
-        const highlightedName = this.highlightSearchTerms(dungeon.name, this.currentSearchTerm);
-        
-        return `
-            <div class="dungeon-header">
-                <h3 class="dungeon-title">${highlightedName}</h3>
-                <span class="dungeon-level">Lv.${dungeon.level}</span>
-            </div>
-        `;
-    }
-
-    createDungeonMeta(dungeon) {
-        return `
-            <div class="dungeon-meta">
-                <span class="dungeon-type">${dungeon.type}</span>
-                <span class="dungeon-expansion">${dungeon.expansion}</span>
-            </div>
-        `;
-    }
-
-    createDungeonRewards(dungeon) {
-        return `
-            <div class="dungeon-rewards">
-                <h4>獎勵</h4>
-                <div class="reward-item">
-                    <span class="reward-name">神典石</span>
-                    <span class="reward-value">${dungeon.tombstoneReward}</span>
-                </div>
-            </div>
-        `;
-    }
-
-    createDungeonDescription(dungeon) {
-        const highlightedMechanics = this.highlightSearchTerms(dungeon.mechanics, this.currentSearchTerm);
-        const highlightedDescription = this.highlightSearchTerms(dungeon.description, this.currentSearchTerm);
-        
-        return `
-            <div class="dungeon-description">
-                <strong>機制說明：</strong>${highlightedMechanics}
-            </div>
-            <div class="dungeon-description">
-                ${highlightedDescription}
-            </div>
-        `;
     }
 
     showDungeonDetail(dungeon) {
