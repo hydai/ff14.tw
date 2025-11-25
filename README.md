@@ -61,6 +61,12 @@
 - 使用 logstone API 取得資料
 - 提供直接前往官方 Lodestone 頁面的連結
 
+### 特殊採集時間管理器 (`timed-gathering/`)
+- 艾歐澤亞時間特殊採集點管理
+- 搜尋與過濾功能
+- 多清單管理（新增、移除、匯出/匯入）
+- 巨集匯出功能
+- 多語言支援
 
 ## 🏗️ 技術架構
 
@@ -82,6 +88,7 @@ http://localhost:8000
 - 副本資料庫 (`dungeon-database/`) - 載入 `/data/dungeons.json`
 - 寶圖搜尋器 (`treasure-map-finder/`) - 載入 `/data/treasure-maps.json`
 - Lodestone 角色查詢 (`lodestone-lookup/`) - 使用 logstone API
+- 特殊採集時間管理器 (`timed-gathering/`) - 載入 `/data/timed-gathering.json`
 
 **可直接開啟的工具：**
 - Mini Cactpot 計算機
@@ -100,6 +107,7 @@ ff14.tw/
 ├── data/                   # 資料檔案
 │   ├── dungeons.json       # 副本資料庫 JSON
 │   ├── treasure-maps.json  # 寶圖座標資料
+│   ├── timed-gathering.json # 特殊採集點資料
 │   └── zone-translations.json # 地區名稱翻譯
 ├── assets/                 # 共用資源
 │   ├── css/
@@ -115,9 +123,10 @@ ff14.tw/
     ├── dungeon-database/   # 副本資料庫
     ├── faux-hollows-foxes/ # Faux Hollows Foxes 計算機
     ├── lodestone-lookup/   # Lodestone 角色查詢
-    ├── mini-cactpot/      # Mini Cactpot 計算機
+    ├── mini-cactpot/       # Mini Cactpot 計算機
+    ├── timed-gathering/    # 特殊採集時間管理器
     ├── treasure-map-finder/# 寶圖搜尋器
-    └── wondrous-tails/    # Wondrous Tails 預測器
+    └── wondrous-tails/     # Wondrous Tails 預測器
 ```
 
 ### 架構

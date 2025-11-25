@@ -204,6 +204,15 @@ const FF14Utils = {
             this.showToast('載入資料失敗', 'error');
             return null;
         }
+    },
+
+    // 防抖函數 - 延遲執行直到停止呼叫一段時間
+    debounce(func, delay = 300) {
+        let timeoutId;
+        return function(...args) {
+            clearTimeout(timeoutId);
+            timeoutId = setTimeout(() => func.apply(this, args), delay);
+        };
     }
 };
 
