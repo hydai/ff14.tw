@@ -221,6 +221,7 @@ class DungeonDatabase {
      * @param {HTMLElement} tagElement - The tag element to toggle
      * @param {Set} selectedSet - The Set to store selected values
      * @param {string} dataAttribute - The data attribute name to get the value from
+     * @returns {void}
      */
     toggleTag(tagElement, selectedSet, dataAttribute) {
         const value = tagElement.dataset[dataAttribute];
