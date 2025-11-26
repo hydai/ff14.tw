@@ -206,7 +206,17 @@ const FF14Utils = {
         }
     },
 
-    // 防抖函數 - 延遲執行直到停止呼叫一段時間
+    /**
+     * 防抖函數 - 延遲執行直到停止呼叫一段時間
+     * @param {Function} func - 要執行的函數
+     * @param {number} [delay=300] - 延遲毫秒數
+     * @returns {Function} 防抖後的函數
+     * @example
+     * const debouncedSearch = FF14Utils.debounce(function(query) {
+     *     console.log('搜尋:', query);
+     * }, 500);
+     * inputElement.addEventListener('input', (e) => debouncedSearch(e.target.value));
+     */
     debounce(func, delay = 300) {
         let timeoutId;
         return function(...args) {
