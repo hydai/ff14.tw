@@ -225,7 +225,7 @@ class DungeonDatabase {
     toggleTag(tagElement, selectedSet, dataAttribute) {
         const value = tagElement.dataset[dataAttribute];
         if (value === undefined) {
-            console.warn(`Data attribute 'data-${dataAttribute}' not found on element`, tagElement);
+            console.warn(`Dataset attribute '${dataAttribute}' not found on element`, tagElement);
             return;
         }
 
