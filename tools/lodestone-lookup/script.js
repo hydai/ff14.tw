@@ -819,55 +819,9 @@ class LodestoneCharacterLookup {
     }
 
     getJobIconPath(jobName) {
-        // 基礎路徑
         const basePath = '../../assets/images/se/FFXIVJobIcons/';
-        
-        // 將職業名稱標準化（移除空格）
         const normalizedName = jobName.replace(/\s+/g, '');
-        
-        // 職業分類對應
-        const jobCategories = {
-            // 坦克
-            'Paladin': '01_TANK/Job/Paladin.png',
-            'Warrior': '01_TANK/Job/Warrior.png',
-            'DarkKnight': '01_TANK/Job/DarkKnight.png',
-            'Gunbreaker': '01_TANK/Job/Gunbreaker.png',
-            // 治療
-            'WhiteMage': '02_HEALER/Job/WhiteMage.png',
-            'Scholar': '02_HEALER/Job/Scholar.png',
-            'Astrologian': '02_HEALER/Job/Astrologian.png',
-            'Sage': '02_HEALER/Job/Sage.png',
-            // DPS
-            'Monk': '03_DPS/Job/Monk.png',
-            'Dragoon': '03_DPS/Job/Dragoon.png',
-            'Ninja': '03_DPS/Job/Ninja.png',
-            'Samurai': '03_DPS/Job/Samurai.png',
-            'Reaper': '03_DPS/Job/Reaper.png',
-            'Viper': '03_DPS/Job/Viper.png',
-            'Bard': '03_DPS/Job/Bard.png',
-            'Machinist': '03_DPS/Job/Machinist.png',
-            'Dancer': '03_DPS/Job/Dancer.png',
-            'BlackMage': '03_DPS/Job/BlackMage.png',
-            'Summoner': '03_DPS/Job/Summoner.png',
-            'RedMage': '03_DPS/Job/RedMage.png',
-            'Pictomancer': '03_DPS/Job/Pictomancer.png',
-            'BlueMage': '06_LIMITED/BlueMage.png',
-            // 生產
-            'Carpenter': '04_CRAFTER/Carpenter.png',
-            'Blacksmith': '04_CRAFTER/Blacksmith.png',
-            'Armorer': '04_CRAFTER/Armorer.png',
-            'Goldsmith': '04_CRAFTER/Goldsmith.png',
-            'Leatherworker': '04_CRAFTER/Leatherworker.png',
-            'Weaver': '04_CRAFTER/Weaver.png',
-            'Alchemist': '04_CRAFTER/Alchemist.png',
-            'Culinarian': '04_CRAFTER/Culinarian.png',
-            // 採集
-            'Miner': '05_GATHERER/Miner.png',
-            'Botanist': '05_GATHERER/Botanist.png',
-            'Fisher': '05_GATHERER/Fisher.png'
-        };
-        
-        return basePath + (jobCategories[normalizedName] || '00_ROLE/DPSRole.png');
+        return basePath + (window.LODESTONE_JOB_ICONS[normalizedName] || '00_ROLE/DPSRole.png');
     }
     
     displayAchievements(data) {
@@ -1124,31 +1078,11 @@ class LodestoneCharacterLookup {
     }
     
     translateFocusTag(tag) {
-        const translations = {
-            'Casual': '休閒',
-            'Dungeons': '副本',
-            'Leveling': '練級',
-            'Raids': '團隊戰',
-            'Trials': '討伐戰',
-            'Guildhests': '公會令',
-            'Role-playing': '角色扮演',
-            'Questing': '任務',
-            'Crafting': '生產',
-            'Gathering': '採集',
-            'PvP': 'PvP'
-        };
-        return translations[tag] || tag;
+        return window.LODESTONE_TRANSLATIONS.focus[tag] || tag;
     }
-    
+
     translateSeekingTag(tag) {
-        const translations = {
-            'Tank': '坦克',
-            'Healer': '治療',
-            'DPS': 'DPS',
-            'Crafter': '生產職',
-            'Gatherer': '採集職'
-        };
-        return translations[tag] || tag;
+        return window.LODESTONE_TRANSLATIONS.seeking[tag] || tag;
     }
     
     createReputationItem(rep) {
@@ -1180,24 +1114,11 @@ class LodestoneCharacterLookup {
     }
     
     translateGrandCompany(name) {
-        const translations = {
-            'Order of the Twin Adder': '雙蛇黨',
-            'Immortal Flames': '恆輝隊',
-            'Maelstrom': '黑渦團'
-        };
-        return translations[name] || name;
+        return window.LODESTONE_TRANSLATIONS.grandCompany[name] || name;
     }
-    
+
     translateReputationRank(rank) {
-        const translations = {
-            'Neutral': '中立',
-            'Friendly': '友好',
-            'Trusted': '信賴',
-            'Respected': '敬重',
-            'Honored': '崇敬',
-            'Allied': '同盟'
-        };
-        return translations[rank] || rank;
+        return window.LODESTONE_TRANSLATIONS.reputationRank[rank] || rank;
     }
     
     displayFreeCompanyMembers(data) {
