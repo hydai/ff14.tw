@@ -313,6 +313,7 @@ class TimedGatheringManager {
         this.elements.languageButtons.forEach(btn => {
             const isActive = btn.dataset.lang === this.currentLanguage;
             btn.classList.toggle('active', isActive);
+            btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
         });
     }
 

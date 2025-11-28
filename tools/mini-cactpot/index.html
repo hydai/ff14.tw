@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="../../assets/css/common.css">
     <link rel="stylesheet" href="../../assets/css/dark-mode-tools.css">
     <link rel="stylesheet" href="../../assets/css/tools-common.css">
+    <link rel="stylesheet" href="../../assets/css/components/language-switcher.css">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -16,15 +17,29 @@
         <div class="container">
             <a href="/" class="logo">FF14.tw</a>
             <nav class="nav">
-                <a href="/">首頁</a>
-                <a href="/copyright.html">版權聲明</a>
-                <a href="https://github.com/hydai/ff14.tw" target="_blank" rel="noopener noreferrer">GitHub</a>
+                <a href="/" data-i18n="nav_home">首頁</a>
+                <a href="/copyright.html" data-i18n="nav_copyright">版權聲明</a>
+                <a href="https://github.com/hydai/ff14.tw" target="_blank" rel="noopener noreferrer" data-i18n="nav_github">GitHub</a>
                 <div class="nav-dropdown">
-                    <a href="#">關於本站</a>
+                    <a href="#" data-i18n="nav_about_dropdown">關於本站</a>
                     <div class="nav-dropdown-content">
-                        <a href="/about.html">關於</a>
-                        <a href="/changelog.html">修改紀錄</a>
+                        <a href="/about.html" data-i18n="nav_about">關於</a>
+                        <a href="/changelog.html" data-i18n="nav_changelog">修改紀錄</a>
                     </div>
+                </div>
+                <div class="language-switcher">
+                    <button class="language-btn" data-lang="zh" aria-pressed="false">
+                        <span class="lang-flag">🇹🇼</span>
+                        <span class="lang-name">中文</span>
+                    </button>
+                    <button class="language-btn" data-lang="en" aria-pressed="false">
+                        <span class="lang-flag">🇺🇸</span>
+                        <span class="lang-name">EN</span>
+                    </button>
+                    <button class="language-btn" data-lang="ja" aria-pressed="false">
+                        <span class="lang-flag">🇯🇵</span>
+                        <span class="lang-name">日本語</span>
+                    </button>
                 </div>
             </nav>
         </div>
@@ -33,8 +48,8 @@
     <main class="main">
         <div class="container">
             <div class="page-header">
-                <h1>Mini Cactpot 計算機</h1>
-                <p class="description">點選四個格子並輸入對應數字 (1-9)，期望值將自動顯示在對應位置並推薦最佳線條</p>
+                <h1 data-i18n="mini_cactpot_header">Mini Cactpot 計算機</h1>
+                <p class="description" data-i18n="mini_cactpot_desc">點選四個格子並輸入對應數字 (1-9)，期望值將自動顯示在對應位置並推薦最佳線條</p>
             </div>
 
             <div class="tool-content">
@@ -67,17 +82,17 @@
                         <div class="empty-cell"></div>
                     </div>
                     <div class="grid-info">
-                        已選擇: <span id="selected-count">0</span>/4 個格子
+                        <span data-i18n="mini_cactpot_selected">已選擇</span>: <span id="selected-count">0</span>/4 <span data-i18n="mini_cactpot_cells">個格子</span>
                     </div>
                 </div>
 
                 <div class="controls">
-                    <button class="btn btn-primary" id="undo-btn" onclick="undoLastStep()" style="display: none;">回到上一步</button>
-                    <button class="btn btn-secondary" id="reset-btn" onclick="resetGrid()">重置</button>
+                    <button class="btn btn-primary" id="undo-btn" onclick="undoLastStep()" style="display: none;" data-i18n="mini_cactpot_undo">回到上一步</button>
+                    <button class="btn btn-secondary" id="reset-btn" onclick="resetGrid()" data-i18n="mini_cactpot_reset">重置</button>
                 </div>
 
                 <div class="best-choice-info" id="best-choice-info" style="display: none;">
-                    <h3>🏆 最佳選擇</h3>
+                    <h3>🏆 <span data-i18n="mini_cactpot_best_choice">最佳選擇</span></h3>
                     <div id="best-line-summary"></div>
                 </div>
             </div>
@@ -86,10 +101,13 @@
 
     <footer class="footer">
         <div class="container">
-            <p>&copy; 2024-2025 FF14.tw | 本站非官方網站，與 Square Enix 無關 | Made with ❤️ by hydai</p>
+            <p>&copy; 2024-2025 FF14.tw | <span data-i18n="footer_copyright">本站非官方網站，與 Square Enix 無關</span> | <span data-i18n="footer_made_with">Made with ❤️ by hydai</span></p>
         </div>
     </footer>
 
+    <script src="../../assets/js/i18n/i18n-manager.js"></script>
+    <script src="../../assets/js/i18n/translations/common.js"></script>
+    <script src="../../assets/js/i18n/translations/tools/mini-cactpot.js"></script>
     <script src="../../assets/js/common.js"></script>
     <script src="../../assets/js/security-utils.js"></script>
     <script src="script.js"></script>

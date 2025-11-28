@@ -9,22 +9,37 @@
     <link rel="stylesheet" href="../../assets/css/common.css">
     <link rel="stylesheet" href="../../assets/css/dark-mode-tools.css">
     <link rel="stylesheet" href="../../assets/css/tools-common.css">
+    <link rel="stylesheet" href="../../assets/css/components/language-switcher.css">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <header class="header">
         <div class="container">
-            <a href="/" class="logo">FF14.tw</a>
+            <a href="/" class="logo">FF14.tw<span class="logo-separator">|</span><span class="logo-tool-name" data-i18n="pageTitle">特殊採集時間管理器</span></a>
             <nav class="nav">
-                <a href="/">首頁</a>
-                <a href="/copyright.html">版權聲明</a>
-                <a href="https://github.com/hydai/ff14.tw" target="_blank" rel="noopener noreferrer">GitHub</a>
+                <a href="/" data-i18n="nav_home">首頁</a>
+                <a href="/copyright.html" data-i18n="nav_copyright">版權聲明</a>
+                <a href="https://github.com/hydai/ff14.tw" target="_blank" rel="noopener noreferrer" data-i18n="nav_github">GitHub</a>
                 <div class="nav-dropdown">
-                    <a href="#">關於本站</a>
+                    <a href="#" data-i18n="nav_about_dropdown">關於本站</a>
                     <div class="nav-dropdown-content">
-                        <a href="/about.html">關於</a>
-                        <a href="/changelog.html">修改紀錄</a>
+                        <a href="/about.html" data-i18n="nav_about">關於</a>
+                        <a href="/changelog.html" data-i18n="nav_changelog">修改紀錄</a>
                     </div>
+                </div>
+                <div class="language-switcher">
+                    <button class="language-btn" data-lang="zh" aria-pressed="false">
+                        <span class="lang-flag">🇹🇼</span>
+                        <span class="lang-name">中文</span>
+                    </button>
+                    <button class="language-btn" data-lang="en" aria-pressed="false">
+                        <span class="lang-flag">🇺🇸</span>
+                        <span class="lang-name">EN</span>
+                    </button>
+                    <button class="language-btn" data-lang="ja" aria-pressed="false">
+                        <span class="lang-flag">🇯🇵</span>
+                        <span class="lang-name">日本語</span>
+                    </button>
                 </div>
             </nav>
         </div>
@@ -76,10 +91,6 @@
                         <button id="clearSearchBtn" class="btn btn-secondary btn-sm" data-i18n="clearButton">清除</button>
                     </div>
                     <div class="toolbar-actions">
-                        <div class="language-selector">
-                            <button class="btn btn-sm language-btn active" data-lang="zh">中文</button>
-                            <button class="btn btn-sm language-btn" data-lang="ja">日本語</button>
-                        </div>
                         <button id="newListBtn" class="btn btn-primary" data-i18n-html="newListButton">
                             <span class="btn-icon">➕</span> 新增清單
                         </button>
@@ -127,16 +138,16 @@
                             <h2 data-i18n="itemsListTitle">採集物列表</h2>
                             <span class="item-count" id="itemCount">載入中...</span>
                         </div>
-                        
+
                         <!-- 載入中提示 -->
                         <div class="loading" id="loadingIndicator">
                             <div class="loading-spinner"></div>
                             <p data-i18n="loadingItems">載入採集物資料中...</p>
                         </div>
-                        
+
                         <!-- 錯誤訊息 -->
                         <div class="error-message" id="errorMessage" style="display: none;"></div>
-                        
+
                         <!-- 採集物卡片容器 -->
                         <div class="items-container" id="itemsContainer"></div>
                     </div>
@@ -158,7 +169,7 @@
                                     <button id="clearListBtn" class="btn btn-sm" title="清空清單" data-i18n="clearListTooltip" data-i18n-attr="title">🧹</button>
                                 </div>
                             </div>
-                            
+
                             <div class="list-items" id="listItems">
                                 <div class="empty-list-message">
                                     <p data-i18n="emptyListMessage">清單為空</p>
@@ -200,7 +211,7 @@
 
     <footer class="footer">
         <div class="container">
-            <p>&copy; 2024-2025 FF14.tw | 本站非官方網站，與 Square Enix 無關 | Made with ❤️ by hydai</p>
+            <p>&copy; 2024-2025 FF14.tw | <span data-i18n="footer_copyright">本站非官方網站，與 Square Enix 無關</span> | <span data-i18n="footer_made_with">Made with ❤️ by hydai</span></p>
         </div>
     </footer>
 

@@ -8,21 +8,36 @@
     <link rel="icon" type="image/x-icon" href="assets/images/ff14tw.ico">
     <link rel="stylesheet" href="assets/css/common.css">
     <link rel="stylesheet" href="assets/css/changelog.css">
+    <link rel="stylesheet" href="assets/css/components/language-switcher.css">
 </head>
 <body>
     <header class="header">
         <div class="container">
             <a href="/" class="logo">FF14.tw</a>
             <nav class="nav">
-                <a href="/">首頁</a>
-                <a href="/copyright.html">版權聲明</a>
-                <a href="https://github.com/hydai/ff14.tw" target="_blank" rel="noopener noreferrer">GitHub</a>
+                <a href="/" data-i18n="nav_home">首頁</a>
+                <a href="/copyright.html" data-i18n="nav_copyright">版權聲明</a>
+                <a href="https://github.com/hydai/ff14.tw" target="_blank" rel="noopener noreferrer" data-i18n="nav_github">GitHub</a>
                 <div class="nav-dropdown">
-                    <a href="#" class="active">關於本站</a>
+                    <a href="#" class="active" data-i18n="nav_about_dropdown">關於本站</a>
                     <div class="nav-dropdown-content">
-                        <a href="/about.html">關於</a>
-                        <a href="/changelog.html">修改紀錄</a>
+                        <a href="/about.html" data-i18n="nav_about">關於</a>
+                        <a href="/changelog.html" data-i18n="nav_changelog">修改紀錄</a>
                     </div>
+                </div>
+                <div class="language-switcher">
+                    <button class="language-btn" data-lang="zh" aria-pressed="false">
+                        <span class="lang-flag">🇹🇼</span>
+                        <span class="lang-name">中文</span>
+                    </button>
+                    <button class="language-btn" data-lang="en" aria-pressed="false">
+                        <span class="lang-flag">🇺🇸</span>
+                        <span class="lang-name">EN</span>
+                    </button>
+                    <button class="language-btn" data-lang="ja" aria-pressed="false">
+                        <span class="lang-flag">🇯🇵</span>
+                        <span class="lang-name">日本語</span>
+                    </button>
                 </div>
             </nav>
         </div>
@@ -33,7 +48,7 @@
             <!-- TOC 側邊欄 -->
             <aside class="toc-sidebar">
                 <div class="toc-container">
-                    <h2 class="toc-title">快速導覽</h2>
+                    <h2 class="toc-title" data-i18n="changelog_toc_title">快速導覽</h2>
                     <nav class="toc-nav" id="tocNav">
                         <!-- TOC 內容將由 JavaScript 動態生成 -->
                     </nav>
@@ -42,8 +57,8 @@
 
             <!-- 主要內容區 -->
             <div class="changelog-content-wrapper">
-                <h1>修改紀錄</h1>
-                <p class="subtitle">記錄 FF14.tw 的功能更新與改進</p>
+                <h1 data-i18n="changelog_hero_title">修改紀錄</h1>
+                <p class="subtitle" data-i18n="changelog_hero_subtitle">記錄 FF14.tw 的功能更新與改進</p>
 
                 <div class="changelog-container">
                 <!-- 2025年8月 -->
@@ -1703,15 +1718,15 @@
 
                 <!-- 更新說明 -->
                 <div class="update-notice" id="aboutChangelog">
-                    <h3>關於修改紀錄</h3>
-                    <p>本頁面記錄 FF14.tw 的重要功能更新與改進。詳細的技術變更請參考 <a href="https://github.com/hydai/ff14.tw/commits/main" target="_blank" rel="noopener noreferrer">GitHub Commits</a>。</p>
+                    <h3 data-i18n="changelog_about_title">關於修改紀錄</h3>
+                    <p><span data-i18n="changelog_about_desc">本頁面記錄 FF14.tw 的重要功能更新與改進。詳細的技術變更請參考</span> <a href="https://github.com/hydai/ff14.tw/commits/main" target="_blank" rel="noopener noreferrer">GitHub Commits</a><span data-i18n="changelog_about_desc_suffix">。</span></p>
                     <div class="tag-legend">
-                        <h4>標籤說明</h4>
+                        <h4 data-i18n="changelog_tag_legend_title">標籤說明</h4>
                         <ul>
-                            <li><span class="tag tag-success">新增</span> 新功能或新工具</li>
-                            <li><span class="tag tag-infod">改進</span> 功能優化或體驗提升</li>
-                            <li><span class="tag tag-warninged">修正</span> 錯誤修復</li>
-                            <li><span class="tag tag-info">資訊</span> 重要資訊或里程碑</li>
+                            <li><span class="tag tag-success">新增</span> <span data-i18n="changelog_tag_new">新功能或新工具</span></li>
+                            <li><span class="tag tag-info">改進</span> <span data-i18n="changelog_tag_improve">功能優化或體驗提升</span></li>
+                            <li><span class="tag tag-warning">修正</span> <span data-i18n="changelog_tag_fix">錯誤修復</span></li>
+                            <li><span class="tag tag-info">資訊</span> <span data-i18n="changelog_tag_info">重要資訊或里程碑</span></li>
                         </ul>
                     </div>
                 </div>
@@ -1721,11 +1736,14 @@
 
     <footer class="footer">
         <div class="container">
-            <p>&copy; 2024-2025 FF14.tw | 本站非官方網站，與 Square Enix 無關 | Made with ❤️ by hydai</p>
+            <p>&copy; 2024-2025 FF14.tw | <span data-i18n="footer_copyright">本站非官方網站，與 Square Enix 無關</span> | <span data-i18n="footer_made_with">Made with ❤️ by hydai</span></p>
         </div>
     </footer>
 
     <a href="#" class="back-to-top" id="backToTop">↑</a>
+    <script src="assets/js/i18n/i18n-manager.js"></script>
+    <script src="assets/js/i18n/translations/common.js"></script>
+    <script src="assets/js/i18n/translations/changelog.js"></script>
     <script src="assets/js/common.js"></script>
     <script>
         // 生成 TOC
@@ -1790,7 +1808,7 @@
             
             // 添加關於修改紀錄
             tocItems.push({
-                text: '關於修改紀錄',
+                text: window.i18n ? window.i18n.getText('changelog_about_section') : '關於修改紀錄',
                 id: 'aboutChangelog',
                 level: 1,
                 versions: []
@@ -1868,6 +1886,16 @@
             
             // 初始化
             updateActiveLink();
+
+            // 監聽語言變更，更新 TOC 中的「關於修改紀錄」連結
+            if (window.i18n) {
+                window.i18n.onLanguageChange(function() {
+                    const aboutLink = document.querySelector('.toc-link[href="#aboutChangelog"]');
+                    if (aboutLink) {
+                        aboutLink.textContent = window.i18n.getText('changelog_about_section');
+                    }
+                });
+            }
         });
     </script>
 </body>
