@@ -117,7 +117,10 @@ class ThemeManager {
                 ? ThemeManager.ICONS.MOON  // 月亮圖標
                 : ThemeManager.ICONS.SUN;   // 太陽圖標
             
-            button.setAttribute('aria-label', isLight ? '切換至深色模式' : '切換至淺色模式');
+            // 使用 i18n 取得翻譯文字（如果可用）
+            const darkLabel = window.i18n?.getText('theme_toggle_dark') || '切換至深色模式';
+            const lightLabel = window.i18n?.getText('theme_toggle_light') || '切換至淺色模式';
+            button.setAttribute('aria-label', isLight ? darkLabel : lightLabel);
         });
     }
 }
@@ -132,10 +135,12 @@ const FF14Utils = {
     // 複製文字到剪貼簿
     copyToClipboard(text) {
         navigator.clipboard.writeText(text).then(() => {
-            this.showToast('已複製到剪貼簿');
+            const msg = window.i18n?.getText('msg_copied_success') || '已複製到剪貼簿';
+            this.showToast(msg);
         }).catch(err => {
             console.error('複製失敗:', err);
-            this.showToast('複製失敗', 'error');
+            const msg = window.i18n?.getText('msg_copy_failed') || '複製失敗';
+            this.showToast(msg, 'error');
         });
     },
 
@@ -201,7 +206,8 @@ const FF14Utils = {
             return await response.json();
         } catch (error) {
             console.error('載入資料失敗:', error);
-            this.showToast('載入資料失敗', 'error');
+            const msg = window.i18n?.getText('msg_error') || '載入資料失敗';
+            this.showToast(msg, 'error');
             return null;
         }
     },
@@ -247,7 +253,8 @@ function initHamburgerMenu() {
     // 創建漢堡選單按鈕
     const hamburger = document.createElement('button');
     hamburger.className = 'hamburger';
-    hamburger.setAttribute('aria-label', '選單');
+    const menuLabel = window.i18n?.getText('nav_menu') || '選單';
+    hamburger.setAttribute('aria-label', menuLabel);
     hamburger.innerHTML = `
         <span></span>
         <span></span>
@@ -427,6 +434,13 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 初始化主題切換功能
     initThemeToggle();
+
+    // 監聽語言變更以更新主題切換按鈕文字
+    if (window.i18n) {
+        window.i18n.onLanguageChange(() => {
+            window.themeManager.updateThemeToggleButtons();
+        });
+    }
     
     // 為所有工具卡片添加點擊效果
     const toolCards = document.querySelectorAll('.tool-card');
