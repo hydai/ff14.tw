@@ -3,7 +3,7 @@ class I18nManager {
     static CONSTANTS = {
         STORAGE_KEY: 'ff14tw_preferred_language',
         DEFAULT_LANGUAGE: 'zh',
-        SUPPORTED_LANGUAGES: ['zh', 'ja']
+        SUPPORTED_LANGUAGES: ['zh', 'en', 'ja']
     };
 
     constructor() {
@@ -21,6 +21,18 @@ class I18nManager {
         
         this.translations = {
             zh: {
+                // 導航
+                nav_home: '首頁',
+                nav_copyright: '版權聲明',
+                nav_github: 'GitHub',
+                nav_about_dropdown: '關於本站',
+                nav_about: '關於',
+                nav_changelog: '修改紀錄',
+
+                // 頁尾
+                footer_copyright: '本站非官方網站，與 Square Enix 無關',
+                footer_made_with: 'Made with ❤️ by hydai',
+
                 // 頁面標題和標頭
                 pageTitle: '特殊採集時間管理器',
                 pageDescription: 'FF14 特殊採集時間管理工具，支援搜尋、多清單管理、巨集匯出功能',
@@ -180,6 +192,18 @@ class I18nManager {
                 testNotificationBody: '這是一個測試通知，請確認您是否看到了'
             },
             ja: {
+                // ナビゲーション
+                nav_home: 'ホーム',
+                nav_copyright: '著作権表示',
+                nav_github: 'GitHub',
+                nav_about_dropdown: 'サイトについて',
+                nav_about: 'サイト紹介',
+                nav_changelog: '更新履歴',
+
+                // フッター
+                footer_copyright: '非公式サイトです。Square Enixとは関係ありません',
+                footer_made_with: 'Made with ❤️ by hydai',
+
                 // 頁面標題和標頭
                 pageTitle: 'タイムド採集管理ツール',
                 pageDescription: 'FF14 タイムド採集管理ツール、検索、複数リスト管理、マクロエクスポート機能対応',
@@ -337,6 +361,177 @@ class I18nManager {
                 testItemName: 'テストアイテム',
                 testZoneName: 'テストエリア',
                 testNotificationBody: 'これはテスト通知です。表示されたかご確認ください'
+            },
+            en: {
+                // Navigation
+                nav_home: 'Home',
+                nav_copyright: 'Copyright',
+                nav_github: 'GitHub',
+                nav_about_dropdown: 'About Site',
+                nav_about: 'About',
+                nav_changelog: 'Changelog',
+
+                // Footer
+                footer_copyright: 'Unofficial site, not affiliated with Square Enix',
+                footer_made_with: 'Made with ❤️ by hydai',
+
+                // Page title and header
+                pageTitle: 'Timed Gathering Manager',
+                pageDescription: 'FF14 timed gathering management tool with search, multi-list management, and macro export',
+
+                // Time display
+                localTimeLabel: 'Local Time (LT)',
+                eorzeaTimeLabel: 'Eorzea Time (ET)',
+                dayTime: 'Day',
+                nightTime: 'Night',
+
+                // Search and filter
+                searchPlaceholder: 'Search item name, location...',
+                clearButton: 'Clear',
+                filterType: 'Type:',
+                filterExpansion: 'Expansion:',
+                filterVersion: 'Version:',
+                typeMining: 'Mining',
+                typeBotany: 'Botany',
+                typeFishing: 'Fishing',
+
+                // Main buttons
+                newListButton: 'New List',
+                importButton: 'Import',
+                exportButton: 'Export',
+
+                // Panel titles
+                itemsListTitle: 'Item List',
+                loadingItems: 'Loading item data...',
+                noItemsFound: 'No items match the criteria',
+
+                // List management
+                defaultListName: 'Default List',
+                renameListTooltip: 'Rename',
+                deleteListTooltip: 'Delete List',
+                clearListTooltip: 'Clear List',
+                emptyListMessage: 'List is empty',
+                emptyListHint: 'Click "Add to List" button on the left to add items',
+
+                // Item cards
+                addToListButton: 'Add to List',
+                addedToListButton: 'Added',
+                removeFromList: 'Remove',
+
+                // Macro export
+                macroSectionTitle: 'Macro Export',
+                generateMacroButton: 'Generate Macro',
+                includeClearOption: 'Include clear command',
+                sortByTimeOption: 'Sort by time',
+                copyMacroButton: 'Copy to Clipboard',
+                copiedButton: 'Copied!',
+
+                // Dialogs
+                newListDialogTitle: 'New List',
+                renameListDialogTitle: 'Rename List',
+                deleteListDialogTitle: 'Delete List',
+                clearListDialogTitle: 'Clear List',
+                importDialogTitle: 'Import List',
+
+                listNameLabel: 'List Name:',
+                newNameLabel: 'New Name:',
+                enterListNamePlaceholder: 'Enter list name',
+
+                confirmDeleteList: 'Are you sure you want to delete the list',
+                confirmClearList: 'Are you sure you want to clear the list',
+                operationCannotUndo: 'This operation cannot be undone!',
+                willRemoveItems: 'Will remove',
+                itemsUnit: 'items',
+
+                selectFileLabel: 'Select File:',
+                selectJsonFileHint: 'Select a previously exported JSON file',
+
+                cancelButton: 'Cancel',
+                confirmButton: 'Confirm',
+
+                // Notifications
+                addedToListNotification: 'Added to list',
+                removedFromListNotification: 'Removed from list',
+                listCreatedNotification: 'List created',
+                listRenamedNotification: 'List renamed',
+                listDeletedNotification: 'List deleted',
+                listClearedNotification: 'List cleared',
+                listsExportedNotification: 'Lists exported',
+                listsImportedNotification: 'Successfully imported',
+                listsImportedUnit: 'lists',
+                macroCopiedNotification: 'Macro copied to clipboard',
+
+                // Error messages
+                initFailedError: 'Initialization failed, please refresh the page',
+                dataLoadFailedError: 'Failed to load item data, please refresh and try again',
+                maxListsWarning: 'Maximum of',
+                maxListsUnit: 'lists allowed',
+                atLeastOneListWarning: 'At least one list must be kept',
+                listAlreadyEmptyInfo: 'List is already empty',
+                emptyListNoMacroWarning: 'List is empty, cannot generate macro',
+                noMacroToCopyWarning: 'No macro to copy',
+                copyFailedError: 'Copy failed, please select and copy manually',
+                invalidListNameError: 'List name length does not meet requirements',
+                fileFormatError: 'File format error',
+
+                // Time related
+                timeFormat: 'Time',
+                level: 'Lv.',
+
+                // list-manager specific messages
+                listNameEmpty: 'List name cannot be empty',
+                listNameTooLong: 'List name cannot exceed',
+                listNameTooLongUnit: 'characters',
+                listNameExists: 'List name already exists',
+                maxListsReached: 'Maximum list limit reached',
+                itemAlreadyInList: 'Item is already in the list',
+                itemsAlreadyInList: 'The following items are already in the list',
+                listMaxItemsReached: 'List has reached maximum item limit',
+                incompatibleDataVersion: 'Import data version is incompatible',
+                invalidImportFormat: 'Import data format is incorrect',
+                listCreatedSuccess: 'List created successfully',
+                listNotExist: 'List does not exist',
+                listRenamedSuccess: 'List renamed successfully',
+                listDeletedSuccess: 'List deleted successfully',
+                listClearedSuccess: 'List cleared',
+                itemAddedSuccess: 'Item added successfully',
+                itemNotInList: 'Item is not in the list',
+                itemRemovedSuccess: 'Item removed successfully',
+                indexOutOfRange: 'Index out of range',
+                itemOrderUpdated: 'Item order updated',
+                invalidImportData: 'Invalid import data',
+                incompatibleFileVersion: 'File version is incompatible',
+                successImportedLists: 'Successfully imported',
+                successImportedListsUnit: 'lists',
+                sourceListNotExist: 'Source list does not exist',
+                listCopiedSuccess: 'List copied successfully',
+                addedItemsToList: 'Added',
+                addedItemsToListUnit: 'items to target list',
+                listMaxItems: 'List can contain maximum of',
+                listMaxItemsUnit: 'items',
+                itemAlreadyInListSimple: 'This item is already in the list',
+
+                // Notification function
+                notificationLabel: 'Gathering Reminder',
+                notificationToggleLabel: 'Enable gathering notification reminder',
+                notificationDisabled: 'Disabled',
+                notificationEnabled: 'Enabled',
+                notificationPermissionDenied: 'Notification permission denied',
+                notificationNotSupported: 'Browser does not support notifications',
+                notificationHint: 'Send browser notification when gathering time arrives',
+                notificationTitle: 'FF14 Gathering Reminder',
+                notificationBodyTemplate: '${itemName} is now available for gathering!\nLocation: ${zone} ${location}\nCoordinates: ${coordinates}',
+                testNotificationButton: '🔔 Test',
+                testNotificationButtonShort: 'Test Notification',
+
+                // Visual notification text
+                visualNotificationTitle: '🔔 Gathering Reminder',
+                visualNotificationBody: '${itemName} is now available for gathering!',
+                visualNotificationTime: 'Time',
+                visualNotificationLocation: 'Location',
+                testItemName: 'Test Item',
+                testZoneName: 'Test Zone',
+                testNotificationBody: 'This is a test notification, please confirm you can see it'
             }
         };
     }

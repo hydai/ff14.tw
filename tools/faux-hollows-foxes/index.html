@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="../../assets/css/common.css">
     <link rel="stylesheet" href="../../assets/css/dark-mode-tools.css">
     <link rel="stylesheet" href="../../assets/css/tools-common.css">
+    <link rel="stylesheet" href="../../assets/css/components/language-switcher.css">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -16,15 +17,29 @@
         <div class="container">
             <a href="/" class="logo">FF14.tw</a>
             <nav class="nav">
-                <a href="/">首頁</a>
-                <a href="/copyright.html">版權聲明</a>
-                <a href="https://github.com/hydai/ff14.tw" target="_blank" rel="noopener noreferrer">GitHub</a>
+                <a href="/" data-i18n="nav_home">首頁</a>
+                <a href="/copyright.html" data-i18n="nav_copyright">版權聲明</a>
+                <a href="https://github.com/hydai/ff14.tw" target="_blank" rel="noopener noreferrer" data-i18n="nav_github">GitHub</a>
                 <div class="nav-dropdown">
-                    <a href="#">關於本站</a>
+                    <a href="#" data-i18n="nav_about_dropdown">關於本站</a>
                     <div class="nav-dropdown-content">
-                        <a href="/about.html">關於</a>
-                        <a href="/changelog.html">修改紀錄</a>
+                        <a href="/about.html" data-i18n="nav_about">關於</a>
+                        <a href="/changelog.html" data-i18n="nav_changelog">修改紀錄</a>
                     </div>
+                </div>
+                <div class="language-switcher">
+                    <button class="language-btn" data-lang="zh" aria-pressed="false">
+                        <span class="lang-flag">🇹🇼</span>
+                        <span class="lang-name">中文</span>
+                    </button>
+                    <button class="language-btn" data-lang="en" aria-pressed="false">
+                        <span class="lang-flag">🇺🇸</span>
+                        <span class="lang-name">EN</span>
+                    </button>
+                    <button class="language-btn" data-lang="ja" aria-pressed="false">
+                        <span class="lang-flag">🇯🇵</span>
+                        <span class="lang-name">日本語</span>
+                    </button>
                 </div>
             </nav>
         </div>
@@ -32,21 +47,21 @@
 
     <main class="main">
         <div class="container">
-            <h1>Faux Hollows Foxes 計算機</h1>
+            <h1 data-i18n="faux_hollows_header">Faux Hollows Foxes 計算機</h1>
 
             <div class="game-container">
                 <div id="game-hint" class="game-hint">
-                    <p>💡 提示：請先點擊兩個格子設定為障礙物，系統將自動判斷並填充剩餘的障礙物位置</p>
+                    <p data-i18n="faux_hollows_hint">💡 提示：請先點擊兩個格子設定為障礙物，系統將自動判斷並填充剩餘的障礙物位置</p>
                 </div>
                 <div class="game-info">
                     <div class="info-item">
-                        <span class="info-label">剩餘點擊次數：</span>
+                        <span class="info-label" data-i18n="faux_hollows_remaining_clicks">剩餘點擊次數</span>：
                         <span id="remaining-clicks" class="info-value">11</span>
                     </div>
                     <div class="info-item">
-                        <span class="info-label">符合盤面：</span>
+                        <span class="info-label" data-i18n="faux_hollows_matching_boards">符合盤面</span>：
                         <span id="matching-boards" class="info-value">252</span>
-                        <span class="info-unit">種</span>
+                        <span class="info-unit" data-i18n="faux_hollows_boards_unit">種</span>
                     </div>
                 </div>
 
@@ -55,15 +70,15 @@
                 </div>
 
                 <div class="controls">
-                    <button id="reset-btn" class="btn btn-primary">重置遊戲</button>
-                    <button id="undo-btn" class="btn btn-secondary" disabled>回到上一步</button>
-                    <button id="toggle-probabilities" class="btn btn-secondary">隱藏機率</button>
-                    <button id="auto-calculate" class="btn btn-secondary">計算最佳策略</button>
+                    <button id="reset-btn" class="btn btn-primary" data-i18n="faux_hollows_reset">重置遊戲</button>
+                    <button id="undo-btn" class="btn btn-secondary" disabled data-i18n="faux_hollows_undo">回到上一步</button>
+                    <button id="toggle-probabilities" class="btn btn-secondary" data-i18n="faux_hollows_hide_prob">隱藏機率</button>
+                    <button id="auto-calculate" class="btn btn-secondary" data-i18n="faux_hollows_calc_best">計算最佳策略</button>
                 </div>
 
                 <div id="result-panel" class="result-panel" style="display: none;">
-                    <h2>遊戲結果</h2>
-                    <p class="result-score">最終得分：<span id="final-score">0</span></p>
+                    <h2 data-i18n="faux_hollows_result_title">遊戲結果</h2>
+                    <p class="result-score"><span data-i18n="faux_hollows_final_score">最終得分</span>：<span id="final-score">0</span></p>
                     <div id="result-details"></div>
                 </div>
             </div>
@@ -71,38 +86,41 @@
             <!-- Popup for cell selection -->
             <div id="cell-popup" class="popup-overlay" style="display: none;">
                 <div class="popup-content">
-                    <h3>選擇此格類型</h3>
+                    <h3 data-i18n="faux_hollows_popup_title">選擇此格類型</h3>
                     <div class="popup-options">
-                        <button class="popup-btn" data-type="obstacle">🚫 障礙物</button>
-                        <button class="popup-btn" data-type="sword">⚔️ 劍 (2x3)</button>
-                        <button class="popup-btn" data-type="chest">📦 寶箱 (2x2)</button>
-                        <button class="popup-btn" data-type="fox">🦊 宗長 (1x1)</button>
-                        <button class="popup-btn" data-type="empty">✅ 空格</button>
-                        <button class="popup-btn" data-type="clear">🗑️ 清除</button>
+                        <button class="popup-btn" data-type="obstacle" data-i18n="faux_hollows_popup_obstacle">🚫 障礙物</button>
+                        <button class="popup-btn" data-type="sword" data-i18n="faux_hollows_popup_sword">⚔️ 劍 (2x3)</button>
+                        <button class="popup-btn" data-type="chest" data-i18n="faux_hollows_popup_chest">📦 寶箱 (2x2)</button>
+                        <button class="popup-btn" data-type="fox" data-i18n="faux_hollows_popup_fox">🦊 宗長 (1x1)</button>
+                        <button class="popup-btn" data-type="empty" data-i18n="faux_hollows_popup_empty">✅ 空格</button>
+                        <button class="popup-btn" data-type="clear" data-i18n="faux_hollows_popup_clear">🗑️ 清除</button>
                     </div>
-                    
-                    <button class="popup-close">取消</button>
+
+                    <button class="popup-close" data-i18n="faux_hollows_popup_cancel">取消</button>
                 </div>
             </div>
         </div>
-        
+
         <div class="data-source-note">
-            <p>盤面資料來源：<a href="https://www.reddit.com/r/ffxiv/comments/16wl1e7/faux_hollows_fox_location_guide_finished/" target="_blank" rel="noopener noreferrer">r/ffxiv Ylandah</a></p>
+            <p><span data-i18n="faux_hollows_data_source">盤面資料來源</span>：<a href="https://www.reddit.com/r/ffxiv/comments/16wl1e7/faux_hollows_fox_location_guide_finished/" target="_blank" rel="noopener noreferrer">r/ffxiv Ylandah</a></p>
         </div>
     </main>
 
     <footer class="footer">
         <div class="container">
-            <p>&copy; 2024-2025 FF14.tw | 本站非官方網站，與 Square Enix 無關 | Made with ❤️ by hydai</p>
+            <p>&copy; 2024-2025 FF14.tw | <span data-i18n="footer_copyright">本站非官方網站，與 Square Enix 無關</span> | <span data-i18n="footer_made_with">Made with ❤️ by hydai</span></p>
         </div>
     </footer>
 
-    <button id="back-to-top" class="back-to-top" aria-label="回到頂部">
+    <button id="back-to-top" class="back-to-top" data-i18n-attr="aria-label:faux_hollows_back_to_top" aria-label="回到頂部">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M18 15l-6-6-6 6"/>
         </svg>
     </button>
 
+    <script src="../../assets/js/i18n/i18n-manager.js"></script>
+    <script src="../../assets/js/i18n/translations/common.js"></script>
+    <script src="../../assets/js/i18n/translations/tools/faux-hollows-foxes.js"></script>
     <script src="../../assets/js/common.js"></script>
     <script src="../../assets/js/security-utils.js"></script>
     <script src="script.js"></script>

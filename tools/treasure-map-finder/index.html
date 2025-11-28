@@ -9,22 +9,37 @@
     <link rel="stylesheet" href="../../assets/css/common.css">
     <link rel="stylesheet" href="../../assets/css/dark-mode-tools.css">
     <link rel="stylesheet" href="../../assets/css/tools-common.css">
+    <link rel="stylesheet" href="../../assets/css/components/language-switcher.css">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <header class="header">
         <div class="container">
-            <a href="/" class="logo">FF14.tw</a>
+            <a href="/" class="logo">FF14.tw<span class="logo-separator">|</span><span class="logo-tool-name" data-i18n="treasure_map_header">寶圖搜尋器</span></a>
             <nav class="nav">
-                <a href="/">首頁</a>
-                <a href="/copyright.html">版權聲明</a>
-                <a href="https://github.com/hydai/ff14.tw" target="_blank" rel="noopener noreferrer">GitHub</a>
+                <a href="/" data-i18n="nav_home">首頁</a>
+                <a href="/copyright.html" data-i18n="nav_copyright">版權聲明</a>
+                <a href="https://github.com/hydai/ff14.tw" target="_blank" rel="noopener noreferrer" data-i18n="nav_github">GitHub</a>
                 <div class="nav-dropdown">
-                    <a href="#">關於本站</a>
+                    <a href="#" data-i18n="nav_about_dropdown">關於本站</a>
                     <div class="nav-dropdown-content">
-                        <a href="/about.html">關於</a>
-                        <a href="/changelog.html">修改紀錄</a>
+                        <a href="/about.html" data-i18n="nav_about">關於</a>
+                        <a href="/changelog.html" data-i18n="nav_changelog">修改紀錄</a>
                     </div>
+                </div>
+                <div class="language-switcher">
+                    <button class="language-btn" data-lang="zh" aria-pressed="false">
+                        <span class="lang-flag">🇹🇼</span>
+                        <span class="lang-name">中文</span>
+                    </button>
+                    <button class="language-btn" data-lang="en" aria-pressed="false">
+                        <span class="lang-flag">🇺🇸</span>
+                        <span class="lang-name">EN</span>
+                    </button>
+                    <button class="language-btn" data-lang="ja" aria-pressed="false">
+                        <span class="lang-flag">🇯🇵</span>
+                        <span class="lang-name">日本語</span>
+                    </button>
                 </div>
             </nav>
         </div>
@@ -33,7 +48,7 @@
     <main class="main">
         <div class="container">
             <div class="page-header">
-                <h1>寶圖搜尋器</h1>
+                <h1 data-i18n="treasure_map_header">寶圖搜尋器</h1>
             </div>
 
             <div class="tool-content">
@@ -44,15 +59,15 @@
                     </div>
                     <div class="action-bar-right">
                         <button class="btn btn-primary my-list-toggle" id="myListToggle">
-                            <span class="btn-icon">📋</span> 我的清單 <span class="list-count" id="listCount">(0)</span>
+                            <span class="btn-icon">📋</span> <span data-i18n="treasure_map_my_list">我的清單</span> <span class="list-count" id="listCount">(0)</span>
                         </button>
                         <!-- 組隊操作按鈕 -->
                         <div class="team-actions" id="teamActions">
                             <button class="btn btn-primary" id="createRoomBtn">
-                                <span class="btn-icon">🏠</span> 建立組隊
+                                <span class="btn-icon">🏠</span> <span data-i18n="treasure_map_create_room">建立組隊</span>
                             </button>
                             <button class="btn btn-secondary" id="joinRoomBtn">
-                                <span class="btn-icon">🚪</span> 加入隊伍
+                                <span class="btn-icon">🚪</span> <span data-i18n="treasure_map_join_room">加入隊伍</span>
                             </button>
                         </div>
                     </div>
@@ -106,17 +121,17 @@
                 <div class="filter-section">
                     <!-- 篩選標題欄 -->
                     <div class="filter-header">
-                        <h2 class="section-title">篩選條件</h2>
+                        <h2 class="section-title" data-i18n="treasure_map_filter_title">篩選條件</h2>
                         <button class="btn btn-secondary" id="resetFilters">
-                            <span class="btn-icon">↻</span> 重置篩選
+                            <span class="btn-icon">↻</span> <span data-i18n="treasure_map_reset_filters">重置篩選</span>
                         </button>
                     </div>
-                    
+
                     <!-- 等級篩選 -->
                     <div class="filter-group level-filter-group">
                         <div class="filter-group-header">
-                            <label><span class="filter-icon">🏷️</span> 寶圖等級</label>
-                            <span class="filter-hint">可多選</span>
+                            <label><span class="filter-icon">🏷️</span> <span data-i18n="treasure_map_level_filter">寶圖等級</span></label>
+                            <span class="filter-hint" data-i18n="treasure_map_multi_select">可多選</span>
                         </div>
                         <div class="filter-tags" id="levelTags">
                             <button class="filter-tag hidden" data-level="g1">G1 鞣革</button>
@@ -143,8 +158,8 @@
                     <!-- 地圖篩選 -->
                     <div class="filter-group map-filter-group">
                         <div class="filter-group-header collapsible-header" data-collapse="mapTags" data-expanded="false">
-                            <label><span class="filter-icon">🗺️</span> 地圖</label>
-                            <span class="filter-hint">可多選</span>
+                            <label><span class="filter-icon">🗺️</span> <span data-i18n="treasure_map_map_filter">地圖</span></label>
+                            <span class="filter-hint" data-i18n="treasure_map_multi_select">可多選</span>
                             <span class="collapse-indicator">▼</span>
                         </div>
                         <div class="filter-tags map-tags-grid collapsed" id="mapTags">
@@ -321,8 +336,8 @@
 
             <!-- 資料來源說明 -->
             <div class="source-section">
-                <h3>資料來源</h3>
-                <p>本工具的座標資料來源於 <a href="https://game8.jp/" target="_blank" rel="noopener noreferrer">Game8</a>：</p>
+                <h3 data-i18n="treasure_map_data_source">資料來源</h3>
+                <p><span data-i18n="treasure_map_data_source_intro">本工具的座標資料來源於</span> <a href="https://game8.jp/" target="_blank" rel="noopener noreferrer">Game8</a>：</p>
                 <ul class="source-list">
                     <li>G8 巨龍革地圖：<a href="https://game8.jp/ff14/287783" target="_blank" rel="noopener noreferrer">https://game8.jp/ff14/287783</a></li>
                     <li>G10 瞪羚革地圖：<a href="https://game8.jp/ff14/303477" target="_blank" rel="noopener noreferrer">https://game8.jp/ff14/303477</a></li>
@@ -530,10 +545,13 @@
 
     <footer class="footer">
         <div class="container">
-            <p>&copy; 2024-2025 FF14.tw | 本站非官方網站，與 Square Enix 無關 | Made with ❤️ by hydai</p>
+            <p>&copy; 2024-2025 FF14.tw | <span data-i18n="footer_copyright">本站非官方網站，與 Square Enix 無關</span> | <span data-i18n="footer_made_with">Made with ❤️ by hydai</span></p>
         </div>
     </footer>
 
+    <script src="../../assets/js/i18n/i18n-manager.js"></script>
+    <script src="../../assets/js/i18n/translations/common.js"></script>
+    <script src="../../assets/js/i18n/translations/tools/treasure-map-finder.js"></script>
     <script src="../../assets/js/common.js"></script>
     <script src="../../assets/js/security-utils.js"></script>
     <script src="coordinate-utils.js"></script>

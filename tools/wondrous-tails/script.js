@@ -4,7 +4,7 @@ class WondrousTailsCalculator {
         this.totalObjects = 9;
         this.grid = Array(16).fill(false); // 4x4 grid, false = empty, true = placed
         this.placedCount = 0;
-        
+
         this.elements = {
             grid: document.getElementById('wondrous-grid'),
             placedCount: document.getElementById('placed-count'),
@@ -45,7 +45,31 @@ class WondrousTailsCalculator {
         this.elements.grid.addEventListener('click', this.handleCellClick);
         this.elements.resetBtn.addEventListener('click', this.handleReset);
     }
-    
+
+    getText(key, params = {}) {
+        if (window.i18n) {
+            let text = window.i18n.getText(key);
+            // Replace placeholders like {prob} with actual values
+            Object.keys(params).forEach(param => {
+                text = text.replace(`{${param}}`, params[param]);
+            });
+            return text;
+        }
+        // Fallback for specific keys
+        const fallbacks = {
+            'wondrous_tails_max_objects': '最多只能放置 9 個物件',
+            'wondrous_tails_reset_done': '盤面已重置',
+            'wondrous_tails_rec_excellent': '很好的盤面！建議保留，有很高機率獲得獎勵。',
+            'wondrous_tails_rec_medium': '中等盤面，可以考慮保留或重置。',
+            'wondrous_tails_rec_poor': '建議重置盤面，當前獲得獎勵的機率較低。',
+            'wondrous_tails_rec_3lines': `極佳盤面！有 ${params.prob}% 機率獲得 3+ 條線獎勵，強烈建議繼續。`,
+            'wondrous_tails_rec_2lines': `良好盤面！有 ${params.prob}% 機率獲得 2+ 條線獎勵，建議繼續。`,
+            'wondrous_tails_rec_1line': `尚可盤面，有 ${params.prob}% 機率獲得至少 1 條線獎勵。`,
+            'wondrous_tails_rec_low': `當前盤面獲得獎勵機率較低，建議考慮重置。還有 ${params.remaining} 個物件待放置。`
+        };
+        return fallbacks[key] || key;
+    }
+
     toggleCell(position) {
         if (this.grid[position]) {
             // Remove object
@@ -57,7 +81,7 @@ class WondrousTailsCalculator {
                 this.grid[position] = true;
                 this.placedCount++;
             } else {
-                FF14Utils.showToast('最多只能放置 9 個物件', 'error');
+                FF14Utils.showToast(this.getText('wondrous_tails_max_objects'), 'error');
                 return;
             }
         }
@@ -88,7 +112,7 @@ class WondrousTailsCalculator {
         this.grid = Array(16).fill(false);
         this.placedCount = 0;
         this.updateDisplay();
-        FF14Utils.showToast('盤面已重置');
+        FF14Utils.showToast(this.getText('wondrous_tails_reset_done'));
     }
     
     // Check if a line (4 consecutive positions) has all objects placed
@@ -266,25 +290,25 @@ class WondrousTailsCalculator {
     
     generateRecommendation(prob1, prob2, prob3, details) {
         const remainingObjects = this.totalObjects - this.placedCount;
-        
+
         if (remainingObjects === 0) {
             if (prob1 >= 80) {
-                return '很好的盤面！建議保留，有很高機率獲得獎勵。';
+                return this.getText('wondrous_tails_rec_excellent');
             } else if (prob1 >= 50) {
-                return '中等盤面，可以考慮保留或重置。';
+                return this.getText('wondrous_tails_rec_medium');
             } else {
-                return '建議重置盤面，當前獲得獎勵的機率較低。';
+                return this.getText('wondrous_tails_rec_poor');
             }
         }
-        
+
         if (prob3 >= 20) {
-            return `極佳盤面！有 ${prob3}% 機率獲得 3+ 條線獎勵，強烈建議繼續。`;
+            return this.getText('wondrous_tails_rec_3lines', { prob: prob3 });
         } else if (prob2 >= 40) {
-            return `良好盤面！有 ${prob2}% 機率獲得 2+ 條線獎勵，建議繼續。`;
+            return this.getText('wondrous_tails_rec_2lines', { prob: prob2 });
         } else if (prob1 >= 60) {
-            return `尚可盤面，有 ${prob1}% 機率獲得至少 1 條線獎勵。`;
+            return this.getText('wondrous_tails_rec_1line', { prob: prob1 });
         } else {
-            return `當前盤面獲得獎勵機率較低，建議考慮重置。還有 ${remainingObjects} 個物件待放置。`;
+            return this.getText('wondrous_tails_rec_low', { remaining: remainingObjects });
         }
     }
 }

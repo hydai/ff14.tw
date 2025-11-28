@@ -15,12 +15,19 @@ class MiniCactpotCalculator {
             [0, 3, 6], [1, 4, 7], [2, 5, 8], // 直行
             [0, 4, 8], [2, 4, 6]             // 斜線
         ];
-        this.lineNames = [
+        // Line names will be fetched via i18n
+        this.lineNameKeys = [
+            'mini_cactpot_line_row_top', 'mini_cactpot_line_row_mid', 'mini_cactpot_line_row_bot',
+            'mini_cactpot_line_col_left', 'mini_cactpot_line_col_mid', 'mini_cactpot_line_col_right',
+            'mini_cactpot_line_diag_left', 'mini_cactpot_line_diag_right'
+        ];
+        // Fallback line names (Chinese)
+        this.lineNamesFallback = [
             '上橫列', '中橫列', '下橫列',
             '左直行', '中直行', '右直行',
             '左斜線', '右斜線'
         ];
-        
+
         // DOM 元素快取
         this.elements = {
             grid: document.getElementById('extended-grid'),
@@ -36,15 +43,43 @@ class MiniCactpotCalculator {
     initializeGrid() {
         // 移除可能存在的舊事件監聽器
         this.elements.grid.removeEventListener('click', this.handleGridClick);
-        
+
         // 綁定新的事件監聽器
         this.handleGridClick = (e) => {
             if (e.target.classList.contains('grid-cell')) {
                 this.handleCellClick(parseInt(e.target.dataset.position));
             }
         };
-        
+
         this.elements.grid.addEventListener('click', this.handleGridClick);
+    }
+
+    getLineName(index) {
+        if (window.i18n) {
+            return window.i18n.getText(this.lineNameKeys[index]);
+        }
+        return this.lineNamesFallback[index];
+    }
+
+    getText(key, params = {}) {
+        if (window.i18n) {
+            let text = window.i18n.getText(key);
+            // Replace placeholders like {value} with actual values
+            Object.keys(params).forEach(param => {
+                text = text.replace(`{${param}}`, params[param]);
+            });
+            return text;
+        }
+        // Fallback for specific keys
+        const fallbacks = {
+            'mini_cactpot_max_cells': '最多只能選擇 4 個格子',
+            'mini_cactpot_number_used': `數字 ${params.value} 已被使用`,
+            'mini_cactpot_undone': '已回到上一步',
+            'mini_cactpot_reset_done': '已重置九宮格',
+            'mini_cactpot_expected_value': '期望值',
+            'mini_cactpot_range': '範圍'
+        };
+        return fallbacks[key] || key;
     }
 
     saveState() {
@@ -128,7 +163,7 @@ class MiniCactpotCalculator {
             // 選擇格子
             this.selectCell(position);
         } else {
-            FF14Utils.showToast('最多只能選擇 4 個格子', 'error');
+            FF14Utils.showToast(this.getText('mini_cactpot_max_cells'), 'error');
         }
     }
 
@@ -180,7 +215,7 @@ class MiniCactpotCalculator {
         if (value >= 1 && value <= 9) {
             // 檢查數字是否已被使用
             if (this.grid.includes(value)) {
-                FF14Utils.showToast(`數字 ${value} 已被使用`, 'error');
+                FF14Utils.showToast(this.getText('mini_cactpot_number_used', { value }), 'error');
                 return;
             }
             
@@ -278,7 +313,7 @@ class MiniCactpotCalculator {
             });
             
             return {
-                name: this.lineNames[lineIdx],
+                name: this.getLineName(lineIdx),
                 positions: line,
                 expectedValue: totalMGP / combinations.length,
                 minMGP,
@@ -338,9 +373,9 @@ class MiniCactpotCalculator {
             className: '',
             title: bestResult.name,
             titleClass: 'best-choice-title',
-            value: `期望值：${FF14Utils.formatNumber(Math.round(bestResult.expectedValue))} MGP`,
+            value: `${this.getText('mini_cactpot_expected_value')}：${FF14Utils.formatNumber(Math.round(bestResult.expectedValue))} MGP`,
             valueClass: 'best-choice-value',
-            range: `範圍：${FF14Utils.formatNumber(bestResult.minMGP)} - ${FF14Utils.formatNumber(bestResult.maxMGP)} MGP`,
+            range: `${this.getText('mini_cactpot_range')}：${FF14Utils.formatNumber(bestResult.minMGP)} - ${FF14Utils.formatNumber(bestResult.maxMGP)} MGP`,
             rangeClass: 'best-choice-range'
         });
         
@@ -365,7 +400,7 @@ class MiniCactpotCalculator {
         // 更新撤銷按鈕狀態
         this.updateUndoButton();
         
-        FF14Utils.showToast('已回到上一步', 'success');
+        FF14Utils.showToast(this.getText('mini_cactpot_undone'), 'success');
     }
 
 }
@@ -403,7 +438,8 @@ function resetGrid() {
     
     // 重置計算器實例
     calculator = new MiniCactpotCalculator();
-    FF14Utils.showToast('已重置九宮格', 'success');
+    const resetMsg = window.i18n ? window.i18n.getText('mini_cactpot_reset_done') : '已重置九宮格';
+    FF14Utils.showToast(resetMsg, 'success');
 }
 
 function undoLastStep() {

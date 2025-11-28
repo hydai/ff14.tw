@@ -7,34 +7,49 @@
     <meta name="description" content="使用 Lodestone ID 查詢 Final Fantasy XIV 角色資訊。快速查看角色基本資料、職業等級、成就等資訊。">
     <meta name="keywords" content="FF14, FFXIV, Final Fantasy XIV, Lodestone, 角色查詢, 角色資訊, Character Lookup">
     <link rel="canonical" href="https://ff14.tw/tools/lodestone-lookup/">
-    
+
     <!-- Open Graph / Social Media -->
     <meta property="og:title" content="Lodestone 角色查詢 - FF14.tw">
     <meta property="og:description" content="使用 Lodestone ID 查詢 Final Fantasy XIV 角色資訊">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://ff14.tw/tools/lodestone-lookup/">
     <meta property="og:image" content="https://ff14.tw/assets/images/og-image.png">
-    
+
     <link rel="icon" type="image/x-icon" href="../../assets/images/ff14tw.ico">
     <link rel="stylesheet" href="../../assets/css/common.css">
     <link rel="stylesheet" href="../../assets/css/dark-mode-tools.css">
     <link rel="stylesheet" href="../../assets/css/tools-common.css">
+    <link rel="stylesheet" href="../../assets/css/components/language-switcher.css">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <header class="header">
         <div class="container">
-            <a href="/" class="logo">FF14.tw</a>
+            <a href="/" class="logo">FF14.tw<span class="logo-separator">|</span><span class="logo-tool-name" data-i18n="lodestone_header">Lodestone 角色查詢</span></a>
             <nav class="nav">
-                <a href="/">首頁</a>
-                <a href="/copyright.html">版權聲明</a>
-                <a href="https://github.com/hydai/ff14.tw" target="_blank" rel="noopener noreferrer">GitHub</a>
+                <a href="/" data-i18n="nav_home">首頁</a>
+                <a href="/copyright.html" data-i18n="nav_copyright">版權聲明</a>
+                <a href="https://github.com/hydai/ff14.tw" target="_blank" rel="noopener noreferrer" data-i18n="nav_github">GitHub</a>
                 <div class="nav-dropdown">
-                    <a href="#">關於本站</a>
+                    <a href="#" data-i18n="nav_about_dropdown">關於本站</a>
                     <div class="nav-dropdown-content">
-                        <a href="/about.html">關於</a>
-                        <a href="/changelog.html">修改紀錄</a>
+                        <a href="/about.html" data-i18n="nav_about">關於</a>
+                        <a href="/changelog.html" data-i18n="nav_changelog">修改紀錄</a>
                     </div>
+                </div>
+                <div class="language-switcher">
+                    <button class="language-btn" data-lang="zh" aria-pressed="false">
+                        <span class="lang-flag">🇹🇼</span>
+                        <span class="lang-name">中文</span>
+                    </button>
+                    <button class="language-btn" data-lang="en" aria-pressed="false">
+                        <span class="lang-flag">🇺🇸</span>
+                        <span class="lang-name">EN</span>
+                    </button>
+                    <button class="language-btn" data-lang="ja" aria-pressed="false">
+                        <span class="lang-flag">🇯🇵</span>
+                        <span class="lang-name">日本語</span>
+                    </button>
                 </div>
             </nav>
         </div>
@@ -42,36 +57,38 @@
 
     <main class="main container">
         <div class="tool-header">
-            <h1>Lodestone 角色查詢</h1>
-            <p class="tool-description">輸入角色的 Lodestone ID 來查詢詳細資訊</p>
+            <h1 data-i18n="lodestone_header">Lodestone 角色查詢</h1>
+            <p class="tool-description" data-i18n="lodestone_subtitle">輸入角色的 Lodestone ID 來查詢詳細資訊</p>
         </div>
 
         <div class="tool-content">
             <div class="search-section">
                 <div class="search-box">
-                    <input 
-                        type="text" 
-                        id="characterId" 
+                    <input
+                        type="text"
+                        id="characterId"
                         class="form-control form-control-lg"
+                        data-i18n-attr="placeholder"
+                        data-i18n="lodestone_placeholder"
                         placeholder="請輸入 Lodestone ID (例如：12345678)"
                         pattern="[0-9]+"
                         maxlength="10"
                     >
                     <select id="datacenterSelect" class="form-control form-control-lg">
-                        <option value="na">北美資料中心</option>
-                        <option value="jp">日本資料中心</option>
+                        <option value="na" data-i18n="lodestone_dc_na">北美資料中心</option>
+                        <option value="jp" data-i18n="lodestone_dc_jp">日本資料中心</option>
                     </select>
-                    <button id="searchBtn" class="btn btn-primary btn-lg">查詢</button>
+                    <button id="searchBtn" class="btn btn-primary btn-lg" data-i18n="lodestone_search">查詢</button>
                 </div>
                 <div class="search-hint">
-                    <p>提示：您可以在 Lodestone 官方網站的角色頁面 URL 中找到角色 ID</p>
-                    <p>例如：https://na.finalfantasyxiv.com/lodestone/character/<strong>12345678</strong>/</p>
+                    <p data-i18n="lodestone_hint">提示：您可以在 Lodestone 官方網站的角色頁面 URL 中找到角色 ID</p>
+                    <p><span data-i18n="lodestone_example">例如：https://na.finalfantasyxiv.com/lodestone/character/</span><strong>12345678</strong>/</p>
                 </div>
             </div>
 
             <div id="loadingIndicator" class="loading-indicator hidden">
                 <div class="spinner"></div>
-                <p>正在查詢角色資訊...</p>
+                <p data-i18n="lodestone_loading">正在查詢角色資訊...</p>
             </div>
 
             <div id="errorMessage" class="error-message hidden"></div>
@@ -95,163 +112,163 @@
 
                 <div class="info-sections">
                     <section class="info-section">
-                        <h3>基本資訊</h3>
+                        <h3 data-i18n="lodestone_basic_info">基本資訊</h3>
                         <div class="info-grid">
                             <div class="info-item">
-                                <label>守護神：</label>
+                                <label data-i18n="lodestone_deity">守護神：</label>
                                 <span id="characterDeity"></span>
                             </div>
                             <div class="info-item">
-                                <label>開始城市：</label>
+                                <label data-i18n="lodestone_city">開始城市：</label>
                                 <span id="characterCity"></span>
                             </div>
                         </div>
                     </section>
 
                     <section class="info-section">
-                        <h3>職業等級</h3>
+                        <h3 data-i18n="lodestone_job_levels">職業等級</h3>
                         <div id="jobLevels" class="job-levels-grid"></div>
                     </section>
-                    
+
                     <section class="info-section" id="specialContentSection" style="display: none;">
-                        <h3>特殊內容</h3>
+                        <h3 data-i18n="lodestone_special_content">特殊內容</h3>
                         <div id="specialContent" class="special-content-grid"></div>
                     </section>
-                    
+
                     <section class="info-section">
-                        <h3>裝備資訊</h3>
+                        <h3 data-i18n="lodestone_equipment">裝備資訊</h3>
                         <div id="equipmentInfo" class="equipment-grid"></div>
                     </section>
 
                     <section class="info-section">
-                        <h3>角色屬性</h3>
+                        <h3 data-i18n="lodestone_attributes">角色屬性</h3>
                         <div class="info-grid">
                             <div class="info-item">
-                                <label>生命值：</label>
+                                <label data-i18n="lodestone_hp">生命值：</label>
                                 <span id="hp"></span>
                             </div>
                             <div class="info-item">
-                                <label>MP/GP/CP：</label>
+                                <label data-i18n="lodestone_mp">MP/GP/CP：</label>
                                 <span id="mp"></span>
                             </div>
                             <div class="info-item">
-                                <label>物理攻擊力：</label>
+                                <label data-i18n="lodestone_attack_power">物理攻擊力：</label>
                                 <span id="attackPower"></span>
                             </div>
                             <div class="info-item">
-                                <label>物理防禦力：</label>
+                                <label data-i18n="lodestone_defense">物理防禦力：</label>
                                 <span id="defense"></span>
                             </div>
                             <div class="info-item">
-                                <label>魔法攻擊力：</label>
+                                <label data-i18n="lodestone_magic_attack">魔法攻擊力：</label>
                                 <span id="attackMagicPotency"></span>
                             </div>
                             <div class="info-item">
-                                <label>魔法防禦力：</label>
+                                <label data-i18n="lodestone_magic_defense">魔法防禦力：</label>
                                 <span id="magicDefense"></span>
                             </div>
                         </div>
                     </section>
 
                     <section class="info-section">
-                        <h3>副屬性</h3>
+                        <h3 data-i18n="lodestone_sub_attributes">副屬性</h3>
                         <div class="info-grid">
                             <div class="info-item">
-                                <label>力量：</label>
+                                <label data-i18n="lodestone_strength">力量：</label>
                                 <span id="strength"></span>
                             </div>
                             <div class="info-item">
-                                <label>靈巧：</label>
+                                <label data-i18n="lodestone_dexterity">靈巧：</label>
                                 <span id="dexterity"></span>
                             </div>
                             <div class="info-item">
-                                <label>耐力：</label>
+                                <label data-i18n="lodestone_vitality">耐力：</label>
                                 <span id="vitality"></span>
                             </div>
                             <div class="info-item">
-                                <label>智力：</label>
+                                <label data-i18n="lodestone_intelligence">智力：</label>
                                 <span id="intelligence"></span>
                             </div>
                             <div class="info-item">
-                                <label>精神：</label>
+                                <label data-i18n="lodestone_mind">精神：</label>
                                 <span id="mind"></span>
                             </div>
                             <div class="info-item">
-                                <label>爆擊：</label>
+                                <label data-i18n="lodestone_critical">爆擊：</label>
                                 <span id="criticalHit"></span>
                             </div>
                             <div class="info-item">
-                                <label>意志：</label>
+                                <label data-i18n="lodestone_determination">意志：</label>
                                 <span id="determination"></span>
                             </div>
                             <div class="info-item">
-                                <label>直擊：</label>
+                                <label data-i18n="lodestone_direct_hit">直擊：</label>
                                 <span id="directHit"></span>
                             </div>
                             <div class="info-item">
-                                <label>技巧速度：</label>
+                                <label data-i18n="lodestone_skill_speed">技巧速度：</label>
                                 <span id="skillSpeed"></span>
                             </div>
                             <div class="info-item">
-                                <label>咏唱速度：</label>
+                                <label data-i18n="lodestone_spell_speed">咏唱速度：</label>
                                 <span id="spellSpeed"></span>
                             </div>
                             <div class="info-item">
-                                <label>信仰：</label>
+                                <label data-i18n="lodestone_piety">信仰：</label>
                                 <span id="piety"></span>
                             </div>
                             <div class="info-item">
-                                <label>堅韌：</label>
+                                <label data-i18n="lodestone_tenacity">堅韌：</label>
                                 <span id="tenacity"></span>
                             </div>
                         </div>
                     </section>
 
                     <section class="info-section">
-                        <h3>其他資訊</h3>
+                        <h3 data-i18n="lodestone_other_info">其他資訊</h3>
                         <div class="info-grid">
                             <div class="info-item">
-                                <label>大國防軍：</label>
+                                <label data-i18n="lodestone_grand_company">大國防軍：</label>
                                 <span id="grandCompany"></span>
                             </div>
                             <div class="info-item">
-                                <label>生日：</label>
+                                <label data-i18n="lodestone_nameday">生日：</label>
                                 <span id="nameday"></span>
                             </div>
                             <div class="info-item">
-                                <label>個人簡介：</label>
+                                <label data-i18n="lodestone_bio">個人簡介：</label>
                                 <span id="bio"></span>
                             </div>
                         </div>
                     </section>
-                    
+
                     <!-- 分頁導航 -->
                     <div class="tab-navigation" id="tabNavigation" style="display: none;">
-                        <button class="tab-button active" data-tab="overview">總覽</button>
-                        <button class="tab-button" data-tab="achievements">成就</button>
-                        <button class="tab-button" data-tab="mounts">坐騎</button>
-                        <button class="tab-button" data-tab="minions">寵物</button>
-                        <button class="tab-button" data-tab="freecompany">公會</button>
+                        <button class="tab-button active" data-tab="overview" data-i18n="lodestone_tab_overview">總覽</button>
+                        <button class="tab-button" data-tab="achievements" data-i18n="lodestone_tab_achievements">成就</button>
+                        <button class="tab-button" data-tab="mounts" data-i18n="lodestone_tab_mounts">坐騎</button>
+                        <button class="tab-button" data-tab="minions" data-i18n="lodestone_tab_minions">寵物</button>
+                        <button class="tab-button" data-tab="freecompany" data-i18n="lodestone_tab_fc">公會</button>
                     </div>
-                    
+
                     <!-- 分頁內容 -->
                     <div class="tab-content" id="tabContent">
                         <!-- 總覽分頁 -->
                         <div class="tab-pane active" id="overviewTab">
                             <!-- 這裡可以放置簡要統計資訊 -->
                         </div>
-                        
+
                         <!-- 成就分頁 -->
                         <div class="tab-pane" id="achievementsTab">
                     <section class="info-section" id="achievementsSection">
-                        <h3>成就</h3>
+                        <h3 data-i18n="lodestone_tab_achievements">成就</h3>
                         <div class="achievements-summary">
                             <div class="summary-item">
-                                <label>總成就數：</label>
+                                <label data-i18n="lodestone_total_achievements">總成就數：</label>
                                 <span id="totalAchievements">0</span>
                             </div>
                             <div class="summary-item">
-                                <label>成就點數：</label>
+                                <label data-i18n="lodestone_achievement_points">成就點數：</label>
                                 <span id="achievementPoints">0</span>
                             </div>
                         </div>
@@ -259,72 +276,72 @@
                         <div id="achievementsPagination" class="pagination"></div>
                     </section>
                         </div>
-                        
+
                         <!-- 坐騎分頁 -->
                         <div class="tab-pane" id="mountsTab">
                     <section class="info-section" id="mountsSection">
-                        <h3>坐騎收藏</h3>
+                        <h3 data-i18n="lodestone_mounts_collection">坐騎收藏</h3>
                         <div class="collection-summary">
-                            <span id="mountsCount">0</span> 個坐騎
+                            <span id="mountsCount">0</span> <span data-i18n="lodestone_mounts_count_unit">個坐騎</span>
                         </div>
                         <div id="mountsList" class="mounts-grid"></div>
                     </section>
                         </div>
-                        
+
                         <!-- 寵物分頁 -->
                         <div class="tab-pane" id="minionsTab">
                     <section class="info-section" id="minionsSection">
-                        <h3>寵物收藏</h3>
+                        <h3 data-i18n="lodestone_minions_collection">寵物收藏</h3>
                         <div class="collection-summary">
-                            <span id="minionsCount">0</span> 隻寵物
+                            <span id="minionsCount">0</span> <span data-i18n="lodestone_minions_count_unit">隻寵物</span>
                         </div>
                         <div id="minionsList" class="minions-grid"></div>
                     </section>
                         </div>
-                        
+
                         <!-- 公會分頁 -->
                         <div class="tab-pane" id="freecompanyTab">
                     <section class="info-section" id="freeCompanySection">
-                        <h3>公會資訊</h3>
+                        <h3 data-i18n="lodestone_fc_info">公會資訊</h3>
                         <div class="fc-header">
                             <div class="fc-crest" id="fcCrest"></div>
                             <div class="fc-basic-info">
                                 <h4 id="fcDetailName" class="fc-detail-name"></h4>
                                 <p id="fcSlogan" class="fc-slogan"></p>
                                 <div class="fc-stats">
-                                    <span>成員數：<strong id="fcMemberCount">0</strong></span>
-                                    <span>排名：<strong id="fcRank">--</strong></span>
-                                    <span>招募狀態：<strong id="fcRecruitment">--</strong></span>
+                                    <span><span data-i18n="lodestone_fc_members">成員數：</span><strong id="fcMemberCount">0</strong></span>
+                                    <span><span data-i18n="lodestone_fc_rank">排名：</span><strong id="fcRank">--</strong></span>
+                                    <span><span data-i18n="lodestone_fc_recruitment">招募狀態：</span><strong id="fcRecruitment">--</strong></span>
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="fc-details">
                             <div class="fc-estate" id="fcEstateInfo" style="display: none;">
-                                <h5>公會房屋</h5>
+                                <h5 data-i18n="lodestone_fc_estate">公會房屋</h5>
                                 <p id="fcEstateName"></p>
                                 <p id="fcEstatePlot"></p>
                                 <p id="fcEstateGreeting" class="fc-greeting"></p>
                             </div>
-                            
+
                             <div class="fc-focus">
-                                <h5>公會目標</h5>
+                                <h5 data-i18n="lodestone_fc_focus">公會目標</h5>
                                 <div id="fcFocusList" class="tag-list"></div>
                             </div>
-                            
+
                             <div class="fc-seeking">
-                                <h5>招募對象</h5>
+                                <h5 data-i18n="lodestone_fc_seeking">招募對象</h5>
                                 <div id="fcSeekingList" class="tag-list"></div>
                             </div>
-                            
+
                             <div class="fc-reputation">
-                                <h5>大國防軍聲望</h5>
+                                <h5 data-i18n="lodestone_fc_reputation">大國防軍聲望</h5>
                                 <div id="fcReputationList" class="reputation-list"></div>
                             </div>
                         </div>
-                        
+
                         <div class="fc-members">
-                            <h5>公會成員</h5>
+                            <h5 data-i18n="lodestone_fc_member_list">公會成員</h5>
                             <div id="fcMembersList" class="members-grid"></div>
                             <div id="fcMembersPagination" class="pagination"></div>
                         </div>
@@ -334,26 +351,26 @@
                 </div>
 
                 <div class="lodestone-link">
-                    <a id="lodestoneLink" href="" target="_blank" rel="noopener noreferrer">
+                    <a id="lodestoneLink" href="" target="_blank" rel="noopener noreferrer" data-i18n="lodestone_view_full">
                         在 Lodestone 查看完整資訊 →
                     </a>
                 </div>
-                
+
                 <div class="data-timestamp" id="dataTimestamp" style="display: none;">
-                    <p>資料更新時間：<span id="updateTime"></span></p>
+                    <p><span data-i18n="lodestone_data_updated">資料更新時間：</span><span id="updateTime"></span></p>
                 </div>
             </div>
 
             <div class="usage-notes">
-                <h3>使用說明</h3>
+                <h3 data-i18n="lodestone_usage_title">使用說明</h3>
                 <ul>
-                    <li>本工具使用 FFXIV Lodestone 官方資料</li>
-                    <li>查詢結果會快取 24 小時以提升效能</li>
-                    <li>支援查詢角色資訊、職業等級、成就、坐騎和寵物收藏</li>
-                    <li>成就資料支援分頁瀏覽</li>
-                    <li>支援北美和日本資料中心的角色查詢</li>
-                    <li>請選擇正確的資料中心以確保查詢成功</li>
-                    <li>更多詳細資訊請前往官方 Lodestone 頁面查看</li>
+                    <li data-i18n="lodestone_usage_1">本工具使用 FFXIV Lodestone 官方資料</li>
+                    <li data-i18n="lodestone_usage_2">查詢結果會快取 24 小時以提升效能</li>
+                    <li data-i18n="lodestone_usage_3">支援查詢角色資訊、職業等級、成就、坐騎和寵物收藏</li>
+                    <li data-i18n="lodestone_usage_4">成就資料支援分頁瀏覽</li>
+                    <li data-i18n="lodestone_usage_5">支援北美和日本資料中心的角色查詢</li>
+                    <li data-i18n="lodestone_usage_6">請選擇正確的資料中心以確保查詢成功</li>
+                    <li data-i18n="lodestone_usage_7">更多詳細資訊請前往官方 Lodestone 頁面查看</li>
                 </ul>
             </div>
         </div>
@@ -361,10 +378,13 @@
 
     <footer class="footer">
         <div class="container">
-            <p>&copy; 2024-2025 FF14.tw | 本站非官方網站，與 Square Enix 無關 | Made with ❤️ by hydai</p>
+            <p>&copy; 2024-2025 FF14.tw | <span data-i18n="footer_copyright">本站非官方網站，與 Square Enix 無關</span> | <span data-i18n="footer_made_with">Made with ❤️ by hydai</span></p>
         </div>
     </footer>
 
+    <script src="../../assets/js/i18n/i18n-manager.js"></script>
+    <script src="../../assets/js/i18n/translations/common.js"></script>
+    <script src="../../assets/js/i18n/translations/tools/lodestone-lookup.js"></script>
     <script src="../../assets/js/common.js"></script>
     <script src="../../assets/js/security-utils.js"></script>
     <script src="script.js"></script>
