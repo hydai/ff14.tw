@@ -48,11 +48,9 @@ class I18nManager {
                 this.updatePageLanguage();
             });
         } else {
-            // DOM 已載入完成
-            setTimeout(() => {
-                this._initializeLanguageSwitcher();
-                this.updatePageLanguage();
-            }, 0);
+            // DOM 已載入完成，直接執行
+            this._initializeLanguageSwitcher();
+            this.updatePageLanguage();
         }
     }
 
@@ -67,18 +65,20 @@ class I18nManager {
             return stored;
         }
 
-        // 2. 檢查瀏覽器語言
-        const browserLang = navigator.language || navigator.userLanguage;
-        if (browserLang) {
-            const langMap = I18nManager.CONSTANTS.BROWSER_LANG_MAP;
+        // 2. 檢查瀏覽器語言（優先使用 languages 陣列以更準確匹配使用者偏好）
+        const langMap = I18nManager.CONSTANTS.BROWSER_LANG_MAP;
+        const browserLanguages = navigator.languages || [navigator.language || navigator.userLanguage];
+
+        for (const lang of browserLanguages) {
+            if (!lang) continue;
 
             // 嘗試完整匹配 (如 zh-TW)
-            if (langMap[browserLang]) {
-                return langMap[browserLang];
+            if (langMap[lang]) {
+                return langMap[lang];
             }
 
             // 嘗試主語言碼匹配 (如 zh)
-            const primaryLang = browserLang.split('-')[0];
+            const primaryLang = lang.split('-')[0];
             if (langMap[primaryLang]) {
                 return langMap[primaryLang];
             }
@@ -228,20 +228,33 @@ class I18nManager {
             }
         });
 
-        // 處理 data-i18n-html（需要保留子元素如圖標）
+        // 處理 data-i18n-html（需要保留子元素如圖標及其事件監聽器）
         document.querySelectorAll('[data-i18n-html]').forEach(element => {
             const key = element.dataset.i18nHtml;
-            const iconElement = element.querySelector('.btn-icon');
+            const text = this.getText(key);
 
-            if (iconElement) {
-                // 保留圖標，只更新文字
-                const text = this.getText(key);
-                const iconClone = iconElement.cloneNode(true);
-                element.textContent = '';
-                element.appendChild(iconClone);
-                element.appendChild(document.createTextNode(' ' + text));
+            // 尋找最後一個非空的文字節點進行更新，以避免破壞子元素及其事件監聽器
+            let textNode = null;
+            for (let i = element.childNodes.length - 1; i >= 0; i--) {
+                const node = element.childNodes[i];
+                if (node.nodeType === Node.TEXT_NODE && node.textContent.trim()) {
+                    textNode = node;
+                    break;
+                }
+            }
+
+            if (textNode) {
+                // 保留文字節點前的空白字元
+                const space = textNode.textContent.match(/^\s*/)[0] || ' ';
+                textNode.textContent = space + text;
             } else {
-                element.textContent = this.getText(key);
+                // 如果找不到文字節點，作為 fallback，在圖標後附加文字
+                const iconElement = element.querySelector('.btn-icon');
+                if (iconElement) {
+                    element.appendChild(document.createTextNode(' ' + text));
+                } else {
+                    element.textContent = text;
+                }
             }
         });
 
