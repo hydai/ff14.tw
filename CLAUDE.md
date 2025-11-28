@@ -13,7 +13,17 @@ FF14.tw is a multi-tool website for Final Fantasy XIV players in Taiwan, providi
 - **Shared Resources**: Common utilities in `assets/` (CSS variables, utility functions, constants)
 - **Data Management**: JSON files in `/data/` directory for large datasets (dungeons, treasure maps, translations)
 - **Language**: Traditional Chinese (zh-Hant) - all UI text and content
+- **I18n Support**: Multi-language support (zh/en/ja) via I18nManager
 - **Deployment**: GitHub Pages with custom domain (ff14.tw via CNAME)
+
+## Project Statistics
+
+- **HTML Files**: 13 (8 tools + 5 main pages)
+- **JavaScript Files**: 38 (tool scripts + shared utilities + i18n translations)
+- **CSS Files**: 17 (shared + components + tool-specific)
+- **JSON Data Files**: 7 (total ~18,000 lines)
+- **Total Dungeons**: 804 entries
+- **Total Treasure Map Coordinates**: 219 entries
 
 ## Development Commands
 
@@ -320,7 +330,17 @@ The project includes a modular CSS component system in `/assets/css/components/`
 <input type="range" class="form-range" min="0" max="100">
 ```
 
-#### 6. Tags/Badges (`components/tags.css`)
+#### 6. Language Switcher (`components/language-switcher.css`)
+```html
+<!-- 語言切換器 -->
+<div class="language-switcher" id="languageSwitcher">
+    <button class="lang-btn active" data-lang="zh">🇹🇼 中文</button>
+    <button class="lang-btn" data-lang="en">🇺🇸 EN</button>
+    <button class="lang-btn" data-lang="ja">🇯🇵 日本語</button>
+</div>
+```
+
+#### 7. Tags/Badges (`components/tags.css`)
 ```html
 <!-- Basic tags -->
 <span class="tag">預設標籤</span>
@@ -377,8 +397,137 @@ All components automatically support Dark Mode through `[data-theme="dark"]` sel
 ### Responsive Design
 Components include responsive breakpoints:
 - Mobile: < 480px
-- Tablet: < 768px  
+- Tablet: < 768px
 - Desktop: ≥ 768px
+
+## Internationalization (I18n) System
+
+### Overview
+The project supports 3 languages via the I18nManager class:
+- **zh**: 繁體中文（預設）
+- **en**: English
+- **ja**: 日本語
+
+### File Structure
+```
+/assets/js/i18n/
+├── i18n-manager.js          # I18nManager 類別
+└── translations/
+    ├── common.js            # 共用翻譯（導航、頁尾）
+    ├── index.js             # 首頁翻譯
+    ├── about.js             # 關於頁面翻譯
+    ├── changelog.js         # 修改紀錄頁面翻譯
+    ├── copyright.js         # 版權聲明頁面翻譯
+    └── tools/               # 工具翻譯
+        ├── dungeon-database.js
+        ├── treasure-map-finder.js
+        ├── timed-gathering.js
+        ├── lodestone-lookup.js
+        ├── mini-cactpot.js
+        ├── wondrous-tails.js
+        ├── faux-hollows-foxes.js
+        └── character-card.js
+```
+
+### Usage Pattern
+```html
+<!-- HTML 標記 -->
+<h1 data-i18n="hero.title">預設文字</h1>
+<input data-i18n="search.placeholder" data-i18n-attr="placeholder">
+
+<!-- 引入 I18n 系統 -->
+<script src="../../assets/js/i18n/i18n-manager.js"></script>
+<script src="../../assets/js/i18n/translations/common.js"></script>
+<script src="../../assets/js/i18n/translations/tools/tool-name.js"></script>
+```
+
+```javascript
+// JavaScript 初始化
+const i18n = new I18nManager('tool-name');
+i18n.init();
+
+// 手動取得翻譯
+const text = i18n.t('key.path');
+
+// 監聽語言變更
+i18n.addObserver(() => this.updateUI());
+```
+
+### Language Switcher
+```html
+<!-- 在 header 中加入語言切換器 -->
+<link rel="stylesheet" href="../../assets/css/components/language-switcher.css">
+
+<div class="language-switcher" id="languageSwitcher">
+    <button class="lang-btn active" data-lang="zh">🇹🇼 中文</button>
+    <button class="lang-btn" data-lang="en">🇺🇸 EN</button>
+    <button class="lang-btn" data-lang="ja">🇯🇵 日本語</button>
+</div>
+```
+
+## Modular Tool Architecture
+
+### Complex Tools Structure
+Tools with advanced features use modular architecture:
+
+**treasure-map-finder/** (12 files):
+```
+├── index.html
+├── script.js              # 主控制器
+├── room-collaboration.js  # 房間協作功能
+├── filter-manager.js      # 過濾器管理
+├── list-manager.js        # 清單管理
+├── ui-dialog-manager.js   # 對話框管理
+├── zone-manager.js        # 地區管理
+├── coordinate-utils.js    # 座標工具
+└── style.css
+```
+
+**timed-gathering/** (10 files):
+```
+├── index.html
+├── script.js              # 主控制器
+├── list-manager.js        # 清單管理
+├── macro-exporter.js      # 巨集匯出
+├── notification-manager.js # 通知管理
+├── search-filter.js       # 搜尋過濾
+├── security-utils.js      # 安全工具
+├── time-calculator.js     # 時間計算
+├── i18n.js               # 工具專用 i18n
+└── style.css
+```
+
+### Module Pattern
+```javascript
+// 模組匯出模式
+class ModuleName {
+    constructor(mainController) {
+        this.main = mainController;
+        this.elements = {};
+        this.state = {};
+    }
+
+    init() {
+        this.cacheElements();
+        this.bindEvents();
+    }
+}
+
+// 全域匯出
+window.ModuleName = ModuleName;
+```
+
+```javascript
+// 主控制器載入模組
+async loadModules() {
+    this.filterManager = new FilterManager(this);
+    this.listManager = new ListManager(this);
+    await Promise.all([
+        this.filterManager.init(),
+        this.listManager.init()
+    ]);
+}
+```
 
 ## UI Consistency Requirements
 
@@ -453,7 +602,20 @@ handleCellClick(e) {
 Tools with external data follow this structure:
 - Main data file: `/data/[tool-name].json`
 - Supporting data: Zone translations, metadata, etc.
-- Loading pattern with error handling:
+
+**Data Files (`/data/`):**
+```
+/data/
+├── dungeons.json (12,376 行) - 804 個副本資料
+├── treasure-maps.json (2,712 行) - 219 個寶圖座標
+├── timed-gathering.json (1,253 行) - 特殊採集點資料
+├── zones.json (661 行) - 地區定義與元資料
+├── aetherytes.json (633 行) - 傳送點資料
+├── zone-translations.json (151 行) - 地區名稱翻譯 (zh/en/ja)
+└── ff14-gp.csv - GP 值參考資料
+```
+
+Loading pattern with error handling:
 
 ```javascript
 async loadData() {
