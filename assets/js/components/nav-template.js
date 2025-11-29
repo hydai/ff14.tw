@@ -9,7 +9,7 @@ const NavTemplate = {
      * @param {string} options.basePath - 基礎路徑（預設為 '/'）
      * @param {string} options.toolName - 工具名稱（選填）
      * @param {string} options.toolNameKey - 工具名稱的 i18n key（選填）
-     * @returns {DocumentFragment} 導航欄 DOM 片段
+     * @returns {HTMLElement} 導航欄 DOM 元素
      */
     createDOM(options = {}) {
         const { basePath = '/', toolName, toolNameKey } = options;

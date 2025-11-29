@@ -52,6 +52,13 @@ class I18nManager {
             this._initializeLanguageSwitcher();
             this.updatePageLanguage();
         }
+
+        // 監聽動態載入的佈局元件
+        // 因為 LayoutLoader 可能在 I18nManager 之後才建立語言切換器
+        document.addEventListener('layoutLoaded', () => {
+            this._initializeLanguageSwitcher();
+            this.updatePageLanguage();
+        });
     }
 
     /**
