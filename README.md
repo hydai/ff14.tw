@@ -126,8 +126,12 @@ ff14.tw/
 │   │       ├── tags.css
 │   │       └── language-switcher.css
 │   ├── js/
-│   │   ├── common.js       # 共用函式庫（含動態 logo、漢堡選單）
+│   │   ├── common.js       # 共用函式庫（含漢堡選單）
 │   │   ├── security-utils.js # 安全工具（XSS 防護）
+│   │   ├── components/     # 動態載入元件
+│   │   │   ├── nav-template.js     # 導航列模板
+│   │   │   ├── footer-template.js  # 頁尾模板
+│   │   │   └── layout-loader.js    # 佈局載入器
 │   │   └── i18n/           # 國際化系統
 │   │       ├── i18n-manager.js
 │   │       └── translations/
@@ -149,14 +153,15 @@ ff14.tw/
 ```
 
 ### 架構
-- 統一 header/nav/main/footer
-- 簡潔導航列
+- 動態載入 header/footer 元件（JavaScript 模組化）
+- 簡潔導航列（含工具名稱顯示）
 - CSS 自訂屬性
 - `FF14Utils` 全域物件
 - Class-based JavaScript
 - 響應式設計
 - 國際化支援（I18nManager）
 - 共用元件系統 (`/assets/css/components/`)
+- 佈局元件系統 (`/assets/js/components/`)
   - 按鈕元件 (`buttons.css`)
   - 卡片元件 (`cards.css`)
   - 表單元件 (`forms.css`)
