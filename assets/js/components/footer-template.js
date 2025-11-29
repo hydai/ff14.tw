@@ -11,7 +11,6 @@ const FooterTemplate = {
      */
     createDOM(options = {}) {
         const { basePath = '/' } = options;
-        const rootPath = basePath || '/';
 
         // 建立容器
         const container = document.createElement('div');
@@ -41,7 +40,7 @@ const FooterTemplate = {
 
         // 修改紀錄連結
         const changelogLink = document.createElement('a');
-        changelogLink.href = rootPath + 'changelog.html';
+        changelogLink.href = basePath + 'changelog.html';
         changelogLink.setAttribute('data-i18n', 'nav_changelog');
         changelogLink.textContent = '修改紀錄';
         p.appendChild(changelogLink);
