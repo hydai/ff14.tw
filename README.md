@@ -115,7 +115,7 @@ ff14.tw/
 │   └── zone-translations.json # 地區名稱翻譯 (zh/en/ja)
 ├── assets/                 # 共用資源
 │   ├── css/
-│   │   ├── common.css      # 全域樣式（含下拉式選單、漢堡選單）
+│   │   ├── common.css      # 全域樣式（含漢堡選單）
 │   │   ├── dark-mode-tools.css # 深色模式支援
 │   │   ├── tools-common.css    # 工具共用樣式
 │   │   ├── changelog.css   # 修改紀錄頁面專用樣式
@@ -150,7 +150,7 @@ ff14.tw/
 
 ### 架構
 - 統一 header/nav/main/footer
-- 下拉選單導航
+- 簡潔導航列
 - CSS 自訂屬性
 - `FF14Utils` 全域物件
 - Class-based JavaScript
