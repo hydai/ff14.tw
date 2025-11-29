@@ -714,6 +714,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 - Focus indicators with proper contrast
 - ARIA labels for screen readers
 - Focus trapping in modals
+- Use `.visually-hidden` class for content that should be accessible to screen readers and SEO but visually hidden (e.g., H1 titles when already displayed in navigation)
 
 ## FF14-Specific Standards
 

@@ -67,7 +67,13 @@ body {
     padding: 0 20px;
 }
 
-/* 視覺隱藏但保留給螢幕閱讀器和 SEO */
+/* 視覺隱藏但保留給螢幕閱讀器和 SEO
+ * 使用時機：
+ * - 需要為螢幕閱讀器提供內容，但視覺上不需要顯示
+ * - 需要保留 SEO 的 H1 標籤，但視覺上已由導航欄顯示
+ * - 跳過導航連結等可訪問性增強元素
+ * 注意：不要使用 display:none 或 visibility:hidden，這會讓螢幕閱讀器也無法讀取
+ */
 .visually-hidden {
     position: absolute;
     width: 1px;
