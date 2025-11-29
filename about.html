@@ -172,31 +172,61 @@
             .about-content {
                 padding: 1rem;
             }
-            
+
             .about-section {
                 padding: 2rem 1.5rem;
                 margin-bottom: 1.5rem;
             }
-            
+
             .about-section h2 {
                 font-size: 1.5rem;
                 flex-direction: column;
                 text-align: center;
                 gap: 0.5rem;
             }
-            
+
             .hero {
                 padding: 2rem 1rem;
                 margin-bottom: 2rem;
             }
-            
+
             .hero h1 {
                 font-size: 2rem;
             }
-            
+
             .hero p {
                 font-size: 1rem;
             }
+        }
+
+        /* Dark mode 支援 */
+        [data-theme="dark"] .about-section {
+            background: var(--card-bg);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+
+        [data-theme="dark"] .about-section:hover {
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+        }
+
+        [data-theme="dark"] .mission-section {
+            background: linear-gradient(135deg, #3d3520 0%, #4a4028 100%);
+        }
+
+        [data-theme="dark"] .vision-section {
+            background: linear-gradient(135deg, #3d2020 0%, #4a2828 100%);
+        }
+
+        [data-theme="dark"] .features-list li {
+            border-bottom-color: rgba(90, 159, 240, 0.2);
+        }
+
+        [data-theme="dark"] .contribute-box {
+            background: linear-gradient(135deg, #1e3d1e 0%, #2a4a2a 100%);
+        }
+
+        [data-theme="dark"] .contribute-box p {
+            color: #7ecf7e;
         }
     </style>
 </head>
