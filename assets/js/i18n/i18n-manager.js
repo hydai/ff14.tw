@@ -96,10 +96,15 @@ class I18nManager {
 
     /**
      * 初始化語言切換器事件
+     * 此方法為 idempotent，可安全多次呼叫
      */
     _initializeLanguageSwitcher() {
         const switcher = document.querySelector('.language-switcher');
-        if (!switcher) return;
+        // 如果找不到 switcher 或已經初始化過，直接返回
+        if (!switcher || switcher.dataset.i18nInitialized) return;
+
+        // 標記為已初始化
+        switcher.dataset.i18nInitialized = 'true';
 
         switcher.addEventListener('click', (e) => {
             const btn = e.target.closest('.language-btn');
