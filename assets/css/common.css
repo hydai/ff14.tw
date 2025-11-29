@@ -570,3 +570,49 @@ h3 {
 .hamburger span {
     transition: none;
 }
+
+/* ============================
+   佈局載入器樣式 - 防止 FOUC
+   ============================ */
+
+#header-placeholder,
+#footer-placeholder {
+    min-height: 60px;
+}
+
+#header-placeholder {
+    background: var(--gradient-bg);
+}
+
+#footer-placeholder {
+    background: var(--dark-color);
+}
+
+/* 載入完成後的過渡效果 */
+body.layout-loaded .header,
+body.layout-loaded .footer {
+    animation: layoutFadeIn 0.2s ease-in;
+}
+
+@keyframes layoutFadeIn {
+    from { opacity: 0.8; }
+    to { opacity: 1; }
+}
+
+/* 工具頁面 Logo 樣式（用於動態載入） */
+.logo-tool-name {
+    font-size: 1.4rem;
+    font-weight: normal;
+}
+
+@media (max-width: 768px) {
+    .logo-tool-name {
+        font-size: 1.2rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .logo-tool-name {
+        font-size: 1rem;
+    }
+}

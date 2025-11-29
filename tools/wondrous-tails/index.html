@@ -13,22 +13,14 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <header class="header">
-        <div class="container">
-            <a href="/" class="logo">FF14.tw</a>
-            <nav class="nav">
-                <a href="/" data-i18n="nav_home">首頁</a>
-                <a href="/copyright.html" data-i18n="nav_copyright">版權聲明</a>
-                <a href="https://github.com/hydai/ff14.tw" target="_blank" rel="noopener noreferrer" data-i18n="nav_github">GitHub</a>
-                <a href="/about.html" data-i18n="nav_about">關於</a>
-                <div class="language-switcher">
-                    <button class="language-btn" data-lang="zh" aria-pressed="false">ZH-TW</button>
-                    <button class="language-btn" data-lang="en" aria-pressed="false">EN</button>
-                    <button class="language-btn" data-lang="ja" aria-pressed="false">JP</button>
-                </div>
-            </nav>
-        </div>
-    </header>
+    <div id="header-placeholder" data-base-path="../../" data-tool-name="Wondrous Tails 預測器" data-tool-name-key="wondrous_tails_header"></div>
+    <noscript>
+        <nav style="padding: 1rem; background: #667eea; color: white; text-align: center;">
+            <a href="/" style="color: white; margin: 0 1rem;">首頁</a> |
+            <a href="/about.html" style="color: white; margin: 0 1rem;">關於</a> |
+            <a href="/copyright.html" style="color: white; margin: 0 1rem;">版權聲明</a>
+        </nav>
+    </noscript>
 
     <main class="main">
         <div class="container">
@@ -76,15 +68,14 @@
         </div>
     </main>
 
-    <footer class="footer">
-        <div class="container">
-            <p>&copy; 2024-2025 FF14.tw | <span data-i18n="footer_copyright">本站非官方網站，與 Square Enix 無關</span> | <span data-i18n="footer_made_with">Made with ❤️ by hydai</span> | <a href="/changelog.html" data-i18n="nav_changelog">修改紀錄</a></p>
-        </div>
-    </footer>
+    <div id="footer-placeholder" data-base-path="../../"></div>
 
     <script src="../../assets/js/i18n/i18n-manager.js"></script>
     <script src="../../assets/js/i18n/translations/common.js"></script>
     <script src="../../assets/js/i18n/translations/tools/wondrous-tails.js"></script>
+    <script src="../../assets/js/components/nav-template.js"></script>
+    <script src="../../assets/js/components/footer-template.js"></script>
+    <script src="../../assets/js/components/layout-loader.js"></script>
     <script src="../../assets/js/common.js"></script>
     <script src="../../assets/js/security-utils.js"></script>
     <script src="script.js"></script>
