@@ -532,7 +532,7 @@ async loadModules() {
 ## UI Consistency Requirements
 
 ### Navigation Structure
-All pages must maintain consistent navigation with dropdown:
+All pages must maintain consistent navigation:
 ```html
 <header class="header">
     <div class="container">
@@ -541,13 +541,7 @@ All pages must maintain consistent navigation with dropdown:
             <a href="/">首頁</a>
             <a href="/copyright.html">版權聲明</a>
             <a href="https://github.com/hydai/ff14.tw" target="_blank">GitHub</a>
-            <div class="nav-dropdown">
-                <a href="#">關於本站</a>
-                <div class="nav-dropdown-content">
-                    <a href="/about.html">關於</a>
-                    <a href="/changelog.html">修改紀錄</a>
-                </div>
-            </div>
+            <a href="/about.html">關於</a>
         </nav>
     </div>
 </header>
@@ -557,7 +551,7 @@ All pages must maintain consistent navigation with dropdown:
 ```html
 <footer class="footer">
     <div class="container">
-        <p>&copy; 2024-2025 FF14.tw | 本站非官方網站，與 Square Enix 無關 | Made with ❤️ by hydai</p>
+        <p>&copy; 2024-2025 FF14.tw | 本站非官方網站，與 Square Enix 無關 | Made with ❤️ by hydai | <a href="/changelog.html">修改紀錄</a></p>
     </div>
 </footer>
 ```
