@@ -132,8 +132,8 @@ class LayoutLoader {
             // 正規化路徑比較
             const linkPath = new URL(href, window.location.origin).pathname;
 
-            // 正規化處理 /index.html -> /
-            const normalizedCurrentPath = (currentPath === '/index.html') ? '/' : currentPath;
+            // 正規化處理 /index.html -> / (包含子目錄)
+            const normalizedCurrentPath = currentPath.endsWith('/index.html') ? currentPath.slice(0, -10) || '/' : currentPath;
 
             // 精確比對路徑
             if (linkPath === normalizedCurrentPath) {

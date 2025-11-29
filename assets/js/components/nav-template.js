@@ -13,7 +13,6 @@ const NavTemplate = {
      */
     createDOM(options = {}) {
         const { basePath = '/', toolName, toolNameKey } = options;
-        const rootPath = basePath || '/';
 
         // 建立容器
         const container = document.createElement('div');
@@ -21,7 +20,7 @@ const NavTemplate = {
 
         // 建立 Logo
         const logo = document.createElement('a');
-        logo.href = rootPath;
+        logo.href = basePath;
         logo.className = 'logo';
 
         // 設定 Logo 內容
@@ -31,7 +30,7 @@ const NavTemplate = {
 
             const separator = document.createElement('span');
             separator.className = 'logo-separator';
-            separator.textContent = '|';
+            separator.textContent = ' | ';
             logo.appendChild(separator);
 
             const toolNameSpan = document.createElement('span');
@@ -54,10 +53,10 @@ const NavTemplate = {
 
         // 導航連結配置
         const navLinks = [
-            { href: rootPath, i18nKey: 'nav_home', text: '首頁' },
-            { href: rootPath + 'copyright.html', i18nKey: 'nav_copyright', text: '版權聲明' },
+            { href: basePath, i18nKey: 'nav_home', text: '首頁' },
+            { href: basePath + 'copyright.html', i18nKey: 'nav_copyright', text: '版權聲明' },
             { href: 'https://github.com/hydai/ff14.tw', i18nKey: 'nav_github', text: 'GitHub', external: true },
-            { href: rootPath + 'about.html', i18nKey: 'nav_about', text: '關於' }
+            { href: basePath + 'about.html', i18nKey: 'nav_about', text: '關於' }
         ];
 
         // 建立導航連結
