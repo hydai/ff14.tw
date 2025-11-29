@@ -9,7 +9,6 @@ const CommonTranslations = {
         nav_home: '首頁',
         nav_copyright: '版權聲明',
         nav_github: 'GitHub',
-        nav_about_dropdown: '關於本站',
         nav_about: '關於',
         nav_changelog: '修改紀錄',
 
@@ -81,7 +80,6 @@ const CommonTranslations = {
         nav_home: 'Home',
         nav_copyright: 'Copyright',
         nav_github: 'GitHub',
-        nav_about_dropdown: 'About',
         nav_about: 'About',
         nav_changelog: 'Changelog',
 
@@ -153,7 +151,6 @@ const CommonTranslations = {
         nav_home: 'ホーム',
         nav_copyright: '著作権表示',
         nav_github: 'GitHub',
-        nav_about_dropdown: 'このサイトについて',
         nav_about: '概要',
         nav_changelog: '更新履歴',
 

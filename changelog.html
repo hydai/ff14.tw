@@ -18,13 +18,7 @@
                 <a href="/" data-i18n="nav_home">首頁</a>
                 <a href="/copyright.html" data-i18n="nav_copyright">版權聲明</a>
                 <a href="https://github.com/hydai/ff14.tw" target="_blank" rel="noopener noreferrer" data-i18n="nav_github">GitHub</a>
-                <div class="nav-dropdown">
-                    <a href="#" class="active" data-i18n="nav_about_dropdown">關於本站</a>
-                    <div class="nav-dropdown-content">
-                        <a href="/about.html" data-i18n="nav_about">關於</a>
-                        <a href="/changelog.html" data-i18n="nav_changelog">修改紀錄</a>
-                    </div>
-                </div>
+                <a href="/about.html" data-i18n="nav_about">關於</a>
                 <div class="language-switcher">
                     <button class="language-btn" data-lang="zh" aria-pressed="false">ZH-TW</button>
                     <button class="language-btn" data-lang="en" aria-pressed="false">EN</button>
@@ -52,6 +46,98 @@
                 <p class="subtitle" data-i18n="changelog_hero_subtitle">記錄 FF14.tw 的功能更新與改進</p>
 
                 <div class="changelog-container">
+                <!-- 2025年11月 -->
+                <section class="changelog-section">
+                    <h2 class="changelog-year">2025年11月</h2>
+
+                    <article class="changelog-entry">
+                        <div class="changelog-header">
+                            <h3 class="changelog-version">v2.7.0</h3>
+                            <time class="changelog-date" datetime="2025-11-29">2025年11月29日</time>
+                        </div>
+                        <div class="changelog-content">
+                            <ul>
+                                <li><span class="tag tag-info">調整</span> 導航列改版
+                                    <ul>
+                                        <li>移除下拉式選單，「關於」改為直接連結</li>
+                                        <li>頁尾新增「修改紀錄」連結</li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </div>
+                    </article>
+
+                    <article class="changelog-entry">
+                        <div class="changelog-header">
+                            <h3 class="changelog-version">v2.6.0</h3>
+                            <time class="changelog-date" datetime="2025-11-28">2025年11月28日</time>
+                        </div>
+                        <div class="changelog-content">
+                            <ul>
+                                <li><span class="tag tag-success">新增</span> 多語言支援
+                                    <ul>
+                                        <li>支援繁體中文、English、日本語三種語言</li>
+                                        <li>新增 I18nManager 語言切換系統</li>
+                                        <li>新增語言切換器 UI 元件</li>
+                                        <li>所有工具頁面支援三語切換</li>
+                                        <li>瀏覽器語言自動偵測與記憶</li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </div>
+                    </article>
+
+                    <article class="changelog-entry">
+                        <div class="changelog-header">
+                            <h3 class="changelog-version">v2.5.16</h3>
+                            <time class="changelog-date" datetime="2025-11-28">2025年11月28日</time>
+                        </div>
+                        <div class="changelog-content">
+                            <ul>
+                                <li><span class="tag tag-info">優化</span> 程式碼模組化重構
+                                    <ul>
+                                        <li>寶圖搜尋器：RouteCalculator 模組化</li>
+                                        <li>宗長計算機：BOARD_DATA 模組化</li>
+                                        <li>Lodestone 查詢：職業圖示資料模組化</li>
+                                        <li>角色卡產生器：伺服器/職業資料模組化</li>
+                                    </ul>
+                                </li>
+                                <li><span class="tag tag-warning">修正</span> 導航列語言選單對齊問題</li>
+                            </ul>
+                        </div>
+                    </article>
+
+                    <article class="changelog-entry">
+                        <div class="changelog-header">
+                            <h3 class="changelog-version">v2.5.15</h3>
+                            <time class="changelog-date" datetime="2025-11-26">2025年11月26日</time>
+                        </div>
+                        <div class="changelog-content">
+                            <ul>
+                                <li><span class="tag tag-warning">修正</span> 修正 code review 建議的問題</li>
+                                <li><span class="tag tag-info">優化</span> 完善 JSDoc 文件註解</li>
+                                <li><span class="tag tag-info">優化</span> 優化標籤切換邏輯</li>
+                            </ul>
+                        </div>
+                    </article>
+
+                    <article class="changelog-entry">
+                        <div class="changelog-header">
+                            <h3 class="changelog-version">v2.5.14</h3>
+                            <time class="changelog-date" datetime="2025-11-15">2025年11月15日</time>
+                        </div>
+                        <div class="changelog-content">
+                            <ul>
+                                <li><span class="tag tag-warning">修正</span> 暗黑模式對比度與跨瀏覽器一致性</li>
+                                <li><span class="tag tag-info">優化</span> 字型載入與 font-family fallback</li>
+                                <li><span class="tag tag-info">優化</span> 提升 CSS 可維護性與無障礙規範符合度</li>
+                                <li><span class="tag tag-success">新增</span> 漸層文字效果的瀏覽器相容性 fallback</li>
+                                <li><span class="tag tag-info">優化</span> 角色卡產生器 CSS 效能</li>
+                            </ul>
+                        </div>
+                    </article>
+                </section>
+
                 <!-- 2025年8月 -->
                 <section class="changelog-section">
                     <h2 class="changelog-year">2025年8月</h2>
@@ -1727,7 +1813,7 @@
 
     <footer class="footer">
         <div class="container">
-            <p>&copy; 2024-2025 FF14.tw | <span data-i18n="footer_copyright">本站非官方網站，與 Square Enix 無關</span> | <span data-i18n="footer_made_with">Made with ❤️ by hydai</span></p>
+            <p>&copy; 2024-2025 FF14.tw | <span data-i18n="footer_copyright">本站非官方網站，與 Square Enix 無關</span> | <span data-i18n="footer_made_with">Made with ❤️ by hydai</span> | <a href="/changelog.html" data-i18n="nav_changelog">修改紀錄</a></p>
         </div>
     </footer>
 
