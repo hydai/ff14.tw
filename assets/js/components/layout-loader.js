@@ -31,55 +31,18 @@ class LayoutLoader {
      */
     _load() {
         if (this.isLoaded) return;
+        this.isLoaded = true;  // 立即設定，防止併發執行
 
         const options = this._getOptions();
 
         this._loadHeader(options);
         this._loadFooter(options);
 
-        this.isLoaded = true;
         document.body.classList.add(LayoutLoader.CONSTANTS.LOADED_CLASS);
 
-        // 通知 I18nManager 重新初始化語言切換器
-        // 因為 I18nManager 可能在 LayoutLoader 之前執行，
-        // 當時語言切換器按鈕還不存在
-        this._reinitializeI18n();
-
         // 發送自訂事件，讓其他元件知道佈局已載入
+        // I18nManager 會監聽此事件來初始化語言切換器
         document.dispatchEvent(new CustomEvent('layoutLoaded'));
-    }
-
-    /**
-     * 重新初始化 I18nManager 的語言切換器
-     * 解決動態載入導致的初始化順序問題
-     */
-    _reinitializeI18n() {
-        if (typeof window.i18n !== 'undefined') {
-            // 重新綁定語言切換器事件
-            const switcher = document.querySelector('.language-switcher');
-            if (switcher) {
-                switcher.addEventListener('click', (e) => {
-                    const btn = e.target.closest('.language-btn');
-                    if (!btn) return;
-
-                    const lang = btn.dataset.lang;
-                    if (lang) {
-                        window.i18n.setLanguage(lang);
-                    }
-                });
-
-                // 更新按鈕的 active 狀態
-                const currentLang = window.i18n.getCurrentLanguage();
-                document.querySelectorAll('.language-btn').forEach(btn => {
-                    const isActive = btn.dataset.lang === currentLang;
-                    btn.classList.toggle('active', isActive);
-                    btn.setAttribute('aria-pressed', isActive.toString());
-                });
-            }
-
-            // 觸發一次頁面語言更新，確保動態載入的元素也被翻譯
-            window.i18n.updatePageLanguage();
-        }
     }
 
     /**
@@ -169,10 +132,11 @@ class LayoutLoader {
             // 正規化路徑比較
             const linkPath = new URL(href, window.location.origin).pathname;
 
-            // 首頁特殊處理
-            if (linkPath === '/' && (currentPath === '/' || currentPath === '/index.html')) {
-                link.classList.add('active');
-            } else if (linkPath !== '/' && currentPath.endsWith(linkPath)) {
+            // 正規化處理 /index.html -> /
+            const normalizedCurrentPath = (currentPath === '/index.html') ? '/' : currentPath;
+
+            // 精確比對路徑
+            if (linkPath === normalizedCurrentPath) {
                 link.classList.add('active');
             }
         });
