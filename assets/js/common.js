@@ -341,53 +341,6 @@ function initHamburgerMenu() {
     });
 }
 
-// 動態更新 logo 文字
-function updateLogoText() {
-    const logo = document.querySelector('.logo');
-    const h1 = document.querySelector('h1');
-    
-    if (!logo || !h1) {
-        console.warn('Logo or H1 element not found');
-        return;
-    }
-    
-    // 檢查是否在工具頁面（URL 包含 /tools/）
-    if (window.location.pathname.includes('/tools/')) {
-        // 取得工具名稱
-        const toolName = h1.textContent.trim();
-        
-        // 清空 logo 內容
-        logo.textContent = '';
-        
-        // 創建元素來避免 XSS 漏洞
-        const logoMain = document.createElement('span');
-        logoMain.className = 'logo-main';
-        logoMain.textContent = 'FF14.tw';
-        
-        const logoSeparator = document.createElement('span');
-        logoSeparator.className = 'logo-separator';
-        logoSeparator.textContent = ' | ';
-        
-        const logoTool = document.createElement('span');
-        logoTool.className = 'logo-tool';
-        logoTool.textContent = toolName;
-        
-        // 依序添加元素
-        logo.appendChild(logoMain);
-        logo.appendChild(logoSeparator);
-        logo.appendChild(logoTool);
-        
-        // 為 h1 加上隱藏類別
-        h1.classList.add('tool-page-title');
-        
-        // 如果有描述文字，調整其上邊距
-        const description = document.querySelector('.description');
-        if (description) {
-            description.style.marginTop = '0';
-        }
-    }
-}
-
 // 初始化主題切換功能
 function initThemeToggle() {
     const nav = document.querySelector('.nav');
@@ -425,10 +378,7 @@ function initThemeToggle() {
 document.addEventListener('DOMContentLoaded', function() {
     // 初始化主題管理器（最優先）
     window.themeManager = new ThemeManager();
-    
-    // 動態更新 logo 文字（工具頁面）
-    updateLogoText();
-    
+
     // 初始化漢堡選單功能
     initHamburgerMenu();
     
