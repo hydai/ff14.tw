@@ -786,6 +786,206 @@
 }
 
 /* ==========================================================================
+   Chocobo Color Calculator
+   ========================================================================== */
+
+.color-calculator {
+    background: var(--gray-50, #f9fafb);
+    border-radius: var(--border-radius-lg, 12px);
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+}
+
+.color-select-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.color-select-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.color-select-group label {
+    font-weight: 600;
+    color: var(--text-color);
+    font-size: 0.9rem;
+}
+
+.color-select-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.color-select-wrapper select {
+    min-width: 180px;
+}
+
+.color-preview {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 3px solid var(--border-color, #e0e0e0);
+    box-shadow: var(--shadow);
+    flex-shrink: 0;
+    transition: background-color 0.3s ease;
+}
+
+.color-arrow {
+    font-size: 1.5rem;
+    color: var(--text-secondary, #666);
+    flex-shrink: 0;
+}
+
+.calculator-actions {
+    display: flex;
+    justify-content: center;
+    margin-top: 1.5rem;
+}
+
+.result-area {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-color, #e0e0e0);
+}
+
+.result-area h4 {
+    margin: 0 0 1rem 0;
+    color: var(--primary-color);
+    font-size: 1.1rem;
+}
+
+.fruit-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1rem 0;
+}
+
+.fruit-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid var(--border-color, #e0e0e0);
+}
+
+.fruit-item:last-child {
+    border-bottom: none;
+}
+
+.fruit-item.same-color {
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+.fruit-color-dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.fruit-name {
+    font-weight: 500;
+    color: var(--text-color);
+}
+
+.fruit-count {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.feeding-order {
+    margin-top: 1rem;
+}
+
+.feeding-order-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.feeding-step {
+    padding: 0.3rem 0.6rem;
+    border-radius: var(--border-radius-sm, 6px);
+    font-size: 0.8rem;
+    font-weight: 500;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+    transition: transform 0.2s ease;
+}
+
+.feeding-step:hover {
+    transform: scale(1.05);
+}
+
+.feeding-arrow {
+    color: var(--text-secondary, #6b7280);
+    font-size: 1rem;
+    padding: 0 0.2rem;
+    user-select: none;
+}
+
+/* Dark mode for calculator */
+[data-theme="dark"] .color-calculator {
+    background: var(--bg-secondary, #252836);
+}
+
+[data-theme="dark"] .color-preview {
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .fruit-item {
+    border-bottom-color: var(--border-color);
+}
+
+[data-theme="dark"] .feeding-arrow {
+    color: var(--text-secondary, #9ca3af);
+}
+
+/* Responsive for calculator */
+@media (max-width: 768px) {
+    .color-select-row {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .color-arrow {
+        transform: rotate(90deg);
+    }
+
+    .color-select-wrapper select {
+        min-width: 150px;
+    }
+}
+
+@media (max-width: 480px) {
+    .color-calculator {
+        padding: 1rem;
+    }
+
+    .color-select-wrapper select {
+        min-width: 120px;
+        font-size: 0.9rem;
+    }
+
+    .color-preview {
+        width: 32px;
+        height: 32px;
+    }
+
+    .feeding-step {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+    }
+}
+
+/* ==========================================================================
    Print Styles
    ========================================================================== */
 

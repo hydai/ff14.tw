@@ -11,6 +11,7 @@ class GuideManager {
      * Initialize the guide manager
      */
     constructor() {
+        this.colorCalculator = null;
         this.init();
     }
 
@@ -20,6 +21,7 @@ class GuideManager {
     init() {
         this.loadSidebar();
         this.refreshI18n();
+        this.initColorCalculator();
     }
 
     /**
@@ -41,6 +43,20 @@ class GuideManager {
         // If I18nManager exists and is initialized, update translations
         if (typeof I18nManager !== 'undefined' && window.i18n) {
             window.i18n.updatePageLanguage();
+        }
+    }
+
+    /**
+     * Initialize Chocobo Color Calculator if present on page
+     */
+    initColorCalculator() {
+        if (typeof ChocoboColorCalculator === 'undefined') {
+            return;
+        }
+
+        if (document.getElementById('colorCalculator')) {
+            this.colorCalculator = new ChocoboColorCalculator();
+            this.colorCalculator.init();
         }
     }
 }

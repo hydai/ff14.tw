@@ -41,6 +41,21 @@ const GuideTranslations = {
         guide_toc_chocobo: '專屬陸行鳥',
         guide_chocobo_desc: '陸行鳥夥伴系統與養成指南',
 
+        // 染色計算器
+        chocobo_color_calculator: '染色計算器',
+        chocobo_calculator_desc: '選擇目前與目標顏色，計算所需的餵食水果組合。',
+        chocobo_current_color: '目前顏色',
+        chocobo_target_color: '目標顏色',
+        chocobo_calculate: '計算',
+        chocobo_required_fruits: '所需水果',
+        chocobo_show_feeding_order: '顯示餵食順序',
+        chocobo_same_color: '目前顏色與目標顏色相同，無需餵食水果。',
+        chocobo_note_title: '注意：',
+        chocobo_tip_title: '提示：',
+        chocobo_feeding_note: '建議交替餵食不同水果，避免 RGB 值達到上限。餵食後需等待 6 小時才能看到顏色變化。當你看到「陸行鳥的羽毛正在生長新的羽毛」訊息時，表示顏色即將改變。',
+        chocobo_calculator_credit: '染色計算器的顏色資料來源參考自 ffxivchocobo.com，感謝原作者的貢獻。',
+        chocobo_load_error: '載入顏色資料失敗，請重新整理頁面再試。',
+
         // 準備中
         guide_coming_soon: '本頁面內容準備中，敬請期待！'
     },
@@ -83,6 +98,21 @@ const GuideTranslations = {
         guide_toc_chocobo: 'Chocobo Companion',
         guide_chocobo_desc: 'Chocobo companion system and training guide',
 
+        // Color Calculator
+        chocobo_color_calculator: 'Color Calculator',
+        chocobo_calculator_desc: 'Select current and target colors to calculate the required fruit combination.',
+        chocobo_current_color: 'Current Color',
+        chocobo_target_color: 'Target Color',
+        chocobo_calculate: 'Calculate',
+        chocobo_required_fruits: 'Required Fruits',
+        chocobo_show_feeding_order: 'Show Feeding Order',
+        chocobo_same_color: 'Current and target colors are the same. No fruits needed.',
+        chocobo_note_title: 'Note:',
+        chocobo_tip_title: 'Tip:',
+        chocobo_feeding_note: 'Alternate between different fruits to avoid maxing out RGB values. Color changes take 6 hours after feeding. When you see the message about your chocobo growing new feathers, it confirms the color will change.',
+        chocobo_calculator_credit: 'Color data sourced from ffxivchocobo.com. Thanks to the original author.',
+        chocobo_load_error: 'Failed to load color data. Please refresh the page and try again.',
+
         // Coming soon
         guide_coming_soon: 'This page is under construction. Stay tuned!'
     },
@@ -124,6 +154,21 @@ const GuideTranslations = {
         // チョコボ
         guide_toc_chocobo: 'バディチョコボ',
         guide_chocobo_desc: 'バディチョコボシステムと育成ガイド',
+
+        // カラー計算機
+        chocobo_color_calculator: 'カラー計算機',
+        chocobo_calculator_desc: '現在と目標の色を選択して、必要な餌の組み合わせを計算します。',
+        chocobo_current_color: '現在の色',
+        chocobo_target_color: '目標の色',
+        chocobo_calculate: '計算',
+        chocobo_required_fruits: '必要な餌',
+        chocobo_show_feeding_order: '餌の順序を表示',
+        chocobo_same_color: '現在の色と目標の色が同じです。餌は必要ありません。',
+        chocobo_note_title: '注意：',
+        chocobo_tip_title: 'ヒント：',
+        chocobo_feeding_note: 'RGB値が上限に達しないよう、異なる餌を交互に与えてください。色の変更には餌やり後6時間かかります。「チョコボの羽が生え変わり始めた」というメッセージが表示されれば、色の変更が確定です。',
+        chocobo_calculator_credit: 'カラーデータはffxivchocobo.comを参考にしています。原作者に感謝します。',
+        chocobo_load_error: 'カラーデータの読み込みに失敗しました。ページを更新して再試行してください。',
 
         // 準備中
         guide_coming_soon: 'このページは準備中です。お楽しみに！'
