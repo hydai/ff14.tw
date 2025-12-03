@@ -20,7 +20,7 @@
 - 鍵盤導航支援
 - 資料來源：灰機Wiki
 
-### Mini Cactpot 計算機 (`mini-cactpot/`)
+### 仙人微彩計算機 (`mini-cactpot/`)
 - 期望值計算
 - 最佳策略推薦
 - 機率分析
@@ -91,7 +91,7 @@ http://localhost:8000
 - 特殊採集時間管理器 (`timed-gathering/`) - 載入 `/data/timed-gathering.json`
 
 **可直接開啟的工具：**
-- Mini Cactpot 計算機
+- 仙人微彩計算機
 - Wondrous Tails 預測器
 - 角色卡產生器
 - Faux Hollows Foxes 計算機
@@ -146,7 +146,7 @@ ff14.tw/
     ├── dungeon-database/   # 副本資料庫
     ├── faux-hollows-foxes/ # Faux Hollows Foxes 計算機
     ├── lodestone-lookup/   # Lodestone 角色查詢
-    ├── mini-cactpot/       # Mini Cactpot 計算機
+    ├── mini-cactpot/       # 仙人微彩計算機
     ├── timed-gathering/    # 特殊採集時間管理器
     ├── treasure-map-finder/# 寶圖搜尋器
     └── wondrous-tails/     # Wondrous Tails 預測器
