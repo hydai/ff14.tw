@@ -4,11 +4,11 @@
 const WondrousTailsTranslations = {
     zh: {
         // 頁面資訊
-        wondrous_tails_title: 'Wondrous Tails 預測器 - FF14.tw',
-        wondrous_tails_description: 'FF14 天書奇談 Wondrous Tails 機率預測工具，計算連線成功機率',
+        wondrous_tails_title: '天書奇談預測器 - FF14.tw',
+        wondrous_tails_description: 'FF14 天書奇談機率預測工具，計算連線成功機率',
 
         // 頁面標題
-        wondrous_tails_header: 'Wondrous Tails 預測器',
+        wondrous_tails_header: '天書奇談預測器',
         wondrous_tails_desc: '點選格子來標記已放置的物件，機率將即時更新並提供建議',
 
         // 格子資訊
@@ -82,11 +82,11 @@ const WondrousTailsTranslations = {
     },
     ja: {
         // ページ情報
-        wondrous_tails_title: 'きまぐれネコ預言器 - FF14.tw',
-        wondrous_tails_description: 'FF14 きまぐれネコの確率予測ツール、ライン完成確率を計算',
+        wondrous_tails_title: 'クロの空想帳予測器 - FF14.tw',
+        wondrous_tails_description: 'FF14 クロの空想帳の確率予測ツール、ライン完成確率を計算',
 
         // ページヘッダー
-        wondrous_tails_header: 'きまぐれネコ預言器',
+        wondrous_tails_header: 'クロの空想帳予測器',
         wondrous_tails_desc: 'セルをクリックしてシールを配置。確率がリアルタイムで更新され、提案が表示されます',
 
         // グリッド情報

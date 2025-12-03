@@ -15,7 +15,7 @@ const IndexTranslations = {
         tool_mini_cactpot_title: '仙人微彩計算機',
         tool_mini_cactpot_desc: '分析仙人微彩最佳策略，計算期望值並推薦最佳線條選擇',
 
-        tool_wondrous_tails_title: 'Wondrous Tails 預測器',
+        tool_wondrous_tails_title: '天書奇談預測器',
         tool_wondrous_tails_desc: '分析天書奇談盤面，計算連線成功機率，協助決策是否重置',
 
         tool_dungeon_database_title: '副本資料庫',
@@ -103,8 +103,8 @@ const IndexTranslations = {
         tool_mini_cactpot_title: 'ミニくじテンダー計算機',
         tool_mini_cactpot_desc: 'ミニくじテンダーの最適戦略を分析し、期待値を計算',
 
-        tool_wondrous_tails_title: 'きまぐれ帳予測器',
-        tool_wondrous_tails_desc: 'きまぐれ帳のボードを分析し、ライン完成確率を計算',
+        tool_wondrous_tails_title: 'クロの空想帳予測器',
+        tool_wondrous_tails_desc: 'クロの空想帳のボードを分析し、ライン完成確率を計算',
 
         tool_dungeon_database_title: 'ダンジョンデータベース',
         tool_dungeon_database_desc: 'FF14ダンジョン情報、報酬、ギミック説明を含む完全なガイド',
