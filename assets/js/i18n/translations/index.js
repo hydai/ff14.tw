@@ -12,8 +12,8 @@ const IndexTranslations = {
         hero_subtitle: '提供各種FF14相關的實用工具，讓你的艾歐澤亞冒險更加便利！',
 
         // 工具卡片
-        tool_mini_cactpot_title: 'Mini Cactpot 計算機',
-        tool_mini_cactpot_desc: '分析 Mini Cactpot 最佳策略，計算期望值並推薦最佳線條選擇',
+        tool_mini_cactpot_title: '仙人微彩計算機',
+        tool_mini_cactpot_desc: '分析仙人微彩最佳策略，計算期望值並推薦最佳線條選擇',
 
         tool_wondrous_tails_title: 'Wondrous Tails 預測器',
         tool_wondrous_tails_desc: '分析天書奇談盤面，計算連線成功機率，協助決策是否重置',

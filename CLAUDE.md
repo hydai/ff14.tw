@@ -49,7 +49,7 @@ Tools that fetch JSON data require a local server:
 - 特殊採集時間管理器 (`timed-gathering/`) - loads `/data/timed-gathering.json`
 
 Tools that work without server (can open HTML directly):
-- Mini Cactpot 計算機
+- 仙人微彩計算機
 - Wondrous Tails 預測器
 - 角色卡產生器
 - Faux Hollows Foxes 計算機

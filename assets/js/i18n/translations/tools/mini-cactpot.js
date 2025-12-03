@@ -1,14 +1,14 @@
 /**
- * FF14.tw Mini Cactpot 計算機翻譯檔
+ * FF14.tw 仙人微彩計算機翻譯檔
  */
 const MiniCactpotTranslations = {
     zh: {
         // 頁面資訊
-        mini_cactpot_title: 'Mini Cactpot 計算機 - FF14.tw',
-        mini_cactpot_description: 'FF14 Mini Cactpot 最佳策略計算工具，分析期望值並推薦最佳選擇',
+        mini_cactpot_title: '仙人微彩計算機 - FF14.tw',
+        mini_cactpot_description: 'FF14 仙人微彩最佳策略計算工具，分析期望值並推薦最佳選擇',
 
         // 頁面標題
-        mini_cactpot_header: 'Mini Cactpot 計算機',
+        mini_cactpot_header: '仙人微彩計算機',
         mini_cactpot_desc: '點選四個格子並輸入對應數字 (1-9)，期望值將自動顯示在對應位置並推薦最佳線條',
 
         // 格子資訊
