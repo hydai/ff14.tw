@@ -108,6 +108,56 @@
                         <h3>裝甲與染色</h3>
                         <p>夥伴可裝備頭部、身體、腿部三個部位的陸行鳥裝甲。裝甲僅影響外觀，不會改變能力數值。此外，還可以透過特殊飼料改變陸行鳥的羽毛顏色。</p>
 
+                        <h2 id="color-calculator" data-i18n="chocobo_color_calculator">染色計算器</h2>
+                        <p data-i18n="chocobo_calculator_desc">選擇目前與目標顏色，計算所需的餵食水果組合。</p>
+
+                        <div class="color-calculator" id="colorCalculator">
+                            <div class="color-select-row">
+                                <div class="color-select-group">
+                                    <label for="currentColorSelect" data-i18n="chocobo_current_color">目前顏色</label>
+                                    <div class="color-select-wrapper">
+                                        <select id="currentColorSelect" class="form-control"></select>
+                                        <div class="color-preview" id="currentColorPreview"></div>
+                                    </div>
+                                </div>
+
+                                <div class="color-arrow">→</div>
+
+                                <div class="color-select-group">
+                                    <label for="targetColorSelect" data-i18n="chocobo_target_color">目標顏色</label>
+                                    <div class="color-select-wrapper">
+                                        <select id="targetColorSelect" class="form-control"></select>
+                                        <div class="color-preview" id="targetColorPreview"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="calculator-actions">
+                                <button class="btn btn-primary" id="calculateBtn">
+                                    <span data-i18n="chocobo_calculate">計算</span>
+                                </button>
+                            </div>
+
+                            <div class="result-area" id="resultArea" style="display: none;">
+                                <h4 data-i18n="chocobo_required_fruits">所需水果</h4>
+                                <ul class="fruit-list" id="fruitList"></ul>
+
+                                <button class="btn btn-secondary btn-sm" id="showOrderBtn" style="display: none;">
+                                    <span data-i18n="chocobo_show_feeding_order">顯示餵食順序</span>
+                                </button>
+
+                                <div class="feeding-order" id="feedingOrder" style="display: none;"></div>
+                            </div>
+                        </div>
+
+                        <div class="guide-info-card guide-note">
+                            <strong data-i18n="chocobo_note_title">注意：</strong><span data-i18n="chocobo_feeding_note">建議交替餵食不同水果，避免 RGB 值達到上限。餵食後需等待 6 小時才能看到顏色變化。當你看到「陸行鳥的羽毛正在生長新的羽毛」訊息時，表示顏色即將改變。</span>
+                        </div>
+
+                        <div class="guide-info-card guide-tip">
+                            <strong data-i18n="chocobo_tip_title">提示：</strong><span data-i18n="chocobo_calculator_credit">染色計算器的顏色資料來源參考自 <a href="https://ffxivchocobo.com/" target="_blank" rel="noopener noreferrer">ffxivchocobo.com</a>，感謝原作者的貢獻。</span>
+                        </div>
+
                         <h2>寄養系統</h2>
                         <p>擁有個人房屋、公會房屋或公寓的玩家，可在陸行鳥房寄養夥伴進行訓練。</p>
 
@@ -205,6 +255,7 @@
     <script src="../../assets/js/components/layout-loader.js"></script>
     <script src="../../assets/js/common.js"></script>
     <script src="sidebar-template.js"></script>
+    <script src="chocobo-color-calculator.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
