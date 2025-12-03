@@ -36,6 +36,9 @@ const IndexTranslations = {
         tool_timed_gathering_title: '特殊採集時間管理器',
         tool_timed_gathering_desc: '管理 FF14 特殊採集時間，支援搜尋、多清單管理與巨集匯出',
 
+        tool_guide_title: '攻略資料',
+        tool_guide_desc: 'FF14 新手攻略指南，包含公會、軍階、副本、風脈與探索筆記說明',
+
         tool_equipment_analyzer_title: '裝備分析器',
         tool_equipment_analyzer_desc: '分析裝備屬性和配裝建議，提供最佳配裝方案',
 
@@ -77,6 +80,9 @@ const IndexTranslations = {
         tool_timed_gathering_title: 'Timed Gathering Manager',
         tool_timed_gathering_desc: 'Manage FF14 timed gathering nodes with search, lists, and macro export',
 
+        tool_guide_title: 'Game Guide',
+        tool_guide_desc: 'FF14 beginner guide covering guilds, ranks, dungeons, aether currents, and sightseeing log',
+
         tool_equipment_analyzer_title: 'Equipment Analyzer',
         tool_equipment_analyzer_desc: 'Analyze equipment stats and provide optimal gear recommendations',
 
@@ -117,6 +123,9 @@ const IndexTranslations = {
 
         tool_timed_gathering_title: 'タイムド採集管理',
         tool_timed_gathering_desc: 'FF14タイムド採集を検索、リスト、マクロエクスポートで管理',
+
+        tool_guide_title: '攻略情報',
+        tool_guide_desc: 'FF14初心者ガイド。FC、GC階級、ダンジョン、風脈、探検手帳を含む',
 
         tool_equipment_analyzer_title: '装備分析器',
         tool_equipment_analyzer_desc: '装備ステータスを分析し、最適な装備を提案',
