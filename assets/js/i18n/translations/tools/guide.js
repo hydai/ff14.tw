@@ -19,6 +19,7 @@ const GuideTranslations = {
         guide_toc_guild: '公會',
         guide_toc_grand_company: '大國防聯軍',
         guide_toc_dungeon: '副本',
+        guide_toc_party: '隊伍系統',
         guide_toc_aether: '風脈',
         guide_toc_sightseeing: '探索筆記',
 
@@ -26,6 +27,7 @@ const GuideTranslations = {
         guide_guild_desc: '部隊系統、加入方式與福利',
         guide_grand_company_desc: '三大軍團、軍階系統與軍票',
         guide_dungeon_desc: '副本類型與開放條件',
+        guide_party_desc: '組隊方式、職能配置與跨服機制',
         guide_aether_desc: '風脈泉解鎖與飛行系統',
         guide_sightseeing_desc: '探索筆記機制與獎勵',
 
@@ -33,6 +35,7 @@ const GuideTranslations = {
         guide_section_guild_title: '公會',
         guide_section_grand_company_title: '大國防聯軍',
         guide_section_dungeon_title: '副本',
+        guide_section_party_title: '隊伍系統',
         guide_section_aether_title: '風脈',
         guide_section_sightseeing_title: '探索筆記',
         guide_section_chocobo_title: '專屬陸行鳥',
@@ -76,6 +79,7 @@ const GuideTranslations = {
         guide_toc_guild: 'Free Company',
         guide_toc_grand_company: 'Grand Company',
         guide_toc_dungeon: 'Dungeons',
+        guide_toc_party: 'Party System',
         guide_toc_aether: 'Aether Currents',
         guide_toc_sightseeing: 'Sightseeing Log',
 
@@ -83,6 +87,7 @@ const GuideTranslations = {
         guide_guild_desc: 'FC system, how to join, and benefits',
         guide_grand_company_desc: 'Three nations, ranks and company seals',
         guide_dungeon_desc: 'Dungeon types and unlock requirements',
+        guide_party_desc: 'Party formation, role composition and cross-world mechanics',
         guide_aether_desc: 'Aether currents and flying unlock',
         guide_sightseeing_desc: 'Sightseeing log mechanics and rewards',
 
@@ -90,6 +95,7 @@ const GuideTranslations = {
         guide_section_guild_title: 'Free Company',
         guide_section_grand_company_title: 'Grand Company',
         guide_section_dungeon_title: 'Dungeons',
+        guide_section_party_title: 'Party System',
         guide_section_aether_title: 'Aether Currents',
         guide_section_sightseeing_title: 'Sightseeing Log',
         guide_section_chocobo_title: 'Chocobo Companion',
@@ -133,6 +139,7 @@ const GuideTranslations = {
         guide_toc_guild: 'フリーカンパニー',
         guide_toc_grand_company: 'グランドカンパニー',
         guide_toc_dungeon: 'ダンジョン',
+        guide_toc_party: 'パーティシステム',
         guide_toc_aether: '風脈',
         guide_toc_sightseeing: '探検手帳',
 
@@ -140,6 +147,7 @@ const GuideTranslations = {
         guide_guild_desc: 'FCシステム、参加方法、特典',
         guide_grand_company_desc: '三国軍、階級システムと軍票',
         guide_dungeon_desc: 'ダンジョンの種類と開放条件',
+        guide_party_desc: 'パーティ編成、ロール構成、クロスワールドの仕組み',
         guide_aether_desc: '風脈の解放とフライング',
         guide_sightseeing_desc: '探検手帳の仕組みと報酬',
 
@@ -147,6 +155,7 @@ const GuideTranslations = {
         guide_section_guild_title: 'フリーカンパニー',
         guide_section_grand_company_title: 'グランドカンパニー',
         guide_section_dungeon_title: 'ダンジョン',
+        guide_section_party_title: 'パーティシステム',
         guide_section_aether_title: '風脈',
         guide_section_sightseeing_title: '探検手帳',
         guide_section_chocobo_title: 'バディチョコボ',

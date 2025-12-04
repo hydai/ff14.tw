@@ -8,6 +8,7 @@ const GuideSidebarTemplate = {
         { href: 'guild.html', page: 'guild', icon: '🏠', i18nKey: 'guide_toc_guild', text: '公會' },
         { href: 'grand-company.html', page: 'grand-company', icon: '🎖️', i18nKey: 'guide_toc_grand_company', text: '大國防聯軍' },
         { href: 'dungeon.html', page: 'dungeon', icon: '🏰', i18nKey: 'guide_toc_dungeon', text: '副本' },
+        { href: 'party.html', page: 'party', icon: '👥', i18nKey: 'guide_toc_party', text: '隊伍系統' },
         { href: 'aether.html', page: 'aether', icon: '💨', i18nKey: 'guide_toc_aether', text: '風脈' },
         { href: 'sightseeing.html', page: 'sightseeing', icon: '📔', i18nKey: 'guide_toc_sightseeing', text: '探索筆記' },
         { href: 'chocobo.html', page: 'chocobo', icon: '🐤', i18nKey: 'guide_toc_chocobo', text: '專屬陸行鳥' }
