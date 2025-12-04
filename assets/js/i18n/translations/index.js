@@ -39,6 +39,9 @@ const IndexTranslations = {
         tool_guide_title: '攻略資料',
         tool_guide_desc: 'FF14 新手攻略指南，包含公會、軍階、副本、風脈與探索筆記說明',
 
+        tool_report_generator_title: '檢舉模板產生器',
+        tool_report_generator_desc: '快速產生不當行為檢舉的模板文字，協助您進行申訴',
+
         tool_equipment_analyzer_title: '裝備分析器',
         tool_equipment_analyzer_desc: '分析裝備屬性和配裝建議，提供最佳配裝方案',
 
@@ -83,6 +86,9 @@ const IndexTranslations = {
         tool_guide_title: 'Game Guide',
         tool_guide_desc: 'FF14 beginner guide covering guilds, ranks, dungeons, aether currents, and sightseeing log',
 
+        tool_report_generator_title: 'Report Generator',
+        tool_report_generator_desc: 'Quickly generate report templates for reporting inappropriate behavior',
+
         tool_equipment_analyzer_title: 'Equipment Analyzer',
         tool_equipment_analyzer_desc: 'Analyze equipment stats and provide optimal gear recommendations',
 
@@ -126,6 +132,9 @@ const IndexTranslations = {
 
         tool_guide_title: '攻略情報',
         tool_guide_desc: 'FF14初心者ガイド。FC、GC階級、ダンジョン、風脈、探検手帳を含む',
+
+        tool_report_generator_title: '通報テンプレート生成',
+        tool_report_generator_desc: '不適切な行為の通報テンプレートを素早く作成',
 
         tool_equipment_analyzer_title: '装備分析器',
         tool_equipment_analyzer_desc: '装備ステータスを分析し、最適な装備を提案',
