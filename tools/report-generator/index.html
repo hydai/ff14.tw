@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>檢舉模板產生器 - FF14.tw</title>
+    <meta name="description" content="快速產生 FF14 繁中版不當行為檢舉的模板文字，協助玩家進行申訴">
+    <link rel="icon" type="image/x-icon" href="../../assets/images/ff14tw.ico">
+    <link rel="stylesheet" href="../../assets/css/common.css">
+    <link rel="stylesheet" href="../../assets/css/dark-mode-tools.css">
+    <link rel="stylesheet" href="../../assets/css/tools-common.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="header-placeholder" data-base-path="../../" data-tool-name="FF14.tw | 檢舉模板產生器"></div>
+    <noscript>
+        <nav class="noscript-nav">
+            <a href="/" class="noscript-nav-link">首頁</a>
+            <a href="/copyright.html" class="noscript-nav-link">版權聲明</a>
+            <a href="https://github.com/hydai/ff14.tw" target="_blank" rel="noopener noreferrer" class="noscript-nav-link">GitHub</a>
+            <a href="/about.html" class="noscript-nav-link">關於</a>
+        </nav>
+    </noscript>
+
+    <main class="main">
+        <div class="container">
+            <div class="page-header">
+                <p class="description">快速產生不當行為檢舉的模板文字，協助您進行申訴</p>
+            </div>
+
+            <div class="tool-content">
+                <form id="reportForm" class="report-form">
+                    <!-- 發生日期 -->
+                    <div class="form-group">
+                        <label for="incidentDate" class="form-label">發生日期 <span class="required">*</span></label>
+                        <input type="date" id="incidentDate" class="form-control" required>
+                    </div>
+
+                    <!-- 時間範圍 -->
+                    <div class="form-group">
+                        <fieldset>
+                            <legend class="form-label">發生時間（選填）</legend>
+                            <div class="time-range">
+                                <label for="timeStart" class="visually-hidden">開始時間</label>
+                                <input type="time" id="timeStart" class="form-control time-input">
+                                <span class="time-separator">~</span>
+                                <label for="timeEnd" class="visually-hidden">結束時間</label>
+                                <input type="time" id="timeEnd" class="form-control time-input">
+                            </div>
+                            <small class="form-text">若不記得確切時間可留空</small>
+                        </fieldset>
+                    </div>
+
+                    <!-- 被檢舉玩家名稱 -->
+                    <div class="form-group">
+                        <label for="playerName" class="form-label">被檢舉玩家名稱 <span class="required">*</span></label>
+                        <input type="text" id="playerName" class="form-control" placeholder="請輸入玩家名稱" required>
+                    </div>
+
+                    <!-- 被檢舉玩家所屬伺服器 -->
+                    <div class="form-group">
+                        <label for="serverSelect" id="serverLabel" class="form-label">被檢舉玩家所屬伺服器 <span class="required">*</span></label>
+                        <select id="serverSelect" class="form-control" required>
+                            <option value="">請選擇伺服器...</option>
+                            <option value="伊弗利特">伊弗利特</option>
+                            <option value="迦樓羅">迦樓羅</option>
+                            <option value="利維坦">利維坦</option>
+                            <option value="鳳凰">鳳凰</option>
+                            <option value="奧汀">奧汀</option>
+                            <option value="巴哈姆特">巴哈姆特</option>
+                            <option value="other">其他</option>
+                        </select>
+                        <input type="text" id="serverCustom" class="form-control custom-input hidden" placeholder="請輸入伺服器名稱" aria-labelledby="serverLabel">
+                    </div>
+
+                    <!-- 事件發生地點 -->
+                    <div class="form-group">
+                        <label for="location" class="form-label">事件發生地點（地圖/副本名稱）<span class="required">*</span></label>
+                        <input type="text" id="location" class="form-control" placeholder="例如：紅蓮決戰阿拉米格、烏爾達哈" required>
+                    </div>
+
+                    <!-- 事件類別 -->
+                    <div class="form-group">
+                        <label for="incidentType" id="incidentTypeLabel" class="form-label">事件類別 <span class="required">*</span></label>
+                        <select id="incidentType" class="form-control" required>
+                            <option value="">請選擇事件類別...</option>
+                            <option value="強迫玩家跳劇情">強迫玩家跳劇情</option>
+                            <option value="違反規範的 ID 名稱">違反規範的 ID 名稱</option>
+                            <option value="違反規範的名片內容">違反規範的名片內容</option>
+                            <option value="惡意 BM">惡意 BM</option>
+                            <option value="破壞遊戲體驗">破壞遊戲體驗</option>
+                            <option value="other">其他</option>
+                        </select>
+                        <input type="text" id="incidentTypeCustom" class="form-control custom-input hidden" placeholder="請輸入事件類別" aria-labelledby="incidentTypeLabel">
+                    </div>
+
+                    <!-- 事件細節 -->
+                    <div class="form-group">
+                        <label for="details" class="form-label">事件細節 <span class="required">*</span></label>
+                        <textarea id="details" class="form-control" rows="6" placeholder="請詳細描述事件經過，包含對方的言行舉止、造成的影響等" required></textarea>
+                        <small class="form-text">請盡可能詳細描述，有助於官方審核</small>
+                    </div>
+
+                    <!-- 按鈕區 -->
+                    <div class="button-group">
+                        <button type="submit" class="btn btn-primary btn-lg">產生模板</button>
+                        <button type="button" id="resetBtn" class="btn btn-secondary btn-lg">重置</button>
+                    </div>
+                </form>
+
+                <!-- 結果區塊 -->
+                <div id="resultSection" class="result-section hidden">
+                    <h2 class="result-title">生成的模板</h2>
+                    <div class="card">
+                        <div class="card-body">
+                            <pre id="resultText" class="result-text"></pre>
+                        </div>
+                    </div>
+
+                    <div id="charCountDisplay" class="char-count-display">
+                        <span id="charCount">0</span> / 1000 字
+                    </div>
+                    <div id="charLimitWarning" class="char-limit-warning hidden">
+                        超過 1000 字限制！請精簡內容後再提交檢舉。
+                    </div>
+
+                    <div class="action-buttons">
+                        <button id="copyBtn" class="btn btn-success btn-lg">
+                            <span class="btn-icon">📋</span><span class="btn-text">複製到剪貼簿</span>
+                        </button>
+                        <a href="https://www.ffxiv.com.tw/web/support/new_question.aspx" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-lg">
+                            <span class="btn-icon">🔗</span>前往官方檢舉頁面
+                        </a>
+                    </div>
+
+                    <div class="warning-message">
+                        <strong>提示：</strong>請在官方檢舉頁面選擇「<strong>不當行為檢舉</strong>」分類
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="footer-placeholder" data-base-path="../../"></div>
+
+    <script src="../../assets/js/components/nav-template.js"></script>
+    <script src="../../assets/js/components/footer-template.js"></script>
+    <script src="../../assets/js/components/layout-loader.js"></script>
+    <script src="../../assets/js/common.js"></script>
+    <script src="../../assets/js/security-utils.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
