@@ -1,0 +1,272 @@
+/**
+ * FF14.tw 檢舉模板產生器樣式
+ */
+
+/* 隱藏元素 */
+.hidden {
+    display: none;
+}
+
+/* Noscript 導航樣式 */
+.noscript-nav {
+    padding: 1rem;
+    background: #667eea;
+    color: white;
+    text-align: center;
+}
+
+.noscript-nav-link {
+    color: white;
+    margin: 0 1rem;
+}
+
+/* 頁面標題區 */
+.page-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.page-header .description {
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+/* 工具內容區 */
+.tool-content {
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+/* 表單樣式 */
+.report-form {
+    background: var(--surface, #ffffff);
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: var(--shadow-md);
+}
+
+[data-theme="dark"] .report-form {
+    background: var(--card-bg);
+}
+
+/* 表單群組 */
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-label {
+    display: block;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    color: var(--text-color);
+}
+
+.required {
+    color: var(--danger-color, #dc3545);
+}
+
+/* 表單說明文字 */
+.form-text {
+    display: block;
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--text-muted, #999);
+}
+
+/* Fieldset 重置樣式 */
+.form-group fieldset {
+    border: none;
+    padding: 0;
+    margin: 0;
+    min-width: 0;
+}
+
+.form-group fieldset legend {
+    padding: 0;
+    margin-bottom: 0.5rem;
+}
+
+/* 時間範圍輸入 */
+.time-range {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.time-input {
+    flex: 1;
+    max-width: 150px;
+}
+
+.time-separator {
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+/* 自訂輸入框 */
+.custom-input {
+    margin-top: 0.75rem;
+}
+
+/* 按鈕群組 */
+.button-group {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.button-group .btn {
+    flex: 1;
+}
+
+/* 結果區塊 */
+.result-section {
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 2px solid var(--border, #e0e0e0);
+}
+
+.result-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    color: var(--text-color);
+}
+
+/* 結果文字 */
+.result-text {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-family: inherit;
+    font-size: 0.95rem;
+    line-height: 1.8;
+    margin: 0;
+    padding: 1.5rem;
+    background: var(--background, #f8f9fa);
+    border-radius: 8px;
+    color: var(--text-color);
+}
+
+[data-theme="dark"] .result-text {
+    background: var(--bg-secondary);
+}
+
+/* 動作按鈕區 */
+.action-buttons {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.action-buttons .btn {
+    flex: 1;
+    min-width: 200px;
+}
+
+/* 按鈕圖示 */
+.btn-icon {
+    margin-right: 0.5rem;
+}
+
+/* 複製成功狀態 */
+#copyBtn.btn-success-active {
+    background-color: var(--success-color, #28a745);
+    border-color: var(--success-color, #28a745);
+}
+
+/* 警告訊息 */
+.warning-message {
+    margin-top: 1.5rem;
+    padding: 1rem 1.25rem;
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+    border: 1px solid #ffc107;
+    border-radius: 8px;
+    color: #856404;
+    font-size: 0.95rem;
+}
+
+[data-theme="dark"] .warning-message {
+    background: linear-gradient(135deg, rgba(255, 193, 7, 0.2) 0%, rgba(255, 193, 7, 0.1) 100%);
+    border-color: rgba(255, 193, 7, 0.5);
+    color: #ffc107;
+}
+
+/* 字數統計顯示 */
+.char-count-display {
+    text-align: right;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-top: 0.5rem;
+}
+
+.char-count-display.over-limit {
+    color: var(--danger-color, #dc3545);
+    font-weight: 600;
+}
+
+/* 字數限制警告 */
+.char-limit-warning {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+    border: 1px solid #dc3545;
+    border-radius: 8px;
+    color: #721c24;
+    font-weight: 500;
+}
+
+[data-theme="dark"] .char-limit-warning {
+    background: linear-gradient(135deg, rgba(220, 53, 69, 0.2) 0%, rgba(220, 53, 69, 0.1) 100%);
+    border-color: rgba(220, 53, 69, 0.5);
+    color: #f5c6cb;
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+    .report-form {
+        padding: 1.5rem;
+    }
+
+    .time-range {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .time-input {
+        max-width: none;
+    }
+
+    .time-separator {
+        text-align: center;
+        padding: 0.25rem 0;
+    }
+
+    .button-group {
+        flex-direction: column;
+    }
+
+    .action-buttons {
+        flex-direction: column;
+    }
+
+    .action-buttons .btn {
+        min-width: auto;
+    }
+}
+
+@media (max-width: 480px) {
+    .page-header .description {
+        font-size: 1rem;
+    }
+
+    .report-form {
+        padding: 1.25rem;
+    }
+
+    .result-text {
+        padding: 1rem;
+        font-size: 0.9rem;
+    }
+}
