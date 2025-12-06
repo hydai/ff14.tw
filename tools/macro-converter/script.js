@@ -141,38 +141,18 @@ class MacroConverter {
      * @param {object[]} results - Array of conversion results
      */
     displayResults(results) {
-        const container = this.elements.outputMacro;
-
-        // Clear existing content safely
-        container.replaceChildren();
-
+        const outputLines = [];
         let hasWarnings = false;
 
         results.forEach((result) => {
-            const lineDiv = document.createElement('div');
-            lineDiv.className = 'output-line';
-
+            outputLines.push(result.output);
             if (result.untranslatable.length > 0) {
-                lineDiv.classList.add('untranslatable');
                 hasWarnings = true;
-
-                // Add warning icon
-                const warningIcon = document.createElement('span');
-                warningIcon.className = 'warning-icon';
-                warningIcon.textContent = '\u26a0';
-                warningIcon.title = this.getText('macro_converter_untranslatable') + ': ' +
-                    result.untranslatable.join(', ');
-                lineDiv.appendChild(warningIcon);
             }
-
-            // Add line text
-            const lineText = document.createElement('span');
-            lineText.className = 'line-text';
-            lineText.textContent = result.output;
-            lineDiv.appendChild(lineText);
-
-            container.appendChild(lineDiv);
         });
+
+        // Set textarea value
+        this.elements.outputMacro.value = outputLines.join('\n');
 
         // Show/hide warning message
         this.elements.warningMessage.style.display = hasWarnings ? 'flex' : 'none';
@@ -182,7 +162,7 @@ class MacroConverter {
      * Clear the output area
      */
     clearOutput() {
-        this.elements.outputMacro.replaceChildren();
+        this.elements.outputMacro.value = '';
         this.elements.warningMessage.style.display = 'none';
     }
 
@@ -211,14 +191,7 @@ class MacroConverter {
      * Copy output to clipboard
      */
     async copyToClipboard() {
-        // Get all output text
-        const lines = [];
-        const lineElements = this.elements.outputMacro.querySelectorAll('.line-text');
-        lineElements.forEach(el => {
-            lines.push(el.textContent);
-        });
-
-        const text = lines.join('\n');
+        const text = this.elements.outputMacro.value;
 
         if (!text) {
             FF14Utils.showToast(this.getText('macro_converter_nothing_to_copy') || '沒有內容可複製', 'error');
@@ -238,8 +211,8 @@ class MacroConverter {
      * Set placeholder for output area
      */
     setOutputPlaceholder() {
-        this.elements.outputMacro.setAttribute('data-placeholder',
-            this.getText('macro_converter_output_placeholder') || '轉換結果將顯示在這裡...');
+        this.elements.outputMacro.placeholder =
+            this.getText('macro_converter_output_placeholder') || '轉換結果將顯示在這裡...';
     }
 
     /**
