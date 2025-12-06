@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>巨集轉換器 - FF14.tw</title>
+    <meta name="description" content="FF14 巨集語言轉換工具，支援繁體中文、英文、日文巨集互相轉換">
+    <link rel="icon" type="image/x-icon" href="../../assets/images/ff14tw.ico">
+    <link rel="stylesheet" href="../../assets/css/common.css">
+    <link rel="stylesheet" href="../../assets/css/dark-mode-tools.css">
+    <link rel="stylesheet" href="../../assets/css/tools-common.css">
+    <link rel="stylesheet" href="../../assets/css/components/language-switcher.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="header-placeholder" data-base-path="../../" data-tool-name="巨集轉換器" data-tool-name-key="macro_converter_header"></div>
+    <noscript>
+        <nav style="padding: 1rem; background: #667eea; color: white; text-align: center;">
+            <a href="/" style="color: white; margin: 0 1rem;">首頁</a>
+            <a href="/copyright.html" style="color: white; margin: 0 1rem;">版權聲明</a>
+            <a href="https://github.com/hydai/ff14.tw" target="_blank" rel="noopener noreferrer" style="color: white; margin: 0 1rem;">GitHub</a>
+            <a href="/about.html" style="color: white; margin: 0 1rem;">關於</a>
+        </nav>
+    </noscript>
+
+    <main class="main">
+        <div class="container">
+            <div class="page-header">
+                <h1 class="visually-hidden" data-i18n="macro_converter_header">巨集轉換器</h1>
+                <p class="description" data-i18n="macro_converter_desc">將 FF14 巨集在繁體中文、英文、日文之間轉換</p>
+            </div>
+
+            <div class="tool-content">
+                <!-- Language Selectors -->
+                <div class="language-selectors">
+                    <div class="form-group">
+                        <label for="sourceLang" data-i18n="macro_converter_source_lang">來源語言</label>
+                        <select id="sourceLang" class="form-control">
+                            <option value="auto" data-i18n="macro_converter_auto_detect">自動偵測</option>
+                            <option value="zh">繁體中文</option>
+                            <option value="en">English</option>
+                            <option value="ja">日本語</option>
+                        </select>
+                    </div>
+
+                    <button class="btn btn-secondary swap-btn" id="swapLangs" aria-label="交換語言" title="交換語言">
+                        <span class="swap-icon">⇄</span>
+                    </button>
+
+                    <div class="form-group">
+                        <label for="targetLang" data-i18n="macro_converter_target_lang">目標語言</label>
+                        <select id="targetLang" class="form-control">
+                            <option value="zh">繁體中文</option>
+                            <option value="en" selected>English</option>
+                            <option value="ja">日本語</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Macro Panels -->
+                <div class="macro-panels">
+                    <div class="macro-panel">
+                        <div class="panel-header">
+                            <label for="inputMacro" data-i18n="macro_converter_input">輸入巨集</label>
+                            <div class="detected-lang" id="detectedLang" style="display: none;">
+                                <span data-i18n="macro_converter_detected">偵測到</span>: <span id="detectedLangName"></span>
+                            </div>
+                        </div>
+                        <textarea id="inputMacro" class="form-control macro-textarea" rows="12"
+                            placeholder="/ac &quot;製作&quot; &lt;wait.3&gt;&#10;/ac &quot;加工&quot; &lt;wait.3&gt;&#10;/ac &quot;精修&quot; &lt;wait.3&gt;"></textarea>
+                        <div class="panel-actions">
+                            <button class="btn btn-secondary btn-sm" id="clearInput" data-i18n="macro_converter_clear">清除</button>
+                            <button class="btn btn-secondary btn-sm" id="pasteInput" data-i18n="macro_converter_paste">貼上</button>
+                        </div>
+                    </div>
+
+                    <div class="convert-button-container">
+                        <button class="btn btn-primary btn-lg convert-btn" id="convertBtn" data-i18n="macro_converter_convert">
+                            轉換 →
+                        </button>
+                    </div>
+
+                    <div class="macro-panel">
+                        <div class="panel-header">
+                            <label data-i18n="macro_converter_output">輸出結果</label>
+                        </div>
+                        <div id="outputMacro" class="output-display"></div>
+                        <div class="panel-actions">
+                            <button class="btn btn-primary btn-sm" id="copyOutput" data-i18n="macro_converter_copy">複製</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Warning Message -->
+                <div id="warningMessage" class="warning-message" style="display: none;">
+                    <span class="warning-icon-large">⚠</span>
+                    <span data-i18n="macro_converter_warning">部分指令無法翻譯（以橘色標記）</span>
+                </div>
+
+                <!-- Loading Indicator -->
+                <div id="loadingIndicator" class="loading" style="display: none;">
+                    <div class="loading-spinner"></div>
+                    <p data-i18n="macro_converter_loading">載入翻譯資料中...</p>
+                </div>
+
+                <!-- Error Message -->
+                <div id="errorMessage" class="error-message" style="display: none;"></div>
+            </div>
+        </div>
+    </main>
+
+    <div id="footer-placeholder" data-base-path="../../"></div>
+
+    <script src="../../assets/js/i18n/i18n-manager.js"></script>
+    <script src="../../assets/js/i18n/translations/common.js"></script>
+    <script src="../../assets/js/i18n/translations/tools/macro-converter.js"></script>
+    <script src="../../assets/js/components/nav-template.js"></script>
+    <script src="../../assets/js/components/footer-template.js"></script>
+    <script src="../../assets/js/components/layout-loader.js"></script>
+    <script src="../../assets/js/common.js"></script>
+    <script src="../../assets/js/security-utils.js"></script>
+    <script src="conversion-engine.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

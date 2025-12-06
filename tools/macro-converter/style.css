@@ -1,0 +1,235 @@
+/* Macro Converter Tool Styles */
+
+/* Language Selectors */
+.language-selectors {
+    display: flex;
+    align-items: flex-end;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.language-selectors .form-group {
+    flex: 1;
+    min-width: 150px;
+    max-width: 200px;
+}
+
+.language-selectors label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.swap-btn {
+    width: 48px;
+    height: 48px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    margin-bottom: 0;
+}
+
+.swap-icon {
+    font-size: 1.5rem;
+}
+
+/* Macro Panels */
+.macro-panels {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 1.5rem;
+    align-items: stretch;
+}
+
+.macro-panel {
+    display: flex;
+    flex-direction: column;
+    background: var(--surface);
+    border-radius: var(--border-radius-lg);
+    padding: 1rem;
+    border: 1px solid var(--border);
+}
+
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.panel-header label {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.detected-lang {
+    font-size: 0.85rem;
+    color: var(--primary-color);
+    background: rgba(74, 144, 226, 0.1);
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--border-radius-sm);
+}
+
+.macro-textarea {
+    flex: 1;
+    min-height: 250px;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    resize: vertical;
+}
+
+.output-display {
+    flex: 1;
+    min-height: 250px;
+    background: var(--background);
+    border: 1px solid var(--border);
+    border-radius: var(--border-radius-md);
+    padding: 0.75rem;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.output-line {
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--border-radius-sm);
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+}
+
+.output-line.untranslatable {
+    background: rgba(255, 152, 0, 0.15);
+    border-left: 3px solid #ff9800;
+}
+
+.output-line .warning-icon {
+    color: #ff9800;
+    flex-shrink: 0;
+    font-size: 0.9rem;
+}
+
+.output-line .line-text {
+    flex: 1;
+}
+
+.panel-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    justify-content: flex-end;
+}
+
+/* Convert Button */
+.convert-button-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.convert-btn {
+    white-space: nowrap;
+    padding: 1rem 2rem;
+    font-size: 1.1rem;
+}
+
+/* Warning Message */
+.warning-message {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: rgba(255, 152, 0, 0.1);
+    border: 1px solid rgba(255, 152, 0, 0.3);
+    border-radius: var(--border-radius-md);
+    color: #e65100;
+    margin-top: 1.5rem;
+}
+
+.warning-icon-large {
+    font-size: 1.5rem;
+}
+
+/* Dark mode adjustments */
+[data-theme="dark"] .macro-panel {
+    background: var(--surface);
+}
+
+[data-theme="dark"] .output-display {
+    background: rgba(0, 0, 0, 0.2);
+    border-color: var(--border);
+}
+
+[data-theme="dark"] .output-line.untranslatable {
+    background: rgba(255, 152, 0, 0.1);
+}
+
+[data-theme="dark"] .warning-message {
+    background: rgba(255, 152, 0, 0.1);
+    border-color: rgba(255, 152, 0, 0.3);
+    color: #ffb74d;
+}
+
+[data-theme="dark"] .detected-lang {
+    background: rgba(74, 144, 226, 0.15);
+}
+
+/* Empty output state */
+.output-display:empty::before {
+    content: attr(data-placeholder);
+    color: var(--text-secondary);
+    opacity: 0.6;
+}
+
+/* Responsive design */
+@media (max-width: 900px) {
+    .macro-panels {
+        grid-template-columns: 1fr;
+    }
+
+    .convert-button-container {
+        order: 1;
+    }
+
+    .macro-panel:first-child {
+        order: 0;
+    }
+
+    .macro-panel:last-child {
+        order: 2;
+    }
+
+    .convert-btn {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .language-selectors {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .language-selectors .form-group {
+        max-width: none;
+    }
+
+    .swap-btn {
+        align-self: center;
+        transform: rotate(90deg);
+    }
+
+    .macro-textarea,
+    .output-display {
+        min-height: 200px;
+    }
+}

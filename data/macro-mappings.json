@@ -1,0 +1,7598 @@
+{
+  "version": "1.0.0",
+  "generated": "2025-12-07T00:54:30.210379",
+  "textCommands": [
+    {
+      "baseCommand": "/record",
+      "zh": {
+        "alias": "/任務回顧",
+        "shortAlias": "/replay"
+      },
+      "en": {
+        "alias": "/record",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "/replay",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/recordready",
+      "zh": {
+        "alias": "/記錄準備確認",
+        "shortAlias": "/replayready"
+      },
+      "en": {
+        "alias": "/recordready",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "/replayready",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/pvpteamcmd",
+      "zh": {
+        "alias": "/戰隊命令",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/pvpteamcmd",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/saddlebag",
+      "zh": {
+        "alias": "/陸行鳥鞍囊",
+        "shortAlias": "/chocobobag"
+      },
+      "en": {
+        "alias": "/saddlebag",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "/chocobobag",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/magiaright",
+      "zh": {
+        "alias": "/魔素板順時旋轉",
+        "shortAlias": "/magiaright"
+      },
+      "en": {
+        "alias": "/magiaright",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/magialeft",
+      "zh": {
+        "alias": "/魔素板逆時旋轉",
+        "shortAlias": "/magialeft"
+      },
+      "en": {
+        "alias": "/magialeft",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/cwlinkshellcmd",
+      "zh": {
+        "alias": "/跨服貝命令",
+        "shortAlias": "/跨服貝"
+      },
+      "en": {
+        "alias": "/cwlinkshellcmd",
+        "shortAlias": "/cwlcmd"
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/quickchat",
+      "zh": {
+        "alias": "/快捷發言",
+        "shortAlias": "/qchat"
+      },
+      "en": {
+        "alias": "/quickchat",
+        "shortAlias": "/qchat"
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/bluespellbook",
+      "zh": {
+        "alias": "/青魔法書",
+        "shortAlias": "/bluespellbook"
+      },
+      "en": {
+        "alias": "/bluespellbook",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/magiaattack",
+      "zh": {
+        "alias": "/魔素板攻勢",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/magiaattack",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/magiadefense",
+      "zh": {
+        "alias": "/魔素板守勢",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/magiadefense",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/magiaauto",
+      "zh": {
+        "alias": "/魔素板自動",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/magiaauto",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/cwlinkshell1",
+      "zh": {
+        "alias": "/跨服貝頻道1",
+        "shortAlias": "/跨1"
+      },
+      "en": {
+        "alias": "/cwlinkshell1",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/cwlinkshell2",
+      "zh": {
+        "alias": "/跨服貝頻道2",
+        "shortAlias": "/跨2"
+      },
+      "en": {
+        "alias": "/cwlinkshell2",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/cwlinkshell3",
+      "zh": {
+        "alias": "/跨服貝頻道3",
+        "shortAlias": "/跨3"
+      },
+      "en": {
+        "alias": "/cwlinkshell3",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/cwlinkshell4",
+      "zh": {
+        "alias": "/跨服貝頻道4",
+        "shortAlias": "/跨4"
+      },
+      "en": {
+        "alias": "/cwlinkshell4",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/cwlinkshell5",
+      "zh": {
+        "alias": "/跨服貝頻道5",
+        "shortAlias": "/跨5"
+      },
+      "en": {
+        "alias": "/cwlinkshell5",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/cwlinkshell6",
+      "zh": {
+        "alias": "/跨服貝頻道6",
+        "shortAlias": "/跨6"
+      },
+      "en": {
+        "alias": "/cwlinkshell6",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/cwlinkshell7",
+      "zh": {
+        "alias": "/跨服貝頻道7",
+        "shortAlias": "/跨7"
+      },
+      "en": {
+        "alias": "/cwlinkshell7",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/cwlinkshell8",
+      "zh": {
+        "alias": "/跨服貝頻道8",
+        "shortAlias": "/跨8"
+      },
+      "en": {
+        "alias": "/cwlinkshell8",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/graphicpresets",
+      "zh": {
+        "alias": "/圖像設置預設",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/graphicpresets",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/fellowship",
+      "zh": {
+        "alias": "/同好會",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/fellowship",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/fellowshipfinder",
+      "zh": {
+        "alias": "/同好招募",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/fellowshipfinder",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/collection",
+      "zh": {
+        "alias": "/重要物品",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/collection",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/newgame+",
+      "zh": {
+        "alias": "/昔日重現模式",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/newgame+",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/dice",
+      "zh": {
+        "alias": "/擲骰",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/dice",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/nameplatedisp",
+      "zh": {
+        "alias": "/名牌顯示",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/nameplatedisp",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/fashion",
+      "zh": {
+        "alias": "/時尚配飾",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/fashion",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/fashionguide",
+      "zh": {
+        "alias": "/時尚配飾一覽",
+        "shortAlias": "/fashionlist"
+      },
+      "en": {
+        "alias": "/fashionguide",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "/fashionlist",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/officialsite",
+      "zh": {
+        "alias": "/官方網站",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/officialsite",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "//setGearset",
+      "zh": {
+        "alias": "",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "//setGearset",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/petmirage",
+      "zh": {
+        "alias": "/召喚獸投影",
+        "shortAlias": "/petmirage"
+      },
+      "en": {
+        "alias": "/petglamour",
+        "shortAlias": "/petglam"
+      },
+      "ja": {
+        "alias": "/petmirage",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/petsize",
+      "zh": {
+        "alias": "/召喚獸尺寸",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/petsize",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/ridepillion",
+      "zh": {
+        "alias": "/共同騎乘",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/ridepillion",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/patchnote",
+      "zh": {
+        "alias": "/版本更新筆記",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/patchnote",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/portrait",
+      "zh": {
+        "alias": "/肖像",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/portrait",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/adventurerplate",
+      "zh": {
+        "alias": "/冒險者銘牌",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/adventurerplate",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/rclickpc",
+      "zh": {
+        "alias": "/右鍵不可選中玩家",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/rclickpc",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/rclickbattlenpc",
+      "zh": {
+        "alias": "/右鍵不可選中非玩家角色",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/rclickbattlenpc",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/rclickminion",
+      "zh": {
+        "alias": "/右鍵不可選中寵物",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/rclickminion",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/facewear",
+      "zh": {
+        "alias": "/面部配飾",
+        "shortAlias": "/faceaccessory"
+      },
+      "en": {
+        "alias": "/facewear",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "/faceaccessory",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/mutelist",
+      "zh": {
+        "alias": "/禁音列表",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/mutelist",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/termfilter",
+      "zh": {
+        "alias": "/過濾詞",
+        "shortAlias": "/wordfilter"
+      },
+      "en": {
+        "alias": "/termfilter",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "/wordfilter",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/facewearlist",
+      "zh": {
+        "alias": "/面部配飾選單",
+        "shortAlias": "/faceaccessorylist"
+      },
+      "en": {
+        "alias": "/facewearlist",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "/faceaccessorylist",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/visualalerts",
+      "zh": {
+        "alias": "/聲音的視覺表現",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/visualalerts",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/colorfiltering",
+      "zh": {
+        "alias": "/色覺多樣性",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/colorfiltering",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/autotargetpriority",
+      "zh": {
+        "alias": "/自動選中目標",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/autotargetpriority",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/pvpteam",
+      "zh": {
+        "alias": "/戰隊頻道",
+        "shortAlias": "/戰"
+      },
+      "en": {
+        "alias": "/pvpteam",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/cwlinkshell",
+      "zh": {
+        "alias": "/跨服貝頻道",
+        "shortAlias": "/跨"
+      },
+      "en": {
+        "alias": "/cwlinkshell",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/beginner",
+      "zh": {
+        "alias": "/新人頻道",
+        "shortAlias": "/新"
+      },
+      "en": {
+        "alias": "/novice",
+        "shortAlias": "/n"
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/say",
+      "zh": {
+        "alias": "/說話頻道",
+        "shortAlias": "/說"
+      },
+      "en": {
+        "alias": "/say",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/shout",
+      "zh": {
+        "alias": "/喊話頻道",
+        "shortAlias": "/喊"
+      },
+      "en": {
+        "alias": "/shout",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/tell",
+      "zh": {
+        "alias": "/悄悄話頻道",
+        "shortAlias": "/悄"
+      },
+      "en": {
+        "alias": "/tell",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/party",
+      "zh": {
+        "alias": "/小隊頻道",
+        "shortAlias": "/隊"
+      },
+      "en": {
+        "alias": "/party",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/linkshell",
+      "zh": {
+        "alias": "/通訊貝頻道",
+        "shortAlias": "/訊"
+      },
+      "en": {
+        "alias": "/linkshell",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/linkshell1",
+      "zh": {
+        "alias": "/通訊貝頻道1",
+        "shortAlias": "/訊1"
+      },
+      "en": {
+        "alias": "/linkshell1",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/linkshell2",
+      "zh": {
+        "alias": "/通訊貝頻道2",
+        "shortAlias": "/訊2"
+      },
+      "en": {
+        "alias": "/linkshell2",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/linkshell3",
+      "zh": {
+        "alias": "/通訊貝頻道3",
+        "shortAlias": "/訊3"
+      },
+      "en": {
+        "alias": "/linkshell3",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/linkshell4",
+      "zh": {
+        "alias": "/通訊貝頻道4",
+        "shortAlias": "/訊4"
+      },
+      "en": {
+        "alias": "/linkshell4",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/linkshell5",
+      "zh": {
+        "alias": "/通訊貝頻道5",
+        "shortAlias": "/訊5"
+      },
+      "en": {
+        "alias": "/linkshell5",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/linkshell6",
+      "zh": {
+        "alias": "/通訊貝頻道6",
+        "shortAlias": "/訊6"
+      },
+      "en": {
+        "alias": "/linkshell6",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/linkshell7",
+      "zh": {
+        "alias": "/通訊貝頻道7",
+        "shortAlias": "/訊7"
+      },
+      "en": {
+        "alias": "/linkshell7",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/linkshell8",
+      "zh": {
+        "alias": "/通訊貝頻道8",
+        "shortAlias": "/訊8"
+      },
+      "en": {
+        "alias": "/linkshell8",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/freecompany",
+      "zh": {
+        "alias": "/公會頻道",
+        "shortAlias": "/公"
+      },
+      "en": {
+        "alias": "/freecompany",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/echo",
+      "zh": {
+        "alias": "/默語",
+        "shortAlias": "/默"
+      },
+      "en": {
+        "alias": "/echo",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/yell",
+      "zh": {
+        "alias": "/呼喊頻道",
+        "shortAlias": "/呼"
+      },
+      "en": {
+        "alias": "/yell",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/reply",
+      "zh": {
+        "alias": "/回答",
+        "shortAlias": "/回"
+      },
+      "en": {
+        "alias": "/reply",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/alliance",
+      "zh": {
+        "alias": "/團隊頻道",
+        "shortAlias": "/團"
+      },
+      "en": {
+        "alias": "/alliance",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/join",
+      "zh": {
+        "alias": "/參加",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/join",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/decline",
+      "zh": {
+        "alias": "/拒絕",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/decline",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/invite",
+      "zh": {
+        "alias": "/邀請",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/invite",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/kick",
+      "zh": {
+        "alias": "/移除",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/kick",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/leader",
+      "zh": {
+        "alias": "/隊長",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/leader",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/leave",
+      "zh": {
+        "alias": "/退隊",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/leave",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/check",
+      "zh": {
+        "alias": "/查看",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/check",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/trade",
+      "zh": {
+        "alias": "/交易",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/trade",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/automove",
+      "zh": {
+        "alias": "/自動前進",
+        "shortAlias": "/前進"
+      },
+      "en": {
+        "alias": "/automove",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/follow",
+      "zh": {
+        "alias": "/跟隨",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/follow",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/meldrequest",
+      "zh": {
+        "alias": "/委託鑲嵌",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/meldrequest",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/character",
+      "zh": {
+        "alias": "/角色",
+        "shortAlias": "/裝備"
+      },
+      "en": {
+        "alias": "/character",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/journal",
+      "zh": {
+        "alias": "/日誌",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/journal",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/dutyfinder",
+      "zh": {
+        "alias": "/任務搜尋器",
+        "shortAlias": "/任務"
+      },
+      "en": {
+        "alias": "/dutyfinder",
+        "shortAlias": "/finder"
+      },
+      "ja": {
+        "alias": "/contentsfinder",
+        "shortAlias": "/cfinder"
+      }
+    },
+    {
+      "baseCommand": "/armourychest",
+      "zh": {
+        "alias": "/兵裝庫",
+        "shortAlias": "/兵裝"
+      },
+      "en": {
+        "alias": "/armourychest",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/huntinglog",
+      "zh": {
+        "alias": "/討伐筆記",
+        "shortAlias": "/討伐"
+      },
+      "en": {
+        "alias": "/huntinglog",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/craftinglog",
+      "zh": {
+        "alias": "/製作筆記",
+        "shortAlias": "/製作"
+      },
+      "en": {
+        "alias": "/craftinglog",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/gatheringlog",
+      "zh": {
+        "alias": "/採集筆記",
+        "shortAlias": "/採集"
+      },
+      "en": {
+        "alias": "/gatheringlog",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/fishinglog",
+      "zh": {
+        "alias": "/釣魚筆記",
+        "shortAlias": "/釣魚"
+      },
+      "en": {
+        "alias": "/fishinglog",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/achievements",
+      "zh": {
+        "alias": "/成就",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/achievements",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/partycmd",
+      "zh": {
+        "alias": "/小隊命令",
+        "shortAlias": "/小隊"
+      },
+      "en": {
+        "alias": "/partycmd",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/friendlist",
+      "zh": {
+        "alias": "/好友命令",
+        "shortAlias": "/好友"
+      },
+      "en": {
+        "alias": "/friendlist",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/blacklist",
+      "zh": {
+        "alias": "/黑名單命令",
+        "shortAlias": "/黑名單"
+      },
+      "en": {
+        "alias": "/blacklist",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/search",
+      "zh": {
+        "alias": "/搜索命令",
+        "shortAlias": "/搜索"
+      },
+      "en": {
+        "alias": "/search",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/map",
+      "zh": {
+        "alias": "/地圖",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/map",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/teleport",
+      "zh": {
+        "alias": "/傳送",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/teleport",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/marking",
+      "zh": {
+        "alias": "/標記",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/enemysign",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/actionlist",
+      "zh": {
+        "alias": "/技能選單",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/actionlist",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/timers",
+      "zh": {
+        "alias": "/任務情報",
+        "shortAlias": "/情報"
+      },
+      "en": {
+        "alias": "/timers",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/recommended",
+      "zh": {
+        "alias": "/推薦任務",
+        "shortAlias": "/推薦"
+      },
+      "en": {
+        "alias": "/recommended",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/inventory",
+      "zh": {
+        "alias": "/物品",
+        "shortAlias": "/背包"
+      },
+      "en": {
+        "alias": "/inventory",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/freecompanycmd",
+      "zh": {
+        "alias": "/公會命令",
+        "shortAlias": "/公命"
+      },
+      "en": {
+        "alias": "/freecompanycmd",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/linkshellcmd",
+      "zh": {
+        "alias": "/通訊貝命令",
+        "shortAlias": "/通訊貝"
+      },
+      "en": {
+        "alias": "/linkshellcmd",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/return",
+      "zh": {
+        "alias": "/返回",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/return",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/emotelist",
+      "zh": {
+        "alias": "/情感動作",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/emotelist",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/activehelp",
+      "zh": {
+        "alias": "/新手指南",
+        "shortAlias": "/指南"
+      },
+      "en": {
+        "alias": "/activehelp",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "/howtolist",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/characterconfig",
+      "zh": {
+        "alias": "/角色設置",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/characterconfig",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/systemconfig",
+      "zh": {
+        "alias": "/系統設置",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/systemconfig",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/keybind",
+      "zh": {
+        "alias": "/鍵位設置",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/keybind",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/macros",
+      "zh": {
+        "alias": "/巨集",
+        "shortAlias": "/巨"
+      },
+      "en": {
+        "alias": "/macros",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/hudlayout",
+      "zh": {
+        "alias": "/介面設置",
+        "shortAlias": "/介面設置"
+      },
+      "en": {
+        "alias": "/hudlayout",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/logout",
+      "zh": {
+        "alias": "/標題畫面",
+        "shortAlias": "/標題畫面"
+      },
+      "en": {
+        "alias": "/logout",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/shutdown",
+      "zh": {
+        "alias": "/關閉遊戲",
+        "shortAlias": "/關閉遊戲"
+      },
+      "en": {
+        "alias": "/shutdown",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/partysort",
+      "zh": {
+        "alias": "/小隊排序",
+        "shortAlias": "/小隊排序"
+      },
+      "en": {
+        "alias": "/partysort",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/readycheck",
+      "zh": {
+        "alias": "/準備確認",
+        "shortAlias": "/準備確認"
+      },
+      "en": {
+        "alias": "/readycheck",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/ready",
+      "zh": {
+        "alias": "/準備完畢",
+        "shortAlias": "/準備完畢"
+      },
+      "en": {
+        "alias": "/ready",
+        "shortAlias": "/rd"
+      },
+      "ja": {
+        "alias": "/readyok",
+        "shortAlias": "/rok"
+      }
+    },
+    {
+      "baseCommand": "/notready",
+      "zh": {
+        "alias": "/沒有準備好",
+        "shortAlias": "/沒有準備好"
+      },
+      "en": {
+        "alias": "/hold",
+        "shortAlias": "/hd"
+      },
+      "ja": {
+        "alias": "/readyng",
+        "shortAlias": "/rng"
+      }
+    },
+    {
+      "baseCommand": "/waymark",
+      "zh": {
+        "alias": "/場景標記",
+        "shortAlias": "/場景標記"
+      },
+      "en": {
+        "alias": "/waymark",
+        "shortAlias": "/wmark"
+      },
+      "ja": {
+        "alias": "/fieldmarking",
+        "shortAlias": "/fmk"
+      }
+    },
+    {
+      "baseCommand": "/fishguide",
+      "zh": {
+        "alias": "/魚類圖鑑",
+        "shortAlias": "/魚類圖鑑"
+      },
+      "en": {
+        "alias": "/fishguide",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/housing",
+      "zh": {
+        "alias": "/房屋",
+        "shortAlias": "/房屋"
+      },
+      "en": {
+        "alias": "/housing",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/minionguide",
+      "zh": {
+        "alias": "/寵物一覽",
+        "shortAlias": "/寵物一覽"
+      },
+      "en": {
+        "alias": "/minionguide",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "/minionlist",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/mountguide",
+      "zh": {
+        "alias": "/坐騎一覽",
+        "shortAlias": "/坐騎一覽"
+      },
+      "en": {
+        "alias": "/mountguide",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "/mountlist",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/partyfinder",
+      "zh": {
+        "alias": "/隊員招募",
+        "shortAlias": "/招募"
+      },
+      "en": {
+        "alias": "/partyfinder",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/pvpprofile",
+      "zh": {
+        "alias": "/PvP資料",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/pvpprofile",
+        "shortAlias": "/pvpp"
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/companion",
+      "zh": {
+        "alias": "/搭檔",
+        "shortAlias": "/comp"
+      },
+      "en": {
+        "alias": "/companion",
+        "shortAlias": "/comp"
+      },
+      "ja": {
+        "alias": "/buddy",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/keyitem",
+      "zh": {
+        "alias": "/任務道具",
+        "shortAlias": "/關鍵道具"
+      },
+      "en": {
+        "alias": "/keyitem",
+        "shortAlias": "/kitem"
+      },
+      "ja": {
+        "alias": "/eventitem",
+        "shortAlias": "/eitem"
+      }
+    },
+    {
+      "baseCommand": "/challengelog",
+      "zh": {
+        "alias": "/挑戰筆記",
+        "shortAlias": "/挑戰"
+      },
+      "en": {
+        "alias": "/challengelog",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/sightseeinglog",
+      "zh": {
+        "alias": "/探索筆記",
+        "shortAlias": "/探索"
+      },
+      "en": {
+        "alias": "/sightseeinglog",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/goldsaucer",
+      "zh": {
+        "alias": "/金碟遊樂園",
+        "shortAlias": "/金碟"
+      },
+      "en": {
+        "alias": "/goldsaucer",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/currency",
+      "zh": {
+        "alias": "/貨幣一覽",
+        "shortAlias": "/貨幣"
+      },
+      "en": {
+        "alias": "/currency",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/aethercurrent",
+      "zh": {
+        "alias": "/風脈泉",
+        "shortAlias": "/風脈"
+      },
+      "en": {
+        "alias": "/aethercurrent",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/logcolor",
+      "zh": {
+        "alias": "/訊息顏色",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/logcolor",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/playguide",
+      "zh": {
+        "alias": "/資訊中心",
+        "shortAlias": "/資訊"
+      },
+      "en": {
+        "alias": "/playguide",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/generaldutykey",
+      "zh": {
+        "alias": "/任務通用鍵",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/generaldutykey",
+        "shortAlias": "/gdutykey"
+      },
+      "ja": {
+        "alias": "/contentskey",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/raidfinder",
+      "zh": {
+        "alias": "/大型任務搜尋器",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/raidfinder",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/orchestrion",
+      "zh": {
+        "alias": "/管弦樂琴",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/orchestrion",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/countdown",
+      "zh": {
+        "alias": "/倒計時",
+        "shortAlias": "/倒計時"
+      },
+      "en": {
+        "alias": "/countdown",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/contactlist",
+      "zh": {
+        "alias": "/戰友列表",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/contactlist",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/mountspeed",
+      "zh": {
+        "alias": "/坐騎速度",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/mountspeed",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/?",
+      "zh": {
+        "alias": "",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/?",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/wait",
+      "zh": {
+        "alias": "/等待",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/wait",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/legacymark",
+      "zh": {
+        "alias": "/十二神印記",
+        "shortAlias": "/神印"
+      },
+      "en": {
+        "alias": "/legacymark",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/gcsalute",
+      "zh": {
+        "alias": "/軍禮",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/gcsalute",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/macroicon",
+      "zh": {
+        "alias": "/巨集圖標",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/macroicon",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/recast",
+      "zh": {
+        "alias": "/複唱時間",
+        "shortAlias": "/複唱"
+      },
+      "en": {
+        "alias": "/recast",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/gearset",
+      "zh": {
+        "alias": "/套裝",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/gearset",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/itemsort",
+      "zh": {
+        "alias": "/道具整理",
+        "shortAlias": "/整理"
+      },
+      "en": {
+        "alias": "/itemsort",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/random",
+      "zh": {
+        "alias": "/隨機數",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/random",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/instance",
+      "zh": {
+        "alias": "/副本區檢查",
+        "shortAlias": "/副本區"
+      },
+      "en": {
+        "alias": "/instance",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/cleartellhistory",
+      "zh": {
+        "alias": "/清除悄悄話記錄",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/cleartellhistory",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/macrolock",
+      "zh": {
+        "alias": "/鎖定巨集指令",
+        "shortAlias": "/鎖巨集"
+      },
+      "en": {
+        "alias": "/macrolock",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/macroerror",
+      "zh": {
+        "alias": "/巨集錯誤提示",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/macroerror",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/clearlog",
+      "zh": {
+        "alias": "/清除訊息記錄",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/clearlog",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/macrocancel",
+      "zh": {
+        "alias": "/取消巨集",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/macrocancel",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/playtime",
+      "zh": {
+        "alias": "/遊戲時間",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/playtime",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/grouppose",
+      "zh": {
+        "alias": "/集體動作",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/grouppose",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/itemsearch",
+      "zh": {
+        "alias": "/道具檢索",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/itemsearch",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/idlingcamera",
+      "zh": {
+        "alias": "/觀景視角",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/idlingcamera",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/duelswitch",
+      "zh": {
+        "alias": "/決鬥申請攔截",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/duelswitch",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/beginnerchannelinvitation",
+      "zh": {
+        "alias": "/接受新人頻道的邀請",
+        "shortAlias": "/新人邀請"
+      },
+      "en": {
+        "alias": "/novicenetworkinvitation",
+        "shortAlias": "/nnetworkinvitation"
+      },
+      "ja": {
+        "alias": "/beginnerchannelinvitation",
+        "shortAlias": "/bchannelinvitation"
+      }
+    },
+    {
+      "baseCommand": "/beginnerchannelleave",
+      "zh": {
+        "alias": "/退出新人頻道",
+        "shortAlias": "/退新"
+      },
+      "en": {
+        "alias": "/novicenetworkleave",
+        "shortAlias": "/nnetworkleave"
+      },
+      "ja": {
+        "alias": "/beginnerchannelleave",
+        "shortAlias": "/bchannelleave"
+      }
+    },
+    {
+      "baseCommand": "/egiglamour",
+      "zh": {
+        "alias": "/召喚物投影",
+        "shortAlias": "/egimirage"
+      },
+      "en": {
+        "alias": "/egiglamour",
+        "shortAlias": "/egiglam"
+      },
+      "ja": {
+        "alias": "/egimirage",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/title",
+      "zh": {
+        "alias": "/稱號",
+        "shortAlias": "/title"
+      },
+      "en": {
+        "alias": "/title",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/bahamutsize",
+      "zh": {
+        "alias": "/巴哈姆特尺寸",
+        "shortAlias": "/bahamutsize"
+      },
+      "en": {
+        "alias": "/bahamutsize",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/alarm",
+      "zh": {
+        "alias": "/鬧鐘",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/alarm",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/busy",
+      "zh": {
+        "alias": "/忙碌",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/busy",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/away",
+      "zh": {
+        "alias": "/離開",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/away",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/lookingforparty",
+      "zh": {
+        "alias": "/希望組隊",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/lookingforparty",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/lookingformeld",
+      "zh": {
+        "alias": "/接受鑲嵌魔晶石請求",
+        "shortAlias": "/鑲嵌魔晶石"
+      },
+      "en": {
+        "alias": "/lookingtomeld",
+        "shortAlias": "/ltm"
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/searchcomment",
+      "zh": {
+        "alias": "/個性簽名",
+        "shortAlias": "/簽名"
+      },
+      "en": {
+        "alias": "/searchcomment",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/beginnerstatus",
+      "zh": {
+        "alias": "/新人狀態",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/nastatus",
+        "shortAlias": "/nas"
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/beginnerchannel",
+      "zh": {
+        "alias": "/加入新人頻道",
+        "shortAlias": "/bchannel"
+      },
+      "en": {
+        "alias": "/novicenetwork",
+        "shortAlias": "/nnetwork"
+      },
+      "ja": {
+        "alias": "/beginnerchannel",
+        "shortAlias": "/bchannel"
+      }
+    },
+    {
+      "baseCommand": "/returnerstatusoff",
+      "zh": {
+        "alias": "/解除回歸者狀態",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/returnerstatusoff",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "/returnerstatusoff",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/roleplaying",
+      "zh": {
+        "alias": "/角色扮演中",
+        "shortAlias": "/roleplaying"
+      },
+      "en": {
+        "alias": "/roleplaying",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/action",
+      "zh": {
+        "alias": "/技能",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/action",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/battlemode",
+      "zh": {
+        "alias": "/武器狀態",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/battlemode",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/target",
+      "zh": {
+        "alias": "/選中",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/target",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/targetpc",
+      "zh": {
+        "alias": "/選中最近玩家",
+        "shortAlias": "/最近玩家"
+      },
+      "en": {
+        "alias": "/targetpc",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/targetnpc",
+      "zh": {
+        "alias": "/選中最近非玩家",
+        "shortAlias": "/最近非玩家"
+      },
+      "en": {
+        "alias": "/targetnpc",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/targetenemy",
+      "zh": {
+        "alias": "/選中最近敵人",
+        "shortAlias": "/最近敵人"
+      },
+      "en": {
+        "alias": "/targetenemy",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/battletarget",
+      "zh": {
+        "alias": "/戰鬥目標",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/battletarget",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/assist",
+      "zh": {
+        "alias": "/目標的目標",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/assist",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/facetarget",
+      "zh": {
+        "alias": "/轉向目標",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/facetarget",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/nexttarget",
+      "zh": {
+        "alias": "/右側選擇",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/nexttarget",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/previoustarget",
+      "zh": {
+        "alias": "/左側選擇",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/previoustarget",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/targetlasttarget",
+      "zh": {
+        "alias": "/上次目標",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/targetlasttarget",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/targetlastenemy",
+      "zh": {
+        "alias": "/前次敵人",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/targetlastenemy",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/lockon",
+      "zh": {
+        "alias": "/鎖定",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/lockon",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/focustarget",
+      "zh": {
+        "alias": "/焦點目標",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/focustarget",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/petaction",
+      "zh": {
+        "alias": "/召喚獸技能",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/petaction",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/companionaction",
+      "zh": {
+        "alias": "/搭檔技能",
+        "shortAlias": "/cac"
+      },
+      "en": {
+        "alias": "/companionaction",
+        "shortAlias": "/cac"
+      },
+      "ja": {
+        "alias": "/buddyaction",
+        "shortAlias": "/bac"
+      }
+    },
+    {
+      "baseCommand": "/facecamera",
+      "zh": {
+        "alias": "/面向鏡頭",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/facecamera",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/levelsync",
+      "zh": {
+        "alias": "/等級同步",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/levelsync",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/mount",
+      "zh": {
+        "alias": "/坐騎",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/mount",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/additionalaction",
+      "zh": {
+        "alias": "/額外技能",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/additionalaction",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/generalaction",
+      "zh": {
+        "alias": "/共通技能",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/generalaction",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/minion",
+      "zh": {
+        "alias": "/寵物",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/minion",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/statusoff",
+      "zh": {
+        "alias": "/解除狀態",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/statusoff",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/addpvpaction",
+      "zh": {
+        "alias": "/PvP額外技能",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/addpvpaction",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/pvpaction",
+      "zh": {
+        "alias": "/PvP技能",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/pvpaction",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/blueaction",
+      "zh": {
+        "alias": "/青魔法技能",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/blueaction",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/autolockon",
+      "zh": {
+        "alias": "/自動鎖定",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/autolockon",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/autofacetarget",
+      "zh": {
+        "alias": "/自動轉向目標",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/autofacetarget",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/targetring",
+      "zh": {
+        "alias": "/目標環",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/targetring",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/targetline",
+      "zh": {
+        "alias": "/目標線",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/targetline",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/linkline",
+      "zh": {
+        "alias": "/聯繫線",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/aggroline",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/autotarget",
+      "zh": {
+        "alias": "/自動選中",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/autotarget",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/displayhead",
+      "zh": {
+        "alias": "/顯示頭部裝備",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/displayhead",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/displayarms",
+      "zh": {
+        "alias": "/顯示武器",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/displayarms",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/autosheathe",
+      "zh": {
+        "alias": "/自動收回武器",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/autosheathe",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/targetself",
+      "zh": {
+        "alias": "/選中自己",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/targetself",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/groundclick",
+      "zh": {
+        "alias": "/場景點擊",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/groundclick",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/chatlog",
+      "zh": {
+        "alias": "/訊息視窗",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/chatlog",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/battleeffect",
+      "zh": {
+        "alias": "/戰鬥特效",
+        "shortAlias": "/戰鬥特效"
+      },
+      "en": {
+        "alias": "/battleeffect",
+        "shortAlias": "/bfx"
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/hud",
+      "zh": {
+        "alias": "/指定視窗",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/hud",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/hotbar",
+      "zh": {
+        "alias": "/快速鍵",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/hotbar",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/crosshotbar",
+      "zh": {
+        "alias": "/十字快速鍵",
+        "shortAlias": "/xhb"
+      },
+      "en": {
+        "alias": "/crosshotbar",
+        "shortAlias": "/chotbar"
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": "/xhb"
+      }
+    },
+    {
+      "baseCommand": "/hudreset",
+      "zh": {
+        "alias": "/重置介面",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/hudreset",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/uireset",
+      "zh": {
+        "alias": "/重置介面視窗",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/uireset",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/uiscale",
+      "zh": {
+        "alias": "/介面縮放",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/uiscale",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/actionerror",
+      "zh": {
+        "alias": "/技能錯誤",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/actionerror",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/recasterror",
+      "zh": {
+        "alias": "/複唱錯誤",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/recasterror",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "//eventReset",
+      "zh": {
+        "alias": "",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "//eventReset",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/crosshotbartype",
+      "zh": {
+        "alias": "/操作類型",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/crosshotbartype",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/crosshotbardisplay",
+      "zh": {
+        "alias": "/一直顯示十字快速鍵",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/crosshotbardisplay",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/pvphotbar",
+      "zh": {
+        "alias": "/PvP快速鍵",
+        "shortAlias": "/PvP快速鍵"
+      },
+      "en": {
+        "alias": "/pvphotbar",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/pvpcrosshotbar",
+      "zh": {
+        "alias": "/PvP十字快速鍵",
+        "shortAlias": "/PvP十字快速鍵"
+      },
+      "en": {
+        "alias": "/pvpcrosshotbar",
+        "shortAlias": "/pvpchotbar"
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": "/pvpxhb"
+      }
+    },
+    {
+      "baseCommand": "/emotelog",
+      "zh": {
+        "alias": "/情感動作文字提示",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/emotelog",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/jobhudmode",
+      "zh": {
+        "alias": "/職業量譜模式",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/jobhudmode",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/mastervolume",
+      "zh": {
+        "alias": "/整體音量",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/mastervolume",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/bgm",
+      "zh": {
+        "alias": "/背景音樂",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/bgm",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/soundeffects",
+      "zh": {
+        "alias": "/音效",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/soundeffects",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/voice",
+      "zh": {
+        "alias": "/語音",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/voice",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/systemsounds",
+      "zh": {
+        "alias": "/系統音",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/systemsounds",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/ambientsounds",
+      "zh": {
+        "alias": "/環境音",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/ambientsounds",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/soundeffectsself",
+      "zh": {
+        "alias": "/自身音效",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/soundeffectsself",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/soundeffectsparty",
+      "zh": {
+        "alias": "/小隊成員音效",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/soundeffectsparty",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/soundeffectsother",
+      "zh": {
+        "alias": "/他人音效",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/soundeffectsother",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/systemsoundsspeaker",
+      "zh": {
+        "alias": "/喇叭系統音",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/systemsoundsspeaker",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/tiltcamera",
+      "zh": {
+        "alias": "/第三人稱視角俯視角度",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/tiltcamera",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/mountbgm",
+      "zh": {
+        "alias": "/坐騎音樂",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/mountbgm",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/performsounds",
+      "zh": {
+        "alias": "/演奏音量",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/performsounds",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/emote",
+      "zh": {
+        "alias": "/感情表現",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/emote",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/surprised",
+      "zh": {
+        "alias": "/驚訝",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/surprised",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/angry",
+      "zh": {
+        "alias": "/不滿",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/angry",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/furious",
+      "zh": {
+        "alias": "/憤怒",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/furious",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/blush",
+      "zh": {
+        "alias": "/害羞",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/blush",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/bow",
+      "zh": {
+        "alias": "/行禮",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/bow",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/cheer",
+      "zh": {
+        "alias": "/加油",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/cheer",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/clap",
+      "zh": {
+        "alias": "/拍手",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/clap",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/beckon",
+      "zh": {
+        "alias": "/招手",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/beckon",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/comfort",
+      "zh": {
+        "alias": "/安慰",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/comfort",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/cry",
+      "zh": {
+        "alias": "/哭泣",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/cry",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/dance",
+      "zh": {
+        "alias": "/跳舞",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/dance",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/doubt",
+      "zh": {
+        "alias": "/質疑",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/doubt",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/doze",
+      "zh": {
+        "alias": "/打盹",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/doze",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/fume",
+      "zh": {
+        "alias": "/後悔",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/fume",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/goodbye",
+      "zh": {
+        "alias": "/道別",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/goodbye",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/wave",
+      "zh": {
+        "alias": "/揮手",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/wave",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/huh",
+      "zh": {
+        "alias": "/莫名",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/huh",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/joy",
+      "zh": {
+        "alias": "/高興",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/joy",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/kneel",
+      "zh": {
+        "alias": "/下跪",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/kneel",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/chuckle",
+      "zh": {
+        "alias": "/輕笑",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/chuckle",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/laugh",
+      "zh": {
+        "alias": "/大笑",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/laugh",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/lookout",
+      "zh": {
+        "alias": "/張望",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/lookout",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/me",
+      "zh": {
+        "alias": "/展示",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/me",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/no",
+      "zh": {
+        "alias": "/搖頭",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/no",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/deny",
+      "zh": {
+        "alias": "/否定",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/deny",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/panic",
+      "zh": {
+        "alias": "/慌張",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/panic",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/point",
+      "zh": {
+        "alias": "/指向",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/point",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/poke",
+      "zh": {
+        "alias": "/戳指",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/poke",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/congratulate",
+      "zh": {
+        "alias": "/稱讚",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/congratulate",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/psych",
+      "zh": {
+        "alias": "/激勵",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/psych",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/salute",
+      "zh": {
+        "alias": "/敬禮",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/salute",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/shocked",
+      "zh": {
+        "alias": "/震驚",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/shocked",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/shrug",
+      "zh": {
+        "alias": "/聳肩",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/shrug",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/rally",
+      "zh": {
+        "alias": "/鼓勵",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/rally",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/soothe",
+      "zh": {
+        "alias": "/安撫",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/soothe",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/stagger",
+      "zh": {
+        "alias": "/迷糊",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/stagger",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/stretch",
+      "zh": {
+        "alias": "/伸展",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/stretch",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/sulk",
+      "zh": {
+        "alias": "/慍怒",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/sulk",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/think",
+      "zh": {
+        "alias": "/思考",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/think",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/upset",
+      "zh": {
+        "alias": "/失望",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/upset",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/welcome",
+      "zh": {
+        "alias": "/歡迎",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/welcome",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/yes",
+      "zh": {
+        "alias": "/點頭",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/yes",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/thumbsup",
+      "zh": {
+        "alias": "/肯定",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/thumbsup",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/examineself",
+      "zh": {
+        "alias": "/自視",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/examineself",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/pose",
+      "zh": {
+        "alias": "/擺造型",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/pose",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/blowkiss",
+      "zh": {
+        "alias": "/飛吻",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/blowkiss",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/grovel",
+      "zh": {
+        "alias": "/下跪認錯",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/grovel",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/happy",
+      "zh": {
+        "alias": "/欣喜若狂",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/happy",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/disappointed",
+      "zh": {
+        "alias": "/大失所望",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/disappointed",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/lounge",
+      "zh": {
+        "alias": "/坐下",
+        "shortAlias": "/lounge"
+      },
+      "en": {
+        "alias": "/sit",
+        "shortAlias": "/lounge"
+      },
+      "ja": {
+        "alias": "/sit",
+        "shortAlias": "/lounge"
+      }
+    },
+    {
+      "baseCommand": "/groundsit",
+      "zh": {
+        "alias": "/坐下到地上",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/groundsit",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/airquotes",
+      "zh": {
+        "alias": "/引用",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/airquotes",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/pray",
+      "zh": {
+        "alias": "/祈禱",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/pray",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/imperialsalute",
+      "zh": {
+        "alias": "/帝國式軍禮",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/imperialsalute",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/visor",
+      "zh": {
+        "alias": "/頭部裝備",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/visor",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/megaflare",
+      "zh": {
+        "alias": "/百萬火光",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/megaflare",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/crimsonlotus",
+      "zh": {
+        "alias": "/練武",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/crimsonlotus",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/charmed",
+      "zh": {
+        "alias": "/魅惑擁抱",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/charmed",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/cheeron",
+      "zh": {
+        "alias": "/聲援小藍",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/cheeron",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/cheerwave",
+      "zh": {
+        "alias": "/聲援小黃",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/cheerwave",
+        "shortAlias": "/hiphophurray"
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/cheerjump",
+      "zh": {
+        "alias": "/聲援小紅",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/cheerjump",
+        "shortAlias": "/jumparound"
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/straightface",
+      "zh": {
+        "alias": "/平常",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/straightface",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/smile",
+      "zh": {
+        "alias": "/微笑",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/smile",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/grin",
+      "zh": {
+        "alias": "/笑顏",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/grin",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/smirk",
+      "zh": {
+        "alias": "/自信",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/smirk",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/taunt",
+      "zh": {
+        "alias": "/無畏",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/taunt",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/shuteyes",
+      "zh": {
+        "alias": "/閉目",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/shuteyes",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/sad",
+      "zh": {
+        "alias": "/悲傷",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/sad",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/scared",
+      "zh": {
+        "alias": "/恐怖",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/scared",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/amazed",
+      "zh": {
+        "alias": "/意外",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/amazed",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/ouch",
+      "zh": {
+        "alias": "/痛苦",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/ouch",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/annoyed",
+      "zh": {
+        "alias": "/反感",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/annoyed",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/alert",
+      "zh": {
+        "alias": "/吃驚",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/alert",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/worried",
+      "zh": {
+        "alias": "/擔心",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/worried",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/biggrin",
+      "zh": {
+        "alias": "/咧嘴",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/biggrin",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/reflect",
+      "zh": {
+        "alias": "/沉思",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/reflect",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/furrow",
+      "zh": {
+        "alias": "/皺眉",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/furrow",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/scoff",
+      "zh": {
+        "alias": "/苦笑",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/scoff",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/throw",
+      "zh": {
+        "alias": "/投擲",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/throw",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/changepose",
+      "zh": {
+        "alias": "/改變姿勢",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/changepose",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/stepdance",
+      "zh": {
+        "alias": "/踢踏舞",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/stepdance",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/harvestdance",
+      "zh": {
+        "alias": "/豐饒之舞",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/harvestdance",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/balldance",
+      "zh": {
+        "alias": "/宮廷之舞",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/balldance",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/mandervilledance",
+      "zh": {
+        "alias": "/紳士之舞",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/mandervilledance",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/stroke",
+      "zh": {
+        "alias": "/撫摸",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/pet",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/handover",
+      "zh": {
+        "alias": "/遞交",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/handover",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/bombdance",
+      "zh": {
+        "alias": "/火盆舞",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/bombdance",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/hurray",
+      "zh": {
+        "alias": "/勝利歡呼",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/huzzah",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/slap",
+      "zh": {
+        "alias": "/甩巴掌",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/slap",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/hug",
+      "zh": {
+        "alias": "/擁抱",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/hug",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/embrace",
+      "zh": {
+        "alias": "/深情擁抱",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/embrace",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/hildibrand",
+      "zh": {
+        "alias": "/紳士風度",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/hildibrand",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/fistbump",
+      "zh": {
+        "alias": "/對拳",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/fistbump",
+        "shortAlias": "/brofist"
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/thavdance",
+      "zh": {
+        "alias": "/薩維奈舞",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/thavdance",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/golddance",
+      "zh": {
+        "alias": "/黃金之舞",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/golddance",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/sundance",
+      "zh": {
+        "alias": "/太陽之舞",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/sundropdance",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/battlestance",
+      "zh": {
+        "alias": "/準備戰鬥",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/battlestance",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/victorypose",
+      "zh": {
+        "alias": "/歡呼勝利",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/victorypose",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/backflip",
+      "zh": {
+        "alias": "/後空翻",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/backflip",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/easterngreeting",
+      "zh": {
+        "alias": "/抱拳禮",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/easterngreeting",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/eureka",
+      "zh": {
+        "alias": "/靈光一現",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/eureka",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/mogdance",
+      "zh": {
+        "alias": "/莫古莫古舞",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/mogdance",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/haurchefant",
+      "zh": {
+        "alias": "/太棒了",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/haurchefant",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/easternstretch",
+      "zh": {
+        "alias": "/熱身",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/easternstretch",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "/warmup",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/easterndance",
+      "zh": {
+        "alias": "/東方傳統舞蹈",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/easterndance",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/rangerpose1r",
+      "zh": {
+        "alias": "/戰隊演武正紅一式",
+        "shortAlias": "/正紅一式"
+      },
+      "en": {
+        "alias": "/redrangerposea",
+        "shortAlias": "/rrpa"
+      },
+      "ja": {
+        "alias": "/rangerposered1",
+        "shortAlias": "/rposered1"
+      }
+    },
+    {
+      "baseCommand": "/rangerpose2r",
+      "zh": {
+        "alias": "/戰隊演武正黑二式",
+        "shortAlias": "/正黑二式"
+      },
+      "en": {
+        "alias": "/blackrangerposea",
+        "shortAlias": "/brpa"
+      },
+      "ja": {
+        "alias": "/rangerposeblack1",
+        "shortAlias": "/rposeblack1"
+      }
+    },
+    {
+      "baseCommand": "/rangerpose3r",
+      "zh": {
+        "alias": "/戰隊演武正黃三式",
+        "shortAlias": "/正黃三式"
+      },
+      "en": {
+        "alias": "/yellowrangerposea",
+        "shortAlias": "/yrpa"
+      },
+      "ja": {
+        "alias": "/rangerposeyellow1",
+        "shortAlias": "/rposeyellow1"
+      }
+    },
+    {
+      "baseCommand": "/wink",
+      "zh": {
+        "alias": "/右飛眼",
+        "shortAlias": "/飛眼"
+      },
+      "en": {
+        "alias": "/rightwink",
+        "shortAlias": "/wink"
+      },
+      "ja": {
+        "alias": "/rightwink",
+        "shortAlias": "/wink"
+      }
+    },
+    {
+      "baseCommand": "/rangerpose1l",
+      "zh": {
+        "alias": "/戰隊演武逆紅一式",
+        "shortAlias": "/逆紅一式"
+      },
+      "en": {
+        "alias": "/redrangerposeb",
+        "shortAlias": "/rrpb"
+      },
+      "ja": {
+        "alias": "/rangerposered2",
+        "shortAlias": "/rposered2"
+      }
+    },
+    {
+      "baseCommand": "/rangerpose2l",
+      "zh": {
+        "alias": "/戰隊演武逆黑二式",
+        "shortAlias": "/逆黑二式"
+      },
+      "en": {
+        "alias": "/blackrangerposeb",
+        "shortAlias": "/brpb"
+      },
+      "ja": {
+        "alias": "/rangerposeblack2",
+        "shortAlias": "/rposeblack2"
+      }
+    },
+    {
+      "baseCommand": "/rangerpose3l",
+      "zh": {
+        "alias": "/戰隊演武逆黃三式",
+        "shortAlias": "/逆黃三式"
+      },
+      "en": {
+        "alias": "/yellowrangerposeb",
+        "shortAlias": "/yrpb"
+      },
+      "ja": {
+        "alias": "/rangerposeyellow2",
+        "shortAlias": "/rposeyellow2"
+      }
+    },
+    {
+      "baseCommand": "/facepalm",
+      "zh": {
+        "alias": "/捂臉",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/facepalm",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/zantetsuken",
+      "zh": {
+        "alias": "/斬鐵劍",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/zantetsuken",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/flex",
+      "zh": {
+        "alias": "/肉體之美",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/flex",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/respect",
+      "zh": {
+        "alias": "/默哀",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/respect",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/sneer",
+      "zh": {
+        "alias": "/陰險",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/sneer",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/prettyplease",
+      "zh": {
+        "alias": "/撒嬌",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/prettyplease",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/playdead",
+      "zh": {
+        "alias": "/裝死",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/playdead",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/iceheart",
+      "zh": {
+        "alias": "/寒冰的幻想",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/iceheart",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/moonlift",
+      "zh": {
+        "alias": "/日月之舞",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/moonlift",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/dote",
+      "zh": {
+        "alias": "/表達愛意",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/dote",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/spectacles",
+      "zh": {
+        "alias": "/托眼鏡",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/spectacles",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/songbird",
+      "zh": {
+        "alias": "/小黃鶯之舞",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/songbird",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/waterfloat",
+      "zh": {
+        "alias": "/浮水",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/waterfloat",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/waterflip",
+      "zh": {
+        "alias": "/水中翻跟斗",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/waterflip",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/puckerup",
+      "zh": {
+        "alias": "/嘟嘴",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/puckerup",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/powerup",
+      "zh": {
+        "alias": "/蓄力迸發",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/powerup",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/easternbow",
+      "zh": {
+        "alias": "/行東方禮",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/easternbow",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/squats",
+      "zh": {
+        "alias": "/深蹲",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/squats",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/pushups",
+      "zh": {
+        "alias": "/伏地挺身",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/pushups",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/situps",
+      "zh": {
+        "alias": "/仰臥起坐",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/situps",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/breathcontrol",
+      "zh": {
+        "alias": "/深呼吸",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/breathcontrol",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/converse",
+      "zh": {
+        "alias": "/說話",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/converse",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/concentrate",
+      "zh": {
+        "alias": "/認真",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/concentrate",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/disturbed",
+      "zh": {
+        "alias": "/困惑",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/disturbed",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/simper",
+      "zh": {
+        "alias": "/柔和",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/simper",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/beam",
+      "zh": {
+        "alias": "/滿足",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/beam",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/attention",
+      "zh": {
+        "alias": "/立正",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/attention",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/atease",
+      "zh": {
+        "alias": "/稍息",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/atease",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/box",
+      "zh": {
+        "alias": "/練拳",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/box",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/ritualprayer",
+      "zh": {
+        "alias": "/祝禱",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/ritualprayer",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/tremble",
+      "zh": {
+        "alias": "/害怕",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/tremble",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/winded",
+      "zh": {
+        "alias": "/單膝跪地",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/winded",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/aback",
+      "zh": {
+        "alias": "/大吃一驚",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/aback",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/greet",
+      "zh": {
+        "alias": "/打招呼",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/greet",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/boxstep",
+      "zh": {
+        "alias": "/方形步",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/boxstep",
+        "shortAlias": "/2legit"
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/sidestep",
+      "zh": {
+        "alias": "/側步",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/sidestep",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/ultima",
+      "zh": {
+        "alias": "/究極",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/ultima",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/yoldance",
+      "zh": {
+        "alias": "/胡鷹之舞",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/yoldance",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/splash",
+      "zh": {
+        "alias": "/撩水",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/splash",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/sweat",
+      "zh": {
+        "alias": "/好熱",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/sweat",
+        "shortAlias": "/tillyoubleed"
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/shiver",
+      "zh": {
+        "alias": "/好冷",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/shiver",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/elucidate",
+      "zh": {
+        "alias": "/說明",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/elucidate",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/ponder",
+      "zh": {
+        "alias": "/思索",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/ponder",
+        "shortAlias": "/makeyougohmmm"
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/leftwink",
+      "zh": {
+        "alias": "/左飛眼",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/leftwink",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/getfantasy",
+      "zh": {
+        "alias": "/幻想舞步",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/getfantasy",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/popotostep",
+      "zh": {
+        "alias": "/波波托步",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/popotostep",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/hum",
+      "zh": {
+        "alias": "/哼歌",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/hum",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/confirm",
+      "zh": {
+        "alias": "/確認",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/confirm",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/scheme",
+      "zh": {
+        "alias": "/說明計劃",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/scheme",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/endure",
+      "zh": {
+        "alias": "/忍耐",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/endure",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/tomestone",
+      "zh": {
+        "alias": "/神典石",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/tomestone",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/heeltoe",
+      "zh": {
+        "alias": "/趾踵步",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/heeltoe",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/goobbuedo",
+      "zh": {
+        "alias": "/古卜步",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/goobbuedo",
+        "shortAlias": "/mysterymachine"
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/gratuity",
+      "zh": {
+        "alias": "/心意",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/gratuity",
+        "shortAlias": "/makeithail"
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/fistpump",
+      "zh": {
+        "alias": "/振作精神",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/fistpump",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/reprimand",
+      "zh": {
+        "alias": "/提醒",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/reprimand",
+        "shortAlias": "/youknowyourname"
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/sabotender",
+      "zh": {
+        "alias": "/優雅仙人掌",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/sabotender",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/mandervillemambo",
+      "zh": {
+        "alias": "/紳士舞步",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/mandervillemambo",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/laliho",
+      "zh": {
+        "alias": "/啦哩吼",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/laliho",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/simulationm",
+      "zh": {
+        "alias": "/歐米茄M架勢",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/simulationm",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/simulationf",
+      "zh": {
+        "alias": "/歐米茄F架勢",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/simulationf",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/toast",
+      "zh": {
+        "alias": "/乾杯",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/toast",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/lean",
+      "zh": {
+        "alias": "/背靠",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/lean",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/headache",
+      "zh": {
+        "alias": "/頭痛",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/headache",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/snap",
+      "zh": {
+        "alias": "/彈指",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/snap",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/breakfast",
+      "zh": {
+        "alias": "/吃麵包",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/breakfast",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/read",
+      "zh": {
+        "alias": "/看書",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/read",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/insist",
+      "zh": {
+        "alias": "/堅持主張",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/insist",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/consider",
+      "zh": {
+        "alias": "/疑問",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/consider",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/wasshoi",
+      "zh": {
+        "alias": "/嘿喲",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/wasshoi",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/flowershower",
+      "zh": {
+        "alias": "/花雨",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/flowershower",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/flamedance",
+      "zh": {
+        "alias": "/烈焰之舞",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/flamedance",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/highfive",
+      "zh": {
+        "alias": "/擊掌",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/highfive",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/guard",
+      "zh": {
+        "alias": "/巡視",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/guard",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/malevolence",
+      "zh": {
+        "alias": "/詛咒",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/malevolence",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/beesknees",
+      "zh": {
+        "alias": "/蜜蜂之舞",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/beesknees",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/lalihop",
+      "zh": {
+        "alias": "/啦哩吼舞",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/lalihop",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/eatriceball",
+      "zh": {
+        "alias": "/吃飯團",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/eatriceball",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/eatapple",
+      "zh": {
+        "alias": "/吃蘋果",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/eatapple",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/wringhands",
+      "zh": {
+        "alias": "/搓手",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/wringhands",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/sweep",
+      "zh": {
+        "alias": "/掃地",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/sweep",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/paintblack",
+      "zh": {
+        "alias": "/黑色陸行鳥之筆",
+        "shortAlias": "/塗黑"
+      },
+      "en": {
+        "alias": "/paintblack",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/paintred",
+      "zh": {
+        "alias": "/紅色陸行鳥之筆",
+        "shortAlias": "/塗紅"
+      },
+      "en": {
+        "alias": "/paintred",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/paintyellow",
+      "zh": {
+        "alias": "/黃色陸行鳥之筆",
+        "shortAlias": "/塗黃"
+      },
+      "en": {
+        "alias": "/paintyellow",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/paintblue",
+      "zh": {
+        "alias": "/藍色陸行鳥之筆",
+        "shortAlias": "/塗藍"
+      },
+      "en": {
+        "alias": "/paintblue",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/fakesmile",
+      "zh": {
+        "alias": "/假笑",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/fakesmile",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/pantomime",
+      "zh": {
+        "alias": "/默劇",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/pantomime",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/vexed",
+      "zh": {
+        "alias": "/不解",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/vexed",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/shush",
+      "zh": {
+        "alias": "/噓",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/shush",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/eatpizza",
+      "zh": {
+        "alias": "/吃披薩",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/eatpizza",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/clutchhead",
+      "zh": {
+        "alias": "/抱頭",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/clutchhead",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/eatchocolate",
+      "zh": {
+        "alias": "/吃戀人巧克力",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/eatchocolate",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/eategg",
+      "zh": {
+        "alias": "/吃水煮蛋",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/eategg",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/content",
+      "zh": {
+        "alias": "/幸福",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/content",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/sheathe",
+      "zh": {
+        "alias": "/收回武器",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/sheathe",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/draw",
+      "zh": {
+        "alias": "/亮出武器",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/draw",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/tea",
+      "zh": {
+        "alias": "/飲用紅茶",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/tea",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/determined",
+      "zh": {
+        "alias": "/幹勁十足",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/determined",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/showright",
+      "zh": {
+        "alias": "/展現右側",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/showright",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/showleft",
+      "zh": {
+        "alias": "/展現左側",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/showleft",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/deride",
+      "zh": {
+        "alias": "/叛逆精神",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/deride",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/wow",
+      "zh": {
+        "alias": "/兩眼放光",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/wow",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/eatpumpkincookie",
+      "zh": {
+        "alias": "/吃南瓜餅乾",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/eatpumpkincookie",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/spirit",
+      "zh": {
+        "alias": "/觀戰",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/spirit",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/magictrick",
+      "zh": {
+        "alias": "/魔術",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/magictrick",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/littleladiesdance",
+      "zh": {
+        "alias": "/公主之舞",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/littleladiesdance",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/linkpearl",
+      "zh": {
+        "alias": "/通訊珠",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/linkpearl",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/earwiggle",
+      "zh": {
+        "alias": "/搖兔兔耳",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/earwiggle",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/frighten",
+      "zh": {
+        "alias": "/嚇唬人",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/frighten",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/adventoflight",
+      "zh": {
+        "alias": "/威光降臨",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/adventoflight",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/jumpforjoy1",
+      "zh": {
+        "alias": "/雀躍1",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/jumpforjoy1",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/jumpforjoy2",
+      "zh": {
+        "alias": "/雀躍2",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/jumpforjoy2",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/jumpforjoy3",
+      "zh": {
+        "alias": "/雀躍3",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/jumpforjoy3",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/jumpforjoy4",
+      "zh": {
+        "alias": "/雀躍4",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/jumpforjoy4",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/jumpforjoy5",
+      "zh": {
+        "alias": "/雀躍5",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/jumpforjoy5",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/handtoheart",
+      "zh": {
+        "alias": "/手撫胸",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/handtoheart",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/cheeronbright",
+      "zh": {
+        "alias": "/聲援小白",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/cheeronbright",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/cheerwaveviolet",
+      "zh": {
+        "alias": "/聲援小紫",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/cheerwaveviolet",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/cheerjumpgreen",
+      "zh": {
+        "alias": "/聲援小綠",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/cheerjumpgreen",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/allsaintscharm",
+      "zh": {
+        "alias": "/守護天節的魔咒",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/allsaintscharm",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/lophop",
+      "zh": {
+        "alias": "/兔兔舞",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/lophop",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/reference",
+      "zh": {
+        "alias": "/比對文獻",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/reference",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/eatchicken",
+      "zh": {
+        "alias": "/吃炸雞",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/eatchicken",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/sundering",
+      "zh": {
+        "alias": "/眾生離絕",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/sundering",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/slump",
+      "zh": {
+        "alias": "/垂頭喪氣",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/slump",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/loveheart",
+      "zh": {
+        "alias": "/比心",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/loveheart",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/humbletriumph",
+      "zh": {
+        "alias": "/得意洋洋",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/humbletriumph",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/victoryreveal",
+      "zh": {
+        "alias": "/大獲全勝",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/victoryreveal",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/fryegg",
+      "zh": {
+        "alias": "/煎蛋",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/fryegg",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    },
+    {
+      "baseCommand": "/uchiwasshoi",
+      "zh": {
+        "alias": "/扇大團扇",
+        "shortAlias": ""
+      },
+      "en": {
+        "alias": "/uchiwasshoi",
+        "shortAlias": ""
+      },
+      "ja": {
+        "alias": "",
+        "shortAlias": ""
+      }
+    }
+  ],
+  "craftActions": [
+    {
+      "zh": "製作",
+      "en": "Basic Synthesis",
+      "ja": "作業"
+    },
+    {
+      "zh": "加工",
+      "en": "Basic Touch",
+      "ja": "加工"
+    },
+    {
+      "zh": "精修",
+      "en": "Master's Mend",
+      "ja": "マスターズメンド"
+    },
+    {
+      "zh": "中級加工",
+      "en": "Standard Touch",
+      "ja": "中級加工"
+    },
+    {
+      "zh": "精修II",
+      "en": "Master's Mend II",
+      "ja": "マスターズメンドII"
+    },
+    {
+      "zh": "風之印記",
+      "en": "Brand of Wind",
+      "ja": "ブランド・オブ・ウィンド"
+    },
+    {
+      "zh": "中級製作",
+      "en": "Standard Synthesis",
+      "ja": "中級作業"
+    },
+    {
+      "zh": "上級加工",
+      "en": "Advanced Touch",
+      "ja": "上級加工"
+    },
+    {
+      "zh": "比爾格的祝福",
+      "en": "Byregot's Blessing",
+      "ja": "ビエルゴの祝福"
+    },
+    {
+      "zh": "觀察",
+      "en": "Observe",
+      "ja": "経過観察"
+    },
+    {
+      "zh": "火之印記",
+      "en": "Brand of Fire",
+      "ja": "ブランド・オブ・ファイア"
+    },
+    {
+      "zh": "高速製作",
+      "en": "Rapid Synthesis",
+      "ja": "突貫作業"
+    },
+    {
+      "zh": "冰之印記",
+      "en": "Brand of Ice",
+      "ja": "ブランド・オブ・アイス"
+    },
+    {
+      "zh": "漸進",
+      "en": "Piece by Piece",
+      "ja": "ピース・バイ・ピース"
+    },
+    {
+      "zh": "土之印記",
+      "en": "Brand of Earth",
+      "ja": "ブランド・オブ・アース"
+    },
+    {
+      "zh": "模範製作",
+      "en": "Careful Synthesis",
+      "ja": "模範作業"
+    },
+    {
+      "zh": "雷之印記",
+      "en": "Brand of Lightning",
+      "ja": "ブランド・オブ・ライトニング"
+    },
+    {
+      "zh": "模範製作II",
+      "en": "Careful Synthesis II",
+      "ja": "模範作業II"
+    },
+    {
+      "zh": "堅實製作",
+      "en": "Flawless Synthesis",
+      "ja": "堅実作業"
+    },
+    {
+      "zh": "水之印記",
+      "en": "Brand of Water",
+      "ja": "ブランド・オブ・ウォーター"
+    },
+    {
+      "zh": "秘訣",
+      "en": "Tricks of the Trade",
+      "ja": "秘訣"
+    },
+    {
+      "zh": "倉促",
+      "en": "Hasty Touch",
+      "ja": "ヘイスティタッチ"
+    },
+    {
+      "zh": "比爾格的技巧",
+      "en": "Byregot's Brow",
+      "ja": "ビエルゴの技巧"
+    },
+    {
+      "zh": "集中加工",
+      "en": "Precise Touch",
+      "ja": "集中加工"
+    },
+    {
+      "zh": "堅信",
+      "en": "Muscle Memory",
+      "ja": "確信"
+    },
+    {
+      "zh": "革新",
+      "en": "Innovative Touch",
+      "ja": "イノベイティブタッチ"
+    },
+    {
+      "zh": "比爾格的奇蹟",
+      "en": "Byregot's Miracle",
+      "ja": "ビエルゴの奇跡"
+    },
+    {
+      "zh": "妮美雅的紡車",
+      "en": "Nymeia's Wheel",
+      "ja": "ニメーヤの紡車"
+    },
+    {
+      "zh": "匠心獨具",
+      "en": "Trained Hand",
+      "ja": "匠の技"
+    },
+    {
+      "zh": "稱心",
+      "en": "Satisfaction",
+      "ja": "会心の仕事"
+    },
+    {
+      "zh": "收尾",
+      "en": "Finishing Touches",
+      "ja": "フィニッシュワーク"
+    },
+    {
+      "zh": "堅實的心得",
+      "en": "Maker's Mark",
+      "ja": "堅実の心得"
+    },
+    {
+      "zh": "木工師之魂",
+      "en": "Heart of the Carpenter",
+      "ja": "木工師の魂"
+    },
+    {
+      "zh": "鍛造師之魂",
+      "en": "Heart of the Blacksmith",
+      "ja": "鍛冶師の魂"
+    },
+    {
+      "zh": "甲冑師之魂",
+      "en": "Heart of the Armorer",
+      "ja": "甲冑師の魂"
+    },
+    {
+      "zh": "金工師之魂",
+      "en": "Heart of the Goldsmith",
+      "ja": "彫金師の魂"
+    },
+    {
+      "zh": "皮革師之魂",
+      "en": "Heart of the Leatherworker",
+      "ja": "革細工師の魂"
+    },
+    {
+      "zh": "裁縫師之魂",
+      "en": "Heart of the Weaver",
+      "ja": "裁縫師の魂"
+    },
+    {
+      "zh": "鍊金術師之魂",
+      "en": "Heart of the Alchemist",
+      "ja": "錬金術師の魂"
+    },
+    {
+      "zh": "烹調師之魂",
+      "en": "Heart of the Culinarian",
+      "ja": "調理師の魂"
+    },
+    {
+      "zh": "工作小調",
+      "en": "Whistle While You Work",
+      "ja": "仕事唄"
+    },
+    {
+      "zh": "倉促II",
+      "en": "Hasty Touch II",
+      "ja": "ヘイスティタッチII"
+    },
+    {
+      "zh": "高速製作II",
+      "en": "Rapid Synthesis II",
+      "ja": "突貫作業II"
+    },
+    {
+      "zh": "專心加工",
+      "en": "Patient Touch",
+      "ja": "専心加工"
+    },
+    {
+      "zh": "儉約加工",
+      "en": "Prudent Touch",
+      "ja": "倹約加工"
+    },
+    {
+      "zh": "注視製作",
+      "en": "Focused Synthesis",
+      "ja": "注視作業"
+    },
+    {
+      "zh": "注視加工",
+      "en": "Focused Touch",
+      "ja": "注視加工"
+    },
+    {
+      "zh": "起始準備",
+      "en": "Initial Preparations",
+      "ja": "初手仕込"
+    },
+    {
+      "zh": "專精絕技：鞏固",
+      "en": "Specialty: Reinforce",
+      "ja": "マイスターの切札：再生"
+    },
+    {
+      "zh": "專精絕技：安穩",
+      "en": "Specialty: Refurbish",
+      "ja": "マイスターの切札：静穏"
+    },
+    {
+      "zh": "專精絕技：閒靜",
+      "en": "Specialty: Reflect",
+      "ja": "マイスターの切札：真価"
+    },
+    {
+      "zh": "工匠的神速技巧",
+      "en": "Trained Eye",
+      "ja": "匠の早業"
+    },
+    {
+      "zh": "工匠的苦行",
+      "en": "Trained Instinct",
+      "ja": "匠の荒業"
+    },
+    {
+      "zh": "坯料加工",
+      "en": "Preparatory Touch",
+      "ja": "下地加工"
+    },
+    {
+      "zh": "高速製作III",
+      "en": "Rapid Synthesis III",
+      "ja": "突貫作業III"
+    },
+    {
+      "zh": "集中製作",
+      "en": "Intensive Synthesis",
+      "ja": "集中作業"
+    },
+    {
+      "zh": "精密製作",
+      "en": "Delicate Synthesis",
+      "ja": "精密作業"
+    },
+    {
+      "zh": "元素之印記",
+      "en": "Brand of the Elements",
+      "ja": "ブランド・オブ・エレメンタル"
+    },
+    {
+      "zh": "閒靜",
+      "en": "Reflect",
+      "ja": "真価"
+    },
+    {
+      "zh": "設計變動",
+      "en": "Careful Observation",
+      "ja": "設計変更"
+    },
+    {
+      "zh": "坯料製作",
+      "en": "Groundwork",
+      "ja": "下地作業"
+    },
+    {
+      "zh": "專心致志",
+      "en": "Heart and Soul",
+      "ja": "一心不乱"
+    },
+    {
+      "zh": "儉約製作",
+      "en": "Prudent Synthesis",
+      "ja": "倹約作業"
+    },
+    {
+      "zh": "工匠的神技",
+      "en": "Trained Finesse",
+      "ja": "匠の神業"
+    },
+    {
+      "zh": "精煉加工",
+      "en": "Refined Touch",
+      "ja": "洗練加工"
+    },
+    {
+      "zh": "冒進",
+      "en": "Daring Touch",
+      "ja": "デアリングタッチ"
+    },
+    {
+      "zh": "快速改革",
+      "en": "Quick Innovation",
+      "ja": "クイックイノベーション"
+    },
+    {
+      "zh": "巧奪天工",
+      "en": "Immaculate Mend",
+      "ja": "パーフェクトメンド"
+    },
+    {
+      "zh": "工匠的絕技",
+      "en": "Trained Perfection",
+      "ja": "匠の絶技"
+    }
+  ]
+}
