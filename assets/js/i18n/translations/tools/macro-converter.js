@@ -27,7 +27,7 @@ const MacroConverterTranslations = {
         macro_converter_paste: '貼上',
 
         // Messages
-        macro_converter_warning: '部分指令無法翻譯（以橘色標記）',
+        macro_converter_warning: '部分指令無法翻譯',
         macro_converter_loading: '載入翻譯資料中...',
         macro_converter_load_error: '載入翻譯資料失敗，請重新整理頁面再試。',
         macro_converter_copied: '已複製到剪貼簿',
@@ -61,7 +61,7 @@ const MacroConverterTranslations = {
         macro_converter_paste: 'Paste',
 
         // Messages
-        macro_converter_warning: 'Some commands could not be translated (marked in orange)',
+        macro_converter_warning: 'Some commands could not be translated',
         macro_converter_loading: 'Loading translation data...',
         macro_converter_load_error: 'Failed to load translation data. Please refresh the page.',
         macro_converter_copied: 'Copied to clipboard',
@@ -95,7 +95,7 @@ const MacroConverterTranslations = {
         macro_converter_paste: '貼り付け',
 
         // Messages
-        macro_converter_warning: '一部のコマンドは翻訳できませんでした（オレンジ色で表示）',
+        macro_converter_warning: '一部のコマンドは翻訳できませんでした',
         macro_converter_loading: '翻訳データを読み込み中...',
         macro_converter_load_error: '翻訳データの読み込みに失敗しました。ページを更新してください。',
         macro_converter_copied: 'クリップボードにコピーしました',

@@ -141,15 +141,8 @@ class MacroConverter {
      * @param {object[]} results - Array of conversion results
      */
     displayResults(results) {
-        const outputLines = [];
-        let hasWarnings = false;
-
-        results.forEach((result) => {
-            outputLines.push(result.output);
-            if (result.untranslatable.length > 0) {
-                hasWarnings = true;
-            }
-        });
+        const outputLines = results.map(result => result.output);
+        const hasWarnings = results.some(result => result.untranslatable.length > 0);
 
         // Set textarea value
         this.elements.outputMacro.value = outputLines.join('\n');
