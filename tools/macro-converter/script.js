@@ -52,23 +52,23 @@ class MacroConverter {
     }
 
     /**
+     * Sets the target language in the dropdown.
+     * @param {string} lang The language code.
+     */
+    _setTargetLang(lang) {
+        if (lang && this.elements.targetLang) {
+            this.elements.targetLang.value = lang;
+        }
+    }
+
+    /**
      * Sync target language with i18n language
      */
     syncTargetLangWithI18n() {
         if (window.i18n) {
-            // Set initial target language based on current i18n language
-            const currentLang = window.i18n.getCurrentLanguage();
-            if (currentLang && this.elements.targetLang) {
-                this.elements.targetLang.value = currentLang;
-            }
-
-            // Listen for language changes
-            window.i18n.onLanguageChange(() => {
-                const newLang = window.i18n.getCurrentLanguage();
-                if (newLang && this.elements.targetLang) {
-                    this.elements.targetLang.value = newLang;
-                }
-            });
+            // Set initial target language and listen for changes
+            this._setTargetLang(window.i18n.getCurrentLanguage());
+            window.i18n.onLanguageChange((newLang) => this._setTargetLang(newLang));
         }
     }
 
@@ -144,9 +144,7 @@ class MacroConverter {
         const container = this.elements.outputMacro;
 
         // Clear existing content safely
-        while (container.firstChild) {
-            container.removeChild(container.firstChild);
-        }
+        container.replaceChildren();
 
         let hasWarnings = false;
 
@@ -184,9 +182,7 @@ class MacroConverter {
      * Clear the output area
      */
     clearOutput() {
-        while (this.elements.outputMacro.firstChild) {
-            this.elements.outputMacro.removeChild(this.elements.outputMacro.firstChild);
-        }
+        this.elements.outputMacro.replaceChildren();
         this.elements.warningMessage.style.display = 'none';
     }
 
@@ -278,7 +274,6 @@ class MacroConverter {
 }
 
 // Initialize when DOM is ready
-let macroConverter;
 document.addEventListener('DOMContentLoaded', () => {
-    macroConverter = new MacroConverter();
+    new MacroConverter();
 });

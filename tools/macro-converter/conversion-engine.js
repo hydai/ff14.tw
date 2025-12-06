@@ -17,6 +17,13 @@ class ConversionEngine {
         ja: '日本語'
     };
 
+    // Pre-computed list of all action commands for efficient lookup
+    static ALL_ACTION_COMMANDS = [
+        ...ConversionEngine.ACTION_COMMANDS.zh,
+        ...ConversionEngine.ACTION_COMMANDS.en,
+        ...ConversionEngine.ACTION_COMMANDS.ja
+    ];
+
     constructor(mappings) {
         this.mappings = mappings;
         this.textCommandLookup = this.buildTextCommandLookup();
@@ -117,9 +124,9 @@ class ConversionEngine {
             type: 'unknown',
             command: null,
             argument: null,
+            wasQuoted: false,
             waitTime: null,
             rawLine: line,
-            prefix: '',
             suffix: ''
         };
 
@@ -151,12 +158,13 @@ class ConversionEngine {
 
         // Match command pattern: /command "argument" or /command argument
         // Handle quoted arguments with double quotes
-        const cmdMatch = workingLine.match(/^(\/[^\s"]+)(?:\s+"([^"]+)"|\s+([^\s<]+))?(.*)$/);
+        const cmdMatch = workingLine.match(/^(\/[^\s"]+)(?:\s+"([^"]+)"|\s+([^\s"]+))?(.*)$/);
 
         if (cmdMatch) {
             result.type = 'command';
             result.command = cmdMatch[1];
             result.argument = cmdMatch[2] || cmdMatch[3] || null;
+            result.wasQuoted = !!cmdMatch[2];
             result.suffix = (cmdMatch[4] || '').trim();
         }
 
@@ -170,12 +178,7 @@ class ConversionEngine {
      */
     isActionCommand(command) {
         const cmdLower = command.toLowerCase();
-        const allActionCmds = [
-            ...ConversionEngine.ACTION_COMMANDS.zh,
-            ...ConversionEngine.ACTION_COMMANDS.en,
-            ...ConversionEngine.ACTION_COMMANDS.ja
-        ];
-        return allActionCmds.includes(cmdLower);
+        return ConversionEngine.ALL_ACTION_COMMANDS.includes(cmdLower);
     }
 
     /**
@@ -270,8 +273,12 @@ class ConversionEngine {
                     result.untranslatable.push(parsed.argument);
                 }
             } else {
-                // Non-action command argument - keep as is
-                translatedParts.push(`"${parsed.argument}"`);
+                // Non-action command argument - preserve original quoting style
+                if (parsed.wasQuoted) {
+                    translatedParts.push(`"${parsed.argument}"`);
+                } else {
+                    translatedParts.push(parsed.argument);
+                }
             }
         }
 

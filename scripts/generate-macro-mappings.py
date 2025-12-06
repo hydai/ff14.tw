@@ -8,7 +8,6 @@ import csv
 import json
 from pathlib import Path
 from datetime import datetime
-import re
 
 # Project root
 PROJECT_ROOT = Path(__file__).parent.parent
@@ -40,7 +39,6 @@ def parse_csv_rows(filepath):
     # Parse as CSV
     reader = csv.reader(lines)
     header = None
-    skip_next = 0
 
     for i, row in enumerate(reader):
         if i == 0:
