@@ -3,31 +3,28 @@
  * Main controller for the macro conversion UI
  */
 class MacroConverter {
-    static DEBOUNCE_DELAY = 300;
     static DATA_FILE = '../../data/macro-mappings.json';
+    static DEFAULT_EXAMPLE = `/ac "精修" <wait.3>
+/ac "Basic Synthesis" <wait.3>
+/アクション "マスターズメンド" <wait.3>
+/技能 "加工" <wait.2>`;
 
     constructor() {
         this.mappings = null;
         this.engine = null;
-        this.debounceTimeout = null;
-        this.lastDetectedLang = null;
 
         // Cache DOM elements
         this.elements = {
             inputMacro: document.getElementById('inputMacro'),
             outputMacro: document.getElementById('outputMacro'),
-            sourceLang: document.getElementById('sourceLang'),
             targetLang: document.getElementById('targetLang'),
             convertBtn: document.getElementById('convertBtn'),
             copyOutput: document.getElementById('copyOutput'),
             clearInput: document.getElementById('clearInput'),
             pasteInput: document.getElementById('pasteInput'),
-            swapLangs: document.getElementById('swapLangs'),
             warningMessage: document.getElementById('warningMessage'),
             loadingIndicator: document.getElementById('loadingIndicator'),
-            errorMessage: document.getElementById('errorMessage'),
-            detectedLang: document.getElementById('detectedLang'),
-            detectedLangName: document.getElementById('detectedLangName')
+            errorMessage: document.getElementById('errorMessage')
         };
 
         this.init();
@@ -44,12 +41,43 @@ class MacroConverter {
             this.engine = new ConversionEngine(this.mappings);
             this.bindEvents();
             this.setOutputPlaceholder();
+            this.syncTargetLangWithI18n();
+            this.loadDefaultExample();
         } catch (error) {
             console.error('Initialization failed:', error);
             this.showError(this.getText('macro_converter_load_error') || '載入翻譯資料失敗，請重新整理頁面再試。');
         } finally {
             this.showLoading(false);
         }
+    }
+
+    /**
+     * Sync target language with i18n language
+     */
+    syncTargetLangWithI18n() {
+        if (window.i18n) {
+            // Set initial target language based on current i18n language
+            const currentLang = window.i18n.getCurrentLanguage();
+            if (currentLang && this.elements.targetLang) {
+                this.elements.targetLang.value = currentLang;
+            }
+
+            // Listen for language changes
+            window.i18n.onLanguageChange(() => {
+                const newLang = window.i18n.getCurrentLanguage();
+                if (newLang && this.elements.targetLang) {
+                    this.elements.targetLang.value = newLang;
+                }
+            });
+        }
+    }
+
+    /**
+     * Load default example and convert
+     */
+    loadDefaultExample() {
+        this.elements.inputMacro.value = MacroConverter.DEFAULT_EXAMPLE;
+        this.convert();
     }
 
     /**
@@ -79,14 +107,6 @@ class MacroConverter {
         // Paste input
         this.elements.pasteInput.addEventListener('click', () => this.pasteFromClipboard());
 
-        // Swap languages
-        this.elements.swapLangs.addEventListener('click', () => this.swapLanguages());
-
-        // Auto-detect on input change (debounced)
-        this.elements.inputMacro.addEventListener('input', () => {
-            this.debouncedAutoDetect();
-        });
-
         // Keyboard shortcut: Ctrl/Cmd + Enter to convert
         this.elements.inputMacro.addEventListener('keydown', (e) => {
             if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
@@ -94,49 +114,10 @@ class MacroConverter {
                 this.convert();
             }
         });
-
-        // Language change events
-        this.elements.sourceLang.addEventListener('change', () => {
-            if (this.elements.sourceLang.value !== 'auto') {
-                this.elements.detectedLang.style.display = 'none';
-            }
-        });
     }
 
     /**
-     * Debounced auto-detect language
-     */
-    debouncedAutoDetect() {
-        if (this.debounceTimeout) {
-            clearTimeout(this.debounceTimeout);
-        }
-
-        this.debounceTimeout = setTimeout(() => {
-            this.autoDetectLanguage();
-        }, MacroConverter.DEBOUNCE_DELAY);
-    }
-
-    /**
-     * Auto-detect language of input
-     */
-    autoDetectLanguage() {
-        const input = this.elements.inputMacro.value;
-
-        if (!input.trim() || this.elements.sourceLang.value !== 'auto') {
-            this.elements.detectedLang.style.display = 'none';
-            return;
-        }
-
-        const detectedLang = this.engine.detectLanguage(input);
-        this.lastDetectedLang = detectedLang;
-
-        // Show detected language
-        this.elements.detectedLangName.textContent = this.engine.getLanguageName(detectedLang);
-        this.elements.detectedLang.style.display = 'flex';
-    }
-
-    /**
-     * Perform the conversion
+     * Perform the conversion (auto-detect source language per token)
      */
     convert() {
         const input = this.elements.inputMacro.value;
@@ -146,21 +127,10 @@ class MacroConverter {
             return;
         }
 
-        // Determine source language
-        let sourceLang = this.elements.sourceLang.value;
-        if (sourceLang === 'auto') {
-            sourceLang = this.engine.detectLanguage(input);
-            this.lastDetectedLang = sourceLang;
-
-            // Update detected language display
-            this.elements.detectedLangName.textContent = this.engine.getLanguageName(sourceLang);
-            this.elements.detectedLang.style.display = 'flex';
-        }
-
         const targetLang = this.elements.targetLang.value;
 
-        // Perform conversion
-        const results = this.engine.convert(input, sourceLang, targetLang);
+        // Perform conversion (source language is auto-detected per token)
+        const results = this.engine.convert(input, targetLang);
 
         // Display results
         this.displayResults(results);
@@ -226,7 +196,6 @@ class MacroConverter {
     clearInput() {
         this.elements.inputMacro.value = '';
         this.clearOutput();
-        this.elements.detectedLang.style.display = 'none';
     }
 
     /**
@@ -236,7 +205,6 @@ class MacroConverter {
         try {
             const text = await navigator.clipboard.readText();
             this.elements.inputMacro.value = text;
-            this.autoDetectLanguage();
         } catch (err) {
             console.error('Failed to read clipboard:', err);
             FF14Utils.showToast(this.getText('macro_converter_paste_error') || '無法讀取剪貼簿', 'error');
@@ -267,25 +235,6 @@ class MacroConverter {
         } catch (err) {
             console.error('Failed to copy:', err);
             FF14Utils.showToast(this.getText('macro_converter_copy_error') || '複製失敗', 'error');
-        }
-    }
-
-    /**
-     * Swap source and target languages
-     */
-    swapLanguages() {
-        const sourceVal = this.elements.sourceLang.value;
-        const targetVal = this.elements.targetLang.value;
-
-        // If source is auto, use detected language
-        const actualSource = sourceVal === 'auto' ? (this.lastDetectedLang || 'zh') : sourceVal;
-
-        this.elements.sourceLang.value = targetVal;
-        this.elements.targetLang.value = actualSource;
-
-        // Hide detected language indicator since we're now using explicit source
-        if (targetVal !== 'auto') {
-            this.elements.detectedLang.style.display = 'none';
         }
     }
 

@@ -11,11 +11,9 @@ const MacroConverterTranslations = {
         macro_converter_header: '巨集轉換器',
         macro_converter_desc: '將 FF14 巨集在繁體中文、英文、日文之間轉換',
 
-        // Language selectors
-        macro_converter_source_lang: '來源語言',
+        // Language selector
         macro_converter_target_lang: '目標語言',
-        macro_converter_auto_detect: '自動偵測',
-        macro_converter_detected: '偵測到',
+        macro_converter_auto_detect_hint: '自動偵測每個指令的語言並轉換',
 
         // Input/Output
         macro_converter_input: '輸入巨集',
@@ -47,11 +45,9 @@ const MacroConverterTranslations = {
         macro_converter_header: 'Macro Converter',
         macro_converter_desc: 'Convert FF14 macros between Traditional Chinese, English, and Japanese',
 
-        // Language selectors
-        macro_converter_source_lang: 'Source Language',
+        // Language selector
         macro_converter_target_lang: 'Target Language',
-        macro_converter_auto_detect: 'Auto Detect',
-        macro_converter_detected: 'Detected',
+        macro_converter_auto_detect_hint: 'Auto-detects each command\'s language and converts',
 
         // Input/Output
         macro_converter_input: 'Input Macro',
@@ -83,11 +79,9 @@ const MacroConverterTranslations = {
         macro_converter_header: 'マクロ変換ツール',
         macro_converter_desc: 'FF14マクロを繁体字中国語、英語、日本語間で変換',
 
-        // Language selectors
-        macro_converter_source_lang: '元の言語',
+        // Language selector
         macro_converter_target_lang: '変換先言語',
-        macro_converter_auto_detect: '自動検出',
-        macro_converter_detected: '検出済み',
+        macro_converter_auto_detect_hint: '各コマンドの言語を自動検出して変換',
 
         // Input/Output
         macro_converter_input: '入力マクロ',

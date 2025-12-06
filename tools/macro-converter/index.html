@@ -31,30 +31,17 @@
             </div>
 
             <div class="tool-content">
-                <!-- Language Selectors -->
+                <!-- Language Selector -->
                 <div class="language-selectors">
-                    <div class="form-group">
-                        <label for="sourceLang" data-i18n="macro_converter_source_lang">來源語言</label>
-                        <select id="sourceLang" class="form-control">
-                            <option value="auto" data-i18n="macro_converter_auto_detect">自動偵測</option>
+                    <div class="form-group target-lang-group">
+                        <label for="targetLang" data-i18n="macro_converter_target_lang">目標語言</label>
+                        <select id="targetLang" class="form-control">
                             <option value="zh">繁體中文</option>
                             <option value="en">English</option>
                             <option value="ja">日本語</option>
                         </select>
                     </div>
-
-                    <button class="btn btn-secondary swap-btn" id="swapLangs" aria-label="交換語言" title="交換語言">
-                        <span class="swap-icon">⇄</span>
-                    </button>
-
-                    <div class="form-group">
-                        <label for="targetLang" data-i18n="macro_converter_target_lang">目標語言</label>
-                        <select id="targetLang" class="form-control">
-                            <option value="zh">繁體中文</option>
-                            <option value="en" selected>English</option>
-                            <option value="ja">日本語</option>
-                        </select>
-                    </div>
+                    <p class="auto-detect-hint" data-i18n="macro_converter_auto_detect_hint">自動偵測每個指令的語言並轉換</p>
                 </div>
 
                 <!-- Macro Panels -->
@@ -62,12 +49,9 @@
                     <div class="macro-panel">
                         <div class="panel-header">
                             <label for="inputMacro" data-i18n="macro_converter_input">輸入巨集</label>
-                            <div class="detected-lang" id="detectedLang" style="display: none;">
-                                <span data-i18n="macro_converter_detected">偵測到</span>: <span id="detectedLangName"></span>
-                            </div>
                         </div>
                         <textarea id="inputMacro" class="form-control macro-textarea" rows="12"
-                            placeholder="/ac &quot;製作&quot; &lt;wait.3&gt;&#10;/ac &quot;加工&quot; &lt;wait.3&gt;&#10;/ac &quot;精修&quot; &lt;wait.3&gt;"></textarea>
+                            placeholder="/ac &quot;精修&quot; &lt;wait.3&gt;&#10;/ac &quot;Basic Synthesis&quot; &lt;wait.3&gt;&#10;/アクション &quot;マスターズメンド&quot; &lt;wait.3&gt;&#10;/技能 &quot;加工&quot; &lt;wait.2&gt;"></textarea>
                         <div class="panel-actions">
                             <button class="btn btn-secondary btn-sm" id="clearInput" data-i18n="macro_converter_clear">清除</button>
                             <button class="btn btn-secondary btn-sm" id="pasteInput" data-i18n="macro_converter_paste">貼上</button>
