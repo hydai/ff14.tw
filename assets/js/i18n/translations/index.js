@@ -42,6 +42,9 @@ const IndexTranslations = {
         tool_report_generator_title: '檢舉模板產生器',
         tool_report_generator_desc: '快速產生不當行為檢舉的模板文字，協助您進行申訴',
 
+        tool_macro_converter_title: '巨集轉換器',
+        tool_macro_converter_desc: '將 FF14 巨集在繁體中文、英文、日文之間轉換',
+
         tool_equipment_analyzer_title: '裝備分析器',
         tool_equipment_analyzer_desc: '分析裝備屬性和配裝建議，提供最佳配裝方案',
 
@@ -89,6 +92,9 @@ const IndexTranslations = {
         tool_report_generator_title: 'Report Generator',
         tool_report_generator_desc: 'Quickly generate report templates for reporting inappropriate behavior',
 
+        tool_macro_converter_title: 'Macro Converter',
+        tool_macro_converter_desc: 'Convert FF14 macros between Traditional Chinese, English, and Japanese',
+
         tool_equipment_analyzer_title: 'Equipment Analyzer',
         tool_equipment_analyzer_desc: 'Analyze equipment stats and provide optimal gear recommendations',
 
@@ -135,6 +141,9 @@ const IndexTranslations = {
 
         tool_report_generator_title: '通報テンプレート生成',
         tool_report_generator_desc: '不適切な行為の通報テンプレートを素早く作成',
+
+        tool_macro_converter_title: 'マクロ変換ツール',
+        tool_macro_converter_desc: 'FF14マクロを繁体字中国語、英語、日本語間で変換',
 
         tool_equipment_analyzer_title: '装備分析器',
         tool_equipment_analyzer_desc: '装備ステータスを分析し、最適な装備を提案',
