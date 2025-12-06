@@ -1,41 +1,35 @@
 /* Macro Converter Tool Styles */
 
-/* Language Selectors */
+/* Language Selector */
 .language-selectors {
     display: flex;
-    align-items: flex-end;
-    gap: 1rem;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
     margin-bottom: 2rem;
-    flex-wrap: wrap;
-    justify-content: center;
 }
 
 .language-selectors .form-group {
-    flex: 1;
-    min-width: 150px;
-    max-width: 200px;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
 }
 
 .language-selectors label {
-    display: block;
-    margin-bottom: 0.5rem;
     font-weight: 500;
     color: var(--text-secondary);
+    white-space: nowrap;
 }
 
-.swap-btn {
-    width: 48px;
-    height: 48px;
-    padding: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    margin-bottom: 0;
+.target-lang-group select {
+    min-width: 180px;
 }
 
-.swap-icon {
-    font-size: 1.5rem;
+.auto-detect-hint {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    opacity: 0.8;
+    margin: 0;
 }
 
 /* Macro Panels */
@@ -65,14 +59,6 @@
 .panel-header label {
     font-weight: 600;
     color: var(--text-primary);
-}
-
-.detected-lang {
-    font-size: 0.85rem;
-    color: var(--primary-color);
-    background: rgba(74, 144, 226, 0.1);
-    padding: 0.25rem 0.5rem;
-    border-radius: var(--border-radius-sm);
 }
 
 .macro-textarea {
@@ -179,10 +165,6 @@
     color: #ffb74d;
 }
 
-[data-theme="dark"] .detected-lang {
-    background: rgba(74, 144, 226, 0.15);
-}
-
 /* Empty output state */
 .output-display:empty::before {
     content: attr(data-placeholder);
@@ -214,18 +196,9 @@
 }
 
 @media (max-width: 480px) {
-    .language-selectors {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
     .language-selectors .form-group {
-        max-width: none;
-    }
-
-    .swap-btn {
-        align-self: center;
-        transform: rotate(90deg);
+        flex-direction: column;
+        gap: 0.5rem;
     }
 
     .macro-textarea,

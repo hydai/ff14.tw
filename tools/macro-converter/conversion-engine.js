@@ -72,53 +72,39 @@ class ConversionEngine {
     }
 
     /**
-     * Detect the language of a macro text
-     * @param {string} text - The macro text to analyze
-     * @returns {string} - Detected language code (zh, en, ja)
+     * Find a command in all languages
+     * @param {string} command - The command to find
+     * @returns {{ sourceLang: string, entry: object } | null}
      */
-    detectLanguage(text) {
-        const scores = { zh: 0, en: 0, ja: 0 };
-        const lines = text.split('\n').filter(line => line.trim());
-
-        for (const line of lines) {
-            // Check for Japanese-specific characters (hiragana/katakana)
-            if (/[\u3040-\u309f\u30a0-\u30ff]/.test(line)) {
-                scores.ja += 5;
-            }
-            // Check for CJK characters (could be zh or ja)
-            else if (/[\u4e00-\u9fff]/.test(line)) {
-                scores.zh += 3;
-            }
-
-            // Check for known commands and actions
-            const parsed = this.parseLine(line);
-
-            if (parsed.command) {
-                const cmdLower = parsed.command.toLowerCase();
-                for (const lang of ['zh', 'en', 'ja']) {
-                    if (this.textCommandLookup[lang][cmdLower]) {
-                        scores[lang] += 5;
-                    }
-                }
-            }
-
-            if (parsed.argument) {
-                const argLower = parsed.argument.toLowerCase();
-                for (const lang of ['zh', 'en', 'ja']) {
-                    if (this.craftActionLookup[lang][argLower]) {
-                        scores[lang] += 10;
-                    }
-                }
+    findCommandInAllLanguages(command) {
+        const cmdLower = command.toLowerCase();
+        for (const lang of ['zh', 'en', 'ja']) {
+            if (this.textCommandLookup[lang][cmdLower]) {
+                return {
+                    sourceLang: lang,
+                    entry: this.textCommandLookup[lang][cmdLower]
+                };
             }
         }
+        return null;
+    }
 
-        // Return the language with highest score, default to en if tied
-        const maxScore = Math.max(scores.zh, scores.en, scores.ja);
-        if (maxScore === 0) return 'en';
-
-        if (scores.ja === maxScore) return 'ja';
-        if (scores.zh === maxScore) return 'zh';
-        return 'en';
+    /**
+     * Find a craft action in all languages
+     * @param {string} actionName - The action name to find
+     * @returns {{ sourceLang: string, entry: object } | null}
+     */
+    findCraftActionInAllLanguages(actionName) {
+        const nameLower = actionName.toLowerCase();
+        for (const lang of ['zh', 'en', 'ja']) {
+            if (this.craftActionLookup[lang][nameLower]) {
+                return {
+                    sourceLang: lang,
+                    entry: this.craftActionLookup[lang][nameLower]
+                };
+            }
+        }
+        return null;
     }
 
     /**
@@ -178,12 +164,11 @@ class ConversionEngine {
     }
 
     /**
-     * Check if a command is an action command (/ac, /action, etc.)
+     * Check if a command is an action command (/ac, /action, etc.) in any language
      * @param {string} command - The command to check
-     * @param {string} lang - The language code
      * @returns {boolean}
      */
-    isActionCommand(command, lang) {
+    isActionCommand(command) {
         const cmdLower = command.toLowerCase();
         const allActionCmds = [
             ...ConversionEngine.ACTION_COMMANDS.zh,
@@ -194,71 +179,64 @@ class ConversionEngine {
     }
 
     /**
-     * Translate a command to target language
+     * Translate a command to target language (auto-detect source language)
      * @param {string} command - The command to translate
-     * @param {string} sourceLang - Source language code
      * @param {string} targetLang - Target language code
      * @returns {object} - { translated: string, found: boolean }
      */
-    translateCommand(command, sourceLang, targetLang) {
-        const cmdLower = command.toLowerCase();
-
-        // Check if it's an action command - translate to target's /ac
-        if (this.isActionCommand(command, sourceLang)) {
-            // Use /ac for all languages (it's universal)
+    translateCommand(command, targetLang) {
+        // Check if it's an action command - translate to /ac (universal)
+        if (this.isActionCommand(command)) {
             return { translated: '/ac', found: true };
         }
 
-        // Look up in text command table
-        const cmdEntry = this.textCommandLookup[sourceLang][cmdLower];
+        // Find the command in all languages
+        const found = this.findCommandInAllLanguages(command);
 
-        if (cmdEntry) {
+        if (found) {
             // Get target language alias
-            const targetAlias = cmdEntry[targetLang]?.alias;
+            const targetAlias = found.entry[targetLang]?.alias;
             if (targetAlias) {
                 return { translated: targetAlias, found: true };
             }
 
             // Fall back to base command
-            if (cmdEntry.baseCommand) {
-                return { translated: cmdEntry.baseCommand, found: true };
+            if (found.entry.baseCommand) {
+                return { translated: found.entry.baseCommand, found: true };
             }
         }
 
-        // Not found
+        // Not found - keep original
         return { translated: command, found: false };
     }
 
     /**
-     * Translate a craft action name to target language
+     * Translate a craft action name to target language (auto-detect source language)
      * @param {string} actionName - The action name to translate
-     * @param {string} sourceLang - Source language code
      * @param {string} targetLang - Target language code
      * @returns {object} - { translated: string, found: boolean }
      */
-    translateCraftAction(actionName, sourceLang, targetLang) {
-        const nameLower = actionName.toLowerCase();
-        const actionEntry = this.craftActionLookup[sourceLang][nameLower];
+    translateCraftAction(actionName, targetLang) {
+        const found = this.findCraftActionInAllLanguages(actionName);
 
-        if (actionEntry) {
-            const targetName = actionEntry[targetLang];
+        if (found) {
+            const targetName = found.entry[targetLang];
             if (targetName) {
                 return { translated: targetName, found: true };
             }
         }
 
-        // Not found
+        // Not found - keep original
         return { translated: actionName, found: false };
     }
 
     /**
-     * Translate a single line
+     * Translate a single line (auto-detect source language per token)
      * @param {string} line - The line to translate
-     * @param {string} sourceLang - Source language code
      * @param {string} targetLang - Target language code
      * @returns {object} - { output: string, untranslatable: string[] }
      */
-    translateLine(line, sourceLang, targetLang) {
+    translateLine(line, targetLang) {
         const result = {
             output: line,
             untranslatable: []
@@ -274,8 +252,8 @@ class ConversionEngine {
         // Build the translated line
         let translatedParts = [];
 
-        // Translate the command
-        const cmdResult = this.translateCommand(parsed.command, sourceLang, targetLang);
+        // Translate the command (auto-detect source language)
+        const cmdResult = this.translateCommand(parsed.command, targetLang);
         translatedParts.push(cmdResult.translated);
 
         if (!cmdResult.found && parsed.command) {
@@ -284,8 +262,8 @@ class ConversionEngine {
 
         // Translate the argument if it's an action command
         if (parsed.argument) {
-            if (this.isActionCommand(parsed.command, sourceLang)) {
-                const actionResult = this.translateCraftAction(parsed.argument, sourceLang, targetLang);
+            if (this.isActionCommand(parsed.command)) {
+                const actionResult = this.translateCraftAction(parsed.argument, targetLang);
                 translatedParts.push(`"${actionResult.translated}"`);
 
                 if (!actionResult.found) {
@@ -312,22 +290,14 @@ class ConversionEngine {
     }
 
     /**
-     * Convert a full macro text
+     * Convert a full macro text (auto-detect source language per line)
      * @param {string} text - The macro text to convert
-     * @param {string} sourceLang - Source language code
      * @param {string} targetLang - Target language code
      * @returns {object[]} - Array of { output: string, untranslatable: string[] }
      */
-    convert(text, sourceLang, targetLang) {
+    convert(text, targetLang) {
         const lines = text.split('\n');
-        const results = [];
-
-        for (const line of lines) {
-            const result = this.translateLine(line, sourceLang, targetLang);
-            results.push(result);
-        }
-
-        return results;
+        return lines.map(line => this.translateLine(line, targetLang));
     }
 
     /**
