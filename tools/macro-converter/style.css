@@ -73,7 +73,7 @@
 .output-display {
     flex: 1;
     min-height: 250px;
-    background: var(--background);
+    background: #f8f9fa;
     border: 1px solid var(--border);
     border-radius: var(--border-radius-md);
     padding: 0.75rem;
@@ -83,6 +83,7 @@
     overflow-y: auto;
     white-space: pre-wrap;
     word-wrap: break-word;
+    color: #333;
 }
 
 .output-line {
@@ -151,8 +152,9 @@
 }
 
 [data-theme="dark"] .output-display {
-    background: rgba(0, 0, 0, 0.2);
+    background: #1e222a;
     border-color: var(--border);
+    color: #e8e8e8;
 }
 
 [data-theme="dark"] .output-line.untranslatable {
