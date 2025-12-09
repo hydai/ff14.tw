@@ -738,6 +738,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 - 所有頁面的導航列都需保持一致的風格，包含版權聲明連結
 - 所有頁面的頁尾都需與首頁風格一致
 - 當我呼叫 Update 時，請更新 README.md 與 CLAUDE.md
+- 使用 FF14 繁中服官方用語時，請參考 TERMINOLOGY.md 文件
 
 ## Current Tools
 
