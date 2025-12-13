@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generated": "2025-12-07T00:54:30.210379",
+  "generated": "2025-12-14T04:27:05.273990",
   "textCommands": [
     {
       "baseCommand": "/record",
@@ -7250,6 +7250,11 @@
   ],
   "craftActions": [
     {
+      "zh": "上級加工",
+      "en": "Advanced Touch",
+      "ja": "上級加工"
+    },
+    {
       "zh": "製作",
       "en": "Basic Synthesis",
       "ja": "作業"
@@ -7260,44 +7265,9 @@
       "ja": "加工"
     },
     {
-      "zh": "精修",
-      "en": "Master's Mend",
-      "ja": "マスターズメンド"
-    },
-    {
-      "zh": "中級加工",
-      "en": "Standard Touch",
-      "ja": "中級加工"
-    },
-    {
-      "zh": "精修II",
-      "en": "Master's Mend II",
-      "ja": "マスターズメンドII"
-    },
-    {
-      "zh": "風之印記",
-      "en": "Brand of Wind",
-      "ja": "ブランド・オブ・ウィンド"
-    },
-    {
-      "zh": "中級製作",
-      "en": "Standard Synthesis",
-      "ja": "中級作業"
-    },
-    {
-      "zh": "上級加工",
-      "en": "Advanced Touch",
-      "ja": "上級加工"
-    },
-    {
-      "zh": "比爾格的祝福",
-      "en": "Byregot's Blessing",
-      "ja": "ビエルゴの祝福"
-    },
-    {
-      "zh": "觀察",
-      "en": "Observe",
-      "ja": "経過観察"
+      "zh": "土之印記",
+      "en": "Brand of Earth",
+      "ja": "ブランド・オブ・アース"
     },
     {
       "zh": "火之印記",
@@ -7305,29 +7275,9 @@
       "ja": "ブランド・オブ・ファイア"
     },
     {
-      "zh": "高速製作",
-      "en": "Rapid Synthesis",
-      "ja": "突貫作業"
-    },
-    {
       "zh": "冰之印記",
       "en": "Brand of Ice",
       "ja": "ブランド・オブ・アイス"
-    },
-    {
-      "zh": "漸進",
-      "en": "Piece by Piece",
-      "ja": "ピース・バイ・ピース"
-    },
-    {
-      "zh": "土之印記",
-      "en": "Brand of Earth",
-      "ja": "ブランド・オブ・アース"
-    },
-    {
-      "zh": "模範製作",
-      "en": "Careful Synthesis",
-      "ja": "模範作業"
     },
     {
       "zh": "雷之印記",
@@ -7335,29 +7285,24 @@
       "ja": "ブランド・オブ・ライトニング"
     },
     {
-      "zh": "模範製作II",
-      "en": "Careful Synthesis II",
-      "ja": "模範作業II"
-    },
-    {
-      "zh": "堅實製作",
-      "en": "Flawless Synthesis",
-      "ja": "堅実作業"
-    },
-    {
       "zh": "水之印記",
       "en": "Brand of Water",
       "ja": "ブランド・オブ・ウォーター"
     },
     {
-      "zh": "秘訣",
-      "en": "Tricks of the Trade",
-      "ja": "秘訣"
+      "zh": "風之印記",
+      "en": "Brand of Wind",
+      "ja": "ブランド・オブ・ウィンド"
     },
     {
-      "zh": "倉促",
-      "en": "Hasty Touch",
-      "ja": "ヘイスティタッチ"
+      "zh": "元素之印記",
+      "en": "Brand of the Elements",
+      "ja": "ブランド・オブ・エレメンタル"
+    },
+    {
+      "zh": "比爾格的祝福",
+      "en": "Byregot's Blessing",
+      "ja": "ビエルゴの祝福"
     },
     {
       "zh": "比爾格的技巧",
@@ -7365,39 +7310,34 @@
       "ja": "ビエルゴの技巧"
     },
     {
-      "zh": "集中加工",
-      "en": "Precise Touch",
-      "ja": "集中加工"
-    },
-    {
-      "zh": "堅信",
-      "en": "Muscle Memory",
-      "ja": "確信"
-    },
-    {
-      "zh": "革新",
-      "en": "Innovative Touch",
-      "ja": "イノベイティブタッチ"
-    },
-    {
       "zh": "比爾格的奇蹟",
       "en": "Byregot's Miracle",
       "ja": "ビエルゴの奇跡"
     },
     {
-      "zh": "妮美雅的紡車",
-      "en": "Nymeia's Wheel",
-      "ja": "ニメーヤの紡車"
+      "zh": "設計變動",
+      "en": "Careful Observation",
+      "ja": "設計変更"
     },
     {
-      "zh": "匠心獨具",
-      "en": "Trained Hand",
-      "ja": "匠の技"
+      "zh": "模範製作",
+      "en": "Careful Synthesis",
+      "ja": "模範作業"
     },
     {
-      "zh": "稱心",
-      "en": "Satisfaction",
-      "ja": "会心の仕事"
+      "zh": "模範製作II",
+      "en": "Careful Synthesis II",
+      "ja": "模範作業II"
+    },
+    {
+      "zh": "冒進",
+      "en": "Daring Touch",
+      "ja": "デアリングタッチ"
+    },
+    {
+      "zh": "精密製作",
+      "en": "Delicate Synthesis",
+      "ja": "精密作業"
     },
     {
       "zh": "收尾",
@@ -7405,14 +7345,54 @@
       "ja": "フィニッシュワーク"
     },
     {
-      "zh": "堅實的心得",
-      "en": "Maker's Mark",
-      "ja": "堅実の心得"
+      "zh": "堅實製作",
+      "en": "Flawless Synthesis",
+      "ja": "堅実作業"
     },
     {
-      "zh": "木工師之魂",
-      "en": "Heart of the Carpenter",
-      "ja": "木工師の魂"
+      "zh": "注視製作",
+      "en": "Focused Synthesis",
+      "ja": "注視作業"
+    },
+    {
+      "zh": "注視加工",
+      "en": "Focused Touch",
+      "ja": "注視加工"
+    },
+    {
+      "zh": "闊步",
+      "en": "Great Strides",
+      "ja": "グレートストライド"
+    },
+    {
+      "zh": "坯料製作",
+      "en": "Groundwork",
+      "ja": "下地作業"
+    },
+    {
+      "zh": "倉促",
+      "en": "Hasty Touch",
+      "ja": "ヘイスティタッチ"
+    },
+    {
+      "zh": "倉促II",
+      "en": "Hasty Touch II",
+      "ja": "ヘイスティタッチII"
+    },
+    {
+      "zh": "專心致志",
+      "en": "Heart and Soul",
+      "ja": "一心不乱"
+    },
+    {
+      "zh": "鍊金術師之魂",
+      "en": "Heart of the Alchemist",
+      "ja": "錬金術師の魂"
+    },
+    {
+      "zh": "甲冑師之魂",
+      "en": "Heart of the Armorer",
+      "ja": "甲冑師の魂"
     },
     {
       "zh": "鍛造師之魂",
@@ -7420,9 +7400,14 @@
       "ja": "鍛冶師の魂"
     },
     {
-      "zh": "甲冑師之魂",
-      "en": "Heart of the Armorer",
-      "ja": "甲冑師の魂"
+      "zh": "木工師之魂",
+      "en": "Heart of the Carpenter",
+      "ja": "木工師の魂"
+    },
+    {
+      "zh": "烹調師之魂",
+      "en": "Heart of the Culinarian",
+      "ja": "調理師の魂"
     },
     {
       "zh": "金工師之魂",
@@ -7440,49 +7425,9 @@
       "ja": "裁縫師の魂"
     },
     {
-      "zh": "鍊金術師之魂",
-      "en": "Heart of the Alchemist",
-      "ja": "錬金術師の魂"
-    },
-    {
-      "zh": "烹調師之魂",
-      "en": "Heart of the Culinarian",
-      "ja": "調理師の魂"
-    },
-    {
-      "zh": "工作小調",
-      "en": "Whistle While You Work",
-      "ja": "仕事唄"
-    },
-    {
-      "zh": "倉促II",
-      "en": "Hasty Touch II",
-      "ja": "ヘイスティタッチII"
-    },
-    {
-      "zh": "高速製作II",
-      "en": "Rapid Synthesis II",
-      "ja": "突貫作業II"
-    },
-    {
-      "zh": "專心加工",
-      "en": "Patient Touch",
-      "ja": "専心加工"
-    },
-    {
-      "zh": "儉約加工",
-      "en": "Prudent Touch",
-      "ja": "倹約加工"
-    },
-    {
-      "zh": "注視製作",
-      "en": "Focused Synthesis",
-      "ja": "注視作業"
-    },
-    {
-      "zh": "注視加工",
-      "en": "Focused Touch",
-      "ja": "注視加工"
+      "zh": "巧奪天工",
+      "en": "Immaculate Mend",
+      "ja": "パーフェクトメンド"
     },
     {
       "zh": "起始準備",
@@ -7490,39 +7435,14 @@
       "ja": "初手仕込"
     },
     {
-      "zh": "專精絕技：鞏固",
-      "en": "Specialty: Reinforce",
-      "ja": "マイスターの切札：再生"
+      "zh": "改革",
+      "en": "Innovation",
+      "ja": "イノベーション"
     },
     {
-      "zh": "專精絕技：安穩",
-      "en": "Specialty: Refurbish",
-      "ja": "マイスターの切札：静穏"
-    },
-    {
-      "zh": "專精絕技：閒靜",
-      "en": "Specialty: Reflect",
-      "ja": "マイスターの切札：真価"
-    },
-    {
-      "zh": "工匠的神速技巧",
-      "en": "Trained Eye",
-      "ja": "匠の早業"
-    },
-    {
-      "zh": "工匠的苦行",
-      "en": "Trained Instinct",
-      "ja": "匠の荒業"
-    },
-    {
-      "zh": "坯料加工",
-      "en": "Preparatory Touch",
-      "ja": "下地加工"
-    },
-    {
-      "zh": "高速製作III",
-      "en": "Rapid Synthesis III",
-      "ja": "突貫作業III"
+      "zh": "革新",
+      "en": "Innovative Touch",
+      "ja": "イノベイティブタッチ"
     },
     {
       "zh": "集中製作",
@@ -7530,34 +7450,54 @@
       "ja": "集中作業"
     },
     {
-      "zh": "精密製作",
-      "en": "Delicate Synthesis",
-      "ja": "精密作業"
+      "zh": "堅實的心得",
+      "en": "Maker's Mark",
+      "ja": "堅実の心得"
     },
     {
-      "zh": "元素之印記",
-      "en": "Brand of the Elements",
-      "ja": "ブランド・オブ・エレメンタル"
+      "zh": "精修",
+      "en": "Master's Mend",
+      "ja": "マスターズメンド"
     },
     {
-      "zh": "閒靜",
-      "en": "Reflect",
-      "ja": "真価"
+      "zh": "精修II",
+      "en": "Master's Mend II",
+      "ja": "マスターズメンドII"
     },
     {
-      "zh": "設計變動",
-      "en": "Careful Observation",
-      "ja": "設計変更"
+      "zh": "堅信",
+      "en": "Muscle Memory",
+      "ja": "確信"
     },
     {
-      "zh": "坯料製作",
-      "en": "Groundwork",
-      "ja": "下地作業"
+      "zh": "妮美雅的紡車",
+      "en": "Nymeia's Wheel",
+      "ja": "ニメーヤの紡車"
     },
     {
-      "zh": "專心致志",
-      "en": "Heart and Soul",
-      "ja": "一心不乱"
+      "zh": "觀察",
+      "en": "Observe",
+      "ja": "経過観察"
+    },
+    {
+      "zh": "專心加工",
+      "en": "Patient Touch",
+      "ja": "専心加工"
+    },
+    {
+      "zh": "漸進",
+      "en": "Piece by Piece",
+      "ja": "ピース・バイ・ピース"
+    },
+    {
+      "zh": "集中加工",
+      "en": "Precise Touch",
+      "ja": "集中加工"
+    },
+    {
+      "zh": "坯料加工",
+      "en": "Preparatory Touch",
+      "ja": "下地加工"
     },
     {
       "zh": "儉約製作",
@@ -7565,19 +7505,9 @@
       "ja": "倹約作業"
     },
     {
-      "zh": "工匠的神技",
-      "en": "Trained Finesse",
-      "ja": "匠の神業"
-    },
-    {
-      "zh": "精煉加工",
-      "en": "Refined Touch",
-      "ja": "洗練加工"
-    },
-    {
-      "zh": "冒進",
-      "en": "Daring Touch",
-      "ja": "デアリングタッチ"
+      "zh": "儉約加工",
+      "en": "Prudent Touch",
+      "ja": "倹約加工"
     },
     {
       "zh": "快速改革",
@@ -7585,14 +7515,94 @@
       "ja": "クイックイノベーション"
     },
     {
-      "zh": "巧奪天工",
-      "en": "Immaculate Mend",
-      "ja": "パーフェクトメンド"
+      "zh": "高速製作",
+      "en": "Rapid Synthesis",
+      "ja": "突貫作業"
+    },
+    {
+      "zh": "高速製作II",
+      "en": "Rapid Synthesis II",
+      "ja": "突貫作業II"
+    },
+    {
+      "zh": "高速製作III",
+      "en": "Rapid Synthesis III",
+      "ja": "突貫作業III"
+    },
+    {
+      "zh": "精煉加工",
+      "en": "Refined Touch",
+      "ja": "洗練加工"
+    },
+    {
+      "zh": "閒靜",
+      "en": "Reflect",
+      "ja": "真価"
+    },
+    {
+      "zh": "稱心",
+      "en": "Satisfaction",
+      "ja": "会心の仕事"
+    },
+    {
+      "zh": "專精絕技：閒靜",
+      "en": "Specialty: Reflect",
+      "ja": "マイスターの切札：真価"
+    },
+    {
+      "zh": "專精絕技：安穩",
+      "en": "Specialty: Refurbish",
+      "ja": "マイスターの切札：静穏"
+    },
+    {
+      "zh": "專精絕技：鞏固",
+      "en": "Specialty: Reinforce",
+      "ja": "マイスターの切札：再生"
+    },
+    {
+      "zh": "中級製作",
+      "en": "Standard Synthesis",
+      "ja": "中級作業"
+    },
+    {
+      "zh": "中級加工",
+      "en": "Standard Touch",
+      "ja": "中級加工"
+    },
+    {
+      "zh": "工匠的神速技巧",
+      "en": "Trained Eye",
+      "ja": "匠の早業"
+    },
+    {
+      "zh": "工匠的神技",
+      "en": "Trained Finesse",
+      "ja": "匠の神業"
+    },
+    {
+      "zh": "匠心獨具",
+      "en": "Trained Hand",
+      "ja": "匠の技"
+    },
+    {
+      "zh": "工匠的苦行",
+      "en": "Trained Instinct",
+      "ja": "匠の荒業"
     },
     {
       "zh": "工匠的絕技",
       "en": "Trained Perfection",
       "ja": "匠の絶技"
+    },
+    {
+      "zh": "秘訣",
+      "en": "Tricks of the Trade",
+      "ja": "秘訣"
+    },
+    {
+      "zh": "工作小調",
+      "en": "Whistle While You Work",
+      "ja": "仕事唄"
     }
   ]
 }

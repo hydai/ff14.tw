@@ -181,7 +181,10 @@ def extract_craft_actions(zh_file, en_file, ja_file):
                 'ja': ja_name
             }
 
-    return list(actions_map.values())
+    # Sort by English name for consistency and maintainability
+    actions_list = list(actions_map.values())
+    sorted_actions = sorted(actions_list, key=lambda x: x.get('en', ''))
+    return sorted_actions
 
 def main():
     """Main function to generate macro-mappings.json."""
