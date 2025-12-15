@@ -7455,6 +7455,11 @@
       "ja": "堅実の心得"
     },
     {
+      "zh": "掌握",
+      "en": "Manipulation",
+      "ja": "マニピュレーション"
+    },
+    {
       "zh": "精修",
       "en": "Master's Mend",
       "ja": "マスターズメンド"
@@ -7598,6 +7603,21 @@
       "zh": "秘訣",
       "en": "Tricks of the Trade",
       "ja": "秘訣"
+    },
+    {
+      "zh": "崇敬",
+      "en": "Veneration",
+      "ja": "ヴェネレーション"
+    },
+    {
+      "zh": "儉約",
+      "en": "Waste Not",
+      "ja": "倹約"
+    },
+    {
+      "zh": "長期儉約",
+      "en": "Waste Not II",
+      "ja": "長期倹約"
     },
     {
       "zh": "工作小調",
