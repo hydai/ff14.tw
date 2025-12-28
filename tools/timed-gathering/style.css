@@ -314,22 +314,6 @@
     flex-wrap: wrap;
 }
 
-.tag-filter {
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.tag-filter:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.tag-filter.active {
-    background: var(--primary);
-    color: white;
-    border-color: var(--primary);
-}
-
 .tag-icon {
     margin-right: 0.25rem;
 }

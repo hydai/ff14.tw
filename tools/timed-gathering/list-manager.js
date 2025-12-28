@@ -24,7 +24,7 @@ class ListManager {
      */
     createDefaultList() {
         // Use i18n for default list name if available
-        const defaultName = window.i18n ? window.i18n.getText('defaultListName') : '預設清單';
+        const defaultName = FF14Utils.getI18nText('defaultListName', 'Default List');
         this.lists[ListManager.CONSTANTS.DEFAULT_LIST_ID] = {
             id: ListManager.CONSTANTS.DEFAULT_LIST_ID,
             name: defaultName,
@@ -128,9 +128,11 @@ class ListManager {
     createList(name) {
         // 檢查清單數量限制
         if (Object.keys(this.lists).length >= ListManager.CONSTANTS.MAX_LISTS) {
-            const message = window.i18n ? 
-                window.i18n.getText('maxListsWarning') + ' ' + ListManager.CONSTANTS.MAX_LISTS + ' ' + window.i18n.getText('maxListsUnit') :
-                `最多只能建立 ${ListManager.CONSTANTS.MAX_LISTS} 個清單`;
+            const message = FF14Utils.getI18nText(
+                'maxListsWarning', 
+                'Maximum of {0} lists allowed', 
+                ListManager.CONSTANTS.MAX_LISTS
+            );
             return {
                 success: false,
                 message: message
@@ -139,7 +141,7 @@ class ListManager {
         
         // 驗證名稱
         if (!name || name.trim().length === 0) {
-            const message = window.i18n ? window.i18n.getText('listNameEmpty') : '清單名稱不能為空';
+            const message = FF14Utils.getI18nText('listNameEmpty', 'List name cannot be empty');
             return {
                 success: false,
                 message: message
@@ -147,9 +149,11 @@ class ListManager {
         }
         
         if (name.length > ListManager.CONSTANTS.MAX_LIST_NAME_LENGTH) {
-            const message = window.i18n ? 
-                window.i18n.getText('listNameTooLong') + ' ' + ListManager.CONSTANTS.MAX_LIST_NAME_LENGTH + ' ' + window.i18n.getText('listNameTooLongUnit') :
-                `清單名稱不能超過 ${ListManager.CONSTANTS.MAX_LIST_NAME_LENGTH} 個字元`;
+            const message = FF14Utils.getI18nText(
+                'listNameTooLong',
+                'List name cannot exceed {0} characters',
+                ListManager.CONSTANTS.MAX_LIST_NAME_LENGTH
+            );
             return {
                 success: false,
                 message: message
@@ -159,7 +163,7 @@ class ListManager {
         // 檢查名稱是否重複
         const isDuplicate = Object.values(this.lists).some(list => list.name === name);
         if (isDuplicate) {
-            const message = window.i18n ? window.i18n.getText('listNameExists') : '清單名稱已存在';
+            const message = FF14Utils.getI18nText('listNameExists', 'List name already exists');
             return {
                 success: false,
                 message: message
@@ -317,7 +321,11 @@ class ListManager {
         if (list.items.length >= ListManager.CONSTANTS.MAX_ITEMS_PER_LIST) {
             return {
                 success: false,
-                message: `清單最多只能包含 ${ListManager.CONSTANTS.MAX_ITEMS_PER_LIST} 個項目`
+                message: FF14Utils.getI18nText(
+                    'listMaxItems',
+                    'List can contain maximum of {0} items',
+                    ListManager.CONSTANTS.MAX_ITEMS_PER_LIST
+                )
             };
         }
         
@@ -325,7 +333,7 @@ class ListManager {
         if (list.items.some(i => i.id === item.id)) {
             return {
                 success: false,
-                message: '此採集物已在清單中'
+                message: FF14Utils.getI18nText('itemAlreadyInListSimple', 'This item is already in the list')
             };
         }
         
@@ -518,7 +526,11 @@ class ListManager {
         return {
             success: true,
             count: importedCount,
-            message: `成功匯入 ${importedCount} 個清單`
+            message: FF14Utils.getI18nText(
+                'successImportedLists',
+                'Successfully imported {0} lists',
+                importedCount
+            )
         };
     }
 
@@ -614,7 +626,11 @@ class ListManager {
         return {
             success: true,
             addedCount: addedCount,
-            message: `已新增 ${addedCount} 個項目到目標清單`
+            message: FF14Utils.getI18nText(
+                'addedItemsToList',
+                'Added {0} items to target list',
+                addedCount
+            )
         };
     }
 }

@@ -70,6 +70,11 @@ class TimedGatheringManager {
 
     async initialize() {
         try {
+            // Explicitly load translations
+            if (window.i18n && window.TimedGatheringTranslations) {
+                window.i18n.loadTranslations('timed-gathering', window.TimedGatheringTranslations);
+            }
+
             // 初始化模組
             this.listManager = new ListManager();
             this.macroExporter = new MacroExporter();
@@ -97,7 +102,7 @@ class TimedGatheringManager {
             
         } catch (error) {
             console.error('初始化失敗:', error);
-            this.showError(window.i18n.getText('initFailedError'));
+            this.showError(FF14Utils.getI18nText('initFailedError', 'Initialization failed, please refresh the page'));
         }
     }
 
@@ -148,7 +153,7 @@ class TimedGatheringManager {
             
         } catch (error) {
             console.error('載入資料失敗:', error);
-            this.showError(window.i18n.getText('dataLoadFailedError'));
+            this.showError(FF14Utils.getI18nText('dataLoadFailedError', 'Failed to load item data, please refresh and try again'));
         } finally {
             this.showLoading(false);
         }
@@ -354,7 +359,7 @@ class TimedGatheringManager {
         if (this.filteredData.length === 0) {
             const emptyMessage = document.createElement('div');
             emptyMessage.className = 'empty-message';
-            emptyMessage.textContent = window.i18n.getText('noItemsFound');
+            emptyMessage.textContent = FF14Utils.getI18nText('noItemsFound', 'No items match the criteria');
             container.appendChild(emptyMessage);
             return;
         }
@@ -444,7 +449,7 @@ class TimedGatheringManager {
         SecurityUtils.updateButtonContent(
             addBtn,
             isInList ? '✔️' : '➕',
-            isInList ? window.i18n.getText('addedToListButton') : window.i18n.getText('addToListButton')
+            isInList ? FF14Utils.getI18nText('addedToListButton', 'Added') : FF14Utils.getI18nText('addToListButton', 'Add to List')
         );
         addBtn.disabled = isInList;
         
@@ -452,7 +457,7 @@ class TimedGatheringManager {
             this.addItemToList(item);
             addBtn.className = 'btn btn-success btn-sm';
             // Use safe DOM manipulation instead of innerHTML
-            SecurityUtils.updateButtonContent(addBtn, '✔️', window.i18n.getText('addedToListButton'));
+            SecurityUtils.updateButtonContent(addBtn, '✔️', FF14Utils.getI18nText('addedToListButton', 'Added'));
             addBtn.disabled = true;
         });
         
@@ -475,7 +480,7 @@ class TimedGatheringManager {
         const result = this.listManager.addToList(this.currentListId, item);
         if (result.success) {
             this.updateListDisplay();
-            this.showNotification(window.i18n.getText('addedToListNotification'), 'success');
+            this.showNotification(FF14Utils.getI18nText('addedToListNotification', 'Added to list'), 'success');
         } else {
             this.showNotification(result.message, 'warning');
         }
@@ -489,8 +494,8 @@ class TimedGatheringManager {
         if (!list || list.items.length === 0) {
             // Use safe DOM manipulation instead of innerHTML
             const emptyMessage = SecurityUtils.createEmptyMessage(
-                window.i18n.getText('emptyListMessage'),
-                window.i18n.getText('emptyListHint')
+                FF14Utils.getI18nText('emptyListMessage', 'List is empty'),
+                FF14Utils.getI18nText('emptyListHint', 'Click "Add to List" button on the left to add items')
             );
             container.appendChild(emptyMessage);
             
@@ -547,7 +552,7 @@ class TimedGatheringManager {
         const removeBtn = document.createElement('button');
         removeBtn.className = 'btn btn-sm btn-danger';
         removeBtn.textContent = '🗑️';  // Use textContent instead of innerHTML
-        removeBtn.title = window.i18n.getText('removeFromList');
+        removeBtn.title = FF14Utils.getI18nText('removeFromList', 'Remove');
         removeBtn.addEventListener('click', () => {
             this.removeItemFromList(item.id);
         });
@@ -561,7 +566,7 @@ class TimedGatheringManager {
         this.listManager.removeFromList(this.currentListId, itemId);
         this.updateListDisplay();
         this.updateDisplay(); // 更新左側顯示
-        this.showNotification(window.i18n.getText('removedFromListNotification'), 'info');
+        this.showNotification(FF14Utils.getI18nText('removedFromListNotification', 'Removed from list'), 'info');
     }
 
     loadLists() {
@@ -617,17 +622,22 @@ class TimedGatheringManager {
 
     showNewListDialog() {
         if (this.listManager.getAllLists().length >= TimedGatheringManager.CONSTANTS.MAX_LISTS) {
-            this.showNotification(window.i18n.getText('maxListsWarning') + ' ' + TimedGatheringManager.CONSTANTS.MAX_LISTS + ' ' + window.i18n.getText('maxListsUnit'), 'warning');
+            const warning = FF14Utils.getI18nText(
+                'maxListsWarning', 
+                'Maximum of {0} lists allowed', 
+                TimedGatheringManager.CONSTANTS.MAX_LISTS
+            );
+            this.showNotification(warning, 'warning');
             return;
         }
         
-        this.elements.dialogTitle.textContent = window.i18n.getText('newListDialogTitle');
+        this.elements.dialogTitle.textContent = FF14Utils.getI18nText('newListDialogTitle', 'New List');
         // Use safe DOM manipulation instead of innerHTML
         SecurityUtils.clearElement(this.elements.dialogBody);
         const formGroup = SecurityUtils.createFormGroup({
-            label: window.i18n.getText('listNameLabel'),
+            label: FF14Utils.getI18nText('listNameLabel', 'List Name:'),
             inputId: 'newListName',
-            placeholder: window.i18n.getText('enterListNamePlaceholder'),
+            placeholder: FF14Utils.getI18nText('enterListNamePlaceholder', 'Enter list name'),
             maxLength: TimedGatheringManager.CONSTANTS.MAX_LIST_NAME_LENGTH
         });
         this.elements.dialogBody.appendChild(formGroup);
@@ -638,7 +648,7 @@ class TimedGatheringManager {
             
             // Validate and sanitize input
             if (!SecurityUtils.validateTextLength(rawName, 1, TimedGatheringManager.CONSTANTS.MAX_LIST_NAME_LENGTH)) {
-                this.showNotification(window.i18n.getText('invalidListNameError'), 'error');
+                this.showNotification(FF14Utils.getI18nText('invalidListNameError', 'List name length does not meet requirements'), 'error');
                 return;
             }
             
@@ -651,7 +661,7 @@ class TimedGatheringManager {
                     this.loadLists();
                     this.switchToList(result.listId);
                     this.hideDialog();
-                    this.showNotification(window.i18n.getText('listCreatedNotification'), 'success');
+                    this.showNotification(FF14Utils.getI18nText('listCreatedNotification', 'List created'), 'success');
                 } else {
                     this.showNotification(result.message, 'error');
                 }
@@ -669,11 +679,11 @@ class TimedGatheringManager {
     showRenameListDialog() {
         const currentList = this.listManager.getList(this.currentListId);
         
-        this.elements.dialogTitle.textContent = window.i18n.getText('renameListDialogTitle');
+        this.elements.dialogTitle.textContent = FF14Utils.getI18nText('renameListDialogTitle', 'Rename List');
         // Use safe DOM manipulation instead of innerHTML
         SecurityUtils.clearElement(this.elements.dialogBody);
         const formGroup = SecurityUtils.createFormGroup({
-            label: window.i18n.getText('newNameLabel'),
+            label: FF14Utils.getI18nText('newNameLabel', 'New Name:'),
             inputId: 'renameListInput',
             value: currentList.name,
             maxLength: TimedGatheringManager.CONSTANTS.MAX_LIST_NAME_LENGTH
@@ -686,7 +696,7 @@ class TimedGatheringManager {
             
             // Validate and sanitize input
             if (!SecurityUtils.validateTextLength(rawName, 1, TimedGatheringManager.CONSTANTS.MAX_LIST_NAME_LENGTH)) {
-                this.showNotification(window.i18n.getText('invalidListNameError'), 'error');
+                this.showNotification(FF14Utils.getI18nText('invalidListNameError', 'List name length does not meet requirements'), 'error');
                 return;
             }
             
@@ -699,7 +709,7 @@ class TimedGatheringManager {
                     this.loadLists();
                     this.elements.currentListName.textContent = newName;
                     this.hideDialog();
-                    this.showNotification(window.i18n.getText('listRenamedNotification'), 'success');
+                    this.showNotification(FF14Utils.getI18nText('listRenamedNotification', 'List renamed'), 'success');
                 } else {
                     this.showNotification(result.message, 'error');
                 }
@@ -730,11 +740,16 @@ class TimedGatheringManager {
         SecurityUtils.clearElement(this.elements.dialogBody);
         
         const confirmText = document.createElement('p');
-        confirmText.textContent = window.i18n.getText('confirmDeleteList') + `「${currentList.name}」嗎？`;
+        // Updated to use format with placeholder
+        confirmText.textContent = FF14Utils.getI18nText(
+            'confirmDeleteList', 
+            'Are you sure you want to delete the list "{0}"?',
+            currentList.name
+        );
         
         const warningText = document.createElement('p');
         warningText.className = 'text-danger';
-        warningText.textContent = window.i18n.getText('operationCannotUndo');
+        warningText.textContent = FF14Utils.getI18nText('operationCannotUndo', 'This operation cannot be undone!');
         
         this.elements.dialogBody.appendChild(confirmText);
         this.elements.dialogBody.appendChild(warningText);
@@ -748,7 +763,7 @@ class TimedGatheringManager {
                     this.switchToList(remainingLists[0].id);
                 }
                 this.hideDialog();
-                this.showNotification(window.i18n.getText('listDeletedNotification'), 'success');
+                this.showNotification(FF14Utils.getI18nText('listDeletedNotification', 'List deleted'), 'success');
             } else {
                 this.showNotification(result.message, 'error');
             }
@@ -761,7 +776,7 @@ class TimedGatheringManager {
         const list = this.listManager.getList(this.currentListId);
         
         if (!list || list.items.length === 0) {
-            this.showNotification(window.i18n.getText('listAlreadyEmptyInfo'), 'info');
+            this.showNotification(FF14Utils.getI18nText('listAlreadyEmptyInfo', 'List is already empty'), 'info');
             return;
         }
         
@@ -770,10 +785,20 @@ class TimedGatheringManager {
         SecurityUtils.clearElement(this.elements.dialogBody);
         
         const confirmText = document.createElement('p');
-        confirmText.textContent = window.i18n.getText('confirmClearList') + `「${list.name}」嗎？`;
+        // Updated to use format with placeholder
+        confirmText.textContent = FF14Utils.getI18nText(
+            'confirmClearList', 
+            'Are you sure you want to clear the list "{0}"?', 
+            list.name
+        );
         
         const itemCountText = document.createElement('p');
-        itemCountText.textContent = window.i18n.getText('willRemoveItems') + ' ' + list.items.length + ' ' + window.i18n.getText('itemsUnit');
+        // Updated to use format with placeholder
+        itemCountText.textContent = FF14Utils.getI18nText(
+            'willRemoveItems', 
+            'Will remove {0} items', 
+            list.items.length
+        );
         
         this.elements.dialogBody.appendChild(confirmText);
         this.elements.dialogBody.appendChild(itemCountText);
@@ -783,7 +808,7 @@ class TimedGatheringManager {
             this.updateListDisplay();
             this.updateDisplay();
             this.hideDialog();
-            this.showNotification(window.i18n.getText('listClearedNotification'), 'success');
+            this.showNotification(FF14Utils.getI18nText('listClearedNotification', 'List cleared'), 'success');
         };
         
         this.showDialog();
@@ -793,7 +818,7 @@ class TimedGatheringManager {
         const list = this.listManager.getList(this.currentListId);
         
         if (!list || list.items.length === 0) {
-            this.showNotification(window.i18n.getText('emptyListNoMacroWarning'), 'warning');
+            this.showNotification(FF14Utils.getI18nText('emptyListNoMacroWarning', 'List is empty, cannot generate macro'), 'warning');
             return;
         }
         
@@ -815,12 +840,12 @@ class TimedGatheringManager {
         const macroText = this.elements.macroText.value;
         
         if (!macroText) {
-            this.showNotification(window.i18n.getText('noMacroToCopyWarning'), 'warning');
+            this.showNotification(FF14Utils.getI18nText('noMacroToCopyWarning', 'No macro to copy'), 'warning');
             return;
         }
         
         navigator.clipboard.writeText(macroText).then(() => {
-            this.showNotification(window.i18n.getText('macroCopiedNotification'), 'success');
+            this.showNotification(FF14Utils.getI18nText('macroCopiedNotification', 'Macro copied to clipboard'), 'success');
             
             // 暫時改變按鈕文字
             // Store original button content
@@ -828,25 +853,25 @@ class TimedGatheringManager {
             const originalText = this.elements.copyMacroBtn.textContent.replace(originalIcon, '').trim();
             
             // Update button safely
-            SecurityUtils.updateButtonContent(this.elements.copyMacroBtn, '✔️', window.i18n.getText('copiedButton'));
+            SecurityUtils.updateButtonContent(this.elements.copyMacroBtn, '✔️', FF14Utils.getI18nText('copiedButton', 'Copied!'));
             
             setTimeout(() => {
                 // Restore original content
-                SecurityUtils.updateButtonContent(this.elements.copyMacroBtn, originalIcon, originalText || window.i18n.getText('copyMacroButton'));
+                SecurityUtils.updateButtonContent(this.elements.copyMacroBtn, originalIcon, originalText || FF14Utils.getI18nText('copyMacroButton', 'Copy to Clipboard'));
             }, 2000);
         }).catch(err => {
             console.error('複製失敗:', err);
-            this.showNotification(window.i18n.getText('copyFailedError'), 'error');
+            this.showNotification(FF14Utils.getI18nText('copyFailedError', 'Copy failed, please select and copy manually'), 'error');
         });
     }
 
     showImportDialog() {
-        this.elements.dialogTitle.textContent = window.i18n.getText('importDialogTitle');
+        this.elements.dialogTitle.textContent = FF14Utils.getI18nText('importDialogTitle', 'Import List');
         // Use safe DOM manipulation instead of innerHTML
         SecurityUtils.clearElement(this.elements.dialogBody);
         
         const formGroup = SecurityUtils.createFormGroup({
-            label: window.i18n.getText('selectFileLabel'),
+            label: FF14Utils.getI18nText('selectFileLabel', 'Select File:'),
             inputId: 'importFile',
             inputType: 'file',
             accept: '.json'
@@ -854,7 +879,7 @@ class TimedGatheringManager {
         
         const helpText = document.createElement('p');
         helpText.className = 'text-muted';
-        helpText.textContent = window.i18n.getText('selectJsonFileHint');
+        helpText.textContent = FF14Utils.getI18nText('selectJsonFileHint', 'Select a previously exported JSON file');
         
         this.elements.dialogBody.appendChild(formGroup);
         this.elements.dialogBody.appendChild(helpText);
@@ -890,7 +915,7 @@ class TimedGatheringManager {
             
             if (!parseResult.success) {
                 console.error('匯入失敗:', parseResult.error);
-                this.showNotification(window.i18n.getText('fileFormatError') + ': ' + parseResult.error, 'error');
+                this.showNotification(FF14Utils.getI18nText('fileFormatError', 'File format error') + ': ' + parseResult.error, 'error');
                 return;
             }
             
@@ -899,7 +924,10 @@ class TimedGatheringManager {
             if (result.success) {
                 this.loadLists();
                 this.hideDialog();
-                this.showNotification(window.i18n.getText('listsImportedNotification') + ' ' + result.count + ' ' + window.i18n.getText('listsImportedUnit'), 'success');
+                this.showNotification(
+                    FF14Utils.getI18nText('listsImportedNotification', 'Successfully imported {0} lists', result.count), 
+                    'success'
+                );
             } else {
                 this.showNotification(result.message, 'error');
             }
@@ -923,7 +951,7 @@ class TimedGatheringManager {
         
         URL.revokeObjectURL(url);
         
-        this.showNotification(window.i18n.getText('listsExportedNotification'), 'success');
+        this.showNotification(FF14Utils.getI18nText('listsExportedNotification', 'Lists exported'), 'success');
     }
 
     updateItemCount() {
