@@ -232,6 +232,27 @@ const FF14Utils = {
                 func.apply(context, args);
             }, delay);
         };
+    },
+
+    /**
+     * 安全獲取 i18n 文字，如果 key 不存在則返回 fallback
+     * @param {string} key - i18n key
+     * @param {string} fallback - 預設文字
+     * @param {...any} args - 格式化參數
+     * @returns {string} 翻譯文字或預設文字
+     */
+    getI18nText(key, fallback, ...args) {
+        if (window.i18n && window.i18n.hasKey(key)) {
+            return window.i18n.getText(key, ...args);
+        }
+        
+        let result = fallback;
+        if (args.length > 0) {
+            result = result.replace(/\{(\d+)\}/g, (match, index) => {
+                return args[index] !== undefined ? args[index] : match;
+            });
+        }
+        return result;
     }
 };
 
