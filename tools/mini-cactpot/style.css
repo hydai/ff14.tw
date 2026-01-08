@@ -383,7 +383,7 @@
     border: none;
     border-radius: 12px;
     cursor: pointer;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, color 0.2s ease, opacity 0.2s ease;
     box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
     display: flex;
     align-items: center;
