@@ -42,6 +42,7 @@ class MiniCactpotCalculator {
 
         // 當前選中的格子位置（用於 popup）
         this.currentPopupPosition = null;
+        this.currentPopupOptions = null;
         this.lastFocusedElement = null; // 用於 popup 的無障礙功能
 
         this.initializeGrid();
@@ -73,16 +74,24 @@ class MiniCactpotCalculator {
         };
         this.elements.numberGrid.addEventListener('click', this.handleNumberGridClick);
 
-        // 取消按鈕
-        this.handlePopupCloseClick = () => {
+        const cancelAction = () => {
+            const { isNewSelection } = this.currentPopupOptions || {};
             this.hideNumberPopup();
+            if (isNewSelection && this.history.length > 0) {
+                const lastState = this.history.pop();
+                this.restoreState(lastState);
+                this.updateUndoButton();
+            }
         };
+
+        // 取消按鈕
+        this.handlePopupCloseClick = cancelAction;
         this.elements.popupClose.addEventListener('click', this.handlePopupCloseClick);
 
         // 點擊 overlay 關閉
         this.handleOverlayClick = (e) => {
             if (e.target === this.elements.numberPopup) {
-                this.hideNumberPopup();
+                cancelAction();
             }
         };
         this.elements.numberPopup.addEventListener('click', this.handleOverlayClick);
@@ -90,7 +99,7 @@ class MiniCactpotCalculator {
         // ESC 鍵關閉
         this.handlePopupKeydown = (e) => {
             if (e.key === 'Escape' && this.elements.numberPopup.classList.contains('visible')) {
-                this.hideNumberPopup();
+                cancelAction();
             }
         };
         document.addEventListener('keydown', this.handlePopupKeydown);
@@ -117,8 +126,9 @@ class MiniCactpotCalculator {
         }
     }
 
-    showNumberPopup(position) {
+    showNumberPopup(position, options = {}) {
         this.currentPopupPosition = position;
+        this.currentPopupOptions = options;
         this.lastFocusedElement = document.activeElement;
         this.updateNumberPopupState();
         this.elements.numberPopup.classList.add('visible');
@@ -135,6 +145,7 @@ class MiniCactpotCalculator {
     hideNumberPopup() {
         this.elements.numberPopup.classList.remove('visible');
         this.currentPopupPosition = null;
+        this.currentPopupOptions = null;
         if (this.lastFocusedElement) {
             this.lastFocusedElement.focus();
             this.lastFocusedElement = null;
@@ -270,7 +281,7 @@ class MiniCactpotCalculator {
 
         if (cell.classList.contains('selected')) {
             // 已選擇但尚未輸入數字的格子，重新顯示 popup
-            this.showNumberPopup(position);
+            this.showNumberPopup(position, { isNewSelection: false });
         } else if (this.selectedCells.length < 4) {
             // 選擇格子
             this.selectCell(position);
@@ -291,7 +302,7 @@ class MiniCactpotCalculator {
         this.updateUI();
 
         // 顯示數字選擇 popup
-        this.showNumberPopup(position);
+        this.showNumberPopup(position, { isNewSelection: true });
     }
 
     updateUI() {
