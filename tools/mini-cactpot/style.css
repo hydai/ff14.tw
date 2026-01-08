@@ -390,16 +390,16 @@
     justify-content: center;
 }
 
-.number-btn:hover:not(.used) {
+.number-btn:hover:not(:disabled) {
     transform: translateY(-3px) scale(1.05);
     box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
 }
 
-.number-btn:active:not(.used) {
+.number-btn:active:not(:disabled) {
     transform: translateY(-1px) scale(1.02);
 }
 
-.number-btn.used {
+.number-btn:disabled {
     background: linear-gradient(135deg, #ccc, #999);
     color: #666;
     cursor: not-allowed;
@@ -437,6 +437,11 @@
 }
 
 /* Dark mode support for popup */
+[data-theme="dark"] {
+    --cactpot-btn-grad-start: #5a6fd6;
+    --cactpot-btn-grad-end: #6b4f9a;
+}
+
 [data-theme="dark"] .popup-content.number-picker {
     background: var(--bg-secondary);
 }
@@ -445,11 +450,7 @@
     color: var(--text-color);
 }
 
-[data-theme="dark"] .number-btn {
-    background: linear-gradient(135deg, #5a6fd6, #6b4f9a);
-}
-
-[data-theme="dark"] .number-btn.used {
+[data-theme="dark"] .number-btn:disabled {
     background: linear-gradient(135deg, #444, #333);
     color: #777;
 }
