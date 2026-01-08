@@ -452,7 +452,7 @@
 
 [data-theme="dark"] .number-btn:disabled {
     background: linear-gradient(135deg, #444, #333);
-    color: #777;
+    color: #999;
 }
 
 [data-theme="dark"] .popup-close {
