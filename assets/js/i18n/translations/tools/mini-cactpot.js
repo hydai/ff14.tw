@@ -38,7 +38,11 @@ const MiniCactpotTranslations = {
         mini_cactpot_max_cells: '最多只能選擇 4 個格子',
         mini_cactpot_number_used: '數字 {value} 已被使用',
         mini_cactpot_undone: '已回到上一步',
-        mini_cactpot_reset_done: '已重置九宮格'
+        mini_cactpot_reset_done: '已重置九宮格',
+
+        // Popup
+        mini_cactpot_popup_title: '選擇數字',
+        mini_cactpot_popup_cancel: '取消'
     },
     en: {
         // Page info
@@ -76,7 +80,11 @@ const MiniCactpotTranslations = {
         mini_cactpot_max_cells: 'Maximum 4 cells can be selected',
         mini_cactpot_number_used: 'Number {value} is already used',
         mini_cactpot_undone: 'Undone',
-        mini_cactpot_reset_done: 'Grid has been reset'
+        mini_cactpot_reset_done: 'Grid has been reset',
+
+        // Popup
+        mini_cactpot_popup_title: 'Select Number',
+        mini_cactpot_popup_cancel: 'Cancel'
     },
     ja: {
         // ページ情報
@@ -114,7 +122,11 @@ const MiniCactpotTranslations = {
         mini_cactpot_max_cells: '最大4つのマスのみ選択できます',
         mini_cactpot_number_used: '数字 {value} は既に使用されています',
         mini_cactpot_undone: '元に戻しました',
-        mini_cactpot_reset_done: 'グリッドをリセットしました'
+        mini_cactpot_reset_done: 'グリッドをリセットしました',
+
+        // ポップアップ
+        mini_cactpot_popup_title: '数字を選択',
+        mini_cactpot_popup_cancel: 'キャンセル'
     }
 };
 
