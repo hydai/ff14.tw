@@ -42,6 +42,7 @@ class MiniCactpotCalculator {
 
         // 當前選中的格子位置（用於 popup）
         this.currentPopupPosition = null;
+        this.lastFocusedElement = null; // 用於 popup 的無障礙功能
 
         this.initializeGrid();
         this.initializePopup();
@@ -97,18 +98,18 @@ class MiniCactpotCalculator {
 
     destroy() {
         // 移除 grid 事件監聽器
-        if (this.handleGridClick) {
+        if (this.handleGridClick && this.elements.grid) {
             this.elements.grid.removeEventListener('click', this.handleGridClick);
         }
 
         // 移除 popup 事件監聽器
-        if (this.handleNumberGridClick) {
+        if (this.handleNumberGridClick && this.elements.numberGrid) {
             this.elements.numberGrid.removeEventListener('click', this.handleNumberGridClick);
         }
-        if (this.handlePopupCloseClick) {
+        if (this.handlePopupCloseClick && this.elements.popupClose) {
             this.elements.popupClose.removeEventListener('click', this.handlePopupCloseClick);
         }
-        if (this.handleOverlayClick) {
+        if (this.handleOverlayClick && this.elements.numberPopup) {
             this.elements.numberPopup.removeEventListener('click', this.handleOverlayClick);
         }
         if (this.handlePopupKeydown) {
@@ -118,13 +119,26 @@ class MiniCactpotCalculator {
 
     showNumberPopup(position) {
         this.currentPopupPosition = position;
+        this.lastFocusedElement = document.activeElement;
         this.updateNumberPopupState();
         this.elements.numberPopup.style.display = 'flex';
+
+        // 將焦點移至第一個可用的數字按鈕，如果沒有則移至關閉按鈕
+        const firstAvailableBtn = this.elements.numberGrid.querySelector('.number-btn:not(.used)');
+        if (firstAvailableBtn) {
+            firstAvailableBtn.focus();
+        } else {
+            this.elements.popupClose.focus();
+        }
     }
 
     hideNumberPopup() {
         this.elements.numberPopup.style.display = 'none';
         this.currentPopupPosition = null;
+        if (this.lastFocusedElement) {
+            this.lastFocusedElement.focus();
+            this.lastFocusedElement = null;
+        }
     }
 
     updateNumberPopupState() {
