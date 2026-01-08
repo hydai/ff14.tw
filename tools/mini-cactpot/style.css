@@ -324,3 +324,134 @@
 [data-theme="dark"] .best-line-text {
     color: var(--text-color);
 }
+
+/* Number Picker Popup Styles */
+.popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.popup-content.number-picker {
+    background: var(--surface);
+    border-radius: 16px;
+    padding: 1.5rem;
+    max-width: 320px;
+    width: 90%;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    animation: popIn 0.2s ease-out;
+}
+
+.popup-content.number-picker h3 {
+    margin: 0 0 1.25rem 0;
+    text-align: center;
+    font-size: 1.25rem;
+    color: var(--text-primary);
+}
+
+.number-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 1rem;
+}
+
+.number-btn {
+    aspect-ratio: 1;
+    min-width: 60px;
+    min-height: 60px;
+    font-size: 1.5rem;
+    font-weight: bold;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.number-btn:hover:not(.used) {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+}
+
+.number-btn:active:not(.used) {
+    transform: translateY(-1px) scale(1.02);
+}
+
+.number-btn.used {
+    background: linear-gradient(135deg, #ccc, #999);
+    color: #666;
+    cursor: not-allowed;
+    box-shadow: none;
+    opacity: 0.6;
+}
+
+.popup-close {
+    width: 100%;
+    padding: 0.875rem;
+    background: var(--background);
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.popup-close:hover {
+    background: var(--border);
+    color: var(--text-primary);
+}
+
+@keyframes popIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Dark mode support for popup */
+[data-theme="dark"] .popup-content.number-picker {
+    background: var(--bg-secondary);
+}
+
+[data-theme="dark"] .popup-content.number-picker h3 {
+    color: var(--text-color);
+}
+
+[data-theme="dark"] .number-btn {
+    background: linear-gradient(135deg, #5a6fd6, #6b4f9a);
+}
+
+[data-theme="dark"] .number-btn.used {
+    background: linear-gradient(135deg, #444, #333);
+    color: #777;
+}
+
+[data-theme="dark"] .popup-close {
+    background: var(--bg-primary);
+    border-color: var(--border-color);
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .popup-close:hover {
+    background: var(--border-color);
+    color: var(--text-color);
+}

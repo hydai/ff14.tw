@@ -34,10 +34,17 @@ class MiniCactpotCalculator {
             selectedCount: document.getElementById('selected-count'),
             bestChoiceInfo: document.getElementById('best-choice-info'),
             bestLineSummary: document.getElementById('best-line-summary'),
-            undoBtn: document.getElementById('undo-btn')
+            undoBtn: document.getElementById('undo-btn'),
+            numberPopup: document.getElementById('number-popup'),
+            numberGrid: document.querySelector('.number-grid'),
+            popupClose: document.querySelector('#number-popup .popup-close')
         };
-        
+
+        // 當前選中的格子位置（用於 popup）
+        this.currentPopupPosition = null;
+
         this.initializeGrid();
+        this.initializePopup();
     }
 
     initializeGrid() {
@@ -52,6 +59,87 @@ class MiniCactpotCalculator {
         };
 
         this.elements.grid.addEventListener('click', this.handleGridClick);
+    }
+
+    initializePopup() {
+        // 數字按鈕點擊事件
+        this.elements.numberGrid.querySelectorAll('.number-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const number = parseInt(btn.dataset.number);
+                this.handleNumberSelection(number);
+            });
+        });
+
+        // 取消按鈕
+        this.elements.popupClose.addEventListener('click', () => {
+            this.hideNumberPopup();
+        });
+
+        // 點擊 overlay 關閉
+        this.elements.numberPopup.addEventListener('click', (e) => {
+            if (e.target === this.elements.numberPopup) {
+                this.hideNumberPopup();
+            }
+        });
+
+        // ESC 鍵關閉
+        this.handlePopupKeydown = (e) => {
+            if (e.key === 'Escape' && this.elements.numberPopup.style.display !== 'none') {
+                this.hideNumberPopup();
+            }
+        };
+        document.addEventListener('keydown', this.handlePopupKeydown);
+    }
+
+    showNumberPopup(position) {
+        this.currentPopupPosition = position;
+        this.updateNumberPopupState();
+        this.elements.numberPopup.style.display = 'flex';
+    }
+
+    hideNumberPopup() {
+        this.elements.numberPopup.style.display = 'none';
+        this.currentPopupPosition = null;
+    }
+
+    updateNumberPopupState() {
+        // 更新已使用數字的狀態
+        const usedNumbers = this.grid.filter(n => n !== null);
+
+        this.elements.numberGrid.querySelectorAll('.number-btn').forEach(btn => {
+            const number = parseInt(btn.dataset.number);
+            if (usedNumbers.includes(number)) {
+                btn.classList.add('used');
+            } else {
+                btn.classList.remove('used');
+            }
+        });
+    }
+
+    handleNumberSelection(number) {
+        if (this.currentPopupPosition === null) return;
+
+        // 檢查數字是否已被使用
+        if (this.grid.includes(number)) {
+            FF14Utils.showToast(this.getText('mini_cactpot_number_used', { value: number }), 'error');
+            return;
+        }
+
+        // 保存狀態
+        this.saveState();
+
+        // 填入數字
+        const position = this.currentPopupPosition;
+        this.grid[position] = number;
+        const cell = document.querySelector(`[data-position="${position}"]`);
+        cell.classList.add('revealed');
+        cell.textContent = number;
+
+        // 關閉 popup
+        this.hideNumberPopup();
+
+        // 更新 UI
+        this.updateUI();
     }
 
     getLineName(index) {
@@ -110,32 +198,18 @@ class MiniCactpotCalculator {
             cell.classList.remove('selected', 'revealed');
             cell.textContent = '';
         });
-        
+
         // 重新繪製格子狀態
         this.selectedCells.forEach(position => {
             const cell = document.querySelector(`[data-position="${position}"]`);
             cell.classList.add('selected');
-            
+
             if (this.grid[position] !== null) {
                 cell.classList.add('revealed');
                 cell.textContent = this.grid[position];
             } else {
-                // 重新創建輸入框
-                const input = document.createElement('input');
-                input.type = 'number';
-                input.min = '1';
-                input.max = '9';
-                input.placeholder = '?';
-                input.addEventListener('input', (e) => {
-                    this.handleNumberInput(position, parseInt(e.target.value));
-                });
-                input.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter') {
-                        e.target.blur();
-                    }
-                });
-                SecurityUtils.clearElement(cell);
-                cell.appendChild(input);
+                // 顯示問號表示尚未輸入數字
+                cell.textContent = '?';
             }
         });
     }
@@ -151,14 +225,14 @@ class MiniCactpotCalculator {
 
     handleCellClick(position) {
         const cell = document.querySelector(`[data-position="${position}"]`);
-        
+
         if (cell.classList.contains('revealed')) {
             return; // 已經輸入數字的格子不能再點選
         }
 
         if (cell.classList.contains('selected')) {
-            // 取消選擇
-            this.unselectCell(position);
+            // 已選擇但尚未輸入數字的格子，重新顯示 popup
+            this.showNumberPopup(position);
         } else if (this.selectedCells.length < 4) {
             // 選擇格子
             this.selectCell(position);
@@ -170,31 +244,16 @@ class MiniCactpotCalculator {
     selectCell(position) {
         // 保存狀態
         this.saveState();
-        
+
         const cell = document.querySelector(`[data-position="${position}"]`);
         cell.classList.add('selected');
+        cell.textContent = '?';
         this.selectedCells.push(position);
-        
-        // 創建輸入框
-        const input = document.createElement('input');
-        input.type = 'number';
-        input.min = '1';
-        input.max = '9';
-        input.placeholder = '?';
-        input.addEventListener('input', (e) => {
-            this.handleNumberInput(position, parseInt(e.target.value));
-        });
-        input.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                e.target.blur();
-            }
-        });
-        
-        SecurityUtils.clearElement(cell);
-        cell.appendChild(input);
-        input.focus();
-        
+
         this.updateUI();
+
+        // 顯示數字選擇 popup
+        this.showNumberPopup(position);
     }
 
     unselectCell(position) {
@@ -210,27 +269,6 @@ class MiniCactpotCalculator {
         
         this.updateUI();
     }
-
-    handleNumberInput(position, value) {
-        if (value >= 1 && value <= 9) {
-            // 檢查數字是否已被使用
-            if (this.grid.includes(value)) {
-                FF14Utils.showToast(this.getText('mini_cactpot_number_used', { value }), 'error');
-                return;
-            }
-            
-            // 保存狀態
-            this.saveState();
-            
-            this.grid[position] = value;
-            const cell = document.querySelector(`[data-position="${position}"]`);
-            cell.classList.add('revealed');
-            cell.textContent = value;
-            
-            this.updateUI();
-        }
-    }
-    
 
     updateUI() {
         const selectedCount = this.selectedCells.length;
