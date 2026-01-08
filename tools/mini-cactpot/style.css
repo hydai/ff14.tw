@@ -437,7 +437,7 @@
 }
 
 /* Dark mode support for popup */
-[data-theme="dark"] {
+:root[data-theme="dark"] {
     --cactpot-btn-grad-start: #5a6fd6;
     --cactpot-btn-grad-end: #6b4f9a;
 }

@@ -96,10 +96,32 @@ class MiniCactpotCalculator {
         };
         this.elements.numberPopup.addEventListener('click', this.handleOverlayClick);
 
-        // ESC 鍵關閉
+        // 鍵盤事件處理：ESC 關閉、Tab 焦點陷阱
         this.handlePopupKeydown = (e) => {
-            if (e.key === 'Escape' && this.elements.numberPopup.classList.contains('visible')) {
+            if (!this.elements.numberPopup.classList.contains('visible')) return;
+
+            if (e.key === 'Escape') {
                 cancelAction();
+                return;
+            }
+
+            if (e.key === 'Tab') {
+                const focusableElements = Array.from(this.elements.numberPopup.querySelectorAll('button:not(:disabled)'));
+                if (focusableElements.length === 0) return;
+                const firstElement = focusableElements[0];
+                const lastElement = focusableElements[focusableElements.length - 1];
+
+                if (e.shiftKey) { // Shift + Tab
+                    if (document.activeElement === firstElement) {
+                        lastElement.focus();
+                        e.preventDefault();
+                    }
+                } else { // Tab
+                    if (document.activeElement === lastElement) {
+                        firstElement.focus();
+                        e.preventDefault();
+                    }
+                }
             }
         };
         document.addEventListener('keydown', this.handlePopupKeydown);
