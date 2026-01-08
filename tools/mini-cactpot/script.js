@@ -89,7 +89,7 @@ class MiniCactpotCalculator {
 
         // ESC 鍵關閉
         this.handlePopupKeydown = (e) => {
-            if (e.key === 'Escape' && this.elements.numberPopup.style.display !== 'none') {
+            if (e.key === 'Escape' && this.elements.numberPopup.classList.contains('visible')) {
                 this.hideNumberPopup();
             }
         };
@@ -121,7 +121,7 @@ class MiniCactpotCalculator {
         this.currentPopupPosition = position;
         this.lastFocusedElement = document.activeElement;
         this.updateNumberPopupState();
-        this.elements.numberPopup.style.display = 'flex';
+        this.elements.numberPopup.classList.add('visible');
 
         // 將焦點移至第一個可用的數字按鈕，如果沒有則移至關閉按鈕
         const firstAvailableBtn = this.elements.numberGrid.querySelector('.number-btn:not(.used)');
@@ -133,7 +133,7 @@ class MiniCactpotCalculator {
     }
 
     hideNumberPopup() {
-        this.elements.numberPopup.style.display = 'none';
+        this.elements.numberPopup.classList.remove('visible');
         this.currentPopupPosition = null;
         if (this.lastFocusedElement) {
             this.lastFocusedElement.focus();
