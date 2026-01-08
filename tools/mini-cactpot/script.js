@@ -54,7 +54,7 @@ class MiniCactpotCalculator {
         // 綁定新的事件監聽器
         this.handleGridClick = (e) => {
             if (e.target.classList.contains('grid-cell')) {
-                this.handleCellClick(parseInt(e.target.dataset.position));
+                this.handleCellClick(parseInt(e.target.dataset.position, 10));
             }
         };
 
@@ -62,25 +62,29 @@ class MiniCactpotCalculator {
     }
 
     initializePopup() {
-        // 數字按鈕點擊事件
-        this.elements.numberGrid.querySelectorAll('.number-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const number = parseInt(btn.dataset.number);
+        // 使用事件委派處理數字按鈕點擊
+        this.handleNumberGridClick = (e) => {
+            const btn = e.target.closest('.number-btn');
+            if (btn && !btn.classList.contains('used')) {
+                const number = parseInt(btn.dataset.number, 10);
                 this.handleNumberSelection(number);
-            });
-        });
+            }
+        };
+        this.elements.numberGrid.addEventListener('click', this.handleNumberGridClick);
 
         // 取消按鈕
-        this.elements.popupClose.addEventListener('click', () => {
+        this.handlePopupCloseClick = () => {
             this.hideNumberPopup();
-        });
+        };
+        this.elements.popupClose.addEventListener('click', this.handlePopupCloseClick);
 
         // 點擊 overlay 關閉
-        this.elements.numberPopup.addEventListener('click', (e) => {
+        this.handleOverlayClick = (e) => {
             if (e.target === this.elements.numberPopup) {
                 this.hideNumberPopup();
             }
-        });
+        };
+        this.elements.numberPopup.addEventListener('click', this.handleOverlayClick);
 
         // ESC 鍵關閉
         this.handlePopupKeydown = (e) => {
@@ -89,6 +93,27 @@ class MiniCactpotCalculator {
             }
         };
         document.addEventListener('keydown', this.handlePopupKeydown);
+    }
+
+    destroy() {
+        // 移除 grid 事件監聽器
+        if (this.handleGridClick) {
+            this.elements.grid.removeEventListener('click', this.handleGridClick);
+        }
+
+        // 移除 popup 事件監聽器
+        if (this.handleNumberGridClick) {
+            this.elements.numberGrid.removeEventListener('click', this.handleNumberGridClick);
+        }
+        if (this.handlePopupCloseClick) {
+            this.elements.popupClose.removeEventListener('click', this.handlePopupCloseClick);
+        }
+        if (this.handleOverlayClick) {
+            this.elements.numberPopup.removeEventListener('click', this.handleOverlayClick);
+        }
+        if (this.handlePopupKeydown) {
+            document.removeEventListener('keydown', this.handlePopupKeydown);
+        }
     }
 
     showNumberPopup(position) {
@@ -107,7 +132,7 @@ class MiniCactpotCalculator {
         const usedNumbers = this.grid.filter(n => n !== null);
 
         this.elements.numberGrid.querySelectorAll('.number-btn').forEach(btn => {
-            const number = parseInt(btn.dataset.number);
+            const number = parseInt(btn.dataset.number, 10);
             if (usedNumbers.includes(number)) {
                 btn.classList.add('used');
             } else {
@@ -445,11 +470,11 @@ class MiniCactpotCalculator {
 
 // 全域函數
 function resetGrid() {
-    // 移除舊的事件監聽器
-    if (calculator && calculator.handleGridClick) {
-        calculator.elements.grid.removeEventListener('click', calculator.handleGridClick);
+    // 銷毀舊的實例以移除事件監聽器
+    if (calculator) {
+        calculator.destroy();
     }
-    
+
     // 清除所有格子的狀態
     document.querySelectorAll('.grid-cell').forEach(cell => {
         cell.classList.remove('selected', 'revealed');
