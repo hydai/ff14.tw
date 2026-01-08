@@ -67,7 +67,7 @@ class MiniCactpotCalculator {
         // 使用事件委派處理數字按鈕點擊
         this.handleNumberGridClick = (e) => {
             const btn = e.target.closest('.number-btn');
-            if (btn && !btn.classList.contains('used')) {
+            if (btn && !btn.disabled) {
                 const number = parseInt(btn.dataset.number, 10);
                 this.handleNumberSelection(number);
             }
@@ -143,6 +143,9 @@ class MiniCactpotCalculator {
         if (this.handlePopupKeydown) {
             document.removeEventListener('keydown', this.handlePopupKeydown);
         }
+
+        // 隱藏 popup 並移除其 keydown listener
+        this.hideNumberPopup();
     }
 
     showNumberPopup(position, options = {}) {
@@ -181,7 +184,6 @@ class MiniCactpotCalculator {
             const number = parseInt(btn.dataset.number, 10);
             const isUsed = usedNumbers.includes(number);
 
-            btn.classList.toggle('used', isUsed);
             btn.disabled = isUsed;
         });
     }
