@@ -470,7 +470,7 @@ class MiniCactpotCalculator {
 
 // 全域函數
 function resetGrid() {
-    // 銷毀舊的實例以移除事件監聽器
+    // 清理舊的實例以移除事件監聽器
     if (calculator) {
         calculator.destroy();
     }
