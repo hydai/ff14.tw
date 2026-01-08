@@ -149,11 +149,7 @@ class MiniCactpotCalculator {
             const number = parseInt(btn.dataset.number, 10);
             const isUsed = usedNumbers.includes(number);
 
-            if (isUsed) {
-                btn.classList.add('used');
-            } else {
-                btn.classList.remove('used');
-            }
+            btn.classList.toggle('used', isUsed);
             btn.disabled = isUsed;
         });
     }
@@ -296,20 +292,6 @@ class MiniCactpotCalculator {
 
         // 顯示數字選擇 popup
         this.showNumberPopup(position);
-    }
-
-    unselectCell(position) {
-        // 保存狀態
-        this.saveState();
-        
-        const cell = document.querySelector(`[data-position="${position}"]`);
-        cell.classList.remove('selected', 'revealed');
-        cell.textContent = '';
-        
-        this.selectedCells = this.selectedCells.filter(pos => pos !== position);
-        this.grid[position] = null;
-        
-        this.updateUI();
     }
 
     updateUI() {

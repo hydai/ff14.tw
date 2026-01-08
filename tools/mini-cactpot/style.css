@@ -1,5 +1,10 @@
 @import url('/assets/css/tools-common.css');
 
+:root {
+    --cactpot-btn-grad-start: #667eea;
+    --cactpot-btn-grad-end: #764ba2;
+}
+
 .page-header {
     text-align: center;
     margin-bottom: 2rem;
@@ -373,7 +378,7 @@
     min-height: 60px;
     font-size: 1.5rem;
     font-weight: bold;
-    background: linear-gradient(135deg, #667eea, #764ba2);
+    background: linear-gradient(135deg, var(--cactpot-btn-grad-start), var(--cactpot-btn-grad-end));
     color: white;
     border: none;
     border-radius: 12px;
