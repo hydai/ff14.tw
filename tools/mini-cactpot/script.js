@@ -124,7 +124,7 @@ class MiniCactpotCalculator {
         this.elements.numberPopup.classList.add('visible');
 
         // 將焦點移至第一個可用的數字按鈕，如果沒有則移至關閉按鈕
-        const firstAvailableBtn = this.elements.numberGrid.querySelector('.number-btn:not(.used)');
+        const firstAvailableBtn = this.elements.numberGrid.querySelector('.number-btn:not(:disabled)');
         if (firstAvailableBtn) {
             firstAvailableBtn.focus();
         } else {
@@ -147,11 +147,14 @@ class MiniCactpotCalculator {
 
         this.elements.numberGrid.querySelectorAll('.number-btn').forEach(btn => {
             const number = parseInt(btn.dataset.number, 10);
-            if (usedNumbers.includes(number)) {
+            const isUsed = usedNumbers.includes(number);
+
+            if (isUsed) {
                 btn.classList.add('used');
             } else {
                 btn.classList.remove('used');
             }
+            btn.disabled = isUsed;
         });
     }
 
