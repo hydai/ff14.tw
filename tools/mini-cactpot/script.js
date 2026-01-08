@@ -195,9 +195,6 @@ class MiniCactpotCalculator {
             return;
         }
 
-        // 保存狀態
-        this.saveState();
-
         // 填入數字
         const position = this.currentPopupPosition;
         this.grid[position] = number;
