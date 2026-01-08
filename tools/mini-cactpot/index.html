@@ -77,8 +77,8 @@
 
             <!-- Number Picker Popup -->
             <div id="number-popup" class="popup-overlay" style="display: none;">
-                <div class="popup-content number-picker">
-                    <h3 data-i18n="mini_cactpot_popup_title">選擇數字</h3>
+                <div class="popup-content number-picker" role="dialog" aria-modal="true" aria-labelledby="number-popup-title">
+                    <h3 id="number-popup-title" data-i18n="mini_cactpot_popup_title">選擇數字</h3>
                     <div class="number-grid">
                         <button class="number-btn" data-number="1">1</button>
                         <button class="number-btn" data-number="2">2</button>
