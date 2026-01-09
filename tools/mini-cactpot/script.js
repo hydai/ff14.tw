@@ -188,12 +188,6 @@ class MiniCactpotCalculator {
     handleNumberSelection(number) {
         if (this.currentPopupPosition === null) return;
 
-        // 檢查數字是否已被使用
-        if (this.grid.includes(number)) {
-            FF14Utils.showToast(this.getText('mini_cactpot_number_used', { value: number }), 'error');
-            return;
-        }
-
         // 填入數字
         const position = this.currentPopupPosition;
         this.grid[position] = number;
