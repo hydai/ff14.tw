@@ -42,7 +42,7 @@ const MiniCactpotTranslations = {
 
         // Popup
         mini_cactpot_popup_title: '選擇數字',
-        mini_cactpot_popup_cancel: '取消'
+        mini_cactpot_popup_cancel: '取消',
     },
     en: {
         // Page info
@@ -84,7 +84,7 @@ const MiniCactpotTranslations = {
 
         // Popup
         mini_cactpot_popup_title: 'Select Number',
-        mini_cactpot_popup_cancel: 'Cancel'
+        mini_cactpot_popup_cancel: 'Cancel',
     },
     ja: {
         // ページ情報
