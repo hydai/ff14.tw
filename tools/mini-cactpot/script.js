@@ -140,9 +140,6 @@ class MiniCactpotCalculator {
         if (this.handleOverlayClick && this.elements.numberPopup) {
             this.elements.numberPopup.removeEventListener('click', this.handleOverlayClick);
         }
-        if (this.handlePopupKeydown) {
-            document.removeEventListener('keydown', this.handlePopupKeydown);
-        }
 
         // 隱藏 popup 並移除其 keydown listener
         this.hideNumberPopup();
