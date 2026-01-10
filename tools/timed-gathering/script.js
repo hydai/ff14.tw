@@ -18,20 +18,20 @@ class TimedGatheringManager {
         this.currentListId = 'default';
         this.debounceTimer = null;
         this.currentLanguage = window.i18n.getCurrentLanguage();
-        
+
         this.elements = {
             // 搜尋與篩選
             searchInput: document.getElementById('searchInput'),
             clearSearchBtn: document.getElementById('clearSearchBtn'),
             typeFilters: document.getElementById('typeFilters'),
             expansionFilters: document.getElementById('expansionFilters'),
-            
+
             // 項目顯示
             itemsContainer: document.getElementById('itemsContainer'),
             itemCount: document.getElementById('itemCount'),
             loadingIndicator: document.getElementById('loadingIndicator'),
             errorMessage: document.getElementById('errorMessage'),
-            
+
             // 清單管理
             listTabs: document.getElementById('listTabs'),
             currentListName: document.getElementById('currentListName'),
@@ -40,11 +40,11 @@ class TimedGatheringManager {
             renameListBtn: document.getElementById('renameListBtn'),
             deleteListBtn: document.getElementById('deleteListBtn'),
             clearListBtn: document.getElementById('clearListBtn'),
-            
+
             // 匯入/匯出
             importBtn: document.getElementById('importBtn'),
             exportBtn: document.getElementById('exportBtn'),
-            
+
             // 巨集
             generateMacroBtn: document.getElementById('generateMacroBtn'),
             includeClearCmd: document.getElementById('includeClearCmd'),
@@ -52,7 +52,7 @@ class TimedGatheringManager {
             macroOutput: document.getElementById('macroOutput'),
             macroText: document.getElementById('macroText'),
             copyMacroBtn: document.getElementById('copyMacroBtn'),
-            
+
             // 對話框
             dialogOverlay: document.getElementById('dialogOverlay'),
             dialogTitle: document.getElementById('dialogTitle'),
@@ -60,11 +60,11 @@ class TimedGatheringManager {
             dialogClose: document.getElementById('dialogClose'),
             dialogCancel: document.getElementById('dialogCancel'),
             dialogConfirm: document.getElementById('dialogConfirm'),
-            
+
             // 語言選擇器
             languageButtons: document.querySelectorAll('.language-btn')
         };
-        
+
         this.initialize();
     }
 
@@ -93,25 +93,25 @@ class TimedGatheringManager {
             this.searchFilter = new SearchFilter();
             this.timeCalculator = new TimeCalculator();
             this.notificationManager = new NotificationManager();
-            
+
             // 將 NotificationManager 實例暴露到全域，以便事件處理器能夠存取
             window.notificationManager = this.notificationManager;
-            
+
             // 載入資料
             await this.loadData();
-            
+
             // 初始化事件
             this.initializeEvents();
-            
+
             // 初始化通知設定
             this.initializeNotifications();
-            
+
             // 載入清單
             this.loadLists();
-            
+
             // 初始顯示
             this.updateDisplay();
-            
+
         } catch (error) {
             console.error('初始化失敗:', error);
             this.showError(FF14Utils.getI18nText('initFailedError', 'Initialization failed, please refresh the page'));
@@ -125,9 +125,9 @@ class TimedGatheringManager {
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-            
+
             const jsonText = await response.text();
-            
+
             // Define schema for gathering items
             const itemSchema = {
                 required: ['items'],
@@ -138,31 +138,31 @@ class TimedGatheringManager {
                     }
                 }
             };
-            
+
             // Use safe JSON parsing with schema validation
             const parseResult = SecurityUtils.safeJSONParse(jsonText, itemSchema);
-            
+
             if (!parseResult.success) {
                 throw new Error(parseResult.error);
             }
-            
+
             // Validate and sanitize each item in the array
             const items = parseResult.data.items || [];
             this.data = items.filter(item => {
                 // Basic validation for each item
-                return item && 
-                       typeof item.id === 'string' && 
-                       typeof item.name === 'string' &&
-                       typeof item.type === 'string' &&
-                       (typeof item.level === 'number' || typeof item.level === 'string') &&
-                       typeof item.zone === 'string';
+                return item &&
+                    typeof item.id === 'string' &&
+                    typeof item.name === 'string' &&
+                    typeof item.type === 'string' &&
+                    (typeof item.level === 'number' || typeof item.level === 'string') &&
+                    typeof item.zone === 'string';
             });
-            
+
             this.filteredData = [...this.data];
-            
+
             // 更新項目計數
             this.updateItemCount();
-            
+
         } catch (error) {
             console.error('載入資料失敗:', error);
             this.showError(FF14Utils.getI18nText('dataLoadFailedError', 'Failed to load item data, please refresh and try again'));
@@ -179,20 +179,20 @@ class TimedGatheringManager {
                 this.switchLanguage(lang);
             });
         });
-        
+
         // 初始化語言按鈕狀態
         this.updateLanguageButtons();
-        
+
         // 搜尋
         this.elements.searchInput.addEventListener('input', () => {
             this.debounceSearch();
         });
-        
+
         this.elements.clearSearchBtn.addEventListener('click', () => {
             this.elements.searchInput.value = '';
             this.applyFilters();
         });
-        
+
         // 類型篩選
         this.elements.typeFilters.querySelectorAll('.tag-filter').forEach(tag => {
             tag.addEventListener('click', () => {
@@ -200,7 +200,7 @@ class TimedGatheringManager {
                 this.applyFilters();
             });
         });
-        
+
         // 資料片篩選
         this.elements.expansionFilters.querySelectorAll('.tag-filter').forEach(tag => {
             tag.addEventListener('click', () => {
@@ -208,51 +208,51 @@ class TimedGatheringManager {
                 this.applyFilters();
             });
         });
-        
+
         // 清單管理
         this.elements.newListBtn.addEventListener('click', () => {
             this.showNewListDialog();
         });
-        
+
         this.elements.renameListBtn.addEventListener('click', () => {
             this.showRenameListDialog();
         });
-        
+
         this.elements.deleteListBtn.addEventListener('click', () => {
             this.showDeleteListDialog();
         });
-        
+
         this.elements.clearListBtn.addEventListener('click', () => {
             this.clearCurrentList();
         });
-        
+
         // 匯入/匯出
         this.elements.importBtn.addEventListener('click', () => {
             this.showImportDialog();
         });
-        
+
         this.elements.exportBtn.addEventListener('click', () => {
             this.exportLists();
         });
-        
+
         // 巨集
         this.elements.generateMacroBtn.addEventListener('click', () => {
             this.generateMacro();
         });
-        
+
         this.elements.copyMacroBtn.addEventListener('click', () => {
             this.copyMacroToClipboard();
         });
-        
+
         // 對話框
         this.elements.dialogClose.addEventListener('click', () => {
             this.hideDialog();
         });
-        
+
         this.elements.dialogCancel.addEventListener('click', () => {
             this.hideDialog();
         });
-        
+
         // ESC 關閉對話框 (由 ModalManager 處理)
         /*
         document.addEventListener('keydown', (e) => {
@@ -304,11 +304,11 @@ class TimedGatheringManager {
         if (notificationStatus) {
             const status = this.notificationManager.getNotificationStatus();
             notificationStatus.textContent = status;
-            
+
             // 根據狀態設定樣式 - 支援兩種樣式類名
             const statusClasses = ['status-enabled', 'status-disabled', 'status-denied'];
             notificationStatus.classList.remove(...statusClasses);
-            
+
             if (this.notificationManager.enabled) {
                 notificationStatus.classList.add('status-enabled');
             } else if (Notification.permission === 'denied') {
@@ -327,7 +327,7 @@ class TimedGatheringManager {
         this.updateListDisplay();
         this.updateNotificationStatus(); // 更新通知狀態文字
     }
-    
+
     updateLanguageButtons() {
         this.elements.languageButtons.forEach(btn => {
             const isActive = btn.dataset.lang === this.currentLanguage;
@@ -351,13 +351,13 @@ class TimedGatheringManager {
             .map(tag => tag.dataset.type);
         const activeExpansions = Array.from(this.elements.expansionFilters.querySelectorAll('.tag-filter.active'))
             .map(tag => tag.dataset.expansion);
-        
+
         this.filteredData = this.searchFilter.filter(this.data, {
             searchTerm,
             types: activeTypes,
             expansions: activeExpansions
         });
-        
+
         this.updateDisplay();
     }
 
@@ -377,7 +377,7 @@ class TimedGatheringManager {
             container.appendChild(emptyMessage);
             return;
         }
-        
+
         this.filteredData.forEach(item => {
             const card = this.createItemCard(item);
             container.appendChild(card);
@@ -388,43 +388,43 @@ class TimedGatheringManager {
         const card = document.createElement('div');
         card.className = 'item-card';
         card.dataset.itemId = item.id;
-        
+
         const typeIcon = this.getTypeIcon(item.type);
         const isInList = this.listManager.hasInCurrentList(this.currentListId, item.id);
-        
+
         const header = document.createElement('div');
         header.className = 'item-header';
-        
+
         const titleSection = document.createElement('div');
         titleSection.className = 'item-title-section';
-        
+
         const typeSpan = document.createElement('span');
         typeSpan.className = 'item-type';
         typeSpan.textContent = typeIcon;
         titleSection.appendChild(typeSpan);
-        
+
         const title = document.createElement('h3');
         title.className = 'item-name';
         // 根據當前語言顯示名稱
         const displayName = this.currentLanguage === 'ja' && item.nameJp ? item.nameJp : item.name;
         title.textContent = displayName;
         titleSection.appendChild(title);
-        
+
         header.appendChild(titleSection);
-        
+
         const timeSpan = document.createElement('span');
         timeSpan.className = 'item-time';
         timeSpan.textContent = item.time;
         header.appendChild(timeSpan);
-        
+
         card.appendChild(header);
-        
+
         const body = document.createElement('div');
         body.className = 'item-body';
-        
+
         const info = document.createElement('div');
         info.className = 'item-info';
-        
+
         const zoneDiv = document.createElement('div');
         zoneDiv.className = 'item-zone';
         // 根據當前語言顯示地區和位置
@@ -432,31 +432,31 @@ class TimedGatheringManager {
         const displayLocation = this.currentLanguage === 'ja' && item.locationJp ? item.locationJp : item.location;
         zoneDiv.textContent = `📍 ${displayZone} - ${displayLocation}`;
         info.appendChild(zoneDiv);
-        
+
         const coordsDiv = document.createElement('div');
         coordsDiv.className = 'item-coords';
         coordsDiv.textContent = `📐 ${item.coordinates}`;
         info.appendChild(coordsDiv);
-        
+
         const versionDiv = document.createElement('div');
         versionDiv.className = 'item-version';
         versionDiv.textContent = `v${item.expansion}`;
         info.appendChild(versionDiv);
-        
+
         body.appendChild(info);
-        
+
         if (item.description) {
             const desc = document.createElement('p');
             desc.className = 'item-description';
             desc.textContent = item.description;
             body.appendChild(desc);
         }
-        
+
         card.appendChild(body);
-        
+
         const footer = document.createElement('div');
         footer.className = 'item-footer';
-        
+
         const addBtn = document.createElement('button');
         addBtn.className = isInList ? 'btn btn-success btn-sm' : 'btn btn-primary btn-sm';
         // Use safe DOM manipulation instead of innerHTML
@@ -466,7 +466,7 @@ class TimedGatheringManager {
             isInList ? FF14Utils.getI18nText('addedToListButton', 'Added') : FF14Utils.getI18nText('addToListButton', 'Add to List')
         );
         addBtn.disabled = isInList;
-        
+
         addBtn.addEventListener('click', () => {
             this.addItemToList(item);
             addBtn.className = 'btn btn-success btn-sm';
@@ -474,10 +474,10 @@ class TimedGatheringManager {
             SecurityUtils.updateButtonContent(addBtn, '✔️', FF14Utils.getI18nText('addedToListButton', 'Added'));
             addBtn.disabled = true;
         });
-        
+
         footer.appendChild(addBtn);
         card.appendChild(footer);
-        
+
         return card;
     }
 
@@ -504,7 +504,7 @@ class TimedGatheringManager {
         const list = this.listManager.getList(this.currentListId);
         const container = this.elements.listItems;
         SecurityUtils.clearElement(container);
-        
+
         if (!list || list.items.length === 0) {
             // Use safe DOM manipulation instead of innerHTML
             const emptyMessage = SecurityUtils.createEmptyMessage(
@@ -512,19 +512,19 @@ class TimedGatheringManager {
                 FF14Utils.getI18nText('emptyListHint', 'Click "Add to List" button on the left to add items')
             );
             container.appendChild(emptyMessage);
-            
+
             // 清空通知監控列表
             if (this.notificationManager) {
                 this.notificationManager.updateWatchList([]);
             }
             return;
         }
-        
+
         list.items.forEach(item => {
             const listItem = this.createListItem(item);
             container.appendChild(listItem);
         });
-        
+
         // 更新通知監控列表
         if (this.notificationManager && this.notificationManager.enabled) {
             this.notificationManager.updateWatchList(list.items);
@@ -535,34 +535,34 @@ class TimedGatheringManager {
         const div = document.createElement('div');
         div.className = 'list-item';
         div.dataset.itemId = item.id;
-        
+
         const info = document.createElement('div');
         info.className = 'list-item-info';
-        
+
         const typeIcon = document.createElement('span');
         typeIcon.className = 'list-item-type';
         typeIcon.textContent = this.getTypeIcon(item.type);
         info.appendChild(typeIcon);
-        
+
         const name = document.createElement('span');
         name.className = 'list-item-name';
         // 根據當前語言顯示名稱
         const displayName = this.currentLanguage === 'ja' && item.nameJp ? item.nameJp : item.name;
         name.textContent = displayName;
         info.appendChild(name);
-        
+
         const version = document.createElement('span');
         version.className = 'list-item-version';
         version.textContent = `v${item.expansion}`;
         info.appendChild(version);
-        
+
         const time = document.createElement('span');
         time.className = 'list-item-time';
         time.textContent = item.time;
         info.appendChild(time);
-        
+
         div.appendChild(info);
-        
+
         const removeBtn = document.createElement('button');
         removeBtn.className = 'btn btn-sm btn-danger';
         removeBtn.textContent = '🗑️';  // Use textContent instead of innerHTML
@@ -570,9 +570,9 @@ class TimedGatheringManager {
         removeBtn.addEventListener('click', () => {
             this.removeItemFromList(item.id);
         });
-        
+
         div.appendChild(removeBtn);
-        
+
         return div;
     }
 
@@ -586,7 +586,7 @@ class TimedGatheringManager {
     loadLists() {
         const lists = this.listManager.getAllLists();
         this.renderListTabs(lists);
-        
+
         if (lists.length > 0) {
             this.switchToList(lists[0].id);
         }
@@ -595,21 +595,21 @@ class TimedGatheringManager {
     renderListTabs(lists) {
         const container = this.elements.listTabs;
         SecurityUtils.clearElement(container);
-        
+
         lists.forEach(list => {
             const tab = document.createElement('button');
             tab.className = 'list-tab';
             tab.dataset.listId = list.id;
             tab.textContent = list.name;
-            
+
             if (list.id === this.currentListId) {
                 tab.classList.add('active');
             }
-            
+
             tab.addEventListener('click', () => {
                 this.switchToList(list.id);
             });
-            
+
             container.appendChild(tab);
         });
     }
@@ -617,18 +617,18 @@ class TimedGatheringManager {
     switchToList(listId) {
         this.currentListId = listId;
         const list = this.listManager.getList(listId);
-        
+
         if (list) {
             this.elements.currentListName.textContent = list.name;
-            
+
             // 更新標籤頁狀態
             this.elements.listTabs.querySelectorAll('.list-tab').forEach(tab => {
                 tab.classList.toggle('active', tab.dataset.listId === listId);
             });
-            
+
             // 更新清單顯示
             this.updateListDisplay();
-            
+
             // 更新左側項目顯示
             this.updateDisplay();
         }
@@ -685,7 +685,7 @@ class TimedGatheringManager {
                 }
             }
         };
-        
+
         this.showDialog();
     }
 
@@ -732,12 +732,13 @@ class TimedGatheringManager {
                 }
             }
         };
-        
+
         this.showDialog();
 
         // Optional: Select text after modal is shown (ModalManager handles focus)
-        const input = document.getElementById('renameListInput');
-        if (input) input.select();
+        // Note: 'input' is already declared above; reuse the same reference
+        const renameInput = document.getElementById('renameListInput');
+        if (renameInput) renameInput.select();
     }
 
     showDeleteListDialog() {
@@ -884,36 +885,36 @@ class TimedGatheringManager {
         this.elements.dialogTitle.textContent = FF14Utils.getI18nText('importDialogTitle', 'Import List');
         // Use safe DOM manipulation instead of innerHTML
         SecurityUtils.clearElement(this.elements.dialogBody);
-        
+
         const formGroup = SecurityUtils.createFormGroup({
             label: FF14Utils.getI18nText('selectFileLabel', 'Select File:'),
             inputId: 'importFile',
             inputType: 'file',
             accept: '.json'
         });
-        
+
         const helpText = document.createElement('p');
         helpText.className = 'text-muted';
         helpText.textContent = FF14Utils.getI18nText('selectJsonFileHint', 'Select a previously exported JSON file');
-        
+
         this.elements.dialogBody.appendChild(formGroup);
         this.elements.dialogBody.appendChild(helpText);
-        
+
         this.elements.dialogConfirm.onclick = () => {
             const fileInput = document.getElementById('importFile');
             const file = fileInput.files[0];
-            
+
             if (file) {
                 this.importFile(file);
             }
         };
-        
+
         this.showDialog();
     }
 
     importFile(file) {
         const reader = new FileReader();
-        
+
         reader.onload = (e) => {
             // Define schema for import data
             const importSchema = {
@@ -924,10 +925,10 @@ class TimedGatheringManager {
                     exportDate: { type: 'string' }
                 }
             };
-            
+
             // Use safe JSON parsing with schema validation
             const parseResult = SecurityUtils.safeJSONParse(e.target.result, importSchema);
-            
+
             if (!parseResult.success) {
                 console.error('匯入失敗:', parseResult.error);
                 FF14Utils.showToast(FF14Utils.getI18nText('fileFormatError', 'File format error') + ': ' + parseResult.error, 'error');
