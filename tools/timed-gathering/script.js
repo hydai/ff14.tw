@@ -88,6 +88,7 @@ class TimedGatheringManager {
 
             // 初始化模組
             this.listManager = new ListManager();
+            this.modalManager = new ModalManager();
             this.macroExporter = new MacroExporter();
             this.searchFilter = new SearchFilter();
             this.timeCalculator = new TimeCalculator();
@@ -252,12 +253,14 @@ class TimedGatheringManager {
             this.hideDialog();
         });
         
-        // ESC 關閉對話框
+        // ESC 關閉對話框 (由 ModalManager 處理)
+        /*
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && this.elements.dialogOverlay.style.display !== 'none') {
                 this.hideDialog();
             }
         });
+        */
     }
 
     initializeNotifications() {
@@ -651,6 +654,10 @@ class TimedGatheringManager {
             placeholder: FF14Utils.getI18nText('enterListNamePlaceholder', 'Enter list name'),
             maxLength: TimedGatheringManager.CONSTANTS.MAX_LIST_NAME_LENGTH
         });
+        // Add autofocus to the input for better UX with ModalManager
+        const input = formGroup.querySelector('input');
+        if (input) input.setAttribute('autofocus', '');
+
         this.elements.dialogBody.appendChild(formGroup);
 
         this.elements.dialogConfirm.onclick = () => {
@@ -680,11 +687,6 @@ class TimedGatheringManager {
         };
         
         this.showDialog();
-        
-        // 自動聚焦輸入框
-        setTimeout(() => {
-            document.getElementById('newListName').focus();
-        }, 100);
     }
 
     showRenameListDialog() {
@@ -699,6 +701,10 @@ class TimedGatheringManager {
             value: currentList.name,
             maxLength: TimedGatheringManager.CONSTANTS.MAX_LIST_NAME_LENGTH
         });
+        // Add autofocus to the input
+        const input = formGroup.querySelector('input');
+        if (input) input.setAttribute('autofocus', '');
+
         this.elements.dialogBody.appendChild(formGroup);
 
         this.elements.dialogConfirm.onclick = () => {
@@ -728,12 +734,10 @@ class TimedGatheringManager {
         };
         
         this.showDialog();
-        
-        // 自動選取文字
-        setTimeout(() => {
-            const input = document.getElementById('renameListInput');
-            input.select();
-        }, 100);
+
+        // Optional: Select text after modal is shown (ModalManager handles focus)
+        const input = document.getElementById('renameListInput');
+        if (input) input.select();
     }
 
     showDeleteListDialog() {
@@ -969,12 +973,15 @@ class TimedGatheringManager {
         this.elements.itemCount.textContent = `(${this.filteredData.length} / ${this.data.length})`;
     }
 
-    showDialog() {
-        this.elements.dialogOverlay.style.display = 'flex';
+    showDialog(onClose = null) {
+        this.modalManager.show(this.elements.dialogOverlay, {
+            onClose: onClose,
+            useClass: 'active'
+        });
     }
 
     hideDialog() {
-        this.elements.dialogOverlay.style.display = 'none';
+        this.modalManager.hide();
     }
 
     showLoading(show) {
