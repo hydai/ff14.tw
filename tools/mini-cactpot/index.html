@@ -65,8 +65,15 @@
                 </div>
 
                 <div class="controls">
-                    <button class="btn btn-primary" id="undo-btn" onclick="undoLastStep()" style="display: none;" data-i18n="mini_cactpot_undo">回到上一步</button>
-                    <button class="btn btn-secondary" id="reset-btn" onclick="resetGrid()" data-i18n="mini_cactpot_reset">重置</button>
+                    <div class="btn-group">
+                        <button class="btn btn-secondary" id="undo-btn" disabled>
+                            <span class="btn-icon">↩️</span> <span data-i18n="mini_cactpot_undo">回到上一步</span>
+                        </button>
+                        <button class="btn btn-secondary" id="redo-btn" disabled>
+                            <span class="btn-icon">↪️</span> <span data-i18n="mini_cactpot_redo">重做</span>
+                        </button>
+                    </div>
+                    <button class="btn btn-secondary" id="reset-btn" data-i18n="mini_cactpot_reset">重置</button>
                 </div>
 
                 <div class="best-choice-info" id="best-choice-info" style="display: none;">
