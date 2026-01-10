@@ -138,13 +138,27 @@ class MiniCactpotCalculator {
             useClass: 'visible',
             onClose: () => {
                 // If closed without selection (cancelled) and was a new selection (clicked empty cell)
-                // we need to revert the '?' state
+                // we need to revert the '?' state by directly restoring the cell
                 if (
                     !this.selectionMade &&
                     this.currentPopupOptions?.isNewSelection &&
-                    this.history.canUndo()
+                    this.currentPopupPosition !== null
                 ) {
-                    this.undo();
+                    const pos = this.currentPopupPosition;
+                    const cell = document.querySelector(`[data-position="${pos}"]`);
+
+                    // 還原格子狀態
+                    cell.classList.remove('selected');
+                    cell.textContent = '';
+
+                    // 從 selectedCells 中移除
+                    const idx = this.selectedCells.indexOf(pos);
+                    if (idx > -1) {
+                        this.selectedCells.splice(idx, 1);
+                    }
+
+                    // 更新 UI
+                    this.updateUI();
                 }
 
                 this.currentPopupPosition = null;
@@ -305,8 +319,8 @@ class MiniCactpotCalculator {
         cell.textContent = '?';
         this.selectedCells.push(position);
 
-        // 在修改後保存狀態（確保 redo 能正確還原）
-        this.saveState();
+        // 注意：這裡不保存狀態，狀態只在 handleNumberSelection 中數字被選擇後才保存
+        // 這樣 undo 時就不會回到 '?' 的中介狀態
 
         this.updateUI();
 
