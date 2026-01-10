@@ -72,6 +72,9 @@ const LodestoneLookupTranslations = {
         // 成就區
         lodestone_total_achievements: '總成就數：',
         lodestone_achievement_points: '成就點數：',
+        // 成就標籤（無冒號，用於總覽卡片）
+        lodestone_total_achievements_label: '總成就數',
+        lodestone_achievement_points_label: '成就點數',
 
         // 收藏區
         lodestone_mounts_collection: '坐騎收藏',
@@ -81,9 +84,14 @@ const LodestoneLookupTranslations = {
         lodestone_mounts_count_unit: '個坐騎',
         lodestone_minions_count_unit: '隻寵物',
 
+        // 公會招募狀態
+        lodestone_fc_recruitment_open: '開放',
+        lodestone_fc_recruitment_closed: '關閉',
+
         // 公會資訊
         lodestone_fc_info: '公會資訊',
         lodestone_fc_members: '成員數：',
+        lodestone_fc_members_label: '成員數',
         lodestone_fc_rank: '排名：',
         lodestone_fc_recruitment: '招募狀態：',
         lodestone_fc_estate: '公會房屋',
@@ -104,7 +112,30 @@ const LodestoneLookupTranslations = {
         lodestone_usage_4: '成就資料支援分頁瀏覽',
         lodestone_usage_5: '支援北美和日本資料中心的角色查詢',
         lodestone_usage_6: '請選擇正確的資料中心以確保查詢成功',
-        lodestone_usage_7: '更多詳細資訊請前往官方 Lodestone 頁面查看'
+        lodestone_usage_7: '更多詳細資訊請前往官方 Lodestone 頁面查看',
+
+        // 錯誤訊息
+        lodestone_error_no_id: '請輸入角色 ID',
+        lodestone_error_invalid_id: '角色 ID 必須是數字',
+        lodestone_error_not_found: '找不到此角色，請確認 ID 是否正確',
+        lodestone_error_query_failed: '查詢失敗 ({status}): {statusText}',
+        lodestone_error_format: '伺服器回應格式錯誤',
+        lodestone_error_no_data: '無法取得角色資料',
+        lodestone_error_job_list_loading: '載入詳細職業列表中...',
+        lodestone_error_job_data_unavailable: '職業等級資料暫不可用',
+        lodestone_error_no_equipment: '無裝備資料',
+        lodestone_error_no_jobs: '無職業資料',
+        lodestone_error_no_achievements: '暫無成就資料',
+        lodestone_error_no_mounts: '暫無坐騎資料',
+        lodestone_error_no_minions: '暫無寵物資料',
+        lodestone_error_fc_loading: '載入公會資訊中...',
+        lodestone_error_fc_failed: '公會資訊載入失敗',
+        lodestone_error_no_members: '暫無成員資料',
+
+        // 分頁文字
+        lodestone_pagination_info: '第 {page} 頁，共 {total} 頁',
+        lodestone_pagination_prev: '上一頁',
+        lodestone_pagination_next: '下一頁'
     },
     en: {
         // Page info
@@ -176,6 +207,9 @@ const LodestoneLookupTranslations = {
         // Achievements section
         lodestone_total_achievements: 'Total Achievements:',
         lodestone_achievement_points: 'Achievement Points:',
+        // Achievement labels (no colon, for overview cards)
+        lodestone_total_achievements_label: 'Total Achievements',
+        lodestone_achievement_points_label: 'Achievement Points',
 
         // Collection section
         lodestone_mounts_collection: 'Mount Collection',
@@ -185,9 +219,14 @@ const LodestoneLookupTranslations = {
         lodestone_mounts_count_unit: 'mounts',
         lodestone_minions_count_unit: 'minions',
 
+        // FC Recruitment status
+        lodestone_fc_recruitment_open: 'Open',
+        lodestone_fc_recruitment_closed: 'Closed',
+
         // FC info
         lodestone_fc_info: 'Free Company Info',
         lodestone_fc_members: 'Members:',
+        lodestone_fc_members_label: 'Members',
         lodestone_fc_rank: 'Rank:',
         lodestone_fc_recruitment: 'Recruiting:',
         lodestone_fc_estate: 'Estate',
@@ -208,7 +247,30 @@ const LodestoneLookupTranslations = {
         lodestone_usage_4: 'Achievement data supports pagination',
         lodestone_usage_5: 'Supports NA and JP data center lookups',
         lodestone_usage_6: 'Please select the correct data center for successful queries',
-        lodestone_usage_7: 'Visit the official Lodestone page for more details'
+        lodestone_usage_7: 'Visit the official Lodestone page for more details',
+
+        // Error messages
+        lodestone_error_no_id: 'Please enter character ID',
+        lodestone_error_invalid_id: 'Character ID must be a number',
+        lodestone_error_not_found: 'Character not found, please check if ID is correct',
+        lodestone_error_query_failed: 'Query failed ({status}): {statusText}',
+        lodestone_error_format: 'Server response format error',
+        lodestone_error_no_data: 'Unable to get character data',
+        lodestone_error_job_list_loading: 'Loading detailed job list...',
+        lodestone_error_job_data_unavailable: 'Job level data temporarily unavailable',
+        lodestone_error_no_equipment: 'No equipment data',
+        lodestone_error_no_jobs: 'No job data',
+        lodestone_error_no_achievements: 'No achievement data available',
+        lodestone_error_no_mounts: 'No mount data available',
+        lodestone_error_no_minions: 'No minion data available',
+        lodestone_error_fc_loading: 'Loading Free Company info...',
+        lodestone_error_fc_failed: 'Failed to load Free Company info',
+        lodestone_error_no_members: 'No member data available',
+
+        // Pagination text
+        lodestone_pagination_info: 'Page {page} of {total}',
+        lodestone_pagination_prev: 'Previous',
+        lodestone_pagination_next: 'Next'
     },
     ja: {
         // ページ情報
@@ -280,6 +342,9 @@ const LodestoneLookupTranslations = {
         // アチーブメントセクション
         lodestone_total_achievements: '総アチーブメント数：',
         lodestone_achievement_points: 'アチーブメントポイント：',
+        // アチーブメントラベル（コロンなし、概要カード用）
+        lodestone_total_achievements_label: '総アチーブメント数',
+        lodestone_achievement_points_label: 'アチーブメントポイント',
 
         // コレクションセクション
         lodestone_mounts_collection: 'マウントコレクション',
@@ -289,9 +354,14 @@ const LodestoneLookupTranslations = {
         lodestone_mounts_count_unit: 'マウント',
         lodestone_minions_count_unit: 'ミニオン',
 
+        // FC募集状態
+        lodestone_fc_recruitment_open: '参加可能',
+        lodestone_fc_recruitment_closed: '参加不可',
+
         // FC情報
         lodestone_fc_info: 'フリーカンパニー情報',
         lodestone_fc_members: 'メンバー数：',
+        lodestone_fc_members_label: 'メンバー数',
         lodestone_fc_rank: 'ランク：',
         lodestone_fc_recruitment: '募集状態：',
         lodestone_fc_estate: 'カンパニーハウス',
@@ -312,7 +382,30 @@ const LodestoneLookupTranslations = {
         lodestone_usage_4: 'アチーブメントデータはページネーション対応',
         lodestone_usage_5: '北米と日本DCのキャラクター検索に対応',
         lodestone_usage_6: '正しいデータセンターを選択してください',
-        lodestone_usage_7: '詳細は公式Lodestoneページをご覧ください'
+        lodestone_usage_7: '詳細は公式Lodestoneページをご覧ください',
+
+        // エラーメッセージ
+        lodestone_error_no_id: 'キャラクターIDを入力してください',
+        lodestone_error_invalid_id: 'キャラクターIDは数字でなければなりません',
+        lodestone_error_not_found: 'キャラクターが見つかりません。IDが正しいか確認してください',
+        lodestone_error_query_failed: '検索に失敗しました ({status}): {statusText}',
+        lodestone_error_format: 'サーバーレスポンス形式エラー',
+        lodestone_error_no_data: 'キャラクター情報を取得できませんでした',
+        lodestone_error_job_list_loading: '詳細ジョブリストを読み込み中...',
+        lodestone_error_job_data_unavailable: 'ジョブレベルデータは現在利用できません',
+        lodestone_error_no_equipment: '装備情報なし',
+        lodestone_error_no_jobs: 'ジョブ情報なし',
+        lodestone_error_no_achievements: 'アチーブメント情報なし',
+        lodestone_error_no_mounts: 'マウント情報なし',
+        lodestone_error_no_minions: 'ミニオン情報なし',
+        lodestone_error_fc_loading: 'フリーカンパニー情報を読み込み中...',
+        lodestone_error_fc_failed: 'フリーカンパニー情報の読み込みに失敗しました',
+        lodestone_error_no_members: 'メンバー情報なし',
+
+        // ページネーションテキスト
+        lodestone_pagination_info: '{page} / {total} ページ',
+        lodestone_pagination_prev: '前へ',
+        lodestone_pagination_next: '次へ'
     }
 };
 

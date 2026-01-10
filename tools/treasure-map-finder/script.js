@@ -42,11 +42,10 @@ class TreasureMapFinder {
             this.updateFilteredMaps();
         } catch (error) {
             console.error('初始化失敗:', error);
-            this.showError('載入寶圖資料失敗，請重新整理頁面再試。');
+            this.showError(FF14Utils.getI18nText('treasure_map_load_failed', '載入寶圖資料失敗，請重新整理頁面再試。'));
         }
     }
-    
-    
+
     async loadAetherytes() {
         try {
             const response = await fetch('../../data/aetherytes.json');
@@ -228,10 +227,10 @@ class TreasureMapFinder {
         this.filteredMaps = this.filterManager.applyFilters(this.maps);
         this.currentDisplayCount = 0;
         this.displayMaps();
-        
+
         // 如果有重置訊息需求
         if (!this.filterManager.hasActiveFilters() && this.lastFilterState?.hadFilters) {
-            FF14Utils.showToast('已重置所有篩選條件', 'info');
+            FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_reset_filters', '重置篩選'), 'info');
         }
         
         // 記錄過濾器狀態
@@ -262,16 +261,6 @@ class TreasureMapFinder {
         } else {
             this.elements.loadMore.classList.add('hidden');
         }
-    }
-    
-    // HTML 編碼函數
-    escapeHtml(unsafe) {
-        return unsafe
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
     }
     
     createMapCard(map) {
@@ -344,8 +333,8 @@ class TreasureMapFinder {
         // 詳細地圖按鈕
         const detailBtn = document.createElement('button');
         detailBtn.className = 'btn btn-secondary btn-sm btn-view-detail';
-        detailBtn.title = '查看詳細地圖';
-        SecurityUtils.updateButtonContent(detailBtn, '🗺️', '詳細地圖');
+        detailBtn.title = FF14Utils.getI18nText('treasure_map_view_detail_tooltip', '查看詳細地圖');
+        SecurityUtils.updateButtonContent(detailBtn, '🗺️', FF14Utils.getI18nText('treasure_map_view_detail', '詳細地圖'));
         detailBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             this.uiDialogManager.showMapDetail(map, {
@@ -361,7 +350,7 @@ class TreasureMapFinder {
         const addBtn = document.createElement('button');
         addBtn.className = `btn ${isInList ? 'btn-success' : 'btn-primary'} btn-sm btn-add-to-list`;
         addBtn.dataset.state = isInList ? 'added' : 'default';
-        const btnText = isInList ? '✓ 已加入' : '加入清單';
+        const btnText = isInList ? FF14Utils.getI18nText('treasure_map_added_to_list', '✓ 已加入') : FF14Utils.getI18nText('treasure_map_add_to_list', '加入清單');
         const span = document.createElement('span');
         span.className = 'btn-text';
         span.textContent = btnText;
@@ -393,7 +382,16 @@ class TreasureMapFinder {
         
         return card;
     }
-    
+
+    copyCoordinates(map) {
+        CoordinateUtils.copyCoordinatesToClipboard(map.coords).then(() => {
+            FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_copy_success', '座標指令已複製'), 'success');
+        }).catch(err => {
+            console.error('複製失敗:', err);
+            FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_copy_failed', '複製失敗'), 'error');
+        });
+    }
+
     toggleMapInList(map) {
         // 使用 ListManager 處理清單操作
         const options = {
@@ -430,19 +428,10 @@ class TreasureMapFinder {
             const mapId = card.dataset.mapId;
             const button = card.querySelector('.btn-add-to-list');
             const isInList = this.listManager.has(mapId);
-            
+
             button.dataset.state = isInList ? 'added' : 'default';
             button.className = `btn ${isInList ? 'btn-success' : 'btn-primary'} btn-sm btn-add-to-list`;
-            button.querySelector('.btn-text').textContent = isInList ? '✓ 已加入' : '加入清單';
-        });
-    }
-    
-    copyCoordinates(map) {
-        CoordinateUtils.copyCoordinatesToClipboard(map.coords).then(() => {
-            FF14Utils.showToast('座標指令已複製', 'success');
-        }).catch(err => {
-            console.error('複製失敗:', err);
-            FF14Utils.showToast('複製失敗', 'error');
+            button.querySelector('.btn-text').textContent = isInList ? FF14Utils.getI18nText('treasure_map_added_to_list', '✓ 已加入') : FF14Utils.getI18nText('treasure_map_add_to_list', '加入清單');
         });
     }
     
@@ -660,193 +649,7 @@ class TreasureMapFinder {
         
         return [];
     }
-    
-    // 將遊戲座標轉換為圖片座標
-    gameToImageCoords(gameX, gameY, imageWidth, imageHeight) {
-        return CoordinateUtils.gameToImageCoords(gameX, gameY, imageWidth, imageHeight);
-    }
-    
-    showDetailMap(map) {
-        const modal = document.getElementById('mapDetailModal');
-        const img = document.getElementById('mapDetailImage');
-        const canvas = document.getElementById('mapDetailCanvas');
-        const title = document.getElementById('mapDetailTitle');
-        const coords = document.getElementById('mapDetailCoords');
-        const closeBtn = document.getElementById('mapDetailClose');
-        const overlay = document.getElementById('mapDetailOverlay');
-        
-        // 設置圖片路徑 - 使用基礎地圖
-        const filePrefix = zoneManager.getFilePrefix(map.zoneId);
-        const baseMapPath = `images/maps/map-${filePrefix}.webp`;
-        img.src = baseMapPath;
-        
-        // 設置標題和座標
-        const translations = zoneManager.getZoneNames(map.zoneId) || { zh: map.zone, en: map.zone, ja: map.zone };
-        title.textContent = `${map.level.toUpperCase()} - ${translations.zh || map.zone}`;
-        coords.textContent = `座標：${CoordinateUtils.formatCoordinatesForDisplay(map.coords)}`;
-        
-        // 載入寶圖標記圖示
-        const markIcon = new Image();
-        markIcon.src = 'images/ui/mark.png';
-        
-        // 當圖片載入完成後繪製傳送點和寶圖標記
-        img.onload = () => {
-            // 設置 canvas 尺寸與圖片相同
-            canvas.width = img.naturalWidth;
-            canvas.height = img.naturalHeight;
-            
-            // 繪製內容
-            const ctx = canvas.getContext('2d');
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // 繪製寶圖標記的函數
-            const drawTreasureMark = () => {
-                // 計算標記大小（原始大小的3倍）
-                const markWidth = 27 * 3;  // 原始寬度 27px
-                const markHeight = 29 * 3; // 原始高度 29px
-                
-                // 轉換寶圖座標並繪製標記
-                const treasureCoords = this.gameToImageCoords(
-                    map.coords.x,
-                    map.coords.y,
-                    canvas.width,
-                    canvas.height
-                );
-                
-                // 繪製寶圖標記（確保中心對齊）
-                ctx.drawImage(
-                    markIcon,
-                    Math.floor(treasureCoords.x - markWidth / 2),
-                    Math.floor(treasureCoords.y - markHeight / 2),
-                    markWidth,
-                    markHeight
-                );
-                
-                // 開發模式：繪製精確座標點
-                if (window.location.hostname === 'localhost') {
-                    ctx.save();
-                    ctx.strokeStyle = 'lime';
-                    ctx.lineWidth = 2;
-                    ctx.beginPath();
-                    ctx.moveTo(treasureCoords.x - 10, treasureCoords.y);
-                    ctx.lineTo(treasureCoords.x + 10, treasureCoords.y);
-                    ctx.moveTo(treasureCoords.x, treasureCoords.y - 10);
-                    ctx.lineTo(treasureCoords.x, treasureCoords.y + 10);
-                    ctx.stroke();
-                    ctx.restore();
-                }
-            };
-            
-            // 檢查標記圖示是否已經載入
-            if (markIcon.complete && markIcon.naturalHeight !== 0) {
-                drawTreasureMark();
-            } else {
-                markIcon.onload = drawTreasureMark;
-            }
-            
-            // 取得該地區的傳送點
-            const aetherytes = this.getAetherytesForZone(map.zone);
-            console.log(`Zone: ${map.zone}, Found ${aetherytes.length} aetherytes`);
-            
-            if (aetherytes.length > 0 && this.aetheryteIcon) {
-                // 計算圖標大小（根據圖片大小調整）
-                const iconSize = Math.max(24, Math.min(48, canvas.width / 20));
-                
-                aetherytes.forEach(aetheryte => {
-                    // 轉換座標
-                    const imageCoords = this.gameToImageCoords(
-                        aetheryte.coords.x,
-                        aetheryte.coords.y,
-                        canvas.width,
-                        canvas.height
-                    );
-                    
-                    // 繪製傳送點圖標（確保中心對齊）
-                    // 使用 Math.floor 確保像素對齊
-                    ctx.drawImage(
-                        this.aetheryteIcon,
-                        Math.floor(imageCoords.x - iconSize / 2),
-                        Math.floor(imageCoords.y - iconSize / 2),
-                        iconSize,
-                        iconSize
-                    );
-                    
-                    // 開發模式：繪製精確座標點（可選）
-                    if (window.location.hostname === 'localhost') {
-                        ctx.save();
-                        ctx.strokeStyle = 'red';
-                        ctx.lineWidth = 1;
-                        ctx.beginPath();
-                        ctx.moveTo(imageCoords.x - 5, imageCoords.y);
-                        ctx.lineTo(imageCoords.x + 5, imageCoords.y);
-                        ctx.moveTo(imageCoords.x, imageCoords.y - 5);
-                        ctx.lineTo(imageCoords.x, imageCoords.y + 5);
-                        ctx.stroke();
-                        ctx.restore();
-                    }
-                    
-                    // 繪製傳送點名稱
-                    ctx.save();
-                    
-                    // 根據圖片大小動態調整字體大小
-                    const fontSize = Math.max(16, Math.min(24, canvas.width / 40));
-                    ctx.font = `bold ${fontSize}px Arial, "Microsoft JhengHei", sans-serif`;
-                    ctx.fillStyle = 'white';
-                    ctx.strokeStyle = 'black';
-                    ctx.lineWidth = 4;
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'top';
-                    
-                    const text = aetheryte.name.zh || aetheryte.name.en;
-                    const textY = imageCoords.y + iconSize / 2 + 10;
-                    
-                    // 添加半透明背景以提高可讀性
-                    const metrics = ctx.measureText(text);
-                    const textWidth = metrics.width;
-                    const textHeight = fontSize * 1.2;
-                    
-                    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-                    ctx.fillRect(
-                        imageCoords.x - textWidth / 2 - 5,
-                        textY - 2,
-                        textWidth + 10,
-                        textHeight
-                    );
-                    
-                    // 繪製文字
-                    ctx.fillStyle = 'white';
-                    ctx.strokeText(text, imageCoords.x, textY);
-                    ctx.fillText(text, imageCoords.x, textY);
-                    ctx.restore();
-                });
-            }
-        };
-        
-        // 顯示彈出視窗
-        modal.style.display = 'flex';
-        
-        // 點擊關閉按鈕關閉
-        const closeModal = () => {
-            modal.style.display = 'none';
-            closeBtn.removeEventListener('click', closeModal);
-            overlay.removeEventListener('click', closeModal);
-            img.onload = null; // 清理事件
-            markIcon.onload = null; // 清理標記圖示事件
-        };
-        
-        closeBtn.addEventListener('click', closeModal);
-        overlay.addEventListener('click', closeModal);
-        
-        // 按 ESC 鍵關閉
-        const escHandler = (e) => {
-            if (e.key === 'Escape') {
-                closeModal();
-                document.removeEventListener('keydown', escHandler);
-            }
-        };
-        document.addEventListener('keydown', escHandler);
-    }
-    
+
     toggleListPanel() {
         const isActive = this.elements.myListPanel.classList.contains('active');
         const overlay = document.getElementById('panelOverlay');
@@ -874,16 +677,16 @@ class TreasureMapFinder {
         if (myList.length === 0) {
             const emptyState = document.createElement('div');
             emptyState.className = 'empty-state';
-            
+
             const emptyText = document.createElement('p');
-            emptyText.textContent = '清單是空的';
+            emptyText.textContent = FF14Utils.getI18nText('treasure_map_empty_list', '清單是空的');
             emptyState.appendChild(emptyText);
-            
+
             const hintText = document.createElement('p');
             hintText.className = 'text-secondary';
-            hintText.textContent = '點擊寶圖卡片上的「加入清單」開始建立';
+            hintText.textContent = FF14Utils.getI18nText('treasure_map_list_hint', '點擊寶圖卡片上的「加入清單」開始建立');
             emptyState.appendChild(hintText);
-            
+
             this.elements.listContent.appendChild(emptyState);
             return;
         }
@@ -958,9 +761,9 @@ class TreasureMapFinder {
     }
     
     removeFromList(mapId) {
-        if (confirm('確定要移除這張寶圖嗎？')) {
+        if (confirm(FF14Utils.getI18nText('treasure_map_remove_confirm', '確定要移除這張寶圖嗎？'))) {
             const result = this.listManager.remove(mapId);
-            
+
             if (result.success) {
                 FF14Utils.showToast(result.message, 'info');
                 this.updateListCount();
@@ -982,15 +785,15 @@ class TreasureMapFinder {
     
     clearAllMaps() {
         const currentLength = this.listManager.getLength();
-        
+
         if (currentLength === 0) {
-            FF14Utils.showToast('清單已經是空的', 'info');
+            FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_empty_list', '清單是空的'), 'info');
             return;
         }
-        
-        if (confirm(`確定要清空所有寶圖嗎？共 ${currentLength} 張`)) {
+
+        if (confirm(FF14Utils.getI18nText('treasure_map_clear_confirm', '確定要清空所有寶圖嗎？共 {count} 張', { count: currentLength }))) {
             const result = this.listManager.clear();
-            
+
             if (result.success) {
                 FF14Utils.showToast(result.message, 'success');
                 this.updateListCount();
@@ -1019,10 +822,10 @@ class TreasureMapFinder {
     }
     
     updateResultCount() {
-        this.elements.resultCount.textContent = 
-            `顯示 ${this.currentDisplayCount} / ${this.filteredMaps.length} 個結果`;
+        this.elements.resultCount.textContent =
+            FF14Utils.getI18nText('treasure_map_results', '顯示 {count} 個結果', { count: this.currentDisplayCount }) + ` / ${this.filteredMaps.length}`;
     }
-    
+
     updateListCount() {
         const count = this.listManager.getLength();
         this.elements.listCount.textContent = `(${count})`;
@@ -1040,21 +843,21 @@ class TreasureMapFinder {
             SecurityUtils.clearElement(this.elements.treasureGrid);
             const loadingDiv = document.createElement('div');
             loadingDiv.className = 'loading';
-            loadingDiv.textContent = '載入中...';
+            loadingDiv.textContent = FF14Utils.getI18nText('treasure_map_loading', '載入中...');
             this.elements.treasureGrid.appendChild(loadingDiv);
         }
     }
-    
+
     showError(message) {
         SecurityUtils.clearElement(this.elements.treasureGrid);
-        
+
         const errorDiv = document.createElement('div');
         errorDiv.className = 'error-message';
         errorDiv.textContent = message;
-        
+
         const reloadBtn = document.createElement('button');
         reloadBtn.className = 'btn btn-primary';
-        reloadBtn.textContent = '重新載入';
+        reloadBtn.textContent = FF14Utils.getI18nText('treasure_map_reload', '重新載入');
         reloadBtn.addEventListener('click', () => location.reload());
         
         errorDiv.appendChild(document.createElement('br'));
@@ -1147,15 +950,15 @@ class TreasureMapFinder {
     // 生成路線
     async generateRoute() {
         const myList = this.listManager.getList();
-        
+
         if (myList.length < 2) {
-            FF14Utils.showToast('至少需要 2 張寶圖才能生成路線', 'error');
+            FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_no_maps_for_route', '至少需要 2 張寶圖才能生成路線'), 'error');
             return;
         }
-        
+
         // 等待 routeCalculator 載入完成
         if (!routeCalculator || !routeCalculator.aetherytes) {
-            FF14Utils.showToast('正在載入傳送點資料，請稍後再試', 'info');
+            FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_loading_aetherytes', '正在載入傳送點資料，請稍後再試'), 'info');
             // 等待一下再試
             setTimeout(() => {
                 if (routeCalculator && routeCalculator.aetherytes) {
@@ -1212,20 +1015,20 @@ class TreasureMapFinder {
     // 複製整個路線
     copyEntireRoute() {
         if (!this.currentRoute || this.currentRoute.length === 0) {
-            FF14Utils.showToast('沒有可複製的路線', 'error');
+            FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_no_maps_for_route', '至少需要 2 張寶圖才能生成路線'), 'error');
             return;
         }
-        
+
         // 使用自訂格式建構路線文字
         const routeText = this.currentRoute.map((step, index) => {
             return this.formatStepForCopy(step, index + 1, this.currentRoute.length);
         }).join('\n');
-        
+
         // 複製到剪貼簿
         navigator.clipboard.writeText(routeText).then(() => {
-            FF14Utils.showToast(`已複製 ${this.currentRoute.length} 個地點`, 'success');
+            FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_route_copy_success', '已複製 {count} 個地點', { count: this.currentRoute.length }), 'success');
         }).catch(() => {
-            FF14Utils.showToast('複製失敗，請再試一次', 'error');
+            FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_copy_failed', '複製失敗'), 'error');
         });
     }
     

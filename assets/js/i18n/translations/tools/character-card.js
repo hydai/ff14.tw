@@ -55,7 +55,18 @@ const CharacterCardTranslations = {
 
         // 按鈕
         char_card_generate: '產生角色卡',
-        char_card_download: '下載圖片'
+        char_card_download: '下載圖片',
+
+        // 訊息
+        char_card_error_name_empty: '請輸入角色名稱',
+        char_card_error_job_empty: '請選擇職業',
+        char_card_msg_generated: '角色卡已生成！',
+        char_card_msg_download_dev: '下載功能開發中，敬請期待！',
+        char_card_msg_upload_success: '圖片上傳成功！',
+        char_card_error_file_too_large: '圖片檔案過大，請選擇小於 5MB 的圖片',
+        char_card_error_invalid_file: '請選擇有效的圖片檔案',
+        char_card_msg_image_reset: '圖片已重置',
+        char_card_msg_image_removed: '圖片已移除'
     },
     en: {
         // Page info
@@ -110,7 +121,18 @@ const CharacterCardTranslations = {
 
         // Buttons
         char_card_generate: 'Generate Card',
-        char_card_download: 'Download Image'
+        char_card_download: 'Download Image',
+
+        // Messages
+        char_card_error_name_empty: 'Please enter character name',
+        char_card_error_job_empty: 'Please select a job',
+        char_card_msg_generated: 'Character card generated!',
+        char_card_msg_download_dev: 'Download feature is under development!',
+        char_card_msg_upload_success: 'Image uploaded successfully!',
+        char_card_error_file_too_large: 'File too large, please select an image smaller than 5MB',
+        char_card_error_invalid_file: 'Please select a valid image file',
+        char_card_msg_image_reset: 'Image reset',
+        char_card_msg_image_removed: 'Image removed'
     },
     ja: {
         // ページ情報
@@ -165,7 +187,18 @@ const CharacterCardTranslations = {
 
         // ボタン
         char_card_generate: 'カード生成',
-        char_card_download: '画像ダウンロード'
+        char_card_download: '画像ダウンロード',
+
+        // メッセージ
+        char_card_error_name_empty: 'キャラクター名を入力してください',
+        char_card_error_job_empty: 'ジョブを選択してください',
+        char_card_msg_generated: 'キャラクターカードを生成しました！',
+        char_card_msg_download_dev: 'ダウンロード機能は開発中です、少々お待ちください。',
+        char_card_msg_upload_success: '画像をアップロードしました！',
+        char_card_error_file_too_large: 'ファイルサイズが大きすぎます。5MB以下の画像を選択してください',
+        char_card_error_invalid_file: '有効な画像ファイルを選択してください',
+        char_card_msg_image_reset: '画像をリセットしました',
+        char_card_msg_image_removed: '画像を削除しました'
     }
 };
 

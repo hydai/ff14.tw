@@ -171,9 +171,9 @@ class I18nManager {
     }
 
     /**
-     * 取得翻譯文字（支援 Fallback Chain）
+     * 取得翻譯文字（支援 Fallback Chain 與參數替換）
      * @param {string} key - 翻譯鍵值
-     * @param {...any} args - 參數替換值
+     * @param {...any} args - 參數替換值。可以是多個參數（用於 {0}, {1}）或一個物件（用於 {name}）
      * @returns {string} 翻譯後的文字
      */
     getText(key, ...args) {
@@ -195,11 +195,9 @@ class I18nManager {
             return key;
         }
 
-        // 支援 {0}, {1} 參數替換
+        // 參數替換 - 使用共用工具函數
         if (args.length > 0) {
-            text = text.replace(/\{(\d+)\}/g, (match, index) =>
-                args[index] !== undefined ? args[index] : match
-            );
+            return FF14Utils.replaceParams(text, ...args);
         }
 
         return text;

@@ -93,12 +93,22 @@ class ListManager {
 
         // 檢查是否已存在
         if (this.has(map.id)) {
-            return { success: false, message: '此寶圖已在清單中' };
+            return {
+                success: false,
+                message: FF14Utils.getI18nText('treasure_map_item_already_in_list', '此寶圖已在清單中')
+            };
         }
 
         // 檢查數量限制
         if (this.list.length >= maxItems) {
-            return { success: false, message: `清單已滿（${maxItems}/${maxItems}）` };
+            return {
+                success: false,
+                message: FF14Utils.getI18nText(
+                    'treasure_map_list_full',
+                    `清單已滿（${this.list.length}/${maxItems}）`,
+                    { current: this.list.length, max: maxItems }
+                )
+            };
         }
 
         // 準備資料
@@ -113,7 +123,10 @@ class ListManager {
         this.listIds.add(map.id);
         this.saveToStorage();
 
-        return { success: true, message: '已加入清單' };
+        return {
+            success: true,
+            message: FF14Utils.getI18nText('treasure_map_item_added', '已加入清單')
+        };
     }
 
     /**
@@ -123,7 +136,11 @@ class ListManager {
      */
     remove(id) {
         if (!this.has(id)) {
-            return { success: false, message: '此寶圖不在清單中', removedItem: null };
+            return {
+                success: false,
+                message: FF14Utils.getI18nText('treasure_map_item_not_in_list', '此寶圖不在清單中'),
+                removedItem: null
+            };
         }
 
         // 找到要移除的項目
@@ -134,7 +151,11 @@ class ListManager {
         this.listIds.delete(id);
         this.saveToStorage();
 
-        return { success: true, message: '已從清單移除', removedItem };
+        return {
+            success: true,
+            message: FF14Utils.getI18nText('treasure_map_item_removed', '已從清單移除'),
+            removedItem
+        };
     }
 
     /**
@@ -143,16 +164,24 @@ class ListManager {
      */
     clear() {
         const count = this.list.length;
-        
+
         if (count === 0) {
-            return { success: false, message: '清單已經是空的', count: 0 };
+            return {
+                success: false,
+                message: FF14Utils.getI18nText('treasure_map_empty_list', '清單已經是空的'),
+                count: 0
+            };
         }
 
         this.list = [];
         this.listIds.clear();
         this.saveToStorage();
 
-        return { success: true, message: '已清空清單', count };
+        return {
+            success: true,
+            message: FF14Utils.getI18nText('treasure_map_list_cleared', '已清空清單'),
+            count
+        };
     }
 
     /**

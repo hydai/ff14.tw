@@ -71,3 +71,5 @@ notes/
 # Cloudflare Workers
 .wrangler/
 .dev.vars
+.playwright-mcp/
+scripts/__pycache__/

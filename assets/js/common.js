@@ -132,6 +132,65 @@ const FF14Utils = {
         return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
     },
 
+    /**
+     * 跳脫正則表達式特殊字元
+     * @param {string} str - 要跳脫的字串
+     * @returns {string} 跳脫後的字串
+     */
+    escapeRegExp(str) {
+        return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    },
+
+    /**
+     * 替換字串中的參數佔位符。
+     *
+     * 支援兩種模式（不可混合使用）：
+     * 1. **命名參數**：使用 `{name}` 格式，需傳入物件作為第一個參數
+     *    範例：replaceParams('你好，{name}！', { name: '玩家' }) → '你好，玩家！'
+     *
+     * 2. **索引參數**：使用 `{0}`, `{1}` 格式，可傳入多個參數或物件
+     *    範例：replaceParams('座標：{0}, {1}', 10, 20) → '座標：10, 20'
+     *
+     * **模式判定規則**：
+     * - 若第一個參數是物件，且字串中包含非數字佔位符（如 `{name}`），則使用命名參數模式
+     * - 否則使用索引參數模式
+     *
+     * **注意事項**：
+     * - 若傳入物件但字串只有 `{0}` 這類索引佔位符，會使用索引模式
+     * - 若想確保使用命名模式，請確保字串中至少有一個 `{字母開頭}` 的佔位符
+     *
+     * @param {string} text - 要處理的字串
+     * @param {...any} args - 參數值（物件或多個值）
+     * @returns {string} 替換後的字串
+     */
+    replaceParams(text, ...args) {
+        if (!text || args.length === 0) return text;
+
+        let result = text;
+        const isPlainObjectFirstArg = typeof args[0] === 'object' && args[0] !== null && !Array.isArray(args[0]);
+
+        // Prioritize named parameters if the first argument is an object and the text contains non-numeric placeholders.
+        if (isPlainObjectFirstArg && /\{[a-zA-Z_]/.test(text)) {
+            // 命名參數替換 {name}
+            const params = args[0];
+            const paramKeys = Object.keys(params).sort((a, b) => b.length - a.length);
+
+            if (paramKeys.length > 0) {
+                const regex = new RegExp(`\\{(${paramKeys.map(p => this.escapeRegExp(p)).join('|')})\\}`, 'g');
+                result = result.replace(regex, (match, key) => {
+                    return Object.prototype.hasOwnProperty.call(params, key) ? params[key] : match;
+                });
+            }
+        } else {
+            // 索引參數替換 {0}, {1}
+            const replacements = isPlainObjectFirstArg ? args[0] : args;
+            result = result.replace(/\{(\d+)\}/g, (match, index) => {
+                return Object.prototype.hasOwnProperty.call(replacements, index) ? replacements[index] : match;
+            });
+        }
+        return result;
+    },
+
     // 複製文字到剪貼簿
     copyToClipboard(text) {
         navigator.clipboard.writeText(text).then(() => {
@@ -162,13 +221,18 @@ const FF14Utils = {
             zIndex: '9999',
             opacity: '0',
             transform: 'translateY(-20px)',
-            transition: 'all 0.3s ease'
+            transition: 'all 0.3s ease',
+            whiteSpace: 'pre-line'
         });
 
         if (type === 'success') {
             toast.style.background = '#27ae60';
         } else if (type === 'error') {
             toast.style.background = '#e74c3c';
+        } else if (type === 'warning') {
+            toast.style.background = '#f39c12';
+        } else if (type === 'info') {
+            toast.style.background = '#3498db';
         }
 
         document.body.appendChild(toast);
@@ -245,14 +309,7 @@ const FF14Utils = {
         if (window.i18n && window.i18n.hasKey(key)) {
             return window.i18n.getText(key, ...args);
         }
-        
-        let result = fallback;
-        if (args.length > 0) {
-            result = result.replace(/\{(\d+)\}/g, (match, index) => {
-                return args[index] !== undefined ? args[index] : match;
-            });
-        }
-        return result;
+        return this.replaceParams(fallback, ...args);
     }
 };
 

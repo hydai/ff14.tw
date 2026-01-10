@@ -1154,14 +1154,6 @@ body > div[class~="toast-warning"] {
     display: flex;
     align-items: center;
     justify-content: center;
-}
-
-.map-detail-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
     background: rgba(0, 0, 0, 0.8);
     cursor: pointer;
 }
@@ -1176,6 +1168,7 @@ body > div[class~="toast-warning"] {
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
     display: flex;
     flex-direction: column;
+    cursor: default;
 }
 
 .map-detail-close {

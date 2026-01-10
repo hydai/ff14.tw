@@ -129,9 +129,9 @@ class ListManager {
         // 檢查清單數量限制
         if (Object.keys(this.lists).length >= ListManager.CONSTANTS.MAX_LISTS) {
             const message = FF14Utils.getI18nText(
-                'maxListsWarning', 
-                'Maximum of {0} lists allowed', 
-                ListManager.CONSTANTS.MAX_LISTS
+                'maxListsWarning',
+                'Maximum of {max} lists allowed',
+                { max: ListManager.CONSTANTS.MAX_LISTS }
             );
             return {
                 success: false,
@@ -151,8 +151,8 @@ class ListManager {
         if (name.length > ListManager.CONSTANTS.MAX_LIST_NAME_LENGTH) {
             const message = FF14Utils.getI18nText(
                 'listNameTooLong',
-                'List name cannot exceed {0} characters',
-                ListManager.CONSTANTS.MAX_LIST_NAME_LENGTH
+                'List name cannot exceed {max} characters',
+                { max: ListManager.CONSTANTS.MAX_LIST_NAME_LENGTH }
             );
             return {
                 success: false,
@@ -323,8 +323,8 @@ class ListManager {
                 success: false,
                 message: FF14Utils.getI18nText(
                     'listMaxItems',
-                    'List can contain maximum of {0} items',
-                    ListManager.CONSTANTS.MAX_ITEMS_PER_LIST
+                    'List can contain maximum of {max} items',
+                    { max: ListManager.CONSTANTS.MAX_ITEMS_PER_LIST }
                 )
             };
         }
@@ -528,8 +528,8 @@ class ListManager {
             count: importedCount,
             message: FF14Utils.getI18nText(
                 'successImportedLists',
-                'Successfully imported {0} lists',
-                importedCount
+                'Successfully imported {count} lists',
+                { count: importedCount }
             )
         };
     }
@@ -628,8 +628,8 @@ class ListManager {
             addedCount: addedCount,
             message: FF14Utils.getI18nText(
                 'addedItemsToList',
-                'Added {0} items to target list',
-                addedCount
+                'Added {count} items to target list',
+                { count: addedCount }
             )
         };
     }
