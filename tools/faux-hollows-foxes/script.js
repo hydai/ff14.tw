@@ -93,7 +93,7 @@ class FauxHollowsFoxes {
             while (targetCell && !targetCell.classList.contains('board-cell')) {
                 targetCell = targetCell.parentElement;
             }
-            
+
             if (targetCell && targetCell.classList.contains('board-cell')) {
                 this.onCellClick(targetCell);
             }
@@ -145,7 +145,7 @@ class FauxHollowsFoxes {
         // 初始計算：基於所有盤面
         this.updateObstacleProbabilitiesBasedOnMatches();
         this.updateProbabilityDisplay();
-        
+
         // 初始化時顯示所有盤面的數量
         const matchingCount = this.countMatchingBoards();
         this.elements.matchingBoards.textContent = matchingCount;
@@ -173,7 +173,7 @@ class FauxHollowsFoxes {
 
         // 基於符合的盤面計算機率
         for (let i = 0; i < FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS; i++) {
-            this.obstacleProbabilities[i] = matchingBoards.length > 0 ? 
+            this.obstacleProbabilities[i] = matchingBoards.length > 0 ?
                 Math.round((obstacleCount[i] / matchingBoards.length) * FauxHollowsFoxes.CONSTANTS.PERCENTAGE) : 0;
         }
     }
@@ -205,11 +205,11 @@ class FauxHollowsFoxes {
 
         // 基於符合的盤面計算機率
         for (let i = 0; i < FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS; i++) {
-            this.treasureProbabilities.sword[i] = matchingBoards.length > 0 ? 
+            this.treasureProbabilities.sword[i] = matchingBoards.length > 0 ?
                 Math.round((treasureCount.sword[i] / matchingBoards.length) * FauxHollowsFoxes.CONSTANTS.PERCENTAGE) : 0;
-            this.treasureProbabilities.chest[i] = matchingBoards.length > 0 ? 
+            this.treasureProbabilities.chest[i] = matchingBoards.length > 0 ?
                 Math.round((treasureCount.chest[i] / matchingBoards.length) * FauxHollowsFoxes.CONSTANTS.PERCENTAGE) : 0;
-            this.treasureProbabilities.fox[i] = matchingBoards.length > 0 ? 
+            this.treasureProbabilities.fox[i] = matchingBoards.length > 0 ?
                 Math.round((treasureCount.fox[i] / matchingBoards.length) * FauxHollowsFoxes.CONSTANTS.PERCENTAGE) : 0;
         }
     }
@@ -217,15 +217,15 @@ class FauxHollowsFoxes {
     updateProbabilityDisplay() {
         for (let i = 0; i < FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS; i++) {
             const cell = this.elements.board.children[i];
-            
+
             // 先清除所有機率顯示類別
             cell.classList.remove('probability-display', 'treasure-probability-display');
-            
+
             if (this.board[i] === null) {
                 // 只在未設置的格子上顯示機率
                 cell.textContent = '';
                 SecurityUtils.clearElement(cell);
-                
+
                 if (this.showTreasureProbabilities && this.obstaclesConfirmed) {
                     // 顯示寶物機率
                     this.displayTreasureProbabilities(cell, i);
@@ -247,23 +247,23 @@ class FauxHollowsFoxes {
         const swordProb = this.treasureProbabilities.sword[index];
         const chestProb = this.treasureProbabilities.chest[index];
         const foxProb = this.treasureProbabilities.fox[index];
-        
+
         // 收集有機率的項目，並按優先順序排列（劍、寶箱、宗長）
         const allProbabilities = [
             { type: 'sword', text: `劍${swordProb}%`, prob: swordProb, className: 'sword-prob' },
             { type: 'chest', text: `箱${chestProb}%`, prob: chestProb, className: 'chest-prob' },
             { type: 'fox', text: `狐${foxProb}%`, prob: foxProb, className: 'fox-prob' }
         ];
-        
+
         // 只保留有機率的項目（自動往上替補）
         const validProbabilities = allProbabilities.filter(item => item.prob > 0);
-        
+
         if (validProbabilities.length > 0) {
             // 創建三等份結構，只顯示有效的機率
             SecurityUtils.clearElement(cell);
             const container = document.createElement('div');
             container.className = 'treasure-prob-container';
-            
+
             for (let i = 0; i < 3; i++) {
                 const item = document.createElement('div');
                 if (validProbabilities[i]) {
@@ -280,7 +280,7 @@ class FauxHollowsFoxes {
                 }
                 container.appendChild(item);
             }
-            
+
             cell.appendChild(container);
             cell.classList.add('treasure-probability-display');
         }
@@ -288,7 +288,7 @@ class FauxHollowsFoxes {
 
     updateCellDisplay(cell, index) {
         const value = this.board[index];
-        
+
         switch (value) {
             case 'obstacle':
                 cell.className = 'board-cell obstacle';
@@ -349,20 +349,20 @@ class FauxHollowsFoxes {
     updateMatchingBoards() {
         const matchingCount = this.countMatchingBoards();
         this.elements.matchingBoards.textContent = matchingCount;
-        
+
         // 重新計算基於當前符合盤面的障礙物機率
         this.updateObstacleProbabilitiesBasedOnMatches();
-        
+
         // 如果障礙物已確認，也計算寶物機率
         if (this.obstaclesConfirmed) {
             this.updateTreasureProbabilitiesBasedOnMatches();
         }
-        
+
         this.updateProbabilityDisplay();
-        
+
         // 檢查是否可以自動填充障礙物
         this.checkAndAutoFillObstacles();
-        
+
         // 更新最佳策略高亮
         this.updateOptimalHighlight();
     }
@@ -374,24 +374,24 @@ class FauxHollowsFoxes {
     boardMatches(dbBoard) {
         // 檢查使用者當前盤面是否與資料庫盤面相符
         if (!dbBoard || dbBoard.length !== FauxHollowsFoxes.CONSTANTS.BOARD_SIZE) return false;
-        
+
         for (let row = 0; row < FauxHollowsFoxes.CONSTANTS.BOARD_SIZE; row++) {
             if (!dbBoard[row] || dbBoard[row].length !== FauxHollowsFoxes.CONSTANTS.BOARD_SIZE) return false;
-            
+
             for (let col = 0; col < FauxHollowsFoxes.CONSTANTS.BOARD_SIZE; col++) {
                 const index = row * FauxHollowsFoxes.CONSTANTS.BOARD_SIZE + col;
                 const userValue = this.board[index];
                 const dbValue = dbBoard[row][col];
-                
+
                 // 只有當使用者已經設置了某個位置時，才檢查是否與資料庫一致
                 // null 值表示未設置，應該被視為「未知」，可以匹配任何資料庫值
                 if (userValue !== null) {
                     const userMappedValue = this.mapUserValueToDbValue(userValue);
-                    
+
                     // 特殊處理：資料庫中的 FOX_OR_EMPTY 表示可能是宗長或空格
                     if (dbValue === FauxHollowsFoxes.CONSTANTS.CELL_VALUES.FOX_OR_EMPTY) {
                         // 如果資料庫是 FOX_OR_EMPTY，使用者可以是 fox 或 empty
-                        if (userMappedValue !== FauxHollowsFoxes.CONSTANTS.CELL_VALUES.FOX_OR_EMPTY && 
+                        if (userMappedValue !== FauxHollowsFoxes.CONSTANTS.CELL_VALUES.FOX_OR_EMPTY &&
                             userMappedValue !== FauxHollowsFoxes.CONSTANTS.CELL_VALUES.EMPTY) {
                             return false;
                         }
@@ -405,7 +405,7 @@ class FauxHollowsFoxes {
                 // 如果 userValue === null，則跳過此位置的檢查（未知狀態可匹配任何值）
             }
         }
-        
+
         return true;
     }
 
@@ -465,7 +465,7 @@ class FauxHollowsFoxes {
                 obstacleCount++;
             }
         }
-        
+
         let allObstaclesConfirmed = false;
         if (obstacleCount === 0) {
             allObstaclesConfirmed = false;
@@ -475,7 +475,7 @@ class FauxHollowsFoxes {
             for (let i = 0; i < FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS; i++) {
                 const row = Math.floor(i / 6);
                 const col = i % 6;
-                
+
                 // 檢查這個位置在所有符合盤面中是否都是障礙物
                 let allAreObstacles = true;
                 for (const board of matchingBoards) {
@@ -484,7 +484,7 @@ class FauxHollowsFoxes {
                         break;
                     }
                 }
-                
+
                 // 如果這個位置在所有符合盤面中都是障礙物，但使用者還沒設定為障礙物
                 if (allAreObstacles && this.board[i] !== 'obstacle') {
                     allObstaclesConfirmed = false;
@@ -513,13 +513,13 @@ class FauxHollowsFoxes {
         // 檢查所有未設置位置的障礙物機率是否都已確定（100%或0%）
         let allObstacleProbabilitiesDetermined = true;
         let guaranteedObstacles = [];
-        
+
         for (let i = 0; i < FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS; i++) {
             // 跳過已設置的位置
             if (this.board[i] !== null) continue;
-            
+
             const probability = this.obstacleProbabilities[i];
-            
+
             if (probability === FauxHollowsFoxes.CONSTANTS.PERCENTAGE) {
                 // 100%機率的位置應該被自動填充，如果沒有就有問題
                 guaranteedObstacles.push(i);
@@ -528,7 +528,7 @@ class FauxHollowsFoxes {
                 allObstacleProbabilitiesDetermined = false;
             }
         }
-        
+
         // 如果有100%機率但未填充的位置，先填充它們
         if (guaranteedObstacles.length > 0) {
             // 自動填充時不保存狀態
@@ -540,7 +540,7 @@ class FauxHollowsFoxes {
             this.checkIfObstaclesComplete();
             return;
         }
-        
+
         // 只有當所有位置的障礙物機率都已確定時，才切換到寶物階段
         if (allObstacleProbabilitiesDetermined && !this.obstaclesConfirmed) {
             this.obstaclesConfirmed = true;
@@ -575,7 +575,7 @@ class FauxHollowsFoxes {
                 obstacleCount++;
             }
         }
-        
+
         // 如果沒有任何障礙物，則未確認
         let allObstaclesConfirmed;
         if (obstacleCount === 0) {
@@ -586,7 +586,7 @@ class FauxHollowsFoxes {
             for (let i = 0; i < FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS; i++) {
                 const row = Math.floor(i / 6);
                 const col = i % 6;
-                
+
                 // 檢查這個位置在所有符合盤面中是否都是障礙物
                 let allAreObstacles = true;
                 for (const board of matchingBoards) {
@@ -595,7 +595,7 @@ class FauxHollowsFoxes {
                         break;
                     }
                 }
-                
+
                 // 如果這個位置在所有符合盤面中都是障礙物，但使用者還沒設定為障礙物
                 if (allAreObstacles && this.board[i] !== 'obstacle') {
                     allObstaclesConfirmed = false;
@@ -628,18 +628,18 @@ class FauxHollowsFoxes {
 
         // 檢查所有符合盤面中，每個位置的障礙物是否一致
         const confirmedObstacles = [];
-        
+
         for (let i = 0; i < FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS; i++) {
             // 跳過已經設置的格子
             if (this.board[i] !== null) continue;
 
             const row = Math.floor(i / FauxHollowsFoxes.CONSTANTS.BOARD_SIZE);
             const col = i % FauxHollowsFoxes.CONSTANTS.BOARD_SIZE;
-            
+
             // 檢查這個位置在所有符合盤面中是否都是障礙物
             let allAreObstacles = true;
             let allAreNotObstacles = true;
-            
+
             for (const board of matchingBoards) {
                 if (board[row][col] === FauxHollowsFoxes.CONSTANTS.CELL_VALUES.OBSTACLE) {
                     allAreNotObstacles = false;
@@ -671,22 +671,22 @@ class FauxHollowsFoxes {
             this.updateDisplay();
             this.checkForCompletedShapes();
             this.validateShapes();
-            
+
             // 手動更新符合盤面計數，但不觸發自動填充
             const matchingCount = this.countMatchingBoards();
             this.elements.matchingBoards.textContent = matchingCount;
             this.updateObstacleProbabilitiesBasedOnMatches();
-            
+
             // 檢查是否完成障礙物階段
             this.checkIfObstaclesComplete();
-            
+
             this.updateProbabilityDisplay();
         }
     }
 
     onCellClick(cell) {
         const index = parseInt(cell.dataset.index);
-        
+
         // If cell is already clicked (gray) or occupied, do nothing
         if (cell.classList.contains('clicked') || cell.classList.contains('occupied')) {
             return;
@@ -701,10 +701,10 @@ class FauxHollowsFoxes {
 
     handleTreasurePhaseClick(cell, index) {
         // Allow clicking on: null cells, treasure probability display, or existing treasure cells
-        const canClick = this.board[index] === null || 
-                       cell.classList.contains('treasure-probability-display') ||
-                       ['sword', 'chest', 'fox', 'empty'].includes(this.board[index]);
-        
+        const canClick = this.board[index] === null ||
+            cell.classList.contains('treasure-probability-display') ||
+            ['sword', 'chest', 'fox', 'empty'].includes(this.board[index]);
+
         if (canClick) {
             this.selectedCell = index;
             this.showPopup();
@@ -723,7 +723,7 @@ class FauxHollowsFoxes {
             // Cell is occupied by something else, do nothing
             return;
         }
-        
+
         this.updateObstaclePhaseState();
         this.saveState();
     }
@@ -732,15 +732,15 @@ class FauxHollowsFoxes {
         this.updateDisplay();
         this.checkForCompletedShapes();
         this.validateShapes();
-        
+
         // 更新符合盤面計數並觸發自動填充
         const matchingCount = this.countMatchingBoards();
         this.elements.matchingBoards.textContent = matchingCount;
         this.updateObstacleProbabilitiesBasedOnMatches();
-        
+
         // 嘗試自動填充障礙物並檢查是否完成
         this.tryAutoFillObstacles();
-        
+
         this.updateProbabilityDisplay();
     }
 
@@ -828,6 +828,7 @@ class FauxHollowsFoxes {
         this.validateShapes();
         this.updateMatchingBoards();
         this.updateOptimalHighlight();
+        this.saveState();
     }
 
     setObstacle(index) {
@@ -869,8 +870,8 @@ class FauxHollowsFoxes {
         if (this.obstaclesConfirmed) {
             // Allow placing on: null cells, treasure probability display, or existing treasure cells
             const canPlace = this.board[index] === null ||
-                           cell.classList.contains('treasure-probability-display') ||
-                           ['sword', 'chest', 'fox', 'empty'].includes(this.board[index]);
+                cell.classList.contains('treasure-probability-display') ||
+                ['sword', 'chest', 'fox', 'empty'].includes(this.board[index]);
 
             if (!canPlace) {
                 FF14Utils.showToast(FF14Utils.getI18nText('faux_hollows_cannot_modify', '此格子無法修改！'), 'error');
@@ -886,7 +887,7 @@ class FauxHollowsFoxes {
 
         // If overwriting an existing treasure cell, don't increment click count
         const isOverwriting = this.obstaclesConfirmed &&
-                             ['sword', 'chest', 'fox', 'empty'].includes(this.board[index]);
+            ['sword', 'chest', 'fox', 'empty'].includes(this.board[index]);
 
         // Place the single cell
         this.board[index] = type;
@@ -915,8 +916,8 @@ class FauxHollowsFoxes {
         if (this.obstaclesConfirmed) {
             // Allow placing on: null cells, treasure probability display, or existing treasure cells
             const canPlace = this.board[index] === null ||
-                           cell.classList.contains('treasure-probability-display') ||
-                           ['sword', 'chest', 'fox', 'empty'].includes(this.board[index]);
+                cell.classList.contains('treasure-probability-display') ||
+                ['sword', 'chest', 'fox', 'empty'].includes(this.board[index]);
 
             if (!canPlace) {
                 FF14Utils.showToast(FF14Utils.getI18nText('faux_hollows_cannot_modify', '此格子無法修改！'), 'error');
@@ -932,7 +933,7 @@ class FauxHollowsFoxes {
 
         // If overwriting an existing treasure cell, don't increment click count
         const isOverwriting = this.obstaclesConfirmed &&
-                             ['sword', 'chest', 'fox', 'empty'].includes(this.board[index]);
+            ['sword', 'chest', 'fox', 'empty'].includes(this.board[index]);
 
         this.board[index] = 'empty';
         cell.className = 'board-cell empty';
@@ -972,10 +973,10 @@ class FauxHollowsFoxes {
     checkForCompletedShapes() {
         // Reset score
         this.score = 0;
-        
+
         // Track processed cells to avoid double counting
         const processed = new Set();
-        
+
         // Check for foxes (1x1)
         for (let i = 0; i < FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS; i++) {
             if (this.board[i] === 'fox' && !processed.has(i)) {
@@ -983,7 +984,7 @@ class FauxHollowsFoxes {
                 this.score += FauxHollowsFoxes.CONSTANTS.SCORES.FOX;
             }
         }
-        
+
         // Check for chests (2x2)
         for (let row = 0; row < 5; row++) {
             for (let col = 0; col < 5; col++) {
@@ -992,7 +993,7 @@ class FauxHollowsFoxes {
                 }
             }
         }
-        
+
         // Check for swords (2x3 or 3x2)
         // Check 2x3
         for (let row = 0; row < 4; row++) {
@@ -1002,7 +1003,7 @@ class FauxHollowsFoxes {
                 }
             }
         }
-        
+
         // Check 3x2
         for (let row = 0; row < 5; row++) {
             for (let col = 0; col < 4; col++) {
@@ -1011,12 +1012,12 @@ class FauxHollowsFoxes {
                 }
             }
         }
-        
+
         // Only mark surrounding cells as gray when game is complete
         if (this.clickCount >= FauxHollowsFoxes.CONSTANTS.MAX_CLICKS) {
             this.markGrayCells();
         }
-        
+
         this.updateDisplay();
     }
 
@@ -1107,11 +1108,11 @@ class FauxHollowsFoxes {
 
         return true;
     }
-    
+
     checkShapePattern(row, col, width, height, type, processed) {
         // Check if all cells in the pattern match the type
         const cells = [];
-        
+
         for (let r = row; r < row + height; r++) {
             for (let c = col; c < col + width; c++) {
                 const index = r * 6 + c;
@@ -1121,13 +1122,13 @@ class FauxHollowsFoxes {
                 cells.push(index);
             }
         }
-        
+
         // Mark all cells as processed
         cells.forEach(index => processed.add(index));
         return true;
     }
 
-    
+
     markGrayCells() {
         // Mark all remaining empty cells as gray when game is complete
         for (let i = 0; i < FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS; i++) {
@@ -1168,11 +1169,11 @@ class FauxHollowsFoxes {
 
     showResult() {
         this.elements.finalScore.textContent = this.score;
-        
+
         // Calculate shape counts
         const shapes = { sword: 0, chest: 0, fox: 0 };
         const counted = new Set();
-        
+
         for (let i = 0; i < FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS; i++) {
             const value = this.board[i];
             if (value && !counted.has(value) && value !== 'obstacle' && value !== 'clicked') {
@@ -1215,22 +1216,22 @@ class FauxHollowsFoxes {
             this.clearHighlights();
         }
     }
-    
+
     updateOptimalHighlight() {
         // 清除之前的高亮
         this.clearHighlights();
-        
+
         // 如果功能關閉或障礙物未確認，不進行高亮
         if (!this.showOptimalHighlight || !this.obstaclesConfirmed) {
             return;
         }
-        
+
         // 確保寶物機率已更新
         this.updateTreasureProbabilitiesBasedOnMatches();
-        
+
         // 找出最高機率的劍和寶箱位置
         const optimalCells = this.findOptimalCells();
-        
+
         if (optimalCells.length > 0) {
             // 高亮這些格子
             optimalCells.forEach(cellData => {
@@ -1241,37 +1242,37 @@ class FauxHollowsFoxes {
             });
         }
     }
-    
+
     findOptimalCells() {
         const optimalCells = [];
         let maxSwordProb = 0;
         let maxChestProb = 0;
-        
+
         // 先找出最高機率
         for (let i = 0; i < FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS; i++) {
             // 跳過已經有內容的格子
             if (this.board[i] !== null) continue;
-            
+
             const swordProb = this.treasureProbabilities.sword[i];
             const chestProb = this.treasureProbabilities.chest[i];
-            
+
             if (swordProb > maxSwordProb) {
                 maxSwordProb = swordProb;
             }
-            
+
             if (chestProb > maxChestProb) {
                 maxChestProb = chestProb;
             }
         }
-        
+
         // 找出所有等於最高機率的格子
         for (let i = 0; i < FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS; i++) {
             // 跳過已經有內容的格子
             if (this.board[i] !== null) continue;
-            
+
             const swordProb = this.treasureProbabilities.sword[i];
             const chestProb = this.treasureProbabilities.chest[i];
-            
+
             // 加入所有最高機率的劍位置
             if (swordProb > 0 && swordProb === maxSwordProb) {
                 optimalCells.push({
@@ -1280,7 +1281,7 @@ class FauxHollowsFoxes {
                     probability: swordProb
                 });
             }
-            
+
             // 加入所有最高機率的寶箱位置
             if (chestProb > 0 && chestProb === maxChestProb) {
                 optimalCells.push({
@@ -1290,10 +1291,10 @@ class FauxHollowsFoxes {
                 });
             }
         }
-        
+
         return optimalCells;
     }
-    
+
     clearHighlights() {
         // 清除所有高亮效果
         const cells = this.elements.board.querySelectorAll('.optimal-highlight');
@@ -1374,9 +1375,11 @@ class FauxHollowsFoxes {
         // 重新渲染盤面
         this.renderBoard();
 
-        // 更新顯示
+        // 更新顯示（注意：不能呼叫 updateMatchingBoards，因為它會重新計算機率並覆蓋已恢復的值）
         this.updateDisplay();
-        this.updateMatchingBoards();
+        // 只更新符合盤面數量顯示，不重新計算機率
+        const matchingCount = this.countMatchingBoards();
+        this.elements.matchingBoards.textContent = matchingCount;
         this.updateProbabilityDisplay();
         this.updateOptimalHighlight();
 
@@ -1409,11 +1412,11 @@ class FauxHollowsFoxes {
         for (let i = 0; i < FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS; i++) {
             const cell = this.elements.board.children[i];
             const value = this.board[i];
-            
+
             // 清空內容
             cell.className = 'board-cell';
             cell.textContent = '';
-            
+
             if (value === null) {
                 // 空格子
                 if (this.showProbabilities) {
@@ -1424,12 +1427,12 @@ class FauxHollowsFoxes {
                         const swordProb = this.treasureProbabilities.sword[i];
                         const chestProb = this.treasureProbabilities.chest[i];
                         const foxProb = this.treasureProbabilities.fox[i];
-                        
+
                         if (swordProb > 0 || chestProb > 0 || foxProb > 0) {
                             SecurityUtils.clearElement(cell);
                             const container = document.createElement('div');
                             container.className = 'treasure-prob-container';
-                            
+
                             if (swordProb > 0) {
                                 const swordDiv = document.createElement('div');
                                 swordDiv.className = 'treasure-prob sword-prob';
@@ -1453,7 +1456,7 @@ class FauxHollowsFoxes {
                                 foxDiv.textContent = `${foxText}:${foxProb}%`;
                                 container.appendChild(foxDiv);
                             }
-                            
+
                             cell.appendChild(container);
                             cell.classList.add('treasure-probability-display');
                         }
@@ -1495,25 +1498,25 @@ class FauxHollowsFoxes {
         this.showTreasureProbabilities = false;
         this.showOptimalHighlight = true; // 重置時回復預設開啟
         this.history.clear(); // 清空歷史記錄
-        
+
         // 清除高亮
         this.clearHighlights();
-        
+
         // 更新按鈕文字
         this.elements.autoCalculateBtn.textContent = FF14Utils.getI18nText('faux_hollows_close_best', '關閉最佳策略');
-        
+
         // 禁用回到上一步按鈕
         this.elements.undoBtn.disabled = true;
-        
+
         // Reset UI
         this.initializeBoard();
         this.updateDisplay();
         this.elements.resultPanel.style.display = 'none';
-        
+
         // Restore probability display if enabled
         this.updateProbabilityDisplay();
         this.updateMatchingBoards();
-        
+
         // 顯示提示
         if (this.elements.gameHint) {
             this.elements.gameHint.classList.remove('hidden');
