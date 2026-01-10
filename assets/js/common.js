@@ -174,7 +174,7 @@ const FF14Utils = {
         if (!text || args.length === 0) return text;
 
         let result = text;
-        const isPlainObjectFirstArg = typeof args[0] === 'object' && args[0] !== null && !Array.isArray(args[0]);
+        const isPlainObjectFirstArg = Object.prototype.toString.call(args[0]) === '[object Object]';
 
         // Prioritize named parameters if the first argument is an object and the text contains non-numeric placeholders.
         if (isPlainObjectFirstArg && this._namedParamDetectRegex.test(text)) {
@@ -280,10 +280,10 @@ const FF14Utils = {
      */
     debounce(func, delay = 300) {
         let timeoutId;
-        return function(...args) {
+        return function (...args) {
             const context = this;
             clearTimeout(timeoutId);
-            timeoutId = setTimeout(function() {
+            timeoutId = setTimeout(function () {
                 func.apply(context, args);
             }, delay);
         };
@@ -339,7 +339,7 @@ function initHamburgerMenu() {
     document.body.appendChild(overlay);
 
     // 漢堡選單點擊事件
-    hamburger.addEventListener('click', function() {
+    hamburger.addEventListener('click', function () {
         const isActive = nav.classList.contains('active');
 
         if (isActive) {
@@ -358,7 +358,7 @@ function initHamburgerMenu() {
     });
 
     // 點擊遮罩層關閉選單
-    overlay.addEventListener('click', function() {
+    overlay.addEventListener('click', function () {
         nav.classList.remove('active');
         hamburger.classList.remove('active');
         overlay.classList.remove('active');
@@ -371,30 +371,30 @@ function initHamburgerMenu() {
         const dropdownLink = dropdown.querySelector(':scope > a');
 
         if (dropdownLink) {
-            dropdownLink.addEventListener('click', function(e) {
-            // 只在手機版阻止預設行為
-            if (window.innerWidth <= 768) {
-                e.preventDefault();
+            dropdownLink.addEventListener('click', function (e) {
+                // 只在手機版阻止預設行為
+                if (window.innerWidth <= 768) {
+                    e.preventDefault();
 
-                // 關閉其他下拉選單
-                dropdowns.forEach(other => {
-                    if (other !== dropdown) {
-                        other.classList.remove('active');
-                    }
-                });
+                    // 關閉其他下拉選單
+                    dropdowns.forEach(other => {
+                        if (other !== dropdown) {
+                            other.classList.remove('active');
+                        }
+                    });
 
-                // 切換當前下拉選單
-                dropdown.classList.toggle('active');
-            }
+                    // 切換當前下拉選單
+                    dropdown.classList.toggle('active');
+                }
             });
         }
     });
 
     // 視窗大小改變時重置選單狀態
     let resizeTimeout;
-    window.addEventListener('resize', function() {
+    window.addEventListener('resize', function () {
         clearTimeout(resizeTimeout);
-        resizeTimeout = setTimeout(function() {
+        resizeTimeout = setTimeout(function () {
             if (window.innerWidth > 768) {
                 nav.classList.remove('active');
                 hamburger.classList.remove('active');
@@ -444,7 +444,7 @@ function initThemeToggle() {
 }
 
 // 頁面載入完成後執行
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     // 初始化主題管理器（最優先）
     window.themeManager = new ThemeManager();
 
@@ -464,7 +464,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // 為所有工具卡片添加點擊效果
     const toolCards = document.querySelectorAll('.tool-card');
     toolCards.forEach(card => {
-        card.addEventListener('click', function(e) {
+        card.addEventListener('click', function (e) {
             // 如果點擊的是連結，不需要額外處理
             if (this.tagName === 'A') {
                 return;
@@ -486,7 +486,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.body.appendChild(backToTopBtn);
 
     // 控制返回頂部按鈕顯示/隱藏
-    window.addEventListener('scroll', function() {
+    window.addEventListener('scroll', function () {
         if (window.scrollY > 300) {
             backToTopBtn.classList.add('show');
         } else {
@@ -495,7 +495,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // 返回頂部功能
-    backToTopBtn.addEventListener('click', function() {
+    backToTopBtn.addEventListener('click', function () {
         window.scrollTo({
             top: 0,
             behavior: 'smooth'
