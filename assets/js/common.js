@@ -480,36 +480,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 添加返回頂部按鈕
     const backToTopBtn = document.createElement('button');
-    backToTopBtn.innerHTML = '↑';
+    backToTopBtn.textContent = '↑';
     backToTopBtn.className = 'back-to-top';
-    backToTopBtn.style.cssText = `
-        position: fixed;
-        bottom: 30px;
-        right: 30px;
-        width: 50px;
-        height: 50px;
-        border-radius: 50%;
-        background: var(--primary-color);
-        color: white;
-        border: none;
-        font-size: 20px;
-        cursor: pointer;
-        opacity: 0;
-        visibility: hidden;
-        transition: all 0.3s ease;
-        z-index: 1000;
-    `;
 
     document.body.appendChild(backToTopBtn);
 
     // 控制返回頂部按鈕顯示/隱藏
     window.addEventListener('scroll', function() {
         if (window.scrollY > 300) {
-            backToTopBtn.style.opacity = '1';
-            backToTopBtn.style.visibility = 'visible';
+            backToTopBtn.classList.add('show');
         } else {
-            backToTopBtn.style.opacity = '0';
-            backToTopBtn.style.visibility = 'hidden';
+            backToTopBtn.classList.remove('show');
         }
     });
 
