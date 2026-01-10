@@ -44,17 +44,13 @@ class StateHistoryManager {
         try {
             return JSON.parse(JSON.stringify(obj));
         } catch (error) {
-            // 在舊版環境中，對於包含循環引用或不支援型別的物件，提供更明確的錯誤訊息
-            if (error instanceof TypeError) {
-                throw new TypeError(
-                    'StateHistoryManager.deepClone: JSON fallback failed. ' +
-                    'This usually means the data contains unsupported types (e.g., functions, symbols) ' +
-                    'or circular references in an environment without structuredClone support. ' +
-                    'Original error: ' + error.message
-                );
-            }
-            // 其他非預期錯誤保持原樣拋出
-            throw error;
+            // 在舊版環境中，對於包含循環引用或不支援型別的物件，提供更明確且一致的錯誤訊息
+            throw new TypeError(
+                'StateHistoryManager.deepClone: JSON fallback failed. ' +
+                'This usually means the data contains unsupported types (e.g., functions, symbols) ' +
+                'or circular references in an environment without structuredClone support. ' +
+                'Original error: ' + (error && error.message ? error.message : String(error))
+            );
         }
     }
 

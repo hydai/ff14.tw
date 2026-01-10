@@ -127,6 +127,9 @@ class ThemeManager {
 
 // 通用工具函數
 const FF14Utils = {
+    // 參數正則表達式緩存
+    _paramRegexCache: {},
+
     // 格式化數字（加入千分位符號）
     formatNumber(num) {
         return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
@@ -177,7 +180,15 @@ const FF14Utils = {
             const paramKeys = Object.keys(params).sort((a, b) => b.length - a.length);
 
             if (paramKeys.length > 0) {
-                const regex = new RegExp(`\\{(${paramKeys.map(p => this.escapeRegExp(p)).join('|')})\\}`, 'g');
+                // Optimization: Cache regex patterns to avoid recreating them on every call
+                const cacheKey = paramKeys.join('|');
+                let regex = this._paramRegexCache[cacheKey];
+
+                if (!regex) {
+                    regex = new RegExp(`\\{(${paramKeys.map(p => this.escapeRegExp(p)).join('|')})\\}`, 'g');
+                    this._paramRegexCache[cacheKey] = regex;
+                }
+
                 result = result.replace(regex, (match, key) => {
                     return Object.prototype.hasOwnProperty.call(params, key) ? params[key] : match;
                 });

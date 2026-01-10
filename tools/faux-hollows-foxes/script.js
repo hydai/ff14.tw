@@ -255,10 +255,12 @@ class FauxHollowsFoxes {
                 const item = document.createElement('div');
                 if (validProbabilities[i]) {
                     item.className = `treasure-prob-item ${validProbabilities[i].className}`;
-                    // Construct i18n key dynamically based on type.
-                    // Expected types: 'sword', 'chest', 'fox'
-                    // Keys used: 'faux_hollows_cell_sword', 'faux_hollows_cell_chest', 'faux_hollows_cell_fox'
-                    const typeText = FF14Utils.getI18nText(`faux_hollows_cell_${validProbabilities[i].type}`, validProbabilities[i].type);
+                    const i18nKeys = {
+                        'sword': 'faux_hollows_cell_sword',
+                        'chest': 'faux_hollows_cell_chest',
+                        'fox': 'faux_hollows_cell_fox'
+                    };
+                    const typeText = FF14Utils.getI18nText(i18nKeys[validProbabilities[i].type], validProbabilities[i].type);
                     item.textContent = `${typeText}: ${validProbabilities[i].prob}%`;
                 } else {
                     item.className = 'treasure-prob-item empty-prob';

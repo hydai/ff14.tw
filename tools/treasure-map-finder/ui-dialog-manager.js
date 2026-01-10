@@ -130,8 +130,8 @@ class UIDialogManager {
         }
 
         // 設置關閉按鈕事件
-        // 注意：closeHandler 在這裡設置，並在 ModalManager 的 onClose 回調中移除。
-        // 這種設計是刻意的：事件監聽器的生命週期與 modal 的顯示狀態一致。
+        // Note: closeHandler is set here and removed in ModalManager's onClose callback.
+        // This design is intentional: the event listener lifecycle matches the modal display state.
         const closeHandler = () => this.hideMapDetail();
         elements.closeBtn.addEventListener('click', closeHandler);
 

@@ -213,11 +213,14 @@ class ModalManager {
         ].join(',');
 
         return Array.from(element.querySelectorAll(selector)).filter(el => {
+            // 先檢查元素尺寸，避免對明顯不可見元素呼叫 getComputedStyle
+            if (el.offsetWidth <= 0 || el.offsetHeight <= 0) {
+                return false;
+            }
+
             // 排除隱藏元素（包含 display: none、visibility: hidden、opacity: 0 等情況）
             const style = window.getComputedStyle(el);
-            return el.offsetWidth > 0 &&
-                el.offsetHeight > 0 &&
-                style.visibility !== 'hidden' &&
+            return style.visibility !== 'hidden' &&
                 style.display !== 'none' &&
                 style.opacity !== '0';
         });

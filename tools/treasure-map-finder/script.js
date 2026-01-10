@@ -1018,7 +1018,7 @@ class TreasureMapFinder {
     // 複製整個路線
     copyEntireRoute() {
         if (!this.currentRoute || this.currentRoute.length === 0) {
-            FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_no_maps_for_route', '至少需要 2 張寶圖才能生成路線'), 'error');
+            FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_no_route_to_copy', '目前沒有可複製的路線'), 'error');
             return;
         }
 
