@@ -193,9 +193,26 @@ class ModalManager {
      * - tabindex="-1" 的元素會被排除，因為它們不應參與 Tab 鍵導航
      */
     _getFocusableElements(element) {
-        return Array.from(element.querySelectorAll(
-            'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
-        )).filter(el => {
+        // 擴充的可聚焦元素選擇器，參考 focus-trap 等庫的最佳實踐
+        // 包含標準表單元素、連結、以及具備 tabindex 或特定屬性的元素
+        const selector = [
+            'a[href]',
+            'area[href]',
+            'input:not([disabled])',
+            'select:not([disabled])',
+            'textarea:not([disabled])',
+            'button:not([disabled])',
+            'iframe',
+            'object',
+            'embed',
+            '[contenteditable]',
+            'audio[controls]',
+            'video[controls]',
+            'summary',
+            '[tabindex]:not([tabindex="-1"])'
+        ].join(',');
+
+        return Array.from(element.querySelectorAll(selector)).filter(el => {
             // 排除隱藏元素
             return el.offsetWidth > 0 && el.offsetHeight > 0 && window.getComputedStyle(el).visibility !== 'hidden';
         });

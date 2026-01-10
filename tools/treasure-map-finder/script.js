@@ -823,7 +823,10 @@ class TreasureMapFinder {
     
     updateResultCount() {
         this.elements.resultCount.textContent =
-            FF14Utils.getI18nText('treasure_map_results', '顯示 {count} 個結果', { count: this.currentDisplayCount }) + ` / ${this.filteredMaps.length}`;
+            FF14Utils.getI18nText('treasure_map_results', '顯示 {count} / {total} 個結果', {
+                count: this.currentDisplayCount,
+                total: this.filteredMaps.length
+            });
     }
 
     updateListCount() {

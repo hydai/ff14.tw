@@ -44,6 +44,7 @@ class MiniCactpotCalculator {
         // 當前選中的格子位置（用於 popup）
         this.currentPopupPosition = null;
         this.currentPopupOptions = null;
+        this.selectionMade = false;
         this.lastFocusedElement = null; // 用於 popup 的無障礙功能
 
         this.initializeGrid();

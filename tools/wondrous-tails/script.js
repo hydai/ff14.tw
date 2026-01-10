@@ -58,7 +58,7 @@ class WondrousTailsCalculator {
                 this.placedCount++;
             } else {
                 FF14Utils.showToast(
-                    FF14Utils.getI18nText('wondrous_tails_max_objects', '最多只能放置 {count} 個物件', { count: this.totalObjects }),
+                    FF14Utils.getI18nText('wondrous_tails_max_objects', '最多只能放置 {totalObjects} 個物件', { totalObjects: this.totalObjects }),
                     'error'
                 );
                 return;

@@ -255,13 +255,10 @@ class UIDialogManager {
         copyBtn.onclick = () => {
             // 若瀏覽器不支援剪貼簿 API，提供手動複製指引
             if (!navigator.clipboard || !navigator.clipboard.writeText) {
-                textarea.focus();
-                textarea.select();
-                FF14Utils.showToast(
-                    FF14Utils.getI18nText(
-                        'treasure_map_copy_manual',
-                        '瀏覽器不支援自動複製，請手動選取文字後按 Ctrl+C 複製'
-                    ),
+                this._handleManualCopy(
+                    textarea,
+                    'treasure_map_copy_manual',
+                    '瀏覽器不支援自動複製，請手動選取文字後按 Ctrl+C 複製',
                     'info'
                 );
                 return;
@@ -275,13 +272,10 @@ class UIDialogManager {
             }).catch(err => {
                 console.error('Copy to clipboard failed:', err);
                 // 失敗時選取文字並提示使用者手動複製
-                textarea.focus();
-                textarea.select();
-                FF14Utils.showToast(
-                    FF14Utils.getI18nText(
-                        'treasure_map_copy_failed',
-                        '複製失敗，請手動選取文字後按 Ctrl+C 複製'
-                    ),
+                this._handleManualCopy(
+                    textarea,
+                    'treasure_map_copy_failed',
+                    '複製失敗，請手動選取文字後按 Ctrl+C 複製',
                     'error'
                 );
             });
@@ -342,6 +336,19 @@ class UIDialogManager {
         container.appendChild(buttonContainer);
 
         return container;
+    }
+
+    /**
+     * 處理手動複製
+     * @private
+     */
+    _handleManualCopy(textarea, messageKey, defaultMessage, type) {
+        textarea.focus();
+        textarea.select();
+        FF14Utils.showToast(
+            FF14Utils.getI18nText(messageKey, defaultMessage),
+            type
+        );
     }
 
     /**
@@ -708,7 +715,7 @@ class UIDialogManager {
             const contentDiv = document.createElement('div');
             if (typeof content === 'string') {
                 contentDiv.textContent = content;
-            } else if (content instanceof Node) {
+            } else if (content instanceof HTMLElement) {
                 contentDiv.appendChild(content);
             }
             dialog.appendChild(contentDiv);
@@ -755,7 +762,7 @@ class UIDialogManager {
             // Check if content is a string or DOM element
             if (typeof content === 'string') {
                 contentDiv.textContent = content;
-            } else if (content instanceof Node) {
+            } else if (content instanceof HTMLElement) {
                 contentDiv.appendChild(content);
             }
             dialog.appendChild(contentDiv);

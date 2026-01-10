@@ -70,12 +70,19 @@ class TimedGatheringManager {
 
     async initialize() {
         try {
-            // Explicitly load translations
+            // Explicitly load translations for this tool.
             if (window.i18n && window.TimedGatheringTranslations) {
                 window.i18n.loadTranslations('timed-gathering', window.TimedGatheringTranslations);
                 // Re-apply i18n because this tool's translation namespace is loaded after the global
-                // i18n initialization, so already-rendered timed-gathering UI elements with data-i18n
-                // attributes would not be translated otherwise.
+                // i18n initialization. At this point, some timed-gathering UI elements may already
+                // have been rendered with data-i18n attributes, and they will not be translated
+                // until we trigger a page-wide language update.
+                //
+                // This call is the intended pattern for tools that load their translation namespace
+                // lazily after the main i18n setup: first register the namespace, then invoke
+                // updatePageLanguage() so existing DOM nodes are re-processed.
+                // If the i18n bootstrapping flow is refactored in the future to load all namespaces
+                // up front, this explicit re-application step may no longer be necessary.
                 window.i18n.updatePageLanguage();
             }
 
