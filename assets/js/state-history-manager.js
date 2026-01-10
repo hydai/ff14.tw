@@ -41,7 +41,21 @@ class StateHistoryManager {
         // 注意：此方式不支援 Date, Map, Set, RegExp, 函數、Symbol、循環引用等，
         // 並且當物件包含循環引用時，JSON.stringify 會在執行期拋出錯誤（TypeError）
         // 若需要在舊版環境中完整且安全地支援上述類型與循環引用，建議在專案中加入對 structuredClone 的 polyfill
-        return JSON.parse(JSON.stringify(obj));
+        try {
+            return JSON.parse(JSON.stringify(obj));
+        } catch (error) {
+            // 在舊版環境中，對於包含循環引用或不支援型別的物件，提供更明確的錯誤訊息
+            if (error instanceof TypeError) {
+                throw new TypeError(
+                    'StateHistoryManager.deepClone: JSON fallback failed. ' +
+                    'This usually means the data contains unsupported types (e.g., functions, symbols) ' +
+                    'or circular references in an environment without structuredClone support. ' +
+                    'Original error: ' + error.message
+                );
+            }
+            // 其他非預期錯誤保持原樣拋出
+            throw error;
+        }
     }
 
     /**

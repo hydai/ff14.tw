@@ -150,6 +150,7 @@ const FF14Utils = {
      *
      * 2. **索引參數**：使用 `{0}`, `{1}` 格式，可傳入多個參數或物件
      *    範例：replaceParams('座標：{0}, {1}', 10, 20) → '座標：10, 20'
+     *    範例：replaceParams('選擇：{0}', { 0: '選項A' }) → '選擇：選項A' （使用物件作為索引來源）
      *
      * **模式判定規則**：
      * - 若第一個參數是物件，且字串中包含非數字佔位符（如 `{name}`），則使用命名參數模式
@@ -183,6 +184,8 @@ const FF14Utils = {
             }
         } else {
             // 索引參數替換 {0}, {1}
+            // 如果第一個參數是物件但字串中沒有命名佔位符，則將該物件視為索引來源
+            // 例如：replaceParams('{0}', {0: 'val'}) -> 'val'
             const replacements = isPlainObjectFirstArg ? args[0] : args;
             result = result.replace(/\{(\d+)\}/g, (match, index) => {
                 return Object.prototype.hasOwnProperty.call(replacements, index) ? replacements[index] : match;

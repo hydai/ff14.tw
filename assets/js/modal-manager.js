@@ -213,8 +213,13 @@ class ModalManager {
         ].join(',');
 
         return Array.from(element.querySelectorAll(selector)).filter(el => {
-            // 排除隱藏元素
-            return el.offsetWidth > 0 && el.offsetHeight > 0 && window.getComputedStyle(el).visibility !== 'hidden';
+            // 排除隱藏元素（包含 display: none、visibility: hidden、opacity: 0 等情況）
+            const style = window.getComputedStyle(el);
+            return el.offsetWidth > 0 &&
+                el.offsetHeight > 0 &&
+                style.visibility !== 'hidden' &&
+                style.display !== 'none' &&
+                style.opacity !== '0';
         });
     }
 }

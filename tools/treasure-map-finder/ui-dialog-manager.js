@@ -274,7 +274,7 @@ class UIDialogManager {
                 // 失敗時選取文字並提示使用者手動複製
                 this._handleManualCopy(
                     textarea,
-                    'treasure_map_copy_failed',
+                    'treasure_map_copy_fallback_manual',
                     '複製失敗，請手動選取文字後按 Ctrl+C 複製',
                     'error'
                 );

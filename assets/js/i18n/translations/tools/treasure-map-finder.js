@@ -91,6 +91,8 @@ const TreasureMapTranslations = {
         // 訊息
         treasure_map_copy_success: '座標指令已複製',
         treasure_map_copy_failed: '複製失敗',
+        treasure_map_copy_manual: '瀏覽器不支援自動複製，請手動選取文字後按 Ctrl+C 複製',
+        treasure_map_copy_fallback_manual: '複製失敗，請手動選取文字後按 Ctrl+C 複製',
         treasure_map_remove_confirm: '確定要移除這張寶圖嗎？',
         treasure_map_clear_confirm: '確定要清空所有寶圖嗎？共 {count} 張',
         treasure_map_empty_list: '清單是空的',
@@ -217,6 +219,8 @@ const TreasureMapTranslations = {
         // Messages
         treasure_map_copy_success: 'Coordinates copied',
         treasure_map_copy_failed: 'Copy failed',
+        treasure_map_copy_manual: 'Browser does not support auto-copy, please select text and press Ctrl+C to copy',
+        treasure_map_copy_fallback_manual: 'Copy failed, please select text and press Ctrl+C to copy',
         treasure_map_remove_confirm: 'Are you sure you want to remove this map?',
         treasure_map_clear_confirm: 'Are you sure you want to clear all maps? Total: {count}',
         treasure_map_empty_list: 'List is empty',
@@ -343,6 +347,8 @@ const TreasureMapTranslations = {
         // メッセージ
         treasure_map_copy_success: '座標をコピーしました',
         treasure_map_copy_failed: 'コピーに失敗しました',
+        treasure_map_copy_manual: 'ブラウザが自動コピーに対応していません。テキストを選択して Ctrl+C でコピーしてください',
+        treasure_map_copy_fallback_manual: 'コピーに失敗しました。テキストを選択して Ctrl+C でコピーしてください',
         treasure_map_remove_confirm: 'この地図を削除してもよろしいですか？',
         treasure_map_clear_confirm: 'すべての地図をクリアしてもよろしいですか？合計：{count} 枚',
         treasure_map_empty_list: 'リストは空です',
