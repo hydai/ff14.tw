@@ -133,7 +133,8 @@ class UIDialogManager {
 
         // 設置關閉按鈕事件
         // Note: closeHandler is set here and removed in ModalManager's onClose callback.
-        // This design is intentional: the event listener lifecycle matches the modal display state.
+        // This design is intentional: the event listener lifecycle matches the modal display state,
+        // and allows this dialog to define its own close logic without coupling it into ModalManager.
         const closeHandler = () => this.hideMapDetail();
         elements.closeBtn.addEventListener('click', closeHandler);
 
@@ -613,7 +614,7 @@ class UIDialogManager {
         }
 
         // 設置預覽更新事件
-        this.formatPreviewHandler = () => {
+        const formatPreviewHandler = () => {
             if (onPreviewUpdate) {
                 onPreviewUpdate(
                     elements.teleportFormat.value,
@@ -622,14 +623,20 @@ class UIDialogManager {
             }
         };
 
-        elements.teleportFormat.addEventListener('input', this.formatPreviewHandler);
-        elements.mapFormat.addEventListener('input', this.formatPreviewHandler);
+        elements.teleportFormat.addEventListener('input', formatPreviewHandler);
+        elements.mapFormat.addEventListener('input', formatPreviewHandler);
+
+        // 儲存清理函數
+        this.formatPanelCleanup = () => {
+            elements.teleportFormat.removeEventListener('input', formatPreviewHandler);
+            elements.mapFormat.removeEventListener('input', formatPreviewHandler);
+        };
 
         // 顯示面板
         elements.panel.classList.add(UIDialogManager.CONSTANTS.CSS_CLASSES.ACTIVE);
 
         // 初始預覽
-        this.formatPreviewHandler();
+        formatPreviewHandler();
     }
 
     /**
@@ -642,10 +649,9 @@ class UIDialogManager {
         }
 
         // 移除事件監聽器
-        if (this.formatPreviewHandler) {
-            elements.teleportFormat.removeEventListener('input', this.formatPreviewHandler);
-            elements.mapFormat.removeEventListener('input', this.formatPreviewHandler);
-            this.formatPreviewHandler = null;
+        if (this.formatPanelCleanup) {
+            this.formatPanelCleanup();
+            this.formatPanelCleanup = null;
         }
     }
 

@@ -188,8 +188,9 @@ class ModalManager {
      * Tabindex 處理說明：
      * - 選擇器包含 [tabindex]:not([tabindex="-1"])，會選取所有 tabindex >= 0 的元素
      * - tabindex="0" 的元素會按照 DOM 順序參與焦點循環
-     * - tabindex > 0 的元素會優先於 tabindex="0"，但這裡我們按照 DOM 順序處理
-     *   （這是標準的 focus trap 實作方式，避免複雜的 tabindex 排序）
+     * - 依照 HTML 標準，tabindex > 0 的元素會形成獨立的 Tab 順序（在 tabindex="0" 與預設可聚焦元素之前）
+     * - 在本實作中，為了簡化焦點陷阱邏輯，所有 tabindex >= 0 的元素一律依 DOM 順序參與焦點循環，
+     *   並不依照實際的 tabindex 數值重新排序（此為刻意偏離標準 tabindex 行為）
      * - tabindex="-1" 的元素會被排除，因為它們不應參與 Tab 鍵導航
      */
     _getFocusableElements(element) {
