@@ -25,19 +25,19 @@ class ThemeManager {
         // 儲存 media query 和綁定的事件處理器以便後續管理
         this.darkModeQuery = window.matchMedia?.('(prefers-color-scheme: dark)');
         this._boundSystemThemeChangeHandler = this._handleSystemThemeChange.bind(this);
-        
+
         // 檢查是否有儲存的主題偏好
         const storedTheme = this.getStoredTheme();
-        
+
         // 如果有儲存的偏好就使用，否則偵測系統偏好
         this.theme = storedTheme || this.getSystemPreference();
-        
+
         this.init();
     }
 
     init() {
         this.applyTheme(this.theme);
-        
+
         // 監聽系統主題變更
         this._updateListener(ThemeManager.ACTIONS.ADD);
     }
@@ -97,7 +97,7 @@ class ThemeManager {
     applyTheme(theme) {
         document.documentElement.setAttribute('data-theme', theme);
         this.theme = theme;
-        
+
         // 更新所有主題切換按鈕的圖標
         this.updateThemeToggleButtons();
     }
@@ -113,10 +113,10 @@ class ThemeManager {
         const buttons = document.querySelectorAll('.theme-toggle');
         buttons.forEach(button => {
             const isLight = this.theme === ThemeManager.THEMES.LIGHT;
-            button.innerHTML = isLight 
+            button.innerHTML = isLight
                 ? ThemeManager.ICONS.MOON  // 月亮圖標
                 : ThemeManager.ICONS.SUN;   // 太陽圖標
-            
+
             // 使用 i18n 取得翻譯文字（如果可用）
             const darkLabel = window.i18n?.getText('theme_toggle_dark') || '切換至深色模式';
             const lightLabel = window.i18n?.getText('theme_toggle_light') || '切換至淺色模式';
@@ -222,7 +222,7 @@ const FF14Utils = {
         const toast = document.createElement('div');
         toast.className = `toast toast-${type}`;
         toast.textContent = message;
-        
+
         // 加入樣式
         Object.assign(toast.style, {
             position: 'fixed',
@@ -239,14 +239,15 @@ const FF14Utils = {
             whiteSpace: 'pre-line'
         });
 
-        if (type === 'success') {
-            toast.style.background = '#27ae60';
-        } else if (type === 'error') {
-            toast.style.background = '#e74c3c';
-        } else if (type === 'warning') {
-            toast.style.background = '#f39c12';
-        } else if (type === 'info') {
-            toast.style.background = '#3498db';
+        const toastColors = {
+            success: '#27ae60',
+            error: '#e74c3c',
+            warning: '#f39c12',
+            info: '#3498db'
+        };
+
+        if (toastColors[type]) {
+            toast.style.background = toastColors[type];
         }
 
         document.body.appendChild(toast);
@@ -333,15 +334,15 @@ function initHamburgerMenu() {
     if (document.querySelector('.hamburger')) {
         return;
     }
-    
+
     const header = document.querySelector('.header');
     const headerContainer = header?.querySelector('.container');
     const nav = header?.querySelector('.nav');
-    
+
     if (!header || !headerContainer || !nav) {
         return;
     }
-    
+
     // 創建漢堡選單按鈕
     const hamburger = document.createElement('button');
     hamburger.className = 'hamburger';
@@ -352,19 +353,19 @@ function initHamburgerMenu() {
         <span></span>
         <span></span>
     `;
-    
+
     // 創建遮罩層
     const overlay = document.createElement('div');
     overlay.className = 'nav-overlay';
-    
+
     // 插入元素
     headerContainer.appendChild(hamburger);
     document.body.appendChild(overlay);
-    
+
     // 漢堡選單點擊事件
     hamburger.addEventListener('click', function() {
         const isActive = nav.classList.contains('active');
-        
+
         if (isActive) {
             // 關閉選單
             nav.classList.remove('active');
@@ -379,7 +380,7 @@ function initHamburgerMenu() {
             document.body.style.overflow = 'hidden';
         }
     });
-    
+
     // 點擊遮罩層關閉選單
     overlay.addEventListener('click', function() {
         nav.classList.remove('active');
@@ -387,32 +388,32 @@ function initHamburgerMenu() {
         overlay.classList.remove('active');
         document.body.style.overflow = '';
     });
-    
+
     // 處理下拉選單在手機版的行為
     const dropdowns = nav.querySelectorAll('.nav-dropdown');
     dropdowns.forEach(dropdown => {
         const dropdownLink = dropdown.querySelector(':scope > a');
-        
+
         if (dropdownLink) {
             dropdownLink.addEventListener('click', function(e) {
             // 只在手機版阻止預設行為
             if (window.innerWidth <= 768) {
                 e.preventDefault();
-                
+
                 // 關閉其他下拉選單
                 dropdowns.forEach(other => {
                     if (other !== dropdown) {
                         other.classList.remove('active');
                     }
                 });
-                
+
                 // 切換當前下拉選單
                 dropdown.classList.toggle('active');
             }
             });
         }
     });
-    
+
     // 視窗大小改變時重置選單狀態
     let resizeTimeout;
     window.addEventListener('resize', function() {
@@ -423,7 +424,7 @@ function initHamburgerMenu() {
                 hamburger.classList.remove('active');
                 overlay.classList.remove('active');
                 document.body.style.overflow = '';
-                
+
                 // 重置所有下拉選單狀態
                 dropdowns.forEach(dropdown => {
                     dropdown.classList.remove('active');
@@ -437,22 +438,22 @@ function initHamburgerMenu() {
 function initThemeToggle() {
     const nav = document.querySelector('.nav');
     const hamburger = document.querySelector('.hamburger');
-    
+
     if (!nav) return;
-    
+
     // 創建主題切換按鈕
     const themeToggle = document.createElement('button');
     themeToggle.className = 'theme-toggle';
     themeToggle.setAttribute('type', 'button');
-    
+
     // 設置初始圖標
     window.themeManager.updateThemeToggleButtons();
-    
+
     // 綁定點擊事件
     themeToggle.addEventListener('click', () => {
         window.themeManager.toggle();
     });
-    
+
     // 根據螢幕大小決定插入位置
     if (window.innerWidth <= 768 && hamburger) {
         // 手機版：插入到漢堡選單前
@@ -461,7 +462,7 @@ function initThemeToggle() {
         // 桌面版：插入到導航列最後
         nav.appendChild(themeToggle);
     }
-    
+
     // 初次更新按鈕圖標
     window.themeManager.updateThemeToggleButtons();
 }
@@ -473,7 +474,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 初始化漢堡選單功能
     initHamburgerMenu();
-    
+
     // 初始化主題切換功能
     initThemeToggle();
 
@@ -483,7 +484,7 @@ document.addEventListener('DOMContentLoaded', function() {
             window.themeManager.updateThemeToggleButtons();
         });
     }
-    
+
     // 為所有工具卡片添加點擊效果
     const toolCards = document.querySelectorAll('.tool-card');
     toolCards.forEach(card => {
@@ -492,7 +493,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (this.tagName === 'A') {
                 return;
             }
-            
+
             // 否則查找卡片內的連結
             const link = this.querySelector('a');
             if (link) {
@@ -522,7 +523,7 @@ document.addEventListener('DOMContentLoaded', function() {
         transition: all 0.3s ease;
         z-index: 1000;
     `;
-    
+
     document.body.appendChild(backToTopBtn);
 
     // 控制返回頂部按鈕顯示/隱藏
