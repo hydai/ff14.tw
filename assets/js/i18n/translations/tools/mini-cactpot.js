@@ -17,6 +17,7 @@ const MiniCactpotTranslations = {
 
         // 按鈕
         mini_cactpot_undo: '回到上一步',
+        mini_cactpot_redo: '重做',
         mini_cactpot_reset: '重置',
 
         // 最佳選擇
@@ -59,6 +60,7 @@ const MiniCactpotTranslations = {
 
         // Buttons
         mini_cactpot_undo: 'Undo',
+        mini_cactpot_redo: 'Redo',
         mini_cactpot_reset: 'Reset',
 
         // Best choice
@@ -101,6 +103,7 @@ const MiniCactpotTranslations = {
 
         // ボタン
         mini_cactpot_undo: '元に戻す',
+        mini_cactpot_redo: 'やり直す',
         mini_cactpot_reset: 'リセット',
 
         // 最適選択
