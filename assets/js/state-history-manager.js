@@ -23,8 +23,9 @@ class StateHistoryManager {
      *
      * 瀏覽器相容性：structuredClone 需要 Chrome 98+, Firefox 94+, Safari 15.4+
      * 對於不支援的舊版瀏覽器，會降級使用 JSON 方式（有限制）
-     * 警告：在生產環境中，若使用者使用舊版瀏覽器，JSON 方式可能會導致 Date/Map/Set 等特殊類型資料遺失，
-     * 或者在處理循環引用時拋出錯誤。建議確保目標使用者群體的瀏覽器版本，或引入 polyfill。
+     * 警告：在生產環境中，若使用者使用舊版瀏覽器（低於 Chrome 98, Firefox 94, Safari 15.4），
+     * JSON 方式可能會導致 Date/Map/Set 等特殊類型資料遺失，或者在處理循環引用時拋出錯誤。
+     * 建議確保目標使用者群體的瀏覽器版本，或引入 polyfill。
      *
      * @param {any} obj - 要深拷貝的物件
      * @returns {any} 深拷貝後的物件
