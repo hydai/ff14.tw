@@ -33,6 +33,7 @@ const CommonTranslations = {
         btn_next: '下一步',
         btn_prev: '上一步',
         btn_undo: '還原',
+        btn_redo: '重做',
 
         // 通用訊息
         msg_loading: '載入中...',
@@ -104,6 +105,7 @@ const CommonTranslations = {
         btn_next: 'Next',
         btn_prev: 'Previous',
         btn_undo: 'Undo',
+        btn_redo: 'Redo',
 
         // Common messages
         msg_loading: 'Loading...',
@@ -175,6 +177,7 @@ const CommonTranslations = {
         btn_next: '次へ',
         btn_prev: '前へ',
         btn_undo: '元に戻す',
+        btn_redo: 'やり直す',
 
         // 共通メッセージ
         msg_loading: '読み込み中...',

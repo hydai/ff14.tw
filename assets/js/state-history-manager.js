@@ -13,6 +13,7 @@ class StateHistoryManager {
     constructor(maxSize = StateHistoryManager.CONSTANTS.DEFAULT_MAX_SIZE) {
         this.history = [];
         this.maxSize = maxSize;
+        this.currentIndex = -1;
     }
 
     /**
@@ -65,23 +66,85 @@ class StateHistoryManager {
         // 注意：不支援函數、Symbol、WeakMap、WeakSet
         const stateCopy = StateHistoryManager.deepClone(state);
 
+        // 如果當前不在歷史記錄的末尾（即進行了 Undo 操作後又有新操作），
+        // 則刪除當前位置之後的所有記錄（分支）
+        if (this.currentIndex < this.history.length - 1) {
+            this.history = this.history.slice(0, this.currentIndex + 1);
+        }
+
         this.history.push(stateCopy);
+        this.currentIndex++;
 
         // 限制歷史記錄長度
         if (this.history.length > this.maxSize) {
             this.history.shift();
+            this.currentIndex--; // 因為移除了第一個元素，所以索引要減一
         }
     }
 
     /**
-     * 回復上一步狀態
+     * 回復上一步狀態 (Legacy Mode)
+     * 此方法主要用於不支援 Redo 的舊有工具，它會移除並返回最後一個狀態
      * @returns {any|null} 上一步的狀態，如果沒有歷史記錄則返回 null
      */
     pop() {
         if (this.history.length === 0) {
             return null;
         }
-        return this.history.pop();
+        const item = this.history.pop();
+        this.currentIndex = this.history.length - 1;
+        return item;
+    }
+
+    /**
+     * 執行 Undo 操作
+     * @returns {any|null} Undo 後的狀態，如果無法 Undo 則返回 null
+     */
+    undo() {
+        if (this.currentIndex > 0) {
+            this.currentIndex--;
+            return StateHistoryManager.deepClone(this.history[this.currentIndex]);
+        }
+        return null;
+    }
+
+    /**
+     * 執行 Redo 操作
+     * @returns {any|null} Redo 後的狀態，如果無法 Redo 則返回 null
+     */
+    redo() {
+        if (this.currentIndex < this.history.length - 1) {
+            this.currentIndex++;
+            return StateHistoryManager.deepClone(this.history[this.currentIndex]);
+        }
+        return null;
+    }
+
+    /**
+     * 檢查是否可以 Undo
+     * @returns {boolean}
+     */
+    canUndo() {
+        return this.currentIndex > 0;
+    }
+
+    /**
+     * 檢查是否可以 Redo
+     * @returns {boolean}
+     */
+    canRedo() {
+        return this.currentIndex < this.history.length - 1;
+    }
+
+    /**
+     * 取得當前狀態
+     * @returns {any|null}
+     */
+    getCurrentState() {
+        if (this.currentIndex >= 0 && this.currentIndex < this.history.length) {
+            return StateHistoryManager.deepClone(this.history[this.currentIndex]);
+        }
+        return null;
     }
 
     /**
@@ -97,6 +160,7 @@ class StateHistoryManager {
      */
     clear() {
         this.history = [];
+        this.currentIndex = -1;
     }
 
     /**

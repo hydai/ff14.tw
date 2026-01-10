@@ -5,19 +5,28 @@ class WondrousTailsCalculator {
         this.grid = Array(16).fill(false); // 4x4 grid, false = empty, true = placed
         this.placedCount = 0;
 
+        // Initialize State History Manager
+        this.historyManager = new StateHistoryManager();
+        this.isUndoingOrRedoing = false;
+
         this.elements = {
             grid: document.getElementById('wondrous-grid'),
             placedCount: document.getElementById('placed-count'),
             resetBtn: document.getElementById('reset-btn'),
+            undoBtn: document.getElementById('undo-btn'),
+            redoBtn: document.getElementById('redo-btn'),
             resultsPanel: document.getElementById('results-panel'),
             prob1Line: document.getElementById('prob-1-line'),
             prob2Lines: document.getElementById('prob-2-lines'),
             prob3Lines: document.getElementById('prob-3-lines'),
             recommendationText: document.getElementById('recommendation-text')
         };
-        
+
         this.initializeGrid();
         this.initializeEvents();
+
+        // Save initial state
+        this.saveState();
     }
     
     initializeGrid() {
@@ -37,13 +46,29 @@ class WondrousTailsCalculator {
                 this.toggleCell(parseInt(e.target.dataset.position));
             }
         };
-        
+
         this.handleReset = () => {
             this.resetGrid();
         };
-        
+
+        this.handleUndo = () => {
+            this.undo();
+        };
+
+        this.handleRedo = () => {
+            this.redo();
+        };
+
         this.elements.grid.addEventListener('click', this.handleCellClick);
         this.elements.resetBtn.addEventListener('click', this.handleReset);
+
+        if (this.elements.undoBtn) {
+            this.elements.undoBtn.addEventListener('click', this.handleUndo);
+        }
+
+        if (this.elements.redoBtn) {
+            this.elements.redoBtn.addEventListener('click', this.handleRedo);
+        }
     }
 
     toggleCell(position) {
@@ -66,8 +91,9 @@ class WondrousTailsCalculator {
         }
         
         this.updateDisplay();
+        this.saveState();
     }
-    
+
     updateDisplay() {
         // Update grid visualization
         const cells = this.elements.grid.querySelectorAll('.grid-cell');
@@ -85,15 +111,77 @@ class WondrousTailsCalculator {
             // Hide results when no objects are placed
             this.elements.resultsPanel.style.display = 'none';
         }
+
+        this.updateHistoryButtons();
     }
-    
+
     resetGrid() {
         this.grid = Array(16).fill(false);
         this.placedCount = 0;
         this.updateDisplay();
+        this.saveState();
         FF14Utils.showToast(FF14Utils.getI18nText('wondrous_tails_reset_done', '盤面已重置'));
     }
-    
+
+    // State History Methods
+    saveState() {
+        if (this.isUndoingOrRedoing) return;
+
+        const state = {
+            grid: [...this.grid],
+            placedCount: this.placedCount
+        };
+
+        this.historyManager.push(state);
+        this.updateHistoryButtons();
+    }
+
+    undo() {
+        if (!this.historyManager.canUndo()) return;
+
+        this.isUndoingOrRedoing = true;
+        const previousState = this.historyManager.undo();
+
+        if (previousState) {
+            this.restoreState(previousState);
+            FF14Utils.showToast(FF14Utils.getI18nText('msg_success', '操作成功'));
+        }
+
+        this.isUndoingOrRedoing = false;
+        this.updateHistoryButtons();
+    }
+
+    redo() {
+        if (!this.historyManager.canRedo()) return;
+
+        this.isUndoingOrRedoing = true;
+        const nextState = this.historyManager.redo();
+
+        if (nextState) {
+            this.restoreState(nextState);
+            FF14Utils.showToast(FF14Utils.getI18nText('msg_success', '操作成功'));
+        }
+
+        this.isUndoingOrRedoing = false;
+        this.updateHistoryButtons();
+    }
+
+    restoreState(state) {
+        this.grid = [...state.grid];
+        this.placedCount = state.placedCount;
+        this.updateDisplay();
+    }
+
+    updateHistoryButtons() {
+        if (this.elements.undoBtn) {
+            this.elements.undoBtn.disabled = !this.historyManager.canUndo();
+        }
+
+        if (this.elements.redoBtn) {
+            this.elements.redoBtn.disabled = !this.historyManager.canRedo();
+        }
+    }
+
     // Check if a line (4 consecutive positions) has all objects placed
     checkLine(positions) {
         return positions.every(pos => this.grid[pos]);
