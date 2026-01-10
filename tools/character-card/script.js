@@ -416,50 +416,61 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function startDrag(e) {
         if (!imageElements.backgroundImage.src) return;
-        
+
         isDragging = true;
         const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
         const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
         lastX = clientX;
         lastY = clientY;
-        
+
         characterCard.style.cursor = 'grabbing';
         e.preventDefault();
+
+        // 動態綁定移動和結束事件
+        if (e.type === 'mousedown') {
+            document.addEventListener('mousemove', doDrag);
+            document.addEventListener('mouseup', endDrag);
+        } else {
+            document.addEventListener('touchmove', doDrag, { passive: false });
+            document.addEventListener('touchend', endDrag);
+        }
     }
 
     function doDrag(e) {
         if (!isDragging) return;
-        
+
         const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
         const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
-        
+
         const deltaX = clientX - lastX;
         const deltaY = clientY - lastY;
-        
+
         imageTransform.x += deltaX;
         imageTransform.y += deltaY;
-        
+
         lastX = clientX;
         lastY = clientY;
-        
+
         updateImageTransform();
-        e.preventDefault();
+        if (e.cancelable) {
+            e.preventDefault();
+        }
     }
 
     function endDrag() {
         isDragging = false;
         characterCard.style.cursor = 'default';
+
+        // 移除事件監聽
+        document.removeEventListener('mousemove', doDrag);
+        document.removeEventListener('mouseup', endDrag);
+        document.removeEventListener('touchmove', doDrag);
+        document.removeEventListener('touchend', endDrag);
     }
 
-    // 滑鼠事件
+    // 初始事件監聽
     characterCard.addEventListener('mousedown', startDrag);
-    document.addEventListener('mousemove', doDrag);
-    document.addEventListener('mouseup', endDrag);
-
-    // 觸控事件
-    characterCard.addEventListener('touchstart', startDrag);
-    document.addEventListener('touchmove', doDrag);
-    document.addEventListener('touchend', endDrag);
+    characterCard.addEventListener('touchstart', startDrag, { passive: false });
 
     // 伺服器選擇相關元素
     const serverSelectionElements = {

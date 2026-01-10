@@ -191,15 +191,7 @@ class TreasureMapFinder {
         if (resetFormatBtn) {
             resetFormatBtn.addEventListener('click', () => this.resetFormatSettings());
         }
-        
-        // 格式輸入框變更時更新預覽
-        const teleportFormat = document.getElementById('teleportFormat');
-        const mapFormat = document.getElementById('mapFormat');
-        if (teleportFormat && mapFormat) {
-            teleportFormat.addEventListener('input', () => this.updateFormatPreview());
-            mapFormat.addEventListener('input', () => this.updateFormatPreview());
-        }
-        
+
         // 語言快速切換按鈕
         const langZhBtn = document.getElementById('langZhBtn');
         const langEnBtn = document.getElementById('langEnBtn');
