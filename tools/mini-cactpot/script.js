@@ -3,7 +3,8 @@ class MiniCactpotCalculator {
     constructor() {
         this.grid = new Array(9).fill(null);
         this.selectedCells = [];
-        this.history = []; // 歷史記錄
+        this.history = new StateHistoryManager(); // 歷史記錄
+        this.modalManager = new ModalManager();
         this.mgpTable = {
             6: 10000, 7: 36, 8: 720, 9: 360, 10: 80,
             11: 252, 12: 108, 13: 72, 14: 54, 15: 180,
@@ -43,6 +44,7 @@ class MiniCactpotCalculator {
         // 當前選中的格子位置（用於 popup）
         this.currentPopupPosition = null;
         this.currentPopupOptions = null;
+        this.selectionMade = false;
         this.lastFocusedElement = null; // 用於 popup 的無障礙功能
 
         this.initializeGrid();
@@ -74,54 +76,11 @@ class MiniCactpotCalculator {
         };
         this.elements.numberGrid.addEventListener('click', this.handleNumberGridClick);
 
-        const cancelAction = () => {
-            const { isNewSelection } = this.currentPopupOptions || {};
-            this.hideNumberPopup();
-            if (isNewSelection && this.history.length > 0) {
-                const lastState = this.history.pop();
-                this.restoreState(lastState);
-                this.updateUndoButton();
-            }
-        };
-
         // 取消按鈕
-        this.handlePopupCloseClick = cancelAction;
+        this.handlePopupCloseClick = () => {
+            this.hideNumberPopup();
+        };
         this.elements.popupClose.addEventListener('click', this.handlePopupCloseClick);
-
-        // 點擊 overlay 關閉
-        this.handleOverlayClick = (e) => {
-            if (e.target === this.elements.numberPopup) {
-                cancelAction();
-            }
-        };
-        this.elements.numberPopup.addEventListener('click', this.handleOverlayClick);
-
-        // 鍵盤事件處理：ESC 關閉、Tab 焦點陷阱
-        this.handlePopupKeydown = (e) => {
-            if (e.key === 'Escape') {
-                cancelAction();
-                return;
-            }
-
-            if (e.key === 'Tab') {
-                const focusableElements = Array.from(this.elements.numberPopup.querySelectorAll('button:not(:disabled)'));
-                if (focusableElements.length === 0) return;
-                const firstElement = focusableElements[0];
-                const lastElement = focusableElements[focusableElements.length - 1];
-
-                if (e.shiftKey) { // Shift + Tab
-                    if (document.activeElement === firstElement) {
-                        lastElement.focus();
-                        e.preventDefault();
-                    }
-                } else { // Tab
-                    if (document.activeElement === lastElement) {
-                        firstElement.focus();
-                        e.preventDefault();
-                    }
-                }
-            }
-        };
     }
 
     destroy() {
@@ -137,40 +96,40 @@ class MiniCactpotCalculator {
         if (this.handlePopupCloseClick && this.elements.popupClose) {
             this.elements.popupClose.removeEventListener('click', this.handlePopupCloseClick);
         }
-        if (this.handleOverlayClick && this.elements.numberPopup) {
-            this.elements.numberPopup.removeEventListener('click', this.handleOverlayClick);
-        }
 
-        // 隱藏 popup 並移除其 keydown listener
+        // 隱藏 popup (也會清理 ModalManager)
         this.hideNumberPopup();
     }
 
     showNumberPopup(position, options = {}) {
         this.currentPopupPosition = position;
         this.currentPopupOptions = options;
-        this.lastFocusedElement = document.activeElement;
+        this.selectionMade = false;
         this.updateNumberPopupState();
-        this.elements.numberPopup.classList.add('visible');
-        document.addEventListener('keydown', this.handlePopupKeydown);
 
-        // 將焦點移至第一個可用的數字按鈕，如果沒有則移至關閉按鈕
-        const firstAvailableBtn = this.elements.numberGrid.querySelector('.number-btn:not(:disabled)');
-        if (firstAvailableBtn) {
-            firstAvailableBtn.focus();
-        } else {
-            this.elements.popupClose.focus();
-        }
+        this.modalManager.show(this.elements.numberPopup, {
+            useClass: 'visible',
+            onClose: () => {
+                // If closed without selection (cancelled) and was a new selection (clicked empty cell)
+                // we need to revert the '?' state
+                if (
+                    !this.selectionMade &&
+                    this.currentPopupOptions?.isNewSelection &&
+                    this.history.hasHistory()
+                ) {
+                    const lastState = this.history.pop();
+                    this.restoreState(lastState);
+                    this.updateUndoButton();
+                }
+
+                this.currentPopupPosition = null;
+                this.currentPopupOptions = null;
+            }
+        });
     }
 
     hideNumberPopup() {
-        this.elements.numberPopup.classList.remove('visible');
-        document.removeEventListener('keydown', this.handlePopupKeydown);
-        this.currentPopupPosition = null;
-        this.currentPopupOptions = null;
-        if (this.lastFocusedElement) {
-            this.lastFocusedElement.focus();
-            this.lastFocusedElement = null;
-        }
+        this.modalManager.hide();
     }
 
     updateNumberPopupState() {
@@ -188,6 +147,9 @@ class MiniCactpotCalculator {
     handleNumberSelection(number) {
         if (this.currentPopupPosition === null) return;
 
+        // 標記已選擇，避免關閉時觸發取消邏輯
+        this.selectionMade = true;
+
         // 填入數字
         const position = this.currentPopupPosition;
         this.grid[position] = number;
@@ -203,31 +165,7 @@ class MiniCactpotCalculator {
     }
 
     getLineName(index) {
-        if (window.i18n) {
-            return window.i18n.getText(this.lineNameKeys[index]);
-        }
-        return this.lineNamesFallback[index];
-    }
-
-    getText(key, params = {}) {
-        if (window.i18n) {
-            let text = window.i18n.getText(key);
-            // Replace placeholders like {value} with actual values
-            Object.keys(params).forEach(param => {
-                text = text.replace(`{${param}}`, params[param]);
-            });
-            return text;
-        }
-        // Fallback for specific keys
-        const fallbacks = {
-            'mini_cactpot_max_cells': '最多只能選擇 4 個格子',
-            'mini_cactpot_number_used': `數字 ${params.value} 已被使用`,
-            'mini_cactpot_undone': '已回到上一步',
-            'mini_cactpot_reset_done': '已重置九宮格',
-            'mini_cactpot_expected_value': '期望值',
-            'mini_cactpot_range': '範圍'
-        };
-        return fallbacks[key] || key;
+        return FF14Utils.getI18nText(this.lineNameKeys[index], this.lineNamesFallback[index]);
     }
 
     saveState() {
@@ -237,7 +175,7 @@ class MiniCactpotCalculator {
             selectedCells: [...this.selectedCells],
             timestamp: Date.now()
         });
-        
+
         // 更新撤銷按鈕狀態
         this.updateUndoButton();
     }
@@ -276,7 +214,7 @@ class MiniCactpotCalculator {
 
     updateUndoButton() {
         // 顯示或隱藏撤銷按鈕
-        if (this.history.length > 0) {
+        if (this.history.hasHistory()) {
             this.elements.undoBtn.style.display = 'inline-block';
         } else {
             this.elements.undoBtn.style.display = 'none';
@@ -297,7 +235,7 @@ class MiniCactpotCalculator {
             // 選擇格子
             this.selectCell(position);
         } else {
-            FF14Utils.showToast(this.getText('mini_cactpot_max_cells'), 'error');
+            FF14Utils.showToast(FF14Utils.getI18nText('mini_cactpot_max_cells', '最多只能選擇 4 個格子'), 'error');
         }
     }
 
@@ -457,9 +395,9 @@ class MiniCactpotCalculator {
             className: '',
             title: bestResult.name,
             titleClass: 'best-choice-title',
-            value: `${this.getText('mini_cactpot_expected_value')}：${FF14Utils.formatNumber(Math.round(bestResult.expectedValue))} MGP`,
+            value: `${FF14Utils.getI18nText('mini_cactpot_expected_value', '期望值')}：${FF14Utils.formatNumber(Math.round(bestResult.expectedValue))} MGP`,
             valueClass: 'best-choice-value',
-            range: `${this.getText('mini_cactpot_range')}：${FF14Utils.formatNumber(bestResult.minMGP)} - ${FF14Utils.formatNumber(bestResult.maxMGP)} MGP`,
+            range: `${FF14Utils.getI18nText('mini_cactpot_range', '範圍')}：${FF14Utils.formatNumber(bestResult.minMGP)} - ${FF14Utils.formatNumber(bestResult.maxMGP)} MGP`,
             rangeClass: 'best-choice-range'
         });
         
@@ -473,18 +411,18 @@ class MiniCactpotCalculator {
     }
 
     undo() {
-        if (this.history.length === 0) return;
-        
+        if (!this.history.hasHistory()) return;
+
         // 取出最後的歷史記錄
         const lastState = this.history.pop();
-        
+
         // 恢復狀態
         this.restoreState(lastState);
-        
+
         // 更新撤銷按鈕狀態
         this.updateUndoButton();
-        
-        FF14Utils.showToast(this.getText('mini_cactpot_undone'), 'success');
+
+        FF14Utils.showToast(FF14Utils.getI18nText('mini_cactpot_undone', '已回到上一步'), 'success');
     }
 
 }
@@ -522,8 +460,7 @@ function resetGrid() {
     
     // 重置計算器實例
     calculator = new MiniCactpotCalculator();
-    const resetMsg = window.i18n ? window.i18n.getText('mini_cactpot_reset_done') : '已重置九宮格';
-    FF14Utils.showToast(resetMsg, 'success');
+    FF14Utils.showToast(FF14Utils.getI18nText('mini_cactpot_reset_done', '已重置九宮格'), 'success');
 }
 
 function undoLastStep() {

@@ -86,10 +86,10 @@ class TimeCalculator {
             if (periodElement) {
                 if (hour >= 6 && hour < 18) {
                     periodElement.textContent = '☀️';
-                    periodElement.title = window.i18n?.getText('dayTime') || '白天';
+                    periodElement.title = FF14Utils.getI18nText('dayTime', '白天');
                 } else {
                     periodElement.textContent = '🌙';
-                    periodElement.title = window.i18n?.getText('nightTime') || '夜晚';
+                    periodElement.title = FF14Utils.getI18nText('nightTime', '夜晚');
                 }
             }
         }

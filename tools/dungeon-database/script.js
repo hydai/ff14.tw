@@ -61,10 +61,10 @@ class DungeonDatabase {
             this.dungeons = (data.dungeons || []).filter(dungeon => dungeon.visible !== false);
             this.filteredDungeons = [...this.dungeons];
             this.renderDungeons();
-            
+
         } catch (error) {
             console.error('載入副本資料失敗:', error);
-            this.showError('載入副本資料失敗，請重新整理頁面再試。');
+            this.showError(FF14Utils.getI18nText('dungeon_db_msg_load_failed', '載入副本資料失敗，請重新整理頁面再試。'));
         } finally {
             this.showLoading(false);
         }
@@ -341,8 +341,8 @@ class DungeonDatabase {
         this.focusedCardIndex = -1;
         this.filteredDungeons = [...this.dungeons];
         this.renderDungeons();
-        
-        FF14Utils.showToast('已重置所有過濾條件', 'success');
+
+        FF14Utils.showToast(FF14Utils.getI18nText('dungeon_db_msg_reset_filters', '已重置所有過濾條件'), 'success');
     }
 
     renderDungeons() {
@@ -403,13 +403,13 @@ class DungeonDatabase {
             placeholder.className = 'image-placeholder';
             placeholder.style.display = 'none';
             const placeholderText = document.createElement('span');
-            placeholderText.textContent = '圖片載入中...';
+            placeholderText.textContent = FF14Utils.getI18nText('dungeon_db_image_loading', '圖片載入中...');
             placeholder.appendChild(placeholderText);
             imageDiv.appendChild(placeholder);
         } else {
-            imageDiv.textContent = '圖片準備中';
+            imageDiv.textContent = FF14Utils.getI18nText('dungeon_db_image_preparing', '圖片準備中');
         }
-        
+
         card.appendChild(imageDiv);
         
         // Create content section
@@ -452,19 +452,19 @@ class DungeonDatabase {
         // Rewards
         const rewards = document.createElement('div');
         rewards.className = 'dungeon-rewards';
-        
+
         const rewardsTitle = document.createElement('h4');
-        rewardsTitle.textContent = '獎勵';
+        rewardsTitle.textContent = FF14Utils.getI18nText('dungeon_db_reward', '獎勵');
         rewards.appendChild(rewardsTitle);
-        
+
         const rewardItem = document.createElement('div');
         rewardItem.className = 'reward-item';
-        
+
         const rewardName = document.createElement('span');
         rewardName.className = 'reward-name';
-        rewardName.textContent = '神典石';
+        rewardName.textContent = FF14Utils.getI18nText('dungeon_db_tombstone', '神典石');
         rewardItem.appendChild(rewardName);
-        
+
         const rewardValue = document.createElement('span');
         rewardValue.className = 'reward-value';
         rewardValue.textContent = dungeon.tombstoneReward;
@@ -477,11 +477,11 @@ class DungeonDatabase {
         if (dungeon.specialDrops && dungeon.specialDrops.length > 0) {
             const specialDrops = document.createElement('div');
             specialDrops.className = DungeonDatabase.CONSTANTS.CSS_CLASSES.SPECIAL_DROPS;
-            
+
             const dropsTitle = document.createElement('h4');
-            dropsTitle.textContent = '特殊掉落物';
+            dropsTitle.textContent = FF14Utils.getI18nText('dungeon_db_special_drops', '特殊掉落物');
             specialDrops.appendChild(dropsTitle);
-            
+
             const dropsList = document.createElement('div');
             dropsList.className = 'drops-list';
             
@@ -499,11 +499,11 @@ class DungeonDatabase {
         // Description - Mechanics
         const mechanicsDiv = document.createElement('div');
         mechanicsDiv.className = 'dungeon-description';
-        
+
         const mechanicsLabel = document.createElement('strong');
-        mechanicsLabel.textContent = '機制說明：';
+        mechanicsLabel.textContent = FF14Utils.getI18nText('dungeon_db_mechanics', '機制說明：');
         mechanicsDiv.appendChild(mechanicsLabel);
-        
+
         const highlightedMechanics = this.highlightSearchTermsDOM(dungeon.mechanics, this.currentSearchTerm);
         mechanicsDiv.appendChild(highlightedMechanics);
         content.appendChild(mechanicsDiv);
@@ -547,7 +547,8 @@ class DungeonDatabase {
 
     showDungeonDetail(dungeon) {
         // 未來可以實作詳細頁面或彈窗
-        FF14Utils.showToast(`點擊了 ${dungeon.name}，詳細攻略功能開發中`, 'info');
+        const message = FF14Utils.getI18nText('dungeon_db_msg_detail_dev', `點擊了 {name}，詳細攻略功能開發中`, { name: dungeon.name });
+        FF14Utils.showToast(message, 'info');
     }
 }
 
