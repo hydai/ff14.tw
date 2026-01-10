@@ -452,8 +452,9 @@ document.addEventListener('DOMContentLoaded', function() {
         lastY = clientY;
 
         updateImageTransform();
-        // 在被標記為 passive 的事件監聽器中，事件可能不可取消；
-        // 加上 cancelable 檢查可避免在不可取消事件上呼叫 preventDefault() 而產生錯誤。
+        // 防禦性檢查：雖然此監聽器已設為 passive: false，
+        // 但在某些邊緣情況下（如合成事件）事件仍可能不可取消。
+        // 此檢查可避免在這些情況下呼叫 preventDefault() 而產生錯誤。
         if (e.cancelable) {
             e.preventDefault();
         }
