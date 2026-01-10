@@ -130,6 +130,9 @@ const FF14Utils = {
     // 參數正則表達式緩存
     _paramRegexCache: {},
 
+    // 用於偵測命名參數的正則表達式（預編譯以提升效能）
+    _namedParamDetectRegex: /\{[a-zA-Z_]/,
+
     // 格式化數字（加入千分位符號）
     formatNumber(num) {
         return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
@@ -174,7 +177,7 @@ const FF14Utils = {
         const isPlainObjectFirstArg = typeof args[0] === 'object' && args[0] !== null && !Array.isArray(args[0]);
 
         // Prioritize named parameters if the first argument is an object and the text contains non-numeric placeholders.
-        if (isPlainObjectFirstArg && /\{[a-zA-Z_]/.test(text)) {
+        if (isPlainObjectFirstArg && this._namedParamDetectRegex.test(text)) {
             // 命名參數替換 {name}
             const params = args[0];
             const paramKeys = Object.keys(params).sort((a, b) => b.length - a.length);
