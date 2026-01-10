@@ -26,6 +26,8 @@ class UIDialogManager {
             onFormatSave: null
         };
 
+        this.formatPreviewHandler = null;
+
         // 初始化 DOM 元素參考
         this.initializeElements();
     }
@@ -603,15 +605,15 @@ class UIDialogManager {
     showFormatPanel(currentSettings, onPreviewUpdate) {
         const elements = this.formatPanelElements;
         if (!elements.panel) return;
-        
+
         // 設置當前值
         if (currentSettings) {
             elements.teleportFormat.value = currentSettings.teleport || '';
             elements.mapFormat.value = currentSettings.map || '';
         }
-        
+
         // 設置預覽更新事件
-        const updatePreview = () => {
+        this.formatPreviewHandler = () => {
             if (onPreviewUpdate) {
                 onPreviewUpdate(
                     elements.teleportFormat.value,
@@ -619,15 +621,15 @@ class UIDialogManager {
                 );
             }
         };
-        
-        elements.teleportFormat.addEventListener('input', updatePreview);
-        elements.mapFormat.addEventListener('input', updatePreview);
-        
+
+        elements.teleportFormat.addEventListener('input', this.formatPreviewHandler);
+        elements.mapFormat.addEventListener('input', this.formatPreviewHandler);
+
         // 顯示面板
         elements.panel.classList.add(UIDialogManager.CONSTANTS.CSS_CLASSES.ACTIVE);
-        
+
         // 初始預覽
-        updatePreview();
+        this.formatPreviewHandler();
     }
 
     /**
@@ -637,6 +639,13 @@ class UIDialogManager {
         const elements = this.formatPanelElements;
         if (elements.panel) {
             elements.panel.classList.remove(UIDialogManager.CONSTANTS.CSS_CLASSES.ACTIVE);
+        }
+
+        // 移除事件監聽器
+        if (this.formatPreviewHandler) {
+            elements.teleportFormat.removeEventListener('input', this.formatPreviewHandler);
+            elements.mapFormat.removeEventListener('input', this.formatPreviewHandler);
+            this.formatPreviewHandler = null;
         }
     }
 
