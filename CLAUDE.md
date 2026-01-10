@@ -685,6 +685,12 @@ async loadData() {
 Co-Authored-By: Claude <noreply@anthropic.com>
 ```
 
+### Git Usage Guidelines
+- **NEVER use `git add .`**: Always add specific files you intend to commit to ensure only relevant changes are included.
+- **Check status first**: Run `git status` before adding files to understand the current state.
+- **Atomic commits**: Separate commits logically; each commit should address a single concern.
+
+
 ### Performance Guidelines
 - Debounce search/filter operations at 300ms
 - Use CSS transforms for animations (GPU acceleration)  

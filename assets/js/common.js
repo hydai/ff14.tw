@@ -226,33 +226,6 @@ const FF14Utils = {
         toast.className = `toast toast-${type}`;
         toast.textContent = message;
 
-        // 加入樣式
-        Object.assign(toast.style, {
-            position: 'fixed',
-            top: '20px',
-            right: '20px',
-            padding: '12px 24px',
-            borderRadius: '6px',
-            color: 'white',
-            fontWeight: '500',
-            zIndex: '9999',
-            opacity: '0',
-            transform: 'translateY(-20px)',
-            transition: 'all 0.3s ease',
-            whiteSpace: 'pre-line'
-        });
-
-        const toastColors = {
-            success: '#27ae60',
-            error: '#e74c3c',
-            warning: '#f39c12',
-            info: '#3498db'
-        };
-
-        if (toastColors[type]) {
-            toast.style.background = toastColors[type];
-        }
-
         document.body.appendChild(toast);
 
         // 動畫顯示
