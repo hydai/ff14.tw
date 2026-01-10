@@ -15,6 +15,12 @@ class ModalManager {
 
     /**
      * 顯示模態視窗
+     *
+     * 關於事件監聽器生命週期：
+     * 對於模態視窗內部的關閉按鈕（如 closeBtn），建議在調用 show 方法前（或在封裝組件的初始化階段）添加事件監聽器，
+     * 並在 onClose 回調中移除該監聽器。這樣可以確保事件監聽器的生命週期與模態視窗的顯示狀態一致，
+     * 避免重複綁定或內存洩漏，同時保持 ModalManager 的職責單純（只負責通用的模態行為）。
+     *
      * @param {HTMLElement} element - 模態視窗的 DOM 元素
      * @param {Object} options - 設定選項
      * @param {Function} [options.onClose] - 關閉時的回調函數
