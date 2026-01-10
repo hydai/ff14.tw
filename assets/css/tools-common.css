@@ -73,3 +73,35 @@
     margin: 1rem 0;
     border: 1px solid var(--warning-border, #ffeaa7);
 }
+
+/* Toast 通知訊息 */
+.toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 12px 24px;
+    border-radius: 6px;
+    color: white;
+    font-weight: 500;
+    z-index: 9999;
+    opacity: 0;
+    transform: translateY(-20px);
+    transition: all 0.3s ease;
+    white-space: pre-line;
+}
+
+.toast-success {
+    background-color: #27ae60;
+}
+
+.toast-error {
+    background-color: #e74c3c;
+}
+
+.toast-warning {
+    background-color: #f39c12;
+}
+
+.toast-info {
+    background-color: #3498db;
+}
