@@ -41,7 +41,15 @@
                 </div>
 
                 <div class="controls">
-                    <button class="btn btn-secondary" id="reset-btn" data-i18n="wondrous_tails_reset">重置盤面</button>
+                    <div class="btn-group">
+                        <button class="btn btn-secondary" id="undo-btn" disabled>
+                            <span class="btn-icon">↩️</span> <span data-i18n="btn_undo">還原</span>
+                        </button>
+                        <button class="btn btn-secondary" id="redo-btn" disabled>
+                            <span class="btn-icon">↪️</span> <span data-i18n="btn_redo">重做</span>
+                        </button>
+                    </div>
+                    <button class="btn btn-danger" id="reset-btn" data-i18n="wondrous_tails_reset">重置盤面</button>
                 </div>
 
                 <div class="results-panel" id="results-panel" style="display: none;">
@@ -79,6 +87,7 @@
     <script src="../../assets/js/components/layout-loader.js"></script>
     <script src="../../assets/js/common.js"></script>
     <script src="../../assets/js/security-utils.js"></script>
+    <script src="../../assets/js/state-history-manager.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
