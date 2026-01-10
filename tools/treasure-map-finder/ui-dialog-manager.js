@@ -28,6 +28,9 @@ class UIDialogManager {
 
         this.formatPreviewHandler = null;
 
+        // Map to store cleanup functions for panels
+        this.cleanupHandlers = new Map();
+
         // 初始化 DOM 元素參考
         this.initializeElements();
     }
@@ -132,9 +135,8 @@ class UIDialogManager {
         }
 
         // 設置關閉按鈕事件
-        // Note: closeHandler is set here and removed in ModalManager's onClose callback.
-        // This design is intentional: the event listener lifecycle matches the modal display state,
-        // and allows this dialog to define its own close logic without coupling it into ModalManager.
+        // Note: closeHandler is registered here and cleaned up in ModalManager's onClose callback.
+        // For the shared event-listener lifecycle pattern, see ModalManager documentation.
         const closeHandler = () => this.hideMapDetail();
         elements.closeBtn.addEventListener('click', closeHandler);
 
@@ -602,10 +604,15 @@ class UIDialogManager {
         const elements = this.formatPanelElements;
         if (!elements.panel) return;
 
+        const panelId = 'formatPanel';
+
         // 先清理舊的事件監聽器（如果存在）
-        if (this.formatPanelCleanup) {
-            this.formatPanelCleanup();
-            this.formatPanelCleanup = null;
+        if (this.cleanupHandlers.has(panelId)) {
+            const cleanup = this.cleanupHandlers.get(panelId);
+            if (typeof cleanup === 'function') {
+                cleanup();
+            }
+            this.cleanupHandlers.delete(panelId);
         }
 
         // 設置當前值
@@ -628,10 +635,11 @@ class UIDialogManager {
         elements.mapFormat.addEventListener('input', formatPreviewHandler);
 
         // 儲存清理函數
-        this.formatPanelCleanup = () => {
+        const cleanup = () => {
             elements.teleportFormat.removeEventListener('input', formatPreviewHandler);
             elements.mapFormat.removeEventListener('input', formatPreviewHandler);
         };
+        this.cleanupHandlers.set(panelId, cleanup);
 
         // 顯示面板
         elements.panel.classList.add(UIDialogManager.CONSTANTS.CSS_CLASSES.ACTIVE);
@@ -649,10 +657,15 @@ class UIDialogManager {
             elements.panel.classList.remove(UIDialogManager.CONSTANTS.CSS_CLASSES.ACTIVE);
         }
 
+        const panelId = 'formatPanel';
+
         // 移除事件監聽器
-        if (this.formatPanelCleanup) {
-            this.formatPanelCleanup();
-            this.formatPanelCleanup = null;
+        if (this.cleanupHandlers.has(panelId)) {
+            const cleanup = this.cleanupHandlers.get(panelId);
+            if (typeof cleanup === 'function') {
+                cleanup();
+            }
+            this.cleanupHandlers.delete(panelId);
         }
     }
 
