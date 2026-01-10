@@ -141,8 +141,7 @@ class UIDialogManager {
         // 使用 ModalManager 顯示對話框
         // 現在 modal 本身就是遮罩層，ModalManager 可以自動處理點擊關閉
         this.modalManager.show(elements.modal, {
-            useClass: null,
-            displayStyle: 'flex',
+            // useClass default is 'active', which works with our CSS
             closeOnOverlayClick: true,
             closeOnEsc: true,
             onClose: () => {
@@ -290,8 +289,7 @@ class UIDialogManager {
 
         // 使用 ModalManager 顯示
         this.modalManager.show(overlay, {
-            useClass: null,
-            displayStyle: 'flex',
+            // useClass default is 'active'
             closeOnOverlayClick: true,
             closeOnEsc: true,
             onClose: () => overlay.remove()
@@ -309,19 +307,19 @@ class UIDialogManager {
         const container = document.createElement('div');
 
         const instructionP = document.createElement('p');
-        instructionP.style.marginBottom = '10px';
+        instructionP.className = 'ui-dialog-instruction';
         instructionP.textContent = instruction;
         container.appendChild(instructionP);
 
         const textarea = document.createElement('textarea');
         textarea.id = 'exportTextarea';
-        textarea.style.cssText = 'width: 100%; height: 200px; margin-bottom: 10px; font-family: monospace; font-size: 12px;';
+        textarea.className = 'ui-dialog-textarea';
         textarea.readOnly = true;
         textarea.value = content;
         container.appendChild(textarea);
 
         const buttonContainer = document.createElement('div');
-        buttonContainer.style.textAlign = 'right';
+        buttonContainer.className = 'ui-dialog-actions';
 
         const copyBtn = document.createElement('button');
         copyBtn.className = 'btn btn-primary';
@@ -332,7 +330,6 @@ class UIDialogManager {
         const closeBtn = document.createElement('button');
         closeBtn.className = 'btn btn-secondary';
         closeBtn.id = 'exportCloseBtn';
-        closeBtn.style.marginLeft = '8px';
         closeBtn.textContent = FF14Utils.getI18nText('treasure_map_close', '關閉');
         buttonContainer.appendChild(closeBtn);
 
@@ -395,8 +392,7 @@ class UIDialogManager {
 
         // 使用 ModalManager 顯示
         this.modalManager.show(overlay, {
-            useClass: null,
-            displayStyle: 'flex',
+            // useClass default is 'active'
             closeOnOverlayClick: true,
             closeOnEsc: true,
             onClose: () => overlay.remove()
@@ -414,18 +410,18 @@ class UIDialogManager {
         const container = document.createElement('div');
 
         const instructionP = document.createElement('p');
-        instructionP.style.marginBottom = '10px';
+        instructionP.className = 'ui-dialog-instruction';
         instructionP.textContent = instruction;
         container.appendChild(instructionP);
 
         const textarea = document.createElement('textarea');
         textarea.id = 'importTextarea';
-        textarea.style.cssText = 'width: 100%; height: 200px; margin-bottom: 10px; font-family: monospace; font-size: 12px;';
+        textarea.className = 'ui-dialog-textarea';
         textarea.placeholder = placeholder;
         container.appendChild(textarea);
 
         const buttonContainer = document.createElement('div');
-        buttonContainer.style.textAlign = 'right';
+        buttonContainer.className = 'ui-dialog-actions';
 
         const confirmBtn = document.createElement('button');
         confirmBtn.className = 'btn btn-primary';
@@ -436,7 +432,6 @@ class UIDialogManager {
         const cancelBtn = document.createElement('button');
         cancelBtn.className = 'btn btn-secondary';
         cancelBtn.id = 'importCancelBtn';
-        cancelBtn.style.marginLeft = '8px';
         cancelBtn.textContent = FF14Utils.getI18nText('treasure_map_cancel', '取消');
         buttonContainer.appendChild(cancelBtn);
 
@@ -699,35 +694,14 @@ class UIDialogManager {
         // 建立遮罩層
         const overlay = document.createElement('div');
         overlay.className = 'ui-dialog-overlay';
-        overlay.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: ${UIDialogManager.CONSTANTS.Z_INDEX.DIALOG};
-        `;
+        // Z-index handled by CSS class or default
 
         // 建立對話框
         const dialog = document.createElement('div');
         dialog.className = `ui-dialog ${className}`;
-        dialog.style.cssText = `
-            background: var(--card-bg, white);
-            color: var(--text-color, #333);
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-            max-width: 500px;
-            width: 90%;
-        `;
 
         if (title) {
             const titleElement = document.createElement('h3');
-            titleElement.style.margin = '0 0 10px 0';
             titleElement.textContent = title;
             dialog.appendChild(titleElement);
         }
@@ -755,25 +729,10 @@ class UIDialogManager {
         const { title, content, className = '' } = options;
 
         const dialog = document.createElement('div');
-        dialog.className = `ui-dialog ${className}`;
-        dialog.style.cssText = `
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: var(--card-bg, white);
-            color: var(--text-color, #333);
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-            z-index: ${UIDialogManager.CONSTANTS.Z_INDEX.DIALOG};
-            max-width: 500px;
-            width: 90%;
-        `;
+        dialog.className = `ui-dialog fixed-center ${className}`;
 
         if (title) {
             const titleElement = document.createElement('h3');
-            titleElement.style.margin = '0 0 10px 0';
             titleElement.textContent = title;
             dialog.appendChild(titleElement);
         }

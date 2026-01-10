@@ -452,9 +452,8 @@ document.addEventListener('DOMContentLoaded', function() {
         lastY = clientY;
 
         updateImageTransform();
-        // 防禦性檢查：雖然此監聽器已設為 passive: false，
-        // 但在某些邊緣情況下（如合成事件）事件仍可能不可取消。
-        // 此檢查可避免在這些情況下呼叫 preventDefault() 而產生錯誤。
+        // 防止拖曳期間頁面進行預設行為（例如觸控滾動）
+        // 防禦性檢查：確保事件可取消，避免在某些邊緣情況下報錯
         if (e.cancelable) {
             e.preventDefault();
         }
