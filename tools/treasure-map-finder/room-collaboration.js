@@ -28,6 +28,7 @@ class RoomCollaboration {
         this.isPolling = false;
         this.retryCount = 0;
         this.operationHistory = [];
+        this.modalManager = new ModalManager();
 
         // 顯示當前使用的 API URL（除錯用）
         console.log('Room Collaboration API URL:', RoomCollaboration.CONSTANTS.API_BASE_URL);
@@ -764,38 +765,28 @@ class RoomCollaboration {
 
     // 顯示對話框
     showModal(modalName) {
-        if (this.modals[modalName]) {
-            this.modals[modalName].classList.remove('hidden');
-            this.modals[modalName].style.display = 'flex';  // 保留 flex 顯示
+        const modal = this.modals[modalName];
+        if (modal) {
+            modal.classList.remove('hidden');
+            this.modalManager.show(modal, {
+                useClass: null,
+                displayStyle: 'flex',
+                onClose: () => {
+                    modal.classList.add('hidden');
+                    modal.style.display = '';
+                }
+            });
         }
     }
 
     // 隱藏對話框
     hideModal(modalName) {
-        if (this.modals[modalName]) {
-            this.modals[modalName].classList.add('hidden');
-            this.modals[modalName].style.display = '';  // 清除內聯樣式
-        }
+        this.modalManager.hide();
     }
 
     // 顯示提示訊息
     showToast(message, type = 'success') {
-        // 建立 toast 元素
-        const toast = document.createElement('div');
-        toast.className = `toast toast-${type}`;
-        toast.textContent = message;
-
-        // 添加到頁面
-        document.body.appendChild(toast);
-
-        // 觸發動畫
-        setTimeout(() => toast.classList.add('show'), 10);
-
-        // 3 秒後移除
-        setTimeout(() => {
-            toast.classList.remove('show');
-            setTimeout(() => document.body.removeChild(toast), 300);
-        }, 3000);
+        FF14Utils.showToast(message, type);
     }
 
     // 添加操作歷史

@@ -45,7 +45,7 @@ class MacroConverter {
             this.loadDefaultExample();
         } catch (error) {
             console.error('Initialization failed:', error);
-            this.showError(this.getText('macro_converter_load_error') || '載入翻譯資料失敗，請重新整理頁面再試。');
+            this.showError(FF14Utils.getI18nText('macro_converter_load_error', '載入翻譯資料失敗，請重新整理頁面再試。'));
         } finally {
             this.showLoading(false);
         }
@@ -176,7 +176,7 @@ class MacroConverter {
             this.elements.inputMacro.value = text;
         } catch (err) {
             console.error('Failed to read clipboard:', err);
-            FF14Utils.showToast(this.getText('macro_converter_paste_error') || '無法讀取剪貼簿', 'error');
+            FF14Utils.showToast(FF14Utils.getI18nText('macro_converter_paste_error', '無法讀取剪貼簿'), 'error');
         }
     }
 
@@ -187,16 +187,16 @@ class MacroConverter {
         const text = this.elements.outputMacro.value;
 
         if (!text) {
-            FF14Utils.showToast(this.getText('macro_converter_nothing_to_copy') || '沒有內容可複製', 'error');
+            FF14Utils.showToast(FF14Utils.getI18nText('macro_converter_nothing_to_copy', '沒有內容可複製'), 'error');
             return;
         }
 
         try {
             await navigator.clipboard.writeText(text);
-            FF14Utils.showToast(this.getText('macro_converter_copied') || '已複製到剪貼簿', 'success');
+            FF14Utils.showToast(FF14Utils.getI18nText('macro_converter_copied', '已複製到剪貼簿'), 'success');
         } catch (err) {
             console.error('Failed to copy:', err);
-            FF14Utils.showToast(this.getText('macro_converter_copy_error') || '複製失敗', 'error');
+            FF14Utils.showToast(FF14Utils.getI18nText('macro_converter_copy_error', '複製失敗'), 'error');
         }
     }
 
@@ -205,7 +205,7 @@ class MacroConverter {
      */
     setOutputPlaceholder() {
         this.elements.outputMacro.placeholder =
-            this.getText('macro_converter_output_placeholder') || '轉換結果將顯示在這裡...';
+            FF14Utils.getI18nText('macro_converter_output_placeholder', '轉換結果將顯示在這裡...');
     }
 
     /**
@@ -224,18 +224,6 @@ class MacroConverter {
     showError(message) {
         this.elements.errorMessage.textContent = message;
         this.elements.errorMessage.style.display = 'block';
-    }
-
-    /**
-     * Get i18n text
-     * @param {string} key
-     * @returns {string}
-     */
-    getText(key) {
-        if (window.i18n && typeof window.i18n.getText === 'function') {
-            return window.i18n.getText(key);
-        }
-        return '';
     }
 }
 

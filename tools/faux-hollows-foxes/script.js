@@ -41,8 +41,9 @@ class FauxHollowsFoxes {
         this.showTreasureProbabilities = false;
         this.obstaclesConfirmed = false;
         this.showOptimalHighlight = true; // 預設開啟高亮功能
-        this.history = []; // 儲存每一步的歷史狀態
-        
+        this.history = new StateHistoryManager(); // 儲存每一步的歷史狀態
+        this.modalManager = new ModalManager();
+
         this.elements = {
             board: document.getElementById('game-board'),
             remainingClicks: document.getElementById('remaining-clicks'),
@@ -65,7 +66,7 @@ class FauxHollowsFoxes {
         this.calculateObstacleProbabilities();
         
         // 設定按鈕初始文字
-        this.elements.autoCalculateBtn.textContent = '關閉最佳策略';
+        this.elements.autoCalculateBtn.textContent = FF14Utils.getI18nText('faux_hollows_close_best', '關閉最佳策略');
     }
 
     initializeBoard() {
@@ -104,13 +105,6 @@ class FauxHollowsFoxes {
         // Popup close
         this.elements.popupClose.addEventListener('click', () => {
             this.closePopup();
-        });
-
-        // Close popup on overlay click
-        this.elements.popup.addEventListener('click', (e) => {
-            if (e.target === this.elements.popup) {
-                this.closePopup();
-            }
         });
 
         // Reset button
@@ -261,7 +255,13 @@ class FauxHollowsFoxes {
                 const item = document.createElement('div');
                 if (validProbabilities[i]) {
                     item.className = `treasure-prob-item ${validProbabilities[i].className}`;
-                    item.textContent = validProbabilities[i].text;
+                    const i18nKeys = {
+                        'sword': 'faux_hollows_cell_sword',
+                        'chest': 'faux_hollows_cell_chest',
+                        'fox': 'faux_hollows_cell_fox'
+                    };
+                    const typeText = FF14Utils.getI18nText(i18nKeys[validProbabilities[i].type], validProbabilities[i].type);
+                    item.textContent = `${typeText}: ${validProbabilities[i].prob}%`;
                 } else {
                     item.className = 'treasure-prob-item empty-prob';
                 }
@@ -316,9 +316,9 @@ class FauxHollowsFoxes {
 
     toggleProbabilities() {
         this.showProbabilities = !this.showProbabilities;
-        this.elements.toggleProbabilitiesBtn.textContent = 
-            this.showProbabilities ? '隱藏機率' : '顯示機率';
-        
+        this.elements.toggleProbabilitiesBtn.textContent =
+            this.showProbabilities ? FF14Utils.getI18nText('faux_hollows_hide_prob', '隱藏機率') : FF14Utils.getI18nText('faux_hollows_show_prob', '顯示機率');
+
         if (this.showProbabilities) {
             this.updateProbabilityDisplay();
         } else {
@@ -488,8 +488,8 @@ class FauxHollowsFoxes {
             this.showTreasureProbabilities = true;
             this.updateTreasureProbabilitiesBasedOnMatches();
             this.updateProbabilityDisplay(); // 需要更新UI顯示
-            FF14Utils.showToast('障礙物位置已確認！現在顯示寶物機率，點擊格子可填寫實際發現的寶物', 'success');
-            
+            FF14Utils.showToast(FF14Utils.getI18nText('faux_hollows_obstacles_confirmed', '障礙物位置已確認！現在顯示寶物機率，點擊格子可填寫實際發現的寶物'), 'success');
+
             // 更新最佳策略高亮
             this.updateOptimalHighlight();
         }
@@ -533,8 +533,8 @@ class FauxHollowsFoxes {
             this.obstaclesConfirmed = true;
             this.showTreasureProbabilities = true;
             this.updateTreasureProbabilitiesBasedOnMatches();
-            FF14Utils.showToast('所有障礙物位置已確定！現在顯示寶物機率，點擊格子可填寫實際發現的寶物', 'success');
-            
+            FF14Utils.showToast(FF14Utils.getI18nText('faux_hollows_all_obstacles_confirmed', '所有障礙物位置已確定！現在顯示寶物機率，點擊格子可填寫實際發現的寶物'), 'success');
+
             // 更新最佳策略高亮
             this.updateOptimalHighlight();
         }
@@ -599,8 +599,8 @@ class FauxHollowsFoxes {
             this.showTreasureProbabilities = true;
             this.updateTreasureProbabilitiesBasedOnMatches();
             this.updateProbabilityDisplay(); // 需要更新UI顯示
-            FF14Utils.showToast('障礙物位置已確認！現在顯示寶物機率，點擊格子可填寫實際發現的寶物', 'success');
-            
+            FF14Utils.showToast(FF14Utils.getI18nText('faux_hollows_obstacles_confirmed', '障礙物位置已確認！現在顯示寶物機率，點擊格子可填寫實際發現的寶物'), 'success');
+
             // 更新最佳策略高亮
             this.updateOptimalHighlight();
         }
@@ -650,10 +650,10 @@ class FauxHollowsFoxes {
                 this.setObstacle(index, true);
                 fillCount++;
             }
-            
+
             // 顯示自動填充的提示
-            FF14Utils.showToast(`已自動填充 ${fillCount} 個確定的障礙物位置`, 'success');
-            
+            FF14Utils.showToast(FF14Utils.getI18nText('faux_hollows_auto_filled', '已自動填充 {count} 個確定的障礙物位置', { count: fillCount }), 'success');
+
             // 更新顯示（但不觸發 updateMatchingBoards 避免遞迴）
             this.updateDisplay();
             this.checkForCompletedShapes();
@@ -733,12 +733,19 @@ class FauxHollowsFoxes {
     showPopup() {
         // 根據遊戲階段顯示不同的選項
         this.updatePopupOptions();
-        this.elements.popup.style.display = 'flex';
+
+        this.modalManager.show(this.elements.popup, {
+            useClass: null,
+            displayStyle: 'flex',
+            onClose: () => {
+                this.selectedCell = null;
+            }
+        });
     }
 
     updatePopupOptions() {
         const popupBtns = this.elements.popup.querySelectorAll('.popup-btn');
-        
+
         if (this.obstaclesConfirmed) {
             // 填寶物階段：顯示劍、寶箱、宗長、空格、清除
             popupBtns.forEach(btn => {
@@ -763,8 +770,7 @@ class FauxHollowsFoxes {
     }
 
     closePopup() {
-        this.elements.popup.style.display = 'none';
-        this.selectedCell = null;
+        this.modalManager.hide();
     }
 
     handlePopupSelection(type) {
@@ -779,7 +785,7 @@ class FauxHollowsFoxes {
         } else if (type === 'empty') {
             // Check if we can place empty
             if (this.clickCount >= FauxHollowsFoxes.CONSTANTS.MAX_CLICKS) {
-                FF14Utils.showToast('已達到最大點擊次數！', 'error');
+                FF14Utils.showToast(FF14Utils.getI18nText('faux_hollows_max_clicks', '已達到最大點擊次數！'), 'error');
                 this.closePopup();
                 return;
             }
@@ -787,7 +793,7 @@ class FauxHollowsFoxes {
         } else {
             // Check if we can place the shape
             if (this.clickCount >= FauxHollowsFoxes.CONSTANTS.MAX_CLICKS) {
-                FF14Utils.showToast('已達到最大點擊次數！', 'error');
+                FF14Utils.showToast(FF14Utils.getI18nText('faux_hollows_max_clicks', '已達到最大點擊次數！'), 'error');
                 this.closePopup();
                 return;
             }
@@ -852,22 +858,22 @@ class FauxHollowsFoxes {
 
     placeSingleCell(index, type) {
         const cell = this.elements.board.children[index];
-        
+
         // In treasure phase (obstacles confirmed), allow overwriting treasure cells
         if (this.obstaclesConfirmed) {
             // Allow placing on: null cells, treasure probability display, or existing treasure cells
-            const canPlace = this.board[index] === null || 
+            const canPlace = this.board[index] === null ||
                            cell.classList.contains('treasure-probability-display') ||
                            ['sword', 'chest', 'fox', 'empty'].includes(this.board[index]);
-            
+
             if (!canPlace) {
-                FF14Utils.showToast('此格子無法修改！', 'error');
+                FF14Utils.showToast(FF14Utils.getI18nText('faux_hollows_cannot_modify', '此格子無法修改！'), 'error');
                 return;
             }
         } else {
             // In obstacle phase, only allow placing on null cells or treasure probability display
             if (this.board[index] !== null && !cell.classList.contains('treasure-probability-display')) {
-                FF14Utils.showToast('此格子已被佔用！', 'error');
+                FF14Utils.showToast(FF14Utils.getI18nText('faux_hollows_cell_occupied', '此格子已被佔用！'), 'error');
                 return;
             }
         }
@@ -901,22 +907,22 @@ class FauxHollowsFoxes {
 
     placeEmpty(index) {
         const cell = this.elements.board.children[index];
-        
+
         // In treasure phase (obstacles confirmed), allow overwriting treasure cells
         if (this.obstaclesConfirmed) {
             // Allow placing on: null cells, treasure probability display, or existing treasure cells
-            const canPlace = this.board[index] === null || 
+            const canPlace = this.board[index] === null ||
                            cell.classList.contains('treasure-probability-display') ||
                            ['sword', 'chest', 'fox', 'empty'].includes(this.board[index]);
-            
+
             if (!canPlace) {
-                FF14Utils.showToast('此格子無法修改！', 'error');
+                FF14Utils.showToast(FF14Utils.getI18nText('faux_hollows_cannot_modify', '此格子無法修改！'), 'error');
                 return;
             }
         } else {
             // In obstacle phase, only allow placing on null cells or treasure probability display
             if (this.board[index] !== null && !cell.classList.contains('treasure-probability-display')) {
-                FF14Utils.showToast('此格子已被佔用！', 'error');
+                FF14Utils.showToast(FF14Utils.getI18nText('faux_hollows_cell_occupied', '此格子已被佔用！'), 'error');
                 return;
             }
         }
@@ -949,13 +955,13 @@ class FauxHollowsFoxes {
         }
 
         if (type === 'fox' && count >= 1) {
-            FF14Utils.showToast('宗長只能放置 1 格！', 'error');
+            FF14Utils.showToast(FF14Utils.getI18nText('faux_hollows_fox_limit', '宗長只能放置 1 格！'), 'error');
             return false;
         } else if (type === 'sword' && count >= 6) {
-            FF14Utils.showToast('劍最多只能放置 6 格！', 'error');
+            FF14Utils.showToast(FF14Utils.getI18nText('faux_hollows_sword_limit', '劍最多只能放置 6 格！'), 'error');
             return false;
         } else if (type === 'chest' && count >= 4) {
-            FF14Utils.showToast('寶箱最多只能放置 4 格！', 'error');
+            FF14Utils.showToast(FF14Utils.getI18nText('faux_hollows_chest_limit', '寶箱最多只能放置 4 格！'), 'error');
             return false;
         }
 
@@ -1030,19 +1036,19 @@ class FauxHollowsFoxes {
 
         // Check fox limit
         if (counts.fox > 1) {
-            FF14Utils.showToast('錯誤：宗長只能有 0 或 1 格！', 'error');
+            FF14Utils.showToast(FF14Utils.getI18nText('faux_hollows_fox_error', '錯誤：宗長只能有 0 或 1 格！'), 'error');
             return false;
         }
 
         // Check sword
         if (counts.sword > 6) {
-            FF14Utils.showToast('錯誤：劍最多只能有 6 格！', 'error');
+            FF14Utils.showToast(FF14Utils.getI18nText('faux_hollows_sword_error', '錯誤：劍最多只能有 6 格！'), 'error');
             return false;
         } else if (counts.sword === 6) {
             // Check if it forms a valid 2x3 or 3x2 shape
             let validShape = false;
             const processed = new Set();
-            
+
             // Check 2x3
             for (let row = 0; row < 4; row++) {
                 for (let col = 0; col < 5; col++) {
@@ -1053,7 +1059,7 @@ class FauxHollowsFoxes {
                 }
                 if (validShape) break;
             }
-            
+
             // Check 3x2
             if (!validShape) {
                 processed.clear();
@@ -1069,20 +1075,20 @@ class FauxHollowsFoxes {
             }
 
             if (!validShape && processed.size === 6) {
-                FF14Utils.showToast('錯誤：6 格劍必須形成 2x3 或 3x2 的形狀！', 'error');
+                FF14Utils.showToast(FF14Utils.getI18nText('faux_hollows_sword_shape_error', '錯誤：6 格劍必須形成 2x3 或 3x2 的形狀！'), 'error');
                 return false;
             }
         }
 
         // Check chest
         if (counts.chest > 4) {
-            FF14Utils.showToast('錯誤：寶箱最多只能有 4 格！', 'error');
+            FF14Utils.showToast(FF14Utils.getI18nText('faux_hollows_chest_error', '錯誤：寶箱最多只能有 4 格！'), 'error');
             return false;
         } else if (counts.chest === 4) {
             // Check if it forms a valid 2x2 shape
             let validShape = false;
             const processed = new Set();
-            
+
             for (let row = 0; row < 5; row++) {
                 for (let col = 0; col < 5; col++) {
                     if (this.checkShapePattern(row, col, 2, 2, 'chest', processed)) {
@@ -1094,7 +1100,7 @@ class FauxHollowsFoxes {
             }
 
             if (!validShape) {
-                FF14Utils.showToast('錯誤：4 格寶箱必須形成 2x2 的形狀！', 'error');
+                FF14Utils.showToast(FF14Utils.getI18nText('faux_hollows_chest_shape_error', '錯誤：4 格寶箱必須形成 2x2 的形狀！'), 'error');
                 return false;
             }
         }
@@ -1178,17 +1184,20 @@ class FauxHollowsFoxes {
         }
 
         SecurityUtils.clearElement(this.elements.resultDetails);
-        
+
         const swordP = document.createElement('p');
-        swordP.textContent = `劍 x ${shapes.sword} = ${shapes.sword * FauxHollowsFoxes.CONSTANTS.SCORES.SWORD} 分`;
+        const swordText = FF14Utils.getI18nText('faux_hollows_cell_sword', '劍');
+        swordP.textContent = `${swordText} x ${shapes.sword} = ${shapes.sword * FauxHollowsFoxes.CONSTANTS.SCORES.SWORD} 分`;
         this.elements.resultDetails.appendChild(swordP);
-        
+
         const chestP = document.createElement('p');
-        chestP.textContent = `寶箱 x ${shapes.chest} = ${shapes.chest * FauxHollowsFoxes.CONSTANTS.SCORES.CHEST} 分`;
+        const chestText = FF14Utils.getI18nText('faux_hollows_cell_chest', '箱');
+        chestP.textContent = `${chestText} x ${shapes.chest} = ${shapes.chest * FauxHollowsFoxes.CONSTANTS.SCORES.CHEST} 分`;
         this.elements.resultDetails.appendChild(chestP);
-        
+
         const foxP = document.createElement('p');
-        foxP.textContent = `宗長 x ${shapes.fox} = ${shapes.fox * FauxHollowsFoxes.CONSTANTS.SCORES.FOX} 分`;
+        const foxText = FF14Utils.getI18nText('faux_hollows_cell_fox', '狐');
+        foxP.textContent = `${foxText} x ${shapes.fox} = ${shapes.fox * FauxHollowsFoxes.CONSTANTS.SCORES.FOX} 分`;
         this.elements.resultDetails.appendChild(foxP);
 
         this.elements.resultPanel.style.display = 'block';
@@ -1197,12 +1206,12 @@ class FauxHollowsFoxes {
 
     toggleOptimalHighlight() {
         this.showOptimalHighlight = !this.showOptimalHighlight;
-        
+
         if (this.showOptimalHighlight) {
-            this.elements.autoCalculateBtn.textContent = '關閉最佳策略';
+            this.elements.autoCalculateBtn.textContent = FF14Utils.getI18nText('faux_hollows_close_best', '關閉最佳策略');
             this.updateOptimalHighlight();
         } else {
-            this.elements.autoCalculateBtn.textContent = '顯示最佳策略';
+            this.elements.autoCalculateBtn.textContent = FF14Utils.getI18nText('faux_hollows_show_best', '顯示最佳策略');
             this.clearHighlights();
         }
     }
@@ -1311,22 +1320,17 @@ class FauxHollowsFoxes {
             }
         };
         this.history.push(state);
-        
-        // 限制歷史記錄長度，避免占用太多記憶體
-        if (this.history.length > 50) {
-            this.history.shift();
-        }
-        
+
         // 啟用回到上一步按鈕
         this.elements.undoBtn.disabled = false;
     }
 
     undo() {
-        if (this.history.length === 0) return;
-        
+        if (!this.history.hasHistory()) return;
+
         // 取出上一步的狀態
         const previousState = this.history.pop();
-        
+
         // 恢復狀態
         this.board = [...previousState.board];
         this.clickCount = previousState.clickCount;
@@ -1339,18 +1343,18 @@ class FauxHollowsFoxes {
             chest: [...previousState.treasureProbabilities.chest],
             fox: [...previousState.treasureProbabilities.fox]
         };
-        
+
         // 重新渲染盤面
         this.renderBoard();
-        
+
         // 更新顯示
         this.updateDisplay();
         this.updateMatchingBoards();
         this.updateProbabilityDisplay();
         this.updateOptimalHighlight();
-        
+
         // 如果沒有歷史記錄了，禁用回到上一步按鈕
-        if (this.history.length === 0) {
+        if (!this.history.hasHistory()) {
             this.elements.undoBtn.disabled = true;
         }
         
@@ -1397,21 +1401,24 @@ class FauxHollowsFoxes {
                             if (swordProb > 0) {
                                 const swordDiv = document.createElement('div');
                                 swordDiv.className = 'treasure-prob sword-prob';
-                                swordDiv.textContent = `劍:${swordProb}%`;
+                                const swordText = FF14Utils.getI18nText('faux_hollows_cell_sword', '劍');
+                                swordDiv.textContent = `${swordText}:${swordProb}%`;
                                 container.appendChild(swordDiv);
                             }
-                            
+
                             if (chestProb > 0) {
                                 const chestDiv = document.createElement('div');
                                 chestDiv.className = 'treasure-prob chest-prob';
-                                chestDiv.textContent = `箱:${chestProb}%`;
+                                const chestText = FF14Utils.getI18nText('faux_hollows_cell_chest', '箱');
+                                chestDiv.textContent = `${chestText}:${chestProb}%`;
                                 container.appendChild(chestDiv);
                             }
-                            
+
                             if (foxProb > 0) {
                                 const foxDiv = document.createElement('div');
                                 foxDiv.className = 'treasure-prob fox-prob';
-                                foxDiv.textContent = `狐:${foxProb}%`;
+                                const foxText = FF14Utils.getI18nText('faux_hollows_cell_fox', '狐');
+                                foxDiv.textContent = `${foxText}:${foxProb}%`;
                                 container.appendChild(foxDiv);
                             }
                             
@@ -1425,13 +1432,13 @@ class FauxHollowsFoxes {
                 cell.textContent = '✕';
             } else if (value === 'sword') {
                 cell.className = 'board-cell sword';
-                cell.textContent = '劍';
+                cell.textContent = FF14Utils.getI18nText('faux_hollows_cell_sword', '劍');
             } else if (value === 'chest') {
                 cell.className = 'board-cell chest';
-                cell.textContent = '箱';
+                cell.textContent = FF14Utils.getI18nText('faux_hollows_cell_chest', '箱');
             } else if (value === 'fox') {
                 cell.className = 'board-cell fox';
-                cell.textContent = '狐';
+                cell.textContent = FF14Utils.getI18nText('faux_hollows_cell_fox', '狐');
             } else if (value === 'empty') {
                 cell.className = 'board-cell empty';
             } else if (value === 'clicked') {
@@ -1455,13 +1462,13 @@ class FauxHollowsFoxes {
         this.obstaclesConfirmed = false;
         this.showTreasureProbabilities = false;
         this.showOptimalHighlight = true; // 重置時回復預設開啟
-        this.history = []; // 清空歷史記錄
+        this.history.clear(); // 清空歷史記錄
         
         // 清除高亮
         this.clearHighlights();
         
         // 更新按鈕文字
-        this.elements.autoCalculateBtn.textContent = '關閉最佳策略';
+        this.elements.autoCalculateBtn.textContent = FF14Utils.getI18nText('faux_hollows_close_best', '關閉最佳策略');
         
         // 禁用回到上一步按鈕
         this.elements.undoBtn.disabled = true;

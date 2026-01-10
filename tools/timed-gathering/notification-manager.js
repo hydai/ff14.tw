@@ -149,11 +149,11 @@ class NotificationManager {
                 (item.zone || '未知地區');
             
             // 使用 i18n 獲取視覺通知的文字
-            const visualTitle = window.i18n?.getText('visualNotificationTitle') || '🔔 採集提醒';
-            const visualBodyTemplate = window.i18n?.getText('visualNotificationBody') || '${itemName} 現在可以採集了！';
-            const timeLabel = window.i18n?.getText('visualNotificationTime') || '時間';
-            const locationLabel = window.i18n?.getText('visualNotificationLocation') || '地點';
-            
+            const visualTitle = FF14Utils.getI18nText('visualNotificationTitle', '🔔 採集提醒');
+            const visualBody = FF14Utils.getI18nText('visualNotificationBody', `${itemName} 現在可以採集了！`, { itemName });
+            const timeLabel = FF14Utils.getI18nText('visualNotificationTime', '時間');
+            const locationLabel = FF14Utils.getI18nText('visualNotificationLocation', '地點');
+
             // 創建頁面內通知元素
             const notification = document.createElement('div');
             notification.className = 'gathering-alert';
@@ -171,14 +171,14 @@ class NotificationManager {
                 animation: slideIn 0.3s ease-out;
                 cursor: pointer;
             `;
-            
+
             const title = document.createElement('div');
             title.style.cssText = 'font-weight: bold; margin-bottom: 5px; font-size: 16px;';
             title.textContent = visualTitle;
-            
+
             const body = document.createElement('div');
             body.style.cssText = 'font-size: 14px;';
-            body.textContent = visualBodyTemplate.replace('${itemName}', itemName);
+            body.textContent = visualBody;
             
             const time = document.createElement('div');
             time.style.cssText = 'font-size: 12px; margin-top: 5px; opacity: 0.9;';
@@ -300,7 +300,7 @@ class NotificationManager {
         const hasPermission = await this.requestPermission();
         if (!hasPermission) {
             NotificationManager.log('error', '無法獲得通知權限');
-            alert(window.i18n?.getText('notificationPermissionDenied') || '無法獲得通知權限，請在瀏覽器設定中允許通知');
+            alert(FF14Utils.getI18nText('notificationPermissionDenied', '無法獲得通知權限，請在瀏覽器設定中允許通知'));
             return false;
         }
 
@@ -712,7 +712,7 @@ class NotificationManager {
             return;
         }
         
-        const title = window.i18n?.getText('notificationTitle') || 'FF14 採集提醒';
+        const title = FF14Utils.getI18nText('notificationTitle', 'FF14 採集提醒');
         
         let body;
         try {
@@ -806,23 +806,21 @@ class NotificationManager {
      */
     formatNotificationBody(item) {
         // 提供預設值以防屬性不存在
-        const itemName = this.getCurrentLanguage() === 'ja' ? 
-            (item.nameJp || item.name || '未知物品') : 
+        const itemName = this.getCurrentLanguage() === 'ja' ?
+            (item.nameJp || item.name || '未知物品') :
             (item.name || '未知物品');
-        const zone = this.getCurrentLanguage() === 'ja' ? 
-            (item.zoneJp || item.zone || '未知地區') : 
+        const zone = this.getCurrentLanguage() === 'ja' ?
+            (item.zoneJp || item.zone || '未知地區') :
             (item.zone || '未知地區');
         const location = item.location || '';
         const coordinates = item.coordinates || '未知座標';
-        
-        const template = window.i18n?.getText('notificationBodyTemplate') || 
-            '${itemName} 現在可以採集了！\n地點：${zone} ${location}\n座標：${coordinates}';
-        
-        return template
-            .replace('${itemName}', itemName)
-            .replace('${zone}', zone)
-            .replace('${location}', location)
-            .replace('${coordinates}', coordinates);
+
+        return FF14Utils.getI18nText('notificationBodyTemplate', `${itemName} 現在可以採集了！\n地點：${zone} ${location}\n座標：${coordinates}`, {
+            itemName,
+            zone,
+            location,
+            coordinates
+        });
     }
 
     /**
@@ -839,18 +837,18 @@ class NotificationManager {
      */
     getNotificationStatus() {
         if (!('Notification' in window)) {
-            return window.i18n?.getText('notificationNotSupported') || '瀏覽器不支援通知';
+            return FF14Utils.getI18nText('notificationNotSupported', '瀏覽器不支援通知');
         }
 
         if (Notification.permission === 'denied') {
-            return window.i18n?.getText('notificationPermissionDenied') || '通知權限被拒絕';
+            return FF14Utils.getI18nText('notificationPermissionDenied', '通知權限被拒絕');
         }
 
         if (this.enabled) {
-            return window.i18n?.getText('notificationEnabled') || '通知已啟用';
+            return FF14Utils.getI18nText('notificationEnabled', '通知已啟用');
         }
 
-        return window.i18n?.getText('notificationDisabled') || '通知已停用';
+        return FF14Utils.getI18nText('notificationDisabled', '通知已停用');
     }
 
     /**
@@ -872,9 +870,8 @@ class NotificationManager {
         // 測試簡單通知
         try {
             // 使用 i18n 獲取測試通知文字
-            const testTitle = window.i18n?.getText('notificationTitle') || 'FF14 採集提醒';
-            const testBody = window.i18n?.getText('testNotificationBody') || 
-                '這是一個測試通知，請確認您是否看到了';
+            const testTitle = FF14Utils.getI18nText('notificationTitle', 'FF14 採集提醒');
+            const testBody = FF14Utils.getI18nText('testNotificationBody', '這是一個測試通知，請確認您是否看到了');
             
             const simpleNotification = new Notification(testTitle, {
                 body: testBody,
@@ -898,8 +895,8 @@ class NotificationManager {
         this.playNotificationSound();
         
         // 使用 i18n 獲取測試文字
-        const testItemName = window.i18n?.getText('testItemName') || '測試物品';
-        const testZoneName = window.i18n?.getText('testZoneName') || '測試地區';
+        const testItemName = FF14Utils.getI18nText('testItemName', '測試物品');
+        const testZoneName = FF14Utils.getI18nText('testZoneName', '測試地區');
         
         this.showVisualNotification({
             name: testItemName,

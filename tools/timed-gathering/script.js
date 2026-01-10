@@ -70,9 +70,20 @@ class TimedGatheringManager {
 
     async initialize() {
         try {
-            // Explicitly load translations
+            // Explicitly load translations for this tool.
             if (window.i18n && window.TimedGatheringTranslations) {
                 window.i18n.loadTranslations('timed-gathering', window.TimedGatheringTranslations);
+                // Re-apply i18n because this tool's translation namespace is loaded after the global
+                // i18n initialization. At this point, some timed-gathering UI elements may already
+                // have been rendered with data-i18n attributes, and they will not be translated
+                // until we trigger a page-wide language update.
+                //
+                // This call is the intended pattern for tools that load their translation namespace
+                // lazily after the main i18n setup: first register the namespace, then invoke
+                // updatePageLanguage() so existing DOM nodes are re-processed.
+                // If the i18n bootstrapping flow is refactored in the future to load all namespaces
+                // up front, this explicit re-application step may no longer be necessary.
+                window.i18n.updatePageLanguage();
             }
 
             // 初始化模組
@@ -354,8 +365,8 @@ class TimedGatheringManager {
 
     renderItems() {
         const container = this.elements.itemsContainer;
-        container.innerHTML = '';
-        
+        SecurityUtils.clearElement(container);
+
         if (this.filteredData.length === 0) {
             const emptyMessage = document.createElement('div');
             emptyMessage.className = 'empty-message';
@@ -480,16 +491,16 @@ class TimedGatheringManager {
         const result = this.listManager.addToList(this.currentListId, item);
         if (result.success) {
             this.updateListDisplay();
-            this.showNotification(FF14Utils.getI18nText('addedToListNotification', 'Added to list'), 'success');
+            FF14Utils.showToast(FF14Utils.getI18nText('addedToListNotification', 'Added to list'), 'success');
         } else {
-            this.showNotification(result.message, 'warning');
+            FF14Utils.showToast(result.message, 'warning');
         }
     }
 
     updateListDisplay() {
         const list = this.listManager.getList(this.currentListId);
         const container = this.elements.listItems;
-        container.innerHTML = '';
+        SecurityUtils.clearElement(container);
         
         if (!list || list.items.length === 0) {
             // Use safe DOM manipulation instead of innerHTML
@@ -566,7 +577,7 @@ class TimedGatheringManager {
         this.listManager.removeFromList(this.currentListId, itemId);
         this.updateListDisplay();
         this.updateDisplay(); // 更新左側顯示
-        this.showNotification(FF14Utils.getI18nText('removedFromListNotification', 'Removed from list'), 'info');
+        FF14Utils.showToast(FF14Utils.getI18nText('removedFromListNotification', 'Removed from list'), 'info');
     }
 
     loadLists() {
@@ -580,7 +591,7 @@ class TimedGatheringManager {
 
     renderListTabs(lists) {
         const container = this.elements.listTabs;
-        container.innerHTML = '';
+        SecurityUtils.clearElement(container);
         
         lists.forEach(list => {
             const tab = document.createElement('button');
@@ -623,14 +634,14 @@ class TimedGatheringManager {
     showNewListDialog() {
         if (this.listManager.getAllLists().length >= TimedGatheringManager.CONSTANTS.MAX_LISTS) {
             const warning = FF14Utils.getI18nText(
-                'maxListsWarning', 
-                'Maximum of {0} lists allowed', 
-                TimedGatheringManager.CONSTANTS.MAX_LISTS
+                'maxListsWarning',
+                'Maximum of {max} lists allowed',
+                { max: TimedGatheringManager.CONSTANTS.MAX_LISTS }
             );
-            this.showNotification(warning, 'warning');
+            FF14Utils.showToast(warning, 'warning');
             return;
         }
-        
+
         this.elements.dialogTitle.textContent = FF14Utils.getI18nText('newListDialogTitle', 'New List');
         // Use safe DOM manipulation instead of innerHTML
         SecurityUtils.clearElement(this.elements.dialogBody);
@@ -641,29 +652,29 @@ class TimedGatheringManager {
             maxLength: TimedGatheringManager.CONSTANTS.MAX_LIST_NAME_LENGTH
         });
         this.elements.dialogBody.appendChild(formGroup);
-        
+
         this.elements.dialogConfirm.onclick = () => {
             const input = document.getElementById('newListName');
             const rawName = input.value.trim();
-            
+
             // Validate and sanitize input
             if (!SecurityUtils.validateTextLength(rawName, 1, TimedGatheringManager.CONSTANTS.MAX_LIST_NAME_LENGTH)) {
-                this.showNotification(FF14Utils.getI18nText('invalidListNameError', 'List name length does not meet requirements'), 'error');
+                FF14Utils.showToast(FF14Utils.getI18nText('invalidListNameError', 'List name length does not meet requirements'), 'error');
                 return;
             }
-            
+
             // Sanitize the name to prevent XSS
             const name = SecurityUtils.sanitizeInput(rawName);
-            
+
             if (name) {
                 const result = this.listManager.createList(name);
                 if (result.success) {
                     this.loadLists();
                     this.switchToList(result.listId);
                     this.hideDialog();
-                    this.showNotification(FF14Utils.getI18nText('listCreatedNotification', 'List created'), 'success');
+                    FF14Utils.showToast(FF14Utils.getI18nText('listCreatedNotification', 'List created'), 'success');
                 } else {
-                    this.showNotification(result.message, 'error');
+                    FF14Utils.showToast(result.message, 'error');
                 }
             }
         };
@@ -678,7 +689,7 @@ class TimedGatheringManager {
 
     showRenameListDialog() {
         const currentList = this.listManager.getList(this.currentListId);
-        
+
         this.elements.dialogTitle.textContent = FF14Utils.getI18nText('renameListDialogTitle', 'Rename List');
         // Use safe DOM manipulation instead of innerHTML
         SecurityUtils.clearElement(this.elements.dialogBody);
@@ -689,29 +700,29 @@ class TimedGatheringManager {
             maxLength: TimedGatheringManager.CONSTANTS.MAX_LIST_NAME_LENGTH
         });
         this.elements.dialogBody.appendChild(formGroup);
-        
+
         this.elements.dialogConfirm.onclick = () => {
             const input = document.getElementById('renameListInput');
             const rawName = input.value.trim();
-            
+
             // Validate and sanitize input
             if (!SecurityUtils.validateTextLength(rawName, 1, TimedGatheringManager.CONSTANTS.MAX_LIST_NAME_LENGTH)) {
-                this.showNotification(FF14Utils.getI18nText('invalidListNameError', 'List name length does not meet requirements'), 'error');
+                FF14Utils.showToast(FF14Utils.getI18nText('invalidListNameError', 'List name length does not meet requirements'), 'error');
                 return;
             }
-            
+
             // Sanitize the name to prevent XSS
             const newName = SecurityUtils.sanitizeInput(rawName);
-            
+
             if (newName && newName !== currentList.name) {
                 const result = this.listManager.renameList(this.currentListId, newName);
                 if (result.success) {
                     this.loadLists();
                     this.elements.currentListName.textContent = newName;
                     this.hideDialog();
-                    this.showNotification(FF14Utils.getI18nText('listRenamedNotification', 'List renamed'), 'success');
+                    FF14Utils.showToast(FF14Utils.getI18nText('listRenamedNotification', 'List renamed'), 'success');
                 } else {
-                    this.showNotification(result.message, 'error');
+                    FF14Utils.showToast(result.message, 'error');
                 }
             }
         };
@@ -727,33 +738,33 @@ class TimedGatheringManager {
 
     showDeleteListDialog() {
         const lists = this.listManager.getAllLists();
-        
+
         if (lists.length <= 1) {
-            this.showNotification(window.i18n.getText('atLeastOneListWarning'), 'warning');
+            FF14Utils.showToast(FF14Utils.getI18nText('atLeastOneListWarning', '至少需要保留一個清單'), 'warning');
             return;
         }
-        
+
         const currentList = this.listManager.getList(this.currentListId);
-        
-        this.elements.dialogTitle.textContent = window.i18n.getText('deleteListDialogTitle');
+
+        this.elements.dialogTitle.textContent = FF14Utils.getI18nText('deleteListDialogTitle', '刪除清單');
         // Use safe DOM manipulation instead of innerHTML
         SecurityUtils.clearElement(this.elements.dialogBody);
-        
+
         const confirmText = document.createElement('p');
         // Updated to use format with placeholder
         confirmText.textContent = FF14Utils.getI18nText(
-            'confirmDeleteList', 
-            'Are you sure you want to delete the list "{0}"?',
-            currentList.name
+            'confirmDeleteList',
+            'Are you sure you want to delete the list "{name}"?',
+            { name: currentList.name }
         );
-        
+
         const warningText = document.createElement('p');
         warningText.className = 'text-danger';
         warningText.textContent = FF14Utils.getI18nText('operationCannotUndo', 'This operation cannot be undone!');
-        
+
         this.elements.dialogBody.appendChild(confirmText);
         this.elements.dialogBody.appendChild(warningText);
-        
+
         this.elements.dialogConfirm.onclick = () => {
             const result = this.listManager.deleteList(this.currentListId);
             if (result.success) {
@@ -763,105 +774,105 @@ class TimedGatheringManager {
                     this.switchToList(remainingLists[0].id);
                 }
                 this.hideDialog();
-                this.showNotification(FF14Utils.getI18nText('listDeletedNotification', 'List deleted'), 'success');
+                FF14Utils.showToast(FF14Utils.getI18nText('listDeletedNotification', 'List deleted'), 'success');
             } else {
-                this.showNotification(result.message, 'error');
+                FF14Utils.showToast(result.message, 'error');
             }
         };
-        
+
         this.showDialog();
     }
 
     clearCurrentList() {
         const list = this.listManager.getList(this.currentListId);
-        
+
         if (!list || list.items.length === 0) {
-            this.showNotification(FF14Utils.getI18nText('listAlreadyEmptyInfo', 'List is already empty'), 'info');
+            FF14Utils.showToast(FF14Utils.getI18nText('listAlreadyEmptyInfo', 'List is already empty'), 'info');
             return;
         }
-        
-        this.elements.dialogTitle.textContent = window.i18n.getText('clearListDialogTitle');
+
+        this.elements.dialogTitle.textContent = FF14Utils.getI18nText('clearListDialogTitle', '清空清單');
         // Use safe DOM manipulation instead of innerHTML
         SecurityUtils.clearElement(this.elements.dialogBody);
-        
+
         const confirmText = document.createElement('p');
         // Updated to use format with placeholder
         confirmText.textContent = FF14Utils.getI18nText(
-            'confirmClearList', 
-            'Are you sure you want to clear the list "{0}"?', 
-            list.name
+            'confirmClearList',
+            'Are you sure you want to clear the list "{name}"?',
+            { name: list.name }
         );
-        
+
         const itemCountText = document.createElement('p');
         // Updated to use format with placeholder
         itemCountText.textContent = FF14Utils.getI18nText(
-            'willRemoveItems', 
-            'Will remove {0} items', 
-            list.items.length
+            'willRemoveItems',
+            'Will remove {count} items',
+            { count: list.items.length }
         );
-        
+
         this.elements.dialogBody.appendChild(confirmText);
         this.elements.dialogBody.appendChild(itemCountText);
-        
+
         this.elements.dialogConfirm.onclick = () => {
             this.listManager.clearList(this.currentListId);
             this.updateListDisplay();
             this.updateDisplay();
             this.hideDialog();
-            this.showNotification(FF14Utils.getI18nText('listClearedNotification', 'List cleared'), 'success');
+            FF14Utils.showToast(FF14Utils.getI18nText('listClearedNotification', 'List cleared'), 'success');
         };
-        
+
         this.showDialog();
     }
 
     generateMacro() {
         const list = this.listManager.getList(this.currentListId);
-        
+
         if (!list || list.items.length === 0) {
-            this.showNotification(FF14Utils.getI18nText('emptyListNoMacroWarning', 'List is empty, cannot generate macro'), 'warning');
+            FF14Utils.showToast(FF14Utils.getI18nText('emptyListNoMacroWarning', 'List is empty, cannot generate macro'), 'warning');
             return;
         }
-        
+
         const options = {
             includeClear: this.elements.includeClearCmd.checked,
             sortByTime: this.elements.sortByTime.checked
         };
-        
+
         const macro = this.macroExporter.generate(list.items, options);
-        
+
         this.elements.macroText.value = macro;
         this.elements.macroOutput.style.display = 'block';
-        
+
         // 滾動到巨集區域
         this.elements.macroOutput.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
     copyMacroToClipboard() {
         const macroText = this.elements.macroText.value;
-        
+
         if (!macroText) {
-            this.showNotification(FF14Utils.getI18nText('noMacroToCopyWarning', 'No macro to copy'), 'warning');
+            FF14Utils.showToast(FF14Utils.getI18nText('noMacroToCopyWarning', 'No macro to copy'), 'warning');
             return;
         }
-        
+
         navigator.clipboard.writeText(macroText).then(() => {
-            this.showNotification(FF14Utils.getI18nText('macroCopiedNotification', 'Macro copied to clipboard'), 'success');
-            
+            FF14Utils.showToast(FF14Utils.getI18nText('macroCopiedNotification', 'Macro copied to clipboard'), 'success');
+
             // 暫時改變按鈕文字
             // Store original button content
             const originalIcon = this.elements.copyMacroBtn.querySelector('.btn-icon')?.textContent || '📋';
             const originalText = this.elements.copyMacroBtn.textContent.replace(originalIcon, '').trim();
-            
+
             // Update button safely
             SecurityUtils.updateButtonContent(this.elements.copyMacroBtn, '✔️', FF14Utils.getI18nText('copiedButton', 'Copied!'));
-            
+
             setTimeout(() => {
                 // Restore original content
                 SecurityUtils.updateButtonContent(this.elements.copyMacroBtn, originalIcon, originalText || FF14Utils.getI18nText('copyMacroButton', 'Copy to Clipboard'));
             }, 2000);
         }).catch(err => {
             console.error('複製失敗:', err);
-            this.showNotification(FF14Utils.getI18nText('copyFailedError', 'Copy failed, please select and copy manually'), 'error');
+            FF14Utils.showToast(FF14Utils.getI18nText('copyFailedError', 'Copy failed, please select and copy manually'), 'error');
         });
     }
 
@@ -915,43 +926,43 @@ class TimedGatheringManager {
             
             if (!parseResult.success) {
                 console.error('匯入失敗:', parseResult.error);
-                this.showNotification(FF14Utils.getI18nText('fileFormatError', 'File format error') + ': ' + parseResult.error, 'error');
+                FF14Utils.showToast(FF14Utils.getI18nText('fileFormatError', 'File format error') + ': ' + parseResult.error, 'error');
                 return;
             }
-            
+
             const result = this.listManager.importLists(parseResult.data);
-            
+
             if (result.success) {
                 this.loadLists();
                 this.hideDialog();
-                this.showNotification(
-                    FF14Utils.getI18nText('listsImportedNotification', 'Successfully imported {0} lists', result.count), 
+                FF14Utils.showToast(
+                    FF14Utils.getI18nText('listsImportedNotification', 'Successfully imported {count} lists', { count: result.count }),
                     'success'
                 );
             } else {
-                this.showNotification(result.message, 'error');
+                FF14Utils.showToast(result.message, 'error');
             }
         };
-        
+
         reader.readAsText(file);
     }
 
     exportLists() {
         const data = this.listManager.exportLists();
-        
+
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
-        
+
         const a = document.createElement('a');
         a.href = url;
         a.download = `ff14tw_timed_gathering_lists_${new Date().toISOString().split('T')[0]}.json`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-        
+
         URL.revokeObjectURL(url);
-        
-        this.showNotification(FF14Utils.getI18nText('listsExportedNotification', 'Lists exported'), 'success');
+
+        FF14Utils.showToast(FF14Utils.getI18nText('listsExportedNotification', 'Lists exported'), 'success');
     }
 
     updateItemCount() {
@@ -976,29 +987,6 @@ class TimedGatheringManager {
         this.elements.errorMessage.style.display = 'block';
         this.elements.loadingIndicator.style.display = 'none';
         this.elements.itemsContainer.style.display = 'none';
-    }
-
-    showNotification(message, type = 'info') {
-        // 建立通知元素
-        const notification = document.createElement('div');
-        notification.className = `notification notification-${type}`;
-        notification.textContent = message;
-        
-        // 加入到 body
-        document.body.appendChild(notification);
-        
-        // 顯示動畫
-        setTimeout(() => {
-            notification.classList.add('show');
-        }, 10);
-        
-        // 3 秒後移除
-        setTimeout(() => {
-            notification.classList.remove('show');
-            setTimeout(() => {
-                document.body.removeChild(notification);
-            }, 300);
-        }, 3000);
     }
 }
 
