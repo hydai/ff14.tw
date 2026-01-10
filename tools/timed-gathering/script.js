@@ -73,8 +73,9 @@ class TimedGatheringManager {
             // Explicitly load translations
             if (window.i18n && window.TimedGatheringTranslations) {
                 window.i18n.loadTranslations('timed-gathering', window.TimedGatheringTranslations);
-                // Re-apply i18n because this tool's namespace is loaded after the global i18n init,
-                // so static DOM elements in the timed-gathering UI won't be translated otherwise.
+                // Re-apply i18n because this tool's translation namespace is loaded after the global
+                // i18n initialization, so already-rendered timed-gathering UI elements with data-i18n
+                // attributes would not be translated otherwise.
                 window.i18n.updatePageLanguage();
             }
 

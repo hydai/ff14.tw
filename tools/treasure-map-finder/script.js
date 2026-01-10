@@ -230,7 +230,7 @@ class TreasureMapFinder {
 
         // 如果有重置訊息需求
         if (!this.filterManager.hasActiveFilters() && this.lastFilterState?.hadFilters) {
-            FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_reset_filters', '重置篩選'), 'info');
+            FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_reset_filters', '已重置所有篩選條件'), 'info');
         }
         
         // 記錄過濾器狀態

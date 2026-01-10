@@ -36,8 +36,9 @@ class StateHistoryManager {
         }
 
         // 後備方案：在不支援 structuredClone 的舊版瀏覽器中，使用 JSON 方式深拷貝
-        // 注意：此方式不支援 Date, Map, Set, RegExp, 函數、Symbol、循環引用等
-        // 若需要完整支援，建議在專案中加入對 structuredClone 的 polyfill
+        // 注意：此方式不支援 Date, Map, Set, RegExp, 函數、Symbol、循環引用等，
+        // 並且當物件包含循環引用時，JSON.stringify 會在執行期拋出錯誤（TypeError）
+        // 若需要在舊版環境中完整且安全地支援上述類型與循環引用，建議在專案中加入對 structuredClone 的 polyfill
         return JSON.parse(JSON.stringify(obj));
     }
 

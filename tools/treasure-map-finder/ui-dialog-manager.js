@@ -461,6 +461,9 @@ class UIDialogManager {
             elements.steps.appendChild(stepElement);
         });
 
+        const closeHandler = () => this.hideRouteResult();
+        elements.closeBtn.addEventListener('click', closeHandler);
+
         // 顯示面板
         this.modalManager.show(elements.panel, {
             useClass: UIDialogManager.CONSTANTS.CSS_CLASSES.ACTIVE,
@@ -472,10 +475,6 @@ class UIDialogManager {
                 }
             }
         });
-
-        // 確保關閉按鈕使用 ModalManager
-        const closeHandler = () => this.hideRouteResult();
-        elements.closeBtn.addEventListener('click', closeHandler);
     }
 
     /**
@@ -709,7 +708,7 @@ class UIDialogManager {
             const contentDiv = document.createElement('div');
             if (typeof content === 'string') {
                 contentDiv.textContent = content;
-            } else if (content instanceof HTMLElement) {
+            } else if (content instanceof Node) {
                 contentDiv.appendChild(content);
             }
             dialog.appendChild(contentDiv);
@@ -756,7 +755,7 @@ class UIDialogManager {
             // Check if content is a string or DOM element
             if (typeof content === 'string') {
                 contentDiv.textContent = content;
-            } else if (content instanceof HTMLElement) {
+            } else if (content instanceof Node) {
                 contentDiv.appendChild(content);
             }
             dialog.appendChild(contentDiv);
