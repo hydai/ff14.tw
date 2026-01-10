@@ -607,6 +607,12 @@ class UIDialogManager {
         const elements = this.formatPanelElements;
         if (!elements.panel) return;
 
+        // 先清理舊的事件監聽器（如果存在）
+        if (this.formatPanelCleanup) {
+            this.formatPanelCleanup();
+            this.formatPanelCleanup = null;
+        }
+
         // 設置當前值
         if (currentSettings) {
             elements.teleportFormat.value = currentSettings.teleport || '';
