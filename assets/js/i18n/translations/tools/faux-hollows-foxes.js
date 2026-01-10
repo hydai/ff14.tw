@@ -21,6 +21,7 @@ const FauxHollowsTranslations = {
         // 按鈕
         faux_hollows_reset: '重置遊戲',
         faux_hollows_undo: '回到上一步',
+        faux_hollows_redo: '重做',
         faux_hollows_hide_prob: '隱藏機率',
         faux_hollows_show_prob: '顯示機率',
         faux_hollows_calc_best: '計算最佳策略',
@@ -87,6 +88,7 @@ const FauxHollowsTranslations = {
         // Buttons
         faux_hollows_reset: 'Reset Game',
         faux_hollows_undo: 'Undo',
+        faux_hollows_redo: 'Redo',
         faux_hollows_hide_prob: 'Hide Probability',
         faux_hollows_show_prob: 'Show Probability',
         faux_hollows_calc_best: 'Calculate Best Strategy',
@@ -153,6 +155,7 @@ const FauxHollowsTranslations = {
         // ボタン
         faux_hollows_reset: 'ゲームをリセット',
         faux_hollows_undo: '元に戻す',
+        faux_hollows_redo: 'やり直す',
         faux_hollows_hide_prob: '確率を隠す',
         faux_hollows_show_prob: '確率を表示',
         faux_hollows_calc_best: '最適戦略を計算',

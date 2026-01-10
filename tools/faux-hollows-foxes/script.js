@@ -50,6 +50,7 @@ class FauxHollowsFoxes {
             matchingBoards: document.getElementById('matching-boards'),
             resetBtn: document.getElementById('reset-btn'),
             undoBtn: document.getElementById('undo-btn'),
+            redoBtn: document.getElementById('redo-btn'),
             autoCalculateBtn: document.getElementById('auto-calculate'),
             toggleProbabilitiesBtn: document.getElementById('toggle-probabilities'),
             resultPanel: document.getElementById('result-panel'),
@@ -61,12 +62,17 @@ class FauxHollowsFoxes {
             gameHint: document.getElementById('game-hint')
         };
 
+        this.isUndoingOrRedoing = false;
+
         this.initializeBoard();
         this.initializeEvents();
         this.calculateObstacleProbabilities();
-        
+
         // 設定按鈕初始文字
         this.elements.autoCalculateBtn.textContent = FF14Utils.getI18nText('faux_hollows_close_best', '關閉最佳策略');
+
+        // 初始化歷史記錄按鈕狀態
+        this.saveState();
     }
 
     initializeBoard() {
@@ -116,6 +122,13 @@ class FauxHollowsFoxes {
         this.elements.undoBtn.addEventListener('click', () => {
             this.undo();
         });
+
+        // Redo button
+        if (this.elements.redoBtn) {
+            this.elements.redoBtn.addEventListener('click', () => {
+                this.redo();
+            });
+        }
 
         // Auto calculate button (toggle)
         this.elements.autoCalculateBtn.addEventListener('click', () => {
@@ -712,6 +725,7 @@ class FauxHollowsFoxes {
         }
         
         this.updateObstaclePhaseState();
+        this.saveState();
     }
 
     updateObstaclePhaseState() {
@@ -816,14 +830,9 @@ class FauxHollowsFoxes {
         this.updateOptimalHighlight();
     }
 
-    setObstacle(index, skipSaveState = false) {
-        // 在修改前儲存狀態（除非指定跳過）
-        if (!skipSaveState) {
-            this.saveState();
-        }
-        
+    setObstacle(index) {
         const cell = this.elements.board.children[index];
-        
+
         // Set as obstacle directly without clearing first
         this.board[index] = 'obstacle';
         cell.className = 'board-cell obstacle';
@@ -832,26 +841,23 @@ class FauxHollowsFoxes {
 
     clearCell(index) {
         const cell = this.elements.board.children[index];
-        
+
         // Don't allow clearing if it's a gray cell from game completion
         if (this.clickCount >= FauxHollowsFoxes.CONSTANTS.MAX_CLICKS && this.board[index] === null) {
             return;
         }
-        
-        // 在修改前儲存狀態
-        this.saveState();
-        
+
         // Clear the cell
         this.board[index] = null;
         cell.className = 'board-cell';
         cell.textContent = '';
-        
+
         // Restore probability display if enabled
         if (this.showProbabilities && this.obstacleProbabilities[index] > 0) {
             cell.textContent = `${this.obstacleProbabilities[index]}%`;
             cell.classList.add('probability-display');
         }
-        
+
         // Recalculate everything
         this.recalculateState();
     }
@@ -878,18 +884,15 @@ class FauxHollowsFoxes {
             }
         }
 
-        // 在修改前儲存狀態
-        this.saveState();
-
         // If overwriting an existing treasure cell, don't increment click count
-        const isOverwriting = this.obstaclesConfirmed && 
+        const isOverwriting = this.obstaclesConfirmed &&
                              ['sword', 'chest', 'fox', 'empty'].includes(this.board[index]);
 
         // Place the single cell
         this.board[index] = type;
         cell.className = `board-cell ${type}`;
         SecurityUtils.clearElement(cell);
-        
+
         // Set display text
         if (type === 'fox') {
             cell.textContent = '狐';
@@ -898,7 +901,7 @@ class FauxHollowsFoxes {
         } else if (type === 'chest') {
             cell.textContent = '箱';
         }
-        
+
         // Only increment click count if not overwriting
         if (!isOverwriting) {
             this.clickCount++;
@@ -927,18 +930,15 @@ class FauxHollowsFoxes {
             }
         }
 
-        // 在修改前儲存狀態
-        this.saveState();
-
         // If overwriting an existing treasure cell, don't increment click count
-        const isOverwriting = this.obstaclesConfirmed && 
+        const isOverwriting = this.obstaclesConfirmed &&
                              ['sword', 'chest', 'fox', 'empty'].includes(this.board[index]);
 
         this.board[index] = 'empty';
         cell.className = 'board-cell empty';
         SecurityUtils.clearElement(cell);
         cell.textContent = '';
-        
+
         // Only increment click count if not overwriting
         if (!isOverwriting) {
             this.clickCount++;
@@ -1305,6 +1305,8 @@ class FauxHollowsFoxes {
     }
 
     saveState() {
+        if (this.isUndoingOrRedoing) return;
+
         // 儲存目前狀態到歷史記錄
         const state = {
             board: [...this.board],
@@ -1321,27 +1323,52 @@ class FauxHollowsFoxes {
         };
         this.history.push(state);
 
-        // 啟用回到上一步按鈕
-        this.elements.undoBtn.disabled = false;
+        // 更新按鈕狀態
+        this.updateHistoryButtons();
     }
 
     undo() {
-        if (!this.history.hasHistory()) return;
+        if (!this.history.canUndo()) return;
 
-        // 取出上一步的狀態
-        const previousState = this.history.pop();
+        this.isUndoingOrRedoing = true;
+        const previousState = this.history.undo();
 
+        if (previousState) {
+            this.restoreState(previousState);
+            FF14Utils.showToast(FF14Utils.getI18nText('msg_success', '操作成功'));
+        }
+
+        this.isUndoingOrRedoing = false;
+        this.updateHistoryButtons();
+    }
+
+    redo() {
+        if (!this.history.canRedo()) return;
+
+        this.isUndoingOrRedoing = true;
+        const nextState = this.history.redo();
+
+        if (nextState) {
+            this.restoreState(nextState);
+            FF14Utils.showToast(FF14Utils.getI18nText('msg_success', '操作成功'));
+        }
+
+        this.isUndoingOrRedoing = false;
+        this.updateHistoryButtons();
+    }
+
+    restoreState(state) {
         // 恢復狀態
-        this.board = [...previousState.board];
-        this.clickCount = previousState.clickCount;
-        this.score = previousState.score;
-        this.obstaclesConfirmed = previousState.obstaclesConfirmed;
-        this.showTreasureProbabilities = previousState.showTreasureProbabilities;
-        this.obstacleProbabilities = [...previousState.obstacleProbabilities];
+        this.board = [...state.board];
+        this.clickCount = state.clickCount;
+        this.score = state.score;
+        this.obstaclesConfirmed = state.obstaclesConfirmed;
+        this.showTreasureProbabilities = state.showTreasureProbabilities;
+        this.obstacleProbabilities = [...state.obstacleProbabilities];
         this.treasureProbabilities = {
-            sword: [...previousState.treasureProbabilities.sword],
-            chest: [...previousState.treasureProbabilities.chest],
-            fox: [...previousState.treasureProbabilities.fox]
+            sword: [...state.treasureProbabilities.sword],
+            chest: [...state.treasureProbabilities.chest],
+            fox: [...state.treasureProbabilities.fox]
         };
 
         // 重新渲染盤面
@@ -1353,11 +1380,6 @@ class FauxHollowsFoxes {
         this.updateProbabilityDisplay();
         this.updateOptimalHighlight();
 
-        // 如果沒有歷史記錄了，禁用回到上一步按鈕
-        if (!this.history.hasHistory()) {
-            this.elements.undoBtn.disabled = true;
-        }
-        
         // 檢查是否需要顯示提示
         if (!this.obstaclesConfirmed && this.elements.gameHint) {
             let obstacleCount = 0;
@@ -1369,6 +1391,16 @@ class FauxHollowsFoxes {
             if (obstacleCount < 2) {
                 this.elements.gameHint.classList.remove('hidden');
             }
+        }
+    }
+
+    updateHistoryButtons() {
+        if (this.elements.undoBtn) {
+            this.elements.undoBtn.disabled = !this.history.canUndo();
+        }
+
+        if (this.elements.redoBtn) {
+            this.elements.redoBtn.disabled = !this.history.canRedo();
         }
     }
 
@@ -1486,6 +1518,9 @@ class FauxHollowsFoxes {
         if (this.elements.gameHint) {
             this.elements.gameHint.classList.remove('hidden');
         }
+
+        // 保存初始狀態
+        this.saveState();
     }
 }
 

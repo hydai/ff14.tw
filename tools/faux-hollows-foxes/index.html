@@ -48,7 +48,14 @@
 
                 <div class="controls">
                     <button id="reset-btn" class="btn btn-primary" data-i18n="faux_hollows_reset">重置遊戲</button>
-                    <button id="undo-btn" class="btn btn-secondary" disabled data-i18n="faux_hollows_undo">回到上一步</button>
+                    <div class="btn-group">
+                        <button id="undo-btn" class="btn btn-secondary" disabled>
+                            <span class="btn-icon">↩️</span> <span data-i18n="faux_hollows_undo">回到上一步</span>
+                        </button>
+                        <button id="redo-btn" class="btn btn-secondary" disabled>
+                            <span class="btn-icon">↪️</span> <span data-i18n="faux_hollows_redo">重做</span>
+                        </button>
+                    </div>
                     <button id="toggle-probabilities" class="btn btn-secondary" data-i18n="faux_hollows_hide_prob">隱藏機率</button>
                     <button id="auto-calculate" class="btn btn-secondary" data-i18n="faux_hollows_calc_best">計算最佳策略</button>
                 </div>
