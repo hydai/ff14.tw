@@ -175,15 +175,15 @@ class MiniCactpotCalculator {
         // 標記已選擇，避免關閉時觸發取消邏輯
         this.selectionMade = true;
 
-        // 在修改前保存狀態
-        this.saveState();
-
         // 填入數字
         const position = this.currentPopupPosition;
         this.grid[position] = number;
         const cell = document.querySelector(`[data-position="${position}"]`);
         cell.classList.add('revealed');
         cell.textContent = number;
+
+        // 在修改後保存狀態（確保 redo 能正確還原）
+        this.saveState();
 
         // 關閉 popup
         this.hideNumberPopup();
@@ -300,13 +300,13 @@ class MiniCactpotCalculator {
     }
 
     selectCell(position) {
-        // 保存狀態
-        this.saveState();
-
         const cell = document.querySelector(`[data-position="${position}"]`);
         cell.classList.add('selected');
         cell.textContent = '?';
         this.selectedCells.push(position);
+
+        // 在修改後保存狀態（確保 redo 能正確還原）
+        this.saveState();
 
         this.updateUI();
 
