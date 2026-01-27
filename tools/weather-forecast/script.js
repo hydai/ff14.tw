@@ -124,7 +124,7 @@ class WeatherForecast {
     buildZoneList() {
         const grouped = WeatherZoneData.getZonesGroupedByRegion();
         const fragment = document.createDocumentFragment();
-        const lang = window.i18n ? window.i18n.currentLang : 'zh';
+        const lang = window.i18n ? window.i18n.currentLanguage : 'zh';
 
         for (const [regionId, zones] of Object.entries(grouped)) {
             const regionInfo = WeatherZoneData.regions[regionId];
@@ -372,7 +372,7 @@ class WeatherForecast {
     handleShare() {
         const url = window.location.href;
         navigator.clipboard.writeText(url).then(() => {
-            this.showToast(window.i18n ? window.i18n.t('weather_copied') : '已複製到剪貼簿');
+            this.showToast(window.i18n ? window.i18n.getText('weather_copied') : '已複製到剪貼簿');
         });
     }
 
@@ -386,7 +386,7 @@ class WeatherForecast {
         // Update zone name
         const zone = this.store.getCurrentZone();
         if (zone) {
-            const lang = window.i18n ? window.i18n.currentLang : 'zh';
+            const lang = window.i18n ? window.i18n.currentLanguage : 'zh';
             this.elements.selectedZoneName.textContent = zone[lang] || zone.zh;
         }
     }
@@ -408,7 +408,7 @@ class WeatherForecast {
      */
     renderWeatherTags() {
         const weathers = this.store.getAvailableWeathers();
-        const lang = window.i18n ? window.i18n.currentLang : 'zh';
+        const lang = window.i18n ? window.i18n.currentLanguage : 'zh';
 
         // Clear existing tags
         this.elements.desiredWeatherTags.textContent = '';
@@ -531,7 +531,7 @@ class WeatherForecast {
 
                 // Update title
                 this.elements.resultsTitle.textContent = window.i18n
-                    ? window.i18n.t('weather_results')
+                    ? window.i18n.getText('weather_results')
                     : '搜尋結果';
             } else {
                 // Timetable view (no filters)
@@ -539,7 +539,7 @@ class WeatherForecast {
 
                 // Update title
                 this.elements.resultsTitle.textContent = window.i18n
-                    ? window.i18n.t('weather_timetable')
+                    ? window.i18n.getText('weather_timetable')
                     : '天氣時刻表';
             }
 
@@ -566,7 +566,7 @@ class WeatherForecast {
      * Render results table
      */
     renderResultsTable(results) {
-        const lang = window.i18n ? window.i18n.currentLang : 'zh';
+        const lang = window.i18n ? window.i18n.currentLanguage : 'zh';
         const fragment = document.createDocumentFragment();
         const now = Date.now();
 
