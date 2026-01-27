@@ -153,7 +153,7 @@ const WeatherForecastTranslations = {
         weather_col_local_time: 'Local Time',
         weather_col_eorzea_time: 'ET Time',
         weather_col_weather: 'Weather',
-        weather_col_prev_weather: 'Previous',
+        weather_col_prev_weather: 'Previous Weather',
         weather_col_duration: 'Duration',
 
         // Current time
