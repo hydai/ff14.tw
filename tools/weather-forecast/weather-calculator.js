@@ -31,13 +31,14 @@ const WeatherCalculator = {
         const totalDays = Math.trunc(unix / 4200) >>> 0;
 
         // Calculate base value for hashing
+        // 0x64 = 100, used to scale days and produce weather chance (0-99)
         const calcBase = totalDays * 0x64 + increment;
 
-        // Two-step hash function
+        // Two-step hash function using bitwise XOR
         const step1 = ((calcBase << 0xB) ^ calcBase) >>> 0;
         const step2 = ((step1 >>> 8) ^ step1) >>> 0;
 
-        // Return value in range 0-99
+        // Return value in range 0-99 for weather chance distribution
         return step2 % 0x64;
     },
 
@@ -225,6 +226,8 @@ const WeatherCalculator = {
 
     /**
      * Check if an Eorzea time is within a range (supports wrap-around)
+     * Note: When beginHour === endHour, returns true (full 24 hours).
+     * This handles the case where no time filter is applied (0-24 or same hour).
      * @param {number} hour - Eorzea hour to check (0-23)
      * @param {number} beginHour - Range start hour (0-23)
      * @param {number} endHour - Range end hour (0-23, exclusive)
@@ -232,7 +235,7 @@ const WeatherCalculator = {
      */
     isInTimeRange(hour, beginHour, endHour) {
         if (beginHour === endHour) {
-            return true; // Full 24 hours
+            return true; // Full 24 hours (no filter or same hour selected)
         }
 
         if (beginHour < endHour) {
@@ -264,8 +267,7 @@ const WeatherCalculator = {
     getOverlappingWeatherPeriods(beginHour, endHour) {
         const periods = [];
         for (const period of this.WEATHER_PERIODS) {
-            const periodEnd = (period + 8) % 24;
-            // Check if any part of this period overlaps with the range
+            // Check if any part of this 8-hour period overlaps with the range
             for (let h = period; h < period + 8; h++) {
                 if (this.isInTimeRange(h % 24, beginHour, endHour)) {
                     periods.push(period);
