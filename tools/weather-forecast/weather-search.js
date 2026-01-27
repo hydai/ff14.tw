@@ -40,12 +40,7 @@ class WeatherSearch {
         let time = calc.getWeatherPeriodStart(startTime);
 
         // Track previous weather for transition checks
-        let previousWeather = null;
-        if (time > startTime) {
-            // Get the actual previous weather
-            const prevTime = time - calc.WEATHER_DURATION_MS;
-            previousWeather = calc.getWeatherForZone(zone, prevTime);
-        }
+        let previousWeather = calc.getWeatherForZone(zone, time - calc.WEATHER_DURATION_MS);
 
         while (time < endTime && results.length < maxResults) {
             const weather = calc.getWeatherForZone(zone, time);
