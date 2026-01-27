@@ -52,7 +52,7 @@ const IndexTranslations = {
         tool_equipment_analyzer_desc: '分析裝備屬性和配裝建議，提供最佳配裝方案',
 
         // 狀態標籤
-        status_coming_soon: '即將推出',
+        status_coming_soon: '⏳ 即將推出',
         status_under_construction: '🚧 施工中',
         status_unavailable: '⚠️ 繁中版不支援'
     },
@@ -106,7 +106,7 @@ const IndexTranslations = {
         tool_equipment_analyzer_desc: 'Analyze equipment stats and provide optimal gear recommendations',
 
         // Status badges
-        status_coming_soon: 'Coming Soon',
+        status_coming_soon: '⏳ Coming Soon',
         status_under_construction: '🚧 WIP',
         status_unavailable: '⚠️ Not Available (TW)'
     },
@@ -160,7 +160,7 @@ const IndexTranslations = {
         tool_equipment_analyzer_desc: '装備ステータスを分析し、最適な装備を提案',
 
         // ステータスバッジ
-        status_coming_soon: '近日公開',
+        status_coming_soon: '⏳ 近日公開',
         status_under_construction: '🚧 工事中',
         status_unavailable: '⚠️ 繁体字版未対応'
     }
