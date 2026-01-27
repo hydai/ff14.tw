@@ -99,16 +99,18 @@ class WeatherForecast {
      * Bind event listeners
      */
     bindEvents() {
-        // Zone selection (delegated)
+        // Zone selection (delegated) - click and keyboard
         this.elements.zoneList.addEventListener('click', (e) => this.handleZoneClick(e));
+        this.elements.zoneList.addEventListener('keydown', (e) => this.handleZoneKeydown(e));
 
         // Filter controls
         this.elements.desiredWeatherTags.addEventListener('click', (e) => this.handleWeatherTagClick(e, 'desired'));
         this.elements.previousWeatherTags.addEventListener('click', (e) => this.handleWeatherTagClick(e, 'previous'));
         this.elements.clearFiltersBtn.addEventListener('click', () => this.handleClearFilters());
 
-        // Time grid
+        // Time grid - click and keyboard
         this.elements.timeGrid.addEventListener('click', (e) => this.handleTimeGridClick(e));
+        this.elements.timeGrid.addEventListener('keydown', (e) => this.handleTimeGridKeydown(e));
         this.elements.timeGrid.addEventListener('mouseenter', (e) => this.handleTimeGridHover(e), true);
 
         // Results
@@ -116,6 +118,32 @@ class WeatherForecast {
 
         // Share
         this.elements.shareBtn.addEventListener('click', () => this.handleShare());
+    }
+
+    /**
+     * Handle keyboard events for zone list (region headers)
+     */
+    handleZoneKeydown(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+            const header = e.target.closest('.region-header');
+            if (header) {
+                e.preventDefault();
+                this.handleZoneClick(e);
+            }
+        }
+    }
+
+    /**
+     * Handle keyboard events for time grid
+     */
+    handleTimeGridKeydown(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+            const cell = e.target.closest('.time-cell');
+            if (cell) {
+                e.preventDefault();
+                this.handleTimeGridClick(e);
+            }
+        }
     }
 
     /**
@@ -133,13 +161,23 @@ class WeatherForecast {
             const regionGroup = document.createElement('div');
             regionGroup.className = 'region-group';
 
-            // Region header
+            // Zone buttons container (created first for aria-controls)
+            const buttonsContainer = document.createElement('div');
+            buttonsContainer.className = 'zone-buttons';
+            buttonsContainer.id = `zone-buttons-${regionId}`;
+
+            // Region header with accessibility attributes
             const header = document.createElement('div');
             header.className = 'region-header';
             header.dataset.region = regionId;
+            header.setAttribute('role', 'button');
+            header.setAttribute('tabindex', '0');
+            header.setAttribute('aria-expanded', 'true');
+            header.setAttribute('aria-controls', buttonsContainer.id);
 
             const expandIcon = document.createElement('span');
             expandIcon.className = 'expand-icon';
+            expandIcon.setAttribute('aria-hidden', 'true');
             expandIcon.textContent = '▼';
 
             const regionName = document.createElement('span');
@@ -148,14 +186,11 @@ class WeatherForecast {
             header.appendChild(expandIcon);
             header.appendChild(regionName);
 
-            // Zone buttons container
-            const buttonsContainer = document.createElement('div');
-            buttonsContainer.className = 'zone-buttons';
-
             for (const zone of zones) {
                 const btn = document.createElement('button');
                 btn.className = 'zone-btn';
                 btn.dataset.zone = zone.id;
+                btn.setAttribute('aria-pressed', 'false');
                 btn.textContent = zone[lang] || zone.zh;
                 buttonsContainer.appendChild(btn);
             }
@@ -178,6 +213,9 @@ class WeatherForecast {
             const cell = document.createElement('div');
             cell.className = 'time-cell';
             cell.dataset.hour = i;
+            cell.setAttribute('role', 'button');
+            cell.setAttribute('tabindex', '0');
+            cell.setAttribute('aria-label', `${String(i).padStart(2, '0')}:00`);
             cell.textContent = String(i).padStart(2, '0');
             fragment.appendChild(cell);
         }
@@ -254,7 +292,8 @@ class WeatherForecast {
         const header = e.target.closest('.region-header');
         if (header) {
             const group = header.closest('.region-group');
-            group.classList.toggle(WeatherForecast.CONSTANTS.CSS_CLASSES.COLLAPSED);
+            const isCollapsed = group.classList.toggle(WeatherForecast.CONSTANTS.CSS_CLASSES.COLLAPSED);
+            header.setAttribute('aria-expanded', String(!isCollapsed));
             return;
         }
 
@@ -263,10 +302,14 @@ class WeatherForecast {
         if (btn) {
             const zoneId = btn.dataset.zone;
 
-            // Update active state
+            // Update active state and aria-pressed
             const allBtns = this.elements.zoneList.querySelectorAll('.zone-btn');
-            allBtns.forEach(b => b.classList.remove(WeatherForecast.CONSTANTS.CSS_CLASSES.ACTIVE));
+            allBtns.forEach(b => {
+                b.classList.remove(WeatherForecast.CONSTANTS.CSS_CLASSES.ACTIVE);
+                b.setAttribute('aria-pressed', 'false');
+            });
             btn.classList.add(WeatherForecast.CONSTANTS.CSS_CLASSES.ACTIVE);
+            btn.setAttribute('aria-pressed', 'true');
 
             // Update store
             this.store.setZone(zoneId);
@@ -437,9 +480,11 @@ class WeatherForecast {
         const tag = document.createElement('button');
         tag.className = 'weather-tag';
         tag.dataset.weather = weather;
+        tag.setAttribute('aria-pressed', 'false');
 
         const icon = document.createElement('span');
         icon.className = 'weather-icon';
+        icon.setAttribute('aria-hidden', 'true');
         icon.textContent = info.icon;
 
         const name = document.createElement('span');
@@ -460,20 +505,18 @@ class WeatherForecast {
         const desiredTags = this.elements.desiredWeatherTags.querySelectorAll('.weather-tag');
         desiredTags.forEach(tag => {
             const weather = tag.dataset.weather;
-            tag.classList.toggle(
-                WeatherForecast.CONSTANTS.CSS_CLASSES.ACTIVE,
-                this.store.state.desiredWeathers.has(weather)
-            );
+            const isActive = this.store.state.desiredWeathers.has(weather);
+            tag.classList.toggle(WeatherForecast.CONSTANTS.CSS_CLASSES.ACTIVE, isActive);
+            tag.setAttribute('aria-pressed', String(isActive));
         });
 
         // Update previous weather tags
         const previousTags = this.elements.previousWeatherTags.querySelectorAll('.weather-tag');
         previousTags.forEach(tag => {
             const weather = tag.dataset.weather;
-            tag.classList.toggle(
-                WeatherForecast.CONSTANTS.CSS_CLASSES.ACTIVE,
-                this.store.state.previousWeathers.has(weather)
-            );
+            const isActive = this.store.state.previousWeathers.has(weather);
+            tag.classList.toggle(WeatherForecast.CONSTANTS.CSS_CLASSES.ACTIVE, isActive);
+            tag.setAttribute('aria-pressed', String(isActive));
         });
     }
 
