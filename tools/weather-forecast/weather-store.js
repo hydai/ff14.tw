@@ -159,15 +159,20 @@ class WeatherStore {
         }
 
         if (params.length >= 3 && params[2]) {
-            beginHour = parseInt(params[2], 10) || 0;
+            const parsed = parseInt(params[2], 10);
+            beginHour = isNaN(parsed) ? 0 : Math.max(0, Math.min(23, parsed));
         }
 
         if (params.length >= 4 && params[3]) {
-            endHour = parseInt(params[3], 10) || 24;
+            const parsed = parseInt(params[3], 10);
+            endHour = isNaN(parsed) ? 24 : Math.max(0, Math.min(24, parsed));
         }
 
         if (params.length >= 5 && params[4]) {
-            event = params[4] || null;
+            // Validate event name against known events
+            const validEvents = ['garlok', 'laideronnette'];
+            const eventValue = params[4].toLowerCase();
+            event = validEvents.includes(eventValue) ? eventValue : null;
         }
 
         this.setState({

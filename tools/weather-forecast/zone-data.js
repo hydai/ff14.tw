@@ -150,7 +150,7 @@ const WeatherZoneData = {
 
         // Special / Miscellaneous
         { id: 'wolves-den-pier', region: 'la-noscea', zh: '狼獄演習場', en: "Wolves' Den Pier", ja: 'ウルヴズジェイル演習場', weatherTable: ['Clear Skies', 20, 'Fair Skies', 50, 'Clouds', 70, 'Fog', 80, 'Wind', 90, 'Rain'] },
-        { id: 'eureka-anemos', region: 'othard', zh: '恆冰之地', en: 'Eureka Anemos', ja: '禁断の地 エウレカ：アネモス帯', weatherTable: ['Fair Skies', 30, 'Gales', 60, 'Showers', 90, 'Snow'] },
+        { id: 'eureka-anemos', region: 'othard', zh: '常風之地', en: 'Eureka Anemos', ja: '禁断の地 エウレカ：アネモス帯', weatherTable: ['Fair Skies', 30, 'Gales', 60, 'Showers', 90, 'Snow'] },
         { id: 'eureka-pagos', region: 'othard', zh: '恆冰之地', en: 'Eureka Pagos', ja: '禁断の地 エウレカ：パゴス帯', weatherTable: ['Clear Skies', 10, 'Fog', 28, 'Heat Waves', 46, 'Snow', 64, 'Thunder', 82, 'Blizzards'] },
         { id: 'eureka-pyros', region: 'othard', zh: '涌火之地', en: 'Eureka Pyros', ja: '禁断の地 エウレカ：ピューロス帯', weatherTable: ['Fair Skies', 10, 'Heat Waves', 28, 'Thunder', 46, 'Blizzards', 64, 'Umbral Wind', 82, 'Snow'] },
         { id: 'eureka-hydatos', region: 'othard', zh: '湧水之地', en: 'Eureka Hydatos', ja: '禁断の地 エウレカ：ヒュダトス帯', weatherTable: ['Fair Skies', 12, 'Showers', 34, 'Gloom', 56, 'Thunderstorms', 78, 'Snow'] },

@@ -348,7 +348,7 @@ class WeatherForecast {
         } else {
             // End selection
             this.isSelectingTimeRange = false;
-            const endHour = (hour + 1) % 25; // Make end exclusive
+            const endHour = hour + 1; // Make end exclusive (hour is 0-23, so endHour is 1-24)
             this.store.setTimeRange(this.timeRangeStart, endHour);
             this.timeRangeStart = null;
         }
