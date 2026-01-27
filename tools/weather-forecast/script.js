@@ -306,7 +306,7 @@ class WeatherForecast {
             // End selection
             this.isSelectingTimeRange = false;
             const endHour = (hour + 1) % 25; // Make end exclusive
-            this.store.setTimeRange(this.timeRangeStart, endHour === 0 ? 24 : endHour);
+            this.store.setTimeRange(this.timeRangeStart, endHour);
             this.timeRangeStart = null;
         }
     }
@@ -333,11 +333,11 @@ class WeatherForecast {
             cell.classList.remove(WeatherForecast.CONSTANTS.CSS_CLASSES.IN_RANGE, WeatherForecast.CONSTANTS.CSS_CLASSES.SELECTED);
 
             if (start <= end) {
-                if (i >= start && i <= end) {
+                if (i >= start && i < end) {
                     cell.classList.add(WeatherForecast.CONSTANTS.CSS_CLASSES.IN_RANGE);
                 }
             } else {
-                if (i >= start || i <= end) {
+                if (i >= start || i < end) {
                     cell.classList.add(WeatherForecast.CONSTANTS.CSS_CLASSES.IN_RANGE);
                 }
             }
