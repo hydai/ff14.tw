@@ -66,7 +66,7 @@ const WeatherZoneData = {
         { id: 'mist', region: 'la-noscea', zh: '海霧村', en: 'Mist', ja: 'ミスト・ヴィレッジ', weatherTable: ['Clouds', 20, 'Clear Skies', 50, 'Fair Skies', 70, 'Fog', 80, 'Rain'] },
 
         // The Black Shroud
-        { id: 'gridania', region: 'black-shroud', zh: '格里達尼亞', en: 'Gridania', ja: 'グリダニア', weatherTable: ['Rain', 5, 'Rain', 20, 'Fog', 30, 'Clouds', 40, 'Fair Skies', 55, 'Clear Skies', 85, 'Fair Skies'] },
+        { id: 'gridania', region: 'black-shroud', zh: '格里達尼亞', en: 'Gridania', ja: 'グリダニア', weatherTable: ['Rain', 20, 'Fog', 30, 'Clouds', 40, 'Fair Skies', 55, 'Clear Skies', 85, 'Fair Skies'] },
         { id: 'central-shroud', region: 'black-shroud', zh: '黑衣森林中央林區', en: 'Central Shroud', ja: '黒衣森：中央森林', weatherTable: ['Thunder', 5, 'Rain', 20, 'Fog', 30, 'Clouds', 40, 'Fair Skies', 55, 'Clear Skies', 85, 'Fair Skies'] },
         { id: 'east-shroud', region: 'black-shroud', zh: '黑衣森林東部林區', en: 'East Shroud', ja: '黒衣森：東部森林', weatherTable: ['Thunder', 5, 'Rain', 20, 'Fog', 30, 'Clouds', 40, 'Fair Skies', 55, 'Clear Skies', 85, 'Fair Skies'] },
         { id: 'south-shroud', region: 'black-shroud', zh: '黑衣森林南部林區', en: 'South Shroud', ja: '黒衣森：南部森林', weatherTable: ['Fog', 5, 'Thunderstorms', 10, 'Thunder', 25, 'Fog', 30, 'Clouds', 40, 'Fair Skies', 70, 'Clear Skies'] },
@@ -211,10 +211,6 @@ const WeatherZoneData = {
             const table = zone.weatherTable;
             for (let i = 0; i < table.length; i += 2) {
                 weatherSet.add(table[i]);
-            }
-            // Last weather (no chance value after it)
-            if (table.length % 2 === 1) {
-                weatherSet.add(table[table.length - 1]);
             }
         }
         return Array.from(weatherSet).sort();

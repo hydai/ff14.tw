@@ -389,10 +389,6 @@ class WeatherStore {
         for (let i = 0; i < table.length; i += 2) {
             weathers.add(table[i]);
         }
-        // Last weather if odd length
-        if (table.length % 2 === 1) {
-            weathers.add(table[table.length - 1]);
-        }
 
         return Array.from(weathers);
     }
