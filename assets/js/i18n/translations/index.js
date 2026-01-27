@@ -53,7 +53,8 @@ const IndexTranslations = {
 
         // 狀態標籤
         badge_coming_soon: '即將推出',
-        badge_under_construction: '施工中'
+        badge_under_construction: '施工中',
+        badge_unavailable: '繁中版不支援'
     },
     en: {
         // Page info
@@ -106,7 +107,8 @@ const IndexTranslations = {
 
         // Status badges
         badge_coming_soon: 'Coming Soon',
-        badge_under_construction: 'WIP'
+        badge_under_construction: 'WIP',
+        badge_unavailable: 'Not Available (TW)'
     },
     ja: {
         // ページ情報
@@ -159,7 +161,8 @@ const IndexTranslations = {
 
         // ステータスバッジ
         badge_coming_soon: '近日公開',
-        badge_under_construction: '工事中'
+        badge_under_construction: '工事中',
+        badge_unavailable: '繁体字版未対応'
     }
 };
 

@@ -167,6 +167,10 @@
             box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3);
         }
 
+        .status-badge.unavailable {
+            background: #6c757d;
+        }
+
         .tool-icon {
             font-size: 3.5rem;
             margin-bottom: 1.5rem;
@@ -356,7 +360,7 @@
                     </a>
 
                     <a href="tools/lodestone-lookup/index.html" class="tool-card available">
-                        <span class="status-badge under-construction" data-i18n="status_under_construction">🚧 施工中</span>
+                        <span class="status-badge unavailable" data-i18n="status_unavailable">⚠️ 繁中版不支援</span>
                         <div class="tool-icon">🔍</div>
                         <h3 class="tool-title" data-i18n="tool_lodestone_title">Lodestone 角色查詢</h3>
                         <p class="tool-description" data-i18n="tool_lodestone_desc">使用 Lodestone ID 查詢 FF14 角色資訊，查看職業等級與成就</p>
