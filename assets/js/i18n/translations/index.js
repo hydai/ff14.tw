@@ -45,6 +45,9 @@ const IndexTranslations = {
         tool_macro_converter_title: '巨集轉換器',
         tool_macro_converter_desc: '將 FF14 巨集在繁體中文、英文、日文之間轉換',
 
+        tool_weather_forecast_title: '天氣預報',
+        tool_weather_forecast_desc: '查看艾歐澤亞各地區的天氣預報，搜尋特定天氣條件',
+
         tool_equipment_analyzer_title: '裝備分析器',
         tool_equipment_analyzer_desc: '分析裝備屬性和配裝建議，提供最佳配裝方案',
 
@@ -95,6 +98,9 @@ const IndexTranslations = {
         tool_macro_converter_title: 'Macro Converter',
         tool_macro_converter_desc: 'Convert FF14 macros between Traditional Chinese, English, and Japanese',
 
+        tool_weather_forecast_title: 'Weather Forecast',
+        tool_weather_forecast_desc: 'View weather forecasts for Eorzea zones and search for specific conditions',
+
         tool_equipment_analyzer_title: 'Equipment Analyzer',
         tool_equipment_analyzer_desc: 'Analyze equipment stats and provide optimal gear recommendations',
 
@@ -144,6 +150,9 @@ const IndexTranslations = {
 
         tool_macro_converter_title: 'マクロ変換ツール',
         tool_macro_converter_desc: 'FF14マクロを繁体字中国語、英語、日本語間で変換',
+
+        tool_weather_forecast_title: '天気予報',
+        tool_weather_forecast_desc: 'エオルゼア各地域の天気予報を確認、特定の天気条件を検索',
 
         tool_equipment_analyzer_title: '装備分析器',
         tool_equipment_analyzer_desc: '装備ステータスを分析し、最適な装備を提案',

@@ -1,0 +1,529 @@
+/* ===================================
+   天氣預報工具樣式 (Weather Forecast Tool)
+   =================================== */
+
+/* 目前時間條 */
+.current-time-bar {
+    display: flex;
+    justify-content: center;
+    gap: 3rem;
+    padding: 1rem;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
+    color: white;
+}
+
+.time-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.time-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    opacity: 0.9;
+}
+
+.time-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    font-family: 'Consolas', 'Monaco', monospace;
+}
+
+/* 工具容器 */
+.weather-tool {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 1.5rem;
+    min-height: 600px;
+}
+
+/* 左側地區選擇面板 */
+.zone-selector-panel {
+    background: var(--card-bg, white);
+    border-radius: 12px;
+    padding: 1rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    overflow-y: auto;
+    max-height: calc(100vh - 200px);
+}
+
+.panel-title {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--border-color, #dee2e6);
+}
+
+/* 區域群組 */
+.region-group {
+    margin-bottom: 1rem;
+}
+
+.region-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    cursor: pointer;
+    border-radius: 6px;
+    font-weight: 500;
+    font-size: 0.9rem;
+    color: var(--text-secondary, #6c757d);
+    transition: background-color 0.2s ease;
+}
+
+.region-header:hover {
+    background-color: var(--gray-100, #f8f9fa);
+}
+
+.region-header .expand-icon {
+    transition: transform 0.2s ease;
+}
+
+.region-group.collapsed .expand-icon {
+    transform: rotate(-90deg);
+}
+
+.region-group.collapsed .zone-buttons {
+    display: none;
+}
+
+/* 地區按鈕 */
+.zone-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding-left: 1rem;
+}
+
+.zone-btn {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
+    text-align: left;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: var(--text-color, #212529);
+}
+
+.zone-btn:hover {
+    background-color: var(--gray-100, #f8f9fa);
+    border-color: var(--border-color, #dee2e6);
+}
+
+.zone-btn.active {
+    background-color: var(--primary-color, #4a90e2);
+    color: white;
+    border-color: var(--primary-color, #4a90e2);
+}
+
+/* 右側主要內容面板 */
+.main-content-panel {
+    background: var(--card-bg, white);
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* 無選擇提示 */
+.no-zone-selected {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+    color: var(--text-secondary, #6c757d);
+}
+
+.hint-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    opacity: 0.6;
+}
+
+.no-zone-selected p {
+    font-size: 1.1rem;
+}
+
+/* 選擇地區後的頭部 */
+.selected-zone-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--border-color, #dee2e6);
+}
+
+.selected-zone-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+/* 過濾器面板 */
+.filter-panel {
+    background: var(--gray-50, #f8f9fa);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.filter-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.filter-header h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.filter-group {
+    margin-bottom: 1rem;
+}
+
+.filter-group:last-child {
+    margin-bottom: 0;
+}
+
+.filter-group label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-secondary, #6c757d);
+    margin-bottom: 0.5rem;
+}
+
+/* 天氣標籤 */
+.weather-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.weather-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.375rem 0.75rem;
+    font-size: 0.85rem;
+    background: white;
+    border: 2px solid var(--border-color, #dee2e6);
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: var(--text-color, #212529);
+}
+
+.weather-tag:hover {
+    border-color: var(--primary-color, #4a90e2);
+    background-color: var(--primary-light, #e8f0ff);
+}
+
+.weather-tag.active {
+    background-color: var(--primary-color, #4a90e2);
+    border-color: var(--primary-color, #4a90e2);
+    color: white;
+}
+
+.weather-tag .weather-icon {
+    font-size: 1rem;
+}
+
+/* 時間範圍選擇器 */
+.time-range-selector {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.time-grid {
+    display: grid;
+    grid-template-columns: repeat(24, 1fr);
+    gap: 2px;
+    background: var(--border-color, #dee2e6);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.time-cell {
+    padding: 0.5rem 0;
+    text-align: center;
+    font-size: 0.7rem;
+    background: white;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+    user-select: none;
+}
+
+.time-cell:hover {
+    background-color: var(--gray-100, #f8f9fa);
+}
+
+.time-cell.selected {
+    background-color: var(--primary-color, #4a90e2);
+    color: white;
+}
+
+.time-cell.in-range {
+    background-color: var(--primary-light, #cce0ff);
+}
+
+.time-range-display {
+    text-align: center;
+    font-size: 0.9rem;
+    color: var(--text-secondary, #6c757d);
+}
+
+/* 結果面板 */
+.results-panel h3 {
+    margin: 0 0 1rem 0;
+    font-size: 1.1rem;
+}
+
+.results-table-container {
+    overflow-x: auto;
+}
+
+.results-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.results-table th,
+.results-table td {
+    padding: 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color, #dee2e6);
+}
+
+.results-table th {
+    background: var(--gray-50, #f8f9fa);
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--text-secondary, #6c757d);
+    white-space: nowrap;
+}
+
+.results-table tbody tr:hover {
+    background-color: var(--gray-50, #f8f9fa);
+}
+
+.results-table tbody tr.current-weather {
+    background-color: var(--primary-light, #e8f0ff);
+}
+
+.results-table tbody tr.current-weather td:first-child::before {
+    content: '▶ ';
+    color: var(--primary-color, #4a90e2);
+}
+
+/* 天氣單元格 */
+.weather-cell {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.weather-cell .weather-icon {
+    font-size: 1.1rem;
+}
+
+/* 無結果 */
+.no-results {
+    text-align: center;
+    padding: 3rem;
+    color: var(--text-secondary, #6c757d);
+}
+
+/* 顯示更多按鈕 */
+#showMoreBtn {
+    margin-top: 1rem;
+}
+
+/* Toast 樣式覆寫 */
+.toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 12px 24px;
+    border-radius: 8px;
+    background: #333;
+    color: white;
+    font-size: 0.9rem;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    z-index: 9999;
+}
+
+.toast.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Dark Mode 支援 */
+[data-theme="dark"] .zone-selector-panel,
+[data-theme="dark"] .main-content-panel {
+    background: var(--card-bg);
+}
+
+[data-theme="dark"] .region-header:hover {
+    background-color: var(--dark-gray-700, #374151);
+}
+
+[data-theme="dark"] .zone-btn:hover {
+    background-color: var(--dark-gray-700, #374151);
+    border-color: var(--dark-border-color, #4b5563);
+}
+
+[data-theme="dark"] .filter-panel {
+    background: var(--dark-gray-800, #1f2937);
+}
+
+[data-theme="dark"] .weather-tag {
+    background: var(--dark-gray-800, #1f2937);
+    border-color: var(--dark-border-color, #4b5563);
+    color: var(--dark-text-color, #e5e7eb);
+}
+
+[data-theme="dark"] .weather-tag:hover {
+    background-color: var(--dark-gray-700, #374151);
+}
+
+[data-theme="dark"] .weather-tag.active {
+    background-color: var(--primary-color, #4a90e2);
+    border-color: var(--primary-color, #4a90e2);
+    color: white;
+}
+
+[data-theme="dark"] .time-cell {
+    background: var(--dark-gray-800, #1f2937);
+    color: var(--dark-text-color, #e5e7eb);
+}
+
+[data-theme="dark"] .time-cell:hover {
+    background-color: var(--dark-gray-700, #374151);
+}
+
+[data-theme="dark"] .time-cell.in-range {
+    background-color: rgba(74, 144, 226, 0.3);
+}
+
+[data-theme="dark"] .time-grid {
+    background: var(--dark-border-color, #4b5563);
+}
+
+[data-theme="dark"] .results-table th {
+    background: var(--dark-gray-800, #1f2937);
+}
+
+[data-theme="dark"] .results-table tbody tr:hover {
+    background-color: var(--dark-gray-800, #1f2937);
+}
+
+[data-theme="dark"] .results-table tbody tr.current-weather {
+    background-color: rgba(74, 144, 226, 0.2);
+}
+
+/* 響應式設計 */
+@media (max-width: 992px) {
+    .weather-tool {
+        grid-template-columns: 1fr;
+    }
+
+    .zone-selector-panel {
+        max-height: none;
+    }
+
+    .zone-buttons {
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+
+    .zone-btn {
+        flex: 0 0 auto;
+    }
+}
+
+@media (max-width: 768px) {
+    .current-time-bar {
+        gap: 2rem;
+        padding: 0.75rem;
+    }
+
+    .time-value {
+        font-size: 1.25rem;
+    }
+
+    .main-content-panel {
+        padding: 1rem;
+    }
+
+    .selected-zone-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+
+    .time-grid {
+        grid-template-columns: repeat(12, 1fr);
+    }
+
+    .time-cell {
+        padding: 0.375rem 0;
+        font-size: 0.65rem;
+    }
+
+    .results-table {
+        font-size: 0.8rem;
+    }
+
+    .results-table th,
+    .results-table td {
+        padding: 0.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .current-time-bar {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .time-display {
+        flex-direction: row;
+        gap: 0.5rem;
+    }
+
+    .weather-tags {
+        gap: 0.375rem;
+    }
+
+    .weather-tag {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+    }
+
+    .time-grid {
+        grid-template-columns: repeat(8, 1fr);
+    }
+
+    /* 隱藏前置天氣列以節省空間 */
+    .results-table th:nth-child(4),
+    .results-table td:nth-child(4) {
+        display: none;
+    }
+}
