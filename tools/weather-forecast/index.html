@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>天氣預報 - FF14.tw</title>
+    <meta name="description" content="查看艾歐澤亞各地區的天氣預報，搜尋特定天氣條件，追蹤特殊事件">
+    <link rel="icon" type="image/x-icon" href="../../assets/images/ff14tw.ico">
+    <link rel="stylesheet" href="../../assets/css/common.css">
+    <link rel="stylesheet" href="../../assets/css/dark-mode-tools.css">
+    <link rel="stylesheet" href="../../assets/css/tools-common.css">
+    <link rel="stylesheet" href="../../assets/css/components/language-switcher.css">
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="header-placeholder" data-base-path="../../" data-tool-name="天氣預報" data-tool-name-key="weather_header"></div>
+    <noscript>
+        <nav style="padding: 1rem; background: #667eea; color: white; text-align: center;">
+            <a href="/" style="color: white; margin: 0 1rem;">首頁</a>
+            <a href="/copyright.html" style="color: white; margin: 0 1rem;">版權聲明</a>
+            <a href="https://github.com/hydai/ff14.tw" target="_blank" rel="noopener noreferrer" style="color: white; margin: 0 1rem;">GitHub</a>
+            <a href="/about.html" style="color: white; margin: 0 1rem;">關於</a>
+        </nav>
+    </noscript>
+
+    <main class="main">
+        <div class="container">
+            <h1 class="visually-hidden" data-i18n="weather_header">天氣預報</h1>
+
+            <!-- 目前時間顯示 -->
+            <div class="current-time-bar">
+                <div class="time-display">
+                    <span class="time-label" data-i18n="weather_current_et">目前 ET</span>
+                    <span class="time-value" id="currentET">--:--</span>
+                </div>
+                <div class="time-display">
+                    <span class="time-label" data-i18n="weather_current_lt">本地時間</span>
+                    <span class="time-value" id="currentLT">--:--</span>
+                </div>
+            </div>
+
+            <div class="tool-container weather-tool">
+                <!-- 左側：地區選擇 -->
+                <aside class="zone-selector-panel">
+                    <h2 class="panel-title" data-i18n="weather_select_zone">選擇地區</h2>
+                    <div class="zone-list" id="zoneList">
+                        <!-- 區域和地區按鈕將由 JavaScript 動態生成 -->
+                    </div>
+                </aside>
+
+                <!-- 右側：主要內容區 -->
+                <div class="main-content-panel">
+                    <!-- 沒有選擇地區時的提示 -->
+                    <div class="no-zone-selected" id="noZoneSelected">
+                        <div class="hint-icon">🗺️</div>
+                        <p data-i18n="weather_select_zone_hint">點擊地區按鈕開始查看天氣</p>
+                    </div>
+
+                    <!-- 選擇地區後的內容 -->
+                    <div class="zone-content" id="zoneContent" style="display: none;">
+                        <!-- 目前選擇的地區 -->
+                        <div class="selected-zone-header">
+                            <h2 id="selectedZoneName">--</h2>
+                            <button class="btn btn-sm btn-secondary" id="shareBtn" title="分享連結">
+                                <span class="btn-icon">🔗</span>
+                                <span data-i18n="weather_share">分享連結</span>
+                            </button>
+                        </div>
+
+                        <!-- 過濾器面板 -->
+                        <div class="filter-panel">
+                            <div class="filter-header">
+                                <h3 data-i18n="weather_filter_title">過濾條件</h3>
+                                <button class="btn btn-sm btn-outline-secondary" id="clearFiltersBtn" data-i18n="weather_clear_filters">清除過濾</button>
+                            </div>
+
+                            <!-- 目標天氣過濾 -->
+                            <div class="filter-group">
+                                <label data-i18n="weather_desired_weather">目標天氣</label>
+                                <div class="weather-tags" id="desiredWeatherTags">
+                                    <!-- 天氣標籤將由 JavaScript 動態生成 -->
+                                </div>
+                            </div>
+
+                            <!-- 前置天氣過濾 -->
+                            <div class="filter-group">
+                                <label data-i18n="weather_previous_weather">前置天氣</label>
+                                <div class="weather-tags" id="previousWeatherTags">
+                                    <!-- 天氣標籤將由 JavaScript 動態生成 -->
+                                </div>
+                            </div>
+
+                            <!-- 時間範圍過濾 -->
+                            <div class="filter-group">
+                                <label data-i18n="weather_time_range">艾歐澤亞時間範圍</label>
+                                <div class="time-range-selector">
+                                    <div class="time-grid" id="timeGrid">
+                                        <!-- 24 個時間格子將由 JavaScript 動態生成 -->
+                                    </div>
+                                    <div class="time-range-display">
+                                        <span id="timeRangeText">00:00 - 24:00</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 結果區域 -->
+                        <div class="results-panel">
+                            <h3 id="resultsTitle" data-i18n="weather_timetable">天氣時刻表</h3>
+
+                            <!-- 載入中 -->
+                            <div class="loading" id="resultsLoading" style="display: none;">
+                                <div class="loading-spinner"></div>
+                                <p data-i18n="weather_loading">載入中...</p>
+                            </div>
+
+                            <!-- 結果表格 -->
+                            <div class="results-table-container" id="resultsContainer">
+                                <table class="results-table" id="resultsTable">
+                                    <thead>
+                                        <tr>
+                                            <th data-i18n="weather_col_local_time">本地時間</th>
+                                            <th data-i18n="weather_col_eorzea_time">ET 時間</th>
+                                            <th data-i18n="weather_col_weather">天氣</th>
+                                            <th data-i18n="weather_col_prev_weather">前置天氣</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="resultsBody">
+                                        <!-- 結果行將由 JavaScript 動態生成 -->
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <!-- 無結果 -->
+                            <div class="no-results" id="noResults" style="display: none;">
+                                <p data-i18n="weather_no_results">沒有符合條件的結果</p>
+                            </div>
+
+                            <!-- 顯示更多按鈕 -->
+                            <button class="btn btn-primary btn-block" id="showMoreBtn" style="display: none;" data-i18n="weather_show_more">顯示更多</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="footer-placeholder" data-base-path="../../"></div>
+
+    <!-- Toast 通知 -->
+    <div class="toast" id="toast"></div>
+
+    <script src="../../assets/js/i18n/i18n-manager.js"></script>
+    <script src="../../assets/js/i18n/translations/common.js"></script>
+    <script src="../../assets/js/i18n/translations/tools/weather-forecast.js"></script>
+    <script src="../../assets/js/components/nav-template.js"></script>
+    <script src="../../assets/js/components/footer-template.js"></script>
+    <script src="../../assets/js/components/layout-loader.js"></script>
+    <script src="../../assets/js/common.js"></script>
+    <script src="../../assets/js/security-utils.js"></script>
+    <script src="zone-data.js"></script>
+    <script src="weather-calculator.js"></script>
+    <script src="weather-store.js"></script>
+    <script src="weather-search.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
