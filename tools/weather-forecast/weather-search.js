@@ -103,29 +103,9 @@ class WeatherSearch {
         // Check time range
         if (filters.beginHour !== undefined && filters.endHour !== undefined) {
             if (filters.beginHour !== 0 || filters.endHour !== 24) {
-                // Weather periods are 8 hours long, starting at 0, 8, or 16 ET
-                // Check if any part of the period falls within the time range
-                const periodStart = eorzeaTime.hours;
-                const periodEnd = (periodStart + 8) % 24;
-
                 // Check if the weather period overlaps with the desired time range
-                let overlaps = false;
-                for (let h = periodStart; h !== periodEnd; h = (h + 1) % 24) {
-                    if (calc.isInTimeRange(h, filters.beginHour, filters.endHour)) {
-                        overlaps = true;
-                        break;
-                    }
-                    // Safety check to prevent infinite loop
-                    if (h === periodStart && overlaps === false && ((periodStart + 1) % 24) === periodEnd) {
-                        break;
-                    }
-                }
-                // Also check the period end hour if it's inclusive
-                if (!overlaps && calc.isInTimeRange(periodEnd, filters.beginHour, filters.endHour)) {
-                    overlaps = true;
-                }
-
-                if (!overlaps) {
+                const overlappingPeriods = calc.getOverlappingWeatherPeriods(filters.beginHour, filters.endHour);
+                if (!overlappingPeriods.includes(eorzeaTime.hours)) {
                     return false;
                 }
             }
