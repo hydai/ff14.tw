@@ -30,6 +30,17 @@ class MiniCactpotCalculator {
             '左直行', '中直行', '右直行',
             '左斜線', '右斜線'
         ];
+        // Cell position names (i18n keys and fallbacks)
+        this.cellPositionKeys = [
+            'mini_cactpot_pos_top_left', 'mini_cactpot_pos_top_center', 'mini_cactpot_pos_top_right',
+            'mini_cactpot_pos_mid_left', 'mini_cactpot_pos_center', 'mini_cactpot_pos_mid_right',
+            'mini_cactpot_pos_bot_left', 'mini_cactpot_pos_bot_center', 'mini_cactpot_pos_bot_right'
+        ];
+        this.cellPositionFallback = [
+            '左上', '上中', '右上',
+            '左中', '中央', '右中',
+            '左下', '下中', '右下'
+        ];
 
         // DOM 元素快取
         this.elements = {
@@ -42,7 +53,9 @@ class MiniCactpotCalculator {
             resetBtn: document.getElementById('reset-btn'),
             numberPopup: document.getElementById('number-popup'),
             numberGrid: document.querySelector('.number-grid'),
-            popupClose: document.querySelector('#number-popup .popup-close')
+            popupClose: document.querySelector('#number-popup .popup-close'),
+            cellRecommendationInfo: document.getElementById('cell-recommendation-info'),
+            cellRecommendationSummary: document.getElementById('cell-recommendation-summary')
         };
 
         // 當前選中的格子位置（用於 popup）
@@ -65,8 +78,9 @@ class MiniCactpotCalculator {
 
         // 綁定新的事件監聽器
         this.handleGridClick = (e) => {
-            if (e.target.classList.contains('grid-cell')) {
-                this.handleCellClick(parseInt(e.target.dataset.position, 10));
+            const cell = e.target.closest('.grid-cell');
+            if (cell) {
+                this.handleCellClick(parseInt(cell.dataset.position, 10));
             }
         };
 
@@ -276,8 +290,10 @@ class MiniCactpotCalculator {
     redrawGrid() {
         // 清除所有格子
         document.querySelectorAll('.grid-cell').forEach(cell => {
-            cell.classList.remove('selected', 'revealed');
+            cell.classList.remove('selected', 'revealed', 'cell-recommended-best');
             cell.textContent = '';
+            const ev = cell.querySelector('.cell-ev');
+            if (ev) ev.remove();
         });
 
         // 重新繪製格子狀態
@@ -336,9 +352,17 @@ class MiniCactpotCalculator {
 
         // 當輸入完成四個數字時，自動計算並顯示期望值
         if (revealedCount === 4) {
+            this.clearCellRecommendations();
             this.calculateAndDisplayExpectations();
+        } else if (revealedCount >= 1 && revealedCount <= 3) {
+            this.clearExpectations();
+            const recommendations = this.calculateCellRecommendations();
+            if (recommendations) {
+                this.displayCellRecommendations(recommendations);
+            }
         } else {
             this.clearExpectations();
+            this.clearCellRecommendations();
         }
     }
 
@@ -484,11 +508,255 @@ class MiniCactpotCalculator {
         this.elements.bestChoiceInfo.scrollIntoView({ behavior: 'smooth' });
     }
 
+    // ===== Cell Recommendation Algorithm =====
+
+    /**
+     * Calculates which empty cells to reveal next for optimal expected MGP.
+     * Uses recursive optimal EV computation with in-place mutation.
+     * @returns {Array|null} Sorted array of {position, ev} or null if not applicable
+     */
+    calculateCellRecommendations() {
+        const revealedCount = this.grid.filter(v => v !== null).length;
+        if (revealedCount < 1 || revealedCount >= 4) return null;
+
+        // Build remaining numbers boolean array (index 1-9)
+        const remaining = new Array(10).fill(true);
+        remaining[0] = false;
+        for (let i = 0; i < 9; i++) {
+            if (this.grid[i] !== null) {
+                remaining[this.grid[i]] = false;
+            }
+        }
+
+        // Count remaining numbers
+        let remainingCount = 0;
+        for (let n = 1; n <= 9; n++) {
+            if (remaining[n]) remainingCount++;
+        }
+
+        const results = [];
+        for (let pos = 0; pos < 9; pos++) {
+            if (this.grid[pos] !== null) continue;
+
+            // Average EV over all possible values at this position
+            let totalEV = 0;
+            for (let val = 1; val <= 9; val++) {
+                if (!remaining[val]) continue;
+
+                // Mutate
+                this.grid[pos] = val;
+                remaining[val] = false;
+
+                totalEV += this.computeOptimalEV(this.grid, remaining, revealedCount + 1);
+
+                // Undo
+                this.grid[pos] = null;
+                remaining[val] = true;
+            }
+
+            results.push({ position: pos, ev: totalEV / remainingCount });
+        }
+
+        results.sort((a, b) => b.ev - a.ev);
+        return results;
+    }
+
+    /**
+     * Recursively computes the optimal expected MGP from a given state.
+     * At 4 known cells, returns the best line's EV.
+     * At fewer, finds the best cell to reveal by averaging over all possible values.
+     */
+    computeOptimalEV(grid, remaining, numKnown) {
+        if (numKnown >= 4) {
+            return this.computeBestLineEV(grid, remaining);
+        }
+
+        // Count remaining
+        let remainingCount = 0;
+        for (let n = 1; n <= 9; n++) {
+            if (remaining[n]) remainingCount++;
+        }
+
+        let bestEV = -Infinity;
+
+        for (let pos = 0; pos < 9; pos++) {
+            if (grid[pos] !== null) continue;
+
+            let totalEV = 0;
+            for (let val = 1; val <= 9; val++) {
+                if (!remaining[val]) continue;
+
+                // Mutate
+                grid[pos] = val;
+                remaining[val] = false;
+
+                totalEV += this.computeOptimalEV(grid, remaining, numKnown + 1);
+
+                // Undo
+                grid[pos] = null;
+                remaining[val] = true;
+            }
+
+            const avgEV = totalEV / remainingCount;
+            if (avgEV > bestEV) bestEV = avgEV;
+        }
+
+        return bestEV;
+    }
+
+    /**
+     * Returns the maximum expected value across all 8 lines.
+     * Called when exactly 4 cells are known.
+     */
+    computeBestLineEV(grid, remaining) {
+        // Collect remaining numbers into array for line EV computation
+        const remainingArr = [];
+        for (let n = 1; n <= 9; n++) {
+            if (remaining[n]) remainingArr.push(n);
+        }
+
+        let bestEV = -Infinity;
+        for (let i = 0; i < this.lines.length; i++) {
+            const ev = this.computeLineEV(this.lines[i], grid, remainingArr);
+            if (ev > bestEV) bestEV = ev;
+        }
+        return bestEV;
+    }
+
+    /**
+     * Computes expected value for a single line.
+     * Enumerates all valid assignments of remaining numbers to unknown positions.
+     */
+    computeLineEV(line, grid, remainingArr) {
+        const n = remainingArr.length;
+        let knownSum = 0;
+        let numUnknown = 0;
+
+        for (let i = 0; i < 3; i++) {
+            if (grid[line[i]] !== null) {
+                knownSum += grid[line[i]];
+            } else {
+                numUnknown++;
+            }
+        }
+
+        if (numUnknown === 0) {
+            return this.mgpTable[knownSum] || 0;
+        }
+
+        if (numUnknown === 1) {
+            let total = 0;
+            for (let i = 0; i < n; i++) {
+                total += this.mgpTable[knownSum + remainingArr[i]] || 0;
+            }
+            return total / n;
+        }
+
+        if (numUnknown === 2) {
+            let total = 0;
+            let count = 0;
+            for (let i = 0; i < n; i++) {
+                for (let j = 0; j < n; j++) {
+                    if (i === j) continue;
+                    total += this.mgpTable[knownSum + remainingArr[i] + remainingArr[j]] || 0;
+                    count++;
+                }
+            }
+            return count > 0 ? total / count : 0;
+        }
+
+        // numUnknown === 3
+        let total = 0;
+        let count = 0;
+        for (let i = 0; i < n; i++) {
+            for (let j = 0; j < n; j++) {
+                if (j === i) continue;
+                for (let k = 0; k < n; k++) {
+                    if (k === i || k === j) continue;
+                    total += this.mgpTable[remainingArr[i] + remainingArr[j] + remainingArr[k]] || 0;
+                    count++;
+                }
+            }
+        }
+        return count > 0 ? total / count : 0;
+    }
+
+    // ===== Cell Recommendation UI =====
+
+    /**
+     * Displays cell recommendations on the grid and info panel.
+     */
+    displayCellRecommendations(results) {
+        this.clearCellRecommendations();
+
+        if (!results || results.length === 0) return;
+
+        const best = results[0];
+
+        results.forEach((result, index) => {
+            const cell = document.querySelector(`[data-position="${result.position}"]`);
+            if (!cell) return;
+
+            // Skip cells in "?" state (selected but not yet revealed)
+            if (cell.classList.contains('selected') && !cell.classList.contains('revealed')) return;
+
+            // Only highlight the best cell
+            if (index === 0) {
+                cell.classList.add('cell-recommended-best');
+            }
+
+            // Show EV value inside the cell
+            const evLabel = document.createElement('div');
+            evLabel.className = 'cell-ev';
+            evLabel.textContent = FF14Utils.formatNumber(Math.round(result.ev));
+            cell.appendChild(evLabel);
+        });
+
+        // Update recommendation info panel
+        SecurityUtils.clearElement(this.elements.cellRecommendationSummary);
+
+        const posName = FF14Utils.getI18nText(
+            this.cellPositionKeys[best.position],
+            this.cellPositionFallback[best.position]
+        );
+
+        const card = SecurityUtils.createCard({
+            className: '',
+            title: posName,
+            titleClass: 'best-choice-title',
+            value: `${FF14Utils.getI18nText('mini_cactpot_recommend_ev', '期望 MGP')}：${FF14Utils.formatNumber(Math.round(best.ev))} MGP`,
+            valueClass: 'best-choice-value recommend-value',
+        });
+
+        while (card.firstChild) {
+            this.elements.cellRecommendationSummary.appendChild(card.firstChild);
+        }
+
+        this.elements.cellRecommendationInfo.style.display = 'block';
+    }
+
+    /**
+     * Clears all cell recommendation visuals.
+     */
+    clearCellRecommendations() {
+        document.querySelectorAll('.grid-cell').forEach(cell => {
+            cell.classList.remove('cell-recommended-best');
+            const ev = cell.querySelector('.cell-ev');
+            if (ev) ev.remove();
+        });
+
+        if (this.elements.cellRecommendationInfo) {
+            this.elements.cellRecommendationInfo.style.display = 'none';
+        }
+    }
+
     reset() {
         // 清除所有格子的狀態
         document.querySelectorAll('.grid-cell').forEach(cell => {
-            cell.classList.remove('selected', 'revealed');
+            cell.classList.remove('selected', 'revealed', 'cell-recommended-best');
             cell.textContent = '';
+            const ev = cell.querySelector('.cell-ev');
+            if (ev) ev.remove();
         });
 
         // 清除期望值顯示
@@ -502,6 +770,11 @@ class MiniCactpotCalculator {
 
         // 隱藏最佳選擇資訊
         this.elements.bestChoiceInfo.style.display = 'none';
+
+        // 隱藏格子推薦資訊
+        if (this.elements.cellRecommendationInfo) {
+            this.elements.cellRecommendationInfo.style.display = 'none';
+        }
 
         // 重置選擇計數顯示
         this.elements.selectedCount.textContent = '0';

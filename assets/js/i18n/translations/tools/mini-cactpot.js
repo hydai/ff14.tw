@@ -41,6 +41,21 @@ const MiniCactpotTranslations = {
         mini_cactpot_undone: '已回到上一步',
         mini_cactpot_reset_done: '已重置九宮格',
 
+        // 格子推薦
+        mini_cactpot_recommend_best_reveal: '最佳揭開',
+        mini_cactpot_recommend_ev: '期望 MGP',
+
+        // 格子位置名稱
+        mini_cactpot_pos_top_left: '左上',
+        mini_cactpot_pos_top_center: '上中',
+        mini_cactpot_pos_top_right: '右上',
+        mini_cactpot_pos_mid_left: '左中',
+        mini_cactpot_pos_center: '中央',
+        mini_cactpot_pos_mid_right: '右中',
+        mini_cactpot_pos_bot_left: '左下',
+        mini_cactpot_pos_bot_center: '下中',
+        mini_cactpot_pos_bot_right: '右下',
+
         // Popup
         mini_cactpot_popup_title: '選擇數字',
         mini_cactpot_popup_cancel: '取消',
@@ -84,6 +99,21 @@ const MiniCactpotTranslations = {
         mini_cactpot_undone: 'Undone',
         mini_cactpot_reset_done: 'Grid has been reset',
 
+        // Cell recommendations
+        mini_cactpot_recommend_best_reveal: 'Best Reveal',
+        mini_cactpot_recommend_ev: 'Expected MGP',
+
+        // Cell position names
+        mini_cactpot_pos_top_left: 'Top Left',
+        mini_cactpot_pos_top_center: 'Top Center',
+        mini_cactpot_pos_top_right: 'Top Right',
+        mini_cactpot_pos_mid_left: 'Middle Left',
+        mini_cactpot_pos_center: 'Center',
+        mini_cactpot_pos_mid_right: 'Middle Right',
+        mini_cactpot_pos_bot_left: 'Bottom Left',
+        mini_cactpot_pos_bot_center: 'Bottom Center',
+        mini_cactpot_pos_bot_right: 'Bottom Right',
+
         // Popup
         mini_cactpot_popup_title: 'Select Number',
         mini_cactpot_popup_cancel: 'Cancel',
@@ -126,6 +156,21 @@ const MiniCactpotTranslations = {
         mini_cactpot_number_used: '数字 {value} は既に使用されています',
         mini_cactpot_undone: '元に戻しました',
         mini_cactpot_reset_done: 'グリッドをリセットしました',
+
+        // マス推奨
+        mini_cactpot_recommend_best_reveal: '最適マス',
+        mini_cactpot_recommend_ev: '期待 MGP',
+
+        // マス位置名
+        mini_cactpot_pos_top_left: '左上',
+        mini_cactpot_pos_top_center: '上中央',
+        mini_cactpot_pos_top_right: '右上',
+        mini_cactpot_pos_mid_left: '左中央',
+        mini_cactpot_pos_center: '中央',
+        mini_cactpot_pos_mid_right: '右中央',
+        mini_cactpot_pos_bot_left: '左下',
+        mini_cactpot_pos_bot_center: '下中央',
+        mini_cactpot_pos_bot_right: '右下',
 
         // ポップアップ
         mini_cactpot_popup_title: '数字を選択',
