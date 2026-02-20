@@ -91,43 +91,43 @@
       "id": "xelphatol-apple",
       "effect": { "r": 5, "g": 0, "b": 0 },
       "color": "#e74c3c",
-      "names": { "zh": "澤爾法特蘋果", "en": "Xelphatol Apple", "ja": "ゼルファトルアップル" }
+      "names": { "zh": "塞爾法特爾沙果", "en": "Xelphatol Apple", "ja": "ゼルファトルアップル" }
     },
     {
       "id": "doman-plum",
       "effect": { "r": -5, "g": 0, "b": 0 },
       "color": "#9b59b6",
-      "names": { "zh": "多瑪梅", "en": "Doman Plum", "ja": "ドマの梅" }
+      "names": { "zh": "多瑪青梅", "en": "Doman Plum", "ja": "ドマの梅" }
     },
     {
       "id": "mamook-pear",
       "effect": { "r": 0, "g": 5, "b": 0 },
       "color": "#27ae60",
-      "names": { "zh": "瑪姆克梨", "en": "Mamook Pear", "ja": "マムークの梨" }
+      "names": { "zh": "輝鱗油梨", "en": "Mamook Pear", "ja": "マムークの梨" }
     },
     {
       "id": "valfruit",
       "effect": { "r": 0, "g": -5, "b": 0 },
       "color": "#f1c40f",
-      "names": { "zh": "瓦爾果", "en": "Valfruit", "ja": "バルフルーツ" }
+      "names": { "zh": "瓦爾醋栗", "en": "Valfruit", "ja": "バルフルーツ" }
     },
     {
       "id": "oghomoro-berries",
       "effect": { "r": 0, "g": 0, "b": 5 },
       "color": "#3498db",
-      "names": { "zh": "奧高莫羅莓", "en": "O'Ghomoro Berries", "ja": "オ・ゴモロの実" }
+      "names": { "zh": "歐·葛莫羅漿果", "en": "O'Ghomoro Berries", "ja": "オ・ゴモロの実" }
     },
     {
       "id": "cieldalaes-pineapple",
       "effect": { "r": 0, "g": 0, "b": -5 },
       "color": "#e67e22",
-      "names": { "zh": "希爾達納斯鳳梨", "en": "Cieldalaes Pineapple", "ja": "シェルダレーのパイナップル" }
+      "names": { "zh": "謝爾達萊鳳梨", "en": "Cieldalaes Pineapple", "ja": "シェルダレーのパイナップル" }
     },
     {
       "id": "han-lemon",
       "effect": { "r": 5, "g": 5, "b": 5 },
       "color": "#f39c12",
-      "names": { "zh": "晃輝檸檬", "en": "Han Lemon", "ja": "漢レモン" }
+      "names": { "zh": "拉札漢檸檬", "en": "Han Lemon", "ja": "漢レモン" }
     }
   ],
   "meta": {
