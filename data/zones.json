@@ -436,7 +436,7 @@
           "id": "thedravanianforelands",
           "names": {
             "en": "The Dravanian Forelands",
-            "zh": "龍堡參天高地",
+            "zh": "德拉瓦尼亞山麓地",
             "ja": "高地ドラヴァニア"
           },
           "normalizedName": "thedravanianforelands",
@@ -450,8 +450,8 @@
           "id": "thechurningmists",
           "names": {
             "en": "The Churning Mists",
-            "zh": "翻雲霧海",
-            "ja": "雲海"
+            "zh": "德拉瓦尼亞雲海",
+            "ja": "ドラヴァニア雲海"
           },
           "normalizedName": "thechurningmists",
           "filePrefix": "thechurningmists",
@@ -476,7 +476,7 @@
           "id": "theseaofclouds",
           "names": {
             "en": "The Sea of Clouds",
-            "zh": "雲海",
+            "zh": "阿巴拉提亞雲海",
             "ja": "アバラシア雲海"
           },
           "normalizedName": "theseaofclouds",
@@ -613,11 +613,12 @@
       "庫爾札斯西部高地": "coerthaswesternhighlands",
       "クルザス西部高地": "coerthaswesternhighlands",
       "The Dravanian Forelands": "thedravanianforelands",
-      "龍堡參天高地": "thedravanianforelands",
+      "德拉瓦尼亞山麓地": "thedravanianforelands",
       "高地ドラヴァニア": "thedravanianforelands",
       "The Churning Mists": "thechurningmists",
-      "翻雲霧海": "thechurningmists",
-      "雲海": "theseaofclouds",
+      "德拉瓦尼亞雲海": "thechurningmists",
+      "ドラヴァニア雲海": "thechurningmists",
+      "阿巴拉提亞雲海": "theseaofclouds",
       "The Sea of Clouds": "theseaofclouds",
       "アバラシア雲海": "theseaofclouds",
       "Eastern Thanalan": "easternthanalan",

@@ -97,8 +97,8 @@ const WeatherZoneData = {
 
         // Dravania
         { id: 'idyllshire', region: 'dravania', zh: '田園郡', en: 'Idyllshire', ja: 'イディルシャイア', weatherTable: ['Clouds', 10, 'Fog', 20, 'Rain', 30, 'Showers', 40, 'Clear Skies', 70, 'Fair Skies'] },
-        { id: 'churning-mists', region: 'dravania', zh: '龍堡參天高地', en: 'The Churning Mists', ja: 'ドラヴァニア雲海', weatherTable: ['Clouds', 10, 'Gales', 20, 'Umbral Static', 40, 'Clear Skies', 70, 'Fair Skies'] },
-        { id: 'dravanian-forelands', region: 'dravania', zh: '龍堡內陸低地', en: 'The Dravanian Forelands', ja: 'ドラヴァニア前線', weatherTable: ['Clouds', 10, 'Fog', 20, 'Thunder', 30, 'Dust Storms', 40, 'Clear Skies', 70, 'Fair Skies'] },
+        { id: 'churning-mists', region: 'dravania', zh: '德拉瓦尼亞雲海', en: 'The Churning Mists', ja: 'ドラヴァニア雲海', weatherTable: ['Clouds', 10, 'Gales', 20, 'Umbral Static', 40, 'Clear Skies', 70, 'Fair Skies'] },
+        { id: 'dravanian-forelands', region: 'dravania', zh: '德拉瓦尼亞山麓地', en: 'The Dravanian Forelands', ja: 'ドラヴァニア前線', weatherTable: ['Clouds', 10, 'Fog', 20, 'Thunder', 30, 'Dust Storms', 40, 'Clear Skies', 70, 'Fair Skies'] },
         { id: 'dravanian-hinterlands', region: 'dravania', zh: '龍堡內陸', en: 'The Dravanian Hinterlands', ja: 'ドラヴァニア内地', weatherTable: ['Clouds', 10, 'Fog', 20, 'Rain', 30, 'Showers', 40, 'Clear Skies', 70, 'Fair Skies'] },
 
         // Gyr Abania
