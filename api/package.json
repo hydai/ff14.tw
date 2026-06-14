@@ -13,6 +13,9 @@
   "author": "hydai",
   "license": "MIT",
   "devDependencies": {
-    "wrangler": "^4.59.1"
+    "wrangler": "^4.100.0"
+  },
+  "overrides": {
+    "esbuild": "0.28.1"
   }
 }
