@@ -12,6 +12,9 @@
   "keywords": ["cloudflare-workers", "ff14"],
   "author": "hydai",
   "license": "MIT",
+  "engines": {
+    "node": ">=22.0.0"
+  },
   "devDependencies": {
     "wrangler": "^4.100.0"
   },
