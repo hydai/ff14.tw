@@ -445,15 +445,13 @@ class NotificationManager {
 
     /**
      * 獲取艾歐爾傑亞時間
+     * @param {number} timestamp Unix 時間戳（毫秒）
      * @returns {Object} ET時間物件
      */
-    getEorzeaTime() {
+    getEorzeaTime(timestamp = Date.now()) {
         const EORZEA_MULTIPLIER = 3600 / 175;
-        const now = Date.now();
-        const jstOffset = 9 * 60 * 60 * 1000;
-        const utcTime = now + (new Date().getTimezoneOffset() * 60 * 1000);
-        const jstTime = utcTime + jstOffset;
-        const eorzeaMilliseconds = jstTime * EORZEA_MULTIPLIER;
+        // Unix 時間戳與時區無關，不需要套用 LT 或 ST 偏移。
+        const eorzeaMilliseconds = timestamp * EORZEA_MULTIPLIER;
         const eorzeaDate = new Date(eorzeaMilliseconds);
         
         return {

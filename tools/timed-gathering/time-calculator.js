@@ -22,22 +22,15 @@ class TimeCalculator {
     }
     
     /**
-     * Calculate Eorzea Time from JST (UTC+9)
+     * Calculate Eorzea Time from a Unix timestamp
      * ET runs 20.571428571 times faster than real time
+     * @param {number} timestamp - Unix timestamp in milliseconds
      * @returns {Object} Object with hours, minutes, seconds
      */
-    getEorzeaTime() {
-        // Get current time in milliseconds
-        const now = Date.now();
-        
-        // Convert to JST (UTC+9) for server time
-        const jstOffset = 9 * 60 * 60 * 1000; // 9 hours in milliseconds
-        const utcTime = now + (new Date().getTimezoneOffset() * 60 * 1000);
-        const jstTime = utcTime + jstOffset;
-        
-        // Calculate Eorzea time
-        // ET epoch starts at Unix epoch (1970-01-01 00:00:00 UTC)
-        const eorzeaMilliseconds = jstTime * this.EORZEA_MULTIPLIER;
+    getEorzeaTime(timestamp = Date.now()) {
+        // ET epoch starts at Unix epoch (1970-01-01 00:00:00 UTC).
+        // Unix timestamps are timezone-independent, so no LT/ST offset is needed.
+        const eorzeaMilliseconds = timestamp * this.EORZEA_MULTIPLIER;
         
         // Convert to ET date
         const eorzeaDate = new Date(eorzeaMilliseconds);
