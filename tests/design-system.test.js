@@ -9,6 +9,8 @@ const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
 // 已完成遷移、必須「只讀 token」的檔案；每個任務完成後把檔案加進來
 const TOKEN_CLEAN_FILES = [
     'assets/css/tokens.css',
+    'assets/css/common.css',
+    'assets/css/components/language-switcher.css',
 ];
 
 // ---------- 小工具 ----------
