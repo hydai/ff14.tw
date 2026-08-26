@@ -11,6 +11,7 @@ const TOKEN_CLEAN_FILES = [
     'assets/css/tokens.css',
     'assets/css/common.css',
     'assets/css/components/language-switcher.css',
+    'assets/css/components/buttons.css',
 ];
 
 // ---------- 小工具 ----------
