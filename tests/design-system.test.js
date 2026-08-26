@@ -21,6 +21,7 @@ const TOKEN_CLEAN_FILES = [
     'tools/guide/style.css',
     'tools/wondrous-tails/style.css',
     'tools/mini-cactpot/style.css',
+    'tools/weather-forecast/style.css',
 ];
 
 // 這個檔案的職責就是彙整元件，允許 @import components/*.css
@@ -36,6 +37,7 @@ const MIGRATED_TOOLS = [
     'tools/guide',
     'tools/wondrous-tails',
     'tools/mini-cactpot',
+    'tools/weather-forecast',
 ];
 const LEGACY_CLASSES = ['tag-filter', 'btn-outline-primary', 'btn-outline-secondary', 'btn-outline-danger', 'tag-secondary', 'tag-light', 'tag-dark', 'tag-lg', 'tag-sm'];
 
