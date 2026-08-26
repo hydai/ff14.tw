@@ -1,541 +1,208 @@
-
-:root {
-    --cactpot-btn-grad-start: #667eea;
-    --cactpot-btn-grad-end: #764ba2;
-}
+/* ==========================================================================
+   仙人微彩計算機 — 只寫版面；顏色、圓角、字級一律來自 tokens.css 與共用元件
+   ========================================================================== */
 
 .page-header {
     text-align: center;
-    margin-bottom: 2rem;
+    margin-bottom: var(--space-7);
 }
 
-.tool-content {
-    max-width: 800px;
-    margin: 0 auto;
-}
-
+/* 棋盤：外觀由 .card 提供，這裡只補內距 */
 .cactpot-grid-container {
+    padding: var(--space-6);
+    margin-bottom: var(--space-6);
     text-align: center;
-    margin-bottom: 2rem;
-}
-
-.instruction {
-    color: var(--text-secondary);
-    margin-bottom: 1rem;
 }
 
 .extended-grid {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
-    gap: 8px;
+    gap: var(--space-2);
     max-width: 400px;
-    margin: 0 auto 1rem;
-    padding: 1rem;
-    background: var(--surface);
-    border-radius: 12px;
-    box-shadow: var(--shadow-md);
+    margin: 0 auto var(--space-4);
 }
 
+/* 九宮格：外觀與 selected / revealed 狀態由 .cell 提供 */
 .grid-cell {
     aspect-ratio: 1;
-    background: white;
-    border: 2px solid var(--border);
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5rem;
-    font-weight: bold;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    position: relative;
-    color: #333;
+    font-size: var(--text-2xl);
 }
 
+.grid-cell.cell-recommended-best {
+    border: 2px solid var(--color-primary);
+    color: var(--color-primary);
+    animation: cell-glow 2s ease-in-out infinite;
+}
+
+.cell-ev {
+    font-size: var(--text-xs);
+    font-weight: var(--weight-normal);
+    line-height: 1;
+    color: var(--color-muted);
+}
+
+.cell-recommended-best .cell-ev {
+    font-weight: var(--weight-semibold);
+    color: var(--color-primary);
+}
+
+/* 線條指示格（8 條線的期望值） */
 .expectation-cell {
     aspect-ratio: 1;
-    background: var(--background);
-    border: 2px solid var(--border);
-    border-radius: 8px;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    font-size: 1rem;
-    font-weight: bold;
-    color: var(--text-secondary);
-    flex-direction: column;
-    gap: 0.2rem;
+    gap: 2px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-full);
+    background: var(--color-surface-2);
+    color: var(--color-muted);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    transition: background-color var(--duration-base) var(--ease), border-color var(--duration-base) var(--ease), color var(--duration-base) var(--ease);
 }
 
 .expectation-cell.active {
-    background: var(--primary-light);
-    border-color: var(--primary);
-    color: var(--primary-dark);
+    border-color: var(--color-primary);
+    background: var(--color-primary-tint);
+    color: var(--color-primary);
 }
 
 .expectation-cell.best {
-    background: linear-gradient(135deg, #4caf50, #2e7d32) !important;
-    border: 3px solid #4caf50 !important;
-    color: white !important;
-    font-weight: bold;
-    animation: bestChoice 2s ease-in-out infinite alternate;
-    transform: scale(1.05);
-    z-index: 10;
-    position: relative;
+    border-color: var(--color-success);
+    background: var(--color-success);
+    color: var(--color-on-success);
+    box-shadow: 0 0 0 3px var(--color-success-tint);
 }
 
 .expectation-value {
-    font-size: 0.8rem;
-    font-weight: normal;
+    font-size: var(--text-xs);
+    font-weight: var(--weight-normal);
+    line-height: 1;
 }
 
 .expectation-cell.best .expectation-value {
-    font-size: 0.9rem;
-    font-weight: bold;
-    color: white !important;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-    animation: pulse 1.5s ease-in-out infinite;
+    font-weight: var(--weight-bold);
 }
 
 .empty-cell {
     aspect-ratio: 1;
-    background: transparent;
-    border: none;
-}
-
-.grid-cell:hover {
-    border-color: var(--primary);
-    background: var(--primary-light);
-}
-
-.grid-cell.selected {
-    background: var(--primary-light);
-    color: #333;
-    border-color: var(--primary);
-}
-
-.grid-cell.selected input {
-    color: #333;
-}
-
-.grid-cell.revealed {
-    background: var(--success-light);
-    color: #333;
-    border-color: var(--success);
-    cursor: default;
-}
-
-.grid-cell input {
-    width: 100%;
-    height: 100%;
-    border: none;
-    background: transparent;
-    text-align: center;
-    font-size: 1.5rem;
-    font-weight: bold;
-    color: #333;
-    outline: none;
 }
 
 .grid-info {
-    color: var(--text-secondary);
-    font-size: 0.9rem;
+    font-size: var(--text-sm);
+    color: var(--color-muted);
 }
 
 .controls {
-    text-align: center;
-    margin-bottom: 1rem;
     display: flex;
-    gap: 1rem;
+    flex-wrap: wrap;
     justify-content: center;
+    gap: var(--space-4);
+    margin-bottom: var(--space-6);
 }
 
+/* 結果面板：外觀由 .card 提供 */
+.cell-recommendation-info,
 .best-choice-info {
-    background: linear-gradient(135deg, var(--surface), #e8f5e8);
-    border-radius: 12px;
-    padding: 1.5rem;
-    box-shadow: var(--shadow-md), 0 0 20px rgba(76, 175, 80, 0.2);
-    text-align: center;
-    margin-top: 1rem;
-    border: 2px solid #4caf50;
-    animation: slideIn 0.5s ease-out;
+    margin-bottom: var(--space-6);
+    animation: slideIn var(--duration-slow) var(--ease);
 }
 
-.best-choice-info h3 {
-    margin-bottom: 1rem;
-    color: var(--success);
+.result-stat {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
 }
 
 .best-choice-title {
-    font-size: 1.1rem;
-    margin-bottom: 0.5rem;
-    font-weight: bold;
+    font-size: var(--text-lg);
+    font-weight: var(--weight-semibold);
+    color: var(--color-heading);
 }
 
 .best-choice-value {
-    font-size: 1.3rem;
-    color: var(--success);
-    font-weight: bold;
+    font-size: var(--text-md);
+    font-weight: var(--weight-medium);
+    color: var(--color-success-text);
+}
+
+.best-choice-value.recommend-value {
+    color: var(--color-primary);
 }
 
 .best-choice-range {
-    font-size: 0.9rem;
-    color: var(--text-secondary);
-    margin-top: 0.5rem;
-}
-
-@keyframes bestChoice {
-    0% {
-        box-shadow: 0 0 10px #4caf50, 0 0 20px #81c784;
-        transform: scale(1.05);
-    }
-    50% {
-        box-shadow: 0 0 20px #4caf50, 0 0 40px #81c784, 0 0 60px rgba(76, 175, 80, 0.3);
-        transform: scale(1.08);
-    }
-    100% {
-        box-shadow: 0 0 10px #4caf50, 0 0 20px #81c784;
-        transform: scale(1.05);
-    }
-}
-
-@keyframes pulse {
-    0%, 100% {
-        opacity: 1;
-    }
-    50% {
-        opacity: 0.7;
-    }
+    font-size: var(--text-sm);
+    color: var(--color-muted);
 }
 
 @keyframes slideIn {
-    from {
-        transform: translateY(20px);
-        opacity: 0;
-    }
-    to {
-        transform: translateY(0);
-        opacity: 1;
-    }
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: none; }
 }
 
-.lines-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1rem;
-}
-
-.line-result {
-    background: var(--background);
-    border: 2px solid var(--border);
-    border-radius: 8px;
-    padding: 1rem;
-    text-align: center;
-}
-
-.line-result.best {
-    border-color: var(--success);
-    background: var(--success-light);
-}
-
-.line-result.worst {
-    border-color: var(--danger);
-    background: var(--danger-light);
-}
-
-.line-name {
-    font-weight: bold;
-    margin-bottom: 0.5rem;
-    color: var(--text-primary);
-}
-
-.line-expected {
-    font-size: 1.2rem;
-    font-weight: bold;
-    color: var(--primary);
-    margin-bottom: 0.5rem;
-}
-
-.line-range {
-    font-size: 0.9rem;
-    color: var(--text-secondary);
-}
-
-.mgp-display {
-    display: inline-block;
-    background: var(--primary-light);
-    color: var(--primary-dark);
-    padding: 0.2rem 0.5rem;
-    border-radius: 4px;
-    font-weight: bold;
-    font-size: 0.9rem;
-}
-
-/* Cell Recommendation Styles */
-.grid-cell.cell-recommended-best {
-    border: 3px solid #f59e0b;
-    background: rgba(245, 158, 11, 0.15);
-    animation: recommendGlow 2s ease-in-out infinite alternate;
-}
-
-.cell-ev {
-    font-size: 0.7rem;
-    font-weight: normal;
-    color: var(--text-secondary);
-    line-height: 1;
-}
-
-.cell-recommended-best .cell-ev {
-    font-weight: bold;
-    color: #d97706;
-}
-
-.cell-recommendation-info {
-    background: linear-gradient(135deg, var(--surface), #fef3c7);
-    border-radius: 12px;
-    padding: 1.5rem;
-    box-shadow: var(--shadow-md), 0 0 20px rgba(245, 158, 11, 0.15);
-    text-align: center;
-    margin-bottom: 1rem;
-    border: 2px solid #f59e0b;
-    animation: slideIn 0.5s ease-out;
-}
-
-.cell-recommendation-info h3 {
-    margin-bottom: 1rem;
-    color: #d97706;
-}
-
-.recommend-value {
-    color: #d97706 !important;
-}
-
-@keyframes recommendGlow {
-    0% {
-        box-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
-    }
-    100% {
-        box-shadow: 0 0 16px rgba(245, 158, 11, 0.7), 0 0 30px rgba(245, 158, 11, 0.2);
-    }
-}
-
-@media (max-width: 768px) {
-    .extended-grid {
-        max-width: 320px;
-        gap: 6px;
-    }
-    
-    .grid-cell {
-        font-size: 1.2rem;
-    }
-    
-    .expectation-cell {
-        font-size: 0.9rem;
-    }
-    
-    .expectation-value {
-        font-size: 0.7rem;
-    }
-    
-    .controls {
-        flex-direction: column;
-        align-items: center;
-    }
-}
-
-/* Dark mode 支援 */
-[data-theme="dark"] .grid-cell {
-    background: var(--bg-secondary);
-    color: var(--text-color);
-    border-color: var(--border-color);
-}
-
-[data-theme="dark"] .grid-cell:hover:not(.revealed) {
-    background: var(--hover-bg);
-}
-
-[data-theme="dark"] .grid-cell.selected,
-[data-theme="dark"] .grid-cell.revealed {
-    color: var(--text-color);
-}
-
-[data-theme="dark"] .grid-cell input {
-    color: var(--text-color);
-    background: transparent;
-}
-
-[data-theme="dark"] .prob-item {
-    background: var(--card-bg);
-    color: var(--text-color);
-}
-
-[data-theme="dark"] .prob-list h3 {
-    color: var(--text-color);
-}
-
-[data-theme="dark"] .best-line-text {
-    color: var(--text-color);
-}
-
-/* Number Picker Popup Styles */
+/* 數字選擇對話框：外觀由 .dialog-overlay / .dialog 提供，這裡只管顯示切換與尺寸 */
 .popup-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.7);
     display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
 }
 
 .popup-overlay.visible {
     display: flex;
 }
 
-.popup-content.number-picker {
-    background: var(--surface);
-    border-radius: 16px;
-    padding: 1.5rem;
+.number-picker {
     max-width: 320px;
-    width: 90%;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-    animation: popIn 0.2s ease-out;
-}
-
-.popup-content.number-picker h3 {
-    margin: 0 0 1.25rem 0;
-    text-align: center;
-    font-size: 1.25rem;
-    color: var(--text-primary);
+    animation: popIn var(--duration-base) var(--ease);
 }
 
 .number-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-    margin-bottom: 1rem;
+    gap: var(--space-2);
 }
 
 .number-btn {
     aspect-ratio: 1;
     min-width: 60px;
-    min-height: 60px;
-    font-size: 1.5rem;
-    font-weight: bold;
-    background: linear-gradient(135deg, var(--cactpot-btn-grad-start), var(--cactpot-btn-grad-end));
-    color: white;
-    border: none;
-    border-radius: 12px;
-    cursor: pointer;
-    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, color 0.2s ease, opacity 0.2s ease;
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.number-btn:hover:not(:disabled) {
-    transform: translateY(-3px) scale(1.05);
-    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
-}
-
-.number-btn:active:not(:disabled) {
-    transform: translateY(-1px) scale(1.02);
-}
-
-.number-btn:disabled {
-    background: linear-gradient(135deg, #ccc, #999);
-    color: #666;
-    cursor: not-allowed;
-    box-shadow: none;
-    opacity: 0.6;
-}
-
-.popup-close {
-    width: 100%;
-    padding: 0.875rem;
-    background: var(--background);
-    border: 2px solid var(--border);
-    border-radius: 12px;
-    cursor: pointer;
-    transition: background 0.2s ease, color 0.2s ease;
-    font-size: 1rem;
-    font-weight: 500;
-    color: var(--text-secondary);
-}
-
-.popup-close:hover {
-    background: var(--border);
-    color: var(--text-primary);
+    font-family: inherit;
+    font-size: var(--text-2xl);
 }
 
 @keyframes popIn {
-    from {
-        opacity: 0;
-        transform: scale(0.9);
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: none; }
+}
+
+/* 響應式 */
+@media (max-width: 768px) {
+    .cactpot-grid-container {
+        padding: var(--space-4);
     }
-    to {
-        opacity: 1;
-        transform: scale(1);
+
+    .extended-grid {
+        max-width: 320px;
+        gap: 6px;
+    }
+
+    .grid-cell,
+    .number-btn {
+        font-size: var(--text-xl);
     }
 }
 
-/* Dark mode support for cell recommendations */
-[data-theme="dark"] .grid-cell.cell-recommended-best {
-    border-color: #f59e0b;
-    background: rgba(245, 158, 11, 0.2);
+@media (max-width: 480px) {
+    .controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
 }
 
-[data-theme="dark"] .cell-ev {
-    color: var(--text-secondary);
-}
-
-[data-theme="dark"] .cell-recommended-best .cell-ev {
-    color: #fbbf24;
-}
-
-[data-theme="dark"] .cell-recommendation-info {
-    background: linear-gradient(135deg, var(--bg-secondary), rgba(245, 158, 11, 0.1));
-    border-color: #b45309;
-}
-
-[data-theme="dark"] .cell-recommendation-info h3 {
-    color: #fbbf24;
-}
-
-[data-theme="dark"] .recommend-value {
-    color: #fbbf24 !important;
-}
-
-/* Dark mode support for popup */
-:root[data-theme="dark"] {
-    --cactpot-btn-grad-start: #5a6fd6;
-    --cactpot-btn-grad-end: #6b4f9a;
-}
-
-[data-theme="dark"] .popup-content.number-picker {
-    background: var(--bg-secondary);
-}
-
-[data-theme="dark"] .popup-content.number-picker h3 {
-    color: var(--text-color);
-}
-
-[data-theme="dark"] .number-btn:disabled {
-    background: linear-gradient(135deg, #444, #333);
-    color: #999;
-}
-
-[data-theme="dark"] .popup-close {
-    background: var(--bg-primary);
-    border-color: var(--border-color);
-    color: var(--text-secondary);
-}
-
-[data-theme="dark"] .popup-close:hover {
-    background: var(--border-color);
-    color: var(--text-color);
+@media (prefers-reduced-motion: reduce) {
+    .cell-recommendation-info,
+    .best-choice-info,
+    .number-picker,
+    .grid-cell.cell-recommended-best {
+        animation: none;
+    }
 }

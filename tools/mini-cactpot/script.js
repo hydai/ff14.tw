@@ -490,7 +490,7 @@ class MiniCactpotCalculator {
 
         // Create the card using SecurityUtils
         const card = SecurityUtils.createCard({
-            className: '',
+            className: 'result-stat',
             title: bestResult.name,
             titleClass: 'best-choice-title',
             value: `${FF14Utils.getI18nText('mini_cactpot_expected_value', '期望值')}：${FF14Utils.formatNumber(Math.round(bestResult.expectedValue))} MGP`,
@@ -721,7 +721,7 @@ class MiniCactpotCalculator {
         );
 
         const card = SecurityUtils.createCard({
-            className: '',
+            className: 'result-stat',
             title: posName,
             titleClass: 'best-choice-title',
             value: `${FF14Utils.getI18nText('mini_cactpot_recommend_ev', '期望 MGP')}：${FF14Utils.formatNumber(Math.round(best.ev))} MGP`,

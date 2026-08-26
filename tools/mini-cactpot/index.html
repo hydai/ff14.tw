@@ -34,33 +34,33 @@
                 <p class="description" data-i18n="mini_cactpot_desc">點選四個格子並輸入對應數字 (1-9)，期望值將自動顯示在對應位置並推薦最佳線條</p>
             </div>
 
-            <div class="tool-content">
-                <div class="cactpot-grid-container">
+            <div class="tool-content container-narrow">
+                <div class="cactpot-grid-container card">
                     <div class="extended-grid" id="extended-grid">
                         <!-- Row 1: 期望值顯示 -->
-                        <div class="expectation-cell diagonal-left" data-line="6">↘</div>
-                        <div class="expectation-cell vertical" data-line="3">↓</div>
-                        <div class="expectation-cell vertical" data-line="4">↓</div>
-                        <div class="expectation-cell vertical" data-line="5">↓</div>
-                        <div class="expectation-cell diagonal-right" data-line="7">↙</div>
-                        
+                        <div class="expectation-cell" data-line="6">↘</div>
+                        <div class="expectation-cell" data-line="3">↓</div>
+                        <div class="expectation-cell" data-line="4">↓</div>
+                        <div class="expectation-cell" data-line="5">↓</div>
+                        <div class="expectation-cell" data-line="7">↙</div>
+
                         <!-- Row 2-4: 原始九宮格與橫列期望值 -->
-                        <div class="expectation-cell horizontal" data-line="0">→</div>
-                        <div class="grid-cell" data-position="0"></div>
-                        <div class="grid-cell" data-position="1"></div>
-                        <div class="grid-cell" data-position="2"></div>
+                        <div class="expectation-cell" data-line="0">→</div>
+                        <div class="cell grid-cell" data-position="0"></div>
+                        <div class="cell grid-cell" data-position="1"></div>
+                        <div class="cell grid-cell" data-position="2"></div>
                         <div class="empty-cell"></div>
-                        
-                        <div class="expectation-cell horizontal" data-line="1">→</div>
-                        <div class="grid-cell" data-position="3"></div>
-                        <div class="grid-cell" data-position="4"></div>
-                        <div class="grid-cell" data-position="5"></div>
+
+                        <div class="expectation-cell" data-line="1">→</div>
+                        <div class="cell grid-cell" data-position="3"></div>
+                        <div class="cell grid-cell" data-position="4"></div>
+                        <div class="cell grid-cell" data-position="5"></div>
                         <div class="empty-cell"></div>
-                        
-                        <div class="expectation-cell horizontal" data-line="2">→</div>
-                        <div class="grid-cell" data-position="6"></div>
-                        <div class="grid-cell" data-position="7"></div>
-                        <div class="grid-cell" data-position="8"></div>
+
+                        <div class="expectation-cell" data-line="2">→</div>
+                        <div class="cell grid-cell" data-position="6"></div>
+                        <div class="cell grid-cell" data-position="7"></div>
+                        <div class="cell grid-cell" data-position="8"></div>
                         <div class="empty-cell"></div>
                     </div>
                     <div class="grid-info">
@@ -68,9 +68,11 @@
                     </div>
                 </div>
 
-                <div class="cell-recommendation-info" id="cell-recommendation-info" style="display: none;">
-                    <h3><span data-i18n="mini_cactpot_recommend_best_reveal">最佳揭開</span></h3>
-                    <div id="cell-recommendation-summary"></div>
+                <div class="cell-recommendation-info card" id="cell-recommendation-info" style="display: none;">
+                    <div class="card-body">
+                        <h3 class="card-title"><span data-i18n="mini_cactpot_recommend_best_reveal">最佳揭開</span></h3>
+                        <div id="cell-recommendation-summary"></div>
+                    </div>
                 </div>
 
                 <div class="controls">
@@ -82,31 +84,39 @@
                             <span class="btn-icon">↪️</span> <span data-i18n="mini_cactpot_redo">重做</span>
                         </button>
                     </div>
-                    <button class="btn btn-secondary" id="reset-btn" data-i18n="mini_cactpot_reset">重置</button>
+                    <button class="btn btn-outline" id="reset-btn" data-i18n="mini_cactpot_reset">重置</button>
                 </div>
 
-                <div class="best-choice-info" id="best-choice-info" style="display: none;">
-                    <h3>🏆 <span data-i18n="mini_cactpot_best_choice">最佳選擇</span></h3>
-                    <div id="best-line-summary"></div>
+                <div class="best-choice-info card" id="best-choice-info" style="display: none;">
+                    <div class="card-body">
+                        <h3 class="card-title">🏆 <span data-i18n="mini_cactpot_best_choice">最佳選擇</span></h3>
+                        <div id="best-line-summary"></div>
+                    </div>
                 </div>
             </div>
 
             <!-- Number Picker Popup -->
-            <div id="number-popup" class="popup-overlay">
-                <div class="popup-content number-picker" role="dialog" aria-modal="true" aria-labelledby="number-popup-title">
-                    <h3 id="number-popup-title" data-i18n="mini_cactpot_popup_title">選擇數字</h3>
-                    <div class="number-grid">
-                        <button class="number-btn" data-number="1">1</button>
-                        <button class="number-btn" data-number="2">2</button>
-                        <button class="number-btn" data-number="3">3</button>
-                        <button class="number-btn" data-number="4">4</button>
-                        <button class="number-btn" data-number="5">5</button>
-                        <button class="number-btn" data-number="6">6</button>
-                        <button class="number-btn" data-number="7">7</button>
-                        <button class="number-btn" data-number="8">8</button>
-                        <button class="number-btn" data-number="9">9</button>
+            <div id="number-popup" class="popup-overlay dialog-overlay">
+                <div class="popup-content number-picker dialog" role="dialog" aria-modal="true" aria-labelledby="number-popup-title">
+                    <div class="dialog-header">
+                        <h3 id="number-popup-title" class="dialog-title" data-i18n="mini_cactpot_popup_title">選擇數字</h3>
                     </div>
-                    <button class="popup-close" data-i18n="mini_cactpot_popup_cancel">取消</button>
+                    <div class="dialog-body">
+                        <div class="number-grid">
+                            <button class="cell number-btn" data-number="1">1</button>
+                            <button class="cell number-btn" data-number="2">2</button>
+                            <button class="cell number-btn" data-number="3">3</button>
+                            <button class="cell number-btn" data-number="4">4</button>
+                            <button class="cell number-btn" data-number="5">5</button>
+                            <button class="cell number-btn" data-number="6">6</button>
+                            <button class="cell number-btn" data-number="7">7</button>
+                            <button class="cell number-btn" data-number="8">8</button>
+                            <button class="cell number-btn" data-number="9">9</button>
+                        </div>
+                    </div>
+                    <div class="dialog-actions">
+                        <button class="btn btn-block popup-close" data-i18n="mini_cactpot_popup_cancel">取消</button>
+                    </div>
                 </div>
             </div>
         </div>
