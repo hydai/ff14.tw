@@ -58,8 +58,7 @@ class WeatherForecast {
             showMoreBtn: document.getElementById('showMoreBtn'),
 
             // Actions
-            shareBtn: document.getElementById('shareBtn'),
-            toast: document.getElementById('toast')
+            shareBtn: document.getElementById('shareBtn')
         };
 
         // Initialize
@@ -211,7 +210,7 @@ class WeatherForecast {
 
         for (let i = 0; i < 24; i++) {
             const cell = document.createElement('div');
-            cell.className = 'time-cell';
+            cell.className = 'cell time-cell';
             cell.dataset.hour = i;
             cell.setAttribute('role', 'button');
             cell.setAttribute('tabindex', '0');
@@ -415,7 +414,9 @@ class WeatherForecast {
     handleShare() {
         const url = window.location.href;
         navigator.clipboard.writeText(url).then(() => {
-            this.showToast(window.i18n ? window.i18n.getText('weather_copied') : '已複製到剪貼簿');
+            if (typeof FF14Utils !== 'undefined' && FF14Utils.showToast) {
+                FF14Utils.showToast(window.i18n ? window.i18n.getText('weather_copied') : '已複製到剪貼簿', 'success');
+            }
         });
     }
 
@@ -478,7 +479,7 @@ class WeatherForecast {
      */
     createWeatherTag(weather, info, lang) {
         const tag = document.createElement('button');
-        tag.className = 'weather-tag';
+        tag.className = 'chip weather-tag';
         tag.dataset.weather = weather;
         tag.setAttribute('aria-pressed', 'false');
 
@@ -590,7 +591,7 @@ class WeatherForecast {
             this.elements.resultsLoading.style.display = 'none';
 
             if (results.length === 0) {
-                this.elements.noResults.style.display = 'block';
+                this.elements.noResults.style.display = 'flex';
                 return;
             }
 
@@ -686,18 +687,6 @@ class WeatherForecast {
         // Clear and append
         this.elements.resultsBody.textContent = '';
         this.elements.resultsBody.appendChild(fragment);
-    }
-
-    /**
-     * Show toast notification
-     */
-    showToast(message) {
-        this.elements.toast.textContent = message;
-        this.elements.toast.classList.add('show');
-
-        setTimeout(() => {
-            this.elements.toast.classList.remove('show');
-        }, 2000);
     }
 
     /**

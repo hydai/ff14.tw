@@ -32,11 +32,11 @@
             <h1 class="visually-hidden" data-i18n="pageTitle">特殊採集時間管理器</h1>
             <!-- 時間與通知顯示區域 -->
             <div class="time-display-container">
-                <div class="time-display-card">
+                <div class="time-display-card card">
                     <div class="time-label" data-i18n="localTimeLabel">本地時間 (LT)</div>
                     <div class="time-value" id="localTimeDisplay">--:--:--</div>
                 </div>
-                <div class="time-display-card">
+                <div class="time-display-card card">
                     <div class="time-label" data-i18n="eorzeaTimeLabel">艾歐爾傑亞時間 (ET)</div>
                     <div class="time-value-wrapper">
                         <span class="time-value" id="eorzeaTimeDisplay">--:--:--</span>
@@ -44,18 +44,18 @@
                     </div>
                 </div>
                 <!-- 通知設定卡片 -->
-                <div class="time-display-card notification-card">
+                <div class="time-display-card notification-card card">
                     <div class="time-label">
                         <span class="notification-icon">🔔</span>
                         <span data-i18n="notificationLabel">採集提醒</span>
                     </div>
                     <div class="notification-compact">
-                        <label class="toggle-switch">
+                        <label class="toggle toggle-switch">
                             <input type="checkbox" id="notificationToggle">
-                            <span class="toggle-slider"></span>
+                            <span class="toggle-track"></span>
                         </label>
-                        <span class="notification-status-compact" id="notificationStatus" data-i18n="notificationDisabled">通知已停用</span>
-                        <button id="testNotificationBtn" class="btn btn-sm btn-secondary" title="測試通知" data-i18n="testNotificationButtonShort" data-i18n-attr="title">
+                        <span class="notification-status-compact tag" id="notificationStatus" data-i18n="notificationDisabled">通知已停用</span>
+                        <button id="testNotificationBtn" class="btn btn-sm btn-icon-only" title="測試通知" data-i18n="testNotificationButtonShort" data-i18n-attr="title">
                             🔔
                         </button>
                     </div>
@@ -66,7 +66,7 @@
                 <!-- 頂部工具列 -->
                 <div class="toolbar">
                     <div class="search-section">
-                        <input type="text" id="searchInput" class="form-control search-input" placeholder="搜尋採集物名稱、地點..." data-i18n="searchPlaceholder" data-i18n-attr="placeholder">
+                        <input type="text" id="searchInput" class="form-control" placeholder="搜尋採集物名稱、地點..." data-i18n="searchPlaceholder" data-i18n-attr="placeholder">
                         <button id="clearSearchBtn" class="btn btn-secondary btn-sm" data-i18n="clearButton">清除</button>
                     </div>
                     <div class="toolbar-actions">
@@ -87,13 +87,13 @@
                     <div class="filter-group">
                         <label class="filter-label" data-i18n="filterType">類型：</label>
                         <div class="filter-tags" id="typeFilters">
-                            <button class="tag tag-filter" data-type="mining" data-i18n-html="typeMining">
+                            <button class="chip" data-type="mining" data-i18n-html="typeMining">
                                 <span class="tag-icon">⛏️</span> 採礦
                             </button>
-                            <button class="tag tag-filter" data-type="botany" data-i18n-html="typeBotany">
+                            <button class="chip" data-type="botany" data-i18n-html="typeBotany">
                                 <span class="tag-icon">🌿</span> 園藝
                             </button>
-                            <button class="tag tag-filter" data-type="fishing" data-i18n-html="typeFishing">
+                            <button class="chip" data-type="fishing" data-i18n-html="typeFishing">
                                 <span class="tag-icon">🎣</span> 釣魚
                             </button>
                         </div>
@@ -101,10 +101,10 @@
                     <div class="filter-group">
                         <label class="filter-label" data-i18n="filterVersion">版本：</label>
                         <div class="filter-tags" id="expansionFilters">
-                            <button class="tag tag-filter" data-expansion="7.0">v7.0</button>
-                            <button class="tag tag-filter" data-expansion="7.1">v7.1</button>
-                            <button class="tag tag-filter" data-expansion="7.2">v7.2</button>
-                            <button class="tag tag-filter" data-expansion="7.3">v7.3</button>
+                            <button class="chip" data-expansion="7.0">v7.0</button>
+                            <button class="chip" data-expansion="7.1">v7.1</button>
+                            <button class="chip" data-expansion="7.2">v7.2</button>
+                            <button class="chip" data-expansion="7.3">v7.3</button>
                         </div>
                     </div>
                 </div>
@@ -112,7 +112,7 @@
                 <!-- 主要內容區 -->
                 <div class="main-content">
                     <!-- 左側：採集物列表 -->
-                    <div class="items-panel">
+                    <div class="items-panel card">
                         <div class="panel-header">
                             <h2 data-i18n="itemsListTitle">採集物列表</h2>
                             <span class="item-count" id="itemCount">載入中...</span>
@@ -132,10 +132,10 @@
                     </div>
 
                     <!-- 右側：清單管理 -->
-                    <div class="lists-panel">
+                    <div class="lists-panel card">
                         <!-- 清單標籤頁 -->
-                        <div class="list-tabs" id="listTabs">
-                            <button class="list-tab active" data-list-id="default" data-i18n="defaultListName">預設清單</button>
+                        <div class="tabs list-tabs" id="listTabs">
+                            <button class="tab list-tab active" data-list-id="default" data-i18n="defaultListName">預設清單</button>
                         </div>
 
                         <!-- 清單內容 -->
@@ -194,13 +194,13 @@
     <div id="dialogOverlay" class="dialog-overlay">
         <div class="dialog">
             <div class="dialog-header">
-                <h3 id="dialogTitle" data-i18n="dialogTitle">對話框標題</h3>
-                <button class="dialog-close" id="dialogClose">&times;</button>
+                <h3 class="dialog-title" id="dialogTitle" data-i18n="dialogTitle">對話框標題</h3>
+                <button class="btn btn-close" id="dialogClose" aria-label="關閉">&times;</button>
             </div>
             <div class="dialog-body" id="dialogBody">
                 <!-- 動態內容 -->
             </div>
-            <div class="dialog-footer">
+            <div class="dialog-actions">
                 <button id="dialogCancel" class="btn btn-secondary" data-i18n="cancelButton">取消</button>
                 <button id="dialogConfirm" class="btn btn-primary" data-i18n="confirmButton">確認</button>
             </div>

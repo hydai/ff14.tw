@@ -34,7 +34,7 @@ class WondrousTailsCalculator {
         
         for (let i = 0; i < 16; i++) {
             const cell = document.createElement('div');
-            cell.className = 'grid-cell';
+            cell.className = 'cell grid-cell';
             cell.dataset.position = i;
             this.elements.grid.appendChild(cell);
         }

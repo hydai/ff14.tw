@@ -188,7 +188,7 @@ The project includes a modular CSS component system in `/assets/css/components/`
 
 ### Design Tokens (`assets/css/tokens.css`)
 全站唯一的顏色、字級、間距、圓角、陰影來源；深色模式只在 `[data-theme="dark"]` 重新指定顏色類 token。**規則：**
-- 工具的 `style.css` 只寫版面（grid / flex / 間距），不得出現任何色碼（`#hex`、`rgb()`、`white`）、不得引用 `tokens.css` 未定義的 `var(--…)`、不得 `@import`、不得 `!important`；遷移完成的檔案列在 `tests/design-system.test.js` 的 `TOKEN_CLEAN_FILES`。
+- 工具的 `style.css` 只寫版面（grid / flex / 間距），不得出現任何色碼（`#hex`、`rgb()`、`white`）、不得引用 `tokens.css` 未定義的 `var(--…)`、不得 `@import`、不得 `!important`；遷移完成的檔案列在 `tests/design-system.test.js` 的 `TOKEN_CLEAN_FILES`。已遷移的工具目錄同時列在 `MIGRATED_TOOLS`，其 HTML／JS 不得再使用 `tag-filter`、`btn-outline-*`、`tag-secondary`、`tag-light`、`tag-dark`、`tag-sm`、`tag-lg` 這些舊名稱。
 - 顏色：`--color-primary`（互動色）、`--color-bg` / `--color-surface` / `--color-surface-2`、`--color-border` / `--color-border-strong`、`--color-heading` / `--color-text` / `--color-muted`、語意色 `--color-{success,warning,danger,info}` 及其 `-tint` / `-text` / `-border`，實心底上的字用 `--color-on-{primary,success,warning,danger,info,muted}`。
 - 字級 9 階 `--text-xs` … `--text-5xl`；間距 `--space-1` … `--space-10`（4px 基底）；圓角 `--radius-{sm,md,lg,xl,full}`；陰影 `--shadow-{sm,md,lg,xl}`；控制項高度 `--control-{sm,md,lg}` = 32 / 40 / 48；動態 `--duration-{fast,base,slow}` + `--ease`。
 - `common.css` 頂部的 `--primary-color`、`--text-color` 等舊名稱只是過渡期的相容別名，新程式碼不要使用。
@@ -396,6 +396,57 @@ The project includes a modular CSS component system in `/assets/css/components/`
 <span class="badge">99+</span>
 ```
 
+#### 8. Tabs / Toggle / Progress / Cell / Table / Empty State / Dialog (`tools-common.css`)
+```html
+<!-- 頁籤 -->
+<div class="tabs">
+    <button class="tab active">預設清單</button>
+    <button class="tab">週任務</button>
+</div>
+
+<!-- 開關（勾選狀態由 :checked 驅動） -->
+<label class="toggle">
+    <input type="checkbox">
+    <span class="toggle-track"></span>
+    採集提醒
+</label>
+
+<!-- 進度條 -->
+<div class="progress"><div class="progress-bar" style="width: 35%"></div></div>
+
+<!-- 互動格子（計算型工具的棋盤；尺寸由工具的 grid 決定） -->
+<div class="cell">7</div>
+<div class="cell selected">?</div>
+<div class="cell best"><span class="cell-label">最佳揭開</span>1,612</div>
+
+<!-- 表格 -->
+<div class="table-wrap">
+    <table class="table">…</table>
+</div>
+
+<!-- 空狀態 -->
+<div class="empty-state">
+    <div class="empty-state-icon">🗺️</div>
+    <div class="empty-state-title">找不到符合條件的副本</div>
+    <div class="empty-state-text">試試放寬篩選條件</div>
+</div>
+
+<!-- 對話框（顯示／隱藏由工具自己的 class 切換，例如 .dialog-overlay.active） -->
+<div class="dialog-overlay">
+    <div class="dialog" role="dialog" aria-modal="true">
+        <div class="dialog-header">
+            <h3 class="dialog-title">選擇數字</h3>
+            <button class="btn btn-close" aria-label="關閉">×</button>
+        </div>
+        <div class="dialog-body">…</div>
+        <div class="dialog-actions">
+            <button class="btn btn-secondary">取消</button>
+            <button class="btn btn-primary">確認</button>
+        </div>
+    </div>
+</div>
+```
+
 ### Component Usage Guidelines
 
 1. **Always check for existing components** before creating custom styles
@@ -405,7 +456,7 @@ The project includes a modular CSS component system in `/assets/css/components/`
 5. **Maintain consistency** - if a component doesn't meet your needs, consider updating the shared component instead of creating a one-off solution
 
 ### Dark Mode Support
-All components support Dark Mode automatically: `assets/css/tokens.css` redefines every colour token under `[data-theme="dark"]`, and components contain no dark rules of their own（`tests/design-system.test.js` 會擋下元件與已遷移工具內的 `[data-theme=` 規則）。需要調整深色外觀時改 token，不要在元件或工具加 `[data-theme="dark"]` 覆寫。
+All components support Dark Mode automatically: `assets/css/tokens.css` redefines every colour token under `[data-theme="dark"]`, and components contain no dark rules of their own（`tests/design-system.test.js` 會擋下元件與已遷移工具內的 `[data-theme=` 規則）。需要調整深色外觀時改 token，不要在元件或工具加 `[data-theme="dark"]` 覆寫。`dark-mode-tools.css` 只剩未遷移工具（寶圖搜尋器、Lodestone 角色查詢、宗長計算機、角色卡產生器）在用，Plan 3 整檔刪除。
 
 ### Responsive Design
 Components include responsive breakpoints:

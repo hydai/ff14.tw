@@ -19,6 +19,11 @@ const TOKEN_CLEAN_FILES = [
     'tools/macro-converter/style.css',
     'tools/report-generator/style.css',
     'tools/guide/style.css',
+    'tools/wondrous-tails/style.css',
+    'tools/mini-cactpot/style.css',
+    'tools/weather-forecast/style.css',
+    'tools/timed-gathering/style.css',
+    'tools/dungeon-database/style.css',
 ];
 
 // 這個檔案的職責就是彙整元件，允許 @import components/*.css
@@ -26,6 +31,19 @@ const IMPORT_ALLOWED = new Set(['assets/css/tools-common.css']);
 
 // 元件與已遷移的工具不得自帶 dark 規則；只有 tokens.css（定義）與 common.css（.hero 過渡覆寫）例外
 const DARK_RULES_ALLOWED = new Set(['assets/css/tokens.css', 'assets/css/common.css']);
+
+// 已遷移的工具目錄：HTML / JS 不得再使用共用元件的舊名稱（Plan 3 會刪除這些別名）
+const MIGRATED_TOOLS = [
+    'tools/macro-converter',
+    'tools/report-generator',
+    'tools/guide',
+    'tools/wondrous-tails',
+    'tools/mini-cactpot',
+    'tools/weather-forecast',
+    'tools/timed-gathering',
+    'tools/dungeon-database',
+];
+const LEGACY_CLASSES = ['tag-filter', 'btn-outline-primary', 'btn-outline-secondary', 'btn-outline-danger', 'tag-secondary', 'tag-light', 'tag-dark', 'tag-lg', 'tag-sm'];
 
 // ---------- 小工具 ----------
 function stripComments(css) {
@@ -45,6 +63,18 @@ function definitions(cssBlock) {
 }
 function usedVars(css) {
     return [...css.matchAll(/var\(\s*(--[a-z0-9-]+)/g)].map((m) => m[1]);
+}
+function escapeRegExp(text) {
+    // 把 class 名稱／選擇器放進 RegExp 前，跳脫所有正規表示式的特殊字元
+    return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+function listFiles(dir, exts, out = []) {
+    for (const entry of fs.readdirSync(path.join(ROOT, dir), { withFileTypes: true })) {
+        const rel = path.join(dir, entry.name);
+        if (entry.isDirectory()) listFiles(rel, exts, out);
+        else if (exts.some((ext) => entry.name.endsWith(ext))) out.push(rel);
+    }
+    return out;
 }
 function hasColorLiteral(value) {
     return /#[0-9a-f]{3,8}\b|rgba?\(|hsla?\(/i.test(value);
@@ -116,5 +146,35 @@ test('token-clean 檔案只讀 tokens.css、沒有色碼、沒有 @import、沒�
             if (!DARK_RULES_ALLOWED.has(file)) assert.doesNotMatch(css, /\[data-theme=/, `${file} 不得自帶 [data-theme] 規則`);
             assert.doesNotMatch(css, /!important/, `${file} 不得使用 !important`);
         }
+    }
+});
+
+test('tools-common.css 含有畫布定義的共用元件', () => {
+    const css = stripComments(read('assets/css/tools-common.css'));
+    const selectors = ['.tabs', '.tab', '.toggle', '.toggle-track', '.progress', '.progress-bar', '.cell', '.cell.best', '.table', '.table-wrap', '.empty-state', '.dialog-overlay', '.dialog', '.dialog-actions'];
+    for (const selector of selectors) {
+        const re = new RegExp(`(^|[\\s,])${escapeRegExp(selector)}\\s*[,{]`, 'm');
+        assert.ok(re.test(css), `tools-common.css 缺少 ${selector}`);
+    }
+});
+
+test('已遷移的工具不得再使用共用元件的舊 class 名稱', () => {
+    for (const dir of MIGRATED_TOOLS) {
+        for (const file of listFiles(dir, ['.html', '.js'])) {
+            const text = read(file);
+            for (const cls of LEGACY_CLASSES) {
+                const re = new RegExp(`(?<![\\w-])${escapeRegExp(cls)}(?![\\w-])`);
+                assert.doesNotMatch(text, re, `${file} 使用了舊 class ${cls}`);
+            }
+        }
+    }
+});
+
+test('dark-mode-tools.css 不得覆寫共用元件', () => {
+    const css = stripComments(read('assets/css/dark-mode-tools.css'));
+    const shared = ['cell', 'progress', 'progress-bar', 'tabs', 'tab', 'toggle', 'toggle-track', 'table', 'table-wrap', 'dialog', 'dialog-overlay', 'empty-state', 'chip', 'card', 'tag', 'btn', 'toast'];
+    for (const name of shared) {
+        const re = new RegExp(`\\.${escapeRegExp(name)}(?![\\w-])`);
+        assert.doesNotMatch(css, re, `dark-mode-tools.css 覆寫了共用元件 .${name}`);
     }
 });

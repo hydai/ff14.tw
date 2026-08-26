@@ -129,12 +129,322 @@
     color: var(--color-on-info);
 }
 
+/* ==========================================================================
+   頁籤、開關、進度條、互動格子、表格、空狀態、對話框
+   規格：設計系統畫布「元件 05 訊息與狀態」與「元件 08 頁籤、開關、進度與互動格子」
+   ========================================================================== */
+
+/* 頁籤（<div class="tabs"><button class="tab active">…</button>…</div>） */
+.tabs {
+    display: flex;
+    gap: var(--space-1);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.tab {
+    height: var(--control-md);
+    padding: 0 var(--space-4);
+    margin-bottom: -1px;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+    background: transparent;
+    color: var(--color-muted);
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    line-height: 1;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: color var(--duration-base) var(--ease), border-color var(--duration-base) var(--ease);
+}
+
+.tab:hover {
+    color: var(--color-primary);
+}
+
+.tab:focus-visible {
+    outline: none;
+    box-shadow: var(--ring-primary);
+}
+
+.tab.active {
+    color: var(--color-primary);
+    border-bottom-color: var(--color-primary);
+    font-weight: var(--weight-semibold);
+}
+
+/* 開關（<label class="toggle"><input type="checkbox"><span class="toggle-track"></span>文字</label>） */
+.toggle {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: var(--text-sm);
+    color: var(--color-text);
+    cursor: pointer;
+}
+
+.toggle input {
+    position: absolute;
+    width: 0;
+    height: 0;
+    opacity: 0;
+}
+
+.toggle-track {
+    position: relative;
+    flex-shrink: 0;
+    width: 44px;
+    height: 24px;
+    border-radius: var(--radius-full);
+    background: var(--color-border-strong);
+    transition: background-color var(--duration-base) var(--ease);
+}
+
+.toggle-track::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    border-radius: var(--radius-full);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-sm);
+    transition: transform var(--duration-base) var(--ease);
+}
+
+.toggle input:checked + .toggle-track {
+    background: var(--color-primary);
+}
+
+.toggle input:checked + .toggle-track::after {
+    transform: translateX(20px);
+}
+
+.toggle input:focus-visible + .toggle-track {
+    box-shadow: var(--ring-primary);
+}
+
+.toggle input:disabled + .toggle-track {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+/* 進度條（<div class="progress"><div class="progress-bar" style="width: 35%"></div></div>） */
+.progress {
+    height: 8px;
+    border-radius: var(--radius-full);
+    background: var(--color-border);
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    border-radius: var(--radius-full);
+    background: var(--color-primary);
+    transition: width var(--duration-slow) var(--ease);
+}
+
+/* 互動格子（計算型工具的棋盤格；尺寸由工具的 grid 決定） */
+.cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    color: var(--color-text);
+    font-weight: var(--weight-bold);
+    cursor: pointer;
+    user-select: none;
+    transition: background-color var(--duration-base) var(--ease), border-color var(--duration-base) var(--ease), color var(--duration-base) var(--ease), box-shadow var(--duration-base) var(--ease);
+}
+
+.cell:hover {
+    border-color: var(--color-primary);
+    background: var(--color-primary-tint);
+}
+
+.cell:focus-visible {
+    outline: none;
+    box-shadow: var(--ring-primary);
+}
+
+.cell.selected,
+.cell.revealed {
+    border: 2px solid var(--color-primary);
+    background: var(--color-primary-tint);
+    color: var(--color-primary);
+}
+
+.cell.best {
+    border: 2px solid var(--color-primary);
+    color: var(--color-primary);
+    animation: cell-glow 2s ease-in-out infinite;
+}
+
+.cell.disabled,
+.cell:disabled {
+    background: var(--color-surface-2);
+    color: var(--color-muted);
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.cell-label {
+    font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
+    letter-spacing: 0.04em;
+    color: var(--color-muted);
+}
+
+@keyframes cell-glow {
+    0%, 100% { box-shadow: var(--glow-primary); }
+    50% { box-shadow: var(--glow-primary-strong); }
+}
+
+/* 表格（<div class="table-wrap"><table class="table">…</table></div>） */
+.table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--text-sm);
+}
+
+.table th {
+    padding: 10px var(--space-4);
+    text-align: left;
+    font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
+    letter-spacing: 0.04em;
+    color: var(--color-heading);
+    background: var(--color-surface-2);
+    border-bottom: 1px solid var(--color-border);
+    white-space: nowrap;
+}
+
+.table td {
+    padding: 10px var(--space-4);
+    color: var(--color-text);
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+    vertical-align: middle;
+}
+
+.table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.table tbody tr:hover td {
+    background: var(--color-surface-2);
+}
+
+/* 空狀態（可選的 .empty-state-icon 放 emoji） */
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-6) var(--space-7);
+    border: 1px dashed var(--color-border-strong);
+    border-radius: var(--radius-lg);
+    text-align: center;
+    color: var(--color-muted);
+}
+
+.empty-state-icon {
+    font-size: var(--text-4xl);
+    line-height: 1;
+}
+
+.empty-state-title {
+    font-size: var(--text-md);
+    font-weight: var(--weight-semibold);
+    color: var(--color-heading);
+}
+
+.empty-state-text {
+    font-size: var(--text-sm);
+}
+
+/* 對話框（<div class="dialog-overlay"><div class="dialog" role="dialog">…</div></div>） */
+.dialog-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-overlay);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-4);
+    background: var(--color-overlay);
+}
+
+.dialog {
+    width: 100%;
+    max-width: 480px;
+    max-height: calc(100vh - var(--space-8));
+    overflow: auto;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xl);
+}
+
+.dialog-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    padding: var(--space-4) var(--space-5);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.dialog-title {
+    margin: 0;
+    font-size: var(--text-lg);
+    font-weight: var(--weight-semibold);
+    color: var(--color-heading);
+}
+
+.dialog-body {
+    padding: var(--space-5);
+}
+
+.dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-5);
+    border-top: 1px solid var(--color-border);
+    background: var(--color-surface-2);
+}
+
 @media (prefers-reduced-motion: reduce) {
     .loading-spinner {
         animation-duration: 1.6s;
     }
 
-    .toast {
+    .toast,
+    .tab,
+    .toggle-track,
+    .toggle-track::after,
+    .progress-bar,
+    .cell {
         transition: none;
+    }
+
+    .cell.best {
+        animation: none;
+        box-shadow: var(--glow-primary);
     }
 }

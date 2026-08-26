@@ -154,73 +154,27 @@ class NotificationManager {
             const timeLabel = FF14Utils.getI18nText('visualNotificationTime', '時間');
             const locationLabel = FF14Utils.getI18nText('visualNotificationLocation', '地點');
 
-            // 創建頁面內通知元素
+            // 頁面內提醒：使用共用的 .toast（右上角），保留 8 秒自動關閉與點擊關閉
             const notification = document.createElement('div');
-            notification.className = 'gathering-alert';
-            notification.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                background: linear-gradient(135deg, #4CAF50, #45a049);
-                color: white;
-                padding: 15px 20px;
-                border-radius: 8px;
-                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-                z-index: 10000;
-                max-width: 350px;
-                animation: slideIn 0.3s ease-out;
-                cursor: pointer;
-            `;
+            notification.className = 'toast toast-success gathering-alert';
+            notification.setAttribute('role', 'status');
+            notification.textContent = `${visualTitle}\n${visualBody}\n${timeLabel}: ${item.time} | ${locationLabel}: ${zone}`;
 
-            const title = document.createElement('div');
-            title.style.cssText = 'font-weight: bold; margin-bottom: 5px; font-size: 16px;';
-            title.textContent = visualTitle;
-
-            const body = document.createElement('div');
-            body.style.cssText = 'font-size: 14px;';
-            body.textContent = visualBody;
-            
-            const time = document.createElement('div');
-            time.style.cssText = 'font-size: 12px; margin-top: 5px; opacity: 0.9;';
-            time.textContent = `${timeLabel}: ${item.time} | ${locationLabel}: ${zone}`;
-            
-            notification.appendChild(title);
-            notification.appendChild(body);
-            notification.appendChild(time);
-            
-            // 點擊關閉
-            notification.onclick = () => {
-                notification.style.animation = 'slideOut 0.3s ease-in';
+            const dismiss = () => {
+                if (!notification.parentNode) return;
+                notification.classList.remove('show');
                 setTimeout(() => notification.remove(), 300);
             };
-            
+
+            notification.addEventListener('click', dismiss);
             document.body.appendChild(notification);
-            
-            // 自動移除
-            setTimeout(() => {
-                if (notification.parentNode) {
-                    notification.style.animation = 'slideOut 0.3s ease-in';
-                    setTimeout(() => notification.remove(), 300);
-                }
-            }, 8000);
-            
-            // 添加動畫樣式
-            if (!document.getElementById('gathering-alert-styles')) {
-                const style = document.createElement('style');
-                style.id = 'gathering-alert-styles';
-                style.textContent = `
-                    @keyframes slideIn {
-                        from { transform: translateX(400px); opacity: 0; }
-                        to { transform: translateX(0); opacity: 1; }
-                    }
-                    @keyframes slideOut {
-                        from { transform: translateX(0); opacity: 1; }
-                        to { transform: translateX(400px); opacity: 0; }
-                    }
-                `;
-                document.head.appendChild(style);
-            }
-            
+            // 背景分頁會暫停 requestAnimationFrame：8 秒倒數要等真的顯示後才開始，
+            // 否則使用者切回來時提醒可能已被移除
+            requestAnimationFrame(() => {
+                notification.classList.add('show');
+                setTimeout(dismiss, 8000);
+            });
+
             NotificationManager.log('success', '📢 頁面視覺通知已顯示');
         } catch (error) {
             NotificationManager.log('error', '顯示視覺通知失敗', error);

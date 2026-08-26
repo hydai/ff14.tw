@@ -32,7 +32,7 @@
             <h1 class="visually-hidden" data-i18n="weather_header">天氣預報</h1>
 
             <!-- 目前時間顯示 -->
-            <div class="current-time-bar">
+            <div class="current-time-bar card">
                 <div class="time-display">
                     <span class="time-label" data-i18n="weather_current_et">目前 ET</span>
                     <span class="time-value" id="currentET">--:--</span>
@@ -43,9 +43,9 @@
                 </div>
             </div>
 
-            <div class="tool-container weather-tool">
+            <div class="weather-tool">
                 <!-- 左側：地區選擇 -->
-                <aside class="zone-selector-panel">
+                <aside class="zone-selector-panel card">
                     <h2 class="panel-title" data-i18n="weather_select_zone">選擇地區</h2>
                     <div class="zone-list" id="zoneList">
                         <!-- 區域和地區按鈕將由 JavaScript 動態生成 -->
@@ -53,11 +53,11 @@
                 </aside>
 
                 <!-- 右側：主要內容區 -->
-                <div class="main-content-panel">
+                <div class="main-content-panel card">
                     <!-- 沒有選擇地區時的提示 -->
-                    <div class="no-zone-selected" id="noZoneSelected">
-                        <div class="hint-icon">🗺️</div>
-                        <p data-i18n="weather_select_zone_hint">點擊地區按鈕開始查看天氣</p>
+                    <div class="no-zone-selected empty-state" id="noZoneSelected">
+                        <div class="empty-state-icon" aria-hidden="true">🗺️</div>
+                        <p class="empty-state-text" data-i18n="weather_select_zone_hint">點擊地區按鈕開始查看天氣</p>
                     </div>
 
                     <!-- 選擇地區後的內容 -->
@@ -75,28 +75,28 @@
                         <div class="filter-panel">
                             <div class="filter-header">
                                 <h3 data-i18n="weather_filter_title">過濾條件</h3>
-                                <button class="btn btn-sm btn-outline-secondary" id="clearFiltersBtn" data-i18n="weather_clear_filters">清除過濾</button>
+                                <button class="btn btn-sm btn-outline" id="clearFiltersBtn" data-i18n="weather_clear_filters">清除過濾</button>
                             </div>
 
                             <!-- 目標天氣過濾 -->
-                            <div class="filter-group">
-                                <label data-i18n="weather_desired_weather">目標天氣</label>
-                                <div class="weather-tags" id="desiredWeatherTags">
+                            <div class="form-group">
+                                <label class="form-label" data-i18n="weather_desired_weather">目標天氣</label>
+                                <div class="weather-tags chip-group" id="desiredWeatherTags">
                                     <!-- 天氣標籤將由 JavaScript 動態生成 -->
                                 </div>
                             </div>
 
                             <!-- 前置天氣過濾 -->
-                            <div class="filter-group">
-                                <label data-i18n="weather_previous_weather">前置天氣</label>
-                                <div class="weather-tags" id="previousWeatherTags">
+                            <div class="form-group">
+                                <label class="form-label" data-i18n="weather_previous_weather">前置天氣</label>
+                                <div class="weather-tags chip-group" id="previousWeatherTags">
                                     <!-- 天氣標籤將由 JavaScript 動態生成 -->
                                 </div>
                             </div>
 
                             <!-- 時間範圍過濾 -->
-                            <div class="filter-group">
-                                <label data-i18n="weather_time_range">艾歐澤亞時間範圍</label>
+                            <div class="form-group">
+                                <label class="form-label" data-i18n="weather_time_range">艾歐澤亞時間範圍</label>
                                 <div class="time-range-selector">
                                     <div class="time-grid" id="timeGrid">
                                         <!-- 24 個時間格子將由 JavaScript 動態生成 -->
@@ -119,8 +119,8 @@
                             </div>
 
                             <!-- 結果表格 -->
-                            <div class="results-table-container" id="resultsContainer">
-                                <table class="results-table" id="resultsTable">
+                            <div class="results-table-container table-wrap" id="resultsContainer">
+                                <table class="table results-table" id="resultsTable">
                                     <thead>
                                         <tr>
                                             <th data-i18n="weather_col_local_time">本地時間</th>
@@ -136,8 +136,8 @@
                             </div>
 
                             <!-- 無結果 -->
-                            <div class="no-results" id="noResults" style="display: none;">
-                                <p data-i18n="weather_no_results">沒有符合條件的結果</p>
+                            <div class="no-results empty-state" id="noResults" style="display: none;">
+                                <p class="empty-state-text" data-i18n="weather_no_results">沒有符合條件的結果</p>
                             </div>
 
                             <!-- 顯示更多按鈕 -->
@@ -150,9 +150,6 @@
     </main>
 
     <div id="footer-placeholder" data-base-path="../../"></div>
-
-    <!-- Toast 通知 -->
-    <div class="toast" id="toast"></div>
 
     <script src="../../assets/js/i18n/i18n-manager.js"></script>
     <script src="../../assets/js/i18n/translations/common.js"></script>
