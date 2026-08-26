@@ -54,7 +54,7 @@ class UIDialogManager {
             panel: document.getElementById('routePanel'),
             summary: document.getElementById('routeSummary'),
             steps: document.getElementById('routeSteps'),
-            closeBtn: document.getElementById('closeRoutePanel')
+            closeBtn: document.getElementById('closeRoutePanelBtn')
         };
 
         // 格式設定面板元素
