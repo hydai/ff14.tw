@@ -18,6 +18,7 @@ const TOKEN_CLEAN_FILES = [
     'assets/css/tools-common.css',
     'tools/macro-converter/style.css',
     'tools/report-generator/style.css',
+    'tools/guide/style.css',
 ];
 
 // 這個檔案的職責就是彙整元件，允許 @import components/*.css
