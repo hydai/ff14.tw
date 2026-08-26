@@ -1,11 +1,5 @@
 /* FF14.tw 工具頁面 Dark Mode 樣式調整 */
 
-/* 角色卡產生器的選取按鈕（Plan 3 遷移後刪除） */
-[data-theme="dark"] .selection-btn.selected {
-    background-color: var(--primary-color) !important;
-    color: white !important;
-}
-
 /* Loading spinner */
 [data-theme="dark"] .loading-spinner {
     border-color: var(--border-color);
@@ -57,25 +51,6 @@
 [data-theme="dark"] .stat-item {
     background-color: var(--bg-color);
     border-color: var(--border-color);
-}
-
-/* 角色卡片特殊調整 */
-[data-theme="dark"] .card-preview {
-    background-color: var(--bg-secondary);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-}
-
-[data-theme="dark"] .color-input-wrapper {
-    background-color: var(--bg-color);
-}
-
-[data-theme="dark"] .template-option {
-    background-color: var(--bg-secondary);
-    border-color: var(--border-color);
-}
-
-[data-theme="dark"] .template-option:hover {
-    border-color: var(--primary-color);
 }
 
 /* 寶圖搜尋器 */

@@ -1,859 +1,228 @@
-/* Optimized font loading - only weights actually used in design */
-@import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@600&family=DM+Sans:wght@400;500;600;700&family=Cinzel:wght@600;900&display=swap');
+/* ==========================================================================
+   角色卡產生器 — 頁面外殼只寫版面；顏色、圓角、字級一律來自 tokens.css 與共用元件
+   卡片成品（.preview-section 與 .character-card 家族）在 card-templates.css：
+   那是使用者自訂的成品，不隨站台主題變色，也不受 token 規則約束
+   ========================================================================== */
 
-/*
- * Character Card Generator - Luxury Editorial Design
- * Inspired by high-end gaming magazines and collector's edition art books
- */
-
-:root {
-    --editorial-primary: #1a1a2e;
-    --editorial-secondary: #16213e;
-    --editorial-accent: #c9a961;
-    --editorial-gold: #d4af37;
-    --editorial-silver: #c0c0c0;
-    --editorial-text: #f5f5f5;
-    --editorial-muted: #a8a8a8;
-    --editorial-border: rgba(201, 169, 97, 0.2);
-    --editorial-glow: rgba(212, 175, 55, 0.4);
-
-    /* Light theme colors */
-    --light-bg: #ffffff;
-    --light-bg-secondary: #f8f9fa;
-    --border-light: #e0e0e0;
-    --dark-bg: #0f0f1e;
-
-    /* Animation easing */
-    --ease-quint: cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-* {
-    box-sizing: border-box;
-}
-
-/* Layout Container */
 .tool-container {
     display: grid;
     grid-template-columns: 1fr;
-    gap: 4rem;
-    margin-top: 3rem;
+    gap: var(--space-9);
     max-width: 1400px;
-    margin-left: auto;
-    margin-right: auto;
+    margin: var(--space-9) auto 0;
 }
 
-/* Preview Section - Dramatic Presentation */
-.preview-section {
-    position: relative;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background: linear-gradient(135deg, var(--dark-bg) 0%, var(--editorial-primary) 50%, var(--dark-bg) 100%);
-    padding: 5rem 3rem;
-    border-radius: 16px;
-    overflow: visible;
-    box-shadow:
-        0 20px 60px rgba(0, 0, 0, 0.6),
-        inset 0 1px 0 rgba(255, 255, 255, 0.05);
-}
-
-.preview-section::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background:
-        radial-gradient(circle at 20% 50%, rgba(201, 169, 97, 0.03) 0%, transparent 50%),
-        radial-gradient(circle at 80% 50%, rgba(201, 169, 97, 0.03) 0%, transparent 50%);
-    pointer-events: none;
-}
-
-/* Character Card - Premium Design */
-.character-card {
-    position: relative;
-    background: linear-gradient(135deg, var(--editorial-primary) 0%, var(--editorial-secondary) 100%);
-    border-radius: 20px;
-    overflow: hidden;
-    color: var(--editorial-text);
-    font-family: 'Crimson Pro', serif;
-    box-shadow:
-        0 30px 80px rgba(0, 0, 0, 0.8),
-        0 0 0 1px rgba(201, 169, 97, 0.3),
-        inset 0 1px 0 rgba(255, 255, 255, 0.05);
-    transition: transform 0.6s var(--ease-quint), box-shadow 0.6s var(--ease-quint);
-    cursor: default;
-}
-
-.character-card::before {
-    content: '';
-    position: absolute;
-    top: -2px;
-    left: -2px;
-    right: -2px;
-    bottom: -2px;
-    background: linear-gradient(
-        135deg,
-        var(--editorial-gold) 0%,
-        var(--editorial-accent) 25%,
-        transparent 50%,
-        var(--editorial-accent) 75%,
-        var(--editorial-gold) 100%
-    );
-    opacity: 0;
-    border-radius: 20px;
-    z-index: -1;
-    transition: opacity 0.6s var(--ease-quint);
-}
-
-.character-card:hover::before {
-    opacity: 0.3;
-}
-
-.character-card:hover {
-    transform: translateY(-8px) scale(1.01);
-    box-shadow:
-        0 40px 100px rgba(0, 0, 0, 0.9),
-        0 0 0 1px var(--editorial-accent),
-        inset 0 1px 0 rgba(255, 255, 255, 0.1),
-        0 0 60px var(--editorial-glow);
-}
-
-/* Card Dimensions */
-.character-card.layout-horizontal {
-    width: 800px;
-    height: 600px;
-}
-
-.character-card.layout-vertical {
-    width: 600px;
-    height: 800px;
-}
-
-/* Background Image System */
-.card-background {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    z-index: 1;
-}
-
-.card-background::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(
-        135deg,
-        rgba(26, 26, 46, 0.95) 0%,
-        rgba(26, 26, 46, 0.7) 50%,
-        rgba(26, 26, 46, 0.95) 100%
-    );
-    z-index: 2;
-    pointer-events: none;
-}
-
-.background-image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: transform 0.6s var(--ease-quint);
-    transform-origin: center;
-}
-
-/* Card Content Overlay */
-.card-content {
-    position: relative;
-    z-index: 3;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-}
-
-/* Layout Systems */
-.horizontal-layout,
-.vertical-layout {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    position: relative;
-}
-
-.character-card.layout-vertical .horizontal-layout {
-    display: none;
-}
-
-.character-card.layout-vertical .vertical-layout {
-    display: flex !important;
-}
-
-.vertical-layout {
-    flex-direction: column;
-}
-
-/* Business Card Layout - Editorial Style */
-.business-card-layout {
-    flex: 1;
-    padding: 3rem;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-    position: relative;
-}
-
-.business-card-layout::before {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 60%;
-    background: linear-gradient(
-        to top,
-        rgba(26, 26, 46, 0.98) 0%,
-        rgba(26, 26, 46, 0.85) 50%,
-        transparent 100%
-    );
-    pointer-events: none;
-}
-
-.character-section {
-    position: relative;
-    z-index: 2;
-    display: flex;
-    flex-direction: column;
-    gap: 1.2rem;
-}
-
-/* Decorative Corner Elements */
-.character-section::before,
-.character-section::after {
-    content: '';
-    position: absolute;
-    width: 60px;
-    height: 60px;
-    border: 2px solid var(--editorial-accent);
-    opacity: 0.4;
-    transition: opacity 0.6s var(--ease-quint), border-color 0.6s var(--ease-quint);
-}
-
-.character-section::before {
-    top: -20px;
-    left: -20px;
-    border-right: none;
-    border-bottom: none;
-}
-
-.character-section::after {
-    bottom: -20px;
-    right: -20px;
-    border-left: none;
-    border-top: none;
-}
-
-.character-card:hover .character-section::before,
-.character-card:hover .character-section::after {
-    opacity: 0.8;
-    border-color: var(--editorial-gold);
-}
-
-/* Name Row - Dramatic Typography */
-.name-row {
-    display: flex;
-    align-items: flex-start;
-    gap: 2rem;
-    animation: fadeInUp 0.8s var(--ease-quint) forwards;
-}
-
-@keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(30px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.name-info {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 0.6rem;
-}
-
-.character-name {
-    font-family: 'Cinzel', serif;
-    font-size: 3.5rem;
-    font-weight: 900;
-    line-height: 1.1;
-    margin: 0;
-    letter-spacing: 0.02em;
-    text-transform: uppercase;
-    color: var(--editorial-text);
-    background: linear-gradient(135deg, var(--light-bg) 0%, var(--editorial-gold) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    text-shadow: 0 4px 20px rgba(212, 175, 55, 0.3);
-    position: relative;
-    animation: fadeInUp 0.8s var(--ease-quint) 0.1s backwards;
-}
-
-/*
- * Fallback for browsers that don't support background-clip: text
- * Uses 'and' to ensure fallback only applies when BOTH properties are unsupported
- * Modern browsers support either the standard or prefixed version
- */
-@supports not (background-clip: text) and not (-webkit-background-clip: text) {
-    .character-name {
-        background: none;
-        -webkit-text-fill-color: var(--editorial-text);
-    }
-}
-
-.character-name::after {
-    content: '';
-    position: absolute;
-    bottom: -8px;
-    left: 0;
-    width: 80px;
-    height: 3px;
-    background: linear-gradient(90deg, var(--editorial-gold) 0%, transparent 100%);
-    animation: expandWidth 0.8s var(--ease-quint) 0.4s backwards;
-}
-
-@keyframes expandWidth {
-    from {
-        width: 0;
-    }
-    to {
-        width: 80px;
-    }
-}
-
-.job-name {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 1.1rem;
-    font-weight: 500;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    color: var(--editorial-accent);
-    margin-top: 0.5rem;
-    display: none;
-    animation: fadeInUp 0.8s var(--ease-quint) 0.2s backwards;
-}
-
-/* Info Line - Refined Typography */
-.info-line {
-    display: flex;
-    align-items: center;
-    gap: 0.8rem;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.95rem;
-    font-weight: 400;
-    letter-spacing: 0.05em;
-    color: var(--editorial-muted);
-    flex-wrap: wrap;
-    margin-top: 1rem;
-    animation: fadeInUp 0.8s var(--ease-quint) 0.3s backwards;
-}
-
-.separator {
-    color: var(--editorial-accent);
-    opacity: 0.6;
-    font-size: 0.6rem;
-}
-
-.character-title,
-.company-name,
-.server-name {
-    font-family: 'Crimson Pro', serif;
-    font-size: 1rem;
-    font-style: italic;
-    color: var(--editorial-text);
-    transition: all 0.3s ease;
-}
-
-.company-name {
-    color: var(--editorial-accent);
-}
-
-.character-title:hover,
-.company-name:hover,
-.server-name:hover {
-    color: var(--editorial-gold);
-}
-
-/* Job Icon - Premium Design */
-.job-icon {
-    width: 90px;
-    height: 90px;
-    background: linear-gradient(135deg, rgba(201, 169, 97, 0.15) 0%, rgba(201, 169, 97, 0.05) 100%);
-    border: 2px solid var(--editorial-accent);
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 3.5rem;
-    flex-shrink: 0;
-    position: relative;
-    overflow: hidden;
-    box-shadow:
-        0 8px 24px rgba(0, 0, 0, 0.4),
-        inset 0 1px 0 rgba(255, 255, 255, 0.1);
-    transition: transform 0.6s var(--ease-quint), border-color 0.6s var(--ease-quint), box-shadow 0.6s var(--ease-quint);
-    animation: fadeInScale 0.8s var(--ease-quint) 0.2s backwards;
-}
-
-@keyframes fadeInScale {
-    from {
-        opacity: 0;
-        transform: scale(0.8) rotate(-10deg);
-    }
-    to {
-        opacity: 1;
-        transform: scale(1) rotate(0deg);
-    }
-}
-
-.job-icon::before {
-    content: '';
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: linear-gradient(
-        45deg,
-        transparent 30%,
-        rgba(255, 255, 255, 0.1) 50%,
-        transparent 70%
-    );
-    transform: translateX(-100%) translateY(-100%) rotate(45deg);
-    transition: transform 0.8s var(--ease-quint);
-}
-
-.character-card:hover .job-icon::before {
-    transform: translateX(100%) translateY(100%) rotate(45deg);
-}
-
-.character-card:hover .job-icon {
-    border-color: var(--editorial-gold);
-    box-shadow:
-        0 12px 36px rgba(0, 0, 0, 0.5),
-        0 0 30px var(--editorial-glow),
-        inset 0 1px 0 rgba(255, 255, 255, 0.2);
-    transform: translateY(-4px) rotate(2deg);
-}
-
-.job-icon-img {
-    width: 70%;
-    height: 70%;
-    object-fit: contain;
-    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5));
-}
-
-/* Horizontal Layout Adjustments */
-.character-card.layout-horizontal .business-card-layout {
-    padding: 4rem 3rem 4rem 4rem;
-}
-
-.character-card.layout-horizontal .character-name {
-    font-size: 4rem;
-}
-
-.character-card.layout-horizontal .job-icon {
-    width: 100px;
-    height: 100px;
-}
-
-.character-card.layout-horizontal .info-line {
-    font-size: 1.05rem;
-    margin-top: 1.2rem;
-}
-
-/* Vertical Layout Adjustments */
-.character-card.layout-vertical .business-card-layout {
-    padding: 3rem 2.5rem 3rem 3rem;
-}
-
-.character-card.layout-vertical .character-name {
-    font-size: 3rem;
-}
-
-.character-card.layout-vertical .job-icon {
-    width: 80px;
-    height: 80px;
-}
-
-.character-card.layout-vertical .info-line {
-    font-size: 0.9rem;
-}
-
-/* Input Section - Refined Form Design */
-.input-section {
-    background: linear-gradient(135deg, var(--light-bg) 0%, var(--light-bg-secondary) 100%);
-    padding: 3rem;
-    border-radius: 16px;
-    box-shadow:
-        0 20px 60px rgba(0, 0, 0, 0.1),
-        0 0 0 1px rgba(0, 0, 0, 0.05);
-}
-
-.form-group {
-    margin-bottom: 2rem;
-    position: relative;
-}
-
-.form-group label {
-    display: block;
-    margin-bottom: 0.75rem;
-    font-family: 'DM Sans', sans-serif;
-    font-weight: 700;
-    font-size: 0.9rem;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: var(--editorial-secondary);
-}
-
-.form-group input[type="text"],
-.form-group select {
-    width: 100%;
-    padding: 1rem 1.25rem;
-    border: 2px solid var(--border-light);
-    border-radius: 8px;
-    font-family: 'Crimson Pro', serif;
-    font-size: 1.1rem;
-    background: var(--light-bg);
-    color: var(--editorial-secondary);
-    transition: border-color 0.3s var(--ease-quint), box-shadow 0.3s var(--ease-quint), transform 0.3s var(--ease-quint);
-}
-
-.form-group input[type="text"]:focus,
-.form-group select:focus {
-    outline: none;
-    border-color: var(--editorial-accent);
-    box-shadow: 0 0 0 4px rgba(201, 169, 97, 0.1);
-    transform: translateY(-2px);
-}
-
-/* Color Picker - Elegant Design */
-.color-input-wrapper {
-    display: flex;
-    gap: 1rem;
-    align-items: center;
-}
-
-.color-input-wrapper input[type="color"] {
-    width: 60px;
-    height: 60px;
-    border: 3px solid var(--editorial-accent);
-    border-radius: 12px;
-    cursor: pointer;
-    transition: all 0.3s var(--ease-quint);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.color-input-wrapper input[type="color"]:hover {
-    transform: scale(1.05);
-    box-shadow: 0 6px 20px rgba(201, 169, 97, 0.3);
-}
-
-.color-input-wrapper input[type="text"] {
-    flex: 1;
-    font-family: 'DM Sans', sans-serif;
-    letter-spacing: 0.1em;
-}
-
-/* Button Group - Premium Buttons */
-.button-group {
-    display: flex;
-    gap: 1rem;
-    margin-top: 3rem;
-}
-
-.button-group .btn {
-    flex: 1;
-    padding: 1.2rem 2rem;
-    font-family: 'DM Sans', sans-serif;
-    font-weight: 700;
-    font-size: 1rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    position: relative;
-    overflow: hidden;
-    transition: all 0.4s var(--ease-quint);
-}
-
-.button-group .btn::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.2);
-    transform: translate(-50%, -50%);
-    transition: width 0.6s, height 0.6s;
-}
-
-.button-group .btn:hover::before {
-    width: 300px;
-    height: 300px;
-}
-
-.button-group .btn:active {
-    transform: scale(0.98);
-}
-
-#generateCard {
-    background: linear-gradient(135deg, var(--editorial-accent) 0%, var(--editorial-gold) 100%);
-    color: var(--editorial-primary);
-    box-shadow: 0 8px 24px rgba(201, 169, 97, 0.4);
-}
-
-#generateCard:hover {
-    box-shadow: 0 12px 36px rgba(201, 169, 97, 0.5);
-    transform: translateY(-2px);
-}
-
-#downloadCard {
-    background: linear-gradient(135deg, var(--editorial-secondary) 0%, var(--editorial-primary) 100%);
-    color: var(--editorial-text);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-}
-
-#downloadCard:hover {
-    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.4);
-    transform: translateY(-2px);
-}
-
-/* Image Controls - Premium Interface */
+/* 圖片設定：外觀由 .card 提供 */
 .image-controls {
-    background: linear-gradient(135deg, var(--light-bg-secondary) 0%, var(--light-bg) 100%);
-    padding: 2.5rem;
-    border-radius: 16px;
-    border: 2px solid var(--editorial-accent);
-    box-shadow: 0 12px 36px rgba(201, 169, 97, 0.15);
-    margin-bottom: 2rem;
+    padding: var(--space-7);
 }
 
 .image-controls h3 {
-    margin: 0 0 2rem 0;
-    font-family: 'Cinzel', serif;
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: var(--editorial-secondary);
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    border-bottom: 2px solid var(--editorial-border);
-    padding-bottom: 1rem;
+    margin: 0 0 var(--space-6);
+    padding-bottom: var(--space-4);
+    border-bottom: 1px solid var(--color-border);
+    font-size: var(--text-xl);
+    font-weight: var(--weight-semibold);
+    color: var(--color-heading);
 }
 
 .controls-row {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 1.5rem;
+    gap: var(--space-6);
     align-items: start;
 }
 
 .control-group {
     display: flex;
     flex-direction: column;
-    gap: 0.8rem;
     align-items: center;
+    gap: var(--space-3);
 }
 
 .control-group label {
-    font-family: 'DM Sans', sans-serif;
-    font-weight: 600;
-    font-size: 0.85rem;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: var(--editorial-secondary);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    color: var(--color-heading);
 }
 
-/* Position Controls - Directional Pad */
+.control-group span {
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    color: var(--color-primary);
+}
+
+/* 位置方向鍵 */
 .position-controls {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 0.4rem;
+    gap: var(--space-1);
     width: fit-content;
 }
 
-/* Use ID selectors for robust positioning (independent of HTML order) */
 #moveUp { grid-column: 2; grid-row: 1; }
 #moveDown { grid-column: 2; grid-row: 3; }
 #moveLeft { grid-column: 1; grid-row: 2; }
 #moveRight { grid-column: 3; grid-row: 2; }
 
 .control-btn {
-    width: 36px;
-    height: 36px;
-    border: 2px solid var(--editorial-accent);
-    background: var(--light-bg);
-    color: var(--editorial-secondary);
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 1.1rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background 0.3s var(--ease-quint), color 0.3s var(--ease-quint), transform 0.3s var(--ease-quint), box-shadow 0.3s var(--ease-quint);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    width: 36px;
+    height: 36px;
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    color: var(--color-heading);
+    font-size: var(--text-lg);
+    cursor: pointer;
+    box-shadow: var(--shadow-sm);
+    transition: background-color var(--duration-base) var(--ease), border-color var(--duration-base) var(--ease), color var(--duration-base) var(--ease), transform var(--duration-base) var(--ease);
 }
 
 .control-btn:hover {
-    background: var(--editorial-accent);
-    color: var(--light-bg);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(201, 169, 97, 0.3);
+    border-color: var(--color-primary);
+    background: var(--color-primary-tint);
+    color: var(--color-primary);
+    transform: translateY(-1px);
+}
+
+.control-btn:focus-visible {
+    outline: none;
+    box-shadow: var(--ring-primary);
 }
 
 .control-btn:active {
     transform: translateY(0);
 }
 
-/* Range Sliders - Elegant Design */
+/* 滑桿 */
 .control-group input[type="range"] {
     width: 120px;
     height: 6px;
-    border-radius: 3px;
-    background: linear-gradient(90deg, var(--border-light) 0%, var(--editorial-accent) 100%);
+    border-radius: var(--radius-full);
+    background: var(--color-border-strong);
     outline: none;
     -webkit-appearance: none;
     appearance: none;
 }
 
 .control-group input[type="range"]::-webkit-slider-thumb {
-    -webkit-appearance: none;
     width: 18px;
     height: 18px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, var(--editorial-gold) 0%, var(--editorial-accent) 100%);
+    border-radius: var(--radius-full);
+    background: var(--color-primary);
+    box-shadow: var(--shadow-sm);
     cursor: pointer;
-    box-shadow: 0 2px 8px rgba(201, 169, 97, 0.5);
-    transition: all 0.3s var(--ease-quint);
-}
-
-.control-group input[type="range"]::-webkit-slider-thumb:hover {
-    transform: scale(1.2);
-    box-shadow: 0 4px 12px rgba(201, 169, 97, 0.6);
+    -webkit-appearance: none;
 }
 
 .control-group input[type="range"]::-moz-range-track {
     width: 100%;
     height: 6px;
-    border-radius: 3px;
-    background: linear-gradient(90deg, var(--border-light) 0%, var(--editorial-accent) 100%);
-    border: none;
+    border: 0;
+    border-radius: var(--radius-full);
+    background: var(--color-border-strong);
 }
 
 .control-group input[type="range"]::-moz-range-thumb {
     width: 18px;
     height: 18px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, var(--editorial-gold) 0%, var(--editorial-accent) 100%);
+    border: 0;
+    border-radius: var(--radius-full);
+    background: var(--color-primary);
+    box-shadow: var(--shadow-sm);
     cursor: pointer;
-    border: none;
-    box-shadow: 0 2px 8px rgba(201, 169, 97, 0.5);
-    transition: box-shadow 0.3s var(--ease-quint);
 }
 
-.control-group input[type="range"]::-moz-range-thumb:hover {
-    box-shadow: 0 4px 12px rgba(201, 169, 97, 0.6);
+.control-group input[type="range"]:focus-visible {
+    box-shadow: var(--ring-primary);
 }
 
-.control-group span {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: var(--editorial-accent);
-}
-
-/* File Input - Custom Design */
+/* 圖片上傳 */
 .file-input {
-    padding: 0.8rem 1.2rem;
-    border: 2px dashed var(--editorial-accent);
-    border-radius: 8px;
-    background: var(--light-bg);
-    cursor: pointer;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: var(--editorial-secondary);
-    transition: border-style 0.3s var(--ease-quint), background 0.3s var(--ease-quint), transform 0.3s var(--ease-quint);
+    padding: var(--space-3) var(--space-5);
+    border: 2px dashed var(--color-primary);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    color: var(--color-text);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
     text-align: center;
+    cursor: pointer;
+    transition: border-style var(--duration-base) var(--ease), background-color var(--duration-base) var(--ease), transform var(--duration-base) var(--ease);
 }
 
 .file-input:hover {
     border-style: solid;
-    background: rgba(201, 169, 97, 0.05);
-    transform: translateY(-2px);
+    background: var(--color-primary-tint);
+    transform: translateY(-1px);
 }
 
-.form-hint {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.8rem;
-    color: var(--editorial-muted);
-    text-align: center;
-    margin-top: 0.4rem;
-}
-
-/* Action Buttons */
 .action-buttons {
     display: flex;
     flex-direction: column;
-    gap: 0.6rem;
+    gap: var(--space-2);
 }
 
-.action-buttons .btn {
-    padding: 0.6rem 1rem;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.85rem;
-    font-weight: 600;
-    border-radius: 6px;
-    border: 2px solid var(--editorial-secondary);
-    background: var(--light-bg);
-    color: var(--editorial-secondary);
+/* 表單：外觀由 .card 與 .form-control / .form-label 提供 */
+.input-section {
+    padding: var(--space-9);
+}
+
+.form-group {
+    margin-bottom: var(--space-7);
+}
+
+.color-input-wrapper {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+}
+
+.color-input-wrapper input[type="color"] {
+    width: 60px;
+    height: 60px;
+    padding: 0;
+    border: 2px solid var(--color-border-strong);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-sm);
     cursor: pointer;
-    transition: background 0.3s var(--ease-quint), color 0.3s var(--ease-quint), transform 0.3s var(--ease-quint);
 }
 
-.action-buttons .btn:hover {
-    background: var(--editorial-secondary);
-    color: var(--light-bg);
-    transform: translateX(4px);
+.color-input-wrapper input[type="text"] {
+    flex: 1;
+    font-family: var(--font-mono);
+    letter-spacing: 0.08em;
 }
 
-/* Server & Job Selection - Refined Interface */
+.button-group {
+    display: flex;
+    gap: var(--space-4);
+    margin-top: var(--space-9);
+}
+
+.button-group .btn {
+    flex: 1;
+}
+
+/* 伺服器／職業選擇：手風琴 */
 .collapsible-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1rem;
-    background: linear-gradient(135deg, rgba(201, 169, 97, 0.05) 0%, rgba(201, 169, 97, 0.02) 100%);
-    border-radius: 8px;
+    padding: var(--space-4);
+    margin-bottom: var(--space-4);
+    background: var(--color-surface-2);
+    border-radius: var(--radius-md);
     cursor: pointer;
-    transition: background 0.3s var(--ease-quint);
-    margin-bottom: 1rem;
+    transition: background-color var(--duration-base) var(--ease);
 }
 
 .collapsible-header:hover {
-    background: linear-gradient(135deg, rgba(201, 169, 97, 0.1) 0%, rgba(201, 169, 97, 0.05) 100%);
+    background: var(--color-primary-tint);
 }
 
 .collapsible-header label {
@@ -862,27 +231,29 @@
 }
 
 .collapse-toggle {
-    background: none;
-    border: 2px solid var(--editorial-accent);
-    width: 32px;
-    height: 32px;
-    border-radius: 6px;
-    cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background 0.3s var(--ease-quint), color 0.3s var(--ease-quint);
+    width: var(--control-sm);
+    height: var(--control-sm);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    color: var(--color-heading);
+    cursor: pointer;
+    transition: background-color var(--duration-base) var(--ease), color var(--duration-base) var(--ease), border-color var(--duration-base) var(--ease);
 }
 
 .collapse-toggle:hover {
-    background: var(--editorial-accent);
-    color: var(--light-bg);
+    border-color: var(--color-primary);
+    background: var(--color-primary-tint);
+    color: var(--color-primary);
 }
 
 .toggle-icon {
-    font-size: 0.9rem;
-    transition: transform 0.3s var(--ease-quint);
     display: inline-block;
+    font-size: var(--text-sm);
+    transition: transform var(--duration-slow) var(--ease);
 }
 
 .collapse-toggle.collapsed .toggle-icon {
@@ -890,12 +261,10 @@
 }
 
 .collapsible-content {
-    overflow: hidden;
-    transition: max-height 0.4s var(--ease-quint), opacity 0.4s var(--ease-quint);
-    /* Set to a value larger than expected content height for smooth collapse animation
-     * Current content (server/job selection grids) fits well within 1000px */
     max-height: 1000px;
+    overflow: hidden;
     opacity: 1;
+    transition: max-height var(--duration-slow) var(--ease), opacity var(--duration-slow) var(--ease);
 }
 
 .collapsible-content.collapsed {
@@ -903,203 +272,125 @@
     opacity: 0;
 }
 
-/* Selection Grid - Premium Cards */
+/* 選項卡（單選，不是篩選膠囊，維持工具自有） */
 .selection-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-    gap: 0.8rem;
-    margin-bottom: 1rem;
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
 }
 
 .selection-btn {
-    padding: 1rem 1.2rem;
-    border: 2px solid var(--border-light);
-    background: var(--light-bg);
-    color: var(--editorial-secondary);
-    border-radius: 8px;
-    cursor: pointer;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.9rem;
-    font-weight: 600;
-    transition: border-color 0.3s var(--ease-quint), background 0.3s var(--ease-quint), transform 0.3s var(--ease-quint), box-shadow 0.3s var(--ease-quint);
     position: relative;
-    overflow: hidden;
-}
-
-.selection-btn::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(201, 169, 97, 0.1), transparent);
-    transition: left 0.5s var(--ease-quint);
-}
-
-.selection-btn:hover::before {
-    left: 100%;
+    padding: var(--space-4) var(--space-5);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    color: var(--color-text);
+    font-family: inherit;
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    cursor: pointer;
+    transition: border-color var(--duration-base) var(--ease), background-color var(--duration-base) var(--ease), color var(--duration-base) var(--ease), transform var(--duration-base) var(--ease), box-shadow var(--duration-base) var(--ease);
 }
 
 .selection-btn:hover {
-    border-color: var(--editorial-accent);
-    background: rgba(201, 169, 97, 0.05);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(201, 169, 97, 0.2);
+    border-color: var(--color-primary);
+    background: var(--color-primary-tint);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+}
+
+.selection-btn:focus-visible {
+    outline: none;
+    box-shadow: var(--ring-primary);
 }
 
 .selection-btn.selected {
-    border-color: var(--editorial-accent);
-    background: linear-gradient(135deg, var(--editorial-accent) 0%, var(--editorial-gold) 100%);
-    color: var(--editorial-primary);
-    box-shadow: 0 6px 20px rgba(201, 169, 97, 0.4);
-    transform: translateY(-2px);
+    border-color: var(--color-primary);
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+    box-shadow: var(--shadow-md);
 }
 
 .selection-btn.selected::after {
-    content: '✓';
+    content: "✓";
     position: absolute;
-    top: 0.4rem;
-    right: 0.4rem;
-    font-size: 0.8rem;
-    font-weight: bold;
+    top: var(--space-1);
+    right: var(--space-2);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-bold);
 }
 
-/*
- * Selected Display - Elegant Card
- * Note: Visibility is dynamically controlled by JavaScript selection handlers
- * - Hidden by default: display: none
- * - Shown when user selects a server/job: display = 'flex'
- */
+/* 已選結果列（顯示與否由 JS 的 style.display 控制） */
 .selected-server {
     display: none;
     align-items: center;
-    gap: 1rem;
-    padding: 1.2rem 1.5rem;
-    background: linear-gradient(135deg, rgba(201, 169, 97, 0.1) 0%, rgba(201, 169, 97, 0.05) 100%);
-    border: 2px solid var(--editorial-accent);
-    border-radius: 12px;
-    margin-top: 1rem;
-    box-shadow: 0 4px 12px rgba(201, 169, 97, 0.15);
+    gap: var(--space-4);
+    margin-top: var(--space-4);
+    padding: var(--space-4) var(--space-6);
+    background: var(--color-primary-tint);
+    border: 1px solid var(--color-primary);
+    border-radius: var(--radius-lg);
 }
 
 .selected-label {
-    font-family: 'DM Sans', sans-serif;
-    font-weight: 700;
-    font-size: 0.85rem;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: var(--editorial-secondary);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
+    letter-spacing: 0.04em;
+    color: var(--color-heading);
 }
 
 .selected-value {
     flex: 1;
-    font-family: 'Crimson Pro', serif;
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--editorial-accent);
+    font-size: var(--text-lg);
+    font-weight: var(--weight-semibold);
+    color: var(--color-primary);
 }
 
-.clear-btn {
-    padding: 0.5rem 1rem;
-    border: 2px solid var(--editorial-secondary);
-    background: var(--light-bg);
-    color: var(--editorial-secondary);
-    border-radius: 6px;
-    cursor: pointer;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.8rem;
-    font-weight: 600;
-    transition: background 0.3s var(--ease-quint), color 0.3s var(--ease-quint);
-}
-
-.clear-btn:hover {
-    background: var(--editorial-secondary);
-    color: var(--light-bg);
-}
-
-/* Job Category - Refined Organization */
+/* 職業分類：外觀由 .card 提供 */
 .job-category {
-    margin-bottom: 1.5rem;
-    border: 2px solid var(--border-light);
-    border-radius: 12px;
-    padding: 1.2rem;
-    background: var(--light-bg);
-    transition: border-color 0.3s var(--ease-quint), box-shadow 0.3s var(--ease-quint);
-}
-
-.job-category:hover {
-    border-color: var(--editorial-accent);
-    box-shadow: 0 4px 12px rgba(201, 169, 97, 0.1);
+    padding: var(--space-5);
+    margin-bottom: var(--space-6);
 }
 
 .job-category-title {
     display: flex;
     align-items: center;
-    gap: 0.8rem;
-    margin: 0 0 1rem 0;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 1rem;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: var(--editorial-secondary);
-    padding-bottom: 0.8rem;
-    border-bottom: 2px solid var(--border-light);
+    gap: var(--space-3);
+    margin: 0 0 var(--space-4);
+    padding-bottom: var(--space-3);
+    border-bottom: 1px solid var(--color-border);
+    font-size: var(--text-md);
+    font-weight: var(--weight-semibold);
+    color: var(--color-heading);
 }
 
 .job-category-icon {
-    width: 32px;
-    height: 32px;
-    background: linear-gradient(135deg, var(--editorial-accent) 0%, var(--editorial-gold) 100%);
-    border-radius: 8px;
-    color: var(--light-bg);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1rem;
-    box-shadow: 0 2px 8px rgba(201, 169, 97, 0.3);
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-md);
+    background: var(--color-primary-tint);
+    color: var(--color-primary);
+    font-size: var(--text-md);
 }
 
 .job-category .selection-grid {
     grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
-    gap: 0.6rem;
+    gap: var(--space-2);
 }
 
-/* Responsive Design - Mobile Optimization */
-@media (max-width: 1200px) {
+/* 響應式（卡片本身的縮放在 card-templates.css） */
+@media (max-width: 768px) {
     .tool-container {
-        gap: 3rem;
-    }
-
-    .preview-section {
-        padding: 4rem 2rem;
-    }
-}
-
-@media (max-width: 968px) {
-    .character-card.layout-horizontal {
-        transform: scale(0.8);
-        transform-origin: center;
-    }
-
-    .character-card.layout-vertical {
-        transform: scale(0.8);
-        transform-origin: center;
+        gap: var(--space-7);
     }
 
     .input-section {
-        padding: 2rem;
-    }
-}
-
-@media (max-width: 768px) {
-    .character-card.layout-horizontal {
-        transform: scale(0.65);
-    }
-
-    .character-card.layout-vertical {
-        transform: scale(0.65);
+        padding: var(--space-7);
     }
 
     .button-group {
@@ -1108,130 +399,16 @@
 
     .controls-row {
         grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-        gap: 1rem;
+        gap: var(--space-4);
     }
 }
 
 @media (max-width: 480px) {
-    .preview-section {
-        padding: 2rem 1rem;
-    }
-
-    .character-card.layout-horizontal {
-        transform: scale(0.5);
-    }
-
-    .character-card.layout-vertical {
-        transform: scale(0.5);
-    }
-
     .input-section {
-        padding: 1.5rem;
+        padding: var(--space-6);
     }
 
     .controls-row {
         grid-template-columns: 1fr;
-    }
-}
-
-/* Dark Mode Support */
-[data-theme="dark"] .input-section {
-    background: linear-gradient(135deg, var(--editorial-secondary) 0%, var(--editorial-primary) 100%);
-}
-
-[data-theme="dark"] .form-group label {
-    color: var(--editorial-text);
-}
-
-[data-theme="dark"] .form-group input[type="text"],
-[data-theme="dark"] .form-group select {
-    background: var(--editorial-primary);
-    color: var(--editorial-text);
-    border-color: var(--editorial-accent);
-}
-
-[data-theme="dark"] .form-group input[type="text"]:focus,
-[data-theme="dark"] .form-group select:focus {
-    border-color: var(--editorial-gold);
-    box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.25);
-}
-
-[data-theme="dark"] .selection-btn {
-    background: var(--editorial-primary);
-    color: var(--editorial-text);
-    border-color: rgba(201, 169, 97, 0.3);
-}
-
-[data-theme="dark"] .job-category {
-    background: var(--editorial-primary);
-    border-color: rgba(201, 169, 97, 0.3);
-}
-
-[data-theme="dark"] .image-controls {
-    background: linear-gradient(135deg, var(--editorial-secondary) 0%, var(--editorial-primary) 100%);
-}
-
-/* Dark mode text contrast fixes for readability */
-[data-theme="dark"] .selected-label,
-[data-theme="dark"] .job-category-title,
-[data-theme="dark"] .image-controls h3,
-[data-theme="dark"] .control-group label {
-    color: var(--editorial-text);
-}
-
-/* Print Styles */
-@media print {
-    .tool-container {
-        display: block;
-    }
-
-    .input-section,
-    .image-controls {
-        display: none;
-    }
-
-    .preview-section {
-        padding: 0;
-        background: none;
-        box-shadow: none;
-    }
-
-    .character-card {
-        box-shadow: none;
-    }
-
-    /* Reset all animated elements to ensure visibility when printing */
-    .character-name,
-    .job-name,
-    .info-line,
-    .job-icon {
-        animation: none !important;
-        opacity: 1 !important;
-        transform: none !important;
-    }
-
-    .character-name::after {
-        animation: none !important;
-        width: 80px !important;
-    }
-
-    /* Globally disable all animations and transitions for print */
-    *,
-    *::before,
-    *::after {
-        animation: none !important;
-        transition: none !important;
-    }
-}
-
-/* Accessibility - Reduced Motion */
-@media (prefers-reduced-motion: reduce) {
-    *,
-    *::before,
-    *::after {
-        animation-duration: 0s !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0s !important;
-        scroll-behavior: auto !important;
     }
 }

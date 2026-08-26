@@ -1,0 +1,559 @@
+/* ==========================================================================
+   角色卡產生器 — 卡片成品與展示台
+   這是使用者自訂的成品：顏色、字型、動畫都不隨站台主題變色，
+   也不受 tokens.css 規則約束（本檔不在 tests/design-system.test.js 的 TOKEN_CLEAN_FILES 內）。
+   頁面外殼（表單、按鈕、面板）的樣式在 style.css。
+   ========================================================================== */
+@import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@600&family=DM+Sans:wght@400;500;600;700&family=Cinzel:wght@600;900&display=swap');
+
+:root {
+    --editorial-primary: #1a1a2e;
+    --editorial-secondary: #16213e;
+    --editorial-accent: #c9a961;
+    --editorial-gold: #d4af37;
+    --editorial-text: #f5f5f5;
+    --editorial-muted: #a8a8a8;
+    --editorial-glow: rgba(212, 175, 55, 0.4);
+    --light-bg: #ffffff;
+    --dark-bg: #0f0f1e;
+    --ease-quint: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Preview Section - Dramatic Presentation */
+.preview-section {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(135deg, var(--dark-bg) 0%, var(--editorial-primary) 50%, var(--dark-bg) 100%);
+    padding: 5rem 3rem;
+    border-radius: 16px;
+    overflow: visible;
+    box-shadow:
+        0 20px 60px rgba(0, 0, 0, 0.6),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.preview-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background:
+        radial-gradient(circle at 20% 50%, rgba(201, 169, 97, 0.03) 0%, transparent 50%),
+        radial-gradient(circle at 80% 50%, rgba(201, 169, 97, 0.03) 0%, transparent 50%);
+    pointer-events: none;
+}
+
+/* Character Card - Premium Design */
+.character-card {
+    position: relative;
+    background: linear-gradient(135deg, var(--editorial-primary) 0%, var(--editorial-secondary) 100%);
+    border-radius: 20px;
+    overflow: hidden;
+    color: var(--editorial-text);
+    font-family: 'Crimson Pro', serif;
+    box-shadow:
+        0 30px 80px rgba(0, 0, 0, 0.8),
+        0 0 0 1px rgba(201, 169, 97, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    transition: transform 0.6s var(--ease-quint), box-shadow 0.6s var(--ease-quint);
+    cursor: default;
+}
+
+.character-card::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(
+        135deg,
+        var(--editorial-gold) 0%,
+        var(--editorial-accent) 25%,
+        transparent 50%,
+        var(--editorial-accent) 75%,
+        var(--editorial-gold) 100%
+    );
+    opacity: 0;
+    border-radius: 20px;
+    z-index: -1;
+    transition: opacity 0.6s var(--ease-quint);
+}
+
+.character-card:hover::before {
+    opacity: 0.3;
+}
+
+.character-card:hover {
+    transform: translateY(-8px) scale(1.01);
+    box-shadow:
+        0 40px 100px rgba(0, 0, 0, 0.9),
+        0 0 0 1px var(--editorial-accent),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1),
+        0 0 60px var(--editorial-glow);
+}
+
+/* Card Dimensions */
+.character-card.layout-horizontal {
+    width: 800px;
+    height: 600px;
+}
+
+.character-card.layout-vertical {
+    width: 600px;
+    height: 800px;
+}
+
+/* Background Image System */
+.card-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    z-index: 1;
+}
+
+.card-background::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+        135deg,
+        rgba(26, 26, 46, 0.95) 0%,
+        rgba(26, 26, 46, 0.7) 50%,
+        rgba(26, 26, 46, 0.95) 100%
+    );
+    z-index: 2;
+    pointer-events: none;
+}
+
+.background-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.6s var(--ease-quint);
+    transform-origin: center;
+}
+
+/* Card Content Overlay */
+.card-content {
+    position: relative;
+    z-index: 3;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Layout Systems */
+.horizontal-layout,
+.vertical-layout {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    position: relative;
+}
+
+.character-card.layout-vertical .horizontal-layout {
+    display: none;
+}
+
+.character-card.layout-vertical .vertical-layout {
+    display: flex !important;
+}
+
+.vertical-layout {
+    flex-direction: column;
+}
+
+/* Business Card Layout - Editorial Style */
+.business-card-layout {
+    flex: 1;
+    padding: 3rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    position: relative;
+}
+
+.business-card-layout::before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 60%;
+    background: linear-gradient(
+        to top,
+        rgba(26, 26, 46, 0.98) 0%,
+        rgba(26, 26, 46, 0.85) 50%,
+        transparent 100%
+    );
+    pointer-events: none;
+}
+
+.character-section {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+}
+
+/* Decorative Corner Elements */
+.character-section::before,
+.character-section::after {
+    content: '';
+    position: absolute;
+    width: 60px;
+    height: 60px;
+    border: 2px solid var(--editorial-accent);
+    opacity: 0.4;
+    transition: opacity 0.6s var(--ease-quint), border-color 0.6s var(--ease-quint);
+}
+
+.character-section::before {
+    top: -20px;
+    left: -20px;
+    border-right: none;
+    border-bottom: none;
+}
+
+.character-section::after {
+    bottom: -20px;
+    right: -20px;
+    border-left: none;
+    border-top: none;
+}
+
+.character-card:hover .character-section::before,
+.character-card:hover .character-section::after {
+    opacity: 0.8;
+    border-color: var(--editorial-gold);
+}
+
+/* Name Row - Dramatic Typography */
+.name-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 2rem;
+    animation: fadeInUp 0.8s var(--ease-quint) forwards;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.name-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.character-name {
+    font-family: 'Cinzel', serif;
+    font-size: 3.5rem;
+    font-weight: 900;
+    line-height: 1.1;
+    margin: 0;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--editorial-text);
+    background: linear-gradient(135deg, var(--light-bg) 0%, var(--editorial-gold) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: 0 4px 20px rgba(212, 175, 55, 0.3);
+    position: relative;
+    animation: fadeInUp 0.8s var(--ease-quint) 0.1s backwards;
+}
+
+/*
+ * Fallback for browsers that don't support background-clip: text
+ * Uses 'and' to ensure fallback only applies when BOTH properties are unsupported
+ * Modern browsers support either the standard or prefixed version
+ */
+@supports not (background-clip: text) and not (-webkit-background-clip: text) {
+    .character-name {
+        background: none;
+        -webkit-text-fill-color: var(--editorial-text);
+    }
+}
+
+.character-name::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 0;
+    width: 80px;
+    height: 3px;
+    background: linear-gradient(90deg, var(--editorial-gold) 0%, transparent 100%);
+    animation: expandWidth 0.8s var(--ease-quint) 0.4s backwards;
+}
+
+@keyframes expandWidth {
+    from {
+        width: 0;
+    }
+    to {
+        width: 80px;
+    }
+}
+
+.job-name {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--editorial-accent);
+    margin-top: 0.5rem;
+    display: none;
+    animation: fadeInUp 0.8s var(--ease-quint) 0.2s backwards;
+}
+
+/* Info Line - Refined Typography */
+.info-line {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 400;
+    letter-spacing: 0.05em;
+    color: var(--editorial-muted);
+    flex-wrap: wrap;
+    margin-top: 1rem;
+    animation: fadeInUp 0.8s var(--ease-quint) 0.3s backwards;
+}
+
+.separator {
+    color: var(--editorial-accent);
+    opacity: 0.6;
+    font-size: 0.6rem;
+}
+
+.character-title,
+.company-name,
+.server-name {
+    font-family: 'Crimson Pro', serif;
+    font-size: 1rem;
+    font-style: italic;
+    color: var(--editorial-text);
+    transition: all 0.3s ease;
+}
+
+.company-name {
+    color: var(--editorial-accent);
+}
+
+.character-title:hover,
+.company-name:hover,
+.server-name:hover {
+    color: var(--editorial-gold);
+}
+
+/* Job Icon - Premium Design */
+.job-icon {
+    width: 90px;
+    height: 90px;
+    background: linear-gradient(135deg, rgba(201, 169, 97, 0.15) 0%, rgba(201, 169, 97, 0.05) 100%);
+    border: 2px solid var(--editorial-accent);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3.5rem;
+    flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+    box-shadow:
+        0 8px 24px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    transition: transform 0.6s var(--ease-quint), border-color 0.6s var(--ease-quint), box-shadow 0.6s var(--ease-quint);
+    animation: fadeInScale 0.8s var(--ease-quint) 0.2s backwards;
+}
+
+@keyframes fadeInScale {
+    from {
+        opacity: 0;
+        transform: scale(0.8) rotate(-10deg);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) rotate(0deg);
+    }
+}
+
+.job-icon::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+        45deg,
+        transparent 30%,
+        rgba(255, 255, 255, 0.1) 50%,
+        transparent 70%
+    );
+    transform: translateX(-100%) translateY(-100%) rotate(45deg);
+    transition: transform 0.8s var(--ease-quint);
+}
+
+.character-card:hover .job-icon::before {
+    transform: translateX(100%) translateY(100%) rotate(45deg);
+}
+
+.character-card:hover .job-icon {
+    border-color: var(--editorial-gold);
+    box-shadow:
+        0 12px 36px rgba(0, 0, 0, 0.5),
+        0 0 30px var(--editorial-glow),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    transform: translateY(-4px) rotate(2deg);
+}
+
+.job-icon-img {
+    width: 70%;
+    height: 70%;
+    object-fit: contain;
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5));
+}
+
+/* Horizontal Layout Adjustments */
+.character-card.layout-horizontal .business-card-layout {
+    padding: 4rem 3rem 4rem 4rem;
+}
+
+.character-card.layout-horizontal .character-name {
+    font-size: 4rem;
+}
+
+.character-card.layout-horizontal .job-icon {
+    width: 100px;
+    height: 100px;
+}
+
+.character-card.layout-horizontal .info-line {
+    font-size: 1.05rem;
+    margin-top: 1.2rem;
+}
+
+/* Vertical Layout Adjustments */
+.character-card.layout-vertical .business-card-layout {
+    padding: 3rem 2.5rem 3rem 3rem;
+}
+
+.character-card.layout-vertical .character-name {
+    font-size: 3rem;
+}
+
+.character-card.layout-vertical .job-icon {
+    width: 80px;
+    height: 80px;
+}
+
+.character-card.layout-vertical .info-line {
+    font-size: 0.9rem;
+}
+
+/* 卡片在窄螢幕的縮放（外殼的斷點在 style.css） */
+@media (max-width: 968px) {
+    .character-card.layout-horizontal,
+    .character-card.layout-vertical {
+        transform: scale(0.8);
+        transform-origin: center;
+    }
+}
+
+@media (max-width: 768px) {
+    .character-card.layout-horizontal,
+    .character-card.layout-vertical {
+        transform: scale(0.65);
+    }
+}
+
+@media (max-width: 480px) {
+    .preview-section {
+        padding: 2rem 1rem;
+    }
+
+    .character-card.layout-horizontal,
+    .character-card.layout-vertical {
+        transform: scale(0.5);
+    }
+}
+
+/* 列印：只印卡片 */
+@media print {
+    .tool-container {
+        display: block;
+    }
+
+    .input-section,
+    .image-controls {
+        display: none;
+    }
+
+    .preview-section {
+        padding: 0;
+        background: none;
+        box-shadow: none;
+    }
+
+    .character-card {
+        box-shadow: none;
+    }
+
+    .character-name,
+    .job-name,
+    .info-line,
+    .job-icon {
+        animation: none !important;
+        opacity: 1 !important;
+        transform: none !important;
+    }
+
+    .character-name::after {
+        animation: none !important;
+        width: 80px !important;
+    }
+
+    *,
+    *::before,
+    *::after {
+        animation: none !important;
+        transition: none !important;
+    }
+}
+
+/* 減少動態 */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0s !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0s !important;
+        scroll-behavior: auto !important;
+    }
+}
