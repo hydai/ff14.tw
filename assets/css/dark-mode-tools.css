@@ -59,39 +59,6 @@
     border-color: var(--border-color);
 }
 
-/* 篩選標籤 */
-[data-theme="dark"] .type-tag,
-[data-theme="dark"] .expansion-tag,
-[data-theme="dark"] .filter-tag {
-    background-color: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    color: var(--text-color);
-}
-
-[data-theme="dark"] .type-tag:hover,
-[data-theme="dark"] .expansion-tag:hover,
-[data-theme="dark"] .filter-tag:hover {
-    background-color: var(--hover-bg);
-}
-
-[data-theme="dark"] .type-tag.active,
-[data-theme="dark"] .expansion-tag.active,
-[data-theme="dark"] .filter-tag.active {
-    background-color: var(--primary-color);
-    color: white;
-    border-color: var(--primary-color);
-}
-
-/* 副本卡片 */
-[data-theme="dark"] .dungeon-card {
-    background-color: var(--card-bg);
-    border-color: var(--border-color);
-}
-
-[data-theme="dark"] .dungeon-card:hover {
-    box-shadow: 0 4px 12px rgba(255,255,255,0.1);
-}
-
 /* 角色卡片特殊調整 */
 [data-theme="dark"] .card-preview {
     background-color: var(--bg-secondary);
