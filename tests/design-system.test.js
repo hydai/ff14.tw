@@ -15,7 +15,14 @@ const TOKEN_CLEAN_FILES = [
     'assets/css/components/forms.css',
     'assets/css/components/tags.css',
     'assets/css/components/cards.css',
+    'assets/css/tools-common.css',
 ];
+
+// 這個檔案的職責就是彙整元件，允許 @import components/*.css
+const IMPORT_ALLOWED = new Set(['assets/css/tools-common.css']);
+
+// 元件與已遷移的工具不得自帶 dark 規則；只有 tokens.css（定義）與 common.css（.hero 過渡覆寫）例外
+const DARK_RULES_ALLOWED = new Set(['assets/css/tokens.css', 'assets/css/common.css']);
 
 // ---------- 小工具 ----------
 function stripComments(css) {
@@ -102,7 +109,8 @@ test('token-clean 檔案只讀 tokens.css、沒有色碼、沒有 @import、沒�
             const noUrls = css.replace(/url\([^)]*\)/g, 'url()');
             const literal = noUrls.match(/#[0-9a-f]{3,8}\b|rgba?\(|hsla?\(|(?<![\w-])(white|black)(?![\w-])/i);
             assert.equal(literal, null, `${file} 含有色碼：${literal && literal[0]}`);
-            assert.doesNotMatch(css, /@import/, `${file} 不得使用 @import`);
+            if (!IMPORT_ALLOWED.has(file)) assert.doesNotMatch(css, /@import/, `${file} 不得使用 @import`);
+            if (!DARK_RULES_ALLOWED.has(file)) assert.doesNotMatch(css, /\[data-theme=/, `${file} 不得自帶 [data-theme] 規則`);
             assert.doesNotMatch(css, /!important/, `${file} 不得使用 !important`);
         }
     }

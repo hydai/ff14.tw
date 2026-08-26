@@ -1,32 +1,35 @@
-/* ===================================
-   工具共用樣式 (Common Tool Styles)
-   =================================== */
-
-/* 引入元件樣式 */
+/* ==========================================================================
+   工具頁共用樣式 — 載入狀態、訊息、toast
+   元件本體由 components/*.css 提供（在此彙整載入）
+   ========================================================================== */
 @import url('components/buttons.css');
 @import url('components/cards.css');
 @import url('components/forms.css');
 @import url('components/tags.css');
 
-/* 工具頁面基礎樣式 */
+/* 工具頁基礎 */
 .tool-content {
-    padding: var(--spacing-xl, 2rem) 0;
+    padding: var(--space-7) 0;
 }
 
 /* 載入狀態 */
 .loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-3);
+    padding: var(--space-9) var(--space-4);
+    color: var(--color-muted);
     text-align: center;
-    padding: 3rem;
-    color: var(--text-secondary, #6c757d);
 }
 
 .loading-spinner {
-    display: inline-block;
-    width: 2rem;
-    height: 2rem;
-    border: 3px solid var(--gray-200, #e9ecef);
-    border-top-color: var(--primary-color, #4a90e2);
-    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--color-border);
+    border-top-color: var(--color-primary);
+    border-radius: var(--radius-full);
     animation: spin 0.8s linear infinite;
 }
 
@@ -34,74 +37,104 @@
     to { transform: rotate(360deg); }
 }
 
-/* 錯誤訊息 */
-.error-message {
-    background-color: var(--danger-light, #f8d7da);
-    color: var(--danger-dark, #721c24);
-    padding: 1rem;
-    border-radius: 6px;
-    margin: 1rem 0;
-    border: 1px solid var(--danger-border, #f5c6cb);
-}
-
-/* 成功訊息 */
-.success-message {
-    background-color: var(--success-light, #d4edda);
-    color: var(--success-dark, #155724);
-    padding: 1rem;
-    border-radius: 6px;
-    margin: 1rem 0;
-    border: 1px solid var(--success-border, #c3e6cb);
-}
-
-/* 資訊訊息 */
-.info-message {
-    background-color: var(--info-light, #d1ecf1);
-    color: var(--info-dark, #0c5460);
-    padding: 1rem;
-    border-radius: 6px;
-    margin: 1rem 0;
-    border: 1px solid var(--info-border, #bee5eb);
-}
-
-/* 警告訊息 */
+/* 訊息（四種語意，同一形狀） */
+.error-message,
+.success-message,
+.info-message,
 .warning-message {
-    background-color: var(--warning-light, #fff3cd);
-    color: var(--warning-dark, #856404);
-    padding: 1rem;
-    border-radius: 6px;
-    margin: 1rem 0;
-    border: 1px solid var(--warning-border, #ffeaa7);
+    padding: var(--space-3) var(--space-4);
+    margin: var(--space-4) 0;
+    border: 1px solid;
+    border-radius: var(--radius-md);
+    font-size: var(--text-sm);
+    line-height: 1.5;
 }
 
-/* Toast 通知訊息 */
+.error-message {
+    background: var(--color-danger-tint);
+    border-color: var(--color-danger-border);
+    color: var(--color-danger-text);
+}
+
+.success-message {
+    background: var(--color-success-tint);
+    border-color: var(--color-success-border);
+    color: var(--color-success-text);
+}
+
+.info-message {
+    background: var(--color-info-tint);
+    border-color: var(--color-info-border);
+    color: var(--color-info-text);
+}
+
+.warning-message {
+    background: var(--color-warning-tint);
+    border-color: var(--color-warning-border);
+    color: var(--color-warning-text);
+}
+
+.message-title {
+    display: block;
+    font-weight: var(--weight-semibold);
+}
+
+/* Toast 通知（右上角，3 秒後由 JS 移除） */
 .toast {
     position: fixed;
-    top: 20px;
-    right: 20px;
-    padding: 12px 24px;
-    border-radius: 6px;
-    color: white;
-    font-weight: 500;
-    z-index: 9999;
+    top: var(--space-5);
+    right: var(--space-5);
+    z-index: var(--z-toast);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    max-width: min(360px, calc(100vw - var(--space-8)));
+    padding: 10px 18px;
+    border-radius: var(--radius-md);
+    background: var(--color-heading);
+    color: var(--color-surface);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    line-height: 1.4;
+    box-shadow: var(--shadow-lg);
     opacity: 0;
     transform: translateY(-20px);
-    transition: all 0.3s ease;
+    transition: opacity var(--duration-slow) var(--ease), transform var(--duration-slow) var(--ease);
     white-space: pre-line;
+    pointer-events: none;
+}
+
+.toast.show {
+    opacity: 1;
+    transform: translateY(0);
 }
 
 .toast-success {
-    background-color: #27ae60;
+    background: var(--color-success);
+    color: var(--color-on-success);
 }
 
 .toast-error {
-    background-color: #e74c3c;
+    background: var(--color-danger);
+    color: var(--color-on-danger);
 }
 
 .toast-warning {
-    background-color: #f39c12;
+    background: var(--color-warning);
+    color: var(--color-on-warning);
 }
 
 .toast-info {
-    background-color: #3498db;
+    background: var(--color-info);
+    color: var(--color-on-info);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .loading-spinner {
+        animation-duration: 1.6s;
+    }
+
+    .toast {
+        transition: none;
+    }
 }
