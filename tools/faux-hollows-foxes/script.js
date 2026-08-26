@@ -79,7 +79,7 @@ class FauxHollowsFoxes {
         SecurityUtils.clearElement(this.elements.board);
         for (let i = 0; i < FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS; i++) {
             const cell = document.createElement('div');
-            cell.className = 'board-cell';
+            cell.className = 'cell board-cell';
             cell.dataset.index = i;
             this.elements.board.appendChild(cell);
         }
@@ -291,36 +291,36 @@ class FauxHollowsFoxes {
 
         switch (value) {
             case 'obstacle':
-                cell.className = 'board-cell obstacle';
+                cell.className = 'cell board-cell obstacle';
                 cell.textContent = '✕';
                 break;
             case 'sword':
-                cell.className = 'board-cell sword';
+                cell.className = 'cell board-cell sword';
                 cell.textContent = '⚔️';
                 break;
             case 'chest':
-                cell.className = 'board-cell chest';
+                cell.className = 'cell board-cell chest';
                 cell.textContent = '📦';
                 break;
             case 'fox':
-                cell.className = 'board-cell fox';
+                cell.className = 'cell board-cell fox';
                 cell.textContent = '🦊';
                 break;
             case 'empty':
-                cell.className = 'board-cell empty';
+                cell.className = 'cell board-cell empty';
                 cell.textContent = '◯';
                 break;
             case 'clicked':
-                cell.className = 'board-cell clicked';
+                cell.className = 'cell board-cell clicked';
                 cell.textContent = '';
                 break;
             default:
                 // 處理其他特殊情況
                 if (value && value.startsWith('sword')) {
-                    cell.className = 'board-cell sword connected';
+                    cell.className = 'cell board-cell sword connected';
                     cell.textContent = '⚔️';
                 } else if (value && value.startsWith('chest')) {
-                    cell.className = 'board-cell chest connected';
+                    cell.className = 'cell board-cell chest connected';
                     cell.textContent = '📦';
                 }
                 break;
@@ -836,7 +836,7 @@ class FauxHollowsFoxes {
 
         // Set as obstacle directly without clearing first
         this.board[index] = 'obstacle';
-        cell.className = 'board-cell obstacle';
+        cell.className = 'cell board-cell obstacle';
         cell.textContent = '✕';
     }
 
@@ -850,7 +850,7 @@ class FauxHollowsFoxes {
 
         // Clear the cell
         this.board[index] = null;
-        cell.className = 'board-cell';
+        cell.className = 'cell board-cell';
         cell.textContent = '';
 
         // Restore probability display if enabled
@@ -891,7 +891,7 @@ class FauxHollowsFoxes {
 
         // Place the single cell
         this.board[index] = type;
-        cell.className = `board-cell ${type}`;
+        cell.className = `cell board-cell ${type}`;
         SecurityUtils.clearElement(cell);
 
         // Set display text
@@ -936,7 +936,7 @@ class FauxHollowsFoxes {
             ['sword', 'chest', 'fox', 'empty'].includes(this.board[index]);
 
         this.board[index] = 'empty';
-        cell.className = 'board-cell empty';
+        cell.className = 'cell board-cell empty';
         SecurityUtils.clearElement(cell);
         cell.textContent = '';
 
@@ -1134,7 +1134,7 @@ class FauxHollowsFoxes {
         for (let i = 0; i < FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS; i++) {
             if (this.board[i] === null) {
                 const cell = this.elements.board.children[i];
-                cell.className = 'board-cell clicked';
+                cell.className = 'cell board-cell clicked';
             }
         }
     }
@@ -1201,7 +1201,7 @@ class FauxHollowsFoxes {
         foxP.textContent = `${foxText} x ${shapes.fox} = ${shapes.fox * FauxHollowsFoxes.CONSTANTS.SCORES.FOX} 分`;
         this.elements.resultDetails.appendChild(foxP);
 
-        this.elements.resultPanel.style.display = 'block';
+        this.elements.resultPanel.style.display = 'flex';
     }
 
 
@@ -1236,7 +1236,7 @@ class FauxHollowsFoxes {
             // 高亮這些格子
             optimalCells.forEach(cellData => {
                 const cell = this.elements.board.children[cellData.index];
-                cell.classList.add('optimal-highlight');
+                cell.classList.add('optimal-highlight', 'best');
                 cell.dataset.optimalType = cellData.type;
                 cell.dataset.optimalProbability = cellData.probability;
             });
@@ -1299,7 +1299,7 @@ class FauxHollowsFoxes {
         // 清除所有高亮效果
         const cells = this.elements.board.querySelectorAll('.optimal-highlight');
         cells.forEach(cell => {
-            cell.classList.remove('optimal-highlight');
+            cell.classList.remove('optimal-highlight', 'best');
             delete cell.dataset.optimalType;
             delete cell.dataset.optimalProbability;
         });
@@ -1414,7 +1414,7 @@ class FauxHollowsFoxes {
             const value = this.board[i];
 
             // 清空內容
-            cell.className = 'board-cell';
+            cell.className = 'cell board-cell';
             cell.textContent = '';
 
             if (value === null) {
@@ -1435,7 +1435,7 @@ class FauxHollowsFoxes {
 
                             if (swordProb > 0) {
                                 const swordDiv = document.createElement('div');
-                                swordDiv.className = 'treasure-prob sword-prob';
+                                swordDiv.className = 'treasure-prob-item sword-prob';
                                 const swordText = FF14Utils.getI18nText('faux_hollows_cell_sword', '劍');
                                 swordDiv.textContent = `${swordText}:${swordProb}%`;
                                 container.appendChild(swordDiv);
@@ -1443,7 +1443,7 @@ class FauxHollowsFoxes {
 
                             if (chestProb > 0) {
                                 const chestDiv = document.createElement('div');
-                                chestDiv.className = 'treasure-prob chest-prob';
+                                chestDiv.className = 'treasure-prob-item chest-prob';
                                 const chestText = FF14Utils.getI18nText('faux_hollows_cell_chest', '箱');
                                 chestDiv.textContent = `${chestText}:${chestProb}%`;
                                 container.appendChild(chestDiv);
@@ -1451,7 +1451,7 @@ class FauxHollowsFoxes {
 
                             if (foxProb > 0) {
                                 const foxDiv = document.createElement('div');
-                                foxDiv.className = 'treasure-prob fox-prob';
+                                foxDiv.className = 'treasure-prob-item fox-prob';
                                 const foxText = FF14Utils.getI18nText('faux_hollows_cell_fox', '狐');
                                 foxDiv.textContent = `${foxText}:${foxProb}%`;
                                 container.appendChild(foxDiv);
@@ -1463,21 +1463,21 @@ class FauxHollowsFoxes {
                     }
                 }
             } else if (value === 'obstacle') {
-                cell.className = 'board-cell obstacle';
+                cell.className = 'cell board-cell obstacle';
                 cell.textContent = '✕';
             } else if (value === 'sword') {
-                cell.className = 'board-cell sword';
+                cell.className = 'cell board-cell sword';
                 cell.textContent = FF14Utils.getI18nText('faux_hollows_cell_sword', '劍');
             } else if (value === 'chest') {
-                cell.className = 'board-cell chest';
+                cell.className = 'cell board-cell chest';
                 cell.textContent = FF14Utils.getI18nText('faux_hollows_cell_chest', '箱');
             } else if (value === 'fox') {
-                cell.className = 'board-cell fox';
+                cell.className = 'cell board-cell fox';
                 cell.textContent = FF14Utils.getI18nText('faux_hollows_cell_fox', '狐');
             } else if (value === 'empty') {
-                cell.className = 'board-cell empty';
+                cell.className = 'cell board-cell empty';
             } else if (value === 'clicked') {
-                cell.className = 'board-cell clicked';
+                cell.className = 'cell board-cell clicked';
             }
         }
     }

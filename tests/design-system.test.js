@@ -24,6 +24,7 @@ const TOKEN_CLEAN_FILES = [
     'tools/weather-forecast/style.css',
     'tools/timed-gathering/style.css',
     'tools/dungeon-database/style.css',
+    'tools/faux-hollows-foxes/style.css',
 ];
 
 // 這個檔案的職責就是彙整元件，允許 @import components/*.css
@@ -42,6 +43,7 @@ const MIGRATED_TOOLS = [
     'tools/weather-forecast',
     'tools/timed-gathering',
     'tools/dungeon-database',
+    'tools/faux-hollows-foxes',
 ];
 const LEGACY_CLASSES = ['tag-filter', 'btn-outline-primary', 'btn-outline-secondary', 'btn-outline-danger', 'tag-secondary', 'tag-light', 'tag-dark', 'tag-lg', 'tag-sm'];
 

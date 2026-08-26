@@ -31,10 +31,10 @@
         <div class="container">
             <h1 class="visually-hidden" data-i18n="faux_hollows_header">Faux Hollows Foxes 計算機</h1>
             <div class="game-container">
-                <div id="game-hint" class="game-hint">
+                <div id="game-hint" class="game-hint info-message">
                     <p data-i18n="faux_hollows_hint">💡 提示：請先點擊兩個格子設定為障礙物，系統將自動判斷並填充剩餘的障礙物位置</p>
                 </div>
-                <div class="game-info">
+                <div class="game-info card">
                     <div class="info-item">
                         <span class="info-label" data-i18n="faux_hollows_remaining_clicks">剩餘點擊次數</span>：
                         <span id="remaining-clicks" class="info-value">11</span>
@@ -51,7 +51,7 @@
                 </div>
 
                 <div class="controls">
-                    <button id="reset-btn" class="btn btn-primary" data-i18n="faux_hollows_reset">重置遊戲</button>
+                    <button id="reset-btn" class="btn btn-outline" data-i18n="faux_hollows_reset">重置遊戲</button>
                     <div class="btn-group">
                         <button id="undo-btn" class="btn btn-secondary" disabled>
                             <span class="btn-icon">↩️</span> <span data-i18n="faux_hollows_undo">回到上一步</span>
@@ -61,10 +61,10 @@
                         </button>
                     </div>
                     <button id="toggle-probabilities" class="btn btn-secondary" data-i18n="faux_hollows_hide_prob">隱藏機率</button>
-                    <button id="auto-calculate" class="btn btn-secondary" data-i18n="faux_hollows_calc_best">計算最佳策略</button>
+                    <button id="auto-calculate" class="btn btn-primary" data-i18n="faux_hollows_calc_best">計算最佳策略</button>
                 </div>
 
-                <div id="result-panel" class="result-panel" style="display: none;">
+                <div id="result-panel" class="result-panel card" style="display: none;">
                     <h2 data-i18n="faux_hollows_result_title">遊戲結果</h2>
                     <p class="result-score"><span data-i18n="faux_hollows_final_score">最終得分</span>：<span id="final-score">0</span></p>
                     <div id="result-details"></div>
@@ -72,19 +72,24 @@
             </div>
 
             <!-- Popup for cell selection -->
-            <div id="cell-popup" class="popup-overlay" style="display: none;">
-                <div class="popup-content">
-                    <h3 data-i18n="faux_hollows_popup_title">選擇此格類型</h3>
-                    <div class="popup-options">
-                        <button class="popup-btn" data-type="obstacle" data-i18n="faux_hollows_popup_obstacle">🚫 障礙物</button>
-                        <button class="popup-btn" data-type="sword" data-i18n="faux_hollows_popup_sword">⚔️ 劍 (2x3)</button>
-                        <button class="popup-btn" data-type="chest" data-i18n="faux_hollows_popup_chest">📦 寶箱 (2x2)</button>
-                        <button class="popup-btn" data-type="fox" data-i18n="faux_hollows_popup_fox">🦊 宗長 (1x1)</button>
-                        <button class="popup-btn" data-type="empty" data-i18n="faux_hollows_popup_empty">✅ 空格</button>
-                        <button class="popup-btn" data-type="clear" data-i18n="faux_hollows_popup_clear">🗑️ 清除</button>
+            <div id="cell-popup" class="popup-overlay dialog-overlay" style="display: none;">
+                <div class="popup-content dialog">
+                    <div class="dialog-header">
+                        <h3 class="dialog-title" data-i18n="faux_hollows_popup_title">選擇此格類型</h3>
                     </div>
-
-                    <button class="popup-close" data-i18n="faux_hollows_popup_cancel">取消</button>
+                    <div class="dialog-body">
+                        <div class="popup-options">
+                            <button class="popup-btn" data-type="obstacle" data-i18n="faux_hollows_popup_obstacle">🚫 障礙物</button>
+                            <button class="popup-btn" data-type="sword" data-i18n="faux_hollows_popup_sword">⚔️ 劍 (2x3)</button>
+                            <button class="popup-btn" data-type="chest" data-i18n="faux_hollows_popup_chest">📦 寶箱 (2x2)</button>
+                            <button class="popup-btn" data-type="fox" data-i18n="faux_hollows_popup_fox">🦊 宗長 (1x1)</button>
+                            <button class="popup-btn" data-type="empty" data-i18n="faux_hollows_popup_empty">✅ 空格</button>
+                            <button class="popup-btn" data-type="clear" data-i18n="faux_hollows_popup_clear">🗑️ 清除</button>
+                        </div>
+                    </div>
+                    <div class="dialog-actions">
+                        <button class="btn btn-block popup-close" data-i18n="faux_hollows_popup_cancel">取消</button>
+                    </div>
                 </div>
             </div>
         </div>
