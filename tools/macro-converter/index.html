@@ -6,6 +6,10 @@
     <title>巨集轉換器 - FF14.tw</title>
     <meta name="description" content="FF14 巨集語言轉換工具，支援繁體中文、英文、日文巨集互相轉換">
     <link rel="icon" type="image/x-icon" href="../../assets/images/ff14tw.ico">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../assets/css/tokens.css">
     <link rel="stylesheet" href="../../assets/css/common.css">
     <link rel="stylesheet" href="../../assets/css/dark-mode-tools.css">
     <link rel="stylesheet" href="../../assets/css/tools-common.css">
@@ -46,7 +50,7 @@
 
                 <!-- Macro Panels -->
                 <div class="macro-panels">
-                    <div class="macro-panel">
+                    <div class="macro-panel card">
                         <div class="panel-header">
                             <label for="inputMacro" data-i18n="macro_converter_input">輸入巨集</label>
                         </div>
@@ -64,7 +68,7 @@
                         </button>
                     </div>
 
-                    <div class="macro-panel">
+                    <div class="macro-panel card">
                         <div class="panel-header">
                             <label for="outputMacro" data-i18n="macro_converter_output">輸出結果</label>
                         </div>
@@ -77,7 +81,6 @@
 
                 <!-- Warning Message -->
                 <div id="warningMessage" class="warning-message" style="display: none;">
-                    <span class="warning-icon-large">⚠</span>
                     <span data-i18n="macro_converter_warning">部分指令無法翻譯</span>
                 </div>
 

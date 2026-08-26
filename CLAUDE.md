@@ -54,7 +54,7 @@ Tools that work without server (can open HTML directly):
 - 角色卡產生器
 - Faux Hollows Foxes 計算機
 
-**No package management, linting, or testing commands** - the project uses vanilla web technologies only.
+**Testing:** `node --test`（Node 內建 test runner，自動執行 `tests/*.test.js`）。`tests/design-system.test.js` 守住設計系統規則（token 完整性、對比度、token-clean 檔案清單）；`tests/pages.test.js` 守住每一頁的載入順序與字型。每次 commit 前執行。沒有 package.json、bundler 或 linter。
 
 ## Core Patterns
 
@@ -134,6 +134,10 @@ HTML Structure:
 3. Import shared CSS/JS in the following order:
    ```html
    <!-- CSS -->
+   <link rel="preconnect" href="https://fonts.googleapis.com">
+   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
+   <link rel="stylesheet" href="../../assets/css/tokens.css">
    <link rel="stylesheet" href="../../assets/css/common.css">
    <link rel="stylesheet" href="../../assets/css/dark-mode-tools.css">
    <link rel="stylesheet" href="../../assets/css/tools-common.css">
@@ -182,6 +186,14 @@ HTML Structure:
 ### Overview
 The project includes a modular CSS component system in `/assets/css/components/` to ensure UI consistency across all tools. **Always use these shared components instead of creating custom styles.**
 
+### Design Tokens (`assets/css/tokens.css`)
+全站唯一的顏色、字級、間距、圓角、陰影來源；深色模式只在 `[data-theme="dark"]` 重新指定顏色類 token。**規則：**
+- 工具的 `style.css` 只寫版面（grid / flex / 間距），不得出現任何色碼（`#hex`、`rgb()`、`white`）、不得引用 `tokens.css` 未定義的 `var(--…)`、不得 `@import`、不得 `!important`；遷移完成的檔案列在 `tests/design-system.test.js` 的 `TOKEN_CLEAN_FILES`。
+- 顏色：`--color-primary`（互動色）、`--color-bg` / `--color-surface` / `--color-surface-2`、`--color-border` / `--color-border-strong`、`--color-heading` / `--color-text` / `--color-muted`、語意色 `--color-{success,warning,danger,info}` 及其 `-tint` / `-text` / `-border`，實心底上的字用 `--color-on-{primary,success,warning,danger,info,muted}`。
+- 字級 9 階 `--text-xs` … `--text-5xl`；間距 `--space-1` … `--space-10`（4px 基底）；圓角 `--radius-{sm,md,lg,xl,full}`；陰影 `--shadow-{sm,md,lg,xl}`；控制項高度 `--control-{sm,md,lg}` = 32 / 40 / 48；動態 `--duration-{fast,base,slow}` + `--ease`。
+- `common.css` 頂部的 `--primary-color`、`--text-color` 等舊名稱只是過渡期的相容別名，新程式碼不要使用。
+- 品牌漸層 `--gradient-brand` 只用在頁首、首頁 hero、工具卡 hover 頂線。
+
 ### Available Components
 
 #### 1. Buttons (`components/buttons.css`)
@@ -191,15 +203,15 @@ The project includes a modular CSS component system in `/assets/css/components/`
 <button class="btn btn-secondary">Secondary Button</button>
 <button class="btn btn-success">Success Button</button>
 <button class="btn btn-danger">Danger Button</button>
-<button class="btn btn-warning">Warning Button</button>
-<button class="btn btn-info">Info Button</button>
 
 <!-- Size variants -->
 <button class="btn btn-primary btn-sm">Small Button</button>
 <button class="btn btn-primary btn-lg">Large Button</button>
 
-<!-- Outline buttons -->
-<button class="btn btn-outline-primary">Outline Primary</button>
+<!-- 輪廓 / 文字 -->
+<button class="btn btn-outline">輪廓按鈕</button>
+<button class="btn btn-ghost">文字按鈕</button>
+<!-- 純 .btn = 次要按鈕；一個畫面最多一顆 .btn-primary -->
 
 <!-- Icon buttons -->
 <button class="btn btn-primary">
@@ -227,7 +239,6 @@ The project includes a modular CSS component system in `/assets/css/components/`
 
 <!-- Hoverable clickable card -->
 <div class="card hoverable clickable">
-    <img class="card-img-top" src="image.jpg" alt="Card image">
     <div class="card-body">
         <h3 class="card-title">Interactive Card</h3>
         <p class="card-text">This card responds to hover and click.</p>
@@ -241,19 +252,9 @@ The project includes a modular CSS component system in `/assets/css/components/`
     <div class="card">...</div>
 </div>
 
-<!-- Horizontal card -->
-<div class="card card-horizontal">
-    <img class="card-img-left" src="image.jpg" alt="Card image">
-    <div class="card-body">
-        <h3 class="card-title">Horizontal Card</h3>
-        <p class="card-text">Content flows horizontally.</p>
-    </div>
-</div>
-
 <!-- Card states -->
 <div class="card card-selected">Selected card</div>
 <div class="card card-disabled">Disabled card</div>
-<div class="card card-loading">Loading card</div>
 ```
 
 #### 3. Loading States (`tools-common.css`)
@@ -323,14 +324,6 @@ The project includes a modular CSS component system in `/assets/css/components/`
     <input type="text" class="form-control search-input" placeholder="搜尋...">
 </div>
 
-<!-- Input group -->
-<div class="input-group">
-    <div class="input-group-prepend">
-        <span class="input-group-text">@</span>
-    </div>
-    <input type="text" class="form-control" placeholder="使用者名稱">
-</div>
-
 <!-- Validation states -->
 <input type="text" class="form-control is-valid">
 <div class="valid-feedback">輸入正確！</div>
@@ -353,18 +346,15 @@ The project includes a modular CSS component system in `/assets/css/components/`
         單選按鈕
     </label>
 </div>
-
-<!-- Range slider -->
-<input type="range" class="form-range" min="0" max="100">
 ```
 
 #### 6. Language Switcher (`components/language-switcher.css`)
 ```html
 <!-- 語言切換器 -->
 <div class="language-switcher" id="languageSwitcher">
-    <button class="lang-btn active" data-lang="zh">🇹🇼 中文</button>
-    <button class="lang-btn" data-lang="en">🇺🇸 EN</button>
-    <button class="lang-btn" data-lang="ja">🇯🇵 日本語</button>
+    <button class="language-btn active" data-lang="zh">🇹🇼 中文</button>
+    <button class="language-btn" data-lang="en">🇺🇸 EN</button>
+    <button class="language-btn" data-lang="ja">🇯🇵 日本語</button>
 </div>
 ```
 
@@ -389,9 +379,11 @@ The project includes a modular CSS component system in `/assets/css/components/`
 <!-- Outline tags -->
 <span class="tag tag-outline-primary">輪廓標籤</span>
 
-<!-- Filter tags (toggleable) -->
-<button class="tag tag-filter">四人迷宮</button>
-<button class="tag tag-filter active">八人副本</button>
+<!-- 篩選膠囊（可切換；.tag-filter 為舊名稱） -->
+<button class="chip">四人迷宮</button>
+<button class="chip active">八人副本</button>
+<!-- 實心狀態徽章 -->
+<span class="tag tag-solid tag-warning">施工中</span>
 
 <!-- Tag groups -->
 <div class="tag-group">
@@ -402,13 +394,6 @@ The project includes a modular CSS component system in `/assets/css/components/`
 
 <!-- Badges -->
 <span class="badge">99+</span>
-<span class="badge badge-circle">5</span>
-
-<!-- Dismissible tag -->
-<span class="tag tag-primary tag-dismissible">
-    可關閉標籤
-    <button class="tag-close">&times;</button>
-</span>
 ```
 
 ### Component Usage Guidelines
@@ -420,7 +405,7 @@ The project includes a modular CSS component system in `/assets/css/components/`
 5. **Maintain consistency** - if a component doesn't meet your needs, consider updating the shared component instead of creating a one-off solution
 
 ### Dark Mode Support
-All components automatically support Dark Mode through `[data-theme="dark"]` selectors. No additional styling needed.
+All components support Dark Mode automatically: `assets/css/tokens.css` redefines every colour token under `[data-theme="dark"]`, and components contain no dark rules of their own（`tests/design-system.test.js` 會擋下元件與已遷移工具內的 `[data-theme=` 規則）。需要調整深色外觀時改 token，不要在元件或工具加 `[data-theme="dark"]` 覆寫。
 
 ### Responsive Design
 Components include responsive breakpoints:
@@ -487,9 +472,9 @@ i18n.addObserver(() => this.updateUI());
 <link rel="stylesheet" href="../../assets/css/components/language-switcher.css">
 
 <div class="language-switcher" id="languageSwitcher">
-    <button class="lang-btn active" data-lang="zh">🇹🇼 中文</button>
-    <button class="lang-btn" data-lang="en">🇺🇸 EN</button>
-    <button class="lang-btn" data-lang="ja">🇯🇵 日本語</button>
+    <button class="language-btn active" data-lang="zh">🇹🇼 中文</button>
+    <button class="language-btn" data-lang="en">🇺🇸 EN</button>
+    <button class="language-btn" data-lang="ja">🇯🇵 日本語</button>
 </div>
 ```
 

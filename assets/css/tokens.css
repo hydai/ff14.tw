@@ -1,0 +1,217 @@
+/* ==========================================================================
+   FF14.tw 設計 token — 全站唯一的顏色、尺寸、字體來源
+   規格：設計系統畫布「基礎 Foundations」（2026-08-26，方向 A 靛藍統一）
+   規則：
+   1. 元件與工具只能透過 var(--…) 取值，不得再出現色碼。
+   2. 深色模式只在 [data-theme="dark"] 重新指定顏色類 token；
+      元件與工具不再各自撰寫 dark 規則。
+   3. 新增 token 前先確認畫布上沒有可用的值。
+   ========================================================================== */
+
+:root {
+    /* ---- 品牌（只用在頁首、首頁 hero、工具卡 hover 頂線） ---- */
+    --color-brand-a: #667eea;
+    --color-brand-b: #764ba2;
+    --gradient-brand: linear-gradient(135deg, var(--color-brand-a) 0%, var(--color-brand-b) 100%);
+
+    /* ---- 主色（互動色：按鈕、連結、啟用中的篩選、焦點環） ---- */
+    --color-primary: #5061d3;
+    --color-primary-hover: #4352c6;
+    --color-primary-active: #3b49ba;
+    --color-primary-tint: #eeeffb;
+    --color-on-primary: #ffffff;
+    --ring-primary: 0 0 0 3px rgba(80, 97, 211, 0.3);
+    --glow-primary: 0 0 12px rgba(80, 97, 211, 0.55);
+    --glow-primary-strong: 0 0 22px rgba(80, 97, 211, 0.9);
+
+    /* ---- 中性色 ---- */
+    --color-bg: #f5f7fa;
+    --color-surface: #ffffff;
+    --color-surface-2: #f8f9fa;
+    --color-border: #e9ecef;
+    --color-border-strong: #ced4da;
+    --color-heading: #2c3e50;
+    --color-text: #333333;
+    --color-muted: #64707d;
+    --color-on-muted: #ffffff;
+    --color-hover: rgba(0, 0, 0, 0.05);
+    --color-mark: #fdf1de;
+    --color-overlay: rgba(0, 0, 0, 0.5);
+
+    /* ---- 語意色：fill / tint（柔和底）/ text（柔和底上的字）/ border / on（實心底上的字） ---- */
+    --color-success: #198754;
+    --color-success-tint: #e3f1ea;
+    --color-success-text: #146c43;
+    --color-success-border: #aed5c3;
+    --color-on-success: #ffffff;
+
+    --color-warning: #f39c12;
+    --color-warning-tint: #fdf1de;
+    --color-warning-text: #8a5a00;
+    --color-warning-border: #fbdcac;
+    --color-on-warning: #2c3e50;
+
+    --color-danger: #dc3545;
+    --color-danger-tint: #fcebec;
+    --color-danger-text: #a52834;
+    --color-danger-border: #f3b8be;
+    --color-on-danger: #ffffff;
+    --ring-danger: 0 0 0 3px rgba(220, 53, 69, 0.25);
+
+    --color-info: #0e7c9c;
+    --color-info-tint: #e7f2f5;
+    --color-info-text: #0b5e77;
+    --color-info-border: #abd1dc;
+    --color-on-info: #ffffff;
+
+    /* ---- 頁首、hero、頁尾 ---- */
+    --header-bg: var(--gradient-brand);
+    --header-text: #ffffff;
+    --nav-hover: rgba(255, 255, 255, 0.2);
+    --nav-active: rgba(255, 255, 255, 0.3);
+    --lang-bg: rgba(255, 255, 255, 0.12);
+    --lang-text: rgba(255, 255, 255, 0.85);
+    --lang-active-bg: rgba(255, 255, 255, 0.95);
+    --lang-active-text: #2c3e50;
+    --hero-bg: var(--gradient-brand);
+    --hero-text: #ffffff;
+    --hero-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+    --footer-bg: #2c3e50;
+    --footer-text: rgba(255, 255, 255, 0.85);
+
+    /* ---- 陰影（帶標題色的透明度，不用純黑） ---- */
+    --shadow-sm: 0 1px 2px rgba(44, 62, 80, 0.06);
+    --shadow-md: 0 2px 8px rgba(44, 62, 80, 0.08);
+    --shadow-lg: 0 8px 24px rgba(44, 62, 80, 0.12);
+    --shadow-xl: 0 16px 40px rgba(44, 62, 80, 0.16);
+
+    /* ---- 圓角 ---- */
+    --radius-sm: 4px;
+    --radius-md: 6px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    --radius-full: 999px;
+
+    /* ---- 間距（4px 基底） ---- */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 20px;
+    --space-6: 24px;
+    --space-7: 32px;
+    --space-8: 40px;
+    --space-9: 48px;
+    --space-10: 64px;
+
+    /* ---- 字體 ---- */
+    --font-sans: 'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --text-xs: 0.75rem;
+    --text-sm: 0.875rem;
+    --text-md: 1rem;
+    --text-lg: 1.125rem;
+    --text-xl: 1.25rem;
+    --text-2xl: 1.5rem;
+    --text-3xl: 1.875rem;
+    --text-4xl: 2.25rem;
+    --text-5xl: 3rem;
+    --leading-tight: 1.2;
+    --leading-snug: 1.35;
+    --leading-normal: 1.6;
+    --leading-relaxed: 1.8;
+    --weight-normal: 400;
+    --weight-medium: 500;
+    --weight-semibold: 600;
+    --weight-bold: 700;
+
+    /* ---- 控制項高度 ---- */
+    --control-sm: 32px;
+    --control-md: 40px;
+    --control-lg: 48px;
+
+    /* ---- 動態 ---- */
+    --duration-fast: 150ms;
+    --duration-base: 200ms;
+    --duration-slow: 300ms;
+    --ease: cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* ---- 版面 ---- */
+    --container-max: 1200px;
+    --container-narrow: 800px;
+    --container-gutter: 20px;
+    --z-header: 100;
+    --z-overlay: 1000;
+    --z-modal: 1001;
+    --z-toast: 9999;
+}
+
+[data-theme="dark"] {
+    --color-brand-a: #667eea;
+    --color-brand-b: #764ba2;
+    --gradient-brand: linear-gradient(135deg, #4b5ca8 0%, #563b79 100%);
+
+    --color-primary: #8b9cf5;
+    --color-primary-hover: #a0aef8;
+    --color-primary-active: #7c8cf0;
+    --color-primary-tint: #2c314e;
+    --color-on-primary: #0f1419;
+    --ring-primary: 0 0 0 3px rgba(139, 156, 245, 0.35);
+    --glow-primary: 0 0 12px rgba(139, 156, 245, 0.55);
+    --glow-primary-strong: 0 0 22px rgba(139, 156, 245, 0.9);
+
+    --color-bg: #0f1419;
+    --color-surface: #1a1d2e;
+    --color-surface-2: #2d3142;
+    --color-border: #3d4154;
+    --color-border-strong: #4d5270;
+    --color-heading: #f3f4f8;
+    --color-text: #e8e8e8;
+    --color-muted: #a0a8b8;
+    --color-on-muted: #0f1419;
+    --color-hover: rgba(255, 255, 255, 0.06);
+    --color-mark: rgba(247, 184, 74, 0.25);
+    --color-overlay: rgba(0, 0, 0, 0.7);
+
+    --color-success: #34d058;
+    --color-success-tint: rgba(52, 208, 88, 0.14);
+    --color-success-text: #6fe28f;
+    --color-success-border: rgba(52, 208, 88, 0.35);
+    --color-on-success: #0f1419;
+
+    --color-warning: #f7b84a;
+    --color-warning-tint: rgba(247, 184, 74, 0.14);
+    --color-warning-text: #f9c86e;
+    --color-warning-border: rgba(247, 184, 74, 0.35);
+    --color-on-warning: #0f1419;
+
+    --color-danger: #ff7b7b;
+    --color-danger-tint: rgba(255, 123, 123, 0.14);
+    --color-danger-text: #ff9c9c;
+    --color-danger-border: rgba(255, 123, 123, 0.35);
+    --color-on-danger: #0f1419;
+    --ring-danger: 0 0 0 3px rgba(255, 123, 123, 0.3);
+
+    --color-info: #20c9e6;
+    --color-info-tint: rgba(32, 201, 230, 0.14);
+    --color-info-text: #63d9ee;
+    --color-info-border: rgba(32, 201, 230, 0.35);
+    --color-on-info: #0f1419;
+
+    --header-text: #ffffff;
+    --nav-hover: rgba(255, 255, 255, 0.12);
+    --nav-active: rgba(255, 255, 255, 0.2);
+    --lang-bg: rgba(255, 255, 255, 0.08);
+    --lang-text: rgba(255, 255, 255, 0.75);
+    --lang-active-bg: rgba(255, 255, 255, 0.9);
+    --lang-active-text: #1a1d2e;
+    --hero-text: #ffffff;
+    --hero-shadow: 0 10px 30px rgba(102, 126, 234, 0.25);
+    --footer-bg: #1a1d2e;
+    --footer-text: rgba(255, 255, 255, 0.75);
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+    --shadow-xl: 0 16px 40px rgba(0, 0, 0, 0.6);
+}

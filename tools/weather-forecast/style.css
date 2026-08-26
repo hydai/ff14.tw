@@ -372,6 +372,7 @@
 .toast.show {
     opacity: 1;
     visibility: visible;
+    transform: translateX(-50%);
 }
 
 /* Dark Mode 支援 */
