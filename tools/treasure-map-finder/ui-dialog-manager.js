@@ -315,7 +315,7 @@ class UIDialogManager {
 
         const textarea = document.createElement('textarea');
         textarea.id = 'exportTextarea';
-        textarea.className = 'ui-dialog-textarea';
+        textarea.className = 'ui-dialog-textarea form-control';
         textarea.readOnly = true;
         textarea.value = content;
         container.appendChild(textarea);
@@ -418,7 +418,7 @@ class UIDialogManager {
 
         const textarea = document.createElement('textarea');
         textarea.id = 'importTextarea';
-        textarea.className = 'ui-dialog-textarea';
+        textarea.className = 'ui-dialog-textarea form-control';
         textarea.placeholder = placeholder;
         container.appendChild(textarea);
 
@@ -706,12 +706,12 @@ class UIDialogManager {
 
         // 建立遮罩層
         const overlay = document.createElement('div');
-        overlay.className = 'ui-dialog-overlay';
+        overlay.className = 'ui-dialog-overlay dialog-overlay';
         // Z-index handled by CSS class or default
 
         // 建立對話框
         const dialog = document.createElement('div');
-        dialog.className = `ui-dialog ${className}`;
+        dialog.className = `ui-dialog dialog ${className}`;
 
         if (title) {
             const titleElement = document.createElement('h3');
@@ -732,36 +732,6 @@ class UIDialogManager {
         overlay.appendChild(dialog);
 
         return { overlay, dialog };
-    }
-
-    /**
-     * 建立通用對話框 (無遮罩層，保留向後相容)
-     * @deprecated 建議使用 createDialogWithOverlay
-     */
-    createDialog(options) {
-        const { title, content, className = '' } = options;
-
-        const dialog = document.createElement('div');
-        dialog.className = `ui-dialog fixed-center ${className}`;
-
-        if (title) {
-            const titleElement = document.createElement('h3');
-            titleElement.textContent = title;
-            dialog.appendChild(titleElement);
-        }
-
-        if (content) {
-            const contentDiv = document.createElement('div');
-            // Check if content is a string or DOM element
-            if (typeof content === 'string') {
-                contentDiv.textContent = content;
-            } else if (content instanceof HTMLElement) {
-                contentDiv.appendChild(content);
-            }
-            dialog.appendChild(contentDiv);
-        }
-
-        return dialog;
     }
 
     /**

@@ -257,7 +257,7 @@ class TreasureMapFinder {
     
     createMapCard(map) {
         const card = document.createElement('div');
-        card.className = 'treasure-card';
+        card.className = 'treasure-card card hoverable clickable';
         card.dataset.mapId = map.id;
         
         const isInList = this.listManager.has(map.id);
@@ -320,7 +320,7 @@ class TreasureMapFinder {
         
         // 建立按鈕區域
         const actions = document.createElement('div');
-        actions.className = 'card-actions';
+        actions.className = 'treasure-card-actions';
         
         // 詳細地圖按鈕
         const detailBtn = document.createElement('button');
@@ -368,10 +368,7 @@ class TreasureMapFinder {
             }
             this.copyCoordinates(map);
         });
-        
-        // 添加游標樣式提示可點擊
-        card.style.cursor = 'pointer';
-        
+
         return card;
     }
 
@@ -675,7 +672,7 @@ class TreasureMapFinder {
             emptyState.appendChild(emptyText);
 
             const hintText = document.createElement('p');
-            hintText.className = 'text-secondary';
+            hintText.className = 'empty-state-text';
             hintText.textContent = FF14Utils.getI18nText('treasure_map_list_hint', '點擊寶圖卡片上的「加入清單」開始建立');
             emptyState.appendChild(hintText);
 
@@ -703,7 +700,7 @@ class TreasureMapFinder {
             itemInfo.className = 'item-info';
             
             const levelSpan = document.createElement('span');
-            levelSpan.className = 'item-level';
+            levelSpan.className = 'item-level tag tag-solid tag-primary';
             levelSpan.textContent = item.level.toUpperCase();
             itemInfo.appendChild(levelSpan);
             
@@ -740,7 +737,7 @@ class TreasureMapFinder {
             
             // 移除按鈕
             const removeBtn = document.createElement('button');
-            removeBtn.className = 'btn-remove';
+            removeBtn.className = 'btn-remove btn btn-close';
             removeBtn.dataset.mapId = item.id;
             removeBtn.textContent = '×';
             removeBtn.addEventListener('click', (e) => {
