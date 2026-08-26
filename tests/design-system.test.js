@@ -28,13 +28,14 @@ const TOKEN_CLEAN_FILES = [
     'tools/lodestone-lookup/styles.css',
     'tools/character-card/style.css',
     'tools/treasure-map-finder/style.css',
+    'assets/css/pages.css',
 ];
 
 // 這個檔案的職責就是彙整元件，允許 @import components/*.css
 const IMPORT_ALLOWED = new Set(['assets/css/tools-common.css']);
 
-// 元件與已遷移的工具不得自帶 dark 規則；只有 tokens.css（定義）與 common.css（.hero 過渡覆寫）例外
-const DARK_RULES_ALLOWED = new Set(['assets/css/tokens.css', 'assets/css/common.css']);
+// 元件、工具與站台樣式都不得自帶 dark 規則；只有 tokens.css（定義）例外
+const DARK_RULES_ALLOWED = new Set(['assets/css/tokens.css']);
 
 // 已遷移的工具目錄：HTML / JS 不得再使用共用元件的舊名稱（Plan 3 會刪除這些別名）
 const MIGRATED_TOOLS = [
