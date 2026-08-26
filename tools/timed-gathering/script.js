@@ -194,7 +194,7 @@ class TimedGatheringManager {
         });
 
         // 類型篩選
-        this.elements.typeFilters.querySelectorAll('.tag-filter').forEach(tag => {
+        this.elements.typeFilters.querySelectorAll('.chip').forEach(tag => {
             tag.addEventListener('click', () => {
                 tag.classList.toggle('active');
                 this.applyFilters();
@@ -202,7 +202,7 @@ class TimedGatheringManager {
         });
 
         // 資料片篩選
-        this.elements.expansionFilters.querySelectorAll('.tag-filter').forEach(tag => {
+        this.elements.expansionFilters.querySelectorAll('.chip').forEach(tag => {
             tag.addEventListener('click', () => {
                 tag.classList.toggle('active');
                 this.applyFilters();
@@ -305,16 +305,14 @@ class TimedGatheringManager {
             const status = this.notificationManager.getNotificationStatus();
             notificationStatus.textContent = status;
 
-            // 根據狀態設定樣式 - 支援兩種樣式類名
-            const statusClasses = ['status-enabled', 'status-disabled', 'status-denied'];
+            // 根據狀態設定徽章樣式（共用 .tag）
+            const statusClasses = ['tag-solid', 'tag-success', 'tag-danger'];
             notificationStatus.classList.remove(...statusClasses);
 
             if (this.notificationManager.enabled) {
-                notificationStatus.classList.add('status-enabled');
+                notificationStatus.classList.add('tag-solid', 'tag-success');
             } else if (Notification.permission === 'denied') {
-                notificationStatus.classList.add('status-denied');
-            } else {
-                notificationStatus.classList.add('status-disabled');
+                notificationStatus.classList.add('tag-solid', 'tag-danger');
             }
         }
     }
@@ -347,9 +345,9 @@ class TimedGatheringManager {
         // Sanitize search input to prevent XSS
         const rawSearchTerm = this.elements.searchInput.value;
         const searchTerm = SecurityUtils.sanitizeInput(rawSearchTerm).toLowerCase();
-        const activeTypes = Array.from(this.elements.typeFilters.querySelectorAll('.tag-filter.active'))
+        const activeTypes = Array.from(this.elements.typeFilters.querySelectorAll('.chip.active'))
             .map(tag => tag.dataset.type);
-        const activeExpansions = Array.from(this.elements.expansionFilters.querySelectorAll('.tag-filter.active'))
+        const activeExpansions = Array.from(this.elements.expansionFilters.querySelectorAll('.chip.active'))
             .map(tag => tag.dataset.expansion);
 
         this.filteredData = this.searchFilter.filter(this.data, {
@@ -372,7 +370,7 @@ class TimedGatheringManager {
 
         if (this.filteredData.length === 0) {
             const emptyMessage = document.createElement('div');
-            emptyMessage.className = 'empty-message';
+            emptyMessage.className = 'empty-state';
             emptyMessage.textContent = FF14Utils.getI18nText('noItemsFound', 'No items match the criteria');
             container.appendChild(emptyMessage);
             return;
@@ -386,7 +384,7 @@ class TimedGatheringManager {
 
     createItemCard(item) {
         const card = document.createElement('div');
-        card.className = 'item-card';
+        card.className = 'item-card card';
         card.dataset.itemId = item.id;
 
         const typeIcon = this.getTypeIcon(item.type);
@@ -413,7 +411,7 @@ class TimedGatheringManager {
         header.appendChild(titleSection);
 
         const timeSpan = document.createElement('span');
-        timeSpan.className = 'item-time';
+        timeSpan.className = 'item-time tag tag-solid tag-primary';
         timeSpan.textContent = item.time;
         header.appendChild(timeSpan);
 
@@ -533,7 +531,7 @@ class TimedGatheringManager {
 
     createListItem(item) {
         const div = document.createElement('div');
-        div.className = 'list-item';
+        div.className = 'list-item card';
         div.dataset.itemId = item.id;
 
         const info = document.createElement('div');
@@ -552,12 +550,12 @@ class TimedGatheringManager {
         info.appendChild(name);
 
         const version = document.createElement('span');
-        version.className = 'list-item-version';
+        version.className = 'list-item-version tag tag-solid tag-primary';
         version.textContent = `v${item.expansion}`;
         info.appendChild(version);
 
         const time = document.createElement('span');
-        time.className = 'list-item-time';
+        time.className = 'list-item-time tag';
         time.textContent = item.time;
         info.appendChild(time);
 
@@ -598,7 +596,7 @@ class TimedGatheringManager {
 
         lists.forEach(list => {
             const tab = document.createElement('button');
-            tab.className = 'list-tab';
+            tab.className = 'tab list-tab';
             tab.dataset.listId = list.id;
             tab.textContent = list.name;
 
