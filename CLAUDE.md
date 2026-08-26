@@ -139,7 +139,6 @@ HTML Structure:
    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
    <link rel="stylesheet" href="../../assets/css/tokens.css">
    <link rel="stylesheet" href="../../assets/css/common.css">
-   <link rel="stylesheet" href="../../assets/css/dark-mode-tools.css">
    <link rel="stylesheet" href="../../assets/css/tools-common.css">
    <link rel="stylesheet" href="../../assets/css/components/language-switcher.css">
    <link rel="stylesheet" href="style.css">

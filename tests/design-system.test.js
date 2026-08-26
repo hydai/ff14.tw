@@ -180,11 +180,9 @@ test('已遷移的工具不得再使用共用元件的舊 class 名稱', () => {
     }
 });
 
-test('dark-mode-tools.css 不得覆寫共用元件', () => {
-    const css = stripComments(read('assets/css/dark-mode-tools.css'));
-    const shared = ['cell', 'progress', 'progress-bar', 'tabs', 'tab', 'toggle', 'toggle-track', 'table', 'table-wrap', 'dialog', 'dialog-overlay', 'empty-state', 'chip', 'card', 'tag', 'btn', 'toast'];
-    for (const name of shared) {
-        const re = new RegExp(`\\.${escapeRegExp(name)}(?![\\w-])`);
-        assert.doesNotMatch(css, re, `dark-mode-tools.css 覆寫了共用元件 .${name}`);
+test('dark-mode-tools.css 已刪除，且沒有頁面連結它', () => {
+    assert.equal(fs.existsSync(path.join(ROOT, 'assets/css/dark-mode-tools.css')), false, 'assets/css/dark-mode-tools.css 應已刪除');
+    for (const file of [...listFiles('tools', ['.html']), 'index.html', 'about.html', 'copyright.html', 'changelog.html']) {
+        assert.doesNotMatch(read(file), /dark-mode-tools\.css/, `${file} 仍連結 dark-mode-tools.css`);
     }
 });
