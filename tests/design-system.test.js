@@ -29,6 +29,7 @@ const TOKEN_CLEAN_FILES = [
     'tools/character-card/style.css',
     'tools/treasure-map-finder/style.css',
     'assets/css/pages.css',
+    'assets/css/changelog.css',
 ];
 
 // 這個檔案的職責就是彙整元件，允許 @import components/*.css
