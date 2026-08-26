@@ -14,6 +14,7 @@ const TOKEN_CLEAN_FILES = [
     'assets/css/components/buttons.css',
     'assets/css/components/forms.css',
     'assets/css/components/tags.css',
+    'assets/css/components/cards.css',
 ];
 
 // ---------- 小工具 ----------
