@@ -6,19 +6,6 @@
     display: none;
 }
 
-/* 無 JavaScript 時的導覽列 */
-.noscript-nav {
-    padding: var(--space-4);
-    background: var(--gradient-brand);
-    color: var(--header-text);
-    text-align: center;
-}
-
-.noscript-nav-link {
-    color: var(--header-text);
-    margin: 0 var(--space-4);
-}
-
 .page-header {
     text-align: center;
     margin-bottom: var(--space-7);

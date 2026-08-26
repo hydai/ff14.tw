@@ -42,6 +42,19 @@ body {
     background-color: var(--color-bg);
 }
 
+/* 無 JavaScript 時的導覽列（每一頁 <noscript> 共用） */
+.noscript-nav {
+    padding: var(--space-4);
+    background: var(--gradient-brand);
+    color: var(--header-text);
+    text-align: center;
+}
+
+.noscript-nav-link {
+    color: var(--header-text);
+    margin: 0 var(--space-4);
+}
+
 .container {
     max-width: var(--container-max);
     margin: 0 auto;
