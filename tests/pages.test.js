@@ -62,3 +62,34 @@ test('工具 CSS 不得以 @import 重複載入 /assets/css 的共用樣式', ()
         assert.doesNotMatch(css, /@import\s+url\(\s*['"]?\/?assets\/css\//, `${rel(file)} 以 @import 重複載入共用樣式`);
     }
 });
+
+const ALLOWED_INLINE_STYLE = /^display:\s*none;?$/;
+
+test('頁面不得有內嵌 <style> 區塊', () => {
+    for (const page of pages) {
+        assert.doesNotMatch(fs.readFileSync(page, 'utf8'), /<style[\s>]/i, `${rel(page)} 仍有內嵌 <style> 區塊`);
+    }
+});
+
+test('頁面的 style= 屬性只允許 JS 控制顯示用的 display: none 初始狀態', () => {
+    for (const page of pages) {
+        const html = fs.readFileSync(page, 'utf8');
+        for (const m of html.matchAll(/\sstyle=(?:"([^"]*)"|'([^']*)')/g)) {
+            assert.match((m[1] ?? m[2]).trim(), ALLOWED_INLINE_STYLE, `${rel(page)} 有不被允許的內嵌樣式：style="${m[1] ?? m[2]}"`);
+        }
+    }
+});
+
+test('noscript 導覽列全站統一使用 .noscript-nav', () => {
+    for (const page of pages) {
+        const html = fs.readFileSync(page, 'utf8');
+        if (!html.includes('<noscript>')) continue;
+        assert.match(html, /<nav class="noscript-nav">/, `${rel(page)} 的 noscript 導覽列未使用共用 class`);
+    }
+});
+
+test('沒有頁面連結 dark-mode-tools.css', () => {
+    for (const page of pages) {
+        assert.doesNotMatch(fs.readFileSync(page, 'utf8'), /dark-mode-tools\.css/, `${rel(page)} 仍連結 dark-mode-tools.css`);
+    }
+});

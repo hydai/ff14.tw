@@ -22,14 +22,7 @@
     vertical-align: middle;
 }
 
-.tag-sm {
-    height: 22px;
-    padding: 0 var(--space-2);
-    font-size: var(--text-xs);
-}
-
-.tag-md,
-.tag-lg {
+.tag-md {
     height: 28px;
     padding: 0 10px;
     font-size: var(--text-sm);
@@ -64,20 +57,6 @@
     background: var(--color-info-tint);
     border-color: var(--color-info-tint);
     color: var(--color-info-text);
-}
-
-/* 舊名稱相容 */
-.tag-secondary,
-.tag-light {
-    background: var(--color-surface-2);
-    border-color: var(--color-border);
-    color: var(--color-muted);
-}
-
-.tag-dark {
-    background: var(--color-muted);
-    border-color: var(--color-muted);
-    color: var(--color-on-muted);
 }
 
 /* 實心（狀態徽章：施工中、即將推出…） */
@@ -206,9 +185,8 @@
     margin: 0;
 }
 
-/* ---- 篩選膠囊（可切換；.tag-filter 為舊名稱，必須寫在所有 .tag* 之後） ---- */
-.chip,
-.tag-filter {
+/* ---- 篩選膠囊（可切換） ---- */
+.chip {
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -228,38 +206,33 @@
     transition: background-color var(--duration-base) var(--ease), border-color var(--duration-base) var(--ease), color var(--duration-base) var(--ease), transform var(--duration-base) var(--ease);
 }
 
-.chip:hover,
-.tag-filter:hover {
+.chip:hover {
     background: var(--color-primary-tint);
     border-color: var(--color-primary);
     color: var(--color-primary);
     transform: translateY(-1px);
 }
 
-.chip:focus-visible,
-.tag-filter:focus-visible {
+.chip:focus-visible {
     outline: none;
     border-color: var(--color-primary);
     box-shadow: var(--ring-primary);
 }
 
-.chip.active,
-.tag-filter.active {
+.chip.active {
     background: var(--color-primary);
     border-color: var(--color-primary);
     color: var(--color-on-primary);
 }
 
-.chip.active:hover,
-.tag-filter.active:hover {
+.chip.active:hover {
     background: var(--color-primary-hover);
     border-color: var(--color-primary-hover);
     color: var(--color-on-primary);
 }
 
 /* 啟用時前面畫一個勾（純 CSS，不用圖片） */
-.chip.active::before,
-.tag-filter.active::before {
+.chip.active::before {
     content: "";
     width: 8px;
     height: 5px;
@@ -327,13 +300,11 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .chip,
-    .tag-filter {
+    .chip {
         transition: none;
     }
 
-    .chip:hover,
-    .tag-filter:hover {
+    .chip:hover {
         transform: none;
     }
 }

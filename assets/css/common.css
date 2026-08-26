@@ -3,31 +3,6 @@
    顏色與尺寸一律來自 assets/css/tokens.css（每一頁都在本檔之前載入）
    ========================================================================== */
 
-/* --------------------------------------------------------------------------
-   舊 token 名稱 → 新 token 的相容別名層
-   只為了尚未遷移的工具而存在，工具全部遷移完成後整段刪除（Plan 3）。
-   新程式碼一律直接使用 tokens.css 的名稱，不要再引用這些舊名稱。
-   -------------------------------------------------------------------------- */
-:root {
-    --primary-color: var(--color-primary);
-    --secondary-color: var(--color-warning);
-    --accent-color: var(--color-danger);
-    --dark-color: var(--color-heading);
-    --light-color: var(--color-surface-2);
-    --text-color: var(--color-text);
-    --text-secondary: var(--color-muted);
-    --border-color: var(--color-border);
-    --shadow: var(--shadow-md);
-    --header-shadow: var(--shadow-md);
-    --gradient-bg: var(--gradient-brand);
-    --bg-color: var(--color-bg);
-    --bg-secondary: var(--color-surface);
-    --card-bg: var(--color-surface);
-    --hover-bg: var(--color-hover);
-    --dropdown-bg: var(--color-surface);
-    --dropdown-shadow: var(--shadow-lg);
-}
-
 * {
     box-sizing: border-box;
     margin: 0;

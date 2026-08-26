@@ -77,17 +77,13 @@
 }
 
 /* 輪廓 */
-.btn-outline,
-.btn-outline-primary,
-.btn-outline-secondary {
+.btn-outline {
     background: transparent;
     border-color: var(--color-primary);
     color: var(--color-primary);
 }
 
-.btn-outline:hover:not(:disabled),
-.btn-outline-primary:hover:not(:disabled),
-.btn-outline-secondary:hover:not(:disabled) {
+.btn-outline:hover:not(:disabled) {
     background: var(--color-primary-tint);
     color: var(--color-primary);
 }
@@ -121,17 +117,6 @@
 
 .btn-danger:focus-visible {
     box-shadow: var(--ring-danger);
-}
-
-.btn-outline-danger {
-    background: transparent;
-    border-color: var(--color-danger);
-    color: var(--color-danger-text);
-}
-
-.btn-outline-danger:hover:not(:disabled) {
-    background: var(--color-danger-tint);
-    color: var(--color-danger-text);
 }
 
 /* 成功（動作完成的回饋，例如「已複製」） */
