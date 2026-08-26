@@ -276,7 +276,7 @@ class LodestoneCharacterLookup {
                 }
 
                 // 顯示分頁導航並創建總覽
-                this.elements.tabNavigation.style.display = 'flex';
+                this.elements.tabNavigation.classList.remove('hidden');
                 this.createOverview(achievementsData, mountsData, minionsData);
 
                 // 預設顯示總覽分頁
@@ -328,9 +328,9 @@ class LodestoneCharacterLookup {
             console.log('設定立繪:', character.Portrait);
             this.elements.characterPortrait.src = character.Portrait;
             this.elements.characterPortrait.alt = `${character.Name} 立繪`;
-            this.elements.characterPortrait.style.display = 'block';
+            this.elements.characterPortrait.classList.remove('hidden');
         } else {
-            this.elements.characterPortrait.style.display = 'none';
+            this.elements.characterPortrait.classList.add('hidden');
         }
         
         // Server info
@@ -372,12 +372,12 @@ class LodestoneCharacterLookup {
                 if (iconLayers.Bottom) {
                     this.elements.fcIcon.src = iconLayers.Bottom;
                     this.elements.fcIcon.alt = '公會圖標';
-                    this.elements.fcIcon.style.display = 'inline-block';
+                    this.elements.fcIcon.classList.remove('hidden');
                 }
             }
         } else {
             this.elements.fcName.textContent = '無';
-            this.elements.fcIcon.style.display = 'none';
+            this.elements.fcIcon.classList.add('hidden');
         }
         
         // Job levels info
@@ -423,8 +423,7 @@ class LodestoneCharacterLookup {
 
                 // Create note
                 const note = document.createElement('p');
-                note.style.marginTop = '1rem';
-                note.style.color = 'var(--text-color-secondary)';
+                note.className = 'job-list-note';
                 note.textContent = FF14Utils.getI18nText('lodestone_error_job_list_loading', '載入詳細職業列表中...');
 
                 // Add to container
@@ -638,6 +637,8 @@ class LodestoneCharacterLookup {
         jobEntries.forEach(([jobKey, job]) => {
             const jobItem = document.createElement('div');
             jobItem.className = `job-item job-category-${categoryClass}`;
+            const roleColor = window.LODESTONE_ROLE_COLORS ? window.LODESTONE_ROLE_COLORS[categoryClass] : null;
+            if (roleColor) jobItem.style.borderLeft = `2px solid ${roleColor}`;
             
             // 創建職業圖標
             const jobIcon = document.createElement('img');
@@ -653,6 +654,7 @@ class LodestoneCharacterLookup {
             jobIcon.addEventListener('error', function() {
                 const textIcon = document.createElement('div');
                 textIcon.className = 'job-icon-text';
+                if (roleColor) { textIcon.style.background = roleColor; textIcon.style.color = '#ffffff'; }
                 textIcon.textContent = chineseName.charAt(0);
                 this.parentNode.replaceChild(textIcon, this);
             });
@@ -730,7 +732,7 @@ class LodestoneCharacterLookup {
         this.elements.specialContent.appendChild(contentGrid);
         
         // 顯示特殊內容區塊
-        this.elements.specialContentSection.style.display = 'block';
+        this.elements.specialContentSection.classList.remove('hidden');
     }
 
     createSpecialContentItem(area, name, level, current, max) {
@@ -739,7 +741,8 @@ class LodestoneCharacterLookup {
         
         const icon = document.createElement('div');
         icon.className = 'job-icon-text';
-        icon.style.background = '#ffc107';
+        icon.style.background = window.LODESTONE_ROLE_COLORS.special;
+        icon.style.color = '#ffffff';
         icon.textContent = area.charAt(0);
         
         const details = document.createElement('div');
@@ -760,8 +763,6 @@ class LodestoneCharacterLookup {
         if (current) {
             const info = document.createElement('p');
             info.className = 'job-extra-info';
-            info.style.fontSize = '0.8rem';
-            info.style.color = 'var(--text-color-secondary)';
             
             // 根據區域決定顯示格式
             if (area === 'Eureka') {
@@ -818,7 +819,7 @@ class LodestoneCharacterLookup {
         });
         
         this.elements.updateTime.textContent = formattedDate;
-        this.elements.dataTimestamp.style.display = 'block';
+        this.elements.dataTimestamp.classList.remove('hidden');
     }
 
     getJobIconPath(jobName) {
@@ -876,6 +877,7 @@ class LodestoneCharacterLookup {
 
         if (pagination.PagePrev) {
             const prevBtn = document.createElement('button');
+            prevBtn.className = 'btn btn-sm';
             prevBtn.textContent = FF14Utils.getI18nText('lodestone_pagination_prev', '上一頁');
             prevBtn.onclick = () => this.loadAchievementsPage(characterId, pagination.PagePrev);
             paginationButtons.appendChild(prevBtn);
@@ -883,6 +885,7 @@ class LodestoneCharacterLookup {
 
         if (pagination.PageNext) {
             const nextBtn = document.createElement('button');
+            nextBtn.className = 'btn btn-sm';
             nextBtn.textContent = FF14Utils.getI18nText('lodestone_pagination_next', '下一頁');
             nextBtn.onclick = () => this.loadAchievementsPage(characterId, pagination.PageNext);
             paginationButtons.appendChild(nextBtn);
@@ -1000,8 +1003,6 @@ class LodestoneCharacterLookup {
                     this.displayFreeCompanyInfo(data.FreeCompany);
                     // 更新頂部的公會名稱為可點擊連結
                     this.elements.fcName.textContent = data.FreeCompany.Name || '未知公會';
-                    this.elements.fcName.style.cursor = 'pointer';
-                    this.elements.fcName.style.color = 'var(--primary-color)';
                     this.elements.fcName.onclick = () => {
                         document.getElementById('freeCompanySection').scrollIntoView({ behavior: 'smooth' });
                     };
@@ -1047,7 +1048,7 @@ class LodestoneCharacterLookup {
             this.elements.fcEstateName.textContent = fc.Estate.Name || '未命名';
             this.elements.fcEstatePlot.textContent = fc.Estate.Plot;
             this.elements.fcEstateGreeting.textContent = fc.Estate.Greeting || '無歡迎詞';
-            this.elements.fcEstateInfo.style.display = 'block';
+            this.elements.fcEstateInfo.classList.remove('hidden');
         }
         
         // 公會目標
@@ -1055,7 +1056,7 @@ class LodestoneCharacterLookup {
         if (fc.Focus && fc.Focus.length > 0) {
             fc.Focus.forEach(focus => {
                 const tag = document.createElement('span');
-                tag.className = 'tag';
+                tag.className = 'tag tag-primary tag-pill';
                 tag.textContent = this.translateFocusTag(focus);
                 this.elements.fcFocusList.appendChild(tag);
             });
@@ -1066,7 +1067,7 @@ class LodestoneCharacterLookup {
         if (fc.Seeking && fc.Seeking.length > 0) {
             fc.Seeking.forEach(seeking => {
                 const tag = document.createElement('span');
-                tag.className = 'tag';
+                tag.className = 'tag tag-primary tag-pill';
                 tag.textContent = this.translateSeekingTag(seeking);
                 this.elements.fcSeekingList.appendChild(tag);
             });
@@ -1106,10 +1107,10 @@ class LodestoneCharacterLookup {
         rank.textContent = this.translateReputationRank(rep.RANK);
         
         const progressBar = document.createElement('div');
-        progressBar.className = 'reputation-progress';
+        progressBar.className = 'reputation-progress progress';
         
         const progressFill = document.createElement('div');
-        progressFill.className = 'reputation-progress-fill';
+        progressFill.className = 'reputation-progress-fill progress-bar';
         progressFill.style.width = `${rep.PROGRESS.Progress || 0}%`;
         
         progressBar.appendChild(progressFill);
@@ -1231,6 +1232,7 @@ class LodestoneCharacterLookup {
 
         if (pagination.Page > 1) {
             const prevBtn = document.createElement('button');
+            prevBtn.className = 'btn btn-sm';
             prevBtn.textContent = FF14Utils.getI18nText('lodestone_pagination_prev', '上一頁');
             prevBtn.onclick = () => this.loadFCMembersPage(pagination.Page - 1);
             paginationButtons.appendChild(prevBtn);
@@ -1238,6 +1240,7 @@ class LodestoneCharacterLookup {
 
         if (pagination.Page < pagination.PageTotal) {
             const nextBtn = document.createElement('button');
+            nextBtn.className = 'btn btn-sm';
             nextBtn.textContent = FF14Utils.getI18nText('lodestone_pagination_next', '下一頁');
             nextBtn.onclick = () => this.loadFCMembersPage(pagination.Page + 1);
             paginationButtons.appendChild(nextBtn);
@@ -1272,7 +1275,7 @@ class LodestoneCharacterLookup {
 
         // 成就統計
         const achievementCard = document.createElement('div');
-        achievementCard.className = 'overview-card';
+        achievementCard.className = 'overview-card card clickable hoverable';
 
         // 建立 h4 標題
         const achievementTitle = document.createElement('h4');
@@ -1308,7 +1311,7 @@ class LodestoneCharacterLookup {
 
         // 坐騎統計
         const mountCard = document.createElement('div');
-        mountCard.className = 'overview-card';
+        mountCard.className = 'overview-card card clickable hoverable';
 
         // 建立 h4 標題
         const mountTitle = document.createElement('h4');
@@ -1331,7 +1334,7 @@ class LodestoneCharacterLookup {
 
         // 寵物統計
         const minionCard = document.createElement('div');
-        minionCard.className = 'overview-card';
+        minionCard.className = 'overview-card card clickable hoverable';
 
         // 建立 h4 標題
         const minionTitle = document.createElement('h4');
@@ -1355,7 +1358,7 @@ class LodestoneCharacterLookup {
         // 公會統計（如果有）
         if (this.currentFCId) {
             const fcCard = document.createElement('div');
-            fcCard.className = 'overview-card';
+            fcCard.className = 'overview-card card clickable hoverable';
 
             // 建立 h4 標題
             const fcTitle = document.createElement('h4');

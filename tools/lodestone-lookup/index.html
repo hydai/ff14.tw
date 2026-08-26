@@ -38,14 +38,14 @@
     </noscript>
 
     <main class="main container">
-        <div class="tool-header">
+        <div class="page-header">
             <h1 class="visually-hidden" data-i18n="lodestone_header">Lodestone 角色查詢</h1>
-            <p class="tool-description" data-i18n="lodestone_subtitle">輸入角色的 Lodestone ID 來查詢詳細資訊</p>
+            <p class="description" data-i18n="lodestone_subtitle">輸入角色的 Lodestone ID 來查詢詳細資訊</p>
         </div>
 
         <div class="tool-content">
-            <div class="search-section">
-                <div class="search-box">
+            <div class="search-section card">
+                <div class="search-row">
                     <input
                         type="text"
                         id="characterId"
@@ -68,14 +68,14 @@
                 </div>
             </div>
 
-            <div id="loadingIndicator" class="loading-indicator hidden">
-                <div class="spinner"></div>
+            <div id="loadingIndicator" class="loading-indicator loading hidden">
+                <div class="spinner loading-spinner"></div>
                 <p data-i18n="lodestone_loading">正在查詢角色資訊...</p>
             </div>
 
             <div id="errorMessage" class="error-message hidden"></div>
 
-            <div id="characterInfo" class="character-info hidden">
+            <div id="characterInfo" class="character-info card hidden">
                 <div class="character-header">
                     <img id="characterAvatar" class="character-avatar" src="" alt="">
                     <div class="character-basic">
@@ -83,12 +83,12 @@
                         <p id="characterTitle" class="character-title"></p>
                         <p id="characterServer" class="character-server"></p>
                         <div id="characterFC" class="character-fc">
-                            <img id="fcIcon" class="fc-icon" src="" alt="" style="display: none;">
+                            <img id="fcIcon" class="fc-icon hidden" src="" alt="">
                             <span id="fcName" class="fc-name-link"></span>
                         </div>
                     </div>
                     <div class="character-portrait">
-                        <img id="characterPortrait" class="portrait-image" src="" alt="" style="display: none;">
+                        <img id="characterPortrait" class="portrait-image hidden" src="" alt="">
                     </div>
                 </div>
 
@@ -112,7 +112,7 @@
                         <div id="jobLevels" class="job-levels-grid"></div>
                     </section>
 
-                    <section class="info-section" id="specialContentSection" style="display: none;">
+                    <section class="info-section hidden" id="specialContentSection">
                         <h3 data-i18n="lodestone_special_content">特殊內容</h3>
                         <div id="specialContent" class="special-content-grid"></div>
                     </section>
@@ -225,12 +225,12 @@
                     </section>
 
                     <!-- 分頁導航 -->
-                    <div class="tab-navigation" id="tabNavigation" style="display: none;">
-                        <button class="tab-button active" data-tab="overview" data-i18n="lodestone_tab_overview">總覽</button>
-                        <button class="tab-button" data-tab="achievements" data-i18n="lodestone_tab_achievements">成就</button>
-                        <button class="tab-button" data-tab="mounts" data-i18n="lodestone_tab_mounts">坐騎</button>
-                        <button class="tab-button" data-tab="minions" data-i18n="lodestone_tab_minions">寵物</button>
-                        <button class="tab-button" data-tab="freecompany" data-i18n="lodestone_tab_fc">公會</button>
+                    <div class="tab-navigation tabs hidden" id="tabNavigation">
+                        <button class="tab-button tab active" data-tab="overview" data-i18n="lodestone_tab_overview">總覽</button>
+                        <button class="tab-button tab" data-tab="achievements" data-i18n="lodestone_tab_achievements">成就</button>
+                        <button class="tab-button tab" data-tab="mounts" data-i18n="lodestone_tab_mounts">坐騎</button>
+                        <button class="tab-button tab" data-tab="minions" data-i18n="lodestone_tab_minions">寵物</button>
+                        <button class="tab-button tab" data-tab="freecompany" data-i18n="lodestone_tab_fc">公會</button>
                     </div>
 
                     <!-- 分頁內容 -->
@@ -299,7 +299,7 @@
                         </div>
 
                         <div class="fc-details">
-                            <div class="fc-estate" id="fcEstateInfo" style="display: none;">
+                            <div class="fc-estate hidden" id="fcEstateInfo">
                                 <h5 data-i18n="lodestone_fc_estate">公會房屋</h5>
                                 <p id="fcEstateName"></p>
                                 <p id="fcEstatePlot"></p>
@@ -338,13 +338,13 @@
                     </a>
                 </div>
 
-                <div class="data-timestamp" id="dataTimestamp" style="display: none;">
+                <div class="data-timestamp hidden" id="dataTimestamp">
                     <p><span data-i18n="lodestone_data_updated">資料更新時間：</span><span id="updateTime"></span></p>
                 </div>
             </div>
 
-            <div class="usage-notes">
-                <h3 data-i18n="lodestone_usage_title">使用說明</h3>
+            <div class="usage-notes info-message">
+                <h3 data-i18n="lodestone_usage_title" class="message-title">使用說明</h3>
                 <ul>
                     <li data-i18n="lodestone_usage_1">本工具使用 FFXIV Lodestone 官方資料</li>
                     <li data-i18n="lodestone_usage_2">查詢結果會快取 24 小時以提升效能</li>
