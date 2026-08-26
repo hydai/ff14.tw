@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="../../assets/css/common.css">
     <link rel="stylesheet" href="../../assets/css/dark-mode-tools.css">
     <link rel="stylesheet" href="../../assets/css/tools-common.css">
+    <link rel="stylesheet" href="../../assets/css/components/language-switcher.css">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -32,8 +33,8 @@
                 <p class="description">快速產生不當行為檢舉的模板文字，協助您進行申訴</p>
             </div>
 
-            <div class="tool-content">
-                <form id="reportForm" class="report-form">
+            <div class="tool-content container-narrow">
+                <form id="reportForm" class="report-form card">
                     <!-- 發生日期 -->
                     <div class="form-group">
                         <label for="incidentDate" class="form-label">發生日期 <span class="required">*</span></label>
@@ -124,7 +125,7 @@
                     <div id="charCountDisplay" class="char-count-display">
                         <span id="charCount">0</span> / 1000 字
                     </div>
-                    <div id="charLimitWarning" class="char-limit-warning hidden">
+                    <div id="charLimitWarning" class="error-message hidden">
                         超過 1000 字限制！請精簡內容後再提交檢舉。
                     </div>
 
