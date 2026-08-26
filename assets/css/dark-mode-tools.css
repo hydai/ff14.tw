@@ -1,29 +1,9 @@
 /* FF14.tw 工具頁面 Dark Mode 樣式調整 */
 
-/* 通用工具頁面調整 */
-[data-theme="dark"] .grid-cell,
-[data-theme="dark"] .cell,
-[data-theme="dark"] .cactpot-cell {
-    background-color: var(--bg-secondary);
-    border-color: var(--border-color);
-    color: var(--text-color);
-}
-
-[data-theme="dark"] .grid-cell:hover,
-[data-theme="dark"] .cell:hover,
-[data-theme="dark"] .cactpot-cell:hover {
-    background-color: var(--hover-bg);
-}
-
-[data-theme="dark"] .selected,
-[data-theme="dark"] .grid-cell.selected,
-[data-theme="dark"] .cell.selected {
+/* 角色卡產生器的選取按鈕（Plan 3 遷移後刪除） */
+[data-theme="dark"] .selection-btn.selected {
     background-color: var(--primary-color) !important;
     color: white !important;
-}
-
-[data-theme="dark"] .best-choice {
-    box-shadow: 0 0 25px rgba(90, 159, 240, 0.8);
 }
 
 /* Loading spinner */
@@ -193,8 +173,7 @@
 }
 
 /* 圖表和數據視覺化 */
-[data-theme="dark"] .chart,
-[data-theme="dark"] .progress-bar {
+[data-theme="dark"] .chart {
     background-color: var(--bg-secondary);
 }
 

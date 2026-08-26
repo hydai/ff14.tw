@@ -19,6 +19,7 @@ const TOKEN_CLEAN_FILES = [
     'tools/macro-converter/style.css',
     'tools/report-generator/style.css',
     'tools/guide/style.css',
+    'tools/wondrous-tails/style.css',
 ];
 
 // 這個檔案的職責就是彙整元件，允許 @import components/*.css
@@ -32,6 +33,7 @@ const MIGRATED_TOOLS = [
     'tools/macro-converter',
     'tools/report-generator',
     'tools/guide',
+    'tools/wondrous-tails',
 ];
 const LEGACY_CLASSES = ['tag-filter', 'btn-outline-primary', 'btn-outline-secondary', 'btn-outline-danger', 'tag-secondary', 'tag-light', 'tag-dark', 'tag-lg', 'tag-sm'];
 
@@ -157,5 +159,14 @@ test('已遷移的工具不得再使用共用元件的舊 class 名稱', () => {
                 assert.doesNotMatch(text, re, `${file} 使用了舊 class ${cls}`);
             }
         }
+    }
+});
+
+test('dark-mode-tools.css 不得覆寫共用元件', () => {
+    const css = stripComments(read('assets/css/dark-mode-tools.css'));
+    const shared = ['cell', 'progress', 'progress-bar', 'tabs', 'tab', 'toggle', 'toggle-track', 'table', 'table-wrap', 'dialog', 'dialog-overlay', 'empty-state', 'chip', 'card', 'tag', 'btn', 'toast'];
+    for (const name of shared) {
+        const re = new RegExp(`\\.${escapeRegExp(name)}(?![\\w-])`);
+        assert.doesNotMatch(css, re, `dark-mode-tools.css 覆寫了共用元件 .${name}`);
     }
 });
