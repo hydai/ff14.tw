@@ -740,6 +740,9 @@ class TreasureMapFinder {
             removeBtn.className = 'btn-remove btn btn-close';
             removeBtn.dataset.mapId = item.id;
             removeBtn.textContent = '×';
+            removeBtn.setAttribute('data-i18n', 'treasure_map_remove_from_list');
+            removeBtn.setAttribute('data-i18n-attr', 'aria-label');
+            removeBtn.setAttribute('aria-label', FF14Utils.getI18nText('treasure_map_remove_from_list', '移除'));
             removeBtn.addEventListener('click', (e) => {
                 this.removeFromList(item.id);
             });

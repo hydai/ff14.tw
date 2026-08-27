@@ -449,10 +449,10 @@
 
     <!-- 加入隊伍對話框 -->
     <div class="modal dialog-overlay hidden" id="joinRoomModal">
-        <div class="modal-content dialog">
+        <div class="modal-content dialog" role="dialog" aria-modal="true" aria-labelledby="joinRoomModal-title">
             <div class="dialog-header">
-                <h3 class="dialog-title">加入隊伍</h3>
-                <button class="btn btn-close" id="closeJoinModalBtn">×</button>
+                <h3 id="joinRoomModal-title" class="dialog-title">加入隊伍</h3>
+                <button class="btn btn-close" id="closeJoinModalBtn" aria-label="關閉" data-i18n="treasure_map_close" data-i18n-attr="aria-label">×</button>
             </div>
             <div class="modal-body dialog-body">
                 <label for="roomCodeInput">請輸入隊伍代號：</label>
@@ -468,10 +468,10 @@
 
     <!-- 編輯暱稱對話框 -->
     <div class="modal dialog-overlay hidden" id="editNicknameModal">
-        <div class="modal-content dialog">
+        <div class="modal-content dialog" role="dialog" aria-modal="true" aria-labelledby="editNicknameModal-title">
             <div class="dialog-header">
-                <h3 class="dialog-title">編輯暱稱</h3>
-                <button class="btn btn-close" id="closeNicknameModalBtn">×</button>
+                <h3 id="editNicknameModal-title" class="dialog-title">編輯暱稱</h3>
+                <button class="btn btn-close" id="closeNicknameModalBtn" aria-label="關閉" data-i18n="treasure_map_close" data-i18n-attr="aria-label">×</button>
             </div>
             <div class="modal-body dialog-body">
                 <label for="nicknameInput">您的暱稱：</label>
@@ -487,10 +487,10 @@
 
     <!-- 離開隊伍確認對話框 -->
     <div class="modal dialog-overlay hidden" id="leaveRoomModal">
-        <div class="modal-content dialog">
+        <div class="modal-content dialog" role="dialog" aria-modal="true" aria-labelledby="leaveRoomModal-title">
             <div class="dialog-header">
-                <h3 class="dialog-title">離開隊伍</h3>
-                <button class="btn btn-close" id="closeLeaveModalBtn">×</button>
+                <h3 id="leaveRoomModal-title" class="dialog-title">離開隊伍</h3>
+                <button class="btn btn-close" id="closeLeaveModalBtn" aria-label="關閉" data-i18n="treasure_map_close" data-i18n-attr="aria-label">×</button>
             </div>
             <div class="modal-body dialog-body">
                 <p>您確定要離開隊伍嗎？</p>

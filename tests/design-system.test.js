@@ -178,3 +178,83 @@ test('common.css 不再定義相容別名層', () => {
         assert.doesNotMatch(common, new RegExp('--' + escapeRegExp(name) + '\\s*:'), `common.css 不應再定義 --${name}`);
     }
 });
+
+// ---------- 對話框與圖示按鈕的無障礙屬性 ----------
+function openTags(html, tagName) {
+    return html.match(new RegExp(`<${tagName}\\b[^>]*>`, 'g')) || [];
+}
+function classTokens(tag) {
+    const m = tag.match(/\sclass="([^"]*)"/);
+    return m ? m[1].split(/\s+/) : [];
+}
+const ROOT_PAGES = ['index.html', 'about.html', 'copyright.html', 'changelog.html'];
+
+test('.dialog 元素必須有 role="dialog"、aria-modal="true" 與 aria-labelledby', () => {
+    const files = [...listFiles('tools', ['.html']), ...ROOT_PAGES];
+    let dialogCount = 0;
+    for (const file of files) {
+        const html = read(file);
+        for (const tag of openTags(html, 'div')) {
+            // 除了 class 含 dialog token 的元素，也要檢查任何標了 aria-modal="true" 的元素
+            // （例如 #formatPanel，它的 class 是 format-panel，不含 dialog token）
+            if (!classTokens(tag).includes('dialog') && !/\saria-modal="true"/.test(tag)) continue;
+            dialogCount++;
+            assert.match(tag, /\srole="dialog"/, `${file} 的 .dialog 缺少 role="dialog"：${tag}`);
+            assert.match(tag, /\saria-modal="true"/, `${file} 的 .dialog 缺少 aria-modal="true"：${tag}`);
+            assert.match(tag, /\saria-labelledby="[^"]+"/, `${file} 的 .dialog 缺少 aria-labelledby：${tag}`);
+        }
+    }
+    assert.ok(dialogCount > 0, '沒有找到任何 .dialog，測試可能失效');
+
+    // 明確驗證 #formatPanel（treasure-map-finder 的自訂格式面板）：
+    // 它的 class 是 format-panel、不含 dialog token，是本測試檔中唯一一個這樣的對話框
+    const formatPanelFile = 'tools/treasure-map-finder/index.html';
+    const formatPanelTag = openTags(read(formatPanelFile), 'div').find((tag) => /\sid="formatPanel"/.test(tag));
+    assert.ok(formatPanelTag, `${formatPanelFile} 找不到 id="formatPanel" 的元素`);
+    assert.match(formatPanelTag, /\srole="dialog"/, `${formatPanelFile} 的 #formatPanel 缺少 role="dialog"：${formatPanelTag}`);
+    assert.match(formatPanelTag, /\saria-modal="true"/, `${formatPanelFile} 的 #formatPanel 缺少 aria-modal="true"：${formatPanelTag}`);
+    assert.match(formatPanelTag, /\saria-labelledby="[^"]+"/, `${formatPanelFile} 的 #formatPanel 缺少 aria-labelledby：${formatPanelTag}`);
+});
+
+test('.btn-close／.popup-close／.btn-remove 按鈕必須有可存取名稱（aria-label、title 或可見文字）', () => {
+    const CLOSE_CLASSES = ['btn-close', 'popup-close', 'btn-remove'];
+
+    // 靜態 HTML 按鈕
+    const htmlFiles = [...listFiles('tools', ['.html']), ...ROOT_PAGES];
+    let checked = 0;
+    for (const file of htmlFiles) {
+        const html = read(file);
+        for (const tag of openTags(html, 'button')) {
+            const classes = classTokens(tag);
+            if (!CLOSE_CLASSES.some((c) => classes.includes(c))) continue;
+            checked++;
+            const hasAriaLabel = /\saria-label="[^"]+"/.test(tag);
+            const hasTitle = /\stitle="[^"]+"/.test(tag);
+            const startIdx = html.indexOf(tag);
+            const endIdx = html.indexOf('</button>', startIdx);
+            const innerText = html.slice(startIdx + tag.length, endIdx).split(/<[^>]+>/).join('').trim();
+            const hasVisibleText = /[\p{L}\p{N}]/u.test(innerText) && innerText.length > 1;
+            assert.ok(hasAriaLabel || hasTitle || hasVisibleText, `${file} 的按鈕缺少可存取名稱：${tag}`);
+        }
+    }
+    assert.ok(checked > 0, '沒有找到任何 .btn-close / .popup-close / .btn-remove 按鈕，測試可能失效');
+
+    // JS 動態建立的按鈕（heuristic：掃描 className = '...' 字面值）
+    const jsFiles = listFiles('tools', ['.js']);
+    const CLASS_RE = /(\w+)\.className\s*=\s*['"][^'"]*(?<![\w-])(?:btn-close|popup-close|btn-remove)(?![\w-])[^'"]*['"]/g;
+    let jsChecked = 0;
+    for (const file of jsFiles) {
+        const js = read(file);
+        for (const m of js.matchAll(CLASS_RE)) {
+            jsChecked++;
+            const varName = m[1];
+            const win = js.slice(m.index, m.index + 500);
+            const varRe = escapeRegExp(varName);
+            const hasLabel = new RegExp(`${varRe}\\.setAttribute\\(\\s*['"]aria-label['"]|${varRe}\\.title\\s*=`).test(win);
+            const textMatch = win.match(new RegExp(`${varRe}\\.textContent\\s*=\\s*['"\`]([^'"\`]*)['"\`]`));
+            const hasVisibleText = !!(textMatch && /[\p{L}\p{N}]/u.test(textMatch[1]) && textMatch[1].length > 1);
+            assert.ok(hasLabel || hasVisibleText, `${file} 動態建立的按鈕缺少可存取名稱（變數 ${varName}）`);
+        }
+    }
+    assert.ok(jsChecked > 0, '沒有找到任何 JS 動態建立的 .btn-close / .popup-close / .btn-remove 按鈕，測試可能失效');
+});
