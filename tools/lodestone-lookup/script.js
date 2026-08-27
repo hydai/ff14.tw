@@ -697,7 +697,10 @@ class LodestoneCharacterLookup {
             jobIcon.addEventListener('error', function() {
                 const textIcon = document.createElement('div');
                 textIcon.className = 'job-icon-text';
-                if (roleColor) { textIcon.style.background = roleColor; textIcon.style.color = '#ffffff'; }
+                if (roleColor) {
+                    textIcon.style.background = roleColor;
+                    textIcon.style.color = (window.LODESTONE_ROLE_TEXT_COLORS && window.LODESTONE_ROLE_TEXT_COLORS[categoryClass]) || '#ffffff';
+                }
                 textIcon.textContent = chineseName.charAt(0);
                 this.parentNode.replaceChild(textIcon, this);
             });
@@ -785,7 +788,7 @@ class LodestoneCharacterLookup {
         const icon = document.createElement('div');
         icon.className = 'job-icon-text';
         icon.style.background = window.LODESTONE_ROLE_COLORS.special;
-        icon.style.color = '#ffffff';
+        icon.style.color = window.LODESTONE_ROLE_TEXT_COLORS.special;
         icon.textContent = area.charAt(0);
         
         const details = document.createElement('div');
