@@ -59,6 +59,10 @@ const MiniCactpotTranslations = {
         // Popup
         mini_cactpot_popup_title: '選擇數字',
         mini_cactpot_popup_cancel: '取消',
+
+        // 格子無障礙標籤
+        mini_cactpot_cell_label: '第 {n} 格',
+        mini_cactpot_cell_ev: '期望值 {ev}',
     },
     en: {
         // Page info
@@ -117,6 +121,10 @@ const MiniCactpotTranslations = {
         // Popup
         mini_cactpot_popup_title: 'Select Number',
         mini_cactpot_popup_cancel: 'Cancel',
+
+        // Cell accessible label
+        mini_cactpot_cell_label: 'Cell {n}',
+        mini_cactpot_cell_ev: 'expected value {ev}',
     },
     ja: {
         // ページ情報
@@ -174,7 +182,11 @@ const MiniCactpotTranslations = {
 
         // ポップアップ
         mini_cactpot_popup_title: '数字を選択',
-        mini_cactpot_popup_cancel: 'キャンセル'
+        mini_cactpot_popup_cancel: 'キャンセル',
+
+        // セルのアクセシブルラベル
+        mini_cactpot_cell_label: 'マス {n}',
+        mini_cactpot_cell_ev: '期待値 {ev}'
     }
 };
 

@@ -25,6 +25,9 @@ class WondrousTailsCalculator {
         this.initializeGrid();
         this.initializeEvents();
 
+        // 語言切換時重新以目前語言重建所有格子的 aria-label
+        window.i18n.onLanguageChange(() => this.refreshCellLabels());
+
         // Save initial state
         this.saveState();
     }
@@ -36,8 +39,22 @@ class WondrousTailsCalculator {
             const cell = document.createElement('div');
             cell.className = 'cell grid-cell';
             cell.dataset.position = i;
+            cell.tabIndex = 0;
+            cell.setAttribute('role', 'button');
+            cell.setAttribute('aria-pressed', 'false');
+            cell.setAttribute('aria-label', FF14Utils.getI18nText('wondrous_tails_cell_label', '第 {n} 格', { n: i + 1 }));
             this.elements.grid.appendChild(cell);
         }
+    }
+
+    /**
+     * 語言切換時，重新以目前語言重建所有格子的 aria-label
+     */
+    refreshCellLabels() {
+        this.elements.grid.querySelectorAll('.grid-cell').forEach((cell) => {
+            const position = parseInt(cell.dataset.position, 10);
+            cell.setAttribute('aria-label', FF14Utils.getI18nText('wondrous_tails_cell_label', '第 {n} 格', { n: position + 1 }));
+        });
     }
     
     initializeEvents() {
@@ -60,6 +77,14 @@ class WondrousTailsCalculator {
         };
 
         this.elements.grid.addEventListener('click', this.handleCellClick);
+
+        this.handleCellKeydown = (e) => {
+            if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('grid-cell')) {
+                e.preventDefault();
+                this.toggleCell(parseInt(e.target.dataset.position));
+            }
+        };
+        this.elements.grid.addEventListener('keydown', this.handleCellKeydown);
         this.elements.resetBtn.addEventListener('click', this.handleReset);
 
         if (this.elements.undoBtn) {
@@ -99,6 +124,7 @@ class WondrousTailsCalculator {
         const cells = this.elements.grid.querySelectorAll('.grid-cell');
         cells.forEach((cell, index) => {
             cell.classList.toggle('placed', this.grid[index]);
+            cell.setAttribute('aria-pressed', String(this.grid[index]));
         });
         
         // Update counter

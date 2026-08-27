@@ -258,3 +258,24 @@ test('.btn-close／.popup-close／.btn-remove 按鈕必須有可存取名稱（a
     }
     assert.ok(jsChecked > 0, '沒有找到任何 JS 動態建立的 .btn-close / .popup-close / .btn-remove 按鈕，測試可能失效');
 });
+
+test('猜謎方格工具的格子都設定 tabindex，可以用 Tab 鍵移動焦點', () => {
+    const jsChecks = [
+        { file: 'tools/faux-hollows-foxes/script.js', classNamePattern: /cell\.className\s*=\s*'cell board-cell'/ },
+        { file: 'tools/wondrous-tails/script.js', classNamePattern: /cell\.className\s*=\s*'cell grid-cell'/ }
+    ];
+    for (const { file, classNamePattern } of jsChecks) {
+        const js = read(file);
+        const match = classNamePattern.exec(js);
+        assert.ok(match, `${file} 找不到格子的 className 設定，測試可能失效`);
+        const windowText = js.slice(match.index, match.index + 300);
+        assert.match(windowText, /\.tabIndex\s*=\s*0|setAttribute\(\s*['"]tabindex['"]/, `${file} 的格子工廠沒有設定 tabindex`);
+    }
+
+    const html = read('tools/mini-cactpot/index.html');
+    const gridCells = html.match(/<div class="cell grid-cell"[^>]*>/g) || [];
+    assert.equal(gridCells.length, 9, 'mini-cactpot 應該有 9 個 .grid-cell');
+    for (const tag of gridCells) {
+        assert.match(tag, /\stabindex="0"/, `mini-cactpot 的格子缺少 tabindex="0"：${tag}`);
+    }
+});

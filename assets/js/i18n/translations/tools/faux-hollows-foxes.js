@@ -67,7 +67,18 @@ const FauxHollowsTranslations = {
         // 格子內容
         faux_hollows_cell_fox: '狐',
         faux_hollows_cell_sword: '劍',
-        faux_hollows_cell_chest: '箱'
+        faux_hollows_cell_chest: '箱',
+
+        // 格子無障礙標籤與狀態
+        faux_hollows_cell_label: '第 {n} 格',
+        faux_hollows_cell_state_obstacle: '障礙物',
+        faux_hollows_cell_state_sword: '劍',
+        faux_hollows_cell_state_chest: '寶箱',
+        faux_hollows_cell_state_fox: '宗長',
+        faux_hollows_cell_state_empty: '空格',
+        faux_hollows_cell_state_used: '已用',
+        faux_hollows_cell_state_unknown: '未揭開',
+        faux_hollows_cell_obstacle_prob: '障礙物機率 {value}'
     },
     en: {
         // Page info
@@ -134,7 +145,18 @@ const FauxHollowsTranslations = {
         // Cell content
         faux_hollows_cell_fox: 'Fox',
         faux_hollows_cell_sword: 'Swd',
-        faux_hollows_cell_chest: 'Box'
+        faux_hollows_cell_chest: 'Box',
+
+        // Cell accessible label and state
+        faux_hollows_cell_label: 'Cell {n}',
+        faux_hollows_cell_state_obstacle: 'Obstacle',
+        faux_hollows_cell_state_sword: 'Sword',
+        faux_hollows_cell_state_chest: 'Chest',
+        faux_hollows_cell_state_fox: 'Fox',
+        faux_hollows_cell_state_empty: 'Empty',
+        faux_hollows_cell_state_used: 'Used',
+        faux_hollows_cell_state_unknown: 'Unrevealed',
+        faux_hollows_cell_obstacle_prob: 'Obstacle probability {value}'
     },
     ja: {
         // ページ情報
@@ -201,7 +223,18 @@ const FauxHollowsTranslations = {
         // セル内容
         faux_hollows_cell_fox: '狐',
         faux_hollows_cell_sword: '剣',
-        faux_hollows_cell_chest: '箱'
+        faux_hollows_cell_chest: '箱',
+
+        // セルのアクセシブルラベルと状態
+        faux_hollows_cell_label: 'マス {n}',
+        faux_hollows_cell_state_obstacle: '障害物',
+        faux_hollows_cell_state_sword: '剣',
+        faux_hollows_cell_state_chest: '宝箱',
+        faux_hollows_cell_state_fox: '狐',
+        faux_hollows_cell_state_empty: '空き',
+        faux_hollows_cell_state_used: '使用済み',
+        faux_hollows_cell_state_unknown: '未公開',
+        faux_hollows_cell_obstacle_prob: '障害物確率 {value}'
     }
 };
 

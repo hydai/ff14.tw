@@ -380,7 +380,7 @@ class DungeonDatabase {
         const card = document.createElement('div');
         card.className = `${DUNGEON_CARD} card hoverable clickable`;
         card.dataset.id = dungeon.id;
-        
+
         // Create image section
         const imageDiv = document.createElement('div');
         imageDiv.className = 'dungeon-image';

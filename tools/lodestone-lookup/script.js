@@ -88,8 +88,12 @@ class LodestoneCharacterLookup {
         
         this.currentAchievementPage = 1;
         this.currentFCId = null;
+        this.overviewCards = [];
 
         this.initializeEvents();
+
+        // 語言切換時重建總覽卡片的標題與視覺隱藏提示文字（在建立總覽前呼叫也安全，方法內會先檢查）
+        window.i18n.onLanguageChange(() => this.updateOverviewCardLabels());
     }
 
     initializeEvents() {
@@ -124,6 +128,28 @@ class LodestoneCharacterLookup {
             const isActive = pane.id === `${tabName}Tab`;
             pane.classList.toggle('active', isActive);
         });
+    }
+
+    /**
+     * 從總覽卡片切到指定分頁，並把焦點交給對應的分頁按鈕，
+     * 避免切換後總覽面板被隱藏（display: none）導致焦點遺失。
+     * 找不到分頁按鈕時，退回聚焦分頁內容面板本身。
+     * @param {string} tabName - 分頁名稱（overview / achievements / mounts / minions / freecompany）
+     */
+    activateTabFromCard(tabName) {
+        this.switchTab(tabName);
+
+        const tabButton = this.elements.tabNavigation.querySelector(`[role="tab"][data-tab="${tabName}"]`);
+        if (tabButton) {
+            tabButton.focus();
+            return;
+        }
+
+        const panel = document.getElementById(`${tabName}Tab`);
+        if (panel) {
+            panel.tabIndex = -1;
+            panel.focus();
+        }
     }
 
     async searchCharacter() {
@@ -1270,12 +1296,17 @@ class LodestoneCharacterLookup {
         const overviewTab = document.getElementById('overviewTab');
         overviewTab.textContent = '';
 
+        // 記錄每張總覽卡片的標題元素與視覺隱藏提示元素，供語言切換時重建兩者文字
+        this.overviewCards = [];
+
         const overviewGrid = document.createElement('div');
         overviewGrid.className = 'overview-grid';
 
         // 成就統計
         const achievementCard = document.createElement('div');
         achievementCard.className = 'overview-card card clickable hoverable';
+        achievementCard.tabIndex = 0;
+        achievementCard.setAttribute('role', 'button');
 
         // 建立 h4 標題
         const achievementTitle = document.createElement('h4');
@@ -1307,11 +1338,34 @@ class LodestoneCharacterLookup {
         achievementPointsStat.appendChild(achievementPointsValue);
         achievementPointsStat.appendChild(achievementPointsLabel);
         achievementCard.appendChild(achievementPointsStat);
-        achievementCard.onclick = () => this.switchTab('achievements');
+
+        // 不用 aria-label（會蓋掉卡片上的統計數字，讓螢幕閱讀器唸不出總成就數／點數），
+        // 改在卡片最後加一個視覺隱藏的提示文字，讓 accessible name 變成
+        // 「可見內容（標題＋統計數字）＋動作提示」
+        const achievementHint = document.createElement('span');
+        achievementHint.className = 'visually-hidden';
+        achievementHint.textContent = FF14Utils.getI18nText('lodestone_go_to_tab', '前往{tab}分頁', { tab: achievementTitle.textContent });
+        achievementCard.appendChild(achievementHint);
+
+        achievementCard.onclick = () => this.activateTabFromCard('achievements');
+        achievementCard.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                this.activateTabFromCard('achievements');
+            }
+        });
+        this.overviewCards.push({
+            titleEl: achievementTitle,
+            titleKey: 'lodestone_tab_achievements',
+            titleFallback: '成就',
+            hintEl: achievementHint
+        });
 
         // 坐騎統計
         const mountCard = document.createElement('div');
         mountCard.className = 'overview-card card clickable hoverable';
+        mountCard.tabIndex = 0;
+        mountCard.setAttribute('role', 'button');
 
         // 建立 h4 標題
         const mountTitle = document.createElement('h4');
@@ -1330,11 +1384,32 @@ class LodestoneCharacterLookup {
         mountStat.appendChild(mountValue);
         mountStat.appendChild(mountLabel);
         mountCard.appendChild(mountStat);
-        mountCard.onclick = () => this.switchTab('mounts');
+
+        // 理由同上：aria-label 改成卡片最後的視覺隱藏提示文字
+        const mountHint = document.createElement('span');
+        mountHint.className = 'visually-hidden';
+        mountHint.textContent = FF14Utils.getI18nText('lodestone_go_to_tab', '前往{tab}分頁', { tab: mountTitle.textContent });
+        mountCard.appendChild(mountHint);
+
+        mountCard.onclick = () => this.activateTabFromCard('mounts');
+        mountCard.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                this.activateTabFromCard('mounts');
+            }
+        });
+        this.overviewCards.push({
+            titleEl: mountTitle,
+            titleKey: 'lodestone_tab_mounts',
+            titleFallback: '坐騎',
+            hintEl: mountHint
+        });
 
         // 寵物統計
         const minionCard = document.createElement('div');
         minionCard.className = 'overview-card card clickable hoverable';
+        minionCard.tabIndex = 0;
+        minionCard.setAttribute('role', 'button');
 
         // 建立 h4 標題
         const minionTitle = document.createElement('h4');
@@ -1353,12 +1428,33 @@ class LodestoneCharacterLookup {
         minionStat.appendChild(minionValue);
         minionStat.appendChild(minionLabel);
         minionCard.appendChild(minionStat);
-        minionCard.onclick = () => this.switchTab('minions');
+
+        // 理由同上：aria-label 改成卡片最後的視覺隱藏提示文字
+        const minionHint = document.createElement('span');
+        minionHint.className = 'visually-hidden';
+        minionHint.textContent = FF14Utils.getI18nText('lodestone_go_to_tab', '前往{tab}分頁', { tab: minionTitle.textContent });
+        minionCard.appendChild(minionHint);
+
+        minionCard.onclick = () => this.activateTabFromCard('minions');
+        minionCard.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                this.activateTabFromCard('minions');
+            }
+        });
+        this.overviewCards.push({
+            titleEl: minionTitle,
+            titleKey: 'lodestone_tab_minions',
+            titleFallback: '寵物',
+            hintEl: minionHint
+        });
 
         // 公會統計（如果有）
         if (this.currentFCId) {
             const fcCard = document.createElement('div');
             fcCard.className = 'overview-card card clickable hoverable';
+            fcCard.tabIndex = 0;
+            fcCard.setAttribute('role', 'button');
 
             // 建立 h4 標題
             const fcTitle = document.createElement('h4');
@@ -1377,15 +1473,48 @@ class LodestoneCharacterLookup {
             fcStat.appendChild(fcValue);
             fcStat.appendChild(fcLabel);
             fcCard.appendChild(fcStat);
-            fcCard.onclick = () => this.switchTab('freecompany');
+
+            // 理由同上：aria-label 改成卡片最後的視覺隱藏提示文字
+            const fcHint = document.createElement('span');
+            fcHint.className = 'visually-hidden';
+            fcHint.textContent = FF14Utils.getI18nText('lodestone_go_to_tab', '前往{tab}分頁', { tab: fcTitle.textContent });
+            fcCard.appendChild(fcHint);
+
+            fcCard.onclick = () => this.activateTabFromCard('freecompany');
+            fcCard.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    this.activateTabFromCard('freecompany');
+                }
+            });
+            this.overviewCards.push({
+                titleEl: fcTitle,
+                titleKey: 'lodestone_tab_fc',
+                titleFallback: '公會',
+                hintEl: fcHint
+            });
             overviewGrid.appendChild(fcCard);
         }
         
         overviewGrid.appendChild(achievementCard);
         overviewGrid.appendChild(mountCard);
         overviewGrid.appendChild(minionCard);
-        
+
         overviewTab.appendChild(overviewGrid);
+    }
+
+    /**
+     * 語言切換時，重新以目前語言翻譯總覽卡片的標題文字與卡片最後的
+     * 視覺隱藏提示文字，讓兩者維持一致；尚未查詢過角色（總覽卡片還沒建立）時安全跳過。
+     */
+    updateOverviewCardLabels() {
+        if (!this.overviewCards) return;
+
+        this.overviewCards.forEach(({ titleEl, titleKey, titleFallback, hintEl }) => {
+            const title = FF14Utils.getI18nText(titleKey, titleFallback);
+            titleEl.textContent = title;
+            hintEl.textContent = FF14Utils.getI18nText('lodestone_go_to_tab', '前往{tab}分頁', { tab: title });
+        });
     }
 }
 

@@ -68,6 +68,7 @@ const LodestoneLookupTranslations = {
         lodestone_tab_mounts: '坐騎',
         lodestone_tab_minions: '寵物',
         lodestone_tab_fc: '公會',
+        lodestone_go_to_tab: '前往{tab}分頁',
 
         // 成就區
         lodestone_total_achievements: '總成就數：',
@@ -203,6 +204,7 @@ const LodestoneLookupTranslations = {
         lodestone_tab_mounts: 'Mounts',
         lodestone_tab_minions: 'Minions',
         lodestone_tab_fc: 'Free Company',
+        lodestone_go_to_tab: 'Go to the {tab} tab',
 
         // Achievements section
         lodestone_total_achievements: 'Total Achievements:',
@@ -338,6 +340,7 @@ const LodestoneLookupTranslations = {
         lodestone_tab_mounts: 'マウント',
         lodestone_tab_minions: 'ミニオン',
         lodestone_tab_fc: 'フリーカンパニー',
+        lodestone_go_to_tab: '{tab}タブへ移動',
 
         // アチーブメントセクション
         lodestone_total_achievements: '総アチーブメント数：',
