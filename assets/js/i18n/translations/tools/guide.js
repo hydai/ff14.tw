@@ -56,7 +56,8 @@ const GuideTranslations = {
         chocobo_note_title: '注意：',
         chocobo_tip_title: '提示：',
         chocobo_feeding_note: '建議交替餵食不同水果，避免 RGB 值達到上限。餵食後需等待 6 小時才能看到顏色變化。當你看到「陸行鳥的羽毛正在生長新的羽毛」訊息時，表示顏色即將改變。',
-        chocobo_calculator_credit: '染色計算器的顏色資料來源參考自 ffxivchocobo.com，感謝原作者的貢獻。',
+        chocobo_calculator_credit_prefix: '染色計算器的顏色資料來源參考自 ',
+        chocobo_calculator_credit_suffix: '，感謝原作者的貢獻。',
         chocobo_load_error: '載入顏色資料失敗，請重新整理頁面再試。',
 
         // 準備中
@@ -116,7 +117,8 @@ const GuideTranslations = {
         chocobo_note_title: 'Note:',
         chocobo_tip_title: 'Tip:',
         chocobo_feeding_note: 'Alternate between different fruits to avoid maxing out RGB values. Color changes take 6 hours after feeding. When you see the message about your chocobo growing new feathers, it confirms the color will change.',
-        chocobo_calculator_credit: 'Color data sourced from ffxivchocobo.com. Thanks to the original author.',
+        chocobo_calculator_credit_prefix: 'Color data sourced from ',
+        chocobo_calculator_credit_suffix: '. Thanks to the original author.',
         chocobo_load_error: 'Failed to load color data. Please refresh the page and try again.',
 
         // Coming soon
@@ -176,7 +178,8 @@ const GuideTranslations = {
         chocobo_note_title: '注意：',
         chocobo_tip_title: 'ヒント：',
         chocobo_feeding_note: 'RGB値が上限に達しないよう、異なる餌を交互に与えてください。色の変更には餌やり後6時間かかります。「チョコボの羽が生え変わり始めた」というメッセージが表示されれば、色の変更が確定です。',
-        chocobo_calculator_credit: 'カラーデータはffxivchocobo.comを参考にしています。原作者に感謝します。',
+        chocobo_calculator_credit_prefix: 'カラーデータは',
+        chocobo_calculator_credit_suffix: 'を参考にしています。原作者に感謝します。',
         chocobo_load_error: 'カラーデータの読み込みに失敗しました。ページを更新して再試行してください。',
 
         // 準備中
