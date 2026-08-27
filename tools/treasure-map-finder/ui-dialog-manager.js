@@ -28,6 +28,14 @@ class UIDialogManager {
 
         this.formatPreviewHandler = null;
 
+        // 格式面板開啟期間，是否曾經把路線面板的 aria-modal 暫時改成 false
+        // （見 showFormatPanel／hideFormatPanel）
+        this.routePanelAriaModalOverridden = false;
+
+        // 格式面板開啟期間，是否曾經把路線面板的焦點陷阱暫時關閉
+        // （見 showFormatPanel／hideFormatPanel）
+        this.routePanelFocusTrapOverridden = false;
+
         // Map to store cleanup functions for panels
         this.cleanupHandlers = new Map();
 
@@ -476,6 +484,11 @@ class UIDialogManager {
             useClass: UIDialogManager.CONSTANTS.CSS_CLASSES.ACTIVE,
             closeOnOverlayClick: false,
             onClose: () => {
+                // 格式面板是從路線面板內開啟的，關閉路線面板時要一併收起（重複呼叫無副作用）。
+                // 這裡傳 restoreFocus: false——上面這個 modalManager.hide() 已經把焦點還給
+                // 開啟路線面板的按鈕，不能讓 hideFormatPanel 又把焦點搶回路線面板內、
+                // 即將一起被隱藏的「自訂格式」按鈕
+                this.hideFormatPanel({ restoreFocus: false });
                 elements.closeBtn.removeEventListener('click', closeHandler);
                 if (this.callbacks.onRouteClose) {
                     this.callbacks.onRouteClose();
@@ -641,20 +654,89 @@ class UIDialogManager {
         };
         this.cleanupHandlers.set(panelId, cleanup);
 
-        // 顯示面板
+        // 顯示面板（格式面板是從路線面板內開啟的，兩者需同時顯示，
+        // 因此不透過共用的 modalManager（會關閉正在開啟的路線面板），改為獨立處理顯示與 Escape；
+        // 面板本身是非模態的，不攔截 Tab／Shift+Tab，焦點可自然離開面板到路線面板的其他控制項）
         elements.panel.classList.add(UIDialogManager.CONSTANTS.CSS_CLASSES.ACTIVE);
+
+        // 格式面板開著時，路線面板退居背景但兩者同時可見、可操作；
+        // 路線面板若仍宣告 aria-modal="true"，輔助科技會把 DOM 中在它範圍外的
+        // 格式面板整個視為不可用。暫時撤銷路線面板的 aria-modal，
+        // 關閉格式面板時再還原（見 hideFormatPanel，且不論路線面板當下是否
+        // 隨之一併關閉都要還原，見該處註解）
+        const routePanelForModal = this.routePanelElements.panel;
+        if (routePanelForModal) {
+            routePanelForModal.setAttribute('aria-modal', 'false');
+            this.routePanelAriaModalOverridden = true;
+        }
+
+        // 路線面板由 ModalManager 管理，預設會啟用焦點陷阱 (focusTrap)，
+        // Tab 在面板內的最後一個控制項會循環回第一個，導致焦點永遠跳不出去、
+        // 摸不到旁邊同時開啟的格式面板。格式面板開啟期間先暫時關閉路線面板的
+        // 焦點陷阱，讓 Tab／Shift+Tab 可以在兩個手足面板之間自然移動；
+        // 只有在路線面板確實是 ModalManager 目前的 activeModal 時才需要處理，
+        // 且不影響 ESC 關閉路線面板的行為（見 ModalManager.setFocusTrap 註解）
+        if (routePanelForModal && this.modalManager.activeModal === routePanelForModal) {
+            this.modalManager.setFocusTrap(false);
+            this.routePanelFocusTrapOverridden = true;
+        }
+
+        // 記住開啟面板前的焦點元素，關閉時歸還焦點
+        this.formatPanelOpener = document.activeElement;
+
+        // 綁定鍵盤事件處理器（只建立一次），掛在面板本身而非 document，
+        // 避免與路線面板（由 modalManager 管理）的鍵盤事件互相干擾
+        if (!this._boundFormatPanelKeydown) {
+            this._boundFormatPanelKeydown = (event) => this.handleFormatPanelKeydown(event);
+        }
+        elements.panel.addEventListener('keydown', this._boundFormatPanelKeydown);
+
+        // 將焦點移入面板內第一個可聚焦元素，找不到時退回聚焦面板本身
+        const initialFocusTarget = elements.panel.querySelector(
+            'input:not([disabled]), textarea:not([disabled]), select:not([disabled]), button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+        if (initialFocusTarget) {
+            initialFocusTarget.focus();
+        } else {
+            elements.panel.focus();
+        }
 
         // 初始預覽
         formatPreviewHandler();
     }
 
     /**
-     * 隱藏格式設定面板
+     * 處理格式設定面板的鍵盤事件（僅 Escape 關閉）
+     * #formatPanel 是非模態面板，路線面板仍在旁邊維持開啟並可操作，
+     * 因此這裡不攔截 Tab／Shift+Tab，焦點可以自然離開面板到路線面板的其他控制項；
+     * Escape 呼叫 stopPropagation()，避免事件冒泡到 document 觸發路線面板
+     * （由 modalManager 管理）一併關閉
+     * @param {KeyboardEvent} event - 鍵盤事件
      */
-    hideFormatPanel() {
+    handleFormatPanelKeydown(event) {
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            event.stopPropagation();
+            this.hideFormatPanel();
+        }
+    }
+
+    /**
+     * 隱藏格式設定面板
+     * @param {Object} [options={}]
+     * @param {boolean} [options.restoreFocus=true] - 是否把焦點歸還給開啟面板前的觸發元素。
+     *   路線面板的 onClose 在「兩個面板一併關閉」時會傳入 false——
+     *   ModalManager.hide() 當下已經把焦點還給生成路線按鈕，這裡不能再搶著
+     *   把焦點送進即將隨路線面板一起隱藏的「自訂格式」按鈕
+     */
+    hideFormatPanel(options = {}) {
+        const { restoreFocus = true } = options;
         const elements = this.formatPanelElements;
         if (elements.panel) {
             elements.panel.classList.remove(UIDialogManager.CONSTANTS.CSS_CLASSES.ACTIVE);
+            if (this._boundFormatPanelKeydown) {
+                elements.panel.removeEventListener('keydown', this._boundFormatPanelKeydown);
+            }
         }
 
         const panelId = 'formatPanel';
@@ -667,6 +749,51 @@ class UIDialogManager {
             }
             this.cleanupHandlers.delete(panelId);
         }
+
+        // 將焦點歸還給開啟面板前的觸發元素；只在該元素仍連接在文件中
+        // 且視覺上可見時才聚焦，避免把焦點送進一個已經隨路線面板一起
+        // 隱藏、看不到的按鈕
+        if (restoreFocus && this.formatPanelOpener && !this.formatPanelOpener.disabled &&
+            this.isElementVisible(this.formatPanelOpener)) {
+            this.formatPanelOpener.focus();
+        }
+        this.formatPanelOpener = null;
+
+        // 還原路線面板的 aria-modal。這裡不用「路線面板目前是否還是 active」
+        // 來判斷要不要還原：單獨關閉格式面板時路線面板固然還是 active，
+        // 但隨路線面板一起關閉時，ModalManager.hide() 會先移除 .active、
+        // 清空 activeModal，最後才執行 onClose 呼叫到這裡，屆時路線面板
+        // 一定已經不是 active，用該狀態判斷會導致這個情境永遠不還原。
+        // 改用「格式面板開啟時是否真的動過這個屬性」來判斷，兩種情境都要
+        // 還原成 true，確保路線面板下次重新開啟時不會殘留這次暫時關閉用的
+        // aria-modal="false"
+        if (this.routePanelAriaModalOverridden) {
+            const routePanel = this.routePanelElements.panel;
+            if (routePanel) {
+                routePanel.setAttribute('aria-modal', 'true');
+            }
+            this.routePanelAriaModalOverridden = false;
+        }
+
+        // 還原路線面板的焦點陷阱，理由與上面還原 aria-modal 相同：
+        // 不論是單獨關閉格式面板，或是路線面板先一步觸發 ModalManager.hide()
+        // 導致 activeModal 已經清空的連鎖關閉路徑，都要用「格式面板開啟時
+        // 是否真的關過焦點陷阱」這個旗標來判斷，兩種情境都要呼叫
+        // setFocusTrap(true) 復原，避免路線面板下次重新開啟時焦點陷阱
+        // 仍停留在關閉狀態
+        if (this.routePanelFocusTrapOverridden) {
+            this.modalManager.setFocusTrap(true);
+            this.routePanelFocusTrapOverridden = false;
+        }
+    }
+
+    /**
+     * 判斷元素是否仍連接在文件中，且視覺上可見（未被 CSS 隱藏）
+     * offsetParent 在 position:fixed 的元素上恆為 null，因此用
+     * getClientRects().length 兜底，避免誤判為不可見
+     */
+    isElementVisible(el) {
+        return !!el && el.isConnected && (el.offsetParent !== null || el.getClientRects().length > 0);
     }
 
     /**
@@ -714,9 +841,13 @@ class UIDialogManager {
         dialog.className = `ui-dialog dialog ${className}`;
 
         if (title) {
+            const titleId = `ui-dialog-title-${UIDialogManager.CONSTANTS.Z_INDEX.DIALOG}-${Date.now()}`;
             const titleElement = document.createElement('h3');
+            titleElement.id = titleId;
             titleElement.textContent = title;
             dialog.appendChild(titleElement);
+            dialog.setAttribute('aria-labelledby', titleId);
+            overlay.setAttribute('aria-labelledby', titleId);
         }
 
         if (content) {

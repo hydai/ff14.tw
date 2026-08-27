@@ -113,6 +113,23 @@ class ModalManager {
     }
 
     /**
+     * 動態切換焦點陷阱 (Focus Trap) 的啟用狀態
+     *
+     * 用途：某些情境會在目前的 activeModal 旁邊另外開出一個非模態的手足面板
+     * （例如寶圖搜尋器的路線面板／格式面板），此時需要暫時關閉焦點陷阱，
+     * 讓 Tab／Shift+Tab 可以離開 activeModal、移動到旁邊的手足面板，
+     * 面板關閉後再呼叫一次並傳入 true 復原陷阱。
+     * `_handleKeyDown`／`_handleFocusTrap` 每次按鍵都會即時讀取
+     * `this.options.focusTrap`，因此這裡修改後立即生效，不需要重新呼叫 show()。
+     * 此方法不影響 `closeOnEsc`，ESC 關閉 activeModal 的行為維持不變。
+     *
+     * @param {boolean} enabled - 是否啟用焦點陷阱
+     */
+    setFocusTrap(enabled) {
+        this.options.focusTrap = !!enabled;
+    }
+
+    /**
      * 處理鍵盤事件 (ESC 和 Tab)
      */
     _handleKeyDown(e) {
