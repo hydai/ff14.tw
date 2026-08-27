@@ -345,7 +345,7 @@
                 <button class="btn btn-danger btn-sm" id="clearAllBtn" title="清空全部">
                     <span class="btn-icon">🗑️</span> 清空
                 </button>
-                <button class="btn btn-close" id="closePanelBtn" title="關閉">×</button>
+                <button class="btn btn-close" id="closePanelBtn" title="關閉" aria-label="關閉" data-i18n="treasure_map_close" data-i18n-attr="aria-label">×</button>
             </div>
         </div>
         <div class="panel-tabs tabs hidden" id="panelTabs" role="tablist">
@@ -367,10 +367,10 @@
     </div>
     
     <!-- 路線結果面板 -->
-    <div class="route-panel" id="routePanel">
+    <div class="route-panel" id="routePanel" role="dialog" aria-modal="true" aria-labelledby="routePanel-title">
         <div class="panel-header">
-            <h3>最佳路線</h3>
-            <button class="btn btn-close" id="closeRoutePanelBtn" title="關閉">×</button>
+            <h3 id="routePanel-title">最佳路線</h3>
+            <button class="btn btn-close" id="closeRoutePanelBtn" title="關閉" aria-label="關閉" data-i18n="treasure_map_close" data-i18n-attr="aria-label">×</button>
         </div>
         <div class="route-summary" id="routeSummary">
             <!-- 路線摘要將由 JavaScript 動態生成 -->
@@ -389,10 +389,10 @@
     </div>
     
     <!-- 自訂格式設定面板 -->
-    <div class="format-panel" id="formatPanel" role="dialog" aria-modal="true" aria-labelledby="formatPanel-title" tabindex="-1">
+    <div class="format-panel" id="formatPanel" role="dialog" aria-labelledby="formatPanel-title" tabindex="-1">
         <div class="panel-header">
             <h3 id="formatPanel-title">自訂輸出格式</h3>
-            <button class="btn btn-close" id="closeFormatPanelBtn" title="關閉">×</button>
+            <button class="btn btn-close" id="closeFormatPanelBtn" title="關閉" aria-label="關閉" data-i18n="treasure_map_close" data-i18n-attr="aria-label">×</button>
         </div>
         <div class="format-content">
             <div class="format-lang-switcher">
@@ -448,8 +448,8 @@
     </div>
 
     <!-- 加入隊伍對話框 -->
-    <div class="modal dialog-overlay hidden" id="joinRoomModal">
-        <div class="modal-content dialog" role="dialog" aria-modal="true" aria-labelledby="joinRoomModal-title">
+    <div class="modal dialog-overlay hidden" id="joinRoomModal" role="dialog" aria-modal="true" aria-labelledby="joinRoomModal-title">
+        <div class="modal-content dialog">
             <div class="dialog-header">
                 <h3 id="joinRoomModal-title" class="dialog-title">加入隊伍</h3>
                 <button class="btn btn-close" id="closeJoinModalBtn" aria-label="關閉" data-i18n="treasure_map_close" data-i18n-attr="aria-label">×</button>
@@ -467,8 +467,8 @@
     </div>
 
     <!-- 編輯暱稱對話框 -->
-    <div class="modal dialog-overlay hidden" id="editNicknameModal">
-        <div class="modal-content dialog" role="dialog" aria-modal="true" aria-labelledby="editNicknameModal-title">
+    <div class="modal dialog-overlay hidden" id="editNicknameModal" role="dialog" aria-modal="true" aria-labelledby="editNicknameModal-title">
+        <div class="modal-content dialog">
             <div class="dialog-header">
                 <h3 id="editNicknameModal-title" class="dialog-title">編輯暱稱</h3>
                 <button class="btn btn-close" id="closeNicknameModalBtn" aria-label="關閉" data-i18n="treasure_map_close" data-i18n-attr="aria-label">×</button>
@@ -486,8 +486,8 @@
     </div>
 
     <!-- 離開隊伍確認對話框 -->
-    <div class="modal dialog-overlay hidden" id="leaveRoomModal">
-        <div class="modal-content dialog" role="dialog" aria-modal="true" aria-labelledby="leaveRoomModal-title">
+    <div class="modal dialog-overlay hidden" id="leaveRoomModal" role="dialog" aria-modal="true" aria-labelledby="leaveRoomModal-title">
+        <div class="modal-content dialog">
             <div class="dialog-header">
                 <h3 id="leaveRoomModal-title" class="dialog-title">離開隊伍</h3>
                 <button class="btn btn-close" id="closeLeaveModalBtn" aria-label="關閉" data-i18n="treasure_map_close" data-i18n-attr="aria-label">×</button>
@@ -506,7 +506,7 @@
 
 
     <!-- 地圖詳細檢視彈出視窗 -->
-    <div class="map-detail-modal" id="mapDetailModal">
+    <div class="map-detail-modal" id="mapDetailModal" role="dialog" aria-modal="true" aria-labelledby="mapDetailTitle">
         <div class="map-detail-content">
             <button class="map-detail-close" id="mapDetailClose" title="關閉">×</button>
             <div class="map-detail-image-container">

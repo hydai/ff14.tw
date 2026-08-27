@@ -189,30 +189,76 @@ function classTokens(tag) {
 }
 const ROOT_PAGES = ['index.html', 'about.html', 'copyright.html', 'changelog.html'];
 
-test('.dialog 元素必須有 role="dialog"、aria-modal="true" 與 aria-labelledby', () => {
+// 遮罩層的 class（也就是實際交給 ModalManager 的那一層）；
+// route-panel／map-detail-modal 不經過 ModalManager 的遮罩層機制，但一樣是鎖住畫面的對話框，
+// 所以也放進來，確保它們的 role="dialog" 不會在未來的修改中被靜默拿掉（規則 (b)）
+const OVERLAY_CLASSES = ['dialog-overlay', 'popup-overlay', 'route-panel', 'map-detail-modal'];
+// 非模態對話框：格式面板開著時路線面板仍可操作，所以不得宣告 aria-modal
+const NON_MODAL_DIALOG_IDS = ['formatPanel'];
+
+function allOpenTags(html) {
+    return html.match(/<[a-zA-Z][^>]*>/g) || [];
+}
+function attr(tag, name) {
+    const m = tag.match(new RegExp(`\\s${escapeRegExp(name)}="([^"]*)"`));
+    return m ? m[1] : null;
+}
+
+test('對話框的 role="dialog" 放在遮罩層，且有 aria-labelledby 與（除 #formatPanel 外）aria-modal', () => {
     const files = [...listFiles('tools', ['.html']), ...ROOT_PAGES];
-    let dialogCount = 0;
+    let roleCount = 0;
+    let overlayCount = 0;
     for (const file of files) {
         const html = read(file);
-        for (const tag of openTags(html, 'div')) {
-            // 除了 class 含 dialog token 的元素，也要檢查任何標了 aria-modal="true" 的元素
-            // （例如 #formatPanel，它的 class 是 format-panel，不含 dialog token）
-            if (!classTokens(tag).includes('dialog') && !/\saria-modal="true"/.test(tag)) continue;
-            dialogCount++;
-            assert.match(tag, /\srole="dialog"/, `${file} 的 .dialog 缺少 role="dialog"：${tag}`);
-            assert.match(tag, /\saria-modal="true"/, `${file} 的 .dialog 缺少 aria-modal="true"：${tag}`);
-            assert.match(tag, /\saria-labelledby="[^"]+"/, `${file} 的 .dialog 缺少 aria-labelledby：${tag}`);
+        const ids = new Set([...html.matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]));
+        for (const tag of allOpenTags(html)) {
+            const classes = classTokens(tag);
+            const isOverlay = OVERLAY_CLASSES.some((c) => classes.includes(c));
+            const hasDialogRole = /\srole="dialog"/.test(tag);
+            const id = attr(tag, 'id');
+
+            // (a) 每個 role="dialog" 都要有可存取名稱，並且除了非模態面板外都要 aria-modal="true"
+            if (hasDialogRole) {
+                roleCount++;
+                const labelledby = attr(tag, 'aria-labelledby');
+                const ariaLabel = attr(tag, 'aria-label');
+                assert.ok(
+                    (labelledby && labelledby.trim()) || (ariaLabel && ariaLabel.trim()),
+                    `${file} 的 role="dialog" 缺少可存取名稱（aria-labelledby 或 aria-label）：${tag}`
+                );
+                if (labelledby) {
+                    for (const target of labelledby.trim().split(/\s+/)) {
+                        assert.ok(ids.has(target), `${file} 的 aria-labelledby="${target}" 在同一頁找不到對應的 id：${tag}`);
+                    }
+                }
+                if (NON_MODAL_DIALOG_IDS.includes(id)) {
+                    assert.doesNotMatch(tag, /\saria-modal=/, `${file} 的 #${id} 是非模態對話框，不應宣告 aria-modal：${tag}`);
+                } else {
+                    assert.match(tag, /\saria-modal="true"/, `${file} 的 role="dialog" 缺少 aria-modal="true"：${tag}`);
+                }
+            }
+
+            // (b) 遮罩層一定要自己帶 role="dialog"（ModalManager 不再動 ARIA）
+            if (isOverlay) {
+                overlayCount++;
+                assert.ok(hasDialogRole, `${file} 的遮罩層缺少 role="dialog"：${tag}`);
+            }
+
+            // (c) 內層的 .dialog 盒子必須是沒有 role 的一般容器
+            if (classes.includes('dialog') && !isOverlay) {
+                assert.ok(!hasDialogRole, `${file} 的內層 .dialog 不應該有 role="dialog"，請改放在遮罩層：${tag}`);
+            }
         }
     }
-    assert.ok(dialogCount > 0, '沒有找到任何 .dialog，測試可能失效');
+    assert.ok(overlayCount > 0, '沒有找到任何遮罩層，測試可能失效');
+    assert.ok(roleCount >= overlayCount, '沒有找到足夠的 role="dialog"，測試可能失效');
 
-    // 明確驗證 #formatPanel（treasure-map-finder 的自訂格式面板）：
-    // 它的 class 是 format-panel、不含 dialog token，是本測試檔中唯一一個這樣的對話框
+    // 明確驗證 #formatPanel（treasure-map-finder 的自訂格式面板）：非模態，但仍要有 role 與名稱
     const formatPanelFile = 'tools/treasure-map-finder/index.html';
-    const formatPanelTag = openTags(read(formatPanelFile), 'div').find((tag) => /\sid="formatPanel"/.test(tag));
+    const formatPanelTag = allOpenTags(read(formatPanelFile)).find((tag) => /\sid="formatPanel"/.test(tag));
     assert.ok(formatPanelTag, `${formatPanelFile} 找不到 id="formatPanel" 的元素`);
     assert.match(formatPanelTag, /\srole="dialog"/, `${formatPanelFile} 的 #formatPanel 缺少 role="dialog"：${formatPanelTag}`);
-    assert.match(formatPanelTag, /\saria-modal="true"/, `${formatPanelFile} 的 #formatPanel 缺少 aria-modal="true"：${formatPanelTag}`);
+    assert.doesNotMatch(formatPanelTag, /\saria-modal=/, `${formatPanelFile} 的 #formatPanel 不應宣告 aria-modal：${formatPanelTag}`);
     assert.match(formatPanelTag, /\saria-labelledby="[^"]+"/, `${formatPanelFile} 的 #formatPanel 缺少 aria-labelledby：${formatPanelTag}`);
 });
 

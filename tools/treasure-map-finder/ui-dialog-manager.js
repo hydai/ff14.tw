@@ -14,6 +14,9 @@ class UIDialogManager {
         }
     };
 
+    // 動態對話框標題 id 的流水號（單調遞增，避免同一毫秒內產生重複 id）
+    static dialogTitleSeq = 0;
+
     constructor() {
         // 儲存所有對話框的參考
         this.dialogs = new Map();
@@ -832,8 +835,11 @@ class UIDialogManager {
         const { title, content, className = '' } = options;
 
         // 建立遮罩層
+        // ARIA 一律掛在遮罩層（交給 ModalManager 的那一層），內層 .ui-dialog 維持沒有 role 的容器
         const overlay = document.createElement('div');
         overlay.className = 'ui-dialog-overlay dialog-overlay';
+        overlay.setAttribute('role', 'dialog');
+        overlay.setAttribute('aria-modal', 'true');
         // Z-index handled by CSS class or default
 
         // 建立對話框
@@ -841,12 +847,11 @@ class UIDialogManager {
         dialog.className = `ui-dialog dialog ${className}`;
 
         if (title) {
-            const titleId = `ui-dialog-title-${UIDialogManager.CONSTANTS.Z_INDEX.DIALOG}-${Date.now()}`;
+            const titleId = `ui-dialog-title-${++UIDialogManager.dialogTitleSeq}`;
             const titleElement = document.createElement('h3');
             titleElement.id = titleId;
             titleElement.textContent = title;
             dialog.appendChild(titleElement);
-            dialog.setAttribute('aria-labelledby', titleId);
             overlay.setAttribute('aria-labelledby', titleId);
         }
 
