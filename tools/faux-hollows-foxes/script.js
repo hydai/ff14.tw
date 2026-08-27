@@ -790,8 +790,9 @@ class FauxHollowsFoxes {
     onCellClick(cell) {
         const index = parseInt(cell.dataset.index);
 
-        // If cell is already clicked (gray) or occupied, do nothing
-        if (cell.classList.contains('clicked') || cell.classList.contains('occupied')) {
+        // If cell is already clicked (gray), do nothing
+        // 註：occupied 這個 class 從未被程式加入過，原本的 OR 判斷恆為 false，予以移除
+        if (cell.classList.contains('clicked')) {
             return;
         }
 
