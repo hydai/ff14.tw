@@ -18,12 +18,12 @@ FF14.tw is a multi-tool website for Final Fantasy XIV players in Taiwan, providi
 
 ## Project Statistics
 
-- **HTML Files**: 13 (8 tools + 5 main pages)
-- **JavaScript Files**: 41 (tool scripts + shared utilities + i18n translations + layout components)
+- **HTML Files**: 24 total — 19 across 12 tool directories (11 single-page tools + `guide/` with 8 pages) + 4 main pages (`index.html`, `about.html`, `changelog.html`, `copyright.html`) + 1 API test harness (`api/test.html`)
+- **JavaScript Files**: 65 total — 35 tool scripts + 4 shared utilities (`assets/js/`) + 17 i18n (manager + translations) + 3 layout components (`assets/js/components/`) + 5 test files (`tests/*.test.js`: design-system, pages, timed-gathering-eorzea-time, scripts, docs) + 1 Cloudflare Worker (`api/treasure-room-worker.js`); plus 3 Node build scripts (`scripts/*.mjs`, not shipped to the site)
 - **CSS Files**: 23 (shared + components + tool-specific)
-- **JSON Data Files**: 7 (total ~18,000 lines)
-- **Total Dungeons**: 804 entries
-- **Total Treasure Map Coordinates**: 219 entries
+- **JSON Data Files**: 8 (total ~25,600 lines); `/data/` also has one non-JSON `ff14-gp.csv`
+- **Total Dungeons**: 803 entries (data file's own `metadata.totalDungeons` field still says 804 — pre-existing inconsistency inside `dungeons.json` itself, not a doc bug)
+- **Total Treasure Map Coordinates**: 227 entries (G8/G10/G12/G14/G15/G17/G18)
 
 ## Development Commands
 
@@ -44,17 +44,22 @@ php -S localhost:8000
 **CORS Requirements:**
 Tools that fetch JSON data require a local server:
 - 副本資料庫 (`dungeon-database/`) - loads `/data/dungeons.json`
-- 寶圖搜尋器 (`treasure-map-finder/`) - loads `/data/treasure-maps.json` and `/data/zone-translations.json`
+- 寶圖搜尋器 (`treasure-map-finder/`) - loads `/data/aetherytes.json`, `/data/treasure-maps.json` and `/data/zones.json`
 - Lodestone 角色查詢 (`lodestone-lookup/`) - uses logstone API
 - 特殊採集時間管理器 (`timed-gathering/`) - loads `/data/timed-gathering.json`
+- 巨集轉換器 (`macro-converter/`) - loads `/data/macro-mappings.json`
+- 攻略資料 (`guide/`) - 僅陸行鳥毛色頁面 (`chocobo.html`) loads `/data/chocobo-colors.json`，其餘 7 個頁面不需要伺服器
 
 Tools that work without server (can open HTML directly):
 - 仙人微彩計算機
 - Wondrous Tails 預測器
 - 角色卡產生器
 - Faux Hollows Foxes 計算機
+- 檢舉模板產生器
+- 天氣預報
+- 攻略資料（陸行鳥毛色頁面除外）
 
-**Testing:** `node --test`（Node 內建 test runner，自動執行 `tests/*.test.js`）。`tests/design-system.test.js` 守住設計系統規則（token 完整性、對比度、token-clean 檔案清單）；`tests/pages.test.js` 守住每一頁的載入順序與字型。每次 commit 前執行。沒有 package.json、bundler 或 linter。
+**Testing:** `node --test`（Node 內建 test runner，自動執行 `tests/*.test.js`）。`tests/design-system.test.js` 守住設計系統規則（token 完整性、對比度、token-clean 檔案清單）；`tests/pages.test.js` 守住每一頁的載入順序與字型；`tests/timed-gathering-eorzea-time.test.js` 守住艾歐澤亞時間換算在不同時區下的一致性；`tests/scripts.test.js` 守住 `assets/`、`tools/` 底下的 JS 不得使用 `innerHTML`；`tests/docs.test.js` 守住 CLAUDE.md／README 的副本數、寶圖座標數與 JSON 資料檔案數這幾個關鍵統計數字不會與 `/data` 底下的實際資料脫節。每次 commit 前執行。網站主體沒有 package.json、bundler 或 linter（`api/` 的 Cloudflare Worker 子專案另有自己的 `package.json`／`wrangler`，與網站建置無關）。
 
 ## Core Patterns
 
@@ -172,7 +177,7 @@ HTML Structure:
    ```
 5. **Use shared UI components instead of creating custom styles:**
    - **Buttons**: Use `.btn`, `.btn-primary`, `.btn-secondary`, `.btn-success`, `.btn-danger`, `.btn-sm`, `.btn-lg`
-   - **Cards**: Use `.card`, `.card-header`, `.card-body`, `.card-footer`, `.card-grid`, `.card-hoverable`
+   - **Cards**: Use `.card`, `.card-header`, `.card-body`, `.card-footer`, `.card-grid`, `.hoverable`（需與 `.card` 並用，例：`class="card hoverable clickable"`；也可用等效的獨立修飾類 `.card-hover` / `.card-clickable`）
    - **Forms**: Use `.form-control`, `.form-group`, `.form-label`, `.form-text`, `.form-check`
    - **Tags/Badges**: Use `.tag`, `.tag-primary`, `.chip`, `.badge`, `.tag-pill`, `.tag-outline-*`
    - **Loading states**: Use `.loading`, `.loading-spinner`
@@ -476,15 +481,18 @@ The project supports 3 languages via the I18nManager class:
     ├── about.js             # 關於頁面翻譯
     ├── changelog.js         # 修改紀錄頁面翻譯
     ├── copyright.js         # 版權聲明頁面翻譯
-    └── tools/               # 工具翻譯
+    └── tools/               # 工具翻譯（report-generator 目前未使用 i18n，沒有對應檔案）
+        ├── character-card.js
         ├── dungeon-database.js
-        ├── treasure-map-finder.js
-        ├── timed-gathering.js
-        ├── lodestone-lookup.js
-        ├── mini-cactpot.js
-        ├── wondrous-tails.js
         ├── faux-hollows-foxes.js
-        └── character-card.js
+        ├── guide.js
+        ├── lodestone-lookup.js
+        ├── macro-converter.js
+        ├── mini-cactpot.js
+        ├── timed-gathering.js
+        ├── treasure-map-finder.js
+        ├── weather-forecast.js
+        └── wondrous-tails.js
 ```
 
 ### Usage Pattern
@@ -528,7 +536,7 @@ i18n.addObserver(() => this.updateUI());
 ### Complex Tools Structure
 Tools with advanced features use modular architecture:
 
-**treasure-map-finder/** (12 files):
+**treasure-map-finder/** (11 個程式檔 + 3 份文件；另有 `images/` 圖片資源目錄，不逐一列出):
 ```
 ├── index.html
 ├── script.js              # 主控制器
@@ -538,10 +546,13 @@ Tools with advanced features use modular architecture:
 ├── ui-dialog-manager.js   # 對話框管理
 ├── zone-manager.js        # 地區管理
 ├── coordinate-utils.js    # 座標工具
+├── route-calculator.js    # 路線規劃
+├── migrate-data.js        # 資料遷移工具
 └── style.css
 ```
+（另有 README-migration.md、room-collaboration-spec.md、SPEC.md 三份文件，不計入程式碼檔案數）
 
-**timed-gathering/** (10 files):
+**timed-gathering/** (8 files):
 ```
 ├── index.html
 ├── script.js              # 主控制器
@@ -549,11 +560,10 @@ Tools with advanced features use modular architecture:
 ├── macro-exporter.js      # 巨集匯出
 ├── notification-manager.js # 通知管理
 ├── search-filter.js       # 搜尋過濾
-├── security-utils.js      # 安全工具
 ├── time-calculator.js     # 時間計算
-├── i18n.js               # 工具專用 i18n
 └── style.css
 ```
+（已改用共用的 `assets/js/security-utils.js` 與共用 i18n 系統，不再有工具專屬的 `security-utils.js` / `i18n.js`）
 
 ### Module Pattern
 ```javascript
@@ -668,12 +678,14 @@ Tools with external data follow this structure:
 **Data Files (`/data/`):**
 ```
 /data/
-├── dungeons.json (12,376 行) - 804 個副本資料
-├── treasure-maps.json (2,712 行) - 219 個寶圖座標
+├── dungeons.json (12,376 行) - 803 個副本資料（檔案內 metadata.totalDungeons 欄位仍寫 804，屬既有落差）
+├── treasure-maps.json (2,712 行) - 227 個寶圖座標（G8/G10/G12/G14/G15/G17/G18）
+├── macro-mappings.json (7,627 行) - 巨集轉換器的巨集指令對照表
 ├── timed-gathering.json (1,253 行) - 特殊採集點資料
-├── zones.json (661 行) - 地區定義與元資料
+├── chocobo-colors.json (138 行) - 陸行鳥毛色配方資料（攻略資料工具使用）
+├── zones.json (662 行) - 地區定義與元資料
 ├── aetherytes.json (633 行) - 傳送點資料
-├── zone-translations.json (151 行) - 地區名稱翻譯 (zh/en/ja)
+├── zone-translations.json (151 行) - 地區名稱翻譯 (zh/en/ja)（目前沒有任何程式碼引用，疑似孤兒檔案）
 └── ff14-gp.csv - GP 值參考資料
 ```
 
@@ -779,13 +791,17 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 ## Current Tools
 
 1. **Character Card Generator** (`character-card/`): Customizable FF14 character cards
-2. **Dungeon Database** (`dungeon-database/`): 804 dungeons with multi-select filtering
+2. **Dungeon Database** (`dungeon-database/`): 803 dungeons with multi-select filtering
 3. **Mini Cactpot Calculator** (`mini-cactpot/`): 3x3 lottery probability calculator
 4. **Wondrous Tails Predictor** (`wondrous-tails/`): 4x4 bingo probability calculator
 5. **Faux Hollows Foxes** (`faux-hollows-foxes/`): 6x6 treasure hunting puzzle solver
-6. **Treasure Map Finder** (`treasure-map-finder/`): 219 treasure map coordinates with route planning (G8/G10/G12/G14/G15/G17)
+6. **Treasure Map Finder** (`treasure-map-finder/`): 227 treasure map coordinates with route planning (G8/G10/G12/G14/G15/G17/G18)
 7. **Lodestone Lookup** (`lodestone-lookup/`): Character information lookup using Lodestone ID with complete stats, jobs, and equipment display
 8. **Timed Gathering Manager** (`timed-gathering/`): Eorzea time-based gathering node tracker with multi-list management and macro export
+9. **Guide** (`guide/`): FF14 新手攻略指南，涵蓋公會、大國防聯軍、副本、風脈、隊伍系統、探索筆記與陸行鳥毛色計算（8 個子頁面）
+10. **Report Generator** (`report-generator/`): 產生不當行為檢舉的模板文字，協助申訴
+11. **Macro Converter** (`macro-converter/`): 在繁體中文、英文、日文之間轉換 FF14 巨集
+12. **Weather Forecast** (`weather-forecast/`): 查詢艾歐澤亞各地區天氣預報，支援特定天氣條件搜尋
 
 ## Development Memories
 
@@ -797,6 +813,10 @@ Co-Authored-By: Claude <noreply@anthropic.com>
   - `treasure-map-finder` 為寶圖搜尋器
   - `lodestone-lookup` 為 Lodestone 角色查詢
   - `timed-gathering` 為特殊採集時間管理器
+  - `guide` 為攻略資料
+  - `report-generator` 為檢舉模板產生器
+  - `macro-converter` 為巨集轉換器
+  - `weather-forecast` 為天氣預報
   - 請記住他們的對應關係，避免改錯工具
 - 永遠使用 DOM 操作來取代 innerHTML
 
@@ -811,7 +831,7 @@ When adding external data sources, always:
 
 ### Treasure Map Room Collaboration API
 - Deployed on Cloudflare Workers
-- Supports room CRUD operations (Create, Read, Update, Delete)
+- Supports room create/read/update (`POST /api/rooms`, `GET`/`PUT /api/rooms/:code`), join/leave/remove-member, and automatic expiry cleanup (`POST /api/cleanup`) — no user-facing per-room delete endpoint exists today
 - Implements CORS security restrictions - only allows requests from ff14.tw domain
 - Development environment can enable localhost support via environment variables
 - Provides real-time collaboration features for treasure map hunting groups
