@@ -279,3 +279,19 @@ test('猜謎方格工具的格子都設定 tabindex，可以用 Tab 鍵移動焦
         assert.match(tag, /\stabindex="0"/, `mini-cactpot 的格子缺少 tabindex="0"：${tag}`);
     }
 });
+
+test('每個 role="tablist" 都至少有一個帶 aria-selected 的 role="tab"', () => {
+    const files = [...listFiles('tools', ['.html']), 'index.html', 'about.html', 'copyright.html', 'changelog.html'];
+    let tablistCount = 0;
+    for (const file of files) {
+        const html = read(file);
+        if (!/role="tablist"/.test(html)) continue;
+        tablistCount++;
+        const tabTags = html.match(/<[^>]+\srole="tab"[^>]*>/g) || [];
+        assert.ok(tabTags.length > 0, `${file} 有 role="tablist" 卻找不到 role="tab"`);
+        // 每個 role="tab" 都要有 aria-selected（比題目要求的「至少一個」更嚴謹，可完整防止漏加屬性）
+        const allHaveAriaSelected = tabTags.every((tag) => /\saria-selected="(true|false)"/.test(tag));
+        assert.ok(allHaveAriaSelected, `${file} 有 role="tab" 缺少 aria-selected`);
+    }
+    assert.ok(tablistCount > 0, '沒有找到任何 role="tablist"，測試可能失效');
+});

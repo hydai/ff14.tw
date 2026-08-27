@@ -115,12 +115,29 @@ class LodestoneCharacterLookup {
                 this.switchTab(e.target.dataset.tab);
             });
         });
+
+        // 方向鍵在分頁間移動並直接切換
+        this.elements.tabNavigation.addEventListener('keydown', (e) => {
+            if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+            const tabs = Array.from(this.elements.tabButtons);
+            const currentIndex = tabs.indexOf(document.activeElement);
+            if (currentIndex === -1) return;
+            e.preventDefault();
+            const nextIndex = e.key === 'ArrowRight'
+                ? (currentIndex + 1) % tabs.length
+                : (currentIndex - 1 + tabs.length) % tabs.length;
+            tabs[nextIndex].focus();
+            tabs[nextIndex].click();
+        });
     }
     
     switchTab(tabName) {
         // 更新按鈕狀態
         this.elements.tabButtons.forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.tab === tabName);
+            const isActive = btn.dataset.tab === tabName;
+            btn.classList.toggle('active', isActive);
+            btn.setAttribute('aria-selected', String(isActive));
+            btn.tabIndex = isActive ? 0 : -1;
         });
         
         // 更新分頁內容

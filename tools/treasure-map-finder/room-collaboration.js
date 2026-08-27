@@ -901,8 +901,12 @@ class RoomCollaboration {
             // 更新按鈕狀態
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.classList.remove('active');
+                btn.setAttribute('aria-selected', 'false');
+                btn.tabIndex = -1;
             });
             tabBtn.classList.add('active');
+            tabBtn.setAttribute('aria-selected', 'true');
+            tabBtn.tabIndex = 0;
 
             // 切換內容
             const tab = tabBtn.dataset.tab;
@@ -914,6 +918,20 @@ class RoomCollaboration {
                 historyContent.classList.remove('hidden');
                 this.renderHistory();
             }
+        });
+
+        // 方向鍵在分頁間移動並直接切換
+        panelTabs.addEventListener('keydown', (e) => {
+            if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+            const tabs = Array.from(panelTabs.querySelectorAll('.tab-btn'));
+            const currentIndex = tabs.indexOf(document.activeElement);
+            if (currentIndex === -1) return;
+            e.preventDefault();
+            const nextIndex = e.key === 'ArrowRight'
+                ? (currentIndex + 1) % tabs.length
+                : (currentIndex - 1 + tabs.length) % tabs.length;
+            tabs[nextIndex].focus();
+            tabs[nextIndex].click();
         });
     }
 

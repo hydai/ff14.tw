@@ -348,14 +348,14 @@
                 <button class="btn btn-close" id="closePanelBtn" title="關閉">×</button>
             </div>
         </div>
-        <div class="panel-tabs tabs hidden" id="panelTabs">
-            <button class="tab-btn tab active" data-tab="list">清單</button>
-            <button class="tab-btn tab" data-tab="history">歷史</button>
+        <div class="panel-tabs tabs hidden" id="panelTabs" role="tablist">
+            <button class="tab-btn tab active" data-tab="list" id="tab-panel-list" role="tab" aria-selected="true" aria-controls="listContent" tabindex="0">清單</button>
+            <button class="tab-btn tab" data-tab="history" id="tab-panel-history" role="tab" aria-selected="false" aria-controls="historyContent" tabindex="-1">歷史</button>
         </div>
-        <div class="list-content" id="listContent">
+        <div class="list-content" id="listContent" role="tabpanel" aria-labelledby="tab-panel-list">
             <!-- 清單項目將由 JavaScript 動態生成 -->
         </div>
-        <div class="history-content hidden" id="historyContent">
+        <div class="history-content hidden" id="historyContent" role="tabpanel" aria-labelledby="tab-panel-history">
             <!-- 操作歷史將由 JavaScript 動態生成 -->
         </div>
         <div class="panel-footer">

@@ -142,6 +142,9 @@
 }
 
 .tab {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     height: var(--control-md);
     padding: 0 var(--space-4);
     margin-bottom: -1px;
