@@ -94,6 +94,19 @@ const LODESTONE_TRANSLATIONS = {
     }
 };
 
+// 職業分類的識別色（資料性顏色，不隨主題變色；由 script.js 以 inline style 套用）
+const LODESTONE_ROLE_COLORS = {
+    tank: '#3f51b5',
+    healer: '#4caf50',
+    melee: '#f44336',
+    ranged: '#f44336',
+    magic: '#f44336',
+    crafting: '#9e9e9e',
+    gathering: '#9e9e9e',
+    special: '#ffc107'
+};
+
 // 匯出到全域
 window.LODESTONE_JOB_ICONS = LODESTONE_JOB_ICONS;
 window.LODESTONE_TRANSLATIONS = LODESTONE_TRANSLATIONS;
+window.LODESTONE_ROLE_COLORS = LODESTONE_ROLE_COLORS;

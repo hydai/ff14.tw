@@ -11,19 +11,19 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../../assets/css/tokens.css">
     <link rel="stylesheet" href="../../assets/css/common.css">
-    <link rel="stylesheet" href="../../assets/css/dark-mode-tools.css">
     <link rel="stylesheet" href="../../assets/css/tools-common.css">
     <link rel="stylesheet" href="../../assets/css/components/language-switcher.css">
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="card-templates.css">
 </head>
 <body>
     <div id="header-placeholder" data-base-path="../../" data-tool-name="角色卡產生器" data-tool-name-key="char_card_header"></div>
     <noscript>
-        <nav style="padding: 1rem; background: #667eea; color: white; text-align: center;">
-            <a href="/" style="color: white; margin: 0 1rem;">首頁</a>
-            <a href="/copyright.html" style="color: white; margin: 0 1rem;">版權聲明</a>
-            <a href="https://github.com/hydai/ff14.tw" target="_blank" rel="noopener noreferrer" style="color: white; margin: 0 1rem;">GitHub</a>
-            <a href="/about.html" style="color: white; margin: 0 1rem;">關於</a>
+        <nav class="noscript-nav">
+            <a href="/" class="noscript-nav-link">首頁</a>
+            <a href="/copyright.html" class="noscript-nav-link">版權聲明</a>
+            <a href="https://github.com/hydai/ff14.tw" target="_blank" rel="noopener noreferrer" class="noscript-nav-link">GitHub</a>
+            <a href="/about.html" class="noscript-nav-link">關於</a>
         </nav>
     </noscript>
 
@@ -32,7 +32,7 @@
             <h1 class="visually-hidden" data-i18n="char_card_header">角色卡產生器</h1>
             <div class="tool-container">
                 <div class="preview-section">
-                    <div id="characterCard" class="character-card theme-default layout-horizontal">
+                    <div id="characterCard" class="character-card layout-horizontal">
                         <div class="card-background" id="cardBackground">
                             <img id="backgroundImage" class="background-image" style="display: none;">
                         </div>
@@ -84,13 +84,13 @@
                     </div>
                 </div>
 
-                <div class="image-controls">
+                <div class="image-controls card">
                     <h3 data-i18n="char_card_image_settings">圖片設定</h3>
                     <div class="controls-row">
                         <div class="control-group">
                             <label data-i18n="char_card_upload_image">上傳圖片</label>
                             <input type="file" id="characterImage" accept="image/*" class="file-input">
-                            <small class="form-hint" data-i18n="char_card_file_types">JPG、PNG、GIF</small>
+                            <small class="form-text" data-i18n="char_card_file_types">JPG、PNG、GIF</small>
                         </div>
                         <div class="control-group" id="positionGroup" style="display: none;">
                             <label data-i18n="char_card_position">位置</label>
@@ -119,22 +119,22 @@
                         <div class="control-group" id="actionGroup" style="display: none;">
                             <label data-i18n="char_card_actions">操作</label>
                             <div class="action-buttons">
-                                <button type="button" class="btn btn-secondary" id="resetImage" data-i18n="char_card_reset">重置</button>
-                                <button type="button" class="btn btn-secondary" id="removeImage" data-i18n="char_card_remove">移除</button>
+                                <button type="button" class="btn btn-secondary btn-sm" id="resetImage" data-i18n="char_card_reset">重置</button>
+                                <button type="button" class="btn btn-secondary btn-sm" id="removeImage" data-i18n="char_card_remove">移除</button>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="input-section">
+                <div class="input-section card">
                     <div class="form-group">
-                        <label for="characterName" data-i18n="char_card_name_label">角色名稱</label>
-                        <input type="text" id="characterName" data-i18n-attr="placeholder" data-i18n="char_card_name_placeholder" placeholder="輸入角色名稱">
+                        <label for="characterName" data-i18n="char_card_name_label" class="form-label">角色名稱</label>
+                        <input type="text" id="characterName" data-i18n-attr="placeholder" data-i18n="char_card_name_placeholder" placeholder="輸入角色名稱" class="form-control">
                     </div>
 
                     <div class="form-group">
                         <div class="collapsible-header" id="serverCollapsibleHeader">
-                            <label data-i18n="char_card_server_label">伺服器選擇</label>
+                            <label data-i18n="char_card_server_label" class="form-label">伺服器選擇</label>
                             <button type="button" class="collapse-toggle" id="serverCollapseToggle">
                                 <span class="toggle-icon">▼</span>
                             </button>
@@ -144,7 +144,7 @@
                         <div class="selected-server" id="selectedServer" style="display: none;">
                             <span class="selected-label" data-i18n="char_card_selected">已選擇：</span>
                             <span class="selected-value" id="selectedServerName"></span>
-                            <button type="button" class="clear-btn" id="clearServer" data-i18n="char_card_reselect">重新選擇</button>
+                            <button type="button" class="btn btn-outline btn-sm clear-btn" id="clearServer" data-i18n="char_card_reselect">重新選擇</button>
                         </div>
 
                         <div class="collapsible-content" id="serverCollapsibleContent">
@@ -180,7 +180,7 @@
 
                     <div class="form-group">
                         <div class="collapsible-header" id="jobCollapsibleHeader">
-                            <label data-i18n="char_card_job_label">職業選擇</label>
+                            <label data-i18n="char_card_job_label" class="form-label">職業選擇</label>
                             <button type="button" class="collapse-toggle" id="jobCollapseToggle">
                                 <span class="toggle-icon">▼</span>
                             </button>
@@ -190,12 +190,12 @@
                         <div class="selected-server" id="selectedJob" style="display: none;">
                             <span class="selected-label" data-i18n="char_card_selected_job">已選擇職業：</span>
                             <span class="selected-value" id="selectedJobName"></span>
-                            <button type="button" class="clear-btn" id="clearJob" data-i18n="char_card_reselect">重新選擇</button>
+                            <button type="button" class="btn btn-outline btn-sm clear-btn" id="clearJob" data-i18n="char_card_reselect">重新選擇</button>
                         </div>
 
                         <div class="collapsible-content" id="jobCollapsibleContent">
                             <!-- 坦克職業 -->
-                            <div class="job-category">
+                            <div class="job-category card">
                                 <h4 class="job-category-title">
                                     <span class="job-category-icon">🛡️</span>
                                     <span data-i18n="char_card_job_tank">坦克</span>
@@ -209,7 +209,7 @@
                             </div>
 
                             <!-- 治療職業 -->
-                            <div class="job-category">
+                            <div class="job-category card">
                                 <h4 class="job-category-title">
                                     <span class="job-category-icon">💚</span>
                                     <span data-i18n="char_card_job_healer">治療</span>
@@ -223,7 +223,7 @@
                             </div>
 
                             <!-- 近戰職業 -->
-                            <div class="job-category">
+                            <div class="job-category card">
                                 <h4 class="job-category-title">
                                     <span class="job-category-icon">⚔️</span>
                                     <span data-i18n="char_card_job_melee">近戰</span>
@@ -238,7 +238,7 @@
                             </div>
 
                             <!-- 遠程職業 -->
-                            <div class="job-category">
+                            <div class="job-category card">
                                 <h4 class="job-category-title">
                                     <span class="job-category-icon">🏹</span>
                                     <span data-i18n="char_card_job_ranged">遠程</span>
@@ -251,7 +251,7 @@
                             </div>
 
                             <!-- 魔法職業 -->
-                            <div class="job-category">
+                            <div class="job-category card">
                                 <h4 class="job-category-title">
                                     <span class="job-category-icon">🔮</span>
                                     <span data-i18n="char_card_job_caster">魔法</span>
@@ -270,34 +270,34 @@
 
 
                     <div class="form-group">
-                        <label for="characterTitle" data-i18n="char_card_title_label">稱號</label>
-                        <input type="text" id="characterTitle" data-i18n-attr="placeholder" data-i18n="char_card_title_placeholder" placeholder="角色稱號（可選）">
+                        <label for="characterTitle" data-i18n="char_card_title_label" class="form-label">稱號</label>
+                        <input type="text" id="characterTitle" data-i18n-attr="placeholder" data-i18n="char_card_title_placeholder" placeholder="角色稱號（可選）" class="form-control">
                     </div>
 
                     <div class="form-group">
-                        <label for="freeCompany" data-i18n="char_card_fc_label">部隊名稱</label>
-                        <input type="text" id="freeCompany" data-i18n-attr="placeholder" data-i18n="char_card_fc_placeholder" placeholder="部隊名稱（可選）">
+                        <label for="freeCompany" data-i18n="char_card_fc_label" class="form-label">部隊名稱</label>
+                        <input type="text" id="freeCompany" data-i18n-attr="placeholder" data-i18n="char_card_fc_placeholder" placeholder="部隊名稱（可選）" class="form-control">
                     </div>
 
                     <div class="form-group">
-                        <label for="cardLayout" data-i18n="char_card_layout_label">卡片版型</label>
-                        <select id="cardLayout">
+                        <label for="cardLayout" data-i18n="char_card_layout_label" class="form-label">卡片版型</label>
+                        <select id="cardLayout" class="form-control">
                             <option value="horizontal" data-i18n="char_card_layout_horizontal">橫版 (800x600)</option>
                             <option value="vertical" data-i18n="char_card_layout_vertical">直版 (600x800)</option>
                         </select>
                     </div>
 
                     <div class="form-group">
-                        <label for="nameColor" data-i18n="char_card_name_color">角色名稱顏色</label>
+                        <label for="nameColor" data-i18n="char_card_name_color" class="form-label">角色名稱顏色</label>
                         <div class="color-input-wrapper">
                             <input type="color" id="nameColor" value="#FFFFFF">
-                            <input type="text" id="nameColorText" value="#FFFFFF" placeholder="#FFFFFF">
+                            <input type="text" id="nameColorText" value="#FFFFFF" placeholder="#FFFFFF" class="form-control">
                         </div>
                     </div>
 
 
                     <div class="button-group">
-                        <button id="generateCard" class="btn" data-i18n="char_card_generate">產生角色卡</button>
+                        <button id="generateCard" class="btn btn-primary" data-i18n="char_card_generate">產生角色卡</button>
                         <button id="downloadCard" class="btn btn-secondary" data-i18n="char_card_download">下載圖片</button>
                     </div>
                 </div>

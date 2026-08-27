@@ -13,7 +13,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../../assets/css/tokens.css">
     <link rel="stylesheet" href="../../assets/css/common.css">
-    <link rel="stylesheet" href="../../assets/css/dark-mode-tools.css">
     <link rel="stylesheet" href="../../assets/css/tools-common.css">
     <link rel="stylesheet" href="../../assets/css/components/language-switcher.css">
     <link rel="stylesheet" href="style.css">
@@ -25,11 +24,11 @@
 
     <!-- Noscript fallback -->
     <noscript>
-        <nav style="padding: 1rem; background: #667eea; color: white; text-align: center;">
-            <a href="/" style="color: white; margin: 0 1rem;">首頁</a>
-            <a href="/copyright.html" style="color: white; margin: 0 1rem;">版權聲明</a>
-            <a href="https://github.com/hydai/ff14.tw" target="_blank" rel="noopener noreferrer" style="color: white; margin: 0 1rem;">GitHub</a>
-            <a href="/about.html" style="color: white; margin: 0 1rem;">關於</a>
+        <nav class="noscript-nav">
+            <a href="/" class="noscript-nav-link">首頁</a>
+            <a href="/copyright.html" class="noscript-nav-link">版權聲明</a>
+            <a href="https://github.com/hydai/ff14.tw" target="_blank" rel="noopener noreferrer" class="noscript-nav-link">GitHub</a>
+            <a href="/about.html" class="noscript-nav-link">關於</a>
         </nav>
     </noscript>
 
@@ -174,36 +173,38 @@
                         <p>隊伍中每增加一種不同的職能類別，全體成員的主要屬性（力量、敏捷、耐力、智力、精神）將提升 1%，最高可達 5%。</p>
 
                         <h3>職能分類表</h3>
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>職能類別</th>
-                                    <th>包含職業</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>坦克（Tank）</td>
-                                    <td>劍術師/騎士、斧術師/戰士、暗黑騎士、絕槍戰士</td>
-                                </tr>
-                                <tr>
-                                    <td>近戰 DPS</td>
-                                    <td>格鬥家/武僧、槍術師/龍騎士、雙劍師/忍者、武士、鐮刀客、蝮蛇劍士</td>
-                                </tr>
-                                <tr>
-                                    <td>遠程物理 DPS</td>
-                                    <td>弓箭手/吟遊詩人、機工士、舞者</td>
-                                </tr>
-                                <tr>
-                                    <td>遠程魔法 DPS</td>
-                                    <td>咒術師/黑魔法師、秘術師/召喚師、赤魔法師、繪靈法師、青魔法師</td>
-                                </tr>
-                                <tr>
-                                    <td>治療（Healer）</td>
-                                    <td>幻術師/白魔法師、學者、占星術士、賢者</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                        <div class="table-wrap">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>職能類別</th>
+                                        <th>包含職業</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>坦克（Tank）</td>
+                                        <td>劍術師/騎士、斧術師/戰士、暗黑騎士、絕槍戰士</td>
+                                    </tr>
+                                    <tr>
+                                        <td>近戰 DPS</td>
+                                        <td>格鬥家/武僧、槍術師/龍騎士、雙劍師/忍者、武士、鐮刀客、蝮蛇劍士</td>
+                                    </tr>
+                                    <tr>
+                                        <td>遠程物理 DPS</td>
+                                        <td>弓箭手/吟遊詩人、機工士、舞者</td>
+                                    </tr>
+                                    <tr>
+                                        <td>遠程魔法 DPS</td>
+                                        <td>咒術師/黑魔法師、秘術師/召喚師、赤魔法師、繪靈法師、青魔法師</td>
+                                    </tr>
+                                    <tr>
+                                        <td>治療（Healer）</td>
+                                        <td>幻術師/白魔法師、學者、占星術士、賢者</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
 
                     </div>
                 </article>

@@ -115,8 +115,9 @@ ff14.tw/
 │   └── zone-translations.json # 地區名稱翻譯 (zh/en/ja)
 ├── assets/                 # 共用資源
 │   ├── css/
+│   │   ├── tokens.css      # 設計 token（顏色／字級／間距／陰影唯一來源）
 │   │   ├── common.css      # 全域樣式（含漢堡選單）
-│   │   ├── dark-mode-tools.css # 深色模式支援
+│   │   ├── pages.css       # 關於／版權聲明頁面專用樣式
 │   │   ├── tools-common.css    # 工具共用樣式
 │   │   ├── changelog.css   # 修改紀錄頁面專用樣式
 │   │   └── components/     # UI 元件

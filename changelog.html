@@ -11,17 +11,18 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="assets/css/tokens.css">
     <link rel="stylesheet" href="assets/css/common.css">
+    <link rel="stylesheet" href="assets/css/components/tags.css">
     <link rel="stylesheet" href="assets/css/changelog.css">
     <link rel="stylesheet" href="assets/css/components/language-switcher.css">
 </head>
 <body>
     <div id="header-placeholder" data-base-path="/"></div>
     <noscript>
-        <nav style="padding: 1rem; background: #667eea; color: white; text-align: center;">
-            <a href="/" style="color: white; margin: 0 1rem;">首頁</a>
-            <a href="/copyright.html" style="color: white; margin: 0 1rem;">版權聲明</a>
-            <a href="https://github.com/hydai/ff14.tw" target="_blank" rel="noopener noreferrer" style="color: white; margin: 0 1rem;">GitHub</a>
-            <a href="/about.html" style="color: white; margin: 0 1rem;">關於</a>
+        <nav class="noscript-nav">
+            <a href="/" class="noscript-nav-link">首頁</a>
+            <a href="/copyright.html" class="noscript-nav-link">版權聲明</a>
+            <a href="https://github.com/hydai/ff14.tw" target="_blank" rel="noopener noreferrer" class="noscript-nav-link">GitHub</a>
+            <a href="/about.html" class="noscript-nav-link">關於</a>
         </nav>
     </noscript>
 
@@ -46,6 +47,22 @@
                 <!-- 2026年8月 -->
                 <section class="changelog-section">
                     <h2 class="changelog-year">2026年8月</h2>
+
+                    <article class="changelog-entry">
+                        <div class="changelog-header">
+                            <h3 class="changelog-version">v2.15.0</h3>
+                            <time class="changelog-date" datetime="2026-08-27">2026年8月27日</time>
+                        </div>
+                        <div class="changelog-content">
+                            <ul>
+                                <li><span class="tag tag-info">改善</span> 設計系統全站完成：宗長計算機、Lodestone 角色查詢、角色卡產生器、寶圖搜尋器與首頁、關於、版權聲明、修改紀錄頁面全部改用統一的顏色、元件與深色模式</li>
+                                <li><span class="tag tag-warning">修正</span> 寶圖搜尋器：次要按鈕白字看不見、「生成路線」無法開啟、深色模式對話框半白、卡片沒有圓角</li>
+                                <li><span class="tag tag-warning">修正</span> Lodestone 角色查詢：淺色模式下搜尋框與資訊卡片沒有底色；宗長計算機：回到上一步後機率顯示壞掉、格子與視窗沒有圓角</li>
+                                <li><span class="tag tag-warning">修正</span> 修改紀錄頁「新增」「修正」標籤沒有顏色；首頁「施工中」「即將推出」徽章文字對比不足；攻略資料的職能分類表格沒有樣式</li>
+                                <li><span class="tag tag-info">改善</span> 深色模式下的捲軸與原生表單控制項自動配色；角色卡產生器的卡片成品維持原本的設計，不受站台主題影響</li>
+                            </ul>
+                        </div>
+                    </article>
 
                     <article class="changelog-entry">
                         <div class="changelog-header">

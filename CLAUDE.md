@@ -20,7 +20,7 @@ FF14.tw is a multi-tool website for Final Fantasy XIV players in Taiwan, providi
 
 - **HTML Files**: 13 (8 tools + 5 main pages)
 - **JavaScript Files**: 41 (tool scripts + shared utilities + i18n translations + layout components)
-- **CSS Files**: 17 (shared + components + tool-specific)
+- **CSS Files**: 23 (shared + components + tool-specific)
 - **JSON Data Files**: 7 (total ~18,000 lines)
 - **Total Dungeons**: 804 entries
 - **Total Treasure Map Coordinates**: 219 entries
@@ -139,7 +139,6 @@ HTML Structure:
    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
    <link rel="stylesheet" href="../../assets/css/tokens.css">
    <link rel="stylesheet" href="../../assets/css/common.css">
-   <link rel="stylesheet" href="../../assets/css/dark-mode-tools.css">
    <link rel="stylesheet" href="../../assets/css/tools-common.css">
    <link rel="stylesheet" href="../../assets/css/components/language-switcher.css">
    <link rel="stylesheet" href="style.css">
@@ -160,10 +159,11 @@ HTML Structure:
    <body>
        <div id="header-placeholder" data-base-path="../../" data-tool-name="工具名稱" data-tool-name-key="i18n_key"></div>
        <noscript>
-           <nav style="padding: 1rem; background: #667eea; color: white; text-align: center;">
-               <a href="/" style="color: white; margin: 0 1rem;">首頁</a> |
-               <a href="/about.html" style="color: white; margin: 0 1rem;">關於</a> |
-               <a href="/copyright.html" style="color: white; margin: 0 1rem;">版權聲明</a>
+           <nav class="noscript-nav">
+               <a href="/" class="noscript-nav-link">首頁</a>
+               <a href="/copyright.html" class="noscript-nav-link">版權聲明</a>
+               <a href="https://github.com/hydai/ff14.tw" target="_blank" rel="noopener noreferrer" class="noscript-nav-link">GitHub</a>
+               <a href="/about.html" class="noscript-nav-link">關於</a>
            </nav>
        </noscript>
        <!-- main content -->
@@ -174,7 +174,7 @@ HTML Structure:
    - **Buttons**: Use `.btn`, `.btn-primary`, `.btn-secondary`, `.btn-success`, `.btn-danger`, `.btn-sm`, `.btn-lg`
    - **Cards**: Use `.card`, `.card-header`, `.card-body`, `.card-footer`, `.card-grid`, `.card-hoverable`
    - **Forms**: Use `.form-control`, `.form-group`, `.form-label`, `.form-text`, `.form-check`
-   - **Tags/Badges**: Use `.tag`, `.tag-primary`, `.tag-filter`, `.badge`, `.tag-pill`, `.tag-outline-*`
+   - **Tags/Badges**: Use `.tag`, `.tag-primary`, `.chip`, `.badge`, `.tag-pill`, `.tag-outline-*`
    - **Loading states**: Use `.loading`, `.loading-spinner`
    - **Messages**: Use `.error-message`, `.success-message`, `.info-message`, `.warning-message`
 5. Follow the class-based JavaScript architecture pattern
@@ -188,11 +188,10 @@ The project includes a modular CSS component system in `/assets/css/components/`
 
 ### Design Tokens (`assets/css/tokens.css`)
 全站唯一的顏色、字級、間距、圓角、陰影來源；深色模式只在 `[data-theme="dark"]` 重新指定顏色類 token。**規則：**
-- 工具的 `style.css` 只寫版面（grid / flex / 間距），不得出現任何色碼（`#hex`、`rgb()`、`white`）、不得引用 `tokens.css` 未定義的 `var(--…)`、不得 `@import`、不得 `!important`；遷移完成的檔案列在 `tests/design-system.test.js` 的 `TOKEN_CLEAN_FILES`。已遷移的工具目錄同時列在 `MIGRATED_TOOLS`，其 HTML／JS 不得再使用 `tag-filter`、`btn-outline-*`、`tag-secondary`、`tag-light`、`tag-dark`、`tag-sm`、`tag-lg` 這些舊名稱。
+- 工具的 `style.css` 只寫版面（grid / flex / 間距），不得出現任何色碼（`#hex`、`rgb()`、`white`）、不得引用 `tokens.css` 未定義的 `var(--…)`、不得 `@import`、不得 `!important`；`tests/design-system.test.js` 自動檢查 `assets/css/**` 與 `tools/*/` 底下所有 CSS（唯一例外是 `tools/character-card/card-templates.css`——角色卡的卡片成品是使用者自訂的畫面，不隨主題變色），HTML／JS 不得使用 `tag-filter`、`btn-outline-*`、`tag-secondary`、`tag-light`、`tag-dark`、`tag-sm`、`tag-lg` 這些舊名稱，也不得再出現 `var(--primary-color)` 之類的相容別名。
 - 顏色：`--color-primary`（互動色）、`--color-bg` / `--color-surface` / `--color-surface-2`、`--color-border` / `--color-border-strong`、`--color-heading` / `--color-text` / `--color-muted`、語意色 `--color-{success,warning,danger,info}` 及其 `-tint` / `-text` / `-border`，實心底上的字用 `--color-on-{primary,success,warning,danger,info,muted}`。
 - 字級 9 階 `--text-xs` … `--text-5xl`；間距 `--space-1` … `--space-10`（4px 基底）；圓角 `--radius-{sm,md,lg,xl,full}`；陰影 `--shadow-{sm,md,lg,xl}`；控制項高度 `--control-{sm,md,lg}` = 32 / 40 / 48；動態 `--duration-{fast,base,slow}` + `--ease`。
-- `common.css` 頂部的 `--primary-color`、`--text-color` 等舊名稱只是過渡期的相容別名，新程式碼不要使用。
-- 品牌漸層 `--gradient-brand` 只用在頁首、首頁 hero、工具卡 hover 頂線。
+- 品牌漸層 `--gradient-brand` 只用在頁首、首頁 hero、工具卡 hover 頂線、無 JavaScript 時的導覽列。
 
 ### Available Components
 
@@ -363,15 +362,10 @@ The project includes a modular CSS component system in `/assets/css/components/`
 <!-- Basic tags -->
 <span class="tag">預設標籤</span>
 <span class="tag tag-primary">主要標籤</span>
-<span class="tag tag-secondary">次要標籤</span>
 <span class="tag tag-success">成功標籤</span>
 <span class="tag tag-danger">危險標籤</span>
 <span class="tag tag-warning">警告標籤</span>
 <span class="tag tag-info">資訊標籤</span>
-
-<!-- Size variants -->
-<span class="tag tag-sm">小型標籤</span>
-<span class="tag tag-lg">大型標籤</span>
 
 <!-- Pill tags -->
 <span class="tag tag-pill tag-primary">藥丸標籤</span>
@@ -379,7 +373,7 @@ The project includes a modular CSS component system in `/assets/css/components/`
 <!-- Outline tags -->
 <span class="tag tag-outline-primary">輪廓標籤</span>
 
-<!-- 篩選膠囊（可切換；.tag-filter 為舊名稱） -->
+<!-- 篩選膠囊（可切換） -->
 <button class="chip">四人迷宮</button>
 <button class="chip active">八人副本</button>
 <!-- 實心狀態徽章 -->
@@ -388,7 +382,7 @@ The project includes a modular CSS component system in `/assets/css/components/`
 <!-- Tag groups -->
 <div class="tag-group">
     <span class="tag tag-primary">標籤1</span>
-    <span class="tag tag-secondary">標籤2</span>
+    <span class="tag tag-success">標籤2</span>
     <span class="tag tag-info">標籤3</span>
 </div>
 
@@ -456,7 +450,7 @@ The project includes a modular CSS component system in `/assets/css/components/`
 5. **Maintain consistency** - if a component doesn't meet your needs, consider updating the shared component instead of creating a one-off solution
 
 ### Dark Mode Support
-All components support Dark Mode automatically: `assets/css/tokens.css` redefines every colour token under `[data-theme="dark"]`, and components contain no dark rules of their own（`tests/design-system.test.js` 會擋下元件與已遷移工具內的 `[data-theme=` 規則）。需要調整深色外觀時改 token，不要在元件或工具加 `[data-theme="dark"]` 覆寫。`dark-mode-tools.css` 只剩未遷移工具（寶圖搜尋器、Lodestone 角色查詢、宗長計算機、角色卡產生器）在用，Plan 3 整檔刪除。
+All components support Dark Mode automatically: `assets/css/tokens.css` redefines every colour token under `[data-theme="dark"]`, and components contain no dark rules of their own（`tests/design-system.test.js` 會擋下元件與已遷移工具內的 `[data-theme=` 規則）。需要調整深色外觀時改 token，不要在元件或工具加 `[data-theme="dark"]` 覆寫。`dark-mode-tools.css` 已刪除；深色模式的捲軸與原生表單控制項由 `tokens.css` 的 `color-scheme` 自動配色。頁面不得有內嵌 `<style>`，`style=` 屬性只允許 JS 控制顯示用的 `display: none`（`tests/pages.test.js` 會擋）。
 
 ### Responsive Design
 Components include responsive breakpoints:

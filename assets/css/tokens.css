@@ -9,6 +9,8 @@
    ========================================================================== */
 
 :root {
+    color-scheme: light;
+
     /* ---- 品牌（只用在頁首、首頁 hero、工具卡 hover 頂線） ---- */
     --color-brand-a: #667eea;
     --color-brand-b: #764ba2;
@@ -147,6 +149,8 @@
 }
 
 [data-theme="dark"] {
+    color-scheme: dark;
+
     --color-brand-a: #667eea;
     --color-brand-b: #764ba2;
     --gradient-brand: linear-gradient(135deg, #4b5ca8 0%, #563b79 100%);
