@@ -33,14 +33,15 @@ class ChocoboColorCalculator {
         await this.loadData();
         this.cacheElements();
         this.bindEvents();
+
+        // 監聽語言變更；讀取目前語言要放在畫面渲染前，避免第一次載入時畫面停留在中文
+        if (window.i18n) {
+            this.lang = window.i18n.getCurrentLanguage() || 'zh';
+            window.i18n.onLanguageChange(() => this.updateLanguage());
+        }
+
         this.populateSelects();
         this.updatePreviews();
-
-        // 監聽語言變更
-        if (window.i18n) {
-            window.i18n.addObserver(() => this.updateLanguage());
-            this.lang = window.i18n.currentLang || 'zh';
-        }
     }
 
     /**
@@ -379,8 +380,8 @@ class ChocoboColorCalculator {
      * 取得翻譯文字
      */
     getTranslation(key, fallback) {
-        if (window.i18n && typeof window.i18n.t === 'function') {
-            const translation = window.i18n.t(key);
+        if (window.i18n && typeof window.i18n.getText === 'function') {
+            const translation = window.i18n.getText(key);
             return translation !== key ? translation : fallback;
         }
         return fallback;
@@ -391,7 +392,7 @@ class ChocoboColorCalculator {
      */
     updateLanguage() {
         if (window.i18n) {
-            this.lang = window.i18n.currentLang || 'zh';
+            this.lang = window.i18n.getCurrentLanguage() || 'zh';
         }
         this.populateSelects();
         this.updatePreviews();
