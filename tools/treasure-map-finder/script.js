@@ -25,7 +25,10 @@ class TreasureMapFinder {
             clearAllBtn: document.getElementById('clearAllBtn'),
             loadMore: document.getElementById('loadMore')
         };
-        
+
+        // 語言切換時重新以目前語言重繪清單（移除按鈕的 aria-label 帶有地區與座標，需要重組）
+        window.i18n.onLanguageChange(() => this.renderMyList());
+
         this.init();
     }
     
@@ -353,13 +356,27 @@ class TreasureMapFinder {
             this.toggleMapInList(map);
         });
         actions.appendChild(addBtn);
-        
+
+        // 複製座標按鈕（讓鍵盤與輔助科技使用者也能用到整張卡片的複製功能）
+        const copyBtn = document.createElement('button');
+        copyBtn.type = 'button';
+        copyBtn.className = 'btn btn-secondary btn-sm btn-copy-coords';
+        copyBtn.textContent = FF14Utils.getI18nText('treasure_map_copy_coords', '複製座標');
+        // 固定字串（無插值），交給 i18n manager 在語言切換時透過 [data-i18n] 全域重新翻譯，
+        // 不必依賴這裡的語言監聽（目前只會重繪「我的清單」）
+        copyBtn.setAttribute('data-i18n', 'treasure_map_copy_coords');
+        copyBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.copyCoordinates(map);
+        });
+        actions.appendChild(copyBtn);
+
         content.appendChild(actions);
-        
+
         // 組合卡片
         card.appendChild(imageWrapper);
         card.appendChild(content);
-        
+
         // 為整個卡片添加點擊事件（複製座標）
         card.addEventListener('click', (e) => {
             // 如果點擊的是按鈕，則不處理
@@ -720,7 +737,11 @@ class TreasureMapFinder {
             
             const translations = zoneId ? zoneManager.getZoneNames(zoneId) : null;
             if (translations && translations.zh) {
-                zoneSpan.textContent = translations.zh;
+                // 依目前介面語言挑選地區名稱，找不到對應語言時退回中文；
+                // 下面的「移除」按鈕標籤直接沿用 zoneSpan.textContent，
+                // 這裡選對語言就能一併修正 en/ja 介面下標籤混雜中文的問題
+                const currentLang = window.i18n.getCurrentLanguage();
+                zoneSpan.textContent = translations[currentLang] || translations.zh;
                 zoneSpan.title = `${translations.en || item.zone} / ${translations.ja || ''}`;
             } else {
                 zoneSpan.textContent = item.zone;
@@ -736,10 +757,18 @@ class TreasureMapFinder {
             listItem.appendChild(itemInfo);
             
             // 移除按鈕
+            // 清單裡每一列都有一顆「移除」，名稱要帶上地區與座標才分得出來；
+            // 因為帶了動態文字，不能用 data-i18n（那只能綁固定字串），改在每次重繪時用當下語言組出名稱
+            const removeLabel = FF14Utils.getI18nText('treasure_map_remove_item', '移除 {zone} {coords}', {
+                zone: zoneSpan.textContent,
+                coords: coordsSpan.textContent
+            });
+
             const removeBtn = document.createElement('button');
             removeBtn.className = 'btn-remove btn btn-close';
             removeBtn.dataset.mapId = item.id;
             removeBtn.textContent = '×';
+            removeBtn.setAttribute('aria-label', removeLabel);
             removeBtn.addEventListener('click', (e) => {
                 this.removeFromList(item.id);
             });

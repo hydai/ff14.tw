@@ -15,11 +15,41 @@ class ThemeManager {
 
     static STORAGE_KEY = 'theme';
 
-    // 定義主題圖標
-    static ICONS = {
-        MOON: '<svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>',
-        SUN: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>'
-    };
+    // 建立月亮圖示（深色模式時顯示）
+    static createMoonIcon() {
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('viewBox', '0 0 24 24');
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', 'M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z');
+        svg.appendChild(path);
+        return svg;
+    }
+
+    // 建立太陽圖示（淺色模式時顯示）
+    static createSunIcon() {
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('viewBox', '0 0 24 24');
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('cx', '12');
+        circle.setAttribute('cy', '12');
+        circle.setAttribute('r', '5');
+        svg.appendChild(circle);
+        const rays = [
+            ['12', '1', '12', '3'], ['12', '21', '12', '23'],
+            ['4.22', '4.22', '5.64', '5.64'], ['18.36', '18.36', '19.78', '19.78'],
+            ['1', '12', '3', '12'], ['21', '12', '23', '12'],
+            ['4.22', '19.78', '5.64', '18.36'], ['18.36', '5.64', '19.78', '4.22']
+        ];
+        rays.forEach(([x1, y1, x2, y2]) => {
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line.setAttribute('x1', x1);
+            line.setAttribute('y1', y1);
+            line.setAttribute('x2', x2);
+            line.setAttribute('y2', y2);
+            svg.appendChild(line);
+        });
+        return svg;
+    }
 
     constructor() {
         // 儲存 media query 和綁定的事件處理器以便後續管理
@@ -113,9 +143,7 @@ class ThemeManager {
         const buttons = document.querySelectorAll('.theme-toggle');
         buttons.forEach(button => {
             const isLight = this.theme === ThemeManager.THEMES.LIGHT;
-            button.innerHTML = isLight
-                ? ThemeManager.ICONS.MOON  // 月亮圖標
-                : ThemeManager.ICONS.SUN;   // 太陽圖標
+            button.replaceChildren(isLight ? ThemeManager.createMoonIcon() : ThemeManager.createSunIcon());  // 淺色模式顯示月亮圖示，深色模式顯示太陽圖示
 
             // 使用 i18n 取得翻譯文字（如果可用）
             const darkLabel = window.i18n?.getText('theme_toggle_dark') || '切換至深色模式';
@@ -324,11 +352,10 @@ function initHamburgerMenu() {
     hamburger.className = 'hamburger';
     const menuLabel = window.i18n?.getText('nav_menu') || '選單';
     hamburger.setAttribute('aria-label', menuLabel);
-    hamburger.innerHTML = `
-        <span></span>
-        <span></span>
-        <span></span>
-    `;
+    // 建立漢堡選單的三條線（避免使用 innerHTML）
+    hamburger.appendChild(document.createElement('span'));
+    hamburger.appendChild(document.createElement('span'));
+    hamburger.appendChild(document.createElement('span'));
 
     // 創建遮罩層
     const overlay = document.createElement('div');

@@ -261,6 +261,20 @@ class TimedGatheringManager {
             }
         });
         */
+
+        // 方向鍵在清單分頁間移動並直接切換
+        this.elements.listTabs.addEventListener('keydown', (e) => {
+            if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+            const tabs = Array.from(this.elements.listTabs.querySelectorAll('.list-tab'));
+            const currentIndex = tabs.indexOf(document.activeElement);
+            if (currentIndex === -1) return;
+            e.preventDefault();
+            const nextIndex = e.key === 'ArrowRight'
+                ? (currentIndex + 1) % tabs.length
+                : (currentIndex - 1 + tabs.length) % tabs.length;
+            tabs[nextIndex].focus();
+            tabs[nextIndex].click();
+        });
     }
 
     initializeNotifications() {
@@ -594,15 +608,20 @@ class TimedGatheringManager {
         const container = this.elements.listTabs;
         SecurityUtils.clearElement(container);
 
+        container.setAttribute('role', 'tablist');
         lists.forEach(list => {
             const tab = document.createElement('button');
             tab.className = 'tab list-tab';
             tab.dataset.listId = list.id;
             tab.textContent = list.name;
+            tab.id = `tab-list-${list.id}`;
+            tab.setAttribute('role', 'tab');
+            tab.setAttribute('aria-controls', 'listItems');
 
-            if (list.id === this.currentListId) {
-                tab.classList.add('active');
-            }
+            const isActive = list.id === this.currentListId;
+            tab.classList.toggle('active', isActive);
+            tab.setAttribute('aria-selected', String(isActive));
+            tab.tabIndex = isActive ? 0 : -1;
 
             tab.addEventListener('click', () => {
                 this.switchToList(list.id);
@@ -621,8 +640,13 @@ class TimedGatheringManager {
 
             // 更新標籤頁狀態
             this.elements.listTabs.querySelectorAll('.list-tab').forEach(tab => {
-                tab.classList.toggle('active', tab.dataset.listId === listId);
+                const isActive = tab.dataset.listId === listId;
+                tab.classList.toggle('active', isActive);
+                tab.setAttribute('aria-selected', String(isActive));
+                tab.tabIndex = isActive ? 0 : -1;
             });
+            this.elements.listItems.setAttribute('role', 'tabpanel');
+            this.elements.listItems.setAttribute('aria-labelledby', `tab-list-${listId}`);
 
             // 更新清單顯示
             this.updateListDisplay();

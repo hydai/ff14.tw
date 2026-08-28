@@ -45,21 +45,21 @@
 
                         <!-- Row 2-4: 原始九宮格與橫列期望值 -->
                         <div class="expectation-cell" data-line="0">→</div>
-                        <div class="cell grid-cell" data-position="0"></div>
-                        <div class="cell grid-cell" data-position="1"></div>
-                        <div class="cell grid-cell" data-position="2"></div>
+                        <div class="cell grid-cell" data-position="0" tabindex="0" role="button" aria-label="第 1 格"></div>
+                        <div class="cell grid-cell" data-position="1" tabindex="0" role="button" aria-label="第 2 格"></div>
+                        <div class="cell grid-cell" data-position="2" tabindex="0" role="button" aria-label="第 3 格"></div>
                         <div class="empty-cell"></div>
 
                         <div class="expectation-cell" data-line="1">→</div>
-                        <div class="cell grid-cell" data-position="3"></div>
-                        <div class="cell grid-cell" data-position="4"></div>
-                        <div class="cell grid-cell" data-position="5"></div>
+                        <div class="cell grid-cell" data-position="3" tabindex="0" role="button" aria-label="第 4 格"></div>
+                        <div class="cell grid-cell" data-position="4" tabindex="0" role="button" aria-label="第 5 格"></div>
+                        <div class="cell grid-cell" data-position="5" tabindex="0" role="button" aria-label="第 6 格"></div>
                         <div class="empty-cell"></div>
 
                         <div class="expectation-cell" data-line="2">→</div>
-                        <div class="cell grid-cell" data-position="6"></div>
-                        <div class="cell grid-cell" data-position="7"></div>
-                        <div class="cell grid-cell" data-position="8"></div>
+                        <div class="cell grid-cell" data-position="6" tabindex="0" role="button" aria-label="第 7 格"></div>
+                        <div class="cell grid-cell" data-position="7" tabindex="0" role="button" aria-label="第 8 格"></div>
+                        <div class="cell grid-cell" data-position="8" tabindex="0" role="button" aria-label="第 9 格"></div>
                         <div class="empty-cell"></div>
                     </div>
                     <div class="grid-info">
@@ -95,8 +95,8 @@
             </div>
 
             <!-- Number Picker Popup -->
-            <div id="number-popup" class="popup-overlay dialog-overlay">
-                <div class="popup-content number-picker dialog" role="dialog" aria-modal="true" aria-labelledby="number-popup-title">
+            <div id="number-popup" class="popup-overlay dialog-overlay" role="dialog" aria-modal="true" aria-labelledby="number-popup-title">
+                <div class="popup-content number-picker dialog">
                     <div class="dialog-header">
                         <h3 id="number-popup-title" class="dialog-title" data-i18n="mini_cactpot_popup_title">選擇數字</h3>
                     </div>

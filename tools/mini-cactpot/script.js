@@ -68,6 +68,14 @@ class MiniCactpotCalculator {
         this.initializePopup();
         this.initializeControls();
 
+        // 語言切換時重新以目前語言重建所有格子的 aria-label
+        window.i18n.onLanguageChange(() => this.refreshCellLabels());
+
+        // index.html 裡的 aria-label 是寫死的中文；若使用者先前已切換過語言
+        // （儲存在 localStorage），第一次載入時要立刻依目前語言重建一次，
+        // 不能等到下一次語言切換才更新
+        this.refreshCellLabels();
+
         // 保存初始狀態
         this.saveState();
     }
@@ -85,6 +93,19 @@ class MiniCactpotCalculator {
         };
 
         this.elements.grid.addEventListener('click', this.handleGridClick);
+
+        // 移除可能存在的舊事件監聽器（鍵盤）
+        this.elements.grid.removeEventListener('keydown', this.handleGridKeydown);
+
+        this.handleGridKeydown = (e) => {
+            if (e.key !== 'Enter' && e.key !== ' ') return;
+            const cell = e.target.closest('.grid-cell');
+            if (cell) {
+                e.preventDefault();
+                this.handleCellClick(parseInt(cell.dataset.position, 10));
+            }
+        };
+        this.elements.grid.addEventListener('keydown', this.handleGridKeydown);
     }
 
     initializePopup() {
@@ -163,7 +184,7 @@ class MiniCactpotCalculator {
 
                     // 還原格子狀態
                     cell.classList.remove('selected');
-                    cell.textContent = '';
+                    this.setCellDisplay(cell, '');
 
                     // 從 selectedCells 中移除
                     const idx = this.selectedCells.indexOf(pos);
@@ -208,7 +229,7 @@ class MiniCactpotCalculator {
         this.grid[position] = number;
         const cell = document.querySelector(`[data-position="${position}"]`);
         cell.classList.add('revealed');
-        cell.textContent = number;
+        this.setCellDisplay(cell, number);
 
         // 在修改後保存狀態（確保 redo 能正確還原）
         this.saveState();
@@ -287,11 +308,58 @@ class MiniCactpotCalculator {
         }
     }
 
+    setCellDisplay(cell, text) {
+        cell.textContent = text;
+        this.updateCellLabel(cell);
+    }
+
+    /**
+     * 依格子目前實際顯示的內容重建 aria-label，
+     * 讓輔助科技讀到的名稱與畫面一致（數字，以及計算後顯示的期望值）
+     */
+    updateCellLabel(cell) {
+        const position = parseInt(cell.dataset.position, 10);
+        // 數字是 setCellDisplay 寫進去的第一個文字節點，期望值則是後來附加的 .cell-ev
+        const firstChild = cell.firstChild;
+        const displayText = (firstChild && firstChild.nodeType === Node.TEXT_NODE) ? firstChild.textContent : '';
+        const evElement = cell.querySelector('.cell-ev');
+        const evText = evElement ? evElement.textContent : '';
+
+        let label = FF14Utils.getI18nText('mini_cactpot_cell_label', '第 {n} 格', { n: position + 1 });
+        if (displayText !== '') {
+            label += `：${displayText}`;
+        }
+        if (evText !== '') {
+            const evLabel = FF14Utils.getI18nText('mini_cactpot_cell_ev', '期望值 {ev}', { ev: evText });
+            label += displayText === '' ? `：${evLabel}` : `，${evLabel}`;
+        }
+        cell.setAttribute('aria-label', label);
+
+        // 已輸入數字的格子 (revealed) 不能再被點選或用鍵盤觸發（見 handleCellClick
+        // 開頭的判斷），因此一併標記 aria-disabled 並移出 Tab 順序，避免使用者
+        // 用鍵盤或螢幕閱讀器停在一顆按下去沒有作用的格子上。undo／redo／reset
+        // 都是透過 setCellDisplay() 呼叫到這裡重繪，因此不需要在各處個別處理。
+        if (cell.classList.contains('revealed')) {
+            cell.setAttribute('aria-disabled', 'true');
+            cell.tabIndex = -1;
+        } else {
+            cell.removeAttribute('aria-disabled');
+            cell.tabIndex = 0;
+        }
+    }
+
+    /**
+     * 語言切換時，重新以目前語言重建所有格子的 aria-label
+     */
+    refreshCellLabels() {
+        document.querySelectorAll('.grid-cell').forEach((cell) => this.updateCellLabel(cell));
+    }
+
     redrawGrid() {
         // 清除所有格子
         document.querySelectorAll('.grid-cell').forEach(cell => {
             cell.classList.remove('selected', 'revealed', 'cell-recommended-best');
-            cell.textContent = '';
+            this.setCellDisplay(cell, '');
             const ev = cell.querySelector('.cell-ev');
             if (ev) ev.remove();
         });
@@ -303,10 +371,10 @@ class MiniCactpotCalculator {
 
             if (this.grid[position] !== null) {
                 cell.classList.add('revealed');
-                cell.textContent = this.grid[position];
+                this.setCellDisplay(cell, this.grid[position]);
             } else {
                 // 顯示問號表示尚未輸入數字
-                cell.textContent = '?';
+                this.setCellDisplay(cell, '?');
             }
         });
     }
@@ -332,7 +400,7 @@ class MiniCactpotCalculator {
     selectCell(position) {
         const cell = document.querySelector(`[data-position="${position}"]`);
         cell.classList.add('selected');
-        cell.textContent = '?';
+        this.setCellDisplay(cell, '?');
         this.selectedCells.push(position);
 
         // 注意：這裡不保存狀態，狀態只在 handleNumberSelection 中數字被選擇後才保存
@@ -710,6 +778,7 @@ class MiniCactpotCalculator {
             evLabel.className = 'cell-ev';
             evLabel.textContent = FF14Utils.formatNumber(Math.round(result.ev));
             cell.appendChild(evLabel);
+            this.updateCellLabel(cell);
         });
 
         // Update recommendation info panel
@@ -743,6 +812,7 @@ class MiniCactpotCalculator {
             cell.classList.remove('cell-recommended-best');
             const ev = cell.querySelector('.cell-ev');
             if (ev) ev.remove();
+            this.updateCellLabel(cell);
         });
 
         if (this.elements.cellRecommendationInfo) {
@@ -754,7 +824,7 @@ class MiniCactpotCalculator {
         // 清除所有格子的狀態
         document.querySelectorAll('.grid-cell').forEach(cell => {
             cell.classList.remove('selected', 'revealed', 'cell-recommended-best');
-            cell.textContent = '';
+            this.setCellDisplay(cell, '');
             const ev = cell.querySelector('.cell-ev');
             if (ev) ev.remove();
         });

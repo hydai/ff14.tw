@@ -21,7 +21,11 @@ class ModalManager {
      * 並在 onClose 回調中移除該監聽器。這樣可以確保事件監聽器的生命週期與模態視窗的顯示狀態一致，
      * 避免重複綁定或內存洩漏，同時保持 ModalManager 的職責單純（只負責通用的模態行為）。
      *
-     * @param {HTMLElement} element - 模態視窗的 DOM 元素
+     * 關於 ARIA：本方法不會動任何 ARIA 屬性。
+     * role="dialog"、aria-modal="true"、aria-labelledby 一律寫在 HTML 的遮罩層元素上
+     * （也就是傳進來的 element），內層的 .dialog 盒子維持沒有 role 的一般容器。
+     *
+     * @param {HTMLElement} element - 模態視窗的 DOM 元素（遮罩層，需自帶 role="dialog" 等 ARIA 屬性）
      * @param {Object} options - 設定選項
      * @param {Function} [options.onClose] - 關閉時的回調函數
      * @param {boolean} [options.closeOnOverlayClick=true] - 是否允許點擊背景關閉
@@ -57,10 +61,6 @@ class ModalManager {
         } else {
             element.style.display = this.options.displayStyle;
         }
-
-        // 設定 ARIA 屬性
-        element.setAttribute('aria-modal', 'true');
-        element.setAttribute('role', 'dialog');
 
         // 加入事件監聽
         if (this.options.closeOnEsc || this.options.focusTrap) {
@@ -110,6 +110,23 @@ class ModalManager {
         if (typeof onClose === 'function') {
             onClose();
         }
+    }
+
+    /**
+     * 動態切換焦點陷阱 (Focus Trap) 的啟用狀態
+     *
+     * 用途：某些情境會在目前的 activeModal 旁邊另外開出一個非模態的手足面板
+     * （例如寶圖搜尋器的路線面板／格式面板），此時需要暫時關閉焦點陷阱，
+     * 讓 Tab／Shift+Tab 可以離開 activeModal、移動到旁邊的手足面板，
+     * 面板關閉後再呼叫一次並傳入 true 復原陷阱。
+     * `_handleKeyDown`／`_handleFocusTrap` 每次按鍵都會即時讀取
+     * `this.options.focusTrap`，因此這裡修改後立即生效，不需要重新呼叫 show()。
+     * 此方法不影響 `closeOnEsc`，ESC 關閉 activeModal 的行為維持不變。
+     *
+     * @param {boolean} enabled - 是否啟用焦點陷阱
+     */
+    setFocusTrap(enabled) {
+        this.options.focusTrap = !!enabled;
     }
 
     /**

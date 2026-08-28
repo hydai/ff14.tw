@@ -345,17 +345,17 @@
                 <button class="btn btn-danger btn-sm" id="clearAllBtn" title="清空全部">
                     <span class="btn-icon">🗑️</span> 清空
                 </button>
-                <button class="btn btn-close" id="closePanelBtn" title="關閉">×</button>
+                <button class="btn btn-close" id="closePanelBtn" title="關閉" aria-label="關閉" data-i18n="treasure_map_close" data-i18n-attr="aria-label">×</button>
             </div>
         </div>
-        <div class="panel-tabs tabs hidden" id="panelTabs">
-            <button class="tab-btn tab active" data-tab="list">清單</button>
-            <button class="tab-btn tab" data-tab="history">歷史</button>
+        <div class="panel-tabs tabs hidden" id="panelTabs" role="tablist">
+            <button class="tab-btn tab active" data-tab="list" id="tab-panel-list" role="tab" aria-selected="true" aria-controls="listContent" tabindex="0">清單</button>
+            <button class="tab-btn tab" data-tab="history" id="tab-panel-history" role="tab" aria-selected="false" aria-controls="historyContent" tabindex="-1">歷史</button>
         </div>
-        <div class="list-content" id="listContent">
+        <div class="list-content" id="listContent" role="tabpanel" aria-labelledby="tab-panel-list">
             <!-- 清單項目將由 JavaScript 動態生成 -->
         </div>
-        <div class="history-content hidden" id="historyContent">
+        <div class="history-content hidden" id="historyContent" role="tabpanel" aria-labelledby="tab-panel-history">
             <!-- 操作歷史將由 JavaScript 動態生成 -->
         </div>
         <div class="panel-footer">
@@ -367,10 +367,10 @@
     </div>
     
     <!-- 路線結果面板 -->
-    <div class="route-panel" id="routePanel">
+    <div class="route-panel" id="routePanel" role="dialog" aria-modal="true" aria-labelledby="routePanel-title">
         <div class="panel-header">
-            <h3>最佳路線</h3>
-            <button class="btn btn-close" id="closeRoutePanelBtn" title="關閉">×</button>
+            <h3 id="routePanel-title">最佳路線</h3>
+            <button class="btn btn-close" id="closeRoutePanelBtn" title="關閉" aria-label="關閉" data-i18n="treasure_map_close" data-i18n-attr="aria-label">×</button>
         </div>
         <div class="route-summary" id="routeSummary">
             <!-- 路線摘要將由 JavaScript 動態生成 -->
@@ -389,10 +389,10 @@
     </div>
     
     <!-- 自訂格式設定面板 -->
-    <div class="format-panel" id="formatPanel">
+    <div class="format-panel" id="formatPanel" role="dialog" aria-labelledby="formatPanel-title" tabindex="-1">
         <div class="panel-header">
-            <h3>自訂輸出格式</h3>
-            <button class="btn btn-close" id="closeFormatPanelBtn" title="關閉">×</button>
+            <h3 id="formatPanel-title">自訂輸出格式</h3>
+            <button class="btn btn-close" id="closeFormatPanelBtn" title="關閉" aria-label="關閉" data-i18n="treasure_map_close" data-i18n-attr="aria-label">×</button>
         </div>
         <div class="format-content">
             <div class="format-lang-switcher">
@@ -448,11 +448,11 @@
     </div>
 
     <!-- 加入隊伍對話框 -->
-    <div class="modal dialog-overlay hidden" id="joinRoomModal">
+    <div class="modal dialog-overlay hidden" id="joinRoomModal" role="dialog" aria-modal="true" aria-labelledby="joinRoomModal-title">
         <div class="modal-content dialog">
             <div class="dialog-header">
-                <h3 class="dialog-title">加入隊伍</h3>
-                <button class="btn btn-close" id="closeJoinModalBtn">×</button>
+                <h3 id="joinRoomModal-title" class="dialog-title">加入隊伍</h3>
+                <button class="btn btn-close" id="closeJoinModalBtn" aria-label="關閉" data-i18n="treasure_map_close" data-i18n-attr="aria-label">×</button>
             </div>
             <div class="modal-body dialog-body">
                 <label for="roomCodeInput">請輸入隊伍代號：</label>
@@ -467,11 +467,11 @@
     </div>
 
     <!-- 編輯暱稱對話框 -->
-    <div class="modal dialog-overlay hidden" id="editNicknameModal">
+    <div class="modal dialog-overlay hidden" id="editNicknameModal" role="dialog" aria-modal="true" aria-labelledby="editNicknameModal-title">
         <div class="modal-content dialog">
             <div class="dialog-header">
-                <h3 class="dialog-title">編輯暱稱</h3>
-                <button class="btn btn-close" id="closeNicknameModalBtn">×</button>
+                <h3 id="editNicknameModal-title" class="dialog-title">編輯暱稱</h3>
+                <button class="btn btn-close" id="closeNicknameModalBtn" aria-label="關閉" data-i18n="treasure_map_close" data-i18n-attr="aria-label">×</button>
             </div>
             <div class="modal-body dialog-body">
                 <label for="nicknameInput">您的暱稱：</label>
@@ -486,11 +486,11 @@
     </div>
 
     <!-- 離開隊伍確認對話框 -->
-    <div class="modal dialog-overlay hidden" id="leaveRoomModal">
+    <div class="modal dialog-overlay hidden" id="leaveRoomModal" role="dialog" aria-modal="true" aria-labelledby="leaveRoomModal-title">
         <div class="modal-content dialog">
             <div class="dialog-header">
-                <h3 class="dialog-title">離開隊伍</h3>
-                <button class="btn btn-close" id="closeLeaveModalBtn">×</button>
+                <h3 id="leaveRoomModal-title" class="dialog-title">離開隊伍</h3>
+                <button class="btn btn-close" id="closeLeaveModalBtn" aria-label="關閉" data-i18n="treasure_map_close" data-i18n-attr="aria-label">×</button>
             </div>
             <div class="modal-body dialog-body">
                 <p>您確定要離開隊伍嗎？</p>
@@ -506,7 +506,7 @@
 
 
     <!-- 地圖詳細檢視彈出視窗 -->
-    <div class="map-detail-modal" id="mapDetailModal">
+    <div class="map-detail-modal" id="mapDetailModal" role="dialog" aria-modal="true" aria-labelledby="mapDetailTitle">
         <div class="map-detail-content">
             <button class="map-detail-close" id="mapDetailClose" title="關閉">×</button>
             <div class="map-detail-image-container">

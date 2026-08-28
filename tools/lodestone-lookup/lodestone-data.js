@@ -95,18 +95,32 @@ const LODESTONE_TRANSLATIONS = {
 };
 
 // 職業分類的識別色（資料性顏色，不隨主題變色；由 script.js 以 inline style 套用）
+// 數值已依 WCAG AA（4.5:1）校正，確保搭配 LODESTONE_ROLE_TEXT_COLORS 的文字色時可讀
 const LODESTONE_ROLE_COLORS = {
     tank: '#3f51b5',
-    healer: '#4caf50',
-    melee: '#f44336',
-    ranged: '#f44336',
-    magic: '#f44336',
-    crafting: '#9e9e9e',
-    gathering: '#9e9e9e',
+    healer: '#2e7d32',
+    melee: '#c62828',
+    ranged: '#c62828',
+    magic: '#c62828',
+    crafting: '#616161',
+    gathering: '#616161',
     special: '#ffc107'
+};
+
+// 各識別色對應的圖示文字色（依背景明度挑選，對比度皆 ≥ 4.5:1）
+const LODESTONE_ROLE_TEXT_COLORS = {
+    tank: '#ffffff',
+    healer: '#ffffff',
+    melee: '#ffffff',
+    ranged: '#ffffff',
+    magic: '#ffffff',
+    crafting: '#ffffff',
+    gathering: '#ffffff',
+    special: '#2c3e50'
 };
 
 // 匯出到全域
 window.LODESTONE_JOB_ICONS = LODESTONE_JOB_ICONS;
 window.LODESTONE_TRANSLATIONS = LODESTONE_TRANSLATIONS;
 window.LODESTONE_ROLE_COLORS = LODESTONE_ROLE_COLORS;
+window.LODESTONE_ROLE_TEXT_COLORS = LODESTONE_ROLE_TEXT_COLORS;

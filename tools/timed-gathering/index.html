@@ -133,8 +133,8 @@
                     <!-- 右側：清單管理 -->
                     <div class="lists-panel card">
                         <!-- 清單標籤頁 -->
-                        <div class="tabs list-tabs" id="listTabs">
-                            <button class="tab list-tab active" data-list-id="default" data-i18n="defaultListName">預設清單</button>
+                        <div class="tabs list-tabs" id="listTabs" role="tablist">
+                            <button class="tab list-tab active" data-list-id="default" id="tab-list-default" role="tab" aria-selected="true" aria-controls="listItems" tabindex="0" data-i18n="defaultListName">預設清單</button>
                         </div>
 
                         <!-- 清單內容 -->
@@ -148,7 +148,7 @@
                                 </div>
                             </div>
 
-                            <div class="list-items" id="listItems">
+                            <div class="list-items" id="listItems" role="tabpanel" aria-labelledby="tab-list-default">
                                 <div class="empty-list-message">
                                     <p data-i18n="emptyListMessage">清單為空</p>
                                     <small data-i18n="emptyListHint">從左側點擊「加入清單」按鈕來新增採集物</small>
@@ -190,7 +190,7 @@
     <div id="footer-placeholder" data-base-path="../../"></div>
 
     <!-- 對話框 -->
-    <div id="dialogOverlay" class="dialog-overlay">
+    <div id="dialogOverlay" class="dialog-overlay" role="dialog" aria-modal="true" aria-labelledby="dialogTitle">
         <div class="dialog">
             <div class="dialog-header">
                 <h3 class="dialog-title" id="dialogTitle" data-i18n="dialogTitle">對話框標題</h3>
