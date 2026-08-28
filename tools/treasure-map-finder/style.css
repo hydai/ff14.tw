@@ -492,11 +492,19 @@
     background: var(--color-surface);
     box-shadow: var(--shadow-xl);
     transform: translateX(100%);
-    transition: transform var(--duration-slow) var(--ease);
+    visibility: hidden;
+    /* visibility 用 0s duration + duration-slow 的 delay：
+       關閉時維持可見到滑出動畫結束才真正隱藏，讓 transform 動畫走完 */
+    transition: transform var(--duration-slow) var(--ease), visibility 0s var(--duration-slow);
 }
 
 .my-list-panel.active {
     transform: translateX(0);
+    visibility: visible;
+    /* 開啟時 visibility 不延遲、不使用 transition 動畫，隨 class 同步立即變成 visible，
+       確保 ModalManager 在 classList.add('active') 後同一輪就能抓到可聚焦元素、正確設定初始焦點
+       （若沿用離場那組 transition，瀏覽器要到下一次畫面更新才會回報 visible，導致初始焦點抓不到） */
+    transition: transform var(--duration-slow) var(--ease), visibility 0s;
 }
 
 /* 抽屜、路線面板、格式面板共用的標題列 */
@@ -1144,6 +1152,7 @@
 
 @media (prefers-reduced-motion: reduce) {
     .my-list-panel,
+    .my-list-panel.active,
     .panel-overlay,
     .collapse-indicator {
         transition: none;

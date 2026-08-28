@@ -7,6 +7,7 @@ class TreasureMapFinder {
         this.listManager = new ListManager(); // 使用 ListManager 模組
         this.filterManager = new FilterManager(); // 使用 FilterManager 模組
         this.uiDialogManager = new UIDialogManager(); // 使用 UIDialogManager 模組
+        this.modalManager = new ModalManager(); // 我的清單面板的焦點管理（開啟時移入焦點、Tab 循環、ESC／關閉時還原焦點）
         this.displayCount = 24;
         this.currentDisplayCount = 0;
         this.aetheryteData = null; // 傳送點資料
@@ -128,21 +129,18 @@ class TreasureMapFinder {
         }
         
         // 匯出/匯入功能
-        document.getElementById('exportListBtn').addEventListener('click', () => this.exportList());
+        document.getElementById('exportListBtn').addEventListener('click', () => {
+            this.modalManager.hide(); // 讓匯出對話框成為唯一作用中的對話框
+            this.exportList();
+        });
         document.getElementById('importListBtn').addEventListener('click', () => {
+            this.modalManager.hide(); // 讓匯入對話框成為唯一作用中的對話框
             this.uiDialogManager.showImportDialog((text) => this.importFromText(text));
         });
         document.getElementById('importFileInput').addEventListener('change', (e) => this.importList(e));
         
         // 載入更多
         this.elements.loadMore.querySelector('button').addEventListener('click', () => this.loadMoreMaps());
-        
-        // ESC 鍵關閉清單面板
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && this.elements.myListPanel.classList.contains('active')) {
-                this.toggleListPanel();
-            }
-        });
         
         // 點擊遮罩關閉
         const overlay = document.getElementById('panelOverlay');
@@ -657,20 +655,26 @@ class TreasureMapFinder {
     }
 
     toggleListPanel() {
-        const isActive = this.elements.myListPanel.classList.contains('active');
         const overlay = document.getElementById('panelOverlay');
-        
-        if (!isActive) {
+
+        if (this.modalManager.activeModal !== this.elements.myListPanel) {
             // 開啟面板
-            this.elements.myListPanel.classList.add('active');
             overlay.classList.add('active');
             this.renderMyList();
             document.body.style.overflow = 'hidden';
+            this.modalManager.show(this.elements.myListPanel, {
+                // #panelOverlay 是獨立於面板本身的手足元素（不是 ModalManager 認得的遮罩層），
+                // 點擊它由既有的 click 監聽器呼叫 toggleListPanel() 處理，故關閉內建的點擊判斷
+                closeOnOverlayClick: false,
+                onClose: () => {
+                    // ESC／關閉按鈕／點擊遮罩都會走到這裡
+                    overlay.classList.remove('active');
+                    document.body.style.overflow = '';
+                }
+            });
         } else {
             // 關閉面板
-            this.elements.myListPanel.classList.remove('active');
-            overlay.classList.remove('active');
-            document.body.style.overflow = '';
+            this.modalManager.hide();
         }
     }
     
@@ -999,7 +1003,16 @@ class TreasureMapFinder {
         
         // 儲存路線資料供複製使用
         this.currentRoute = result.route;
-        
+
+        // 路線面板由 uiDialogManager 另一個獨立的 ModalManager 管理；
+        // 生成路線的按鈕就在「我的清單」面板內，若清單面板繼續開著，
+        // 兩個 ModalManager 實例會同時掛上 document 的 ESC／Tab 監聽。
+        // 按 ESC 會把兩個面板一起關閉，且清單面板的 ModalManager 會把焦點
+        // 還給這顆已經隨面板一起被移出畫面（transform: translateX）的
+        // 「生成路線」按鈕，導致焦點跑到看不到的地方，所以生成路線前
+        // 先收起清單面板，讓路線面板成為唯一作用中的對話框。
+        this.modalManager.hide();
+
         // 顯示路線結果
         this.uiDialogManager.showRouteResult(result, {
             onStepCopy: (step, index, total) => {
