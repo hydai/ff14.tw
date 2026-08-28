@@ -348,7 +348,9 @@ class FauxHollowsFoxes {
             state = FF14Utils.getI18nText('faux_hollows_cell_state_unknown', '未揭開');
         }
 
-        let label = `${FF14Utils.getI18nText('faux_hollows_cell_label', '第 {n} 格', { n: index + 1 })}：${state}`;
+        const sepColon = FF14Utils.getI18nText('label_sep_colon', '：');
+        const sepComma = FF14Utils.getI18nText('label_sep_comma', '，');
+        let label = `${FF14Utils.getI18nText('faux_hollows_cell_label', '第 {n} 格', { n: index + 1 })}${sepColon}${state}`;
 
         // 把畫面上看得到的機率一併帶進名稱（例如「劍: 32%」→「劍 32%」）；
         // 只收「實際看得見」的機率項目 —— empty-prob 是 CSS display:none 的佔位項目，要排除
@@ -357,12 +359,12 @@ class FauxHollowsFoxes {
             .map((item) => item.textContent.trim().replace(/\s*[:：]\s*/, ' '))
             .filter((text) => text !== '');
         if (probTexts.length > 0) {
-            label += `，${probTexts.join('，')}`;
+            label += `${sepComma}${probTexts.join(sepComma)}`;
         } else if (cell.classList.contains('probability-display')) {
             // 障礙物階段的機率是直接寫在格子上的純文字（例如「42%」）
             const obstacleText = cell.textContent.trim();
             if (obstacleText !== '') {
-                label += `，${FF14Utils.getI18nText('faux_hollows_cell_obstacle_prob', '障礙物機率 {value}', { value: obstacleText })}`;
+                label += `${sepComma}${FF14Utils.getI18nText('faux_hollows_cell_obstacle_prob', '障礙物機率 {value}', { value: obstacleText })}`;
             }
         }
 

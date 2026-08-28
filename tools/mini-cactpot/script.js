@@ -325,13 +325,15 @@ class MiniCactpotCalculator {
         const evElement = cell.querySelector('.cell-ev');
         const evText = evElement ? evElement.textContent : '';
 
+        const sepColon = FF14Utils.getI18nText('label_sep_colon', '：');
+        const sepComma = FF14Utils.getI18nText('label_sep_comma', '，');
         let label = FF14Utils.getI18nText('mini_cactpot_cell_label', '第 {n} 格', { n: position + 1 });
         if (displayText !== '') {
-            label += `：${displayText}`;
+            label += `${sepColon}${displayText}`;
         }
         if (evText !== '') {
             const evLabel = FF14Utils.getI18nText('mini_cactpot_cell_ev', '期望值 {ev}', { ev: evText });
-            label += displayText === '' ? `：${evLabel}` : `，${evLabel}`;
+            label += displayText === '' ? `${sepColon}${evLabel}` : `${sepComma}${evLabel}`;
         }
         cell.setAttribute('aria-label', label);
 
@@ -557,13 +559,14 @@ class MiniCactpotCalculator {
         SecurityUtils.clearElement(this.elements.bestLineSummary);
 
         // Create the card using SecurityUtils
+        const sepColon = FF14Utils.getI18nText('label_sep_colon', '：');
         const card = SecurityUtils.createCard({
             className: 'result-stat',
             title: bestResult.name,
             titleClass: 'best-choice-title',
-            value: `${FF14Utils.getI18nText('mini_cactpot_expected_value', '期望值')}：${FF14Utils.formatNumber(Math.round(bestResult.expectedValue))} MGP`,
+            value: `${FF14Utils.getI18nText('mini_cactpot_expected_value', '期望值')}${sepColon}${FF14Utils.formatNumber(Math.round(bestResult.expectedValue))} MGP`,
             valueClass: 'best-choice-value',
-            range: `${FF14Utils.getI18nText('mini_cactpot_range', '範圍')}：${FF14Utils.formatNumber(bestResult.minMGP)} - ${FF14Utils.formatNumber(bestResult.maxMGP)} MGP`,
+            range: `${FF14Utils.getI18nText('mini_cactpot_range', '範圍')}${sepColon}${FF14Utils.formatNumber(bestResult.minMGP)} - ${FF14Utils.formatNumber(bestResult.maxMGP)} MGP`,
             rangeClass: 'best-choice-range'
         });
 
@@ -788,12 +791,13 @@ class MiniCactpotCalculator {
             this.cellPositionKeys[best.position],
             this.cellPositionFallback[best.position]
         );
+        const sepColon = FF14Utils.getI18nText('label_sep_colon', '：');
 
         const card = SecurityUtils.createCard({
             className: 'result-stat',
             title: posName,
             titleClass: 'best-choice-title',
-            value: `${FF14Utils.getI18nText('mini_cactpot_recommend_ev', '期望 MGP')}：${FF14Utils.formatNumber(Math.round(best.ev))} MGP`,
+            value: `${FF14Utils.getI18nText('mini_cactpot_recommend_ev', '期望 MGP')}${sepColon}${FF14Utils.formatNumber(Math.round(best.ev))} MGP`,
             valueClass: 'best-choice-value recommend-value',
         });
 

@@ -327,7 +327,12 @@ class TreasureMapFinder {
         const detailBtn = document.createElement('button');
         detailBtn.className = 'btn btn-secondary btn-sm btn-view-detail';
         detailBtn.title = FF14Utils.getI18nText('treasure_map_view_detail_tooltip', '查看詳細地圖');
+        // 固定字串（無插值），交給 i18n manager 在語言切換時透過 [data-i18n]／[data-i18n-html] 全域重新翻譯，
+        // 不必依賴這裡的語言監聽（目前只會重繪「我的清單」）
+        detailBtn.setAttribute('data-i18n', 'treasure_map_view_detail_tooltip');
+        detailBtn.setAttribute('data-i18n-attr', 'title');
         SecurityUtils.updateButtonContent(detailBtn, '🗺️', FF14Utils.getI18nText('treasure_map_view_detail', '詳細地圖'));
+        detailBtn.setAttribute('data-i18n-html', 'treasure_map_view_detail');
         detailBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             this.uiDialogManager.showMapDetail(map, {
@@ -343,10 +348,14 @@ class TreasureMapFinder {
         const addBtn = document.createElement('button');
         addBtn.className = `btn ${isInList ? 'btn-success' : 'btn-primary'} btn-sm btn-add-to-list`;
         addBtn.dataset.state = isInList ? 'added' : 'default';
-        const btnText = isInList ? FF14Utils.getI18nText('treasure_map_added_to_list', '✓ 已加入') : FF14Utils.getI18nText('treasure_map_add_to_list', '加入清單');
+        const btnKey = isInList ? 'treasure_map_added_to_list' : 'treasure_map_add_to_list';
+        const btnText = FF14Utils.getI18nText(btnKey, isInList ? '✓ 已加入' : '加入清單');
         const span = document.createElement('span');
         span.className = 'btn-text';
         span.textContent = btnText;
+        // 依 isInList 決定的兩個 key 之一，交給 i18n manager 在語言切換時透過 [data-i18n] 全域重新翻譯；
+        // 清單狀態改變時（見 updateCardButtons()）另外同步這個屬性，維持跟目前狀態一致
+        span.dataset.i18n = btnKey;
         SecurityUtils.clearElement(addBtn);
         addBtn.appendChild(span);
         addBtn.addEventListener('click', (e) => {
@@ -432,10 +441,14 @@ class TreasureMapFinder {
             const mapId = card.dataset.mapId;
             const button = card.querySelector('.btn-add-to-list');
             const isInList = this.listManager.has(mapId);
+            const btnKey = isInList ? 'treasure_map_added_to_list' : 'treasure_map_add_to_list';
 
             button.dataset.state = isInList ? 'added' : 'default';
             button.className = `btn ${isInList ? 'btn-success' : 'btn-primary'} btn-sm btn-add-to-list`;
-            button.querySelector('.btn-text').textContent = isInList ? FF14Utils.getI18nText('treasure_map_added_to_list', '✓ 已加入') : FF14Utils.getI18nText('treasure_map_add_to_list', '加入清單');
+            const textSpan = button.querySelector('.btn-text');
+            textSpan.textContent = FF14Utils.getI18nText(btnKey, isInList ? '✓ 已加入' : '加入清單');
+            // 清單狀態改變時同步 data-i18n，讓語言切換時全域重新翻譯用的是「目前」狀態對應的 key
+            textSpan.dataset.i18n = btnKey;
         });
     }
     
