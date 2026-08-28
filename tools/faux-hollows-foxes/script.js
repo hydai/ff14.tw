@@ -323,8 +323,8 @@ class FauxHollowsFoxes {
      * 依格子目前的狀態與畫面上顯示的機率重建 aria-label，
      * 讓輔助科技讀到的名稱與看得到的內容一致；
      * 已停用（clicked）的格子同時標記為停用並移出 Tab 順序。
-     * 「已停用」同時看 this.board 與 DOM class：markGrayCells() 只會把
-     * cell 的 class 改成 clicked，並不會寫回 this.board[i]，所以兩者都要檢查。
+     * 「已停用」同時看 this.board 與 DOM class：markGrayCells() 會同時把
+     * this.board[i] 設成 'clicked' 並改 class，兩者本來就該一致；保留雙重檢查作為防呆。
      * @param {HTMLElement} cell - 格子元素
      * @param {number} index - 格子索引（0 起算）
      */
@@ -487,8 +487,10 @@ class FauxHollowsFoxes {
                 const dbValue = dbBoard[row][col];
 
                 // 只有當使用者已經設置了某個位置時，才檢查是否與資料庫一致
-                // null 值表示未設置，應該被視為「未知」，可以匹配任何資料庫值
-                if (userValue !== null) {
+                // null 值表示未設置；'clicked' 是 markGrayCells() 在遊戲結束時
+                // 補上的已用格標記（該格從未被使用者實際設置過內容），兩者都應該
+                // 被視為「未知」，可以匹配任何資料庫值
+                if (userValue !== null && userValue !== 'clicked') {
                     const userMappedValue = this.mapUserValueToDbValue(userValue);
 
                     // 特殊處理：資料庫中的 FOX_OR_EMPTY 表示可能是宗長或空格
@@ -505,7 +507,7 @@ class FauxHollowsFoxes {
                         }
                     }
                 }
-                // 如果 userValue === null，則跳過此位置的檢查（未知狀態可匹配任何值）
+                // 如果 userValue 是 null 或 'clicked'，則跳過此位置的檢查（未知狀態可匹配任何值）
             }
         }
 
@@ -947,8 +949,8 @@ class FauxHollowsFoxes {
     clearCell(index) {
         const cell = this.elements.board.children[index];
 
-        // Don't allow clearing if it's a gray cell from game completion
-        if (this.clickCount >= FauxHollowsFoxes.CONSTANTS.MAX_CLICKS && this.board[index] === null) {
+        // 已用格不可清除
+        if (this.clickCount >= FauxHollowsFoxes.CONSTANTS.MAX_CLICKS && this.board[index] === 'clicked') {
             return;
         }
 
@@ -1237,6 +1239,9 @@ class FauxHollowsFoxes {
         // Mark all remaining empty cells as gray when game is complete
         for (let i = 0; i < FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS; i++) {
             if (this.board[i] === null) {
+                // 寫回 this.board，讓 saveState()／restoreState() 能正確保存並還原這個「已停用」狀態，
+                // 否則 renderBoard() 在 undo/redo 後只看 this.board 重建，會把這些格子還原成可點擊
+                this.board[i] = 'clicked';
                 const cell = this.elements.board.children[i];
                 cell.className = 'cell board-cell clicked';
                 this.setCellLabel(cell, i);
@@ -1249,10 +1254,12 @@ class FauxHollowsFoxes {
         // Reset click count
         this.clickCount = 0;
 
-        // Count all non-obstacle, non-null cells
+        // Count all non-obstacle, non-null cells, excluding cells markGrayCells()
+        // already marked as 'clicked' when the game completed (they were never an
+        // actual click and must not inflate the count past MAX_CLICKS)
         for (let i = 0; i < FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS; i++) {
             const value = this.board[i];
-            if (value && value !== 'obstacle') {
+            if (value && value !== 'obstacle' && value !== 'clicked') {
                 this.clickCount++;
             }
         }
