@@ -68,7 +68,10 @@ class MacroConverter {
         if (window.i18n) {
             // Set initial target language and listen for changes
             this._setTargetLang(window.i18n.getCurrentLanguage());
-            window.i18n.onLanguageChange((newLang) => this._setTargetLang(newLang));
+            window.i18n.onLanguageChange((newLang) => {
+                this._setTargetLang(newLang);
+                this.setOutputPlaceholder();
+            });
         }
     }
 
