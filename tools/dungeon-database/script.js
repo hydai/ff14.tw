@@ -406,11 +406,13 @@ class DungeonDatabase {
             placeholder.style.display = 'none';
             const placeholderText = document.createElement('span');
             placeholderText.textContent = FF14Utils.getI18nText('dungeon_db_image_loading', '圖片載入中...');
+            placeholderText.dataset.i18n = 'dungeon_db_image_loading';
             placeholder.appendChild(placeholderText);
             imageDiv.appendChild(placeholder);
         } else {
             imageDiv.classList.add('card-placeholder');
             imageDiv.textContent = FF14Utils.getI18nText('dungeon_db_image_preparing', '圖片準備中');
+            imageDiv.dataset.i18n = 'dungeon_db_image_preparing';
         }
 
         card.appendChild(imageDiv);
@@ -458,6 +460,7 @@ class DungeonDatabase {
 
         const rewardsTitle = document.createElement('h4');
         rewardsTitle.textContent = FF14Utils.getI18nText('dungeon_db_reward', '獎勵');
+        rewardsTitle.dataset.i18n = 'dungeon_db_reward';
         rewards.appendChild(rewardsTitle);
 
         const rewardItem = document.createElement('div');
@@ -466,6 +469,7 @@ class DungeonDatabase {
         const rewardName = document.createElement('span');
         rewardName.className = 'reward-name';
         rewardName.textContent = FF14Utils.getI18nText('dungeon_db_tombstone', '神典石');
+        rewardName.dataset.i18n = 'dungeon_db_tombstone';
         rewardItem.appendChild(rewardName);
 
         const rewardValue = document.createElement('span');
@@ -483,6 +487,7 @@ class DungeonDatabase {
 
             const dropsTitle = document.createElement('h4');
             dropsTitle.textContent = FF14Utils.getI18nText('dungeon_db_special_drops', '特殊掉落物');
+            dropsTitle.dataset.i18n = 'dungeon_db_special_drops';
             specialDrops.appendChild(dropsTitle);
 
             const dropsList = document.createElement('div');
@@ -505,6 +510,7 @@ class DungeonDatabase {
 
         const mechanicsLabel = document.createElement('strong');
         mechanicsLabel.textContent = FF14Utils.getI18nText('dungeon_db_mechanics', '機制說明：');
+        mechanicsLabel.dataset.i18n = 'dungeon_db_mechanics';
         mechanicsDiv.appendChild(mechanicsLabel);
 
         const highlightedMechanics = this.highlightSearchTermsDOM(dungeon.mechanics, this.currentSearchTerm);
