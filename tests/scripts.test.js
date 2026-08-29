@@ -19,6 +19,49 @@ function listFiles(dir, exts, out = []) {
 // 掃描 assets/、tools/ 底下所有 .js（此範圍本來就不含 tests/、node_modules/）
 const SCRIPT_FILES = [...listFiles('assets', ['.js']), ...listFiles('tools', ['.js'])];
 
+// 取出翻譯檔裡 `lang: {`…對應 `}` 的區塊（只有一層巢狀字串屬性，作法比照 design-system.test.js 的 block()）
+// 提升到模組層級（原本寫在下面 TARGETS 測試的函式本體內），讓新增的頁面級 data-i18n 測試也能共用，
+// 行為與提升前完全相同，TARGETS 測試本身不需要跟著修改呼叫方式。
+function jsBlock(code, lang) {
+    const start = code.indexOf(`${lang}: {`);
+    if (start === -1) return null;
+    const openBrace = code.indexOf('{', start);
+    let i = openBrace;
+    let depth = 0;
+    for (; i < code.length; i++) {
+        if (code[i] === '{') depth++;
+        else if (code[i] === '}') { depth--; if (depth === 0) break; }
+    }
+    return code.slice(openBrace, i + 1);
+}
+// 只認「行首縮排 + 識別字 + 冒號 + 引號」的鍵值宣告，避免英文譯文裡「Label:」這類字面值被誤判成 key
+function jsKeys(blockText) {
+    const set = new Set();
+    if (!blockText) return set;
+    for (const m of blockText.matchAll(/^\s*(\w+):\s*['"]/gm)) set.add(m[1]);
+    return set;
+}
+function translationKeySet(file, lang) {
+    return jsKeys(jsBlock(read(file), lang));
+}
+
+// 遞迴列出 dir（相對於 ROOT）底下所有 .html，回傳相對路徑（listFiles 已有副檔名清單版本，
+// 這裡另外寫一個不篩副檔名、只找 .html 的版本，供下面的全站 data-i18n 測試使用）
+function listHtmlFiles(dir, out = []) {
+    for (const entry of fs.readdirSync(path.join(ROOT, dir), { withFileTypes: true })) {
+        const rel = path.join(dir, entry.name);
+        if (entry.isDirectory()) listHtmlFiles(rel, out);
+        else if (entry.name.endsWith('.html')) out.push(rel);
+    }
+    return out;
+}
+// 全站會套用 i18n 的頁面：tools/ 底下所有 .html（含 12 個工具的 index.html 與 guide/ 的 8 個子頁面）
+// 加上 4 個根頁面；api/test.html 不是玩家頁面，不列入
+const ALL_I18N_PAGES = [
+    ...listHtmlFiles('tools'),
+    'index.html', 'about.html', 'changelog.html', 'copyright.html'
+];
+
 test('assets 與 tools 底下的 .js 不得使用 innerHTML／outerHTML／insertAdjacentHTML', () => {
     assert.ok(SCRIPT_FILES.length >= 20, `清單不應該是空的（目前 ${SCRIPT_FILES.length} 個）`);
     // 目前沒有核准的例外；未來若要新增，須在此註明檔案與理由
@@ -29,37 +72,22 @@ test('assets 與 tools 底下的 .js 不得使用 innerHTML／outerHTML／insert
     }
 });
 
-test('lodestone-lookup／treasure-map-finder 新增的 data-i18n 鍵值存在於 common.js 與工具翻譯檔（zh/en/ja）', () => {
+test('TARGETS 列出的工具 data-i18n／getI18nText 鍵值存在於 common.js 與工具翻譯檔（zh/en/ja）', () => {
     const LANGS = ['zh', 'en', 'ja'];
     const COMMON_FILE = 'assets/js/i18n/translations/common.js';
     const TARGETS = [
         { html: 'tools/lodestone-lookup/index.html', js: 'tools/lodestone-lookup/script.js', translations: 'assets/js/i18n/translations/tools/lodestone-lookup.js', keyPrefix: 'lodestone_' },
-        { html: 'tools/treasure-map-finder/index.html', js: 'tools/treasure-map-finder/script.js', translations: 'assets/js/i18n/translations/tools/treasure-map-finder.js', keyPrefix: 'treasure_map_' }
+        { html: 'tools/treasure-map-finder/index.html', js: 'tools/treasure-map-finder/script.js', translations: 'assets/js/i18n/translations/tools/treasure-map-finder.js', keyPrefix: 'treasure_map_' },
+        { html: 'tools/mini-cactpot/index.html', js: 'tools/mini-cactpot/script.js', translations: 'assets/js/i18n/translations/tools/mini-cactpot.js', keyPrefix: 'mini_cactpot_' },
+        { html: 'tools/wondrous-tails/index.html', js: 'tools/wondrous-tails/script.js', translations: 'assets/js/i18n/translations/tools/wondrous-tails.js', keyPrefix: 'wondrous_tails_' },
+        { html: 'tools/faux-hollows-foxes/index.html', js: 'tools/faux-hollows-foxes/script.js', translations: 'assets/js/i18n/translations/tools/faux-hollows-foxes.js', keyPrefix: 'faux_hollows_' },
+        { html: 'tools/dungeon-database/index.html', js: 'tools/dungeon-database/script.js', translations: 'assets/js/i18n/translations/tools/dungeon-database.js', keyPrefix: 'dungeon_db_' },
+        { html: 'tools/character-card/index.html', js: 'tools/character-card/script.js', translations: 'assets/js/i18n/translations/tools/character-card.js', keyPrefix: 'char_card_' },
+        { html: 'tools/weather-forecast/index.html', js: 'tools/weather-forecast/script.js', translations: 'assets/js/i18n/translations/tools/weather-forecast.js', keyPrefix: 'weather_' },
+        { html: 'tools/macro-converter/index.html', js: 'tools/macro-converter/script.js', translations: 'assets/js/i18n/translations/tools/macro-converter.js', keyPrefix: 'macro_converter_' }
     ];
 
-    // 取出翻譯檔裡 `lang: {`…對應 `}` 的區塊（只有一層巢狀字串屬性，作法比照 design-system.test.js 的 block()）
-    function jsBlock(code, lang) {
-        const start = code.indexOf(`${lang}: {`);
-        if (start === -1) return null;
-        const openBrace = code.indexOf('{', start);
-        let i = openBrace;
-        let depth = 0;
-        for (; i < code.length; i++) {
-            if (code[i] === '{') depth++;
-            else if (code[i] === '}') { depth--; if (depth === 0) break; }
-        }
-        return code.slice(openBrace, i + 1);
-    }
-    // 只認「行首縮排 + 識別字 + 冒號 + 引號」的鍵值宣告，避免英文譯文裡「Label:」這類字面值被誤判成 key
-    function jsKeys(blockText) {
-        const set = new Set();
-        if (!blockText) return set;
-        for (const m of blockText.matchAll(/^\s*(\w+):\s*['"]/gm)) set.add(m[1]);
-        return set;
-    }
-    function translationKeySet(file, lang) {
-        return jsKeys(jsBlock(read(file), lang));
-    }
+    // jsBlock／jsKeys／translationKeySet 已提升到模組層級（見檔案上方），這裡不再重複定義
 
     const KEY_ATTR_RE = /\sdata-i18n(?:-html)?="([^"]+)"/g;
     const JS_KEY_RES = [
@@ -88,11 +116,18 @@ test('lodestone-lookup／treasure-map-finder 新增的 data-i18n 鍵值存在於
     for (const t of TARGETS) {
         const usedKeys = new Set();
         for (const m of read(t.html).matchAll(KEY_ATTR_RE)) usedKeys.add(m[1]);
-        const js = read(t.js);
-        for (const re of JS_KEY_RES) {
-            for (const m of js.matchAll(re)) usedKeys.add(m[1]);
+        // 不能只讀 t.js：像 treasure-map-finder 這種多檔案工具，key 可能寫在
+        // ui-dialog-manager.js／list-manager.js 等同目錄下的其他模組檔裡，
+        // 所以改成掃 t.js 所在目錄底下每一個 .js（listFiles 會遞迴列出，
+        // 目錄裡若有 images/ 這類非 JS 子目錄，篩副檔名後自然不會抓進來）
+        const toolDir = path.dirname(t.js);
+        for (const jsFile of listFiles(toolDir, ['.js'])) {
+            const js = read(jsFile);
+            for (const re of JS_KEY_RES) {
+                for (const m of js.matchAll(re)) usedKeys.add(m[1]);
+            }
+            for (const m of js.matchAll(literalKeyRe(t.keyPrefix))) usedKeys.add(m[1]);
         }
-        for (const m of js.matchAll(literalKeyRe(t.keyPrefix))) usedKeys.add(m[1]);
         assert.ok(usedKeys.size > 0, `${t.js} 沒有掃到任何 data-i18n 鍵值，測試可能失效`);
 
         for (const lang of LANGS) {
@@ -103,6 +138,89 @@ test('lodestone-lookup／treasure-map-finder 新增的 data-i18n 鍵值存在於
             }
         }
     }
+
+    // assets/js/components（nav-template.js／footer-template.js／layout-loader.js）是全站共用的
+    // 導覽列與頁尾元件，不屬於任何一個 TARGETS 工具目錄，上面的目錄掃描碰不到它們；
+    // tools/guide/sidebar-template.js 同理不在 TARGETS 裡（guide 走的是 i18n.t() 陣列 key，
+    // 不是 TARGETS 用的 keyPrefix 慣例），所以在同一個測試裡一併補掃，不必另開一個 test()。
+    {
+        const GUIDE_FILE = 'assets/js/i18n/translations/tools/guide.js';
+        const COMPONENT_FILES = [
+            ...listFiles('assets/js/components', ['.js']),
+            'tools/guide/sidebar-template.js'
+        ];
+        // 這幾個檔案都用 DOM 操作 + setAttribute('data-i18n', …) 字面值套用 key（footer-template.js、
+        // sidebar-template.js 的標題／返回連結），JS_KEY_RES 已經涵蓋這種字面值賦值；另外也有先寫進
+        // 物件字面值 `{ i18nKey: 'xxx' }`、再用 setAttribute('data-i18n', linkConfig.i18nKey) 間接
+        // 套用的寫法（nav-template.js 的導覽連結、sidebar-template.js 的 ITEMS 陣列），
+        // 所以再補一個 i18nKey 物件屬性的 regex
+        const COMPONENT_KEY_RES = [...JS_KEY_RES, /i18nKey:\s*'([^']+)'/g];
+
+        const componentKeys = new Set();
+        for (const file of COMPONENT_FILES) {
+            const js = read(file);
+            for (const re of COMPONENT_KEY_RES) {
+                for (const m of js.matchAll(re)) componentKeys.add(m[1]);
+            }
+        }
+        assert.ok(componentKeys.size > 0, 'assets/js/components／guide 側欄沒有掃到任何 data-i18n／i18nKey 鍵值，測試可能失效');
+
+        for (const lang of LANGS) {
+            // common.js 涵蓋 nav/footer 共用鍵值，guide.js 額外涵蓋 guide 側欄專用鍵值；
+            // 合併成一個集合檢查，不用替每個檔案分別對應該查哪個翻譯檔
+            const merged = new Set([...translationKeySet(COMMON_FILE, lang), ...translationKeySet(GUIDE_FILE, lang)]);
+            for (const key of componentKeys) {
+                assert.ok(merged.has(key), `assets/js/components／guide 側欄用到的鍵值 "${key}" 在 ${lang} 語系找不到翻譯`);
+            }
+        }
+    }
+});
+
+test('tools/**/*.html 與根頁面用到的 data-i18n 鍵值都能在該頁引入的翻譯檔（zh/en/ja）中找到', () => {
+    const LANGS = ['zh', 'en', 'ja'];
+    const KEY_ATTR_RE = /\sdata-i18n(?:-html)?="([^"]+)"/g;
+    const SCRIPT_SRC_RE = /<script\s+src="([^"]+)"/g;
+
+    assert.ok(ALL_I18N_PAGES.length >= 20, `ALL_I18N_PAGES 清單不應該是空的（目前 ${ALL_I18N_PAGES.length} 個）`);
+
+    let checked = 0;
+    let pagesWithKeys = 0;
+    for (const htmlPath of ALL_I18N_PAGES) {
+        const html = read(htmlPath);
+        const dir = path.dirname(htmlPath);
+
+        // 只認該頁 <script src> 實際引入的翻譯檔，不用「工具名稱猜檔名」，
+        // 這樣才能同時正確處理根頁面、guide 的多個平行子頁、以及完全沒有專屬翻譯檔的頁面
+        const translationFiles = [];
+        for (const m of html.matchAll(SCRIPT_SRC_RE)) {
+            if (m[1].includes('/i18n/translations/') && m[1].endsWith('.js')) {
+                translationFiles.push(path.normalize(path.join(dir, m[1])));
+            }
+        }
+
+        // data-i18n 與搭配它的 data-i18n-attr 用的是同一個 key（data-i18n-attr 只是指定要
+        // 寫入哪個屬性，本身不是另一個 key），KEY_ATTR_RE 已經涵蓋這種元素，不需要另外處理
+        const usedKeys = new Set();
+        for (const m of html.matchAll(KEY_ATTR_RE)) usedKeys.add(m[1]);
+        if (usedKeys.size === 0) continue; // 例如 report-generator，尚未使用 i18n
+        pagesWithKeys++;
+
+        for (const lang of LANGS) {
+            const merged = new Set();
+            for (const tf of translationFiles) {
+                for (const k of translationKeySet(tf, lang)) merged.add(k);
+            }
+            for (const key of usedKeys) {
+                checked++;
+                assert.ok(merged.has(key), `${htmlPath} 用到的 data-i18n 鍵值 "${key}" 在 ${lang} 語系找不到翻譯（該頁引入的翻譯檔：${translationFiles.join(', ') || '(無)'}）`);
+            }
+        }
+    }
+    // 目前 23 頁裡有 22 頁貢獻了 data-i18n 鍵值（僅 report-generator 尚未使用 i18n，貢獻 0 是預期行為）。
+    // 用「精確頁數」取代寬鬆的下限，掃描邏輯若不小心漏頁會立刻在這裡發現，而不必等 checked 累積夠大的落差才觸發。
+    assert.strictEqual(pagesWithKeys, 22, `貢獻 data-i18n 鍵值的頁面數應該是 22（目前 ${pagesWithKeys}），頁面數若有變動需要一併檢視這個守門測試`);
+    // checked 目前是 1149；門檻從 1000 收緊到 1100，讓漏掃能在少數頁面／鍵值就觸發，不用累積到近 150 筆落差
+    assert.ok(checked > 1100, `檢查的 (頁面,語言,鍵值) 組合數不應該太少（目前 ${checked}）`);
 });
 
 test('label_sep_colon／label_sep_comma 在 common.js 的 zh/en/ja 三語都存在且非空', () => {
