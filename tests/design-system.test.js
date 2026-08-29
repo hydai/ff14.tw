@@ -192,7 +192,7 @@ const ROOT_PAGES = ['index.html', 'about.html', 'copyright.html', 'changelog.htm
 // 遮罩層的 class（也就是實際交給 ModalManager 的那一層）；
 // route-panel／map-detail-modal 不經過 ModalManager 的遮罩層機制，但一樣是鎖住畫面的對話框，
 // 所以也放進來，確保它們的 role="dialog" 不會在未來的修改中被靜默拿掉（規則 (b)）
-const OVERLAY_CLASSES = ['dialog-overlay', 'popup-overlay', 'route-panel', 'map-detail-modal'];
+const OVERLAY_CLASSES = ['dialog-overlay', 'popup-overlay', 'route-panel', 'map-detail-modal', 'my-list-panel'];
 // 非模態對話框：格式面板開著時路線面板仍可操作，所以不得宣告 aria-modal
 const NON_MODAL_DIALOG_IDS = ['formatPanel'];
 
@@ -263,7 +263,7 @@ test('對話框的 role="dialog" 放在遮罩層，且有 aria-labelledby 與（
 });
 
 test('.btn-close／.popup-close／.btn-remove 按鈕必須有可存取名稱（aria-label、title 或可見文字）', () => {
-    const CLOSE_CLASSES = ['btn-close', 'popup-close', 'btn-remove'];
+    const CLOSE_CLASSES = ['btn-close', 'popup-close', 'btn-remove', 'map-detail-close'];
 
     // 靜態 HTML 按鈕
     const htmlFiles = [...listFiles('tools', ['.html']), ...ROOT_PAGES];
@@ -283,11 +283,19 @@ test('.btn-close／.popup-close／.btn-remove 按鈕必須有可存取名稱（a
             assert.ok(hasAriaLabel || hasTitle || hasVisibleText, `${file} 的按鈕缺少可存取名稱：${tag}`);
         }
     }
-    assert.ok(checked > 0, '沒有找到任何 .btn-close / .popup-close / .btn-remove 按鈕，測試可能失效');
+    assert.ok(checked > 0, '沒有找到任何 CLOSE_CLASSES 中的按鈕，測試可能失效');
 
-    // JS 動態建立的按鈕（heuristic：掃描 className = '...' 字面值）
+    // 明確驗證 #mapDetailClose：aria-label 必須交給 i18n 系統翻譯，鎖住這個屬性不會被靜默移除
+    const mapDetailFile = 'tools/treasure-map-finder/index.html';
+    const mapDetailCloseTag = openTags(read(mapDetailFile), 'button').find((tag) => attr(tag, 'id') === 'mapDetailClose');
+    assert.ok(mapDetailCloseTag, `${mapDetailFile} 找不到 id="mapDetailClose" 的按鈕`);
+    assert.match(mapDetailCloseTag, /\saria-label="[^"]+"/, `${mapDetailFile} 的 #mapDetailClose 缺少 aria-label：${mapDetailCloseTag}`);
+    assert.match(mapDetailCloseTag, /\sdata-i18n-attr="aria-label"/, `${mapDetailFile} 的 #mapDetailClose 缺少 data-i18n-attr="aria-label"：${mapDetailCloseTag}`);
+
+    // JS 動態建立的按鈕（heuristic：掃描 className = '...' 字面值）；alternation 直接從 CLOSE_CLASSES 產生，避免兩邊定義漂移
     const jsFiles = listFiles('tools', ['.js']);
-    const CLASS_RE = /(\w+)\.className\s*=\s*['"][^'"]*(?<![\w-])(?:btn-close|popup-close|btn-remove)(?![\w-])[^'"]*['"]/g;
+    const closeClassAlt = CLOSE_CLASSES.map(escapeRegExp).join('|');
+    const CLASS_RE = new RegExp(`(\\w+)\\.className\\s*=\\s*['"][^'"]*(?<![\\w-])(?:${closeClassAlt})(?![\\w-])[^'"]*['"]`, 'g');
     let jsChecked = 0;
     for (const file of jsFiles) {
         const js = read(file);
@@ -302,7 +310,7 @@ test('.btn-close／.popup-close／.btn-remove 按鈕必須有可存取名稱（a
             assert.ok(hasLabel || hasVisibleText, `${file} 動態建立的按鈕缺少可存取名稱（變數 ${varName}）`);
         }
     }
-    assert.ok(jsChecked > 0, '沒有找到任何 JS 動態建立的 .btn-close / .popup-close / .btn-remove 按鈕，測試可能失效');
+    assert.ok(jsChecked > 0, '沒有找到任何 JS 動態建立的 CLOSE_CLASSES 中的按鈕，測試可能失效');
 });
 
 test('猜謎方格工具的格子都設定 tabindex，可以用 Tab 鍵移動焦點', () => {

@@ -508,15 +508,10 @@ The project supports 3 languages via the I18nManager class:
 ```
 
 ```javascript
-// JavaScript 初始化
-const i18n = new I18nManager('tool-name');
-i18n.init();
-
-// 手動取得翻譯
-const text = i18n.t('key.path');
-
-// 監聽語言變更
-i18n.addObserver(() => this.updateUI());
+// 全域實例由 i18n-manager.js 建立（window.i18n），工具不需自行 new
+const text = window.i18n.getText('key');
+const lang = window.i18n.getCurrentLanguage();
+window.i18n.onLanguageChange(() => this.updateUI());
 ```
 
 ### Language Switcher

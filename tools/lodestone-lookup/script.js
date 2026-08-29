@@ -1341,6 +1341,7 @@ class LodestoneCharacterLookup {
         totalAchievementsValue.textContent = achievementsData?.TotalAchievements || 0;
         const totalAchievementsLabel = document.createElement('span');
         totalAchievementsLabel.className = 'stat-label';
+        totalAchievementsLabel.dataset.i18n = 'lodestone_total_achievements_label';
         totalAchievementsLabel.textContent = FF14Utils.getI18nText('lodestone_total_achievements_label', '總成就數');
         totalAchievementsStat.appendChild(totalAchievementsValue);
         totalAchievementsStat.appendChild(totalAchievementsLabel);
@@ -1354,6 +1355,7 @@ class LodestoneCharacterLookup {
         achievementPointsValue.textContent = achievementsData?.AchievementPoints || 0;
         const achievementPointsLabel = document.createElement('span');
         achievementPointsLabel.className = 'stat-label';
+        achievementPointsLabel.dataset.i18n = 'lodestone_achievement_points_label';
         achievementPointsLabel.textContent = FF14Utils.getI18nText('lodestone_achievement_points_label', '成就點數');
         achievementPointsStat.appendChild(achievementPointsValue);
         achievementPointsStat.appendChild(achievementPointsLabel);
@@ -1400,6 +1402,7 @@ class LodestoneCharacterLookup {
         mountValue.textContent = mountsData?.Mounts?.length || 0;
         const mountLabel = document.createElement('span');
         mountLabel.className = 'stat-label';
+        mountLabel.dataset.i18n = 'lodestone_mounts_count_unit';
         mountLabel.textContent = FF14Utils.getI18nText('lodestone_mounts_count_unit', '個坐騎');
         mountStat.appendChild(mountValue);
         mountStat.appendChild(mountLabel);
@@ -1444,6 +1447,7 @@ class LodestoneCharacterLookup {
         minionValue.textContent = minionsData?.Minions?.length || 0;
         const minionLabel = document.createElement('span');
         minionLabel.className = 'stat-label';
+        minionLabel.dataset.i18n = 'lodestone_minions_count_unit';
         minionLabel.textContent = FF14Utils.getI18nText('lodestone_minions_count_unit', '隻寵物');
         minionStat.appendChild(minionValue);
         minionStat.appendChild(minionLabel);
@@ -1489,6 +1493,7 @@ class LodestoneCharacterLookup {
             fcValue.textContent = this.elements.fcMemberCount.textContent;
             const fcLabel = document.createElement('span');
             fcLabel.className = 'stat-label';
+            fcLabel.dataset.i18n = 'lodestone_fc_members_label';
             fcLabel.textContent = FF14Utils.getI18nText('lodestone_fc_members_label', '成員數');
             fcStat.appendChild(fcValue);
             fcStat.appendChild(fcLabel);
