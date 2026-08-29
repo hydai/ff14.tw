@@ -9,6 +9,9 @@ class WondrousTailsCalculator {
         this.historyManager = new StateHistoryManager();
         this.isUndoingOrRedoing = false;
 
+        // 語言切換時重繪建議文字用的快取（見 onLanguageChange／displayResults／updateDisplay）
+        this.lastRecommendationArgs = null;
+
         this.elements = {
             grid: document.getElementById('wondrous-grid'),
             placedCount: document.getElementById('placed-count'),
@@ -25,8 +28,14 @@ class WondrousTailsCalculator {
         this.initializeGrid();
         this.initializeEvents();
 
-        // 語言切換時重新以目前語言重建所有格子的 aria-label
-        window.i18n.onLanguageChange(() => this.refreshCellLabels());
+        // 語言切換時重新以目前語言重建所有格子的 aria-label，並在有建議文字快取時一併重繪
+        window.i18n.onLanguageChange(() => {
+            this.refreshCellLabels();
+            if (this.lastRecommendationArgs) {
+                const [prob1, prob2, prob3, details] = this.lastRecommendationArgs;
+                this.elements.recommendationText.textContent = this.generateRecommendation(prob1, prob2, prob3, details);
+            }
+        });
 
         // Save initial state
         this.saveState();
@@ -136,6 +145,8 @@ class WondrousTailsCalculator {
         } else {
             // Hide results when no objects are placed
             this.elements.resultsPanel.style.display = 'none';
+            // 清除語言切換重繪快取，避免下次切換語言時重繪已清空的舊建議文字
+            this.lastRecommendationArgs = null;
         }
 
         this.updateHistoryButtons();
@@ -362,7 +373,10 @@ class WondrousTailsCalculator {
         this.updateProbabilityColors(this.elements.prob3Lines, parseFloat(prob3));
         
         // Generate recommendation
-        const recommendation = this.generateRecommendation(parseFloat(prob1), parseFloat(prob2), parseFloat(prob3), details);
+        // 快取這次呼叫的參數，語言切換時（見建構子的 onLanguageChange）用同一份資料
+        // 以目前語言重新呼叫 generateRecommendation() 重繪文字
+        this.lastRecommendationArgs = [parseFloat(prob1), parseFloat(prob2), parseFloat(prob3), details];
+        const recommendation = this.generateRecommendation(...this.lastRecommendationArgs);
         this.elements.recommendationText.textContent = recommendation;
         
         // Show results panel
