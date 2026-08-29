@@ -1248,8 +1248,11 @@ class TreasureMapFinder {
     }
     
     // 取得地區名稱
+    // 依目前介面語言挑選地區名稱，找不到對應語言時退回中文（與 renderMyList() 一致）
     getZoneName(zoneId) {
-        return zoneManager.getZoneNameZh(zoneId) || zoneId;
+        const translations = zoneManager.getZoneNames(zoneId);
+        const currentLang = window.i18n.getCurrentLanguage();
+        return translations[currentLang] || translations.zh || zoneId;
     }
     
     // 取得傳送點名稱
