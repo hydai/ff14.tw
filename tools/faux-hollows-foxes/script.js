@@ -41,6 +41,11 @@ class FauxHollowsFoxes {
         this.showTreasureProbabilities = false;
         this.obstaclesConfirmed = false;
         this.showOptimalHighlight = true; // 預設開啟高亮功能
+        // 語言切換時重繪結果面板用的快取（見 onLanguageChange／showResult／renderResultPanel）；
+        // 面板顯示時填入這次算出的分數與造型統計，reset() 清空。不直接在語言切換時重新從
+        // this.board 計算，因為 undo 到 MAX_CLICKS 以下不會連動隱藏這個面板（既有行為），
+        // 這種情形下重新計算會跟畫面上切換前凍結的舊結果對不上。
+        this.lastResult = null;
         this.history = new StateHistoryManager(); // 儲存每一步的歷史狀態
         this.modalManager = new ModalManager();
 
@@ -79,10 +84,33 @@ class FauxHollowsFoxes {
         window.i18n.onLanguageChange(() => {
             this.updateProbabilityDisplay();
             this.refreshCellLabels();
+
+            // this.showProbabilities／this.showOptimalHighlight 是這兩顆按鈕文字唯一的真相來源
+            // （toggleProbabilities()／toggleOptimalHighlight() 都是依這兩個布林值決定文字）。
+            // updatePageLanguage() 已經把 index.html 上舊的靜態 data-i18n 移除（見下方 index.html
+            // 修改），這裡是這兩顆按鈕語言切換後唯一會重新設定文字的地方，必須依目前的布林狀態
+            // 重新選字，而不是相信畫面上切換前的字串。
+            this.elements.toggleProbabilitiesBtn.textContent = this.showProbabilities
+                ? FF14Utils.getI18nText('faux_hollows_hide_prob', '隱藏機率')
+                : FF14Utils.getI18nText('faux_hollows_show_prob', '顯示機率');
+            this.elements.autoCalculateBtn.textContent = this.showOptimalHighlight
+                ? FF14Utils.getI18nText('faux_hollows_close_best', '關閉最佳策略')
+                : FF14Utils.getI18nText('faux_hollows_show_best', '顯示最佳策略');
+
+            // 結果面板顯示中（this.lastResult 有值）時，用顯示當下快取的分數／造型統計
+            // 以目前語言重繪；面板未顯示過或已被 reset() 清空快取時不做任何事。
+            if (this.lastResult) {
+                this.renderResultPanel(this.lastResult);
+            }
         });
 
-        // 設定按鈕初始文字
+        // 設定按鈕初始文字（兩顆按鈕的文字完全由 JS 依目前布林狀態決定；
+        // 對應的 index.html 已移除這兩顆按鈕上容易誤導的靜態 data-i18n，
+        // 避免語言切換時被 updatePageLanguage() 蓋回跟目前狀態不符的固定字串）
         this.elements.autoCalculateBtn.textContent = FF14Utils.getI18nText('faux_hollows_close_best', '關閉最佳策略');
+        this.elements.toggleProbabilitiesBtn.textContent = this.showProbabilities
+            ? FF14Utils.getI18nText('faux_hollows_hide_prob', '隱藏機率')
+            : FF14Utils.getI18nText('faux_hollows_show_prob', '顯示機率');
 
         // 初始化歷史記錄按鈕狀態
         this.saveState();
@@ -1282,8 +1310,6 @@ class FauxHollowsFoxes {
     }
 
     showResult() {
-        this.elements.finalScore.textContent = this.score;
-
         // Calculate shape counts
         const shapes = { sword: 0, chest: 0, fox: 0 };
         const counted = new Set();
@@ -1298,21 +1324,36 @@ class FauxHollowsFoxes {
             }
         }
 
+        // 快取這次顯示的分數與造型統計，語言切換時（見 onLanguageChange）用同一份資料重繪
+        this.lastResult = { score: this.score, shapes };
+
+        this.renderResultPanel(this.lastResult);
+    }
+
+    /**
+     * 依分數與造型統計渲染結果面板。showResult() 與語言切換後的 onLanguageChange
+     * 共用這份邏輯，確保重繪出來的文字跟第一次顯示時一致。
+     */
+    renderResultPanel({ score, shapes }) {
+        this.elements.finalScore.textContent = score;
+
         SecurityUtils.clearElement(this.elements.resultDetails);
+
+        const scoreUnit = FF14Utils.getI18nText('faux_hollows_score_unit', '分');
 
         const swordP = document.createElement('p');
         const swordText = FF14Utils.getI18nText('faux_hollows_cell_sword', '劍');
-        swordP.textContent = `${swordText} x ${shapes.sword} = ${shapes.sword * FauxHollowsFoxes.CONSTANTS.SCORES.SWORD} 分`;
+        swordP.textContent = `${swordText} x ${shapes.sword} = ${shapes.sword * FauxHollowsFoxes.CONSTANTS.SCORES.SWORD}${scoreUnit}`;
         this.elements.resultDetails.appendChild(swordP);
 
         const chestP = document.createElement('p');
         const chestText = FF14Utils.getI18nText('faux_hollows_cell_chest', '箱');
-        chestP.textContent = `${chestText} x ${shapes.chest} = ${shapes.chest * FauxHollowsFoxes.CONSTANTS.SCORES.CHEST} 分`;
+        chestP.textContent = `${chestText} x ${shapes.chest} = ${shapes.chest * FauxHollowsFoxes.CONSTANTS.SCORES.CHEST}${scoreUnit}`;
         this.elements.resultDetails.appendChild(chestP);
 
         const foxP = document.createElement('p');
         const foxText = FF14Utils.getI18nText('faux_hollows_cell_fox', '狐');
-        foxP.textContent = `${foxText} x ${shapes.fox} = ${shapes.fox * FauxHollowsFoxes.CONSTANTS.SCORES.FOX} 分`;
+        foxP.textContent = `${foxText} x ${shapes.fox} = ${shapes.fox * FauxHollowsFoxes.CONSTANTS.SCORES.FOX}${scoreUnit}`;
         this.elements.resultDetails.appendChild(foxP);
 
         this.elements.resultPanel.style.display = 'flex';
@@ -1576,25 +1617,14 @@ class FauxHollowsFoxes {
                         }
                     }
                 }
-            } else if (value === 'obstacle') {
-                cell.className = 'cell board-cell obstacle';
-                cell.textContent = '✕';
-            } else if (value === 'sword') {
-                cell.className = 'cell board-cell sword';
-                cell.textContent = FF14Utils.getI18nText('faux_hollows_cell_sword', '劍');
-            } else if (value === 'chest') {
-                cell.className = 'cell board-cell chest';
-                cell.textContent = FF14Utils.getI18nText('faux_hollows_cell_chest', '箱');
-            } else if (value === 'fox') {
-                cell.className = 'cell board-cell fox';
-                cell.textContent = FF14Utils.getI18nText('faux_hollows_cell_fox', '狐');
-            } else if (value === 'empty') {
-                cell.className = 'cell board-cell empty';
-            } else if (value === 'clicked') {
-                cell.className = 'cell board-cell clicked';
+                this.setCellLabel(cell, i);
+            } else {
+                // 已揭開的格子：與一般點擊流程（updateProbabilityDisplay() → updateCellDisplay()）
+                // 共用同一套符號表（emoji），避免 undo/redo 後顯示跟正常流程不一致
+                // （例如英文語系下曾經顯示成文字縮寫「Swd」／「Box」而不是 ⚔️／📦）。
+                // updateCellDisplay() 內部已經會呼叫 setCellLabel()，這裡不必再呼叫一次。
+                this.updateCellDisplay(cell, i);
             }
-
-            this.setCellLabel(cell, i);
         }
     }
 
@@ -1613,6 +1643,9 @@ class FauxHollowsFoxes {
         this.obstaclesConfirmed = false;
         this.showTreasureProbabilities = false;
         this.showOptimalHighlight = true; // 重置時回復預設開啟
+        // 清除語言切換重繪快取，避免下一次切換語言時重繪一個已經被重置、
+        // 畫面上其實看不到的舊結果（見建構子欄位註解／onLanguageChange）
+        this.lastResult = null;
         this.history.clear(); // 清空歷史記錄
 
         // 清除高亮

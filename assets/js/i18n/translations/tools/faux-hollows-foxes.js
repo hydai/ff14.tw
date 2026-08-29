@@ -24,7 +24,6 @@ const FauxHollowsTranslations = {
         faux_hollows_redo: '重做',
         faux_hollows_hide_prob: '隱藏機率',
         faux_hollows_show_prob: '顯示機率',
-        faux_hollows_calc_best: '計算最佳策略',
         faux_hollows_close_best: '關閉最佳策略',
         faux_hollows_show_best: '顯示最佳策略',
 
@@ -41,6 +40,7 @@ const FauxHollowsTranslations = {
         // 結果面板
         faux_hollows_result_title: '遊戲結果',
         faux_hollows_final_score: '最終得分',
+        faux_hollows_score_unit: ' 分',
 
         // 資料來源
         faux_hollows_data_source: '盤面資料來源',
@@ -102,7 +102,6 @@ const FauxHollowsTranslations = {
         faux_hollows_redo: 'Redo',
         faux_hollows_hide_prob: 'Hide Probability',
         faux_hollows_show_prob: 'Show Probability',
-        faux_hollows_calc_best: 'Calculate Best Strategy',
         faux_hollows_close_best: 'Close Best Strategy',
         faux_hollows_show_best: 'Show Best Strategy',
 
@@ -119,6 +118,7 @@ const FauxHollowsTranslations = {
         // Result panel
         faux_hollows_result_title: 'Game Result',
         faux_hollows_final_score: 'Final Score',
+        faux_hollows_score_unit: ' pts',
 
         // Data source
         faux_hollows_data_source: 'Board data source',
@@ -180,7 +180,6 @@ const FauxHollowsTranslations = {
         faux_hollows_redo: 'やり直す',
         faux_hollows_hide_prob: '確率を隠す',
         faux_hollows_show_prob: '確率を表示',
-        faux_hollows_calc_best: '最適戦略を計算',
         faux_hollows_close_best: '最適戦略を閉じる',
         faux_hollows_show_best: '最適戦略を表示',
 
@@ -197,6 +196,7 @@ const FauxHollowsTranslations = {
         // 結果パネル
         faux_hollows_result_title: 'ゲーム結果',
         faux_hollows_final_score: '最終スコア',
+        faux_hollows_score_unit: '点',
 
         // データソース
         faux_hollows_data_source: 'ボードデータソース',
