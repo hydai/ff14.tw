@@ -103,16 +103,6 @@ test('TARGETS 列出的工具 data-i18n／getI18nText 鍵值存在於 common.js 
     const literalKeyRe = (prefix) => new RegExp(`'(${prefix}[a-z0-9_]+)'`, 'g');
     // literalKeyRe 掃出的是「整份檔案裡符合前綴的單引號字串」，範圍比 dataset.i18n／setAttribute
     // 寫法廣，因此也會抓到跟本次修正（變數間接賦值）無關、既有就缺翻譯的 getI18nText() 直接呼叫。
-    // 這 12 個裝備欄位 key（commit 709708ee，2026-01-10）在 zh/en/ja 三語都從未加入翻譯，一直
-    // 只靠 getI18nText() 的中文預設值頂著；這是獨立於 17778e8 的既有缺口，不在本次 fixup 範圍內，
-    // 先明確排除、留待另外的任務補上三語翻譯，避免此處的守門測試因範圍外的舊缺口失敗。
-    const KNOWN_MISSING_TRANSLATION_KEYS = new Set([
-        'lodestone_equip_mainhand', 'lodestone_equip_head', 'lodestone_equip_body',
-        'lodestone_equip_hands', 'lodestone_equip_legs', 'lodestone_equip_feet',
-        'lodestone_equip_earrings', 'lodestone_equip_necklace', 'lodestone_equip_bracelets',
-        'lodestone_equip_ring1', 'lodestone_equip_ring2', 'lodestone_equip_soulcrystal'
-    ]);
-
     for (const t of TARGETS) {
         const usedKeys = new Set();
         for (const m of read(t.html).matchAll(KEY_ATTR_RE)) usedKeys.add(m[1]);
@@ -133,7 +123,6 @@ test('TARGETS 列出的工具 data-i18n／getI18nText 鍵值存在於 common.js 
         for (const lang of LANGS) {
             const merged = new Set([...translationKeySet(COMMON_FILE, lang), ...translationKeySet(t.translations, lang)]);
             for (const key of usedKeys) {
-                if (KNOWN_MISSING_TRANSLATION_KEYS.has(key)) continue;
                 assert.ok(merged.has(key), `${t.js} 用到的 data-i18n 鍵值 "${key}" 在 ${lang} 語系找不到翻譯`);
             }
         }
