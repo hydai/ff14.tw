@@ -173,11 +173,25 @@ class TimedGatheringManager {
 
     initializeEvents() {
         // 語言切換
-        this.elements.languageButtons.forEach(btn => {
-            btn.addEventListener('click', () => {
-                const lang = btn.dataset.lang;
-                this.switchLanguage(lang);
-            });
+        // 這些 .language-btn 是共用 header 切換器（nav-template.js／layout-loader.js 載入）插入的按鈕，
+        // 點擊時已經由 I18nManager._initializeLanguageSwitcher() 掛在 .language-switcher 容器上的
+        // 委派監聽器負責呼叫 window.i18n.setLanguage()，這裡不再另外掛一份按鈕點擊監聽器
+        // （實測過：若兩邊都掛，同一次點擊 setLanguage() 會被呼叫兩次，下面的 observer 也會跟著
+        // 重繪兩次）。這個 TimedGatheringManager 是全站 12 個工具裡唯一有自己 .language-btn
+        // 監聽器的（其餘工具都只靠共用 header 的委派監聽器 + 自己的 onLanguageChange observer），
+        // 屬於既有的重複邏輯，這裡一併拿掉、統一成跟其他工具一樣的寫法。
+        // 重繪統一交給下面註冊的 onLanguageChange observer，不論語言變更是從共用 header 的按鈕，
+        // 還是其他呼叫 window.i18n.setLanguage() 的地方觸發，都只會重繪一次；observer 本身不會呼叫
+        // setLanguage()／switchLanguage()，所以不會有「setLanguage → 通知 observer → 又呼叫
+        // setLanguage」的遞迴風險。
+        // 語言切換時重新以目前語言重繪：按鈕狀態、右側顯示、清單畫面與通知狀態文字
+        // （呼叫的方法與順序沿用原本 switchLanguage() 的重繪部分，只是不再由這裡呼叫 setLanguage()）
+        window.i18n.onLanguageChange((lang) => {
+            this.currentLanguage = lang;
+            this.updateLanguageButtons();
+            this.updateDisplay();
+            this.updateListDisplay();
+            this.updateNotificationStatus();
         });
 
         // 初始化語言按鈕狀態
@@ -329,15 +343,6 @@ class TimedGatheringManager {
                 notificationStatus.classList.add('tag-solid', 'tag-danger');
             }
         }
-    }
-
-    switchLanguage(lang) {
-        this.currentLanguage = lang;
-        window.i18n.setLanguage(lang);
-        this.updateLanguageButtons();
-        this.updateDisplay();
-        this.updateListDisplay();
-        this.updateNotificationStatus(); // 更新通知狀態文字
     }
 
     updateLanguageButtons() {

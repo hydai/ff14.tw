@@ -64,12 +64,24 @@ class MiniCactpotCalculator {
         this.selectionMade = false;
         this.lastFocusedElement = null; // 用於 popup 的無障礙功能
 
+        // 語言切換時重繪快取（見 onLanguageChange／showBestChoice／displayCellRecommendations）
+        this.lastBestResult = null;
+        this.lastCellRecommendations = null;
+
         this.initializeGrid();
         this.initializePopup();
         this.initializeControls();
 
         // 語言切換時重新以目前語言重建所有格子的 aria-label
-        window.i18n.onLanguageChange(() => this.refreshCellLabels());
+        window.i18n.onLanguageChange(() => {
+            this.refreshCellLabels();
+            if (this.lastBestResult) {
+                this.showBestChoice(this.lastBestResult, { scrollIntoView: false });
+            }
+            if (this.lastCellRecommendations) {
+                this.displayCellRecommendations(this.lastCellRecommendations);
+            }
+        });
 
         // index.html 裡的 aria-label 是寫死的中文；若使用者先前已切換過語言
         // （儲存在 localStorage），第一次載入時要立刻依目前語言重建一次，
@@ -517,6 +529,10 @@ class MiniCactpotCalculator {
     }
 
     clearExpectations() {
+        // 這個面板即將被清空／隱藏，連帶清掉語言切換重繪快取，避免下次切換語言時
+        // 重繪一個畫面上其實已經看不到的舊結果
+        this.lastBestResult = null;
+
         // 清除所有期望值顯示
         const expectationCells = document.querySelectorAll('.expectation-cell');
         expectationCells.forEach(cell => {
@@ -554,15 +570,21 @@ class MiniCactpotCalculator {
         cell.appendChild(valueElement);
     }
 
-    showBestChoice(bestResult) {
+    showBestChoice(bestResult, { scrollIntoView = true } = {}) {
+        // 快取這次的結果，語言切換時（見 onLanguageChange）可用同一份資料重繪
+        this.lastBestResult = bestResult;
+
         // Clear existing content
         SecurityUtils.clearElement(this.elements.bestLineSummary);
 
         // Create the card using SecurityUtils
+        // 不能直接用 bestResult.name：它是呼叫當下語言算好的字串，語言切換後重繪
+        // 必須用 lineIndex 重新查目前語言的名稱，否則永遠停在切換前的舊語言
         const sepColon = FF14Utils.getI18nText('label_sep_colon', '：');
+        const lineName = this.getLineName(bestResult.lineIndex);
         const card = SecurityUtils.createCard({
             className: 'result-stat',
-            title: bestResult.name,
+            title: lineName,
             titleClass: 'best-choice-title',
             value: `${FF14Utils.getI18nText('mini_cactpot_expected_value', '期望值')}${sepColon}${FF14Utils.formatNumber(Math.round(bestResult.expectedValue))} MGP`,
             valueClass: 'best-choice-value',
@@ -576,7 +598,9 @@ class MiniCactpotCalculator {
         }
 
         this.elements.bestChoiceInfo.style.display = 'block';
-        this.elements.bestChoiceInfo.scrollIntoView({ behavior: 'smooth' });
+        if (scrollIntoView) {
+            this.elements.bestChoiceInfo.scrollIntoView({ behavior: 'smooth' });
+        }
     }
 
     // ===== Cell Recommendation Algorithm =====
@@ -762,6 +786,11 @@ class MiniCactpotCalculator {
 
         if (!results || results.length === 0) return;
 
+        // 快取這次的結果，語言切換時（見 onLanguageChange）可用同一份資料重繪；
+        // posName／getI18nText 都是呼叫當下才查目前語言，所以這裡不需要像
+        // showBestChoice 那樣額外重新查名稱
+        this.lastCellRecommendations = results;
+
         const best = results[0];
 
         results.forEach((result, index) => {
@@ -812,6 +841,8 @@ class MiniCactpotCalculator {
      * Clears all cell recommendation visuals.
      */
     clearCellRecommendations() {
+        this.lastCellRecommendations = null;
+
         document.querySelectorAll('.grid-cell').forEach(cell => {
             cell.classList.remove('cell-recommended-best');
             const ev = cell.querySelector('.cell-ev');
@@ -849,6 +880,10 @@ class MiniCactpotCalculator {
         if (this.elements.cellRecommendationInfo) {
             this.elements.cellRecommendationInfo.style.display = 'none';
         }
+
+        // 清除語言切換重繪快取，避免下次切換語言時重繪已重置的舊資料
+        this.lastBestResult = null;
+        this.lastCellRecommendations = null;
 
         // 重置選擇計數顯示
         this.elements.selectedCount.textContent = '0';
