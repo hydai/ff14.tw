@@ -283,3 +283,15 @@ test('window.i18n／i18n 只能呼叫 I18nManager 真的定義過的方法', () 
         }
     }
 });
+
+test('assets/js/i18n/translations 底下每個翻譯檔都在檔案自身內呼叫 window.i18n.loadTranslations() 自我註冊', () => {
+    // timed-gathering.js 曾經是唯一沒有在檔案自身呼叫 loadTranslations() 自我註冊的翻譯檔，
+    // 得靠 tools/timed-gathering/script.js 在 initialize() 裡手動延遲註冊，導致頁面剛載入、
+    // DOMContentLoaded／layoutLoaded 監聽器還沒輪到它之前，updatePageLanguage() 掃到一堆
+    // 「找不到翻譯鍵值」的警告。鎖住這個慣例，避免未來新增或修改翻譯檔時又漏掉自我註冊。
+    const files = listFiles('assets/js/i18n/translations', ['.js']);
+    assert.ok(files.length >= 16, `清單不應該漏掉檔案（目前 ${files.length} 個，預期至少 16 個）`);
+    for (const file of files) {
+        assert.match(read(file), /window\.i18n\??\.loadTranslations\(/, `${file} 沒有在檔案自身呼叫 window.i18n.loadTranslations() 自我註冊`);
+    }
+});
