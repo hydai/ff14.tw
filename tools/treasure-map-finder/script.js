@@ -687,20 +687,25 @@ class TreasureMapFinder {
 
     toggleListPanel() {
         const overlay = document.getElementById('panelOverlay');
+        const panel = this.elements.myListPanel;
 
-        if (this.modalManager.activeModal !== this.elements.myListPanel) {
-            // 開啟面板
+        if (this.modalManager.activeModal !== panel) {
+            // 開啟面板：先解除 inert，ModalManager 才抓得到可聚焦元素、正確設定初始焦點
+            panel.inert = false;
             overlay.classList.add('active');
             this.renderMyList();
             document.body.style.overflow = 'hidden';
-            this.modalManager.show(this.elements.myListPanel, {
+            this.modalManager.show(panel, {
                 // #panelOverlay 是獨立於面板本身的手足元素（不是 ModalManager 認得的遮罩層），
                 // 點擊它由既有的 click 監聽器呼叫 toggleListPanel() 處理，故關閉內建的點擊判斷
                 closeOnOverlayClick: false,
                 onClose: () => {
-                    // ESC／關閉按鈕／點擊遮罩都會走到這裡
+                    // ESC／關閉按鈕／點擊遮罩都會走到這裡。此時 hide() 已經把焦點還原、
+                    // 也已經把面板移出堆疊，才把它設回 inert——滑出動畫尚未播完的 300ms
+                    // 內，面板不再能被點擊或用 focus() 拉進去（不只是視覺上關閉）
                     overlay.classList.remove('active');
                     document.body.style.overflow = '';
+                    panel.inert = true;
                 }
             });
         } else {
