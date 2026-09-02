@@ -41,10 +41,10 @@ class FauxHollowsFoxes {
         this.showTreasureProbabilities = false;
         this.obstaclesConfirmed = false;
         this.showOptimalHighlight = true; // 預設開啟高亮功能
-        // 語言切換時重繪結果面板用的快取（見 onLanguageChange／showResult／renderResultPanel）；
-        // 面板顯示時填入這次算出的分數與造型統計，reset() 清空。不直接在語言切換時重新從
-        // this.board 計算，因為 undo 到 MAX_CLICKS 以下不會連動隱藏這個面板（既有行為），
-        // 這種情形下重新計算會跟畫面上切換前凍結的舊結果對不上。
+        // 語言切換時重繪結果面板用的快取（見 onLanguageChange／showResult／hideResult／renderResultPanel）；
+        // 面板顯示時填入這次算出的分數與造型統計，面板收起時清空（updateDisplay() 在點擊數低於
+        // MAX_CLICKS 時呼叫 hideResult()，涵蓋 undo 與 reset）。不直接在語言切換時重新從
+        // this.board 計算，確保重繪的永遠是畫面上正在顯示的那份結果。
         this.lastResult = null;
         this.history = new StateHistoryManager(); // 儲存每一步的歷史狀態
         this.modalManager = new ModalManager();
@@ -1306,6 +1306,9 @@ class FauxHollowsFoxes {
         // Check if game is complete
         if (this.clickCount >= FauxHollowsFoxes.CONSTANTS.MAX_CLICKS) {
             this.showResult();
+        } else {
+            // undo／重置讓點擊數回到門檻以下時，結果面板要跟著收起
+            this.hideResult();
         }
     }
 
@@ -1328,6 +1331,12 @@ class FauxHollowsFoxes {
         this.lastResult = { score: this.score, shapes };
 
         this.renderResultPanel(this.lastResult);
+    }
+
+    hideResult() {
+        // 清除語言切換重繪快取，避免切換語言時重繪一個畫面上已經看不到的舊結果
+        this.lastResult = null;
+        this.elements.resultPanel.style.display = 'none';
     }
 
     /**
@@ -1643,9 +1652,6 @@ class FauxHollowsFoxes {
         this.obstaclesConfirmed = false;
         this.showTreasureProbabilities = false;
         this.showOptimalHighlight = true; // 重置時回復預設開啟
-        // 清除語言切換重繪快取，避免下一次切換語言時重繪一個已經被重置、
-        // 畫面上其實看不到的舊結果（見建構子欄位註解／onLanguageChange）
-        this.lastResult = null;
         this.history.clear(); // 清空歷史記錄
 
         // 清除高亮
@@ -1659,8 +1665,8 @@ class FauxHollowsFoxes {
 
         // Reset UI
         this.initializeBoard();
+        // clickCount 已歸零，updateDisplay() 會透過 hideResult() 收起結果面板並清除快取
         this.updateDisplay();
-        this.elements.resultPanel.style.display = 'none';
 
         // Restore probability display if enabled
         this.updateProbabilityDisplay();
