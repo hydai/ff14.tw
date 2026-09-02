@@ -142,7 +142,11 @@ const TreasureMapTranslations = {
         treasure_map_route_step_copy_title: '複製',
         treasure_map_route_step_copy_success: '已複製',
         treasure_map_export_empty: '清單是空的，無法匯出',
-        treasure_map_export_success: '已複製 {count} 張寶圖清單到剪貼簿'
+        treasure_map_export_success: '已複製 {count} 張寶圖清單到剪貼簿',
+
+        // 組隊區域（補充）
+        treasure_map_copy_room_code: '複製隊伍代號',
+        treasure_map_clear_all_title: '清空全部'
     },
     en: {
         // Page info
@@ -284,7 +288,11 @@ const TreasureMapTranslations = {
         treasure_map_route_step_copy_title: 'Copy',
         treasure_map_route_step_copy_success: 'Copied',
         treasure_map_export_empty: 'List is empty, nothing to export',
-        treasure_map_export_success: 'Copied {count} maps to clipboard'
+        treasure_map_export_success: 'Copied {count} maps to clipboard',
+
+        // Room section (additional)
+        treasure_map_copy_room_code: 'Copy Room Code',
+        treasure_map_clear_all_title: 'Clear All Maps'
     },
     ja: {
         // ページ情報
@@ -426,7 +434,11 @@ const TreasureMapTranslations = {
         treasure_map_route_step_copy_title: 'コピー',
         treasure_map_route_step_copy_success: 'コピーしました',
         treasure_map_export_empty: 'リストが空のため、エクスポートできません',
-        treasure_map_export_success: '{count} 枚の地図リストをクリップボードにコピーしました'
+        treasure_map_export_success: '{count} 枚の地図リストをクリップボードにコピーしました',
+
+        // ルームセクション（追加）
+        treasure_map_copy_room_code: 'ルームコードをコピー',
+        treasure_map_clear_all_title: 'すべての地図をクリア'
     }
 };
 
