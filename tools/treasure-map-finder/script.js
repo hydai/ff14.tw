@@ -28,7 +28,24 @@ class TreasureMapFinder {
         };
 
         // 語言切換時重新以目前語言重繪清單（移除按鈕的 aria-label 帶有地區與座標，需要重組）
-        window.i18n.onLanguageChange(() => this.renderMyList());
+        window.i18n.onLanguageChange(() => {
+            this.renderMyList();
+
+            // 預設範本跟語言走，使用者自訂的不動：只有目前仍是「預設值」
+            // （this.formatSettingsAreDefault，見 loadFormatSettings／saveFormatSettings／
+            // resetFormatSettings）才重新計算 getDefaultFormats()；已存過自訂內容一律略過，
+            // 且這裡只更新記憶體中的 this.formatSettings 與（若面板開著）UI 顯示，
+            // 絕不寫入 localStorage
+            if (this.formatSettingsAreDefault) {
+                this.formatSettings = this.getDefaultFormats();
+
+                const formatPanel = this.uiDialogManager.formatPanelElements?.panel;
+                if (formatPanel?.classList.contains(UIDialogManager.CONSTANTS.CSS_CLASSES.ACTIVE)) {
+                    this.uiDialogManager.setFormatValues(this.formatSettings);
+                    this.updateFormatPreview();
+                }
+            }
+        });
 
         this.init();
     }
@@ -906,16 +923,16 @@ class TreasureMapFinder {
     // 匯出清單功能（複製到剪貼簿）
     exportList() {
         if (this.listManager.getLength() === 0) {
-            FF14Utils.showToast('清單是空的，無法匯出', 'warning');
+            FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_export_empty', '清單是空的，無法匯出'), 'warning');
             return;
         }
-        
+
         // 使用 ListManager 的匯出功能
         const jsonString = this.listManager.exportAsJson();
-        
+
         // 複製到剪貼簿
         navigator.clipboard.writeText(jsonString).then(() => {
-            FF14Utils.showToast(`已複製 ${this.listManager.getLength()} 張寶圖清單到剪貼簿`, 'success');
+            FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_export_success', '已複製 {count} 張寶圖清單到剪貼簿', { count: this.listManager.getLength() }), 'success');
         }).catch(err => {
             console.error('複製失敗:', err);
             // 備用方案：顯示可複製的文字框
@@ -1031,7 +1048,7 @@ class TreasureMapFinder {
             onStepCopy: (step, index, total) => {
                 const formattedText = this.formatStepForCopy(step, index + 1, total);
                 navigator.clipboard.writeText(formattedText).then(() => {
-                    FF14Utils.showToast('已複製', 'success');
+                    FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_route_step_copy_success', '已複製'), 'success');
                 });
             },
             getZoneName: (zoneId) => this.getZoneName(zoneId)
@@ -1130,13 +1147,18 @@ class TreasureMapFinder {
             try {
                 const parseResult = SecurityUtils.safeJSONParse(saved);
                 this.formatSettings = parseResult.success ? parseResult.data : this.getDefaultFormats();
+                // 只有真的載入到已儲存的自訂設定才算「非預設」；解析失敗仍視為使用預設值，
+                // 讓語言切換時的觀察者（見建構子）繼續幫忙跟著語言重新計算
+                this.formatSettingsAreDefault = !parseResult.success;
             } catch (e) {
                 this.formatSettings = this.getDefaultFormats();
+                this.formatSettingsAreDefault = true;
             }
         } else {
             this.formatSettings = this.getDefaultFormats();
+            this.formatSettingsAreDefault = true;
         }
-        
+
         // 更新 UI
         const teleportFormat = document.getElementById('teleportFormat');
         const mapFormat = document.getElementById('mapFormat');
@@ -1144,12 +1166,20 @@ class TreasureMapFinder {
         if (mapFormat) mapFormat.value = this.formatSettings.map;
     }
     
-    // 取得預設格式
-    getDefaultFormats() {
-        return {
-            teleport: '/p 傳送至 <傳送點> <座標>',
-            map: '/p 下一個 <寶圖等級> - <地區> <座標>'
+    // 三語言的巨集格式範本；getDefaultFormats／switchLanguageTemplate 共用同一份，避免各存一份中文範本、彼此可能各自漂移
+    getFormatTemplates(lang) {
+        const templates = {
+            zh: { teleport: '/p 傳送至 <傳送點> <座標>', map: '/p 下一個 <寶圖等級> - <地區> <座標>' },
+            en: { teleport: '/p Teleport to <傳送點_en> <座標>', map: '/p Next <寶圖等級> - <地區_en> <座標>' },
+            ja: { teleport: '/p <傳送點_ja>にテレポート <座標>', map: '/p 次 <寶圖等級> - <地區_ja> <座標>' }
         };
+        return templates[lang];
+    }
+
+    // 取得預設格式（依目前介面語言；找不到對應語言時退回中文）
+    getDefaultFormats() {
+        const currentLang = window.i18n ? window.i18n.getCurrentLanguage() : 'zh';
+        return this.getFormatTemplates(currentLang) || this.getFormatTemplates('zh');
     }
     
     // 儲存格式設定
@@ -1160,19 +1190,24 @@ class TreasureMapFinder {
             teleport: values.teleport,
             map: values.map
         };
-        
+        // 使用者主動存檔，之後語言切換不再幫忙覆寫（見建構子的語言切換觀察者）
+        this.formatSettingsAreDefault = false;
+
         localStorage.setItem('treasureMapFormatSettings', JSON.stringify(this.formatSettings));
-        FF14Utils.showToast('格式設定已儲存', 'success');
+        FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_format_saved', '格式設定已儲存'), 'success');
         this.uiDialogManager.hideFormatPanel();
     }
     
     // 重置格式設定
     resetFormatSettings() {
         this.formatSettings = this.getDefaultFormats();
-        
+        // 回到預設值，之後語言切換要再幫忙跟著語言重新計算（見建構子的語言切換觀察者）；
+        // 注意這裡本來就不寫入 localStorage（保留原行為：重置只影響當下畫面，不清除已儲存設定）
+        this.formatSettingsAreDefault = true;
+
         this.uiDialogManager.setFormatValues(this.formatSettings);
         this.updateFormatPreview();
-        FF14Utils.showToast('已重置為預設格式', 'info');
+        FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_format_reset', '已重置為預設格式'), 'info');
     }
     
     // 更新格式預覽
@@ -1207,22 +1242,7 @@ class TreasureMapFinder {
     
     // 切換語言模板
     switchLanguageTemplate(lang) {
-        const templates = {
-            zh: {
-                teleport: '/p 傳送至 <傳送點> <座標>',
-                map: '/p 下一個 <寶圖等級> - <地區> <座標>'
-            },
-            en: {
-                teleport: '/p Teleport to <傳送點_en> <座標>',
-                map: '/p Next <寶圖等級> - <地區_en> <座標>'
-            },
-            ja: {
-                teleport: '/p <傳送點_ja>にテレポート <座標>',
-                map: '/p 次 <寶圖等級> - <地區_ja> <座標>'
-            }
-        };
-        
-        const template = templates[lang];
+        const template = this.getFormatTemplates(lang);
         if (!template) return;
         
         const teleportFormat = document.getElementById('teleportFormat');
@@ -1233,13 +1253,18 @@ class TreasureMapFinder {
         
         this.updateFormatPreview();
         
-        // 顯示語言切換成功訊息
+        // 顯示語言切換成功訊息（依選擇的模板語言分別對應翻譯鍵值，與目前介面語言無關）
+        const switchedMessageKeys = {
+            zh: 'treasure_map_format_switched_zh',
+            en: 'treasure_map_format_switched_en',
+            ja: 'treasure_map_format_switched_ja'
+        };
         const langNames = {
             zh: '中文',
             en: '英文',
             ja: '日文'
         };
-        FF14Utils.showToast(`已切換至${langNames[lang]}模板`, 'info');
+        FF14Utils.showToast(FF14Utils.getI18nText(switchedMessageKeys[lang], `已切換至${langNames[lang]}模板`), 'info');
     }
     
     // 關閉路線面板

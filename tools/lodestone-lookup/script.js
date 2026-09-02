@@ -529,18 +529,18 @@ class LodestoneCharacterLookup {
         this.elements.equipmentInfo.textContent = '';
 
         const equipmentSlots = [
-            { key: 'Mainhand', label: FF14Utils.getI18nText('lodestone_equip_mainhand', '主手') },
-            { key: 'Head', label: FF14Utils.getI18nText('lodestone_equip_head', '頭部') },
-            { key: 'Body', label: FF14Utils.getI18nText('lodestone_equip_body', '身體') },
-            { key: 'Hands', label: FF14Utils.getI18nText('lodestone_equip_hands', '手部') },
-            { key: 'Legs', label: FF14Utils.getI18nText('lodestone_equip_legs', '腿部') },
-            { key: 'Feet', label: FF14Utils.getI18nText('lodestone_equip_feet', '腳部') },
-            { key: 'Earrings', label: FF14Utils.getI18nText('lodestone_equip_earrings', '耳環') },
-            { key: 'Necklace', label: FF14Utils.getI18nText('lodestone_equip_necklace', '項鍊') },
-            { key: 'Bracelets', label: FF14Utils.getI18nText('lodestone_equip_bracelets', '手鐲') },
-            { key: 'Ring1', label: FF14Utils.getI18nText('lodestone_equip_ring1', '戒指1') },
-            { key: 'Ring2', label: FF14Utils.getI18nText('lodestone_equip_ring2', '戒指2') },
-            { key: 'Soulcrystal', label: FF14Utils.getI18nText('lodestone_equip_soulcrystal', '靈魂水晶') }
+            { key: 'Mainhand', i18nKey: 'lodestone_equip_mainhand', label: FF14Utils.getI18nText('lodestone_equip_mainhand', '主手：') },
+            { key: 'Head', i18nKey: 'lodestone_equip_head', label: FF14Utils.getI18nText('lodestone_equip_head', '頭部：') },
+            { key: 'Body', i18nKey: 'lodestone_equip_body', label: FF14Utils.getI18nText('lodestone_equip_body', '身體：') },
+            { key: 'Hands', i18nKey: 'lodestone_equip_hands', label: FF14Utils.getI18nText('lodestone_equip_hands', '手部：') },
+            { key: 'Legs', i18nKey: 'lodestone_equip_legs', label: FF14Utils.getI18nText('lodestone_equip_legs', '腿部：') },
+            { key: 'Feet', i18nKey: 'lodestone_equip_feet', label: FF14Utils.getI18nText('lodestone_equip_feet', '腳部：') },
+            { key: 'Earrings', i18nKey: 'lodestone_equip_earrings', label: FF14Utils.getI18nText('lodestone_equip_earrings', '耳飾：') },
+            { key: 'Necklace', i18nKey: 'lodestone_equip_necklace', label: FF14Utils.getI18nText('lodestone_equip_necklace', '頸飾：') },
+            { key: 'Bracelets', i18nKey: 'lodestone_equip_bracelets', label: FF14Utils.getI18nText('lodestone_equip_bracelets', '腕飾：') },
+            { key: 'Ring1', i18nKey: 'lodestone_equip_ring1', label: FF14Utils.getI18nText('lodestone_equip_ring1', '戒指1：') },
+            { key: 'Ring2', i18nKey: 'lodestone_equip_ring2', label: FF14Utils.getI18nText('lodestone_equip_ring2', '戒指2：') },
+            { key: 'Soulcrystal', i18nKey: 'lodestone_equip_soulcrystal', label: FF14Utils.getI18nText('lodestone_equip_soulcrystal', '靈魂水晶：') }
         ];
         
         equipmentSlots.forEach(slot => {
@@ -550,7 +550,8 @@ class LodestoneCharacterLookup {
                 equipItem.className = 'equipment-item';
                 
                 const label = document.createElement('strong');
-                label.textContent = `${slot.label}：`;
+                label.dataset.i18n = slot.i18nKey;
+                label.textContent = slot.label;
                 
                 const name = document.createElement('span');
                 name.textContent = equipment.Name;

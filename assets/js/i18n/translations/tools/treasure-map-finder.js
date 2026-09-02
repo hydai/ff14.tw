@@ -62,6 +62,11 @@ const TreasureMapTranslations = {
         treasure_map_preview: '預覽',
         treasure_map_reset_default: '重置為預設值',
         treasure_map_save_settings: '儲存設定',
+        treasure_map_format_saved: '格式設定已儲存',
+        treasure_map_format_reset: '已重置為預設格式',
+        treasure_map_format_switched_zh: '已切換至中文模板',
+        treasure_map_format_switched_en: '已切換至英文模板',
+        treasure_map_format_switched_ja: '已切換至日文模板',
 
         // 加入隊伍對話框
         treasure_map_join_title: '加入隊伍',
@@ -131,7 +136,13 @@ const TreasureMapTranslations = {
         treasure_map_route_regions: '地區順序：{regions}',
         treasure_map_route_teleports: '總傳送次數：{count}',
         treasure_map_route_total_maps: '總寶圖數量：{count}',
-        treasure_map_route_teleport_to: '傳送至 {name}'
+        treasure_map_route_teleport_to: '傳送至 {name}',
+
+        // 路線步驟複製／匯出訊息
+        treasure_map_route_step_copy_title: '複製',
+        treasure_map_route_step_copy_success: '已複製',
+        treasure_map_export_empty: '清單是空的，無法匯出',
+        treasure_map_export_success: '已複製 {count} 張寶圖清單到剪貼簿'
     },
     en: {
         // Page info
@@ -193,6 +204,11 @@ const TreasureMapTranslations = {
         treasure_map_preview: 'Preview',
         treasure_map_reset_default: 'Reset to Default',
         treasure_map_save_settings: 'Save Settings',
+        treasure_map_format_saved: 'Format settings saved',
+        treasure_map_format_reset: 'Reset to default format',
+        treasure_map_format_switched_zh: 'Switched to Chinese template',
+        treasure_map_format_switched_en: 'Switched to English template',
+        treasure_map_format_switched_ja: 'Switched to Japanese template',
 
         // Join room dialog
         treasure_map_join_title: 'Join Room',
@@ -262,7 +278,13 @@ const TreasureMapTranslations = {
         treasure_map_route_regions: 'Region Order: {regions}',
         treasure_map_route_teleports: 'Total Teleports: {count}',
         treasure_map_route_total_maps: 'Total Maps: {count}',
-        treasure_map_route_teleport_to: 'Teleport to {name}'
+        treasure_map_route_teleport_to: 'Teleport to {name}',
+
+        // Route step copy / export messages
+        treasure_map_route_step_copy_title: 'Copy',
+        treasure_map_route_step_copy_success: 'Copied',
+        treasure_map_export_empty: 'List is empty, nothing to export',
+        treasure_map_export_success: 'Copied {count} maps to clipboard'
     },
     ja: {
         // ページ情報
@@ -324,6 +346,11 @@ const TreasureMapTranslations = {
         treasure_map_preview: 'プレビュー',
         treasure_map_reset_default: 'デフォルトに戻す',
         treasure_map_save_settings: '設定を保存',
+        treasure_map_format_saved: '書式設定を保存しました',
+        treasure_map_format_reset: 'デフォルトの書式にリセットしました',
+        treasure_map_format_switched_zh: '中国語テンプレートに切り替えました',
+        treasure_map_format_switched_en: '英語テンプレートに切り替えました',
+        treasure_map_format_switched_ja: '日本語テンプレートに切り替えました',
 
         // ルーム参加ダイアログ
         treasure_map_join_title: 'ルーム参加',
@@ -393,7 +420,13 @@ const TreasureMapTranslations = {
         treasure_map_route_regions: 'エリア順序：{regions}',
         treasure_map_route_teleports: '総テレポ回数：{count}',
         treasure_map_route_total_maps: '総地図数：{count}',
-        treasure_map_route_teleport_to: '{name} へテレポ'
+        treasure_map_route_teleport_to: '{name} へテレポ',
+
+        // ルートステップのコピー／エクスポートメッセージ
+        treasure_map_route_step_copy_title: 'コピー',
+        treasure_map_route_step_copy_success: 'コピーしました',
+        treasure_map_export_empty: 'リストが空のため、エクスポートできません',
+        treasure_map_export_success: '{count} 枚の地図リストをクリップボードにコピーしました'
     }
 };
 

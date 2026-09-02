@@ -110,41 +110,19 @@ class UIDialogManager {
         // 設置標題和座標
         this._renderMapDetailHeader(map, zoneManager);
 
-        // 載入寶圖標記圖示
-        const markIcon = new Image();
-        markIcon.src = 'images/ui/mark.png';
-        
-        // 圖片載入完成後處理
+        // 圖片載入完成後處理；標記圖示的載入與繪製交給 _loadAndDrawMarkers()，
+        // 語言切換後的 refreshActiveDialog() 也會呼叫同一個方法重繪，避免兩處各自維護一份繪製邏輯
         const imageLoadHandler = () => {
             const canvas = elements.canvas;
             const ctx = canvas.getContext('2d');
-            
+
             // 設置 canvas 大小與圖片相同
             canvas.width = elements.img.naturalWidth;
             canvas.height = elements.img.naturalHeight;
-            
-            // 清除畫布
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // 當標記圖示也載入完成後繪製
-            markIcon.onload = () => {
-                this.drawMapMarkers(ctx, canvas, map, markIcon, {
-                    zoneManager,
-                    aetheryteData,
-                    aetheryteIcon,
-                    getAetherytesForZone
-                });
-            };
-            
-            // 如果標記圖示已經載入過，直接繪製
-            if (markIcon.complete) {
-                this.drawMapMarkers(ctx, canvas, map, markIcon, {
-                    zoneManager,
-                    aetheryteData,
-                    aetheryteIcon,
-                    getAetherytesForZone
-                });
-            }
+
+            // 畫布的清除與標記繪製交給 _loadAndDrawMarkers()
+
+            this._loadAndDrawMarkers(map, { zoneManager, aetheryteData, aetheryteIcon, getAetherytesForZone });
         };
         
         // 設置圖片載入事件
@@ -247,7 +225,8 @@ class UIDialogManager {
                 ctx.strokeStyle = 'black';
                 ctx.lineWidth = 6;  // 3px * 2 = 6px (加粗描邊)
                 
-                const text = aetheryte.name.zh || aetheryte.name.en;
+                const currentLang = window.i18n.getCurrentLanguage();
+                const text = aetheryte.name[currentLang] || aetheryte.name.zh || aetheryte.name.en;
                 const textWidth = ctx.measureText(text).width;
                 const textX = imageCoords.x - textWidth / 2;
                 const textY = imageCoords.y + iconSize / 2 + 30;  // 10px * 3 = 30px
@@ -255,6 +234,28 @@ class UIDialogManager {
                 ctx.strokeText(text, textX, textY);
                 ctx.fillText(text, textX, textY);
             });
+        }
+    }
+
+    /**
+     * 建立寶圖標記圖示並繪製到 canvas；showMapDetail() 初次開啟與語言切換後的
+     * refreshActiveDialog() 重繪都呼叫這裡，避免兩處各自維護一份繪製邏輯
+     */
+    _loadAndDrawMarkers(map, options) {
+        const canvas = this.mapDetailElements.canvas;
+        const ctx = canvas.getContext('2d');
+        const markIcon = new Image();
+        markIcon.src = 'images/ui/mark.png';
+
+        const draw = () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            this.drawMapMarkers(ctx, canvas, map, markIcon, options);
+        };
+
+        if (markIcon.complete) {
+            draw();
+        } else {
+            markIcon.onload = draw;
         }
     }
 
@@ -578,6 +579,7 @@ class UIDialogManager {
         if (this.activeDialog.kind === 'mapDetail') {
             const { map, options } = this.activeDialog;
             this._renderMapDetailHeader(map, options.zoneManager);
+            this._loadAndDrawMarkers(map, options);
         } else if (this.activeDialog.kind === 'routeResult') {
             this._renderRouteContent(this.activeDialog.result, this.activeDialog.options);
         }
@@ -679,7 +681,7 @@ class UIDialogManager {
         const copyBtn = document.createElement('button');
         copyBtn.className = 'btn btn-sm btn-copy';
         copyBtn.textContent = '📋';
-        copyBtn.title = '複製';
+        copyBtn.title = FF14Utils.getI18nText('treasure_map_route_step_copy_title', '複製');
         copyBtn.onclick = () => {
             if (onStepCopy) {
                 onStepCopy(step, index, total);

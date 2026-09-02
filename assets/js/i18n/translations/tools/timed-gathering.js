@@ -459,3 +459,8 @@ window.TimedGatheringTranslations = {
         testNotificationBody: 'This is a test notification, please confirm you can see it'
     }
 };
+
+// 載入翻譯到全域 i18n
+if (window.i18n) {
+    window.i18n.loadTranslations('timed-gathering', window.TimedGatheringTranslations);
+}
