@@ -31,6 +31,9 @@ class TreasureMapFinder {
         window.i18n.onLanguageChange(() => {
             this.renderMyList();
 
+            // 「顯示 N 個結果」是帶參數的文字，切換語言時用目前的數量重新組一次
+            this.updateResultCount();
+
             // 預設範本跟語言走，使用者自訂的不動：只有目前仍是「預設值」
             // （this.formatSettingsAreDefault，見 loadFormatSettings／saveFormatSettings／
             // resetFormatSettings）才重新計算 getDefaultFormats()；已存過自訂內容一律略過，
@@ -943,7 +946,7 @@ class TreasureMapFinder {
     // 從文字匯入清單
     async importFromText(text) {
         if (!text.trim()) {
-            FF14Utils.showToast('請貼上清單內容', 'warning');
+            FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_import_text_required', '請貼上清單內容'), 'warning');
             return;
         }
         
@@ -955,7 +958,7 @@ class TreasureMapFinder {
                 // 先解析資料以獲取數量
                 const parseResult = SecurityUtils.safeJSONParse(text);
                 if (!parseResult.success) {
-                    FF14Utils.showToast('檔案格式錯誤', 'error');
+                    FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_import_file_format_error', '檔案格式錯誤'), 'error');
                     return;
                 }
                 const previewData = parseResult.data;
@@ -981,7 +984,7 @@ class TreasureMapFinder {
             
         } catch (error) {
             console.error('匯入失敗:', error);
-            FF14Utils.showToast('匯入失敗：' + error.message, 'error');
+            FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_import_failed', '匯入失敗：{message}', { message: error.message }), 'error');
         }
     }
     
@@ -995,7 +998,7 @@ class TreasureMapFinder {
             this.importFromText(text);
         } catch (error) {
             console.error('讀取檔案失敗:', error);
-            FF14Utils.showToast('讀取檔案失敗', 'error');
+            FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_read_file_failed', '讀取檔案失敗'), 'error');
         }
         
         // 清空檔案輸入
@@ -1027,7 +1030,7 @@ class TreasureMapFinder {
         const result = routeCalculator.calculateRoute(myList);
         
         if (!result || !result.route || result.route.length === 0) {
-            FF14Utils.showToast('無法生成路線', 'error');
+            FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_route_generation_failed', '無法生成路線'), 'error');
             return;
         }
         
@@ -1334,7 +1337,7 @@ class TreasureMapFinder {
             
         } catch (error) {
             console.error('同步到房間失敗:', error);
-            FF14Utils.showToast('同步失敗，請稍後再試', 'error');
+            FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_sync_to_room_failed', '同步失敗，請稍後再試'), 'error');
         }
     }
     

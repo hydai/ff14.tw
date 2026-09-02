@@ -146,7 +146,19 @@ const TreasureMapTranslations = {
 
         // 組隊區域（補充）
         treasure_map_copy_room_code: '複製隊伍代號',
-        treasure_map_clear_all_title: '清空全部'
+        treasure_map_clear_all_title: '清空全部',
+
+        // 匯入／路線／同步錯誤訊息
+        treasure_map_import_text_required: '請貼上清單內容',
+        treasure_map_import_file_format_error: '檔案格式錯誤',
+        treasure_map_import_failed: '匯入失敗：{message}',
+        treasure_map_import_generic_failed: '匯入失敗',
+        treasure_map_import_invalid_json: '無效的 JSON 格式',
+        treasure_map_import_invalid_format: '無效的匯入格式',
+        treasure_map_import_no_valid_maps: '沒有有效的地圖資料',
+        treasure_map_read_file_failed: '讀取檔案失敗',
+        treasure_map_route_generation_failed: '無法生成路線',
+        treasure_map_sync_to_room_failed: '同步失敗，請稍後再試'
     },
     en: {
         // Page info
@@ -292,7 +304,19 @@ const TreasureMapTranslations = {
 
         // Room section (additional)
         treasure_map_copy_room_code: 'Copy Room Code',
-        treasure_map_clear_all_title: 'Clear All Maps'
+        treasure_map_clear_all_title: 'Clear All Maps',
+
+        // Import / route / sync error messages
+        treasure_map_import_text_required: 'Paste the list content first',
+        treasure_map_import_file_format_error: 'Invalid file format',
+        treasure_map_import_failed: 'Import failed: {message}',
+        treasure_map_import_generic_failed: 'Import failed',
+        treasure_map_import_invalid_json: 'Invalid JSON format',
+        treasure_map_import_invalid_format: 'Invalid import format',
+        treasure_map_import_no_valid_maps: 'No valid map data',
+        treasure_map_read_file_failed: 'Failed to read the file',
+        treasure_map_route_generation_failed: 'Unable to generate a route',
+        treasure_map_sync_to_room_failed: 'Sync failed. Please try again later.'
     },
     ja: {
         // ページ情報
@@ -438,7 +462,19 @@ const TreasureMapTranslations = {
 
         // ルームセクション（追加）
         treasure_map_copy_room_code: 'ルームコードをコピー',
-        treasure_map_clear_all_title: 'すべての地図をクリア'
+        treasure_map_clear_all_title: 'すべての地図をクリア',
+
+        // インポート／ルート／同期エラーメッセージ
+        treasure_map_import_text_required: 'リストの内容を貼り付けてください',
+        treasure_map_import_file_format_error: 'ファイル形式が正しくありません',
+        treasure_map_import_failed: 'インポートに失敗しました：{message}',
+        treasure_map_import_generic_failed: 'インポートに失敗しました',
+        treasure_map_import_invalid_json: 'JSON 形式が正しくありません',
+        treasure_map_import_invalid_format: 'インポート形式が正しくありません',
+        treasure_map_import_no_valid_maps: '有効な地図データがありません',
+        treasure_map_read_file_failed: 'ファイルの読み込みに失敗しました',
+        treasure_map_route_generation_failed: 'ルートを生成できません',
+        treasure_map_sync_to_room_failed: '同期に失敗しました。しばらくしてからもう一度お試しください'
     }
 };
 

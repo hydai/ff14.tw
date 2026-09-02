@@ -277,7 +277,7 @@ class ListManager {
             if (typeof data === 'string') {
                 const parseResult = SecurityUtils.safeJSONParse(data);
                 if (!parseResult.success) {
-                    throw new Error('無效的 JSON 格式');
+                    throw new Error(FF14Utils.getI18nText('treasure_map_import_invalid_json', '無效的 JSON 格式'));
                 }
                 importData = parseResult.data;
             } else {
@@ -286,7 +286,7 @@ class ListManager {
             
             // 驗證格式
             if (!importData.maps || !Array.isArray(importData.maps)) {
-                throw new Error('無效的匯入格式');
+                throw new Error(FF14Utils.getI18nText('treasure_map_import_invalid_format', '無效的匯入格式'));
             }
 
             // 驗證所有地圖資料
@@ -303,7 +303,7 @@ class ListManager {
             }
 
             if (validatedMaps.length === 0) {
-                throw new Error('沒有有效的地圖資料');
+                throw new Error(FF14Utils.getI18nText('treasure_map_import_no_valid_maps', '沒有有效的地圖資料'));
             }
 
             let importedCount = 0;
@@ -328,7 +328,9 @@ class ListManager {
 
             return {
                 success: true,
-                message: merge ? `已合併匯入 ${importedCount} 張新寶圖` : `已匯入 ${importedCount} 張寶圖`,
+                message: merge
+                    ? FF14Utils.getI18nText('treasure_map_import_merged', '已合併匯入 {count} 張新寶圖', { count: importedCount })
+                    : FF14Utils.getI18nText('treasure_map_import_success', '已匯入 {count} 張寶圖', { count: importedCount }),
                 imported: importedCount,
                 skipped: skippedCount
             };
@@ -337,7 +339,7 @@ class ListManager {
             console.error('匯入失敗:', error);
             return {
                 success: false,
-                message: error.message || '匯入失敗',
+                message: error.message || FF14Utils.getI18nText('treasure_map_import_generic_failed', '匯入失敗'),
                 imported: 0,
                 skipped: 0
             };
