@@ -531,7 +531,7 @@ textarea:focus {
     }
 
     .nav {
-        display: none;
+        display: flex;
         position: fixed;
         top: 0;
         right: -100%;
@@ -543,14 +543,22 @@ textarea:focus {
         padding: var(--space-10) var(--space-7) var(--space-7);
         gap: var(--space-2);
         box-shadow: var(--shadow-xl);
-        transition: right var(--duration-slow) var(--ease);
+        visibility: hidden;
+        pointer-events: none;
+        /* visibility 用 0s duration + duration-slow 的 delay：關閉時維持可見到滑出動畫
+           結束才真正隱藏，讓 right 的位移動畫走完；比照 .my-list-panel 的作法
+           （tools/treasure-map-finder/style.css） */
+        transition: right var(--duration-slow) var(--ease), visibility 0s var(--duration-slow);
         z-index: 1001;
         overflow-y: auto;
     }
 
     .nav.active {
-        display: flex;
         right: 0;
+        visibility: visible;
+        pointer-events: auto;
+        /* 開啟時 visibility 不延遲，隨 class 同步立即變成 visible */
+        transition: right var(--duration-slow) var(--ease), visibility 0s;
     }
 
     .nav a {
@@ -561,7 +569,6 @@ textarea:focus {
 
     /* 遮罩層 */
     .nav-overlay {
-        display: none;
         position: fixed;
         top: 0;
         left: 0;
@@ -569,10 +576,20 @@ textarea:focus {
         height: 100%;
         background-color: var(--color-overlay);
         z-index: var(--z-overlay);
+        opacity: 0;
+        visibility: hidden;
+        /* 淡出的 300ms 內遮罩仍在畫面上，pointer-events 要立刻關掉，
+           否則這段時間內點頁面任何地方都會被遮罩吃掉（與 .nav 同一套做法） */
+        pointer-events: none;
+        /* 與 .nav 同步：關閉時淡出到滑出動畫結束才真正隱藏；開啟時立即可見 */
+        transition: opacity var(--duration-slow) var(--ease), visibility 0s var(--duration-slow);
     }
 
     .nav-overlay.active {
-        display: block;
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+        transition: opacity var(--duration-slow) var(--ease), visibility 0s;
     }
 
     h1 {
@@ -634,6 +651,13 @@ textarea:focus {
     .tool-card:hover,
     .back-to-top:hover {
         transform: none;
+    }
+
+    .nav,
+    .nav.active,
+    .nav-overlay,
+    .nav-overlay.active {
+        transition: none;
     }
 }
 
