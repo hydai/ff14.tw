@@ -637,6 +637,11 @@
     color: var(--color-heading);
 }
 
+/* 總計行的三段文字各自是 data-i18n 節點，靠 margin 取代原本的空白字元 */
+#totalCount {
+    margin: 0 var(--space-1);
+}
+
 .panel-footer .btn {
     width: 100%;
 }

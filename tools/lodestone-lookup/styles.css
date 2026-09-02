@@ -741,7 +741,8 @@
         max-width: 100%;
     }
 
-    .info-grid {
+    .info-grid,
+    .equipment-grid {
         grid-template-columns: 1fr;
     }
 
@@ -779,6 +780,10 @@
     }
 
     .members-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .achievements-grid {
         grid-template-columns: 1fr;
     }
 }

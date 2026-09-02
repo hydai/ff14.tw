@@ -22,6 +22,10 @@ class UIDialogManager {
         this.dialogs = new Map();
         this.modalManager = new ModalManager();
 
+        // 格式面板疊在路線面板上，兩者必須同時開著，因此需要各自的 ModalManager 實例
+        //（單一實例一次只管理一個視窗）。堆疊會保證 Escape／焦點陷阱只作用在最上層。
+        this.formatModalManager = new ModalManager();
+
         // 儲存回調函數
         this.callbacks = {
             onMapDetailClose: null,
@@ -29,22 +33,16 @@ class UIDialogManager {
             onFormatSave: null
         };
 
-        this.formatPreviewHandler = null;
-
-        // 格式面板開啟期間，是否曾經把路線面板的 aria-modal 暫時改成 false
-        // （見 showFormatPanel／hideFormatPanel）
-        this.routePanelAriaModalOverridden = false;
-
-        // 格式面板開啟期間，是否曾經把路線面板的焦點陷阱暫時關閉
-        // （見 showFormatPanel／hideFormatPanel）
-        this.routePanelFocusTrapOverridden = false;
-
         // Map to store cleanup functions for panels
         this.cleanupHandlers = new Map();
 
         // 目前開啟中的對話框種類與其原始呼叫資料（地圖詳細視窗／路線結果面板），
         // 語言切換時用來重新以目前語言渲染其動態文字（見 refreshActiveDialog）
         this.activeDialog = null;
+
+        // 關閉鈕的固定監聽器參考（見 showRouteResult／showMapDetail）
+        this._boundHideRouteResult = null;
+        this._boundHideMapDetail = null;
 
         // 初始化 DOM 元素參考
         this.initializeElements();
@@ -132,10 +130,11 @@ class UIDialogManager {
         }
 
         // 設置關閉按鈕事件
-        // Note: closeHandler is registered here and cleaned up in ModalManager's onClose callback.
-        // For the shared event-listener lifecycle pattern, see ModalManager documentation.
-        const closeHandler = () => this.hideMapDetail();
-        elements.closeBtn.addEventListener('click', closeHandler);
+        // 與 showRouteResult 相同：固定用同一個函式參考掛載，避免重複開啟時監聽器累積
+        if (!this._boundHideMapDetail) {
+            this._boundHideMapDetail = () => this.hideMapDetail();
+        }
+        elements.closeBtn.addEventListener('click', this._boundHideMapDetail);
 
         // 使用 ModalManager 顯示對話框
         // 現在 modal 本身就是遮罩層，ModalManager 可以自動處理點擊關閉
@@ -144,7 +143,7 @@ class UIDialogManager {
             closeOnOverlayClick: true,
             closeOnEsc: true,
             onClose: () => {
-                elements.closeBtn.removeEventListener('click', closeHandler);
+                elements.closeBtn.removeEventListener('click', this._boundHideMapDetail);
                 if (this.activeDialog?.kind === 'mapDetail') {
                     this.activeDialog = null;
                 }
@@ -521,20 +520,22 @@ class UIDialogManager {
         this.activeDialog = { kind: 'routeResult', result, options };
         this._renderRouteContent(result, options);
 
-        const closeHandler = () => this.hideRouteResult();
-        elements.closeBtn.addEventListener('click', closeHandler);
+        // 每次開啟都會再掛一次關閉鈕的監聽器；ModalManager.show() 對「已經開著的同一個元素」
+        // 會直接 return、不更新 onClose，重複生成路線時舊的監聽器就會累積。
+        // 固定用同一個函式參考掛載——addEventListener 對同一個參考不會重複註冊。
+        if (!this._boundHideRouteResult) {
+            this._boundHideRouteResult = () => this.hideRouteResult();
+        }
+        elements.closeBtn.addEventListener('click', this._boundHideRouteResult);
 
         // 顯示面板
         this.modalManager.show(elements.panel, {
             useClass: UIDialogManager.CONSTANTS.CSS_CLASSES.ACTIVE,
             closeOnOverlayClick: false,
             onClose: () => {
-                // 格式面板是從路線面板內開啟的，關閉路線面板時要一併收起（重複呼叫無副作用）。
-                // 這裡傳 restoreFocus: false——上面這個 modalManager.hide() 已經把焦點還給
-                // 開啟路線面板的按鈕，不能讓 hideFormatPanel 又把焦點搶回路線面板內、
-                // 即將一起被隱藏的「自訂格式」按鈕
-                this.hideFormatPanel({ restoreFocus: false });
-                elements.closeBtn.removeEventListener('click', closeHandler);
+                // 格式面板若還開著，ModalManager.hide() 的連鎖關閉已經在進入這裡之前
+                // 由上而下把它收掉並把焦點還給「自訂格式」按鈕，這裡不需要（也不可以）再插手。
+                elements.closeBtn.removeEventListener('click', this._boundHideRouteResult);
                 if (this.activeDialog?.kind === 'routeResult') {
                     this.activeDialog = null;
                 }
@@ -748,146 +749,35 @@ class UIDialogManager {
         };
         this.cleanupHandlers.set(panelId, cleanup);
 
-        // 顯示面板（格式面板是從路線面板內開啟的，兩者需同時顯示，
-        // 因此不透過共用的 modalManager（會關閉正在開啟的路線面板），改為獨立處理顯示與 Escape；
-        // 面板本身是非模態的，不攔截 Tab／Shift+Tab，焦點可自然離開面板到路線面板的其他控制項）
-        elements.panel.classList.add(UIDialogManager.CONSTANTS.CSS_CLASSES.ACTIVE);
-
-        // 格式面板開著時，路線面板退居背景但兩者同時可見、可操作；
-        // 路線面板若仍宣告 aria-modal="true"，輔助科技會把 DOM 中在它範圍外的
-        // 格式面板整個視為不可用。暫時撤銷路線面板的 aria-modal，
-        // 關閉格式面板時再還原（見 hideFormatPanel，且不論路線面板當下是否
-        // 隨之一併關閉都要還原，見該處註解）
-        const routePanelForModal = this.routePanelElements.panel;
-        if (routePanelForModal) {
-            routePanelForModal.setAttribute('aria-modal', 'false');
-            this.routePanelAriaModalOverridden = true;
-        }
-
-        // 路線面板由 ModalManager 管理，預設會啟用焦點陷阱 (focusTrap)，
-        // Tab 在面板內的最後一個控制項會循環回第一個，導致焦點永遠跳不出去、
-        // 摸不到旁邊同時開啟的格式面板。格式面板開啟期間先暫時關閉路線面板的
-        // 焦點陷阱，讓 Tab／Shift+Tab 可以在兩個手足面板之間自然移動；
-        // 只有在路線面板確實是 ModalManager 目前的 activeModal 時才需要處理，
-        // 且不影響 ESC 關閉路線面板的行為（見 ModalManager.setFocusTrap 註解）
-        if (routePanelForModal && this.modalManager.activeModal === routePanelForModal) {
-            this.modalManager.setFocusTrap(false);
-            this.routePanelFocusTrapOverridden = true;
-        }
-
-        // 記住開啟面板前的焦點元素，關閉時歸還焦點
-        this.formatPanelOpener = document.activeElement;
-
-        // 綁定鍵盤事件處理器（只建立一次），掛在面板本身而非 document，
-        // 避免與路線面板（由 modalManager 管理）的鍵盤事件互相干擾
-        if (!this._boundFormatPanelKeydown) {
-            this._boundFormatPanelKeydown = (event) => this.handleFormatPanelKeydown(event);
-        }
-        elements.panel.addEventListener('keydown', this._boundFormatPanelKeydown);
-
-        // 將焦點移入面板內第一個可聚焦元素，找不到時退回聚焦面板本身
-        const initialFocusTarget = elements.panel.querySelector(
-            'input:not([disabled]), textarea:not([disabled]), select:not([disabled]), button:not([disabled]), [tabindex]:not([tabindex="-1"])'
-        );
-        if (initialFocusTarget) {
-            initialFocusTarget.focus();
-        } else {
-            elements.panel.focus();
-        }
+        // 顯示面板：格式面板疊在路線面板正上方（兩者同為 position:fixed 置中、
+        // 格式面板的 z-index 更高；高度依內容而定，路線面板較長時上下仍可能露出一截），
+        // 因此把它當成一個正常的堆疊模態視窗——
+        // 有自己的焦點陷阱，Escape 只關自己（由 ModalManager 的共用堆疊保證），
+        // 關閉時焦點自動還給開啟它的「自訂格式」按鈕。
+        // 需要獨立的 formatModalManager，因為 this.modalManager 正拿著路線面板。
+        this.formatModalManager.show(elements.panel, {
+            useClass: UIDialogManager.CONSTANTS.CSS_CLASSES.ACTIVE,
+            closeOnOverlayClick: false,   // 格式面板本身沒有遮罩層
+            onClose: () => {
+                const handler = this.cleanupHandlers.get(panelId);
+                if (typeof handler === 'function') {
+                    handler();
+                }
+                this.cleanupHandlers.delete(panelId);
+            }
+        });
 
         // 初始預覽
         formatPreviewHandler();
     }
 
     /**
-     * 處理格式設定面板的鍵盤事件（僅 Escape 關閉）
-     * #formatPanel 是非模態面板，路線面板仍在旁邊維持開啟並可操作，
-     * 因此這裡不攔截 Tab／Shift+Tab，焦點可以自然離開面板到路線面板的其他控制項；
-     * Escape 呼叫 stopPropagation()，避免事件冒泡到 document 觸發路線面板
-     * （由 modalManager 管理）一併關閉
-     * @param {KeyboardEvent} event - 鍵盤事件
-     */
-    handleFormatPanelKeydown(event) {
-        if (event.key === 'Escape') {
-            event.preventDefault();
-            event.stopPropagation();
-            this.hideFormatPanel();
-        }
-    }
-
-    /**
      * 隱藏格式設定面板
-     * @param {Object} [options={}]
-     * @param {boolean} [options.restoreFocus=true] - 是否把焦點歸還給開啟面板前的觸發元素。
-     *   路線面板的 onClose 在「兩個面板一併關閉」時會傳入 false——
-     *   ModalManager.hide() 當下已經把焦點還給生成路線按鈕，這裡不能再搶著
-     *   把焦點送進即將隨路線面板一起隱藏的「自訂格式」按鈕
+     * 事件監聽器的清理都在 showFormatPanel 註冊的 onClose 裡完成、焦點還原由 ModalManager 負責
+     * （見 ModalManager 的事件監聽器生命週期說明）。重複呼叫無副作用。
      */
-    hideFormatPanel(options = {}) {
-        const { restoreFocus = true } = options;
-        const elements = this.formatPanelElements;
-        if (elements.panel) {
-            elements.panel.classList.remove(UIDialogManager.CONSTANTS.CSS_CLASSES.ACTIVE);
-            if (this._boundFormatPanelKeydown) {
-                elements.panel.removeEventListener('keydown', this._boundFormatPanelKeydown);
-            }
-        }
-
-        const panelId = 'formatPanel';
-
-        // 移除事件監聽器
-        if (this.cleanupHandlers.has(panelId)) {
-            const cleanup = this.cleanupHandlers.get(panelId);
-            if (typeof cleanup === 'function') {
-                cleanup();
-            }
-            this.cleanupHandlers.delete(panelId);
-        }
-
-        // 將焦點歸還給開啟面板前的觸發元素；只在該元素仍連接在文件中
-        // 且視覺上可見時才聚焦，避免把焦點送進一個已經隨路線面板一起
-        // 隱藏、看不到的按鈕
-        if (restoreFocus && this.formatPanelOpener && !this.formatPanelOpener.disabled &&
-            this.isElementVisible(this.formatPanelOpener)) {
-            this.formatPanelOpener.focus();
-        }
-        this.formatPanelOpener = null;
-
-        // 還原路線面板的 aria-modal。這裡不用「路線面板目前是否還是 active」
-        // 來判斷要不要還原：單獨關閉格式面板時路線面板固然還是 active，
-        // 但隨路線面板一起關閉時，ModalManager.hide() 會先移除 .active、
-        // 清空 activeModal，最後才執行 onClose 呼叫到這裡，屆時路線面板
-        // 一定已經不是 active，用該狀態判斷會導致這個情境永遠不還原。
-        // 改用「格式面板開啟時是否真的動過這個屬性」來判斷，兩種情境都要
-        // 還原成 true，確保路線面板下次重新開啟時不會殘留這次暫時關閉用的
-        // aria-modal="false"
-        if (this.routePanelAriaModalOverridden) {
-            const routePanel = this.routePanelElements.panel;
-            if (routePanel) {
-                routePanel.setAttribute('aria-modal', 'true');
-            }
-            this.routePanelAriaModalOverridden = false;
-        }
-
-        // 還原路線面板的焦點陷阱，理由與上面還原 aria-modal 相同：
-        // 不論是單獨關閉格式面板，或是路線面板先一步觸發 ModalManager.hide()
-        // 導致 activeModal 已經清空的連鎖關閉路徑，都要用「格式面板開啟時
-        // 是否真的關過焦點陷阱」這個旗標來判斷，兩種情境都要呼叫
-        // setFocusTrap(true) 復原，避免路線面板下次重新開啟時焦點陷阱
-        // 仍停留在關閉狀態
-        if (this.routePanelFocusTrapOverridden) {
-            this.modalManager.setFocusTrap(true);
-            this.routePanelFocusTrapOverridden = false;
-        }
-    }
-
-    /**
-     * 判斷元素是否仍連接在文件中，且視覺上可見（未被 CSS 隱藏）
-     * offsetParent 在 position:fixed 的元素上恆為 null，因此用
-     * getClientRects().length 兜底，避免誤判為不可見
-     */
-    isElementVisible(el) {
-        return !!el && el.isConnected && (el.offsetParent !== null || el.getClientRects().length > 0);
+    hideFormatPanel() {
+        this.formatModalManager.hide();
     }
 
     /**

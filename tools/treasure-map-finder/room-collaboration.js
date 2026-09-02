@@ -60,6 +60,15 @@ class RoomCollaboration {
             leaveRoom: document.getElementById('leaveRoomModal')
         };
 
+        // 語言切換時重繪隊伍區塊（成員數、隊長／移除成員 tooltip）與操作歷史的空狀態；
+        // 歷史紀錄本身在記錄當下就已組好字串，不回溯翻譯（既有設計）
+        window.i18n.onLanguageChange(() => {
+            if (this.currentRoom) {
+                this.updateRoomUI();
+            }
+            this.renderHistory();
+        });
+
         this.init();
     }
 
@@ -189,25 +198,20 @@ class RoomCollaboration {
     async createRoom() {
         // 檢查是否已有隊伍
         if (this.currentRoom) {
-            this.showToast('您已在隊伍中，請先離開現有隊伍', 'warning');
+            this.showToast(FF14Utils.getI18nText('treasure_map_already_in_room', '您已在隊伍中，請先離開現有隊伍'), 'warning');
             return;
         }
 
         // 檢查瀏覽器限制
         const browserLimit = localStorage.getItem('ff14tw_room_created');
         if (browserLimit) {
-            this.showToast('此瀏覽器已有隊伍記錄，請先清除或使用其他瀏覽器', 'warning');
+            this.showToast(FF14Utils.getI18nText('treasure_map_browser_room_limit', '此瀏覽器已有隊伍記錄，請先清除或使用其他瀏覽器'), 'warning');
             return;
         }
 
         // 檢查是否有本地寶圖
         if (this.finder.myList.length > 0) {
-            const clearLocal = confirm(
-                `您目前有 ${this.finder.myList.length} 張本地寶圖。\n\n` +
-                `建立隊伍後，這些寶圖會被歸屬為您新增的，但實際新增時間可能不正確。\n\n` +
-                `建議清空本地清單以確保協作資料的準確性。\n\n` +
-                `要清空本地清單嗎？`
-            );
+            const clearLocal = confirm(FF14Utils.getI18nText('treasure_map_create_room_local_maps_confirm', '您目前有 {count} 張本地寶圖。\n\n建立隊伍後，這些寶圖會被歸屬為您新增的，但實際新增時間可能不正確。\n\n建議清空本地清單以確保協作資料的準確性。\n\n要清空本地清單嗎？', { count: this.finder.myList.length }));
 
             if (clearLocal) {
                 this.finder.myList = [];
@@ -219,7 +223,7 @@ class RoomCollaboration {
             }
         }
 
-        const memberNickname = `光之戰士1`;
+        const memberNickname = FF14Utils.getI18nText('treasure_map_default_nickname_creator', '光之戰士1');
 
         try {
             // 呼叫 API 建立隊伍（隊伍代號由伺服器生成）
@@ -235,7 +239,7 @@ class RoomCollaboration {
 
             if (!response.ok) {
                 const error = await response.json();
-                throw new Error(error.error || '建立隊伍失敗');
+                throw new Error(error.error || FF14Utils.getI18nText('treasure_map_create_room_failed', '建立隊伍失敗'));
             }
 
             const room = await response.json();
@@ -261,23 +265,23 @@ class RoomCollaboration {
             // 記錄操作歷史
             this.addOperationHistory({
                 type: 'room_create',
-                message: `建立了隊伍 ${room.roomCode}`,
+                message: FF14Utils.getI18nText('treasure_map_history_room_created', '建立了隊伍 {code}', { code: room.roomCode }),
                 timestamp: new Date().toISOString()
             });
 
             // 顯示成功訊息
-            this.showToast(`隊伍 ${room.roomCode} 建立成功！`);
+            this.showToast(FF14Utils.getI18nText('treasure_map_create_room_success', '隊伍 {code} 建立成功！', { code: room.roomCode }));
 
         } catch (error) {
             console.error('建立隊伍失敗:', error);
-            this.showToast(error.message || '建立隊伍失敗，請稍後再試', 'error');
+            this.showToast(error.message || FF14Utils.getI18nText('treasure_map_create_room_failed_retry', '建立隊伍失敗，請稍後再試'), 'error');
         }
     }
 
     // 顯示加入隊伍對話框
     showJoinRoomDialog() {
         if (this.currentRoom) {
-            this.showToast('您已在隊伍中，請先離開現有隊伍', 'warning');
+            this.showToast(FF14Utils.getI18nText('treasure_map_already_in_room', '您已在隊伍中，請先離開現有隊伍'), 'warning');
             return;
         }
 
@@ -291,7 +295,7 @@ class RoomCollaboration {
         const roomCode = document.getElementById('roomCodeInput').value.trim().toUpperCase();
 
         if (!roomCode || roomCode.length !== RoomCollaboration.CONSTANTS.ROOM_CODE_LENGTH) {
-            this.showToast('請輸入有效的 6 位隊伍代號', 'warning');
+            this.showToast(FF14Utils.getI18nText('treasure_map_invalid_room_code', '請輸入有效的 6 位隊伍代號'), 'warning');
             return;
         }
 
@@ -304,12 +308,7 @@ class RoomCollaboration {
         try {
             // 檢查是否有本地寶圖
             if (this.finder.myList.length > 0) {
-                const clearLocal = confirm(
-                    `您目前有 ${this.finder.myList.length} 張本地寶圖。\n\n` +
-                    `加入隊伍後，這些寶圖會被歸屬為您新增的，但實際新增時間可能不正確。\n\n` +
-                    `建議清空本地清單以確保協作資料的準確性。\n\n` +
-                    `要清空本地清單嗎？`
-                );
+                const clearLocal = confirm(FF14Utils.getI18nText('treasure_map_join_room_local_maps_confirm', '您目前有 {count} 張本地寶圖。\n\n加入隊伍後，這些寶圖會被歸屬為您新增的，但實際新增時間可能不正確。\n\n建議清空本地清單以確保協作資料的準確性。\n\n要清空本地清單嗎？', { count: this.finder.myList.length }));
 
                 if (clearLocal) {
                     this.finder.myList = [];
@@ -323,7 +322,7 @@ class RoomCollaboration {
 
             // 生成暱稱
             const existingNickname = localStorage.getItem('ff14tw_user_nickname');
-            const memberNickname = existingNickname || `光之戰士`;
+            const memberNickname = existingNickname || FF14Utils.getI18nText('treasure_map_default_nickname', '光之戰士');
 
             // 直接嘗試加入房間（伺服器會處理所有錯誤情況）
             const joinResponse = await fetch(`${RoomCollaboration.CONSTANTS.API_BASE_URL}/rooms/${roomCode}/join`, {
@@ -339,11 +338,11 @@ class RoomCollaboration {
             if (!joinResponse.ok) {
                 const error = await joinResponse.json();
                 // 根據錯誤類型提供適當的中文訊息
-                let errorMessage = error.error || '加入房間失敗';
+                let errorMessage = error.error || FF14Utils.getI18nText('treasure_map_join_room_failed', '加入房間失敗');
                 if (joinResponse.status === 404) {
-                    errorMessage = '房間不存在或已過期';
+                    errorMessage = FF14Utils.getI18nText('treasure_map_room_not_found', '房間不存在或已過期');
                 } else if (error.error === 'Room is full') {
-                    errorMessage = '房間已滿';
+                    errorMessage = FF14Utils.getI18nText('treasure_map_room_full', '房間已滿');
                 }
                 throw new Error(errorMessage);
             }
@@ -373,18 +372,18 @@ class RoomCollaboration {
             // 記錄操作歷史
             this.addOperationHistory({
                 type: 'room_join',
-                message: `${this.currentUser.nickname} 加入了房間`,
+                message: FF14Utils.getI18nText('treasure_map_history_member_joined', '{nickname} 加入了房間', { nickname: this.currentUser.nickname }),
                 timestamp: new Date().toISOString()
             });
 
             // 同步現有的寶圖清單
             this.syncTreasureMaps();
 
-            this.showToast(`成功加入隊伍 ${roomCode}`);
+            this.showToast(FF14Utils.getI18nText('treasure_map_join_room_success', '成功加入隊伍 {code}', { code: roomCode }));
 
         } catch (error) {
             console.error('加入隊伍失敗:', error);
-            this.showToast(error.message || '加入隊伍失敗，請確認隊伍代號是否正確', 'error');
+            this.showToast(error.message || FF14Utils.getI18nText('treasure_map_join_room_failed_retry', '加入隊伍失敗，請確認隊伍代號是否正確'), 'error');
         }
     }
 
@@ -402,12 +401,12 @@ class RoomCollaboration {
         const newNickname = document.getElementById('nicknameInput').value.trim();
 
         if (!newNickname) {
-            this.showToast('請輸入暱稱', 'warning');
+            this.showToast(FF14Utils.getI18nText('treasure_map_nickname_placeholder', '請輸入暱稱'), 'warning');
             return;
         }
 
         if (newNickname.length > 20) {
-            this.showToast('暱稱不能超過 20 個字元', 'warning');
+            this.showToast(FF14Utils.getI18nText('treasure_map_nickname_too_long', '暱稱不能超過 20 個字元'), 'warning');
             return;
         }
 
@@ -426,7 +425,7 @@ class RoomCollaboration {
             });
 
             if (!response.ok) {
-                throw new Error('更新暱稱失敗');
+                throw new Error(FF14Utils.getI18nText('treasure_map_update_nickname_failed', '更新暱稱失敗'));
             }
 
             const updatedRoom = await response.json();
@@ -454,18 +453,18 @@ class RoomCollaboration {
             }));
 
             this.hideModal('editNickname');
-            this.showToast('暱稱已更新');
+            this.showToast(FF14Utils.getI18nText('treasure_map_nickname_updated', '暱稱已更新'));
 
             // 記錄操作歷史
             this.addOperationHistory({
                 type: 'nickname_update',
-                message: `${this.currentUser.nickname} 更新了暱稱`,
+                message: FF14Utils.getI18nText('treasure_map_history_nickname_updated', '{nickname} 更新了暱稱', { nickname: this.currentUser.nickname }),
                 timestamp: new Date().toISOString()
             });
 
         } catch (error) {
             console.error('更新暱稱失敗:', error);
-            this.showToast('更新暱稱失敗，請稍後再試', 'error');
+            this.showToast(FF14Utils.getI18nText('treasure_map_update_nickname_failed_retry', '更新暱稱失敗，請稍後再試'), 'error');
         }
     }
 
@@ -494,13 +493,13 @@ class RoomCollaboration {
             });
 
             if (!response.ok) {
-                throw new Error('離開房間失敗');
+                throw new Error(FF14Utils.getI18nText('treasure_map_leave_room_failed', '離開房間失敗'));
             }
 
             // 記錄操作歷史（在清除資料前）
             this.addOperationHistory({
                 type: 'room_leave',
-                message: `${nickname} 離開了隊伍`,
+                message: FF14Utils.getI18nText('treasure_map_history_member_left', '{nickname} 離開了隊伍', { nickname }),
                 timestamp: new Date().toISOString()
             });
 
@@ -526,11 +525,11 @@ class RoomCollaboration {
             this.hideModal('leaveRoom');
             this.updateRoomUI();
 
-            this.showToast('已離開隊伍');
+            this.showToast(FF14Utils.getI18nText('treasure_map_left_room', '已離開隊伍'));
 
         } catch (error) {
             console.error('離開隊伍失敗:', error);
-            this.showToast('離開隊伍失敗，請稍後再試', 'error');
+            this.showToast(FF14Utils.getI18nText('treasure_map_leave_room_failed_retry', '離開隊伍失敗，請稍後再試'), 'error');
         }
     }
 
@@ -539,7 +538,7 @@ class RoomCollaboration {
         const code = this.currentRoom.roomCode;
         if (navigator.clipboard) {
             navigator.clipboard.writeText(code).then(() => {
-                this.showToast('隊伍代號已複製');
+                this.showToast(FF14Utils.getI18nText('treasure_map_room_code_copied', '隊伍代號已複製'));
             }).catch(() => {
                 this.fallbackCopy(code);
             });
@@ -558,7 +557,7 @@ class RoomCollaboration {
         textarea.select();
         document.execCommand('copy');
         document.body.removeChild(textarea);
-        this.showToast('隊伍代號已複製');
+        this.showToast(FF14Utils.getI18nText('treasure_map_room_code_copied', '隊伍代號已複製'));
     }
 
 
@@ -572,15 +571,15 @@ class RoomCollaboration {
 
         let text;
         if (diff < 60000) { // 1分鐘內
-            text = '剛剛';
+            text = FF14Utils.getI18nText('treasure_map_just_now', '剛剛');
         } else if (diff < 3600000) { // 1小時內
             const minutes = Math.floor(diff / 60000);
-            text = `${minutes}分鐘前`;
+            text = FF14Utils.getI18nText('treasure_map_minutes_ago', '{minutes}分鐘前', { minutes });
         } else if (diff < 86400000) { // 1天內
             const hours = Math.floor(diff / 3600000);
-            text = `${hours}小時前`;
+            text = FF14Utils.getI18nText('treasure_map_hours_ago', '{hours}小時前', { hours });
         } else {
-            text = '超過1天前';
+            text = FF14Utils.getI18nText('treasure_map_more_than_a_day_ago', '超過1天前');
         }
 
         this.elements.lastActivity.textContent = text;
@@ -596,7 +595,7 @@ class RoomCollaboration {
         const remaining = expireTime - now;
 
         if (remaining <= 0) {
-            this.elements.roomTTL.textContent = '已過期';
+            this.elements.roomTTL.textContent = FF14Utils.getI18nText('treasure_map_ttl_expired', '已過期');
             return;
         }
 
@@ -604,9 +603,9 @@ class RoomCollaboration {
         const minutes = Math.floor((remaining % 3600000) / 60000);
 
         if (hours > 0) {
-            this.elements.roomTTL.textContent = `${hours}小時${minutes}分`;
+            this.elements.roomTTL.textContent = FF14Utils.getI18nText('treasure_map_ttl_hours_minutes', '{hours}小時{minutes}分', { hours, minutes });
         } else {
-            this.elements.roomTTL.textContent = `${minutes}分鐘`;
+            this.elements.roomTTL.textContent = FF14Utils.getI18nText('treasure_map_ttl_minutes', '{minutes}分鐘', { minutes });
         }
     }
 
@@ -654,7 +653,7 @@ class RoomCollaboration {
             if (!response.ok) {
                 if (response.status === 404) {
                     // 隊伍已過期
-                    this.showToast('隊伍已過期', 'error');
+                    this.showToast(FF14Utils.getI18nText('treasure_map_room_expired', '隊伍已過期'), 'error');
                     this.forceLeaveRoom();
                     return;
                 }
@@ -698,7 +697,7 @@ class RoomCollaboration {
             this.retryCount++;
 
             if (this.retryCount >= RoomCollaboration.CONSTANTS.RETRY_ATTEMPTS) {
-                this.showToast('同步失敗，請檢查網路連線', 'error');
+                this.showToast(FF14Utils.getI18nText('treasure_map_room_sync_failed_network', '同步失敗，請檢查網路連線'), 'error');
                 this.retryCount = 0;
             }
         } finally {
@@ -738,7 +737,7 @@ class RoomCollaboration {
         // 記錄操作歷史
         this.addOperationHistory({
             type: 'sync',
-            message: '同步房間寶圖清單',
+            message: FF14Utils.getI18nText('treasure_map_history_synced', '同步房間寶圖清單'),
             timestamp: new Date().toISOString()
         });
     }
@@ -863,18 +862,18 @@ class RoomCollaboration {
     // 記錄寶圖操作
     recordMapOperation(type, map, user) {
         const member = this.currentRoom?.members.find(m => m.id === (user?.id || this.currentUser?.id));
-        const nickname = member?.nickname || '未知使用者';
+        const nickname = member?.nickname || FF14Utils.getI18nText('treasure_map_unknown_user', '未知使用者');
 
         let message;
         switch (type) {
             case 'add':
-                message = `${nickname} 新增了 ${map.level.toUpperCase()} - ${map.zone} (${map.coords.x}, ${map.coords.y})`;
+                message = FF14Utils.getI18nText('treasure_map_history_map_added', '{nickname} 新增了 {level} - {zone} ({x}, {y})', { nickname, level: map.level.toUpperCase(), zone: map.zone, x: map.coords.x, y: map.coords.y });
                 break;
             case 'remove':
-                message = `${nickname} 移除了 ${map.level.toUpperCase()} - ${map.zone} (${map.coords.x}, ${map.coords.y})`;
+                message = FF14Utils.getI18nText('treasure_map_history_map_removed', '{nickname} 移除了 {level} - {zone} ({x}, {y})', { nickname, level: map.level.toUpperCase(), zone: map.zone, x: map.coords.x, y: map.coords.y });
                 break;
             default:
-                message = `${nickname} 操作了寶圖`;
+                message = FF14Utils.getI18nText('treasure_map_history_map_operated', '{nickname} 操作了寶圖', { nickname });
         }
 
         this.addOperationHistory({
@@ -946,7 +945,7 @@ class RoomCollaboration {
             const emptyDiv = document.createElement('div');
             emptyDiv.className = 'empty-state';
             const p = document.createElement('p');
-            p.textContent = '尚無操作記錄';
+            p.textContent = FF14Utils.getI18nText('treasure_map_history_empty', '尚無操作記錄');
             emptyDiv.appendChild(p);
             historyContent.appendChild(emptyDiv);
             return;
@@ -998,7 +997,7 @@ class RoomCollaboration {
 
             // 更新隊伍資訊
             this.elements.roomCode.textContent = this.currentRoom.roomCode;
-            this.elements.roomMembers.textContent = `${this.currentRoom.members.length}/${RoomCollaboration.CONSTANTS.MAX_MEMBERS}人`;
+            this.elements.roomMembers.textContent = FF14Utils.getI18nText('treasure_map_member_count', '{count}/{max}人', { count: this.currentRoom.members.length, max: RoomCollaboration.CONSTANTS.MAX_MEMBERS });
             this.elements.userNickname.textContent = this.currentUser.nickname;
 
             // 更新成員列表
@@ -1062,7 +1061,7 @@ class RoomCollaboration {
             if (isCreator) {
                 const crownIcon = document.createElement('span');
                 crownIcon.textContent = ' 👑';
-                crownIcon.title = '隊長';
+                crownIcon.title = FF14Utils.getI18nText('treasure_map_room_leader', '隊長');
                 nameSpan.appendChild(crownIcon);
             }
 
@@ -1074,7 +1073,7 @@ class RoomCollaboration {
                 const removeBtn = document.createElement('button');
                 removeBtn.className = 'member-remove-btn';
                 removeBtn.textContent = '×';
-                removeBtn.title = `移除 ${member.nickname}`;
+                removeBtn.title = FF14Utils.getI18nText('treasure_map_remove_member_tooltip', '移除 {nickname}', { nickname: member.nickname });
                 removeBtn.onclick = () => this.removeMember(member);
                 memberTag.appendChild(removeBtn);
             }
@@ -1085,7 +1084,7 @@ class RoomCollaboration {
 
     // 移除成員
     async removeMember(member) {
-        if (!confirm(`確定要移除 ${member.nickname} 嗎？`)) {
+        if (!confirm(FF14Utils.getI18nText('treasure_map_remove_member_confirm', '確定要移除 {nickname} 嗎？', { nickname: member.nickname }))) {
             return;
         }
 
@@ -1103,7 +1102,7 @@ class RoomCollaboration {
             });
 
             if (!response.ok) {
-                throw new Error('移除成員失敗');
+                throw new Error(FF14Utils.getI18nText('treasure_map_remove_member_failed', '移除成員失敗'));
             }
 
             const updatedRoom = await response.json();
@@ -1113,20 +1112,20 @@ class RoomCollaboration {
             this.updateMembersList();
 
             // 更新房間人數顯示
-            this.elements.roomMembers.textContent = `${this.currentRoom.members.length}/${RoomCollaboration.CONSTANTS.MAX_MEMBERS}人`;
+            this.elements.roomMembers.textContent = FF14Utils.getI18nText('treasure_map_member_count', '{count}/{max}人', { count: this.currentRoom.members.length, max: RoomCollaboration.CONSTANTS.MAX_MEMBERS });
 
             // 記錄操作歷史
             this.addOperationHistory({
                 type: 'member_remove',
-                message: `${this.currentUser.nickname} 將 ${member.nickname} 移出隊伍`,
+                message: FF14Utils.getI18nText('treasure_map_history_member_kicked', '{actor} 將 {target} 移出隊伍', { actor: this.currentUser.nickname, target: member.nickname }),
                 timestamp: new Date().toISOString()
             });
 
-            this.showToast(`已將 ${member.nickname} 移出隊伍`);
+            this.showToast(FF14Utils.getI18nText('treasure_map_member_removed', '已將 {nickname} 移出隊伍', { nickname: member.nickname }));
 
         } catch (error) {
             console.error('移除成員失敗:', error);
-            this.showToast('移除成員失敗，請稍後再試', 'error');
+            this.showToast(FF14Utils.getI18nText('treasure_map_remove_member_failed_retry', '移除成員失敗，請稍後再試'), 'error');
         }
     }
 }

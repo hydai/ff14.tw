@@ -31,6 +31,9 @@ class TreasureMapFinder {
         window.i18n.onLanguageChange(() => {
             this.renderMyList();
 
+            // 「顯示 N 個結果」是帶參數的文字，切換語言時用目前的數量重新組一次
+            this.updateResultCount();
+
             // 預設範本跟語言走，使用者自訂的不動：只有目前仍是「預設值」
             // （this.formatSettingsAreDefault，見 loadFormatSettings／saveFormatSettings／
             // resetFormatSettings）才重新計算 getDefaultFormats()；已存過自訂內容一律略過，
@@ -147,11 +150,9 @@ class TreasureMapFinder {
         
         // 匯出/匯入功能
         document.getElementById('exportListBtn').addEventListener('click', () => {
-            this.modalManager.hide(); // 讓匯出對話框成為唯一作用中的對話框
             this.exportList();
         });
         document.getElementById('importListBtn').addEventListener('click', () => {
-            this.modalManager.hide(); // 讓匯入對話框成為唯一作用中的對話框
             this.uiDialogManager.showImportDialog((text) => this.importFromText(text));
         });
         document.getElementById('importFileInput').addEventListener('change', (e) => this.importList(e));
@@ -703,7 +704,14 @@ class TreasureMapFinder {
                 }
             });
         } else {
-            // 關閉面板
+            // 關閉面板。清單面板被路線／格式面板疊住時會被堆疊設為 inert，但它的遮罩
+            // #panelOverlay 是手足元素、仍收得到點擊：這時比照 Escape 只關最上層那一層，
+            // 不把整疊連鎖收掉，避免一次誤點遮罩就把路線面板與清單一併關掉
+            const topmost = ModalManager.topmost();
+            if (topmost && topmost !== this.modalManager) {
+                topmost.hide();
+                return;
+            }
             this.modalManager.hide();
         }
     }
@@ -943,7 +951,7 @@ class TreasureMapFinder {
     // 從文字匯入清單
     async importFromText(text) {
         if (!text.trim()) {
-            FF14Utils.showToast('請貼上清單內容', 'warning');
+            FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_import_text_required', '請貼上清單內容'), 'warning');
             return;
         }
         
@@ -955,7 +963,7 @@ class TreasureMapFinder {
                 // 先解析資料以獲取數量
                 const parseResult = SecurityUtils.safeJSONParse(text);
                 if (!parseResult.success) {
-                    FF14Utils.showToast('檔案格式錯誤', 'error');
+                    FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_import_file_format_error', '檔案格式錯誤'), 'error');
                     return;
                 }
                 const previewData = parseResult.data;
@@ -981,7 +989,7 @@ class TreasureMapFinder {
             
         } catch (error) {
             console.error('匯入失敗:', error);
-            FF14Utils.showToast('匯入失敗：' + error.message, 'error');
+            FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_import_failed', '匯入失敗：{message}', { message: error.message }), 'error');
         }
     }
     
@@ -995,7 +1003,7 @@ class TreasureMapFinder {
             this.importFromText(text);
         } catch (error) {
             console.error('讀取檔案失敗:', error);
-            FF14Utils.showToast('讀取檔案失敗', 'error');
+            FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_read_file_failed', '讀取檔案失敗'), 'error');
         }
         
         // 清空檔案輸入
@@ -1027,22 +1035,17 @@ class TreasureMapFinder {
         const result = routeCalculator.calculateRoute(myList);
         
         if (!result || !result.route || result.route.length === 0) {
-            FF14Utils.showToast('無法生成路線', 'error');
+            FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_route_generation_failed', '無法生成路線'), 'error');
             return;
         }
         
         // 儲存路線資料供複製使用
         this.currentRoute = result.route;
 
-        // 路線面板由 uiDialogManager 另一個獨立的 ModalManager 管理；
-        // 生成路線的按鈕就在「我的清單」面板內，若清單面板繼續開著，
-        // 兩個 ModalManager 實例會同時掛上 document 的 ESC／Tab 監聽。
-        // 按 ESC 會把兩個面板一起關閉，且清單面板的 ModalManager 會把焦點
-        // 還給這顆已經隨面板一起被移出畫面（transform: translateX）的
-        // 「生成路線」按鈕，導致焦點跑到看不到的地方，所以生成路線前
-        // 先收起清單面板，讓路線面板成為唯一作用中的對話框。
-        this.modalManager.hide();
-
+        // 路線面板由 uiDialogManager 另一個獨立的 ModalManager 實例管理，
+        // 疊在仍然開著的「我的清單」面板上（z-index 1001 > 1000，遮罩與捲動鎖沿用清單面板的）。
+        // ModalManager 的共用堆疊保證 Escape 只關最上層：第一次 Escape 收路線面板、
+        // 焦點回到清單面板裡的「生成路線」按鈕，第二次才收清單面板。
         // 顯示路線結果
         this.uiDialogManager.showRouteResult(result, {
             onStepCopy: (step, index, total) => {
@@ -1334,7 +1337,7 @@ class TreasureMapFinder {
             
         } catch (error) {
             console.error('同步到房間失敗:', error);
-            FF14Utils.showToast('同步失敗，請稍後再試', 'error');
+            FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_sync_to_room_failed', '同步失敗，請稍後再試'), 'error');
         }
     }
     
