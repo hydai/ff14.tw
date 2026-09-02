@@ -40,6 +40,10 @@ class UIDialogManager {
         // 語言切換時用來重新以目前語言渲染其動態文字（見 refreshActiveDialog）
         this.activeDialog = null;
 
+        // 關閉鈕的固定監聽器參考（見 showRouteResult／showMapDetail）
+        this._boundHideRouteResult = null;
+        this._boundHideMapDetail = null;
+
         // 初始化 DOM 元素參考
         this.initializeElements();
 
@@ -126,10 +130,11 @@ class UIDialogManager {
         }
 
         // 設置關閉按鈕事件
-        // Note: closeHandler is registered here and cleaned up in ModalManager's onClose callback.
-        // For the shared event-listener lifecycle pattern, see ModalManager documentation.
-        const closeHandler = () => this.hideMapDetail();
-        elements.closeBtn.addEventListener('click', closeHandler);
+        // 與 showRouteResult 相同：固定用同一個函式參考掛載，避免重複開啟時監聽器累積
+        if (!this._boundHideMapDetail) {
+            this._boundHideMapDetail = () => this.hideMapDetail();
+        }
+        elements.closeBtn.addEventListener('click', this._boundHideMapDetail);
 
         // 使用 ModalManager 顯示對話框
         // 現在 modal 本身就是遮罩層，ModalManager 可以自動處理點擊關閉
@@ -138,7 +143,7 @@ class UIDialogManager {
             closeOnOverlayClick: true,
             closeOnEsc: true,
             onClose: () => {
-                elements.closeBtn.removeEventListener('click', closeHandler);
+                elements.closeBtn.removeEventListener('click', this._boundHideMapDetail);
                 if (this.activeDialog?.kind === 'mapDetail') {
                     this.activeDialog = null;
                 }
@@ -515,8 +520,13 @@ class UIDialogManager {
         this.activeDialog = { kind: 'routeResult', result, options };
         this._renderRouteContent(result, options);
 
-        const closeHandler = () => this.hideRouteResult();
-        elements.closeBtn.addEventListener('click', closeHandler);
+        // 每次開啟都會再掛一次關閉鈕的監聽器；ModalManager.show() 對「已經開著的同一個元素」
+        // 會直接 return、不更新 onClose，重複生成路線時舊的監聽器就會累積。
+        // 固定用同一個函式參考掛載——addEventListener 對同一個參考不會重複註冊。
+        if (!this._boundHideRouteResult) {
+            this._boundHideRouteResult = () => this.hideRouteResult();
+        }
+        elements.closeBtn.addEventListener('click', this._boundHideRouteResult);
 
         // 顯示面板
         this.modalManager.show(elements.panel, {
@@ -525,7 +535,7 @@ class UIDialogManager {
             onClose: () => {
                 // 格式面板若還開著，ModalManager.hide() 的連鎖關閉已經在進入這裡之前
                 // 由上而下把它收掉並把焦點還給「自訂格式」按鈕，這裡不需要（也不可以）再插手。
-                elements.closeBtn.removeEventListener('click', closeHandler);
+                elements.closeBtn.removeEventListener('click', this._boundHideRouteResult);
                 if (this.activeDialog?.kind === 'routeResult') {
                     this.activeDialog = null;
                 }
