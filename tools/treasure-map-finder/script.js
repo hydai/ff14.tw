@@ -150,11 +150,9 @@ class TreasureMapFinder {
         
         // 匯出/匯入功能
         document.getElementById('exportListBtn').addEventListener('click', () => {
-            this.modalManager.hide(); // 讓匯出對話框成為唯一作用中的對話框
             this.exportList();
         });
         document.getElementById('importListBtn').addEventListener('click', () => {
-            this.modalManager.hide(); // 讓匯入對話框成為唯一作用中的對話框
             this.uiDialogManager.showImportDialog((text) => this.importFromText(text));
         });
         document.getElementById('importFileInput').addEventListener('change', (e) => this.importList(e));
@@ -706,7 +704,14 @@ class TreasureMapFinder {
                 }
             });
         } else {
-            // 關閉面板
+            // 關閉面板。清單面板被路線／格式面板疊住時會被堆疊設為 inert，但它的遮罩
+            // #panelOverlay 是手足元素、仍收得到點擊：這時比照 Escape 只關最上層那一層，
+            // 不把整疊連鎖收掉，避免一次誤點遮罩就把路線面板與清單一併關掉
+            const topmost = ModalManager.topmost();
+            if (topmost && topmost !== this.modalManager) {
+                topmost.hide();
+                return;
+            }
             this.modalManager.hide();
         }
     }
@@ -1037,15 +1042,10 @@ class TreasureMapFinder {
         // 儲存路線資料供複製使用
         this.currentRoute = result.route;
 
-        // 路線面板由 uiDialogManager 另一個獨立的 ModalManager 管理；
-        // 生成路線的按鈕就在「我的清單」面板內，若清單面板繼續開著，
-        // 兩個 ModalManager 實例會同時掛上 document 的 ESC／Tab 監聽。
-        // 按 ESC 會把兩個面板一起關閉，且清單面板的 ModalManager 會把焦點
-        // 還給這顆已經隨面板一起被移出畫面（transform: translateX）的
-        // 「生成路線」按鈕，導致焦點跑到看不到的地方，所以生成路線前
-        // 先收起清單面板，讓路線面板成為唯一作用中的對話框。
-        this.modalManager.hide();
-
+        // 路線面板由 uiDialogManager 另一個獨立的 ModalManager 實例管理，
+        // 疊在仍然開著的「我的清單」面板上（z-index 1001 > 1000，遮罩與捲動鎖沿用清單面板的）。
+        // ModalManager 的共用堆疊保證 Escape 只關最上層：第一次 Escape 收路線面板、
+        // 焦點回到清單面板裡的「生成路線」按鈕，第二次才收清單面板。
         // 顯示路線結果
         this.uiDialogManager.showRouteResult(result, {
             onStepCopy: (step, index, total) => {
