@@ -18,20 +18,11 @@ class UIDialogManager {
     static dialogTitleSeq = 0;
 
     constructor() {
-        // 儲存所有對話框的參考
-        this.dialogs = new Map();
         this.modalManager = new ModalManager();
 
         // 格式面板疊在路線面板上，兩者必須同時開著，因此需要各自的 ModalManager 實例
         //（單一實例一次只管理一個視窗）。堆疊會保證 Escape／焦點陷阱只作用在最上層。
         this.formatModalManager = new ModalManager();
-
-        // 儲存回調函數
-        this.callbacks = {
-            onMapDetailClose: null,
-            onRouteClose: null,
-            onFormatSave: null
-        };
 
         // Map to store cleanup functions for panels
         this.cleanupHandlers = new Map();
@@ -146,9 +137,6 @@ class UIDialogManager {
                 elements.closeBtn.removeEventListener('click', this._boundHideMapDetail);
                 if (this.activeDialog?.kind === 'mapDetail') {
                     this.activeDialog = null;
-                }
-                if (this.callbacks.onMapDetailClose) {
-                    this.callbacks.onMapDetailClose();
                 }
             }
         });
@@ -539,9 +527,6 @@ class UIDialogManager {
                 if (this.activeDialog?.kind === 'routeResult') {
                     this.activeDialog = null;
                 }
-                if (this.callbacks.onRouteClose) {
-                    this.callbacks.onRouteClose();
-                }
             }
         });
     }
@@ -854,30 +839,6 @@ class UIDialogManager {
         overlay.appendChild(dialog);
 
         return { overlay, dialog };
-    }
-
-    /**
-     * 設置回調函數
-     */
-    setCallbacks(callbacks) {
-        Object.assign(this.callbacks, callbacks);
-    }
-
-    /**
-     * 關閉所有對話框
-     */
-    closeAll() {
-        // 使用 ModalManager 關閉當前開啟的 modal
-        this.modalManager.hide();
-
-        this.hideMapDetail();
-        this.hideRouteResult();
-        this.hideFormatPanel();
-
-        // 移除所有動態建立的對話框和遮罩層
-        document.querySelectorAll('.ui-dialog-overlay, .ui-dialog').forEach(element => {
-            element.remove();
-        });
     }
 }
 

@@ -778,9 +778,12 @@ class RoomCollaboration {
         }
     }
 
-    // 隱藏對話框
+    // 隱藏對話框（只在名字對應的對話框正是目前開著的那個時才關，避免關錯）
     hideModal(modalName) {
-        this.modalManager.hide();
+        const modal = this.modals[modalName];
+        if (modal && this.modalManager.activeModal === modal) {
+            this.modalManager.hide();
+        }
     }
 
     // 顯示提示訊息

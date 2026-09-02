@@ -162,6 +162,39 @@ test('關閉下層時連鎖關閉疊在上面的每一層', () => {
     assert.equal(ModalManager._stack.length, 0);
 });
 
+test('hide() 連鎖關閉時，若上層的 onClose 拋出仍會關閉所有層，最後才重新拋出第一個錯誤', () => {
+    const a = new ModalManager(), b = new ModalManager(), c = new ModalManager();
+    const l = makeElement('l'), m = makeElement('m'), u = makeElement('u');
+    const order = [];
+    const boom = new Error('boom');
+    a.show(l, { onClose: () => order.push('l') });
+    b.show(m, { onClose: () => { order.push('m'); throw boom; } });
+    c.show(u, { onClose: () => order.push('u') });
+
+    assert.throws(() => a.hide(), (err) => err === boom);
+
+    assert.deepEqual(order, ['u', 'm', 'l'], '即使中間層拋出，關閉順序仍然由上而下，且每一層都關到底');
+    assert.equal(ModalManager._stack.length, 0);
+    assert.equal(l.classList.contains('active'), false);
+    assert.equal(m.classList.contains('active'), false);
+    assert.equal(u.classList.contains('active'), false);
+    assert.equal(dom.listenerCount(), 0);
+    assert.ok(!l.inert, '全部關閉後不應留下 inert');
+    assert.ok(!m.inert);
+    assert.ok(!u.inert);
+});
+
+test('上層 onClose 拋出 null 這類假值時也不會被吞掉', () => {
+    const a = new ModalManager(), b = new ModalManager();
+    const l = makeElement('l'), u = makeElement('u');
+    a.show(l, {});
+    b.show(u, { onClose: () => { throw null; } });
+    assert.throws(() => a.hide(), (err) => err === null);
+    assert.equal(ModalManager._stack.length, 0);
+    assert.equal(l.classList.contains('active'), false);
+    assert.equal(u.classList.contains('active'), false);
+});
+
 test('新視窗推上堆疊時下層設為 inert，重新成為最上層（含連鎖關閉）時解除', () => {
     const a = new ModalManager(), b = new ModalManager(), c = new ModalManager();
     const l = makeElement('l'), m = makeElement('m'), u = makeElement('u');

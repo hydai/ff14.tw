@@ -168,6 +168,8 @@ class ModalManager {
      * 若本視窗不在堆疊最上層（上面還疊著別的視窗），會先由上而下把疊在它上面的
      * 每一層都關掉，再關自己。每一層各自把焦點還給自己開啟前的觸發元素，
      * 因此焦點會一路回捲到最初的那顆按鈕。
+     * 上層的 onClose 若拋出例外，仍會把剩下的層與本層關完，最後才重新拋出
+     * 第一個錯誤（不吞例外）；本層自己的 onClose 拋出時則直接往外傳。
      */
     hide() {
         if (!this.activeModal) return;
@@ -177,13 +179,28 @@ class ModalManager {
         // 萬一預算用盡（正常情況不會發生：只有 onClose 不斷推入新視窗才可能），
         // 迴圈直接停手、繼續往下關自己：後面的 _removeFromStack(this) 只會把自己
         // 移出堆疊，還沒關掉的上層仍留在堆疊上、也仍然是接收 Escape 的那一層。
+        //
+        // 上層的 hide() 有可能拋出（例如它的 onClose 拋錯）：先記下第一個錯誤、
+        // 繼續把剩下的層與自己關完，最後才重新拋出。這樣一層的錯誤不會讓更下面
+        // 的層永遠關不掉、卡在堆疊上；每一層都是先 _removeFromStack 再呼叫 onClose，
+        // 所以捕捉到錯誤時，上層已經移出堆疊、焦點也已經還原，這裡不需要補做清理。
+        let firstError = null;
+        let hasError = false;
         let guard = ModalManager._stack.length + 1;
         while (guard-- > 0) {
             const stack = ModalManager._stack;
             const index = stack.indexOf(this);
             if (index === -1 || index === stack.length - 1) break;
             const top = stack[stack.length - 1];
-            top.hide();
+            try {
+                top.hide();
+            } catch (error) {
+                // 只記第一個錯誤；用旗標而不是真值判斷，throw null／undefined 也照樣重新拋出
+                if (!hasError) {
+                    hasError = true;
+                    firstError = error;
+                }
+            }
             // 上層的 hide() 沒有把自己移出堆疊時中止（理論上不會發生）
             if (ModalManager._stack[ModalManager._stack.length - 1] === top) break;
         }
@@ -211,9 +228,15 @@ class ModalManager {
         }
         this.previousFocus = null;
 
-        // 執行回調
+        // 執行回調。若這裡拋出，本層的狀態已經一致（已移出堆疊、焦點已還原），
+        // 不吞掉、直接往外傳，行為與修正前相同
         if (typeof onClose === 'function') {
             onClose();
+        }
+
+        // 上層曾經拋出的錯誤，等自己這層完全關閉之後才重新拋出，不吞錯誤
+        if (hasError) {
+            throw firstError;
         }
     }
 
