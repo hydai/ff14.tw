@@ -19,7 +19,7 @@ FF14.tw is a multi-tool website for Final Fantasy XIV players in Taiwan, providi
 ## Project Statistics
 
 - **HTML Files**: 24 total — 19 across 12 tool directories (11 single-page tools + `guide/` with 8 pages) + 4 main pages (`index.html`, `about.html`, `changelog.html`, `copyright.html`) + 1 API test harness (`api/test.html`)
-- **JavaScript Files**: 65 total — 35 tool scripts + 4 shared utilities (`assets/js/`) + 17 i18n (manager + translations) + 3 layout components (`assets/js/components/`) + 5 test files (`tests/*.test.js`: design-system, pages, timed-gathering-eorzea-time, scripts, docs) + 1 Cloudflare Worker (`api/treasure-room-worker.js`); plus 3 Node build scripts (`scripts/*.mjs`, not shipped to the site)
+- **JavaScript Files**: 66 total — 35 tool scripts + 4 shared utilities (`assets/js/`) + 17 i18n (manager + translations) + 3 layout components (`assets/js/components/`) + 6 test files (`tests/*.test.js`: design-system, pages, timed-gathering-eorzea-time, scripts, docs, modal-manager-stack) + 1 Cloudflare Worker (`api/treasure-room-worker.js`); plus 3 Node build scripts (`scripts/*.mjs`, not shipped to the site)
 - **CSS Files**: 23 (shared + components + tool-specific)
 - **JSON Data Files**: 8 (total ~25,600 lines); `/data/` also has one non-JSON `ff14-gp.csv`
 - **Total Dungeons**: 803 entries (data file's own `metadata.totalDungeons` field still says 804 — pre-existing inconsistency inside `dungeons.json` itself, not a doc bug)
@@ -59,7 +59,7 @@ Tools that work without server (can open HTML directly):
 - 天氣預報
 - 攻略資料（陸行鳥毛色頁面除外）
 
-**Testing:** `node --test`（Node 內建 test runner，自動執行 `tests/*.test.js`）。`tests/design-system.test.js` 守住設計系統規則（token 完整性、對比度、token-clean 檔案清單）；`tests/pages.test.js` 守住每一頁的載入順序與字型；`tests/timed-gathering-eorzea-time.test.js` 守住艾歐澤亞時間換算在不同時區下的一致性；`tests/scripts.test.js` 守住 `assets/`、`tools/` 底下的 JS 不得使用 `innerHTML`；`tests/docs.test.js` 守住 CLAUDE.md／README 的副本數、寶圖座標數與 JSON 資料檔案數這幾個關鍵統計數字不會與 `/data` 底下的實際資料脫節。每次 commit 前執行。網站主體沒有 package.json、bundler 或 linter（`api/` 的 Cloudflare Worker 子專案另有自己的 `package.json`／`wrangler`，與網站建置無關）。
+**Testing:** `node --test`（Node 內建 test runner，自動執行 `tests/*.test.js`）。`tests/design-system.test.js` 守住設計系統規則（token 完整性、對比度、token-clean 檔案清單）；`tests/pages.test.js` 守住每一頁的載入順序與字型；`tests/timed-gathering-eorzea-time.test.js` 守住艾歐澤亞時間換算在不同時區下的一致性；`tests/scripts.test.js` 守住 `assets/`、`tools/` 底下的 JS 不得使用 `innerHTML`；`tests/docs.test.js` 守住 CLAUDE.md／README 的副本數、寶圖座標數與 JSON 資料檔案數這幾個關鍵統計數字不會與 `/data` 底下的實際資料脫節；`tests/modal-manager-stack.test.js` 用最小 DOM 替身（不需 jsdom）守住 `ModalManager` 的共用堆疊行為：只有最上層回應 Escape／焦點陷阱、關閉下層時由上而下連鎖收合、焦點依序回捲。每次 commit 前執行。網站主體沒有 package.json、bundler 或 linter（`api/` 的 Cloudflare Worker 子專案另有自己的 `package.json`／`wrangler`，與網站建置無關）。
 
 ## Core Patterns
 
