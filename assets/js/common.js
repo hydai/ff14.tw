@@ -365,6 +365,15 @@ function initHamburgerMenu() {
     headerContainer.appendChild(hamburger);
     document.body.appendChild(overlay);
 
+    // 手機版導覽選單關閉時設為 inert：CSS 用 visibility 延遲隱藏讓滑出動畫播完，
+    // 這 300ms 內選單連結仍在 Tab 順序裡、也可用 Enter 觸發；inert 把鍵盤與焦點一併擋掉。
+    // 桌機（>768px）導覽列永遠可用，所以只在手機寬度且未開啟時才 inert；
+    // 視窗大小改變時也要重新同步（同一個 .nav 元素在桌機與手機共用）
+    const syncNavInert = () => {
+        nav.inert = window.innerWidth <= 768 && !nav.classList.contains('active');
+    };
+    syncNavInert();
+
     // 漢堡選單點擊事件
     hamburger.addEventListener('click', function () {
         const isActive = nav.classList.contains('active');
@@ -375,12 +384,14 @@ function initHamburgerMenu() {
             hamburger.classList.remove('active');
             overlay.classList.remove('active');
             document.body.style.overflow = '';
+            syncNavInert();
         } else {
             // 開啟選單
             nav.classList.add('active');
             hamburger.classList.add('active');
             overlay.classList.add('active');
             document.body.style.overflow = 'hidden';
+            syncNavInert();
         }
     });
 
@@ -390,6 +401,7 @@ function initHamburgerMenu() {
         hamburger.classList.remove('active');
         overlay.classList.remove('active');
         document.body.style.overflow = '';
+        syncNavInert();
     });
 
     // 處理下拉選單在手機版的行為
@@ -433,6 +445,7 @@ function initHamburgerMenu() {
                     dropdown.classList.remove('active');
                 });
             }
+            syncNavInert();
         }, 250);
     });
 }
