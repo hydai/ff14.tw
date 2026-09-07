@@ -66,6 +66,8 @@ const FauxHollowsTranslations = {
 
         // 格子內容
         faux_hollows_cell_fox: '狐',
+        faux_hollows_fox_candidate: '宗長候選',
+        faux_hollows_candidate_note: '宗長標記只表示候選位置，不代表出現機率；找到宗長後會移除其他候選提示。',
         faux_hollows_cell_sword: '劍',
         faux_hollows_cell_chest: '箱',
 
@@ -144,6 +146,8 @@ const FauxHollowsTranslations = {
 
         // Cell content
         faux_hollows_cell_fox: 'Fox',
+        faux_hollows_fox_candidate: 'Fox candidate',
+        faux_hollows_candidate_note: 'Fox markers show possible locations, not spawn probabilities. Other candidates disappear once the fox is found.',
         faux_hollows_cell_sword: 'Swd',
         faux_hollows_cell_chest: 'Box',
 
@@ -222,6 +226,8 @@ const FauxHollowsTranslations = {
 
         // セル内容
         faux_hollows_cell_fox: '狐',
+        faux_hollows_fox_candidate: '宗長候補',
+        faux_hollows_candidate_note: '宗長の表示は候補位置であり、出現確率ではありません。宗長を発見すると他の候補表示は消えます。',
         faux_hollows_cell_sword: '剣',
         faux_hollows_cell_chest: '箱',
 

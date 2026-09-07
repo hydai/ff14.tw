@@ -1,0 +1,29 @@
+name: Tests
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: api/package-lock.json
+      - name: Install Worker test runtime
+        run: npm --prefix api ci
+      - name: Run regression and repository checks
+        run: node --test
+      - name: Validate Worker environments without deploying
+        working-directory: api
+        run: |
+          npx wrangler deploy --dry-run --env development
+          npx wrangler deploy --dry-run --env production

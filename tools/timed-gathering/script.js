@@ -280,11 +280,13 @@ class TimedGatheringManager {
         const notificationStatus = document.getElementById('notificationStatus');
         const testNotificationBtn = document.getElementById('testNotificationBtn');
 
-        // 初始化通知狀態
-        if (this.notificationManager.enabled) {
-            notificationToggle.checked = true;
-        }
+        // Notification support is optional; gathering lists still work without it.
+        const state = this.notificationManager.getNotificationState();
+        notificationToggle.checked = state.enabled;
+        notificationToggle.disabled = !state.supported;
+        testNotificationBtn.disabled = !state.supported;
         this.updateNotificationStatus();
+        if (!state.supported) return;
 
         // 通知開關事件
         notificationToggle.addEventListener('change', async () => {
@@ -321,9 +323,10 @@ class TimedGatheringManager {
             const statusClasses = ['tag-solid', 'tag-success', 'tag-danger'];
             notificationStatus.classList.remove(...statusClasses);
 
-            if (this.notificationManager.enabled) {
+            const state = this.notificationManager.getNotificationState();
+            if (state.enabled) {
                 notificationStatus.classList.add('tag-solid', 'tag-success');
-            } else if (Notification.permission === 'denied') {
+            } else if (state.permission === 'denied') {
                 notificationStatus.classList.add('tag-solid', 'tag-danger');
             }
         }
@@ -345,9 +348,8 @@ class TimedGatheringManager {
     }
 
     applyFilters() {
-        // Sanitize search input to prevent XSS
-        const rawSearchTerm = this.elements.searchInput.value;
-        const searchTerm = SecurityUtils.sanitizeInput(rawSearchTerm).toLowerCase();
+        // Search operates on text, just like the dataset and textContent rendering.
+        const searchTerm = this.elements.searchInput.value.trim().toLowerCase();
         const activeTypes = Array.from(this.elements.typeFilters.querySelectorAll('.chip.active'))
             .map(tag => tag.dataset.type);
         const activeExpansions = Array.from(this.elements.expansionFilters.querySelectorAll('.chip.active'))
@@ -589,7 +591,8 @@ class TimedGatheringManager {
         this.renderListTabs(lists);
 
         if (lists.length > 0) {
-            this.switchToList(lists[0].id);
+            const selectedList = lists.find(list => list.id === this.currentListId) || lists[0];
+            this.switchToList(selectedList.id);
         }
     }
 
@@ -681,8 +684,7 @@ class TimedGatheringManager {
                 return;
             }
 
-            // Sanitize the name to prevent XSS
-            const name = SecurityUtils.sanitizeInput(rawName);
+            const name = rawName;
 
             if (name) {
                 const result = this.listManager.createList(name);
@@ -728,8 +730,7 @@ class TimedGatheringManager {
                 return;
             }
 
-            // Sanitize the name to prevent XSS
-            const newName = SecurityUtils.sanitizeInput(rawName);
+            const newName = rawName;
 
             if (newName && newName !== currentList.name) {
                 const result = this.listManager.renameList(this.currentListId, newName);
@@ -856,6 +857,20 @@ class TimedGatheringManager {
 
         const macro = this.macroExporter.generate(list.items, options);
 
+        const skippedCount = list.items.filter(item => {
+            const schedule = TimeCalculator.parseSchedule(item.time, item.duration);
+            return !schedule || schedule.allDay;
+        }).length;
+        if (!macro) {
+            this.elements.macroText.value = '';
+            this.elements.macroOutput.style.display = 'none';
+            FF14Utils.showToast(FF14Utils.getI18nText('noScheduledItems', '清單沒有可設定鬧鐘的採集時段'), 'info');
+            return;
+        }
+        if (skippedCount > 0) {
+            FF14Utils.showToast(FF14Utils.getI18nText('macroSkippedItems', '已略過 {count} 個全天或時間無效的項目', { count: skippedCount }), 'info');
+        }
+
         this.elements.macroText.value = macro;
         this.elements.macroOutput.style.display = 'block';
 
@@ -927,18 +942,8 @@ class TimedGatheringManager {
         const reader = new FileReader();
 
         reader.onload = (e) => {
-            // Define schema for import data
-            const importSchema = {
-                required: ['version', 'lists'],
-                properties: {
-                    version: { type: 'string' },
-                    lists: { type: 'array', minItems: 0 },
-                    exportDate: { type: 'string' }
-                }
-            };
-
-            // Use safe JSON parsing with schema validation
-            const parseResult = SecurityUtils.safeJSONParse(e.target.result, importSchema);
+            // ListManager owns the nested validation contract shared with storage/export.
+            const parseResult = SecurityUtils.safeJSONParse(e.target.result);
 
             if (!parseResult.success) {
                 console.error('匯入失敗:', parseResult.error);
@@ -958,6 +963,10 @@ class TimedGatheringManager {
             } else {
                 FF14Utils.showToast(result.message, 'error');
             }
+        };
+
+        reader.onerror = () => {
+            FF14Utils.showToast(FF14Utils.getI18nText('fileReadFailed', '無法讀取檔案，請重新選取'), 'error');
         };
 
         reader.readAsText(file);

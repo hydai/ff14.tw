@@ -1,5 +1,31 @@
 // Eorzea Time Calculator Module
 class TimeCalculator {
+    /** Parse stored schedules once for notifications, filtering and macro export. */
+    static parseSchedule(time, duration = 55) {
+        if (typeof time !== 'string' || !Number.isFinite(duration) || duration <= 0 || duration > 1440) {
+            return null;
+        }
+        if (time.trim() === '全天') {
+            return { startMinutes: 0, durationMinutes: 1440, allDay: true };
+        }
+
+        const match = time.trim().match(/^(\d{1,2}):(\d{2})(?:\s*-\s*(\d{1,2}):(\d{2}))?$/);
+        if (!match) return null;
+        const startHour = Number(match[1]);
+        const startMinute = Number(match[2]);
+        if (startHour > 23 || startMinute > 59) return null;
+        const startMinutes = startHour * 60 + startMinute;
+
+        let durationMinutes = duration;
+        if (match[3] !== undefined) {
+            const endHour = Number(match[3]);
+            const endMinute = Number(match[4]);
+            if (endHour > 24 || endMinute > 59 || (endHour === 24 && endMinute !== 0)) return null;
+            durationMinutes = (endHour * 60 + endMinute - startMinutes + 1440) % 1440 || 1440;
+        }
+        return { startMinutes, durationMinutes, allDay: durationMinutes === 1440 };
+    }
+
     constructor() {
         // Constants for ET calculation
         this.EORZEA_MULTIPLIER = 3600 / 175; // 1 ET hour = 175 real seconds

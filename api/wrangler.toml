@@ -1,16 +1,26 @@
 name = "ff14-tw-treasure"
 main = "treasure-room-worker.js"
-compatibility_date = "2024-01-01"
+# Matches the workerd release pinned by package-lock.json.
+compatibility_date = "2026-07-22"
 
-# wrangler.toml (wrangler v3.88.0^)
 [observability.logs]
 enabled = true
 
-# KV namespace 設定（預設環境：用於 wrangler dev 和預覽環境）
+[vars]
+ENVIRONMENT = "production"
+
+[[durable_objects.bindings]]
+name = "ROOMS"
+class_name = "TreasureRoom"
+
+[[migrations]]
+tag = "v1-treasure-room-sqlite"
+new_sqlite_classes = ["TreasureRoom"]
+
+# Read-only migration fallback; no new data is written to this namespace.
 [[kv_namespaces]]
 binding = "TREASURE_ROOMS"
 id = "81b924a9a6f347fc96bf2b439d0dc2d6"
-preview_id = "LOCAL_KV_NAMESPACE"  # 用於 `wrangler dev --local` 本地開發
 
 # 本地開發設定
 [dev]
@@ -18,10 +28,27 @@ port = 8787
 local_protocol = "http"
 
 [env.production]
-name = "ff14tw-treasure"
+name = "ff14-tw-treasure"
 #route = { pattern = "api.ff14.tw/*", zone_name = "ff14.tw", custom_domain = true }
 vars = { ENVIRONMENT = "production" }
+
+[[env.production.durable_objects.bindings]]
+name = "ROOMS"
+class_name = "TreasureRoom"
+
+[[env.production.kv_namespaces]]
+binding = "TREASURE_ROOMS"
+id = "81b924a9a6f347fc96bf2b439d0dc2d6"
 
 [env.development]
 name = "ff14tw-treasure-room-api-dev"
 vars = { ENVIRONMENT = "development" }
+
+[[env.development.durable_objects.bindings]]
+name = "ROOMS"
+class_name = "TreasureRoom"
+
+# wrangler dev --local uses an isolated local KV namespace, never the remote data.
+[[env.development.kv_namespaces]]
+binding = "TREASURE_ROOMS"
+id = "81b924a9a6f347fc96bf2b439d0dc2d6"

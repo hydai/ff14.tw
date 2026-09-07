@@ -86,6 +86,7 @@ class LodestoneCharacterLookup {
             tabPanes: document.querySelectorAll('.tab-pane')
         };
         
+        this.searchContext = null;
         this.currentAchievementPage = 1;
         this.currentFCId = null;
         this.overviewCards = [];
@@ -169,182 +170,136 @@ class LodestoneCharacterLookup {
         }
     }
 
+    isCurrentRequest(context) {
+        return this.searchContext === context && !context.controller.signal.aborted;
+    }
+
+    async fetchJSON(path, context, params = {}) {
+        const url = SecurityUtils.buildSafeURL(`https://logstone.z54981220.workers.dev/${path}`, {
+            ...params, dc: context.datacenter
+        });
+        const response = await fetch(url, { signal: context.controller.signal });
+        if (!response.ok) {
+            if (response.status === 404) {
+                throw new Error(FF14Utils.getI18nText('lodestone_error_not_found', '找不到此角色，請確認 ID 是否正確'));
+            }
+            throw new Error(FF14Utils.getI18nText('lodestone_error_query_failed', `查詢失敗 (${response.status}): ${response.statusText}`, {
+                status: response.status, statusText: response.statusText
+            }));
+        }
+        const data = await response.json();
+        if (!data || typeof data !== 'object' || Array.isArray(data)) {
+            throw new Error(FF14Utils.getI18nText('lodestone_error_format', '伺服器回應格式錯誤'));
+        }
+        return data;
+    }
+
+    async loadOptionalData(path, context, onData, params = {}, onError = () => {}) {
+        try {
+            const data = await this.fetchJSON(path, context, params);
+            if (this.isCurrentRequest(context)) onData(data);
+        } catch (error) {
+            if (!this.isCurrentRequest(context)) return;
+            console.warn('選用資料載入失敗:', path, error);
+            onError(error);
+        }
+    }
+
+    resetSearchDisplay() {
+        this.currentFCId = null;
+        this.overviewValues = null;
+        this.overviewCards = [];
+        this.elements.fcName.onclick = null;
+        delete this.elements.fcName.dataset.fcId;
+        this.elements.fcIcon.classList.add('hidden');
+        this.elements.dataTimestamp.classList.add('hidden');
+        this.elements.specialContentSection.classList.add('hidden');
+        this.elements.fcEstateInfo.classList.add('hidden');
+        this.elements.tabNavigation.classList.add('hidden');
+        for (const key of ['specialContent', 'fcCrest', 'fcDetailName', 'fcSlogan', 'fcMemberCount',
+            'fcRank', 'fcRecruitment', 'fcEstateName', 'fcEstatePlot', 'fcEstateGreeting',
+            'fcFocusList', 'fcSeekingList', 'fcReputationList', 'fcMembersPagination', 'achievementsPagination']) {
+            this.elements[key].textContent = '';
+        }
+        this.displayAchievements({});
+        this.displayMounts({});
+        this.displayMinions({});
+        this.displayFreeCompanyMembers({});
+    }
+
+    refreshOverview(context) {
+        if (!this.isCurrentRequest(context) || !this.overviewValues) return;
+        this.overviewValues.achievements.textContent = context.achievements?.TotalAchievements || 0;
+        this.overviewValues.points.textContent = context.achievements?.AchievementPoints || 0;
+        this.overviewValues.mounts.textContent = context.mounts?.Mounts?.length || 0;
+        this.overviewValues.minions.textContent = context.minions?.Minions?.length || 0;
+        if (this.overviewValues.fc) this.overviewValues.fc.textContent = this.elements.fcMemberCount.textContent || 0;
+    }
+
     async searchCharacter() {
         const characterId = this.elements.characterId.value.trim();
-
-        console.log('=== 開始查詢角色 ===');
-        console.log('輸入的角色 ID:', characterId);
-
-        if (!characterId) {
-            this.showError(FF14Utils.getI18nText('lodestone_error_no_id', '請輸入角色 ID'));
+        if (!characterId || !/^\d+$/.test(characterId)) {
+            this.showError(FF14Utils.getI18nText(characterId ? 'lodestone_error_invalid_id' : 'lodestone_error_no_id',
+                characterId ? '角色 ID 必須是數字' : '請輸入角色 ID'));
             return;
         }
 
-        if (!/^\d+$/.test(characterId)) {
-            this.showError(FF14Utils.getI18nText('lodestone_error_invalid_id', '角色 ID 必須是數字'));
-            return;
-        }
-
+        // ID、DC 與所有子請求都屬於同一次查詢；忽略中止後仍然抵達的回應。
+        this.searchContext?.controller.abort();
+        const context = {
+            characterId,
+            datacenter: this.elements.datacenterSelect.value,
+            controller: new AbortController(),
+            achievementRequest: 0,
+            membersRequest: 0
+        };
+        this.searchContext = context;
         this.showLoading(true);
         this.hideError();
         this.hideCharacterInfo();
-
-        const datacenter = this.elements.datacenterSelect.value;
-        const apiUrl = SecurityUtils.buildSafeURL(`https://logstone.z54981220.workers.dev/character/${encodeURIComponent(characterId)}`, { dc: datacenter });
-        const jobApiUrl = SecurityUtils.buildSafeURL(`https://logstone.z54981220.workers.dev/character/${encodeURIComponent(characterId)}/classjob`, { dc: datacenter });
-        const achievementsApiUrl = SecurityUtils.buildSafeURL(`https://logstone.z54981220.workers.dev/character/${encodeURIComponent(characterId)}/achievements`, { page: 1, dc: datacenter });
-        const mountsApiUrl = SecurityUtils.buildSafeURL(`https://logstone.z54981220.workers.dev/character/${encodeURIComponent(characterId)}/mounts`, { dc: datacenter });
-        const minionsApiUrl = SecurityUtils.buildSafeURL(`https://logstone.z54981220.workers.dev/character/${encodeURIComponent(characterId)}/minions`, { dc: datacenter });
-        
-        console.log('API URLs (DC: ' + datacenter + '):', {
-            character: apiUrl,
-            job: jobApiUrl,
-            achievements: achievementsApiUrl,
-            mounts: mountsApiUrl,
-            minions: minionsApiUrl
-        });
+        this.resetSearchDisplay();
 
         try {
-            console.log('正在發送請求...');
-            // 同時發送所有請求
-            const [characterResponse, jobResponse, achievementsResponse, mountsResponse, minionsResponse] = await Promise.all([
-                fetch(apiUrl),
-                fetch(jobApiUrl),
-                fetch(achievementsApiUrl),
-                fetch(mountsApiUrl),
-                fetch(minionsApiUrl)
-            ]);
-            
-            console.log('Character Response 狀態:', characterResponse.status);
-            console.log('Job Response 狀態:', jobResponse.status);
-            
-            if (!characterResponse.ok) {
-                console.error('Character Response 不是 OK:', characterResponse.status, characterResponse.statusText);
-                if (characterResponse.status === 404) {
-                    throw new Error(FF14Utils.getI18nText('lodestone_error_not_found', '找不到此角色，請確認 ID 是否正確'));
-                }
-                throw new Error(FF14Utils.getI18nText('lodestone_error_query_failed', `查詢失敗 (${characterResponse.status}): ${characterResponse.statusText}`, {
-                    status: characterResponse.status,
-                    statusText: characterResponse.statusText
-                }));
-            }
-
-            const characterText = await characterResponse.text();
-            console.log('原始角色回應內容:', characterText);
-
-            let characterData;
-            try {
-                const parseResult = SecurityUtils.safeJSONParse(characterText);
-                if (!parseResult.success) {
-                    throw new Error(FF14Utils.getI18nText('lodestone_error_format', '伺服器回應格式錯誤'));
-                }
-                characterData = parseResult.data;
-                console.log('解析後的角色 JSON 資料:', characterData);
-            } catch (parseError) {
-                console.error('角色 JSON 解析錯誤:', parseError);
-                console.error('無法解析的內容:', characterText);
-                throw new Error(FF14Utils.getI18nText('lodestone_error_format', '伺服器回應格式錯誤'));
-            }
-            
-            // 處理職業資料（如果請求成功）
-            let jobData = null;
-            if (jobResponse.ok) {
-                const jobText = await jobResponse.text();
-                console.log('原始職業回應內容:', jobText);
-                try {
-                    const parseResult = SecurityUtils.safeJSONParse(jobText);
-                    if (!parseResult.success) {
-                        console.error('職業資料格式錯誤');
-                        return;
-                    }
-                    const jobDataResponse = parseResult.data;
-                    console.log('完整職業資料結構:', jobDataResponse);
-                    jobData = jobDataResponse.data || jobDataResponse;  // 嘗試兩種可能的資料結構
-                    console.log('解析後的職業 JSON 資料:', jobData);
-                } catch (parseError) {
-                    console.error('職業 JSON 解析錯誤:', parseError);
-                    console.error('無法解析的內容:', jobText);
-                    // 職業資料解析失敗不影響主要功能
-                }
-            } else {
-                console.warn('無法取得職業資料:', jobResponse.status);
-            }
-            
-            // 處理成就資料
-            let achievementsData = null;
-            if (achievementsResponse.ok) {
-                try {
-                    achievementsData = await achievementsResponse.json();
-                    console.log('成就資料:', achievementsData);
-                } catch (parseError) {
-                    console.error('成就資料解析錯誤:', parseError);
-                }
-            }
-            
-            // 處理坐騎資料
-            let mountsData = null;
-            if (mountsResponse.ok) {
-                try {
-                    mountsData = await mountsResponse.json();
-                    console.log('坐騎資料:', mountsData);
-                } catch (parseError) {
-                    console.error('坐騎資料解析錯誤:', parseError);
-                }
-            }
-            
-            // 處理寵物資料
-            let minionsData = null;
-            if (minionsResponse.ok) {
-                try {
-                    minionsData = await minionsResponse.json();
-                    console.log('寵物資料:', minionsData);
-                } catch (parseError) {
-                    console.error('寵物資料解析錯誤:', parseError);
-                }
-            }
-            
-            if (characterData && characterData.Character) {
-                console.log('準備顯示角色資料...');
-                this.displayCharacterInfo(characterData.Character, jobData);
-
-                // 顯示額外資料
-                if (achievementsData) {
-                    this.displayAchievements(achievementsData);
-                }
-                if (mountsData) {
-                    this.displayMounts(mountsData);
-                }
-                if (minionsData) {
-                    this.displayMinions(minionsData);
-                }
-
-                // 顯示分頁導航並創建總覽
-                this.elements.tabNavigation.classList.remove('hidden');
-                this.createOverview(achievementsData, mountsData, minionsData);
-
-                // 預設顯示總覽分頁
-                this.switchTab('overview');
-
-                // 顯示時間戳記（如果職業資料中有）
-                if (jobData && jobData.timestamp) {
-                    this.displayTimestamp(jobData.timestamp);
-                }
-            } else {
-                console.error('資料格式錯誤或資料為空');
-                console.error('預期格式: {Character: {...}}');
+            const characterData = await this.fetchJSON(`character/${encodeURIComponent(characterId)}`, context);
+            if (!this.isCurrentRequest(context)) return;
+            if (!characterData.Character || typeof characterData.Character !== 'object' || Array.isArray(characterData.Character)) {
                 throw new Error(FF14Utils.getI18nText('lodestone_error_no_data', '無法取得角色資料'));
             }
-        } catch (error) {
-            console.error('查詢過程發生錯誤:', error);
-            console.error('錯誤詳情:', {
-                name: error.name,
-                message: error.message,
-                stack: error.stack
-            });
-            this.showError(`錯誤: ${error.message}`);
-        } finally {
+
+            const character = characterData.Character;
+            this.currentFCId = character.FreeCompany?.Name?.ID || null;
+            this.displayCharacterInfo(character, null);
+            this.elements.tabNavigation.classList.remove('hidden');
+            this.createOverview(null, null, null);
+            this.switchTab('overview');
+            // 主要資料已可使用；選用端點不阻塞顯示，也不阻止開始另一筆查詢。
             this.showLoading(false);
-            console.log('=== 查詢結束 ===');
+
+            const base = `character/${encodeURIComponent(characterId)}`;
+            const optionalRequests = [
+                this.loadOptionalData(`${base}/classjob`, context, data => {
+                    const jobs = data.data || data;
+                    if (jobs.ClassJobs) this.displayJobLevels(jobs.ClassJobs);
+                    if (jobs.timestamp) this.displayTimestamp(jobs.timestamp);
+                }),
+                this.loadAchievementsPage(characterId, 1, context),
+                this.loadOptionalData(`${base}/mounts`, context, data => {
+                    context.mounts = data;
+                    this.displayMounts(data);
+                    this.refreshOverview(context);
+                }),
+                this.loadOptionalData(`${base}/minions`, context, data => {
+                    context.minions = data;
+                    this.displayMinions(data);
+                    this.refreshOverview(context);
+                })
+            ];
+            if (this.currentFCId) optionalRequests.push(this.loadFreeCompanyInfo(this.currentFCId, context));
+            await Promise.all(optionalRequests);
+        } catch (error) {
+            if (this.isCurrentRequest(context)) this.showError(error.message);
+        } finally {
+            if (this.isCurrentRequest(context)) this.showLoading(false);
         }
     }
 
@@ -406,7 +361,7 @@ class LodestoneCharacterLookup {
             this.elements.fcName.dataset.fcId = fcId;
 
             // 查詢公會詳細資訊
-            this.loadFreeCompanyInfo(fcId);
+            // 公會資料由 searchCharacter 使用同一次查詢的 context 載入。
             
             // Display FC icon if available
             if (character.FreeCompany.IconLayers) {
@@ -467,7 +422,7 @@ class LodestoneCharacterLookup {
                 // Create note
                 const note = document.createElement('p');
                 note.className = 'job-list-note';
-                note.textContent = FF14Utils.getI18nText('lodestone_error_job_list_loading', '載入詳細職業列表中...');
+                note.textContent = FF14Utils.getI18nText('lodestone_error_job_data_unavailable', '職業等級資料暫不可用');
 
                 // Add to container
                 this.elements.jobLevels.appendChild(jobItem);
@@ -884,6 +839,7 @@ class LodestoneCharacterLookup {
 
         // 清空並顯示成就列表
         this.elements.achievementsList.textContent = '';
+        this.elements.achievementsPagination.textContent = '';
 
         if (data.Achievements && data.Achievements.length > 0) {
             data.Achievements.forEach(achievement => {
@@ -900,7 +856,7 @@ class LodestoneCharacterLookup {
 
             // 顯示分頁
             if (data.Pagination) {
-                this.displayAchievementsPagination(data.Pagination, data.CharacterID);
+                this.displayAchievementsPagination(data.Pagination, this.searchContext.characterId);
             }
         } else {
             const noData = document.createElement('p');
@@ -910,6 +866,7 @@ class LodestoneCharacterLookup {
     }
 
     displayAchievementsPagination(pagination, characterId) {
+        const context = this.searchContext;
         this.elements.achievementsPagination.textContent = '';
 
         const paginationInfo = document.createElement('div');
@@ -926,7 +883,7 @@ class LodestoneCharacterLookup {
             const prevBtn = document.createElement('button');
             prevBtn.className = 'btn btn-sm';
             prevBtn.textContent = FF14Utils.getI18nText('lodestone_pagination_prev', '上一頁');
-            prevBtn.onclick = () => this.loadAchievementsPage(characterId, pagination.PagePrev);
+            prevBtn.onclick = () => this.loadAchievementsPage(characterId, pagination.PagePrev, context);
             paginationButtons.appendChild(prevBtn);
         }
 
@@ -934,7 +891,7 @@ class LodestoneCharacterLookup {
             const nextBtn = document.createElement('button');
             nextBtn.className = 'btn btn-sm';
             nextBtn.textContent = FF14Utils.getI18nText('lodestone_pagination_next', '下一頁');
-            nextBtn.onclick = () => this.loadAchievementsPage(characterId, pagination.PageNext);
+            nextBtn.onclick = () => this.loadAchievementsPage(characterId, pagination.PageNext, context);
             paginationButtons.appendChild(nextBtn);
         }
 
@@ -942,20 +899,17 @@ class LodestoneCharacterLookup {
         this.elements.achievementsPagination.appendChild(paginationButtons);
     }
     
-    async loadAchievementsPage(characterId, page) {
-        try {
-            const datacenter = this.elements.datacenterSelect.value;
-            const url = SecurityUtils.buildSafeURL(`https://logstone.z54981220.workers.dev/character/${encodeURIComponent(characterId)}/achievements`, { page: page, dc: datacenter });
-            const response = await fetch(url);
-            if (response.ok) {
-                const data = await response.json();
-                this.displayAchievements(data);
-            }
-        } catch (error) {
-            console.error('載入成就頁面失敗:', error);
-        }
+    async loadAchievementsPage(characterId, page, context = this.searchContext) {
+        if (!context || !this.isCurrentRequest(context) || String(characterId) !== context.characterId) return;
+        const request = ++context.achievementRequest;
+        await this.loadOptionalData(`character/${encodeURIComponent(characterId)}/achievements`, context, data => {
+            if (request !== context.achievementRequest) return;
+            context.achievements = data;
+            this.displayAchievements(data);
+            this.refreshOverview(context);
+        }, { page });
     }
-    
+
     displayMounts(data) {
         console.log('顯示坐騎資料:', data);
 
@@ -1030,41 +984,22 @@ class LodestoneCharacterLookup {
         }
     }
     
-    async loadFreeCompanyInfo(fcId) {
-        try {
-            this.currentFCId = fcId;
-            const datacenter = this.elements.datacenterSelect.value;
-            
-            // 同時載入公會資訊和成員列表
-            const fcUrl = SecurityUtils.buildSafeURL(`https://logstone.z54981220.workers.dev/freecompany/${encodeURIComponent(fcId)}`, { dc: datacenter });
-            const membersUrl = SecurityUtils.buildSafeURL(`https://logstone.z54981220.workers.dev/freecompany/${encodeURIComponent(fcId)}/members`, { page: 1, dc: datacenter });
-            const [fcResponse, membersResponse] = await Promise.all([
-                fetch(fcUrl),
-                fetch(membersUrl)
-            ]);
-            
-            if (fcResponse.ok) {
-                const data = await fcResponse.json();
-                console.log('公會資料:', data);
-                if (data.FreeCompany) {
-                    this.displayFreeCompanyInfo(data.FreeCompany);
-                    // 更新頂部的公會名稱為可點擊連結
-                    this.elements.fcName.textContent = data.FreeCompany.Name || '未知公會';
-                    this.elements.fcName.onclick = () => {
-                        document.getElementById('freeCompanySection').scrollIntoView({ behavior: 'smooth' });
-                    };
+    async loadFreeCompanyInfo(fcId, context = this.searchContext) {
+        if (!context || !this.isCurrentRequest(context) || this.currentFCId !== fcId) return;
+        await Promise.all([
+            this.loadOptionalData(`freecompany/${encodeURIComponent(fcId)}`, context, data => {
+                if (this.currentFCId !== fcId || !data.FreeCompany) return;
+                this.displayFreeCompanyInfo(data.FreeCompany);
+                this.elements.fcName.textContent = data.FreeCompany.Name || '未知公會';
+                this.elements.fcName.onclick = () => this.activateTabFromCard('freecompany');
+                this.refreshOverview(context);
+            }, {}, () => {
+                if (this.currentFCId === fcId) {
+                    this.elements.fcName.textContent = FF14Utils.getI18nText('lodestone_error_fc_failed', '公會資訊載入失敗');
                 }
-            }
-            
-            if (membersResponse.ok) {
-                const membersData = await membersResponse.json();
-                console.log('公會成員資料:', membersData);
-                this.displayFreeCompanyMembers(membersData);
-            }
-        } catch (error) {
-            console.error('載入公會資訊失敗:', error);
-            this.elements.fcName.textContent = FF14Utils.getI18nText('lodestone_error_fc_failed', '公會資訊載入失敗');
-        }
+            }),
+            this.loadFCMembersPage(1, context, fcId)
+        ]);
     }
 
     displayFreeCompanyInfo(fc) {
@@ -1178,10 +1113,12 @@ class LodestoneCharacterLookup {
     }
     
     displayFreeCompanyMembers(data) {
+        const context = this.searchContext;
         console.log('顯示公會成員:', data);
         
         // 清空成員列表
         this.elements.fcMembersList.textContent = '';
+        this.elements.fcMembersPagination.textContent = '';
         
         if (data.Members && data.Members.length > 0) {
             data.Members.forEach(member => {
@@ -1205,7 +1142,9 @@ class LodestoneCharacterLookup {
                 name.href = '#';
                 name.onclick = (e) => {
                     e.preventDefault();
-                    // 將角色 ID 填入查詢框並查詢
+                    if (!context || !this.isCurrentRequest(context)) return;
+                    // 成員連結沿用顯示這份名單時的 DC。
+                    this.elements.datacenterSelect.value = context.datacenter;
                     this.elements.characterId.value = member.ID;
                     this.searchCharacter();
                 };
@@ -1265,6 +1204,8 @@ class LodestoneCharacterLookup {
     }
 
     displayFCMembersPagination(pagination) {
+        const context = this.searchContext;
+        const fcId = this.currentFCId;
         this.elements.fcMembersPagination.textContent = '';
 
         const paginationInfo = document.createElement('div');
@@ -1281,7 +1222,7 @@ class LodestoneCharacterLookup {
             const prevBtn = document.createElement('button');
             prevBtn.className = 'btn btn-sm';
             prevBtn.textContent = FF14Utils.getI18nText('lodestone_pagination_prev', '上一頁');
-            prevBtn.onclick = () => this.loadFCMembersPage(pagination.Page - 1);
+            prevBtn.onclick = () => this.loadFCMembersPage(pagination.Page - 1, context, fcId);
             paginationButtons.appendChild(prevBtn);
         }
 
@@ -1289,7 +1230,7 @@ class LodestoneCharacterLookup {
             const nextBtn = document.createElement('button');
             nextBtn.className = 'btn btn-sm';
             nextBtn.textContent = FF14Utils.getI18nText('lodestone_pagination_next', '下一頁');
-            nextBtn.onclick = () => this.loadFCMembersPage(pagination.Page + 1);
+            nextBtn.onclick = () => this.loadFCMembersPage(pagination.Page + 1, context, fcId);
             paginationButtons.appendChild(nextBtn);
         }
 
@@ -1297,28 +1238,21 @@ class LodestoneCharacterLookup {
         this.elements.fcMembersPagination.appendChild(paginationButtons);
     }
     
-    async loadFCMembersPage(page) {
-        if (!this.currentFCId) return;
-        
-        try {
-            const datacenter = this.elements.datacenterSelect.value;
-            const url = SecurityUtils.buildSafeURL(`https://logstone.z54981220.workers.dev/freecompany/${encodeURIComponent(this.currentFCId)}/members`, { page: page, dc: datacenter });
-            const response = await fetch(url);
-            if (response.ok) {
-                const data = await response.json();
-                this.displayFreeCompanyMembers(data);
-            }
-        } catch (error) {
-            console.error('載入公會成員頁面失敗:', error);
-        }
+    async loadFCMembersPage(page, context = this.searchContext, fcId = this.currentFCId) {
+        if (!context || !fcId || !this.isCurrentRequest(context) || this.currentFCId !== fcId) return;
+        const request = ++context.membersRequest;
+        await this.loadOptionalData(`freecompany/${encodeURIComponent(fcId)}/members`, context, data => {
+            if (this.currentFCId === fcId && request === context.membersRequest) this.displayFreeCompanyMembers(data);
+        }, { page });
     }
-    
+
     createOverview(achievementsData, mountsData, minionsData) {
         const overviewTab = document.getElementById('overviewTab');
         overviewTab.textContent = '';
 
         // 記錄每張總覽卡片的標題元素與視覺隱藏提示元素，供語言切換時重建兩者文字
         this.overviewCards = [];
+        this.overviewValues = {};
 
         const overviewGrid = document.createElement('div');
         overviewGrid.className = 'overview-grid';
@@ -1338,6 +1272,7 @@ class LodestoneCharacterLookup {
         const totalAchievementsStat = document.createElement('div');
         totalAchievementsStat.className = 'overview-stat';
         const totalAchievementsValue = document.createElement('span');
+        this.overviewValues.achievements = totalAchievementsValue;
         totalAchievementsValue.className = 'stat-value';
         totalAchievementsValue.textContent = achievementsData?.TotalAchievements || 0;
         const totalAchievementsLabel = document.createElement('span');
@@ -1352,6 +1287,7 @@ class LodestoneCharacterLookup {
         const achievementPointsStat = document.createElement('div');
         achievementPointsStat.className = 'overview-stat';
         const achievementPointsValue = document.createElement('span');
+        this.overviewValues.points = achievementPointsValue;
         achievementPointsValue.className = 'stat-value';
         achievementPointsValue.textContent = achievementsData?.AchievementPoints || 0;
         const achievementPointsLabel = document.createElement('span');
@@ -1399,6 +1335,7 @@ class LodestoneCharacterLookup {
         const mountStat = document.createElement('div');
         mountStat.className = 'overview-stat';
         const mountValue = document.createElement('span');
+        this.overviewValues.mounts = mountValue;
         mountValue.className = 'stat-value';
         mountValue.textContent = mountsData?.Mounts?.length || 0;
         const mountLabel = document.createElement('span');
@@ -1444,6 +1381,7 @@ class LodestoneCharacterLookup {
         const minionStat = document.createElement('div');
         minionStat.className = 'overview-stat';
         const minionValue = document.createElement('span');
+        this.overviewValues.minions = minionValue;
         minionValue.className = 'stat-value';
         minionValue.textContent = minionsData?.Minions?.length || 0;
         const minionLabel = document.createElement('span');
@@ -1490,6 +1428,7 @@ class LodestoneCharacterLookup {
             const fcStat = document.createElement('div');
             fcStat.className = 'overview-stat';
             const fcValue = document.createElement('span');
+            this.overviewValues.fc = fcValue;
             fcValue.className = 'stat-value';
             fcValue.textContent = this.elements.fcMemberCount.textContent;
             const fcLabel = document.createElement('span');

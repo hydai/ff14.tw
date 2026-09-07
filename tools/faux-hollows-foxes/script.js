@@ -34,9 +34,9 @@ class FauxHollowsFoxes {
         this.obstacleProbabilities = Array(FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS).fill(0);
         this.treasureProbabilities = {
             sword: Array(FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS).fill(0),
-            chest: Array(FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS).fill(0),
-            fox: Array(FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS).fill(0)
+            chest: Array(FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS).fill(0)
         };
+        this.foxCandidates = Array(FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS).fill(false);
         this.showProbabilities = true;
         this.showTreasureProbabilities = false;
         this.obstaclesConfirmed = false;
@@ -261,14 +261,15 @@ class FauxHollowsFoxes {
             }
         }
 
-        // 基於符合的盤面計算機率
+        // 資料只記錄宗長候選位置，沒有提供宗長出現率。找到宗長後不再提示其他候選。
+        const foxFound = this.board.includes('fox');
+        // 劍與寶箱按符合盤面計算機率；宗長只保留候選旗標。
         for (let i = 0; i < FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS; i++) {
             this.treasureProbabilities.sword[i] = matchingBoards.length > 0 ?
                 Math.round((treasureCount.sword[i] / matchingBoards.length) * FauxHollowsFoxes.CONSTANTS.PERCENTAGE) : 0;
             this.treasureProbabilities.chest[i] = matchingBoards.length > 0 ?
                 Math.round((treasureCount.chest[i] / matchingBoards.length) * FauxHollowsFoxes.CONSTANTS.PERCENTAGE) : 0;
-            this.treasureProbabilities.fox[i] = matchingBoards.length > 0 ?
-                Math.round((treasureCount.fox[i] / matchingBoards.length) * FauxHollowsFoxes.CONSTANTS.PERCENTAGE) : 0;
+            this.foxCandidates[i] = !foxFound && this.board[i] === null && treasureCount.fox[i] > 0;
         }
     }
 
@@ -284,7 +285,7 @@ class FauxHollowsFoxes {
                 cell.textContent = '';
                 SecurityUtils.clearElement(cell);
 
-                if (this.showTreasureProbabilities && this.obstaclesConfirmed) {
+                if (this.showProbabilities && this.showTreasureProbabilities && this.obstaclesConfirmed) {
                     // 顯示寶物機率
                     this.displayTreasureProbabilities(cell, i);
                 } else if (this.showProbabilities) {
@@ -304,47 +305,28 @@ class FauxHollowsFoxes {
     }
 
     displayTreasureProbabilities(cell, index) {
-        const swordProb = this.treasureProbabilities.sword[index];
-        const chestProb = this.treasureProbabilities.chest[index];
-        const foxProb = this.treasureProbabilities.fox[index];
-
-        // 收集有機率的項目，並按優先順序排列（劍、寶箱、宗長）
-        const allProbabilities = [
-            { type: 'sword', text: `劍${swordProb}%`, prob: swordProb, className: 'sword-prob' },
-            { type: 'chest', text: `箱${chestProb}%`, prob: chestProb, className: 'chest-prob' },
-            { type: 'fox', text: `狐${foxProb}%`, prob: foxProb, className: 'fox-prob' }
-        ];
-
-        // 只保留有機率的項目（自動往上替補）
-        const validProbabilities = allProbabilities.filter(item => item.prob > 0);
-
-        if (validProbabilities.length > 0) {
-            // 創建三等份結構，只顯示有效的機率
-            SecurityUtils.clearElement(cell);
-            const container = document.createElement('div');
-            container.className = 'treasure-prob-container';
-
-            for (let i = 0; i < 3; i++) {
-                const item = document.createElement('div');
-                if (validProbabilities[i]) {
-                    item.className = `treasure-prob-item ${validProbabilities[i].className}`;
-                    const i18nKeys = {
-                        'sword': 'faux_hollows_cell_sword',
-                        'chest': 'faux_hollows_cell_chest',
-                        'fox': 'faux_hollows_cell_fox'
-                    };
-                    const typeText = FF14Utils.getI18nText(i18nKeys[validProbabilities[i].type], validProbabilities[i].type);
-                    item.textContent = `${typeText}: ${validProbabilities[i].prob}%`;
-                } else {
-                    item.className = 'treasure-prob-item empty-prob';
-                }
-                container.appendChild(item);
-            }
-
-            cell.appendChild(container);
-            cell.classList.add('treasure-probability-display');
-            this.setCellLabel(cell, index);
+        const entries = [
+            { value: this.treasureProbabilities.sword[index], key: 'faux_hollows_cell_sword', fallback: '劍', className: 'sword-prob' },
+            { value: this.treasureProbabilities.chest[index], key: 'faux_hollows_cell_chest', fallback: '箱', className: 'chest-prob' }
+        ].filter(entry => entry.value > 0);
+        if (this.foxCandidates[index]) {
+            entries.push({ key: 'faux_hollows_fox_candidate', fallback: '宗長候選', className: 'fox-prob' });
         }
+        if (entries.length === 0) return;
+
+        SecurityUtils.clearElement(cell);
+        const container = document.createElement('div');
+        container.className = 'treasure-prob-container';
+        for (const entry of entries) {
+            const item = document.createElement('div');
+            item.className = `treasure-prob-item ${entry.className}`;
+            const label = FF14Utils.getI18nText(entry.key, entry.fallback);
+            item.textContent = entry.value === undefined ? label : `${label}: ${entry.value}%`;
+            container.appendChild(item);
+        }
+        cell.appendChild(container);
+        cell.classList.add('treasure-probability-display');
+        this.setCellLabel(cell, index);
     }
 
     /**
@@ -1482,9 +1464,9 @@ class FauxHollowsFoxes {
             obstacleProbabilities: [...this.obstacleProbabilities],
             treasureProbabilities: {
                 sword: [...this.treasureProbabilities.sword],
-                chest: [...this.treasureProbabilities.chest],
-                fox: [...this.treasureProbabilities.fox]
-            }
+                chest: [...this.treasureProbabilities.chest]
+            },
+            foxCandidates: [...this.foxCandidates]
         };
         this.history.push(state);
 
@@ -1532,9 +1514,9 @@ class FauxHollowsFoxes {
         this.obstacleProbabilities = [...state.obstacleProbabilities];
         this.treasureProbabilities = {
             sword: [...state.treasureProbabilities.sword],
-            chest: [...state.treasureProbabilities.chest],
-            fox: [...state.treasureProbabilities.fox]
+            chest: [...state.treasureProbabilities.chest]
         };
+        this.foxCandidates = [...state.foxCandidates];
 
         // 重新渲染盤面
         this.renderBoard();
@@ -1572,69 +1554,12 @@ class FauxHollowsFoxes {
     }
 
     renderBoard() {
-        // 重新渲染整個盤面
-        for (let i = 0; i < FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS; i++) {
-            const cell = this.elements.board.children[i];
-            const value = this.board[i];
-
-            // 清空內容
+        // 一般操作、語言切換與 undo/redo 共用顯示流程，避免把宗長候選重新畫成百分比。
+        for (const cell of this.elements.board.children) {
             cell.className = 'cell board-cell';
             cell.textContent = '';
-
-            if (value === null) {
-                // 空格子
-                if (this.showProbabilities) {
-                    if (!this.obstaclesConfirmed && this.obstacleProbabilities[i] > 0) {
-                        cell.textContent = `${this.obstacleProbabilities[i]}%`;
-                        cell.classList.add('probability-display');
-                    } else if (this.obstaclesConfirmed && this.showTreasureProbabilities) {
-                        const swordProb = this.treasureProbabilities.sword[i];
-                        const chestProb = this.treasureProbabilities.chest[i];
-                        const foxProb = this.treasureProbabilities.fox[i];
-
-                        if (swordProb > 0 || chestProb > 0 || foxProb > 0) {
-                            SecurityUtils.clearElement(cell);
-                            const container = document.createElement('div');
-                            container.className = 'treasure-prob-container';
-
-                            if (swordProb > 0) {
-                                const swordDiv = document.createElement('div');
-                                swordDiv.className = 'treasure-prob-item sword-prob';
-                                const swordText = FF14Utils.getI18nText('faux_hollows_cell_sword', '劍');
-                                swordDiv.textContent = `${swordText}:${swordProb}%`;
-                                container.appendChild(swordDiv);
-                            }
-
-                            if (chestProb > 0) {
-                                const chestDiv = document.createElement('div');
-                                chestDiv.className = 'treasure-prob-item chest-prob';
-                                const chestText = FF14Utils.getI18nText('faux_hollows_cell_chest', '箱');
-                                chestDiv.textContent = `${chestText}:${chestProb}%`;
-                                container.appendChild(chestDiv);
-                            }
-
-                            if (foxProb > 0) {
-                                const foxDiv = document.createElement('div');
-                                foxDiv.className = 'treasure-prob-item fox-prob';
-                                const foxText = FF14Utils.getI18nText('faux_hollows_cell_fox', '狐');
-                                foxDiv.textContent = `${foxText}:${foxProb}%`;
-                                container.appendChild(foxDiv);
-                            }
-
-                            cell.appendChild(container);
-                            cell.classList.add('treasure-probability-display');
-                        }
-                    }
-                }
-                this.setCellLabel(cell, i);
-            } else {
-                // 已揭開的格子：與一般點擊流程（updateProbabilityDisplay() → updateCellDisplay()）
-                // 共用同一套符號表（emoji），避免 undo/redo 後顯示跟正常流程不一致
-                // （例如英文語系下曾經顯示成文字縮寫「Swd」／「Box」而不是 ⚔️／📦）。
-                // updateCellDisplay() 內部已經會呼叫 setCellLabel()，這裡不必再呼叫一次。
-                this.updateCellDisplay(cell, i);
-            }
         }
+        this.updateProbabilityDisplay();
     }
 
     reset() {
@@ -1646,9 +1571,9 @@ class FauxHollowsFoxes {
         this.obstacleProbabilities = Array(36).fill(0);
         this.treasureProbabilities = {
             sword: Array(36).fill(0),
-            chest: Array(36).fill(0),
-            fox: Array(36).fill(0)
+            chest: Array(36).fill(0)
         };
+        this.foxCandidates = Array(36).fill(false);
         this.obstaclesConfirmed = false;
         this.showTreasureProbabilities = false;
         this.showOptimalHighlight = true; // 重置時回復預設開啟

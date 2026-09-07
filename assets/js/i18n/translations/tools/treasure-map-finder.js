@@ -3,6 +3,10 @@
  */
 const TreasureMapTranslations = {
     zh: {
+        treasure_map_room_connecting: '隊伍連線中，請稍候再修改清單。',
+        treasure_map_session_expired: '隊伍連線已失效，寶圖已保留在本機，請重新加入或建立隊伍。',
+        treasure_map_legacy_room: '此隊伍已轉為唯讀，寶圖已保留在本機，請建立新隊伍。',
+        treasure_map_local_maps_limit: '個人與隊伍清單合計超過 {max} 張，請先整理清單再加入。',
         // 頁面資訊
         treasure_map_title: '寶圖搜尋器 - FF14.tw',
         treasure_map_description: 'FF14 寶圖位置快速查詢工具，支援多條件篩選與個人清單管理',
@@ -213,6 +217,10 @@ const TreasureMapTranslations = {
         treasure_map_history_empty: '尚無操作記錄'
     },
     en: {
+        treasure_map_room_connecting: 'Connecting to the room. Please wait before editing the list.',
+        treasure_map_session_expired: 'Your room session is no longer valid. Maps have been kept locally; please join or create a room again.',
+        treasure_map_legacy_room: 'This room is now read-only. Maps have been kept locally; please create a new room.',
+        treasure_map_local_maps_limit: 'Your personal and shared lists exceed {max} maps combined. Please shorten your list before joining.',
         // Page info
         treasure_map_title: 'Treasure Map Finder - FF14.tw',
         treasure_map_description: 'FF14 treasure map location finder with filters and personal list management',
@@ -423,6 +431,10 @@ const TreasureMapTranslations = {
         treasure_map_history_empty: 'No activity yet'
     },
     ja: {
+        treasure_map_room_connecting: 'ルームに接続しています。リストの編集は接続完了までお待ちください。',
+        treasure_map_session_expired: 'ルームの接続が無効になりました。地図はローカルに保存されています。再参加するか、新しいルームを作成してください。',
+        treasure_map_legacy_room: 'このルームは読み取り専用です。地図はローカルに保存されています。新しいルームを作成してください。',
+        treasure_map_local_maps_limit: '個人と共有リストの合計が{max}枚を超えています。参加する前にリストを整理してください。',
         // ページ情報
         treasure_map_title: '宝の地図検索 - FF14.tw',
         treasure_map_description: 'FF14 宝の地図位置検索ツール、フィルターと個人リスト管理をサポート',

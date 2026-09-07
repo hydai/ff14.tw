@@ -352,28 +352,27 @@ class ListManager {
      * @param {Array} allMaps - 所有可用的地圖資料
      */
     syncFromRoom(roomMaps, allMaps) {
-        // 清空現有清單
-        this.list = [];
-        this.listIds.clear();
-
-        // 從房間資料重建清單
-        roomMaps.forEach(roomMap => {
-            // 找到對應的完整地圖資料
-            const fullMap = allMaps.find(m => m.id === roomMap.id);
-            
-            if (fullMap) {
-                const mapData = this.sanitizeMapData({
-                    ...fullMap,
-                    addedAt: roomMap.addedAt || new Date().toISOString(),
-                    addedBy: roomMap.addedBy || null
-                });
-                
-                this.list.push(mapData);
-                this.listIds.add(fullMap.id);
-            }
-        });
-
-        this.saveToStorage();
+        const catalogue = new Map(allMaps.map(map => [map.id, map]));
+        const next = new Map();
+        for (const roomMap of roomMaps) {
+            const map = {
+                ...(catalogue.get(roomMap.id) || {
+                    id: roomMap.id, level: roomMap.type, zone: roomMap.zone,
+                    coords: { x: roomMap.x, y: roomMap.y }
+                }),
+                addedAt: roomMap.addedAt,
+                addedBy: roomMap.addedBy
+            };
+            if (this.validateMapData(map)) next.set(map.id, this.sanitizeMapData(map));
+        }
+        this.list = [...next.values()];
+        this.listIds = new Set(next.keys());
+        try {
+            this.saveToStorage();
+        } catch (error) {
+            // A successful remote edit must remain usable even if browser storage is unavailable.
+            console.warn('共用清單僅保留於目前頁面', error);
+        }
     }
 
     /**

@@ -50,7 +50,7 @@ class TreasureMapFinder {
             }
         });
 
-        this.init();
+        this.ready = this.init();
     }
     
     async init() {
@@ -423,7 +423,14 @@ class TreasureMapFinder {
         });
     }
 
+    canEditList() {
+        if (!this.roomCollaboration?.isConnecting) return true;
+        FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_room_connecting', '隊伍連線中，請稍候再修改清單。'), 'info');
+        return false;
+    }
+
     toggleMapInList(map) {
+        if (!this.canEditList()) return;
         // 使用 ListManager 處理清單操作
         const options = {
             maxItems: this.roomCollaboration?.currentRoom ? RoomCollaboration.CONSTANTS.MAX_MAPS : Infinity,
@@ -826,6 +833,7 @@ class TreasureMapFinder {
     }
     
     removeFromList(mapId) {
+        if (!this.canEditList()) return;
         if (confirm(FF14Utils.getI18nText('treasure_map_remove_confirm', '確定要移除這張寶圖嗎？'))) {
             const result = this.listManager.remove(mapId);
 
@@ -849,6 +857,7 @@ class TreasureMapFinder {
     }
     
     clearAllMaps() {
+        if (!this.canEditList()) return;
         const currentLength = this.listManager.getLength();
 
         if (currentLength === 0) {
@@ -954,6 +963,7 @@ class TreasureMapFinder {
     
     // 從文字匯入清單
     async importFromText(text) {
+        if (!this.canEditList()) return;
         if (!text.trim()) {
             FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_import_text_required', '請貼上清單內容'), 'warning');
             return;
@@ -987,6 +997,7 @@ class TreasureMapFinder {
                 this.updateListCount();
                 this.updateCardButtons();
                 this.renderMyList();
+                await this.syncToRoom();
             } else {
                 FF14Utils.showToast(result.message, 'error');
             }
@@ -1302,54 +1313,24 @@ class TreasureMapFinder {
         this.roomCollaboration = roomCollaboration;
     }
     
-    // 同步寶圖到房間
-    async syncToRoom() {
-        if (!this.roomCollaboration?.currentRoom) return;
-        
-        try {
-            const myList = this.listManager.getList();
-            const treasureMaps = myList.map(item => ({
-                id: item.id,
-                type: item.level,
-                x: item.coords.x,
-                y: item.coords.y,
-                zone: item.zone,
-                addedBy: item.addedBy,  // 保持原始值，即使是 null
-                addedAt: item.addedAt || new Date().toISOString()
-            }));
-            
-            const response = await fetch(
-                `${RoomCollaboration.CONSTANTS.API_BASE_URL}/rooms/${this.roomCollaboration.currentRoom.roomCode}`,
-                {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        treasureMaps
-                    })
-                }
-            );
-            
-            if (!response.ok) {
-                throw new Error('同步失敗');
-            }
-            
-            // 更新房間資料
-            const updatedRoom = await response.json();
-            this.roomCollaboration.currentRoom = updatedRoom;
-            
-        } catch (error) {
-            console.error('同步到房間失敗:', error);
-            FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_sync_to_room_failed', '同步失敗，請稍後再試'), 'error');
-        }
+    toRoomMap(item) {
+        return {
+            id: item.id, type: item.level, x: item.coords.x, y: item.coords.y,
+            zone: item.zone, addedBy: item.addedBy, addedAt: item.addedAt
+        };
     }
-    
+
+    // Queue only additions/removals relative to the current shared view.
+    syncToRoom() {
+        if (!this.roomCollaboration?.currentRoom) return Promise.resolve(false);
+        return this.roomCollaboration.mapSync.replaceLocal(this.listManager.getList().map(item => this.toRoomMap(item)));
+    }
+
     // 從房間同步寶圖
-    syncFromRoom() {
+    syncFromRoom(maps) {
         if (!this.roomCollaboration?.currentRoom) return;
 
-        const roomMaps = this.roomCollaboration.currentRoom.treasureMaps || [];
+        const roomMaps = maps || this.roomCollaboration.mapSync.getMaps();
 
         // 使用 ListManager 的 syncFromRoom 方法
         this.listManager.syncFromRoom(roomMaps, this.maps);

@@ -23,12 +23,50 @@ class RoomCollaboration {
         this.finder = treasureMapFinder;
         this.currentRoom = null;
         this.currentUser = null;
+        this.memberToken = null;
+        this.sessionGeneration = 0;
+        this.isConnecting = false;
+        this.isLeaving = false;
+        this.connectionAttempt = null;
         this.pollingTimer = null;
         this.lastActivity = Date.now();
         this.isPolling = false;
         this.retryCount = 0;
         this.operationHistory = [];
         this.modalManager = new ModalManager();
+        this.mapSync = new RoomMapSync({
+            send: (roomCode, batch) => this.request(`/rooms/${roomCode}`, {
+                method: 'PUT', body: batch, authenticated: true
+            }),
+            onChange: (room, maps) => {
+                this.currentRoom = room;
+                const member = room.members.find(item => item.id === this.currentUser?.id);
+                if (!member) {
+                    if (this.isLeaving) return;
+                    this.forceLeaveRoom();
+                    this.showToast(FF14Utils.getI18nText('treasure_map_session_expired', '隊伍連線已失效，寶圖已保留在本機，請重新加入或建立隊伍。'), 'warning');
+                    return;
+                }
+                this.currentUser = member;
+                this.finder.syncFromRoom(maps);
+                this.updateRoomUI();
+                this.saveSession();
+            },
+            onError: error => {
+                if (error.preserveLocal) {
+                    this.forceLeaveRoom();
+                    this.showToast(FF14Utils.getI18nText('treasure_map_session_expired', '隊伍連線已失效，寶圖已保留在本機，請重新加入或建立隊伍。'), 'warning');
+                } else if (error.code === 'ROOM_RECREATE_REQUIRED' && error.room) {
+                    this.recoverLegacyRoom(error.room);
+                } else if (error.status === 401 || error.status === 403 || error.status === 404) {
+                    if (this.isLeaving) return;
+                    this.forceLeaveRoom();
+                    this.showToast(FF14Utils.getI18nText('treasure_map_session_expired', '隊伍連線已失效，寶圖已保留在本機，請重新加入或建立隊伍。'), 'warning');
+                } else {
+                    this.showToast(FF14Utils.getI18nText('treasure_map_sync_to_room_failed', '同步失敗，請稍後再試'), 'error');
+                }
+            }
+        });
 
         // 顯示當前使用的 API URL（除錯用）
         console.log('Room Collaboration API URL:', RoomCollaboration.CONSTANTS.API_BASE_URL);
@@ -72,10 +110,107 @@ class RoomCollaboration {
         this.init();
     }
 
-    init() {
+    async init() {
+        // Room restoration must wait until map IDs can be resolved against the catalogue.
+        await this.finder.ready;
         this.setupEventListeners();
-        this.checkExistingRoom();
-        this.loadUserPreferences();
+        await this.checkExistingRoom();
+    }
+
+    async request(path, { method = 'GET', body, authenticated = false } = {}) {
+        const headers = { 'Content-Type': 'application/json' };
+        if (authenticated) headers.Authorization = `Bearer ${this.memberToken || ''}`;
+        const response = await fetch(`${RoomCollaboration.CONSTANTS.API_BASE_URL}${path}`, {
+            method, headers,
+            ...(body === undefined ? {} : { body: JSON.stringify(body) })
+        });
+        const data = await response.json();
+        if (!response.ok) {
+            const error = new Error(data.error || 'Room request failed');
+            Object.assign(error, { status: response.status, code: data.code, room: data.room });
+            throw error;
+        }
+        return data;
+    }
+
+    saveSession() {
+        if (!this.currentRoom || !this.currentUser) return;
+        SecurityUtils.setStorageData('ff14tw_current_room', {
+            ...this.currentRoom,
+            currentUser: this.currentUser,
+            memberToken: this.memberToken,
+            pendingMapOperations: this.mapSync.pending,
+            lastSyncAt: new Date().toISOString()
+        });
+    }
+
+    connectionRequest(kind, roomCode, memberNickname, initialMaps) {
+        const key = `${kind}:${roomCode}`;
+        if (this.connectionAttempt?.key !== key) {
+            this.connectionAttempt = { key, body: {
+                clientRequestId: crypto.randomUUID(), memberNickname, initialMaps
+            } };
+        }
+        // A retry must carry the original intent: the first request may already be committed.
+        return this.connectionAttempt.body;
+    }
+
+    completeConnection(room, member, memberToken, retained) {
+        const original = new Map(this.connectionAttempt.body.initialMaps.map(map => [map.id, map]));
+        const latest = new Map(retained.map(map => [map.id, this.finder.toRoomMap(map)]));
+        const operations = [];
+        for (const map of room.treasureMaps) {
+            if (original.has(map.id) && !latest.has(map.id) && map.addedBy === member.id) {
+                operations.push({ type: 'remove', id: map.id });
+            }
+        }
+        for (const [id, map] of latest) {
+            if (!original.has(id) && !room.treasureMaps.some(item => item.id === id)) operations.push({ type: 'add', map });
+        }
+        const projected = new Set(room.treasureMaps.map(map => map.id));
+        for (const operation of operations) {
+            if (operation.type === 'remove') projected.delete(operation.id);
+            else projected.add(operation.map.id);
+        }
+        if (projected.size > RoomCollaboration.CONSTANTS.MAX_MAPS) {
+            this.showToast(FF14Utils.getI18nText('treasure_map_local_maps_limit', '個人與隊伍清單合計超過 {max} 張，請先整理清單再加入。', { max: RoomCollaboration.CONSTANTS.MAX_MAPS }), 'warning');
+            return false;
+        }
+        const pending = operations.length ? [{ clientRequestId: crypto.randomUUID(), operations,
+            preserveLocalOnRejection: true }] : [];
+        this.adoptSession(room, member, memberToken, pending);
+        return true;
+    }
+
+    setConnecting(connecting) {
+        this.isConnecting = connecting;
+        document.querySelectorAll('#createRoomBtn, #joinRoomBtn, #clearAllBtn, #importListBtn, .btn-add-to-list, .btn-remove')
+            .forEach(button => { button.disabled = connecting; });
+    }
+
+    adoptSession(room, member, memberToken, pending = []) {
+        if (!member || !/^[a-f0-9]{64}$/.test(memberToken || '')) throw new Error('Invalid room credentials');
+        this.sessionGeneration++;
+        this.currentUser = member;
+        this.memberToken = memberToken;
+        this.mapSync.connect(room, pending);
+        this.connectionAttempt = null;
+        const url = new URL(window.location.href);
+        url.searchParams.set('room', room.roomCode);
+        window.history.pushState({}, '', url);
+        this.startPolling();
+    }
+
+    recoverLegacyRoom(room) {
+        // Keep both the personal list and the former shared list available for export/new rooms.
+        const maps = new Map(this.finder.listManager.getList().map(map => [map.id, this.finder.toRoomMap(map)]));
+        for (const map of room.treasureMaps || []) if (!maps.has(map.id)) maps.set(map.id, map);
+        this.finder.listManager.syncFromRoom([...maps.values()], this.finder.maps);
+        this.finder.updateListCount();
+        this.finder.updateCardButtons();
+        this.finder.renderMyList();
+        this.forceLeaveRoom();
+        this.showToast(FF14Utils.getI18nText('treasure_map_legacy_room', '此隊伍已轉為唯讀，寶圖已保留在本機，請建立新隊伍。'), 'warning');
     }
 
     setupEventListeners() {
@@ -119,162 +254,79 @@ class RoomCollaboration {
     }
 
     // 檢查是否已有隊伍（從 URL 或 localStorage）
-    checkExistingRoom() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const roomCode = urlParams.get('room');
-
-        if (roomCode) {
-            // 先檢查 localStorage 是否已有相同隊伍的資料
-            const savedRoom = localStorage.getItem('ff14tw_current_room');
-            if (savedRoom) {
-                try {
-                    const parseResult = SecurityUtils.safeJSONParse(savedRoom);
-                    if (!parseResult.success) {
-                        console.warn('Invalid room data format');
-                        return;
-                    }
-                    const roomData = parseResult.data;
-                    // 如果已在相同隊伍且資料有效，直接恢復會話
-                    if (roomData.roomCode === roomCode && this.isRoomValid(roomData)) {
-                        this.currentRoom = roomData;
-                        this.currentUser = roomData.currentUser;
-                        this.updateRoomUI();
-                        this.startPolling();
-                        return; // 避免重複加入
-                    }
-                } catch (error) {
-                    console.error('載入隊伍資料失敗:', error);
-                }
-            }
-            // 如果不在隊伍或在不同隊伍，才執行加入
-            this.joinRoom(roomCode);
-        } else {
-            const savedRoom = localStorage.getItem('ff14tw_current_room');
-            if (savedRoom) {
-                try {
-                    const parseResult = SecurityUtils.safeJSONParse(savedRoom);
-                    if (!parseResult.success) {
-                        console.warn('Invalid saved room data');
-                        localStorage.removeItem('ff14tw_current_room');
-                        return;
-                    }
-                    const roomData = parseResult.data;
-                    if (this.isRoomValid(roomData)) {
-                        this.currentRoom = roomData;
-                        this.currentUser = roomData.currentUser;
-                        this.updateRoomUI();
-                        this.startPolling();
-                    } else {
-                        localStorage.removeItem('ff14tw_current_room');
-                    }
-                } catch (error) {
-                    console.error('載入隊伍資料失敗:', error);
-                    localStorage.removeItem('ff14tw_current_room');
-                }
-            }
+    async checkExistingRoom() {
+        const requestedCode = new URLSearchParams(window.location.search).get('room');
+        const saved = SecurityUtils.getValidatedStorageData('ff14tw_current_room');
+        if (saved && (!requestedCode || saved.roomCode === requestedCode) && this.isRoomValid(saved)) {
+            const { currentUser, memberToken, pendingMapOperations, lastSyncAt, ...room } = saved;
+            this.adoptSession(room, currentUser, memberToken, pendingMapOperations || []);
+            return;
         }
-    }
-
-    // 載入使用者偏好設定
-    loadUserPreferences() {
-        const savedNickname = localStorage.getItem('ff14tw_user_nickname');
-        if (savedNickname && this.currentUser) {
-            this.currentUser.nickname = savedNickname;
-            this.elements.userNickname.textContent = savedNickname;
+        if (saved?.roomCode && !saved.memberToken && (!requestedCode || requestedCode === saved.roomCode)) {
+            try {
+                const room = await this.request(`/rooms/${saved.roomCode}`);
+                if (room.readOnly) this.recoverLegacyRoom(room);
+                else {
+                    this.forceLeaveRoom();
+                    this.showToast(FF14Utils.getI18nText('treasure_map_session_expired', '隊伍連線已失效，寶圖已保留在本機，請重新加入或建立隊伍。'), 'warning');
+                }
+            } catch (error) {
+                if (error.status === 404) this.forceLeaveRoom();
+                else this.showToast(FF14Utils.getI18nText('treasure_map_room_sync_failed_network', '同步失敗，請檢查網路連線'), 'error');
+            }
+            return;
         }
+        if (saved && !this.isRoomValid(saved)) this.forceLeaveRoom();
+        if (requestedCode) await this.joinRoom(requestedCode.toUpperCase());
     }
 
     // 檢查隊伍是否有效（未過期且格式正確）
     isRoomValid(roomData) {
-        if (!roomData || !roomData.lastSyncAt) return false;
-        // 檢查是否為新格式（必須有 creatorId）
-        if (!roomData.creatorId) return false;
-        const now = Date.now();
-        const lastSync = new Date(roomData.lastSyncAt).getTime();
-        return (now - lastSync) < RoomCollaboration.CONSTANTS.ROOM_TTL;
+        if (!roomData || !/^[A-Z0-9]{6}$/.test(roomData.roomCode || '')) return false;
+        if (!/^[a-f0-9]{64}$/.test(roomData.memberToken || '') || !roomData.currentUser?.id) return false;
+        if (!Array.isArray(roomData.members) || !Array.isArray(roomData.treasureMaps)) return false;
+        if (!roomData.members.every(member => member && typeof member.id === 'string')) return false;
+        if (!roomData.members.some(member => member.id === roomData.currentUser.id)) return false;
+        if (!roomData.treasureMaps.every(map => map && typeof map.id === 'string')) return false;
+        if (!Number.isSafeInteger(roomData.revision)) return false;
+        const pending = roomData.pendingMapOperations || [];
+        if (!Array.isArray(pending) || !pending.every(batch => batch &&
+            typeof batch.clientRequestId === 'string' && Array.isArray(batch.operations) &&
+            batch.operations.every(op => op && ((op.type === 'remove' && typeof op.id === 'string') ||
+                (op.type === 'add' && op.map && typeof op.map.id === 'string'))))) return false;
+        return Date.now() - new Date(roomData.lastSyncAt).getTime() < RoomCollaboration.CONSTANTS.ROOM_TTL;
     }
 
     // 建立新隊伍
     async createRoom() {
-        // 檢查是否已有隊伍
-        if (this.currentRoom) {
-            this.showToast(FF14Utils.getI18nText('treasure_map_already_in_room', '您已在隊伍中，請先離開現有隊伍'), 'warning');
-            return;
-        }
-
-        // 檢查瀏覽器限制
-        const browserLimit = localStorage.getItem('ff14tw_room_created');
-        if (browserLimit) {
-            this.showToast(FF14Utils.getI18nText('treasure_map_browser_room_limit', '此瀏覽器已有隊伍記錄，請先清除或使用其他瀏覽器'), 'warning');
-            return;
-        }
-
-        // 檢查是否有本地寶圖
-        if (this.finder.myList.length > 0) {
-            const clearLocal = confirm(FF14Utils.getI18nText('treasure_map_create_room_local_maps_confirm', '您目前有 {count} 張本地寶圖。\n\n建立隊伍後，這些寶圖會被歸屬為您新增的，但實際新增時間可能不正確。\n\n建議清空本地清單以確保協作資料的準確性。\n\n要清空本地清單嗎？', { count: this.finder.myList.length }));
-
-            if (clearLocal) {
-                this.finder.myList = [];
-                this.finder.myListIds.clear();
-                this.finder.saveToStorage();
-                this.finder.updateListCount();
-                this.finder.updateCardButtons();
-                this.finder.renderMyList();
-            }
-        }
-
-        const memberNickname = FF14Utils.getI18nText('treasure_map_default_nickname_creator', '光之戰士1');
-
+        if (this.currentRoom || this.isConnecting) return;
+        this.setConnecting(true);
         try {
-            // 呼叫 API 建立隊伍（隊伍代號由伺服器生成）
-            const response = await fetch(`${RoomCollaboration.CONSTANTS.API_BASE_URL}/rooms`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    memberNickname
-                })
-            });
-
-            if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.error || FF14Utils.getI18nText('treasure_map_create_room_failed', '建立隊伍失敗'));
+            const localMaps = this.finder.listManager.getList();
+            const clearLocal = localMaps.length > 0 && confirm(FF14Utils.getI18nText(
+                'treasure_map_create_room_local_maps_confirm', '要清空本地清單嗎？', { count: localMaps.length }));
+            const retained = clearLocal ? [] : localMaps;
+            if (retained.length > RoomCollaboration.CONSTANTS.MAX_MAPS) {
+                this.showToast(FF14Utils.getI18nText('treasure_map_local_maps_limit', '個人與隊伍清單合計超過 {max} 張，請先整理清單再加入。', { max: RoomCollaboration.CONSTANTS.MAX_MAPS }), 'warning');
+                return;
             }
-
-            const room = await response.json();
-            this.currentRoom = room;
-            this.currentUser = room.members[0];
-
-            // 儲存至 localStorage
-            localStorage.setItem('ff14tw_current_room', JSON.stringify({
-                ...this.currentRoom,
-                currentUser: this.currentUser,
-                lastSyncAt: new Date().toISOString()
-            }));
-            localStorage.setItem('ff14tw_room_created', 'true');
-
-            // 更新 URL
-            const url = new URL(window.location);
-            url.searchParams.set('room', room.roomCode);
-            window.history.pushState({}, '', url);
-
-            this.updateRoomUI();
-            this.startPolling();
-
-            // 記錄操作歷史
-            this.addOperationHistory({
-                type: 'room_create',
+            const body = this.connectionRequest('create', '',
+                FF14Utils.getI18nText('treasure_map_default_nickname_creator', '光之戰士1'),
+                retained.map(map => this.finder.toRoomMap(map)));
+            const data = await this.request('/rooms', { method: 'POST', body });
+            const { memberId, memberToken, ...room } = data;
+            if (!this.completeConnection(room, room.members.find(member => member.id === memberId), memberToken, retained)) return;
+            this.addOperationHistory({ type: 'room_create',
                 message: FF14Utils.getI18nText('treasure_map_history_room_created', '建立了隊伍 {code}', { code: room.roomCode }),
-                timestamp: new Date().toISOString()
-            });
-
-            // 顯示成功訊息
+                timestamp: new Date().toISOString() });
             this.showToast(FF14Utils.getI18nText('treasure_map_create_room_success', '隊伍 {code} 建立成功！', { code: room.roomCode }));
-
+            await this.mapSync.flush();
         } catch (error) {
+            if (error.status >= 400 && error.status < 500 && error.status !== 429) this.connectionAttempt = null;
             console.error('建立隊伍失敗:', error);
-            this.showToast(error.message || FF14Utils.getI18nText('treasure_map_create_room_failed_retry', '建立隊伍失敗，請稍後再試'), 'error');
+            this.showToast(FF14Utils.getI18nText('treasure_map_create_room_failed_retry', '建立隊伍失敗，請稍後再試'), 'error');
+        } finally {
+            this.setConnecting(false);
         }
     }
 
@@ -305,85 +357,48 @@ class RoomCollaboration {
 
     // 加入隊伍
     async joinRoom(roomCode) {
+        if (this.currentRoom || this.isConnecting) return;
+        if (!/^[A-Z0-9]{6}$/.test(roomCode)) {
+            this.showToast(FF14Utils.getI18nText('treasure_map_invalid_room_code', '請輸入有效的 6 位隊伍代號'), 'warning');
+            return;
+        }
+        this.setConnecting(true);
         try {
-            // 檢查是否有本地寶圖
-            if (this.finder.myList.length > 0) {
-                const clearLocal = confirm(FF14Utils.getI18nText('treasure_map_join_room_local_maps_confirm', '您目前有 {count} 張本地寶圖。\n\n加入隊伍後，這些寶圖會被歸屬為您新增的，但實際新增時間可能不正確。\n\n建議清空本地清單以確保協作資料的準確性。\n\n要清空本地清單嗎？', { count: this.finder.myList.length }));
-
-                if (clearLocal) {
-                    this.finder.myList = [];
-                    this.finder.myListIds.clear();
-                    this.finder.saveToStorage();
-                    this.finder.updateListCount();
-                    this.finder.updateCardButtons();
-                    this.finder.renderMyList();
-                }
+            const localMaps = this.finder.listManager.getList();
+            const clearLocal = localMaps.length > 0 && confirm(FF14Utils.getI18nText(
+                'treasure_map_join_room_local_maps_confirm', '要清空本地清單嗎？', { count: localMaps.length }));
+            const retained = clearLocal ? [] : localMaps;
+            // Check before joining so a full room never destroys the player's personal list.
+            const preview = await this.request(`/rooms/${roomCode}`);
+            if (preview.readOnly) {
+                this.recoverLegacyRoom(preview);
+                return;
             }
-
-            // 生成暱稱
-            const existingNickname = localStorage.getItem('ff14tw_user_nickname');
-            const memberNickname = existingNickname || FF14Utils.getI18nText('treasure_map_default_nickname', '光之戰士');
-
-            // 直接嘗試加入房間（伺服器會處理所有錯誤情況）
-            const joinResponse = await fetch(`${RoomCollaboration.CONSTANTS.API_BASE_URL}/rooms/${roomCode}/join`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    memberNickname
-                })
+            if (this.connectionAttempt?.key !== `join:${roomCode}` &&
+                new Set([...preview.treasureMaps, ...retained].map(map => map.id)).size > RoomCollaboration.CONSTANTS.MAX_MAPS) {
+                this.showToast(FF14Utils.getI18nText('treasure_map_local_maps_limit', '個人與隊伍清單合計超過 {max} 張，請先整理清單再加入。', { max: RoomCollaboration.CONSTANTS.MAX_MAPS }), 'warning');
+                return;
+            }
+            let memberNickname = FF14Utils.getI18nText('treasure_map_default_nickname', '光之戰士');
+            try { memberNickname = localStorage.getItem('ff14tw_user_nickname') || memberNickname; } catch { /* optional preference */ }
+            const { room, newMember, memberToken } = await this.request(`/rooms/${roomCode}/join`, {
+                method: 'POST', body: this.connectionRequest('join', roomCode, memberNickname,
+                    retained.map(map => this.finder.toRoomMap(map)))
             });
-
-            if (!joinResponse.ok) {
-                const error = await joinResponse.json();
-                // 根據錯誤類型提供適當的中文訊息
-                let errorMessage = error.error || FF14Utils.getI18nText('treasure_map_join_room_failed', '加入房間失敗');
-                if (joinResponse.status === 404) {
-                    errorMessage = FF14Utils.getI18nText('treasure_map_room_not_found', '房間不存在或已過期');
-                } else if (error.error === 'Room is full') {
-                    errorMessage = FF14Utils.getI18nText('treasure_map_room_full', '房間已滿');
-                }
-                throw new Error(errorMessage);
-            }
-
-            const { room, newMember } = await joinResponse.json();
-            this.currentRoom = room;
-            this.currentUser = newMember;
-
-            // 儲存至 localStorage
-            localStorage.setItem('ff14tw_current_room', JSON.stringify({
-                ...this.currentRoom,
-                currentUser: this.currentUser,
-                lastSyncAt: new Date().toISOString()
-            }));
-
-            // 更新 URL
-            const url = new URL(window.location);
-            url.searchParams.set('room', roomCode);
-            window.history.pushState({}, '', url);
-
-            this.updateRoomUI();
-            this.startPolling();
-
-            // 載入操作歷史
+            if (!this.completeConnection(room, newMember, memberToken, retained)) return;
             this.loadOperationHistory();
-
-            // 記錄操作歷史
-            this.addOperationHistory({
-                type: 'room_join',
-                message: FF14Utils.getI18nText('treasure_map_history_member_joined', '{nickname} 加入了房間', { nickname: this.currentUser.nickname }),
-                timestamp: new Date().toISOString()
-            });
-
-            // 同步現有的寶圖清單
-            this.syncTreasureMaps();
-
+            this.addOperationHistory({ type: 'room_join',
+                message: FF14Utils.getI18nText('treasure_map_history_member_joined', '{nickname} 加入了房間', { nickname: newMember.nickname }),
+                timestamp: new Date().toISOString() });
             this.showToast(FF14Utils.getI18nText('treasure_map_join_room_success', '成功加入隊伍 {code}', { code: roomCode }));
-
+            await this.mapSync.flush();
         } catch (error) {
+            if (error.status >= 400 && error.status < 500 && error.status !== 429) this.connectionAttempt = null;
             console.error('加入隊伍失敗:', error);
-            this.showToast(error.message || FF14Utils.getI18nText('treasure_map_join_room_failed_retry', '加入隊伍失敗，請確認隊伍代號是否正確'), 'error');
+            if (error.code === 'ROOM_RECREATE_REQUIRED' && error.room) this.recoverLegacyRoom(error.room);
+            else this.showToast(FF14Utils.getI18nText(error.status === 404 ? 'treasure_map_room_not_found' : 'treasure_map_join_room_failed_retry', '加入隊伍失敗，請確認隊伍代號是否正確'), 'error');
+        } finally {
+            this.setConnecting(false);
         }
     }
 
@@ -399,72 +414,23 @@ class RoomCollaboration {
     // 確認編輯暱稱
     async confirmEditNickname() {
         const newNickname = document.getElementById('nicknameInput').value.trim();
-
-        if (!newNickname) {
-            this.showToast(FF14Utils.getI18nText('treasure_map_nickname_placeholder', '請輸入暱稱'), 'warning');
-            return;
-        }
-
-        if (newNickname.length > 20) {
-            this.showToast(FF14Utils.getI18nText('treasure_map_nickname_too_long', '暱稱不能超過 20 個字元'), 'warning');
-            return;
-        }
-
+        if (!newNickname || newNickname.length > 20 || !this.currentRoom) return;
+        const generation = this.sessionGeneration;
         try {
-            // 呼叫 API 更新暱稱
-            // 注意：目前系統基於信任，只應更新自己的暱稱
-            const response = await fetch(`${RoomCollaboration.CONSTANTS.API_BASE_URL}/rooms/${this.currentRoom.roomCode}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    memberId: this.currentUser.id,  // 只能更新自己的暱稱
-                    nickname: newNickname
-                })
+            const updatedRoom = await this.request(`/rooms/${this.currentRoom.roomCode}`, {
+                method: 'PUT', authenticated: true,
+                body: { nickname: newNickname, clientRequestId: crypto.randomUUID() }
             });
-
-            if (!response.ok) {
-                throw new Error(FF14Utils.getI18nText('treasure_map_update_nickname_failed', '更新暱稱失敗'));
-            }
-
-            const updatedRoom = await response.json();
-            this.currentRoom = updatedRoom;
-
-            // 更新本地資料
-            this.currentUser.nickname = newNickname;
-            this.elements.userNickname.textContent = newNickname;
-
-            // 儲存偏好設定
-            localStorage.setItem('ff14tw_user_nickname', newNickname);
-
-            // 更新成員列表顯示
-            this.updateMembersList();
-
-            // 更新 localStorage 中的房間資料
-            const savedDataStr = localStorage.getItem('ff14tw_current_room') || '{}';
-            const parseResult = SecurityUtils.safeJSONParse(savedDataStr);
-            const savedData = parseResult.success ? parseResult.data : {};
-            savedData.currentUser = this.currentUser;
-            localStorage.setItem('ff14tw_current_room', JSON.stringify({
-                ...this.currentRoom,
-                currentUser: this.currentUser,
-                lastSyncAt: savedData.lastSyncAt
-            }));
-
+            if (generation !== this.sessionGeneration) return;
+            this.mapSync.receive(updatedRoom);
+            try { localStorage.setItem('ff14tw_user_nickname', newNickname); } catch { /* optional preference */ }
             this.hideModal('editNickname');
             this.showToast(FF14Utils.getI18nText('treasure_map_nickname_updated', '暱稱已更新'));
-
-            // 記錄操作歷史
-            this.addOperationHistory({
-                type: 'nickname_update',
-                message: FF14Utils.getI18nText('treasure_map_history_nickname_updated', '{nickname} 更新了暱稱', { nickname: this.currentUser.nickname }),
-                timestamp: new Date().toISOString()
-            });
-
+            this.addOperationHistory({ type: 'nickname_update',
+                message: FF14Utils.getI18nText('treasure_map_history_nickname_updated', '{nickname} 更新了暱稱', { nickname: newNickname }),
+                timestamp: new Date().toISOString() });
         } catch (error) {
-            console.error('更新暱稱失敗:', error);
-            this.showToast(FF14Utils.getI18nText('treasure_map_update_nickname_failed_retry', '更新暱稱失敗，請稍後再試'), 'error');
+            if (generation === this.sessionGeneration) this.showToast(FF14Utils.getI18nText('treasure_map_update_nickname_failed_retry', '更新暱稱失敗，請稍後再試'), 'error');
         }
     }
 
@@ -475,61 +441,38 @@ class RoomCollaboration {
 
     // 離開隊伍
     async leaveRoom(keepList) {
-        try {
-            // 記錄離開前的資訊
-            const roomCode = this.currentRoom.roomCode;
-            const nickname = this.currentUser.nickname;
-
-            // 呼叫 API 離開房間
-            // 注意：目前系統基於信任，只應傳送自己的 memberId
-            const response = await fetch(`${RoomCollaboration.CONSTANTS.API_BASE_URL}/rooms/${roomCode}/leave`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    memberId: this.currentUser.id  // 只能移除自己
-                })
-            });
-
-            if (!response.ok) {
-                throw new Error(FF14Utils.getI18nText('treasure_map_leave_room_failed', '離開房間失敗'));
-            }
-
-            // 記錄操作歷史（在清除資料前）
-            this.addOperationHistory({
-                type: 'room_leave',
-                message: FF14Utils.getI18nText('treasure_map_history_member_left', '{nickname} 離開了隊伍', { nickname }),
-                timestamp: new Date().toISOString()
-            });
-
-            // 清除房間資料
-            this.currentRoom = null;
-            this.currentUser = null;
-            localStorage.removeItem('ff14tw_current_room');
-            localStorage.removeItem('ff14tw_room_created');
-
-            // 移除 URL 參數
-            const url = new URL(window.location);
-            url.searchParams.delete('room');
-            window.history.pushState({}, '', url);
-
-            // 停止輪詢
-            this.stopPolling();
-
-            // 處理清單
+        if (!this.currentRoom || this.isConnecting) return;
+        this.setConnecting(true);
+        this.isLeaving = true;
+        this.stopPolling();
+        const generation = this.sessionGeneration;
+        const finish = () => {
+            this.forceLeaveRoom();
             if (!keepList) {
-                this.finder.clearAllMaps();
+                this.finder.listManager.clear();
+                this.finder.updateListCount();
+                this.finder.updateCardButtons();
+                this.finder.renderMyList();
             }
-
             this.hideModal('leaveRoom');
-            this.updateRoomUI();
-
             this.showToast(FF14Utils.getI18nText('treasure_map_left_room', '已離開隊伍'));
-
+        };
+        try {
+            await this.mapSync.flush();
+            if (generation !== this.sessionGeneration) return;
+            await this.request(`/rooms/${this.currentRoom.roomCode}/leave`, {
+                method: 'POST', authenticated: true, body: { clientRequestId: crypto.randomUUID() }
+            });
+            if (generation !== this.sessionGeneration) return;
+            finish();
         } catch (error) {
-            console.error('離開隊伍失敗:', error);
-            this.showToast(FF14Utils.getI18nText('treasure_map_leave_room_failed_retry', '離開隊伍失敗，請稍後再試'), 'error');
+            if (generation !== this.sessionGeneration) return;
+            if ([401, 403, 404].includes(error.status)) finish();
+            else this.showToast(FF14Utils.getI18nText('treasure_map_leave_room_failed_retry', '離開隊伍失敗，請稍後再試'), 'error');
+        } finally {
+            this.isLeaving = false;
+            this.setConnecting(false);
+            if (this.currentRoom && generation === this.sessionGeneration) this.startPolling();
         }
     }
 
@@ -612,148 +555,74 @@ class RoomCollaboration {
     // 開始輪詢
     startPolling() {
         if (this.pollingTimer) return;
-
-        this.poll(); // 立即執行一次
+        void this.poll();
         this.scheduleNextPoll();
     }
 
-    // 停止輪詢
     stopPolling() {
-        if (this.pollingTimer) {
-            clearTimeout(this.pollingTimer);
-            this.pollingTimer = null;
-        }
+        clearTimeout(this.pollingTimer);
+        this.pollingTimer = null;
         this.isPolling = false;
     }
 
-    // 排程下次輪詢
     scheduleNextPoll() {
-        const now = Date.now();
-        const timeSinceActivity = now - this.lastActivity;
-        const interval = timeSinceActivity > RoomCollaboration.CONSTANTS.POLL_INTERVAL.IDLE_THRESHOLD
-            ? RoomCollaboration.CONSTANTS.POLL_INTERVAL.IDLE
-            : RoomCollaboration.CONSTANTS.POLL_INTERVAL.ACTIVE;
-
-        this.pollingTimer = setTimeout(() => {
-            this.poll();
-            this.scheduleNextPoll();
-        }, interval);
+        if (!this.currentRoom) return;
+        const generation = this.sessionGeneration;
+        const idle = Date.now() - this.lastActivity > RoomCollaboration.CONSTANTS.POLL_INTERVAL.IDLE_THRESHOLD;
+        this.pollingTimer = setTimeout(async () => {
+            this.pollingTimer = null;
+            await this.poll();
+            if (generation === this.sessionGeneration && !this.isLeaving) this.scheduleNextPoll();
+        }, RoomCollaboration.CONSTANTS.POLL_INTERVAL[idle ? 'IDLE' : 'ACTIVE']);
     }
 
-    // 執行輪詢
     async poll() {
-        if (!this.currentRoom || this.isPolling) return;
-
+        if (!this.currentRoom || this.isPolling || this.isLeaving) return;
         this.isPolling = true;
-
+        const generation = this.sessionGeneration;
         try {
-            // 呼叫 API 取得最新房間資料
-            const response = await fetch(`${RoomCollaboration.CONSTANTS.API_BASE_URL}/rooms/${this.currentRoom.roomCode}`);
-
-            if (!response.ok) {
-                if (response.status === 404) {
-                    // 隊伍已過期
-                    this.showToast(FF14Utils.getI18nText('treasure_map_room_expired', '隊伍已過期'), 'error');
-                    this.forceLeaveRoom();
-                    return;
-                }
-                throw new Error('同步失敗');
+            const room = await this.request(`/rooms/${this.currentRoom.roomCode}`);
+            if (generation !== this.sessionGeneration || this.isLeaving) return;
+            if (room.readOnly) {
+                this.recoverLegacyRoom(room);
+                return;
             }
-
-            const roomData = await response.json();
-
-            // 檢查是否有更新
-            const hasUpdate = this.checkForUpdates(roomData);
-
-            if (hasUpdate) {
-                this.currentRoom = roomData;
-
-                // 同步寶圖清單
-                this.syncTreasureMaps();
-
-                // 更新 UI
-                this.updateRoomUI();
-
-                // 儲存更新
-                const savedDataStr = localStorage.getItem('ff14tw_current_room') || '{}';
-                const parseResult = SecurityUtils.safeJSONParse(savedDataStr);
-                const savedData = parseResult.success ? parseResult.data : {};
-                savedData.lastSyncAt = new Date().toISOString();
-                localStorage.setItem('ff14tw_current_room', JSON.stringify({
-                    ...roomData,
-                    currentUser: this.currentUser,
-                    lastSyncAt: savedData.lastSyncAt
-                }));
-            }
-
-            // 更新時間顯示
-            this.updateActivityTime();
-            this.updateRoomTTL();
-
-            this.retryCount = 0; // 重置重試計數
-
+            this.mapSync.receive(room);
+            if (generation !== this.sessionGeneration) return;
+            await this.mapSync.flush();
+            this.retryCount = 0;
         } catch (error) {
-            console.error('同步失敗:', error);
-            this.retryCount++;
-
-            if (this.retryCount >= RoomCollaboration.CONSTANTS.RETRY_ATTEMPTS) {
+            if (generation !== this.sessionGeneration || this.isLeaving) return;
+            if (error.status === 404) {
+                this.forceLeaveRoom();
+                this.showToast(FF14Utils.getI18nText('treasure_map_room_expired', '隊伍已過期'), 'error');
+            } else if (++this.retryCount >= RoomCollaboration.CONSTANTS.RETRY_ATTEMPTS) {
                 this.showToast(FF14Utils.getI18nText('treasure_map_room_sync_failed_network', '同步失敗，請檢查網路連線'), 'error');
                 this.retryCount = 0;
             }
         } finally {
-            this.isPolling = false;
+            if (generation === this.sessionGeneration) this.isPolling = false;
         }
     }
 
-    // 檢查是否有更新
-    checkForUpdates(newData) {
-        if (!this.currentRoom) return true;
-
-        // 比較成員數量
-        if (newData.members.length !== this.currentRoom.members.length) {
-            return true;
-        }
-
-        // 比較寶圖數量
-        if (newData.treasureMaps.length !== this.currentRoom.treasureMaps.length) {
-            return true;
-        }
-
-        // 比較最後活動時間
-        if (newData.lastActivityAt !== this.currentRoom.lastActivityAt) {
-            return true;
-        }
-
-        return false;
-    }
-
-    // 同步寶圖清單
     syncTreasureMaps() {
-        if (!this.currentRoom || !this.finder) return;
-
-        // 從房間同步寶圖到本地
-        this.finder.syncFromRoom();
-
-        // 記錄操作歷史
-        this.addOperationHistory({
-            type: 'sync',
-            message: FF14Utils.getI18nText('treasure_map_history_synced', '同步房間寶圖清單'),
-            timestamp: new Date().toISOString()
-        });
+        this.mapSync.notify();
     }
 
-    // 強制離開房間（房間過期時）
     forceLeaveRoom() {
+        this.sessionGeneration++;
+        this.stopPolling();
+        this.mapSync.disconnect();
         this.currentRoom = null;
         this.currentUser = null;
-        localStorage.removeItem('ff14tw_current_room');
-        localStorage.removeItem('ff14tw_room_created');
-
-        const url = new URL(window.location);
+        this.memberToken = null;
+        try {
+            localStorage.removeItem('ff14tw_current_room');
+            localStorage.removeItem('ff14tw_room_created');
+        } catch { /* keep the current page usable when storage is unavailable */ }
+        const url = new URL(window.location.href);
         url.searchParams.delete('room');
         window.history.pushState({}, '', url);
-
-        this.stopPolling();
         this.updateRoomUI();
     }
 
@@ -813,7 +682,7 @@ class RoomCollaboration {
     // 儲存操作歷史
     saveOperationHistory() {
         const historyKey = `ff14tw_room_history_${this.currentRoom?.roomCode}`;
-        localStorage.setItem(historyKey, JSON.stringify(this.operationHistory));
+        SecurityUtils.setStorageData(historyKey, this.operationHistory);
     }
 
     // 載入操作歷史
@@ -821,22 +690,15 @@ class RoomCollaboration {
         if (!this.currentRoom) return;
 
         const historyKey = `ff14tw_room_history_${this.currentRoom.roomCode}`;
-        const savedHistory = localStorage.getItem(historyKey);
-
-        if (savedHistory) {
-            try {
-                const parseResult = SecurityUtils.safeJSONParse(savedHistory);
-                this.operationHistory = parseResult.success ? parseResult.data : [];
-            } catch (error) {
-                console.error('載入操作歷史失敗:', error);
-                this.operationHistory = [];
-            }
-        }
+        const savedHistory = SecurityUtils.getValidatedStorageData(historyKey);
+        this.operationHistory = Array.isArray(savedHistory)
+            ? savedHistory.filter(item => item && typeof item.message === 'string').slice(0, 50) : [];
     }
 
     // 清理過期的操作歷史
     cleanupExpiredHistory() {
-        const keys = Object.keys(localStorage);
+        let keys;
+        try { keys = Object.keys(localStorage); } catch { return; }
         const now = Date.now();
         const ttl = RoomCollaboration.CONSTANTS.ROOM_TTL;
 
@@ -856,7 +718,7 @@ class RoomCollaboration {
                     }
                 } catch (error) {
                     // 無效的資料，直接刪除
-                    localStorage.removeItem(key);
+                    try { localStorage.removeItem(key); } catch { /* optional history */ }
                 }
             }
         });
@@ -1087,50 +949,22 @@ class RoomCollaboration {
 
     // 移除成員
     async removeMember(member) {
-        if (!confirm(FF14Utils.getI18nText('treasure_map_remove_member_confirm', '確定要移除 {nickname} 嗎？', { nickname: member.nickname }))) {
-            return;
-        }
-
+        if (!this.currentRoom || !confirm(FF14Utils.getI18nText('treasure_map_remove_member_confirm', '確定要移除 {nickname} 嗎？', { nickname: member.nickname }))) return;
+        const generation = this.sessionGeneration;
         try {
-            // 呼叫 API 移除成員
-            const response = await fetch(`${RoomCollaboration.CONSTANTS.API_BASE_URL}/rooms/${this.currentRoom.roomCode}/remove-member`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    requesterId: this.currentUser.id,  // 請求者 ID
-                    targetMemberId: member.id          // 要移除的成員 ID
-                })
+            const room = await this.request(`/rooms/${this.currentRoom.roomCode}/remove-member`, {
+                method: 'POST', authenticated: true,
+                body: { targetMemberId: member.id, clientRequestId: crypto.randomUUID() }
             });
-
-            if (!response.ok) {
-                throw new Error(FF14Utils.getI18nText('treasure_map_remove_member_failed', '移除成員失敗'));
-            }
-
-            const updatedRoom = await response.json();
-            this.currentRoom = updatedRoom;
-
-            // 更新成員列表顯示
-            this.updateMembersList();
-
-            // 更新房間人數顯示
-            this.elements.roomMembers.textContent = FF14Utils.getI18nText('treasure_map_member_count', '{count}/{max}人', { count: this.currentRoom.members.length, max: RoomCollaboration.CONSTANTS.MAX_MEMBERS });
-
-            // 記錄操作歷史
-            this.addOperationHistory({
-                type: 'member_remove',
-                message: FF14Utils.getI18nText('treasure_map_history_member_kicked', '{actor} 將 {target} 移出隊伍', { actor: this.currentUser.nickname, target: member.nickname }),
-                timestamp: new Date().toISOString()
-            });
-
+            if (generation !== this.sessionGeneration) return;
+            this.mapSync.receive(room);
             this.showToast(FF14Utils.getI18nText('treasure_map_member_removed', '已將 {nickname} 移出隊伍', { nickname: member.nickname }));
-
         } catch (error) {
-            console.error('移除成員失敗:', error);
-            this.showToast(FF14Utils.getI18nText('treasure_map_remove_member_failed_retry', '移除成員失敗，請稍後再試'), 'error');
+            if (generation === this.sessionGeneration) this.showToast(FF14Utils.getI18nText('treasure_map_remove_member_failed_retry', '移除成員失敗，請稍後再試'), 'error');
         }
     }
+
+
 }
 
 // 匯出給主程式使用
