@@ -2,6 +2,25 @@
 
 Cloudflare Worker + 每房間 SQLite Durable Object。安全與部署／遷移說明見 [SECURITY.md](SECURITY.md)。
 
+## Cloudflare Workers Builds 設定
+
+在 Worker 的 **Settings > Build** 設定以下欄位；這些設定儲存在 Cloudflare，修改儲存庫不會自動更新。
+
+| 欄位 | 值 |
+| --- | --- |
+| Root directory | `api` |
+| Build command | 留空（無額外建置步驟） |
+| Deploy command | `npm run deploy` |
+| Non-production branch deploy command | `npm run check:deploy` |
+
+正式分支使用 `wrangler deploy --env production`，會發布 Worker 並套用待執行的 Durable Object migration。其他分支只對 development／production 做 bundle 與設定 dry-run，不發布版本或套用 migration；回歸測試由 GitHub Actions 執行。
+
+若建置在 `npx wrangler versions upload` 回報 **10211**，代表這次版本包含尚未套用的 Durable Object migration。Cloudflare [要求以 `wrangler deploy` 套用這類 migration](https://developers.cloudflare.com/workers/versions-and-deployments/gradual-deployments/with-durable-objects/#durable-object-class-lifecycle-changes)。請更新上述對應分支的命令後重跑建置；正式 migration 會在正式分支部署時套用，保留 `wrangler.toml` 中的 migration 記錄。
+
+Workers Builds 預設對非正式分支執行 `versions upload`；含 Durable Object 的 Worker 也不會產生 Preview URL，詳見 [Cloudflare 建置設定](https://developers.cloudflare.com/workers/ci-cd/builds/configuration/#non-production-branch-deploy-command)。單加 `--env production` 只能消除環境選擇警告，無法解決 migration 錯誤。
+
+## API 契約
+
 所有請求需允許的 Origin，JSON body 需 `Content-Type: application/json`。可寫入房間的 mutation 需私密 `Authorization: Bearer <memberToken>`；建立／加入無須 token。
 
 | 路由 | Body | 成功回覆 |

@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler dev --env development --local",
+    "check:deploy": "wrangler deploy --dry-run --env development && wrangler deploy --dry-run --env production",
     "deploy": "wrangler deploy --env production",
     "tail": "wrangler tail --env production",
     "test": "node --test ../tests/treasure-room-api.test.js"

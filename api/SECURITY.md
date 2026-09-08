@@ -40,13 +40,15 @@ npm run dev
 # 本機回歸測試（Node.js 24）
 npm test
 
-# 只檢查 bundle/config，不發布
-npx wrangler deploy --env production --dry-run
+# 檢查 development 與 production 的 bundle/config，不發布
+npm run check:deploy
 
 # 真正發布需另行執行；會套用首次 SQLite Durable Object migration
 npm run deploy
 ```
 
 部署時前後端須一起更新，舊前端無法對新 API 寫入；後端會明確拒絕而不覆寫資料。`v1-treasure-room-sqlite` migration 建立新的 DO class，不將既有 KV 無憑證資料轉成可寫房間。
+
+尚未套用的 Durable Object migration 無法用 `wrangler versions upload` 上傳，會回報 Cloudflare API 錯誤 10211；必須由正式的 `npm run deploy` 套用。dry-run 只驗證本機 bundle/config，不會驗證或變更遠端 migration 狀態。Cloudflare Workers Builds 的正式／非正式分支命令設定見 [README.md](README.md#cloudflare-workers-builds-設定)。
 
 開發依賴維持 Miniflare 4；`package.json` 的 scoped override 將其 Undici 升至同主版號的 `^7.29.0`，修補上游 7.28.0 的安全問題。未來升級 Miniflare 且其依賴已包含修正版時，可移除此 override；更新後執行 `npm audit`、`npm test` 與上述 dry-run。

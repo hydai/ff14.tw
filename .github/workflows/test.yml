@@ -24,6 +24,4 @@ jobs:
         run: node --test
       - name: Validate Worker environments without deploying
         working-directory: api
-        run: |
-          npx wrangler deploy --dry-run --env development
-          npx wrangler deploy --dry-run --env production
+        run: npm run check:deploy
