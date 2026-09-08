@@ -42,11 +42,11 @@ class ListManager {
     /**
      * 儲存清單到本地儲存
      */
-    saveToStorage() {
+    saveToStorage(maps = this.list) {
         const data = {
             version: ListManager.CONSTANTS.STORAGE_VERSION,
             lastUpdated: new Date().toISOString(),
-            maps: this.list
+            maps
         };
         
         try {
@@ -268,9 +268,10 @@ class ListManager {
      * 匯入清單資料
      * @param {Object|string} data - 匯入的資料或 JSON 字串
      * @param {boolean} merge - 是否合併（true）或取代（false）
+     * @param {Object} options - 選項 {maxItems, validate}；validate 在儲存前驗證完整結果
      * @returns {{success: boolean, message: string, imported: number, skipped: number}}
      */
-    import(data, merge = false) {
+    import(data, merge = false, { maxItems = Infinity, validate } = {}) {
         try {
             // 如果是字串，嘗試解析
             let importData;
@@ -306,25 +307,26 @@ class ListManager {
                 throw new Error(FF14Utils.getI18nText('treasure_map_import_no_valid_maps', '沒有有效的地圖資料'));
             }
 
+            // Stage and deduplicate the projected list before persisting or reporting success.
+            const next = new Map((merge ? this.list : []).map(map => [map.id, map]));
             let importedCount = 0;
-
-            if (merge) {
-                // 合併模式：只加入不存在的項目
-                for (const map of validatedMaps) {
-                    if (!this.has(map.id)) {
-                        this.list.push(map);
-                        this.listIds.add(map.id);
-                        importedCount++;
-                    }
+            for (const map of validatedMaps) {
+                if (!next.has(map.id)) {
+                    next.set(map.id, map);
+                    importedCount++;
                 }
-            } else {
-                // 取代模式：清空後重新載入
-                this.list = validatedMaps;
-                this.listIds = new Set(validatedMaps.map(m => m.id));
-                importedCount = validatedMaps.length;
             }
-
-            this.saveToStorage();
+            if (next.size > maxItems) {
+                throw new Error(FF14Utils.getI18nText(
+                    'treasure_map_list_full', `清單已滿（${next.size}/${maxItems}）`,
+                    { current: next.size, max: maxItems }
+                ));
+            }
+            const nextList = [...next.values()];
+            if (validate) validate(nextList);
+            this.saveToStorage(nextList);
+            this.list = nextList;
+            this.listIds = new Set(next.keys());
 
             return {
                 success: true,
@@ -352,28 +354,27 @@ class ListManager {
      * @param {Array} allMaps - 所有可用的地圖資料
      */
     syncFromRoom(roomMaps, allMaps) {
-        // 清空現有清單
-        this.list = [];
-        this.listIds.clear();
-
-        // 從房間資料重建清單
-        roomMaps.forEach(roomMap => {
-            // 找到對應的完整地圖資料
-            const fullMap = allMaps.find(m => m.id === roomMap.id);
-            
-            if (fullMap) {
-                const mapData = this.sanitizeMapData({
-                    ...fullMap,
-                    addedAt: roomMap.addedAt || new Date().toISOString(),
-                    addedBy: roomMap.addedBy || null
-                });
-                
-                this.list.push(mapData);
-                this.listIds.add(fullMap.id);
-            }
-        });
-
-        this.saveToStorage();
+        const catalogue = new Map(allMaps.map(map => [map.id, map]));
+        const next = new Map();
+        for (const roomMap of roomMaps) {
+            const map = {
+                ...(catalogue.get(roomMap.id) || {
+                    id: roomMap.id, level: roomMap.type, zone: roomMap.zone,
+                    coords: { x: roomMap.x, y: roomMap.y }
+                }),
+                addedAt: roomMap.addedAt,
+                addedBy: roomMap.addedBy
+            };
+            if (this.validateMapData(map)) next.set(map.id, this.sanitizeMapData(map));
+        }
+        this.list = [...next.values()];
+        this.listIds = new Set(next.keys());
+        try {
+            this.saveToStorage();
+        } catch (error) {
+            // A successful remote edit must remain usable even if browser storage is unavailable.
+            console.warn('共用清單僅保留於目前頁面', error);
+        }
     }
 
     /**

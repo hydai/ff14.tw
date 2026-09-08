@@ -4,35 +4,108 @@ class ListManager {
         STORAGE_KEY: 'ff14tw_timed_gathering_lists',
         STORAGE_VERSION: '1.0',
         DEFAULT_LIST_ID: 'default',
+        // Version 1.0 stored these labels before it recorded placeholder state.
+        LEGACY_DEFAULT_LIST_NAMES: ['預設清單', 'デフォルトリスト', 'Default List'],
         MAX_LIST_NAME_LENGTH: 50,
         MAX_LISTS: 10,
         MAX_ITEMS_PER_LIST: 100
     };
 
     constructor() {
-        this.lists = {};
+        this.lists = Object.create(null);
+        this.storageLoadFailed = false;
         this.loadFromStorage();
         
         // 確保至少有一個預設清單
         if (Object.keys(this.lists).length === 0) {
-            this.createDefaultList();
+            this.createDefaultList(!this.storageLoadFailed);
         }
     }
 
     /**
      * 建立預設清單
      */
-    createDefaultList() {
+    createDefaultList(persist = true) {
         // Use i18n for default list name if available
         const defaultName = FF14Utils.getI18nText('defaultListName', 'Default List');
         this.lists[ListManager.CONSTANTS.DEFAULT_LIST_ID] = {
             id: ListManager.CONSTANTS.DEFAULT_LIST_ID,
             name: defaultName,
             items: [],
+            isPlaceholder: true,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
         };
-        this.saveToStorage();
+        if (persist) this.saveToStorage();
+    }
+
+    /** Validate the same versioned document used by storage and JSON backups. */
+    static parseBackup(data) {
+        const isRecord = value => value !== null && typeof value === 'object' && !Array.isArray(value);
+        const isText = value => typeof value === 'string' && value.trim().length > 0;
+        const validDate = value => value === undefined || (typeof value === 'string' && Number.isFinite(Date.parse(value)));
+        if (!isRecord(data) || data.version !== ListManager.CONSTANTS.STORAGE_VERSION || !isRecord(data.lists)) return null;
+        const entries = Object.entries(data.lists);
+        if (entries.length > ListManager.CONSTANTS.MAX_LISTS) return null;
+        const lists = Object.create(null);
+        const stringFields = ['nameJp', 'nameEn', 'zoneJp', 'zoneEn', 'location', 'locationJp', 'locationEn', 'coordinates', 'macroFormat', 'expansion', 'description'];
+        for (const [id, list] of entries) {
+            if (!/^[A-Za-z0-9_-]{1,100}$/.test(id) || ['__proto__', 'prototype', 'constructor'].includes(id) ||
+                !isRecord(list) || list.id !== id || !isText(list.name) ||
+                !Array.isArray(list.items) || list.items.length > ListManager.CONSTANTS.MAX_ITEMS_PER_LIST ||
+                (list.isPlaceholder !== undefined && typeof list.isPlaceholder !== 'boolean') ||
+                !validDate(list.createdAt) || !validDate(list.updatedAt)) return null;
+
+            const items = [];
+            const itemIds = new Set();
+            for (const item of list.items) {
+                if (!isRecord(item) || !isText(item.id) || itemIds.has(item.id) || !isText(item.name) || !isText(item.zone) ||
+                    !['mining', 'botany', 'fishing'].includes(item.type) ||
+                    !['number', 'string'].includes(typeof item.level) || !Number.isFinite(Number(item.level)) || Number(item.level) <= 0 ||
+                    !TimeCalculator.parseSchedule(item.time, item.duration) || !validDate(item.addedAt) ||
+                    stringFields.some(field => item[field] !== undefined && typeof item[field] !== 'string')) return null;
+                itemIds.add(item.id);
+                const normalizedItem = {
+                    id: item.id, name: item.name, type: item.type, level: item.level, zone: item.zone,
+                    time: item.time, duration: item.duration, addedAt: item.addedAt
+                };
+                for (const field of stringFields) {
+                    if (item[field] !== undefined) normalizedItem[field] = item[field];
+                }
+                items.push(normalizedItem);
+            }
+            lists[id] = {
+                id, name: list.name.trim(), items,
+                isPlaceholder: id === ListManager.CONSTANTS.DEFAULT_LIST_ID && items.length === 0 &&
+                    (list.isPlaceholder === true || (list.isPlaceholder === undefined &&
+                        ListManager.CONSTANTS.LEGACY_DEFAULT_LIST_NAMES.includes(list.name.trim()))),
+                createdAt: list.createdAt || new Date().toISOString(),
+                updatedAt: list.updatedAt || new Date().toISOString()
+            };
+        }
+        // The old importer appended collision suffixes beyond the name limit. Normalize
+        // those names without rejecting their lists or changing existing bounded names.
+        const usedNames = new Set(Object.values(lists)
+            .filter(list => list.name.length <= ListManager.CONSTANTS.MAX_LIST_NAME_LENGTH)
+            .map(list => list.name));
+        for (const list of Object.values(lists)) {
+            if (list.name.length > ListManager.CONSTANTS.MAX_LIST_NAME_LENGTH) {
+                list.name = ListManager.uniqueListName(list.name, usedNames);
+                usedNames.add(list.name);
+            }
+        }
+        return lists;
+    }
+
+    static uniqueListName(name, usedNames) {
+        const maxLength = ListManager.CONSTANTS.MAX_LIST_NAME_LENGTH;
+        let candidate = name.slice(0, maxLength);
+        let suffix = 1;
+        while (usedNames.has(candidate)) {
+            const ending = ` (${suffix++})`;
+            candidate = name.slice(0, maxLength - ending.length) + ending;
+        }
+        return candidate;
     }
 
     /**
@@ -42,51 +115,27 @@ class ListManager {
         try {
             const stored = localStorage.getItem(ListManager.CONSTANTS.STORAGE_KEY);
             if (stored) {
-                // Define schema for stored data
-                const storageSchema = {
-                    required: ['version', 'lists'],
-                    properties: {
-                        version: { type: 'string' },
-                        lists: { type: 'object' },
-                        lastUpdated: { type: 'string' }
-                    }
-                };
-                
-                // Use safe JSON parsing if SecurityUtils is available
-                let data;
-                if (typeof SecurityUtils !== 'undefined' && SecurityUtils.safeJSONParse) {
-                    const parseResult = SecurityUtils.safeJSONParse(stored, storageSchema);
-                    if (!parseResult.success) {
-                        console.error('清單資料格式錯誤:', parseResult.error);
-                        this.lists = {};
-                        return;
-                    }
-                    data = parseResult.data;
-                } else {
-                    // Fallback to regular parsing with try-catch
-                    data = JSON.parse(stored);
-                }
-                
-                if (data.version === ListManager.CONSTANTS.STORAGE_VERSION) {
-                    this.lists = data.lists || {};
-                    return;
-                }
+                const lists = ListManager.parseBackup(JSON.parse(stored));
+                if (!lists) throw new Error('Invalid stored gathering lists');
+                this.lists = lists;
+                return;
             }
         } catch (error) {
             console.error('載入清單失敗:', error);
+            this.storageLoadFailed = true;
         }
         
-        this.lists = {};
+        this.lists = Object.create(null);
     }
 
     /**
      * 儲存清單到本地儲存
      */
-    saveToStorage() {
+    saveToStorage(lists = this.lists) {
         const data = {
             version: ListManager.CONSTANTS.STORAGE_VERSION,
             lastUpdated: new Date().toISOString(),
-            lists: this.lists
+            lists
         };
         
         try {
@@ -176,6 +225,7 @@ class ListManager {
             id: listId,
             name: name.trim(),
             items: [],
+            isPlaceholder: false,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
         };
@@ -232,6 +282,7 @@ class ListManager {
         }
         
         list.name = newName.trim();
+        list.isPlaceholder = false;
         list.updatedAt = new Date().toISOString();
         this.saveToStorage();
         
@@ -292,6 +343,7 @@ class ListManager {
         }
         
         list.items = [];
+        list.isPlaceholder = false;
         list.updatedAt = new Date().toISOString();
         this.saveToStorage();
         
@@ -360,6 +412,7 @@ class ListManager {
             addedAt: new Date().toISOString()
         });
         
+        list.isPlaceholder = false;
         list.updatedAt = new Date().toISOString();
         this.saveToStorage();
         
@@ -395,6 +448,7 @@ class ListManager {
         }
         
         list.items.splice(index, 1);
+        list.isPlaceholder = false;
         list.updatedAt = new Date().toISOString();
         this.saveToStorage();
         
@@ -444,6 +498,7 @@ class ListManager {
         const item = list.items.splice(fromIndex, 1)[0];
         list.items.splice(toIndex, 0, item);
         
+        list.isPlaceholder = false;
         list.updatedAt = new Date().toISOString();
         this.saveToStorage();
         
@@ -471,66 +526,43 @@ class ListManager {
      * @returns {Object} 結果物件
      */
     importLists(data) {
-        if (!data || !data.lists) {
+        const incoming = ListManager.parseBackup(data);
+        if (!incoming) {
+            return { success: false, message: FF14Utils.getI18nText('invalidImportFormat', '匯入的資料格式不正確') };
+        }
+        const currentLists = Object.assign(Object.create(null), this.lists);
+        const defaultList = currentLists[ListManager.CONSTANTS.DEFAULT_LIST_ID];
+        // A new browser starts with an empty placeholder; it must not prevent restoring ten lists.
+        if (Object.keys(incoming).length > 0 && Object.keys(currentLists).length === 1 &&
+            defaultList?.items.length === 0 && defaultList.isPlaceholder) {
+            delete currentLists[ListManager.CONSTANTS.DEFAULT_LIST_ID];
+        }
+        if (Object.keys(currentLists).length + Object.keys(incoming).length > ListManager.CONSTANTS.MAX_LISTS) {
             return {
                 success: false,
-                message: '無效的匯入資料'
+                message: FF14Utils.getI18nText('maxListsWarning', '最多只能建立 {max} 個清單', { max: ListManager.CONSTANTS.MAX_LISTS })
             };
         }
-        
-        // 檢查版本相容性
-        if (data.version !== ListManager.CONSTANTS.STORAGE_VERSION) {
-            return {
-                success: false,
-                message: '檔案版本不相容'
-            };
+
+        // Stage the complete merge so validation or storage failures cannot partially import a backup.
+        const merged = currentLists;
+        for (const [id, importedList] of Object.entries(incoming)) {
+            let newListId = id;
+            if (Object.hasOwn(merged, newListId)) newListId = this.generateListId(merged);
+            const listName = ListManager.uniqueListName(importedList.name, new Set(Object.values(merged).map(list => list.name)));
+            merged[newListId] = { ...importedList, id: newListId, name: listName, isPlaceholder: false, updatedAt: new Date().toISOString() };
         }
-        
-        // 合併清單（避免覆蓋現有清單）
-        let importedCount = 0;
-        
-        for (const listId in data.lists) {
-            const importedList = data.lists[listId];
-            
-            // 如果 ID 衝突，生成新 ID
-            let newListId = listId;
-            if (this.lists[newListId]) {
-                newListId = this.generateListId();
-            }
-            
-            // 檢查清單數量限制
-            if (Object.keys(this.lists).length >= ListManager.CONSTANTS.MAX_LISTS) {
-                break;
-            }
-            
-            // 確保名稱唯一
-            let listName = importedList.name;
-            let suffix = 1;
-            while (Object.values(this.lists).some(l => l.name === listName)) {
-                listName = `${importedList.name} (${suffix})`;
-                suffix++;
-            }
-            
-            this.lists[newListId] = {
-                ...importedList,
-                id: newListId,
-                name: listName,
-                updatedAt: new Date().toISOString()
-            };
-            
-            importedCount++;
+        try {
+            this.saveToStorage(merged);
+        } catch (error) {
+            return { success: false, message: FF14Utils.getI18nText('listSaveFailed', '無法儲存清單，原有清單未變更') };
         }
-        
-        this.saveToStorage();
-        
+        this.lists = merged;
+        const importedCount = Object.keys(incoming).length;
         return {
             success: true,
             count: importedCount,
-            message: FF14Utils.getI18nText(
-                'successImportedLists',
-                'Successfully imported {count} lists',
-                { count: importedCount }
-            )
+            message: FF14Utils.getI18nText('successImportedLists', '成功匯入 {count} 個清單', { count: importedCount })
         };
     }
 
@@ -538,11 +570,11 @@ class ListManager {
      * 生成唯一清單 ID
      * @returns {string} 清單 ID
      */
-    generateListId() {
+    generateListId(lists = this.lists) {
         let id;
         do {
             id = 'list_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-        } while (this.lists[id]);
+        } while (Object.hasOwn(lists, id));
         return id;
     }
 
@@ -620,6 +652,7 @@ class ListManager {
             }
         }
         
+        targetList.isPlaceholder = false;
         targetList.updatedAt = new Date().toISOString();
         this.saveToStorage();
         

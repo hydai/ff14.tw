@@ -48,7 +48,11 @@ class MacroExporter {
             return '';
         }
 
-        let processedItems = [...items];
+        let processedItems = items.filter(item => {
+            const schedule = TimeCalculator.parseSchedule(item.time, item.duration);
+            return schedule && !schedule.allDay;
+        });
+        if (processedItems.length === 0) return '';
 
         // 按時間排序
         if (sortByTime) {
@@ -90,6 +94,8 @@ class MacroExporter {
      * @returns {string} 鬧鐘指令
      */
     generateAlarmCommand(item, soundEffect = 'se04') {
+        const schedule = TimeCalculator.parseSchedule(item.time, item.duration);
+        if (!schedule || schedule.allDay) return null;
         // 如果有 macroFormat，優先使用
         if (item.macroFormat) {
             const time = this.formatTimeForAlarm(item.time);
@@ -146,12 +152,11 @@ class MacroExporter {
      * @returns {string} 格式化時間 (HHMM)
      */
     formatTimeForAlarm(time) {
-        const match = time.match(MacroExporter.CONSTANTS.TIME_FORMAT_REGEX);
-        if (match) {
-            return match[1] + match[2];
-        }
-        // 如果格式不正確，嘗試移除冒號
-        return time.replace(':', '');
+        const schedule = TimeCalculator.parseSchedule(time);
+        if (!schedule || schedule.allDay) return null;
+        const hours = Math.floor(schedule.startMinutes / 60);
+        const minutes = schedule.startMinutes % 60;
+        return String(hours).padStart(2, '0') + String(minutes).padStart(2, '0');
     }
 
     /**
@@ -160,13 +165,7 @@ class MacroExporter {
      * @returns {number} 分鐘數
      */
     parseTime(time) {
-        const match = time.match(MacroExporter.CONSTANTS.TIME_FORMAT_REGEX);
-        if (match) {
-            const hours = parseInt(match[1], 10);
-            const minutes = parseInt(match[2], 10);
-            return hours * 60 + minutes;
-        }
-        return 0;
+        return TimeCalculator.parseSchedule(time)?.startMinutes ?? Infinity;
     }
 
     /**
@@ -377,7 +376,11 @@ class MacroExporter {
             return '';
         }
 
-        let processedItems = [...items];
+        let processedItems = items.filter(item => {
+            const schedule = TimeCalculator.parseSchedule(item.time, item.duration);
+            return schedule && !schedule.allDay;
+        });
+        if (processedItems.length === 0) return '';
 
         // 按時間排序
         if (sortByTime) {

@@ -50,6 +50,7 @@
 - 座標複製功能（/pos 指令）
 - 最佳路線規劃功能
 - 自訂輸出格式（支援中文、英文、日文）
+- 隊伍協作：私人操作憑證、多人同步、斷線重試與個人清單帶入
 
 ### Lodestone 角色查詢 (`lodestone-lookup/`)
 - 使用 Lodestone ID 查詢角色資訊
@@ -116,6 +117,19 @@ http://localhost:8000
 - 檢舉模板產生器
 - 天氣預報
 
+### 測試與協作 API
+
+使用 Node 24，在專案根目錄執行：
+
+```bash
+npm --prefix api ci
+node --test
+```
+
+測試涵蓋 UI／資料契約、非同步競爭與真實 Miniflare/workerd 的 SQLite Durable Object；需允許本機連接埠。GitHub Actions 會在 push／Pull Request 執行相同測試及 Worker 環境 dry-run。
+
+寶圖協作另開一個終端執行 `npm --prefix api run dev`（本機 API 為 `localhost:8787`），靜態頁面使用 `localhost:8000` 或 `8080`。部署與舊房間過渡方式見 [API 文件](api/README.md)。
+
 ### 專案結構
 ```
 ff14.tw/
@@ -177,7 +191,7 @@ ff14.tw/
 │   ├── add-design-links.mjs
 │   ├── remove-dark-mode-links.mjs
 │   └── replace-noscript-nav.mjs
-├── tests/                  # node --test 測試
+├── tests/                  # 15 份 node --test 測試（下列為部分範例）
 │   ├── design-system.test.js
 │   ├── docs.test.js
 │   ├── modal-manager-stack.test.js
@@ -224,7 +238,7 @@ ff14.tw/
 
 1. Fork 本專案
 2. 建立功能分支：`git checkout -b feature/new-tool`
-3. 提交變更：`git commit -m 'Add new tool'`
+3. 提交變更：`git commit -m 'feat: add new tool'`
 4. 推送到分支：`git push origin feature/new-tool`
 5. 建立 Pull Request
 

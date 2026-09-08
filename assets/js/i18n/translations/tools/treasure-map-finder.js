@@ -3,6 +3,10 @@
  */
 const TreasureMapTranslations = {
     zh: {
+        treasure_map_room_connecting: '隊伍連線中，請稍候再修改清單。',
+        treasure_map_session_expired: '隊伍連線已失效，寶圖已保留在本機，請重新加入或建立隊伍。',
+        treasure_map_legacy_room: '此隊伍已轉為唯讀，寶圖已保留在本機，請建立新隊伍。',
+        treasure_map_local_maps_limit: '個人與隊伍清單合計超過 {max} 張，請先整理清單再加入。',
         // 頁面資訊
         treasure_map_title: '寶圖搜尋器 - FF14.tw',
         treasure_map_description: 'FF14 寶圖位置快速查詢工具，支援多條件篩選與個人清單管理',
@@ -153,6 +157,9 @@ const TreasureMapTranslations = {
         treasure_map_import_file_format_error: '檔案格式錯誤',
         treasure_map_import_failed: '匯入失敗：{message}',
         treasure_map_import_generic_failed: '匯入失敗',
+        treasure_map_import_wait_for_sync: '請等待隊伍同步完成後再匯入。',
+        treasure_map_import_invalid_room_maps: '匯入清單含有隊伍不支援的寶圖資料，請檢查後再試。',
+        treasure_map_leave_room_sync_failed: '寶圖尚未同步完成，請稍後再試離開隊伍。',
         treasure_map_import_invalid_json: '無效的 JSON 格式',
         treasure_map_import_invalid_format: '無效的匯入格式',
         treasure_map_import_no_valid_maps: '沒有有效的地圖資料',
@@ -213,6 +220,10 @@ const TreasureMapTranslations = {
         treasure_map_history_empty: '尚無操作記錄'
     },
     en: {
+        treasure_map_room_connecting: 'Connecting to the room. Please wait before editing the list.',
+        treasure_map_session_expired: 'Your room session is no longer valid. Maps have been kept locally; please join or create a room again.',
+        treasure_map_legacy_room: 'This room is now read-only. Maps have been kept locally; please create a new room.',
+        treasure_map_local_maps_limit: 'Your personal and shared lists exceed {max} maps combined. Please shorten your list before joining.',
         // Page info
         treasure_map_title: 'Treasure Map Finder - FF14.tw',
         treasure_map_description: 'FF14 treasure map location finder with filters and personal list management',
@@ -363,6 +374,9 @@ const TreasureMapTranslations = {
         treasure_map_import_file_format_error: 'Invalid file format',
         treasure_map_import_failed: 'Import failed: {message}',
         treasure_map_import_generic_failed: 'Import failed',
+        treasure_map_import_wait_for_sync: 'Please wait for the party to finish syncing before importing.',
+        treasure_map_import_invalid_room_maps: 'The imported list contains map data unsupported by parties. Please check it and try again.',
+        treasure_map_leave_room_sync_failed: 'Your maps have not finished syncing. Please try leaving the party again later.',
         treasure_map_import_invalid_json: 'Invalid JSON format',
         treasure_map_import_invalid_format: 'Invalid import format',
         treasure_map_import_no_valid_maps: 'No valid map data',
@@ -423,6 +437,10 @@ const TreasureMapTranslations = {
         treasure_map_history_empty: 'No activity yet'
     },
     ja: {
+        treasure_map_room_connecting: 'ルームに接続しています。リストの編集は接続完了までお待ちください。',
+        treasure_map_session_expired: 'ルームの接続が無効になりました。地図はローカルに保存されています。再参加するか、新しいルームを作成してください。',
+        treasure_map_legacy_room: 'このルームは読み取り専用です。地図はローカルに保存されています。新しいルームを作成してください。',
+        treasure_map_local_maps_limit: '個人と共有リストの合計が{max}枚を超えています。参加する前にリストを整理してください。',
         // ページ情報
         treasure_map_title: '宝の地図検索 - FF14.tw',
         treasure_map_description: 'FF14 宝の地図位置検索ツール、フィルターと個人リスト管理をサポート',
@@ -573,6 +591,9 @@ const TreasureMapTranslations = {
         treasure_map_import_file_format_error: 'ファイル形式が正しくありません',
         treasure_map_import_failed: 'インポートに失敗しました：{message}',
         treasure_map_import_generic_failed: 'インポートに失敗しました',
+        treasure_map_import_wait_for_sync: 'パーティの同期が完了してからインポートしてください。',
+        treasure_map_import_invalid_room_maps: 'インポートするリストにパーティで使用できない宝の地図データが含まれています。内容を確認して再試行してください。',
+        treasure_map_leave_room_sync_failed: '宝の地図の同期が完了していません。しばらくしてからパーティ退出を再試行してください。',
         treasure_map_import_invalid_json: 'JSON 形式が正しくありません',
         treasure_map_import_invalid_format: 'インポート形式が正しくありません',
         treasure_map_import_no_valid_maps: '有効な地図データがありません',

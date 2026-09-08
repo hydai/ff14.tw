@@ -86,12 +86,7 @@ class WeatherForecast {
         this.startTimeUpdates();
 
         // Initial render based on URL hash
-        if (this.store.state.zoneId) {
-            this.showZoneContent();
-            this.renderWeatherTags();
-            this.updateTimeRangeUI();
-            this.renderResults();
-        }
+        this.handleStateChange(this.store.state, 'state');
 
         // 語言切換時重新渲染側邊欄地區/地點清單、地區名稱／天氣標籤／結果表格。
         // 側邊欄無論有沒有選取地區都存在，所以 relabelZoneList() 要放在
@@ -297,7 +292,15 @@ class WeatherForecast {
      */
     handleStateChange(state, changeType) {
         switch (changeType) {
+            case 'state':
             case 'zone':
+                this.isSelectingTimeRange = false;
+                this.timeRangeStart = null;
+                this.updateZoneSelection();
+                if (!state.zoneId) {
+                    this.hideZoneContent();
+                    break;
+                }
                 this.showZoneContent();
                 this.renderWeatherTags();
                 this.updateTimeRangeUI();
@@ -322,9 +325,20 @@ class WeatherForecast {
                 this.renderResults();
                 break;
             case 'reset':
+                this.isSelectingTimeRange = false;
+                this.timeRangeStart = null;
+                this.updateZoneSelection();
                 this.hideZoneContent();
                 break;
         }
+    }
+
+    updateZoneSelection() {
+        this.elements.zoneList.querySelectorAll('.zone-btn').forEach(btn => {
+            const active = btn.dataset.zone === this.store.state.zoneId;
+            btn.classList.toggle(WeatherForecast.CONSTANTS.CSS_CLASSES.ACTIVE, active);
+            btn.setAttribute('aria-pressed', String(active));
+        });
     }
 
     /**
@@ -344,15 +358,6 @@ class WeatherForecast {
         const btn = e.target.closest('.zone-btn');
         if (btn) {
             const zoneId = btn.dataset.zone;
-
-            // Update active state and aria-pressed
-            const allBtns = this.elements.zoneList.querySelectorAll('.zone-btn');
-            allBtns.forEach(b => {
-                b.classList.remove(WeatherForecast.CONSTANTS.CSS_CLASSES.ACTIVE);
-                b.setAttribute('aria-pressed', 'false');
-            });
-            btn.classList.add(WeatherForecast.CONSTANTS.CSS_CLASSES.ACTIVE);
-            btn.setAttribute('aria-pressed', 'true');
 
             // Update store
             this.store.setZone(zoneId);

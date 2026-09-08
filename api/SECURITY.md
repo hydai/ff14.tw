@@ -1,75 +1,54 @@
-# API 安全設定指南
+# 房間 API：認證與資料一致性
 
-## CORS 限制設定
+每間新房間由一個 SQLite-backed Durable Object 管理。公開房號讓隊友讀取／加入房間；私密 `memberToken` 驗證成員身分。公開的 `memberId`、`creatorId` 和 `Origin` 均不是憑證。
 
-目前 API 已實施以下安全措施：
+## 身分與權限
 
-### 1. Origin 白名單
+- 建立、加入時產生 256-bit 隨機 `memberToken`。只在該次回覆或同一私密 `clientRequestId` 的重試回覆提供，GET 和一般更新不回傳 token。
+- 所有 PUT、leave、remove-member 需要 `Authorization: Bearer <memberToken>`。伺服器從 token hash 找出成員，不能用 body 的 ID 冒充他人。
+- 成員只能修改自己的暱稱或自行離開。只有房間建立者可以移除其他成員，建立者不能被踢除。成員離開或被移除後立即撤銷 token。
+- 允許房內成員共同新增／移除寶圖；`addedBy`、`addedAt` 由伺服器產生，客戶端不能偽造。
+- token 與 create/join 的 `clientRequestId` 都是私密資料：不得放入分享 URL、公開 room、錯誤日誌。用於安全重試的 token 回覆僅存在該房間的私有 SQLite receipt；驗證索引只保存 token hash。
 
-```javascript
-// 生產環境只允許 ff14.tw
-const allowedOrigins = [
-  'https://ff14.tw',
-  'https://www.ff14.tw'
-];
+## 同步與重試
 
-// 開發環境可額外允許 localhost
-if (env.ENVIRONMENT === 'development') {
-  allowedOrigins.push(
-    'http://localhost:8000',
-    'http://localhost:8080',
-    'http://127.0.0.1:8000',
-    'http://127.0.0.1:8080'
-  );
-}
+PUT 只接受操作陣列，不再接受整份 `treasureMaps` 覆寫。DO 同步讀取與驗證資料，再於同一 SQL transaction 寫入 room 和去重 receipt；中間沒有非同步等待，避免並行更新遺失資料。
+
+create／join／PUT 要求 UUID v4 `clientRequestId`，同一次操作的網路重試必須沿用原值。PUT 去重 key 綁定房間與已驗證成員；同 key 重送只回目前 room，不重新套用舊操作。leave／remove-member 可附同欄位。GET 的 `revision` 供前端拒絕過期快照。
+
+create／join 可以附 `initialMaps` 保留原清單。伺服器將成員與初始寶圖在同一 transaction 寫入，超過 8 人／8 張寶圖即整筆拒絕；重複 map ID 保留原寶圖與原歸屬。所有 mutation body 限制 16 KiB，暱稱、操作類型、ID、座標與數量均先驗證。
+
+## 過期與舊房遷移
+
+- 新房間的有效活動延長 24 小時 TTL；讀取與重複重試不延長活動時間。DO alarm 清除房間及去重資料；每次存取亦檢查期限，不能依靠 alarm 執行時間決定是否過期。
+- 最後一人離開後房間立即回 404，不能透過舊 join 重新開啟。
+- 舊 KV 房間缺少可驗證的私密憑證，因此不以公開 member ID 自動換發 token。GET 保留舊資料，附 `legacy: true`、`readOnly: true`、`revision: 0`。
+- 舊房間的 join／PUT／leave／remove-member 回 `409 ROOM_RECREATE_REQUIRED`，回覆的 `room` 包含可保存的寶圖。使用者可保留／匯出清單後建立新房。
+- 遷移期間保留 `TREASURE_ROOMS` KV binding，程式只讀取，絕不覆寫、刪除或延長舊 TTL。舊資料自然過期後可另行移除此 fallback；本次變更不操作線上 KV 資料。
+
+## CORS 與環境
+
+正式環境允許 `https://ff14.tw`、`https://www.ff14.tw`；development 額外允許 localhost／127.0.0.1 的 8000、8080 port。preflight 允許 Authorization header。CORS 限制瀏覽器的跨站存取，不能取代上述 token 驗證。所有回覆使用 `Cache-Control: no-store` 與 `Vary: Origin`。
+
+`wrangler.toml` 的 default、production、development 均明確宣告 DO 與舊 KV binding，因為環境不繼承 binding。production 名稱維持 `ff14-tw-treasure`，與現有前端 `ff14-tw-treasure.z54981220.workers.dev` 一致。
+
+```sh
+# 本地開發，明確使用 development，資料由本機 Miniflare 保存
+npm ci
+npm run dev
+
+# 本機回歸測試（Node.js 24）
+npm test
+
+# 檢查 development 與 production 的 bundle/config，不發布
+npm run check:deploy
+
+# 真正發布需另行執行；會套用首次 SQLite Durable Object migration
+npm run deploy
 ```
 
-### 2. 嚴格的 Origin 檢查
+部署時前後端須一起更新，舊前端無法對新 API 寫入；後端會明確拒絕而不覆寫資料。`v1-treasure-room-sqlite` migration 建立新的 DO class，不將既有 KV 無憑證資料轉成可寫房間。
 
-- 所有請求都必須有 `Origin` header
-- 只有在白名單中的來源才會收到 CORS headers
-- 非授權來源會收到 403 Forbidden 且沒有 CORS headers
-- **沒有 Origin header 的請求（curl、Postman 等）也會被拒絕**
+尚未套用的 Durable Object migration 無法用 `wrangler versions upload` 上傳，會回報 Cloudflare API 錯誤 10211；必須由正式的 `npm run deploy` 套用。dry-run 只驗證本機 bundle/config，不會驗證或變更遠端 migration 狀態。Cloudflare Workers Builds 的正式／非正式分支命令設定見 [README.md](README.md#cloudflare-workers-builds-設定)。
 
-### 3. 部署指令
-
-```bash
-# 部署到生產環境（只允許 ff14.tw）
-wrangler deploy --env production
-
-# 本地測試
-wrangler dev
-```
-
-### 4. 測試 CORS 保護
-
-```bash
-# 沒有 Origin header - 應該被拒絕（403）
-curl -X GET https://ff14-tw-treasure.z54981220.workers.dev/api/rooms/ABCDEF -v
-
-# Postman 等工具 - 應該被拒絕（403）
-curl -X POST https://ff14-tw-treasure.z54981220.workers.dev/api/rooms \
-  -H "Content-Type: application/json" \
-  -d '{"memberNickname": "Test"}' -v
-
-# 惡意網站 - 應該被拒絕（403）
-curl -X GET https://ff14-tw-treasure.z54981220.workers.dev/api/rooms/ABCDEF \
-  -H "Origin: https://malicious-site.com" -v
-
-# 只有 ff14.tw - 應該成功
-curl -X GET https://ff14-tw-treasure.z54981220.workers.dev/api/rooms/ABCDEF \
-  -H "Origin: https://ff14.tw" -v
-```
-
-## 其他安全措施
-
-1. **房主權限控制**：只有房主可以移除成員
-2. **輸入驗證**：暱稱長度、房間人數限制
-3. **自動過期**：24 小時後自動刪除
-4. **UUID 生成**：使用 crypto.randomUUID() 確保唯一性
-
-## 注意事項
-
-- 確保部署時使用 `--env production` 參數
-- 定期檢查 wrangler.toml 中的環境變數設定
-- 監控 API 使用情況，注意異常請求
+開發依賴維持 Miniflare 4；`package.json` 的 scoped override 將其 Undici 升至同主版號的 `^7.29.0`，修補上游 7.28.0 的安全問題。未來升級 Miniflare 且其依賴已包含修正版時，可移除此 override；更新後執行 `npm audit`、`npm test` 與上述 dry-run。
