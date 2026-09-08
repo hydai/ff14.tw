@@ -18,7 +18,7 @@
   "author": "hydai",
   "license": "MIT",
   "engines": {
-    "node": ">=22.0.0"
+    "node": "^22.13.0 || >=24.0.0"
   },
   "devDependencies": {
     "miniflare": "^4.20260730.0",
