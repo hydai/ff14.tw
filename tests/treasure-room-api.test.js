@@ -160,6 +160,52 @@ test('invalid or over-capacity batches have no partial side effects', async () =
     assert.equal((await request('PUT', `/${room.roomCode}`, { treasureMaps: {}, clientRequestId: randomUUID() }, room.memberToken)).status, 400);
 });
 
+test('the browser import validator agrees with the Worker map operation contract', async () => {
+    const context = vm.createContext({
+        window: { location: new URL('https://ff14.tw/tools/treasure-map-finder/') },
+        FF14Utils: { getI18nText: (key, fallback) => fallback }
+    });
+    vm.runInContext(fs.readFileSync(path.join(root, 'tools/treasure-map-finder/room-collaboration.js'), 'utf8'), context);
+    const validate = context.window.RoomCollaboration.validateMapOperations;
+    const { body: room } = await create();
+    const validMaps = [
+        map('candidate'),
+        { ...map('candidate'), type: 'g1', x: 0, y: 50 },
+        { ...map('candidate'), type: 'g18', x: 50, y: 0 },
+        { ...map('a'.repeat(50)), zone: '界'.repeat(50) }
+    ];
+    const invalidMaps = [
+        null,
+        ...[
+            { id: '' }, { id: 'bad id' }, { id: 'bad/id' }, { id: '寶圖' }, { id: 'a'.repeat(51) },
+            { type: 'g0' }, { type: 'g19' }, { type: 'G8' }, { type: 8 },
+            { zone: '' }, { zone: '   ' }, { zone: '界'.repeat(51) }, { zone: null },
+            { x: -0.1 }, { x: 50.1 }, { y: -0.1 }, { y: 50.1 },
+            { x: '12' }, { y: NaN }, { x: Infinity }
+        ].map(fields => ({ ...map('candidate'), ...fields }))
+    ];
+    const cases = [
+        ...validMaps.map(map => [true, [{ type: 'add', map }]]),
+        ...invalidMaps.map(map => [false, [{ type: 'add', map }]]),
+        [true, []],
+        [true, [{ type: 'remove', id: 'candidate' }]],
+        [true, Array.from({ length: 16 }, (_, index) => ({ type: 'remove', id: `missing_${index}` }))],
+        [false, Array.from({ length: 17 }, (_, index) => ({ type: 'remove', id: `missing_${index}` }))],
+        [false, [{ type: 'remove', id: 'bad id' }]],
+        [false, [{ type: 'replace', map: map('candidate') }]],
+        [false, [null]],
+        [false, null]
+    ];
+    for (const [valid, operations] of cases) {
+        const description = JSON.stringify(operations);
+        if (valid) assert.doesNotThrow(() => validate(operations), description);
+        else assert.throws(() => validate(operations), description);
+        const response = await update(room, operations);
+        assert.equal(response.status, valid ? 200 : 400, description);
+        if (!valid) assert.equal(response.body.code, 'INVALID_REQUEST', description);
+    }
+});
+
 test('request validation rejects malformed JSON, unbounded payloads and invalid nicknames', async () => {
     assert.equal((await request('POST', '', '{')).status, 400);
     assert.equal((await request('POST', '', 'null')).status, 400);
@@ -199,6 +245,12 @@ test('leaving the last member closes the room and does not allow a stale join', 
 });
 
 test('CORS accepts Authorization preflights, allows local development and rejects foreign origins', async () => {
+    const { body: room } = await create();
+    const read = await mf.dispatchFetch(`https://test.invalid/api/rooms/${room.roomCode}`, {
+        headers: { Origin: 'https://ff14.tw' }
+    });
+    assert.equal(read.status, 200);
+    assert.equal(read.headers.get('Access-Control-Allow-Origin'), 'https://ff14.tw');
     const preflight = await request('OPTIONS', '', undefined, undefined, mf, 'http://localhost:8000');
     assert.equal(preflight.status, 204);
     assert.match(preflight.headers.get('Access-Control-Allow-Headers'), /Authorization/);

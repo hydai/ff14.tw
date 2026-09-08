@@ -996,9 +996,7 @@ class TreasureMapFinder {
                 validate: maps => {
                     if (!collaboration) return;
                     const operations = collaboration.mapSync.getOperations(maps.map(map => this.toRoomMap(map)));
-                    if (operations.length > RoomCollaboration.CONSTANTS.MAX_MAP_OPERATIONS) {
-                        throw new Error(FF14Utils.getI18nText('treasure_map_import_wait_for_sync', '請等待隊伍同步完成後再匯入。'));
-                    }
+                    RoomCollaboration.validateMapOperations(operations);
                 }
             });
             

@@ -56,6 +56,7 @@ test('creating a room uses ListManager, atomically submits retained maps and per
     await state.client.createRoom();
     assert.equal(state.requests.length, 1);
     assert.equal(state.requests[0].body.initialMaps[0].id, sample.id);
+    assert.equal(state.requests[0].headers['Content-Type'], 'application/json');
     assert.match(state.requests[0].body.clientRequestId, /^[a-f0-9-]{36}$/);
     assert.equal(state.client.currentUser.id, member.id);
     assert.equal(state.client.memberToken, TOKEN);
@@ -77,10 +78,25 @@ test('joining uses the returned member credential and subsequent edits send auth
     await state.finder.syncToRoom();
     const update = state.requests.find(request => request.method === 'PUT');
     assert.equal(update.headers.Authorization, `Bearer ${TOKEN}`);
+    assert.equal(update.headers['Content-Type'], 'application/json');
     assert.equal(update.body.operations[0].type, 'add');
     assert.equal(update.body.operations[0].map.id, sample.id);
     assert.equal(update.body.treasureMaps, undefined);
     assert.equal(state.client.currentRoom.revision, 1);
+});
+
+test('polling GETs have no JSON body or headers that require a CORS preflight', async () => {
+    const state = setup(() => ({ body: room() }));
+    state.client.adoptSession(room(), member, TOKEN);
+    await state.client.poll();
+    await state.client.poll();
+    assert.equal(state.requests.length, 2);
+    for (const request of state.requests) {
+        assert.equal(request.method, 'GET');
+        assert.equal(request.body, undefined);
+        assert.equal(request.headers['Content-Type'], undefined);
+        assert.equal(request.headers.Authorization, undefined);
+    }
 });
 
 const importMaps = (count, prefix = 'import') => Array.from({ length: count }, (_, index) => ({ ...sample, id: `${prefix}_${index}` }));
@@ -100,6 +116,30 @@ test('oversized room imports fail before changing maps, storage or sending opera
         assert.equal(state.client.mapSync.pending.length, 0);
         assert.equal(state.toasts.length, 1);
         assert.match(state.toasts[0], /清單已滿/);
+    }
+});
+
+test('room-incompatible imports are rejected atomically before replacing or merging local maps', async () => {
+    for (const merge of [false, true]) {
+        for (const invalid of [
+            { id: 'bad id' }, { id: 'bad/id' }, { id: '寶圖' },
+            { level: 'g0' }, { level: 'g19' }, { level: 'G8' }, { zone: '   ' }
+        ]) {
+            const state = setup(() => ({ status: 400, body: { code: 'INVALID_REQUEST', error: 'Invalid map' } }));
+            state.context.confirm = () => merge;
+            state.client.adoptSession(room([state.finder.toRoomMap(sample)]), member, TOKEN);
+            const before = JSON.stringify(state.finder.listManager.getList());
+            const stored = [...state.storage];
+            await state.finder.importFromText(JSON.stringify({ maps: [
+                ...importMaps(1), { ...sample, id: 'invalid', ...invalid }
+            ] }));
+            assert.equal(state.requests.length, 0, JSON.stringify(invalid));
+            assert.equal(JSON.stringify(state.finder.listManager.getList()), before);
+            assert.deepEqual([...state.storage], stored);
+            assert.equal(state.client.mapSync.pending.length, 0);
+            assert.equal(state.toasts.length, 1);
+            assert.match(state.toasts[0], /不支援/);
+        }
     }
 });
 
@@ -261,6 +301,52 @@ test('a leave acknowledgement racing a poll still clears the list and closes the
     assert.deepEqual(closed, ['leaveRoom']);
     assert.equal(state.client.currentRoom, null);
     assert.equal(state.client.isLeaving, false);
+});
+
+test('leaving waits for pending edits to sync and retains the session for retry on transient failures', async () => {
+    for (const keepList of [false, true]) {
+        for (const failure of ['transport', 429, 503]) {
+            let attempts = 0;
+            const state = setup(request => {
+                if (request.method === 'PUT') {
+                    if (++attempts === 1) {
+                        if (failure === 'transport') throw new TypeError('Failed to fetch');
+                        return { status: failure, body: { error: 'Please retry' } };
+                    }
+                    return { body: room([state.finder.toRoomMap(sample)], [member], 1) };
+                }
+                assert.equal(request.method, 'POST');
+                assert.equal(state.client.mapSync.pending.length, 0, 'leave only after the edit acknowledgement');
+                return { body: { message: 'Room deleted' } };
+            });
+            const pending = [{ clientRequestId: webcrypto.randomUUID(), operations: [{ type: 'add', map: state.finder.toRoomMap(sample) }] }];
+            state.client.adoptSession(room(), member, TOKEN, pending);
+            const closed = [];
+            let pollingRestarts = 0;
+            state.client.hideModal = name => closed.push(name);
+            state.client.startPolling = () => { pollingRestarts++; };
+            await state.client.leaveRoom(keepList);
+            assert.deepEqual(state.requests.map(request => request.method), ['PUT']);
+            assert.equal(state.client.currentRoom.roomCode, 'ABC123');
+            assert.equal(state.client.memberToken, TOKEN);
+            assert.equal(state.client.mapSync.pending.length, 1);
+            assert.equal(state.finder.listManager.getList()[0].id, sample.id);
+            assert.equal(JSON.parse(state.storage.get('ff14tw_current_room')).pendingMapOperations[0].clientRequestId, pending[0].clientRequestId);
+            assert.deepEqual(closed, []);
+            assert.equal(state.client.isLeaving, false);
+            assert.equal(state.client.isConnecting, false);
+            assert.equal(pollingRestarts, 1);
+            assert.match(state.toasts.at(-1), /尚未同步完成/);
+
+            await state.client.leaveRoom(keepList);
+            assert.deepEqual(state.requests.map(request => request.method), ['PUT', 'PUT', 'POST']);
+            assert.equal(state.requests[1].body.clientRequestId, state.requests[0].body.clientRequestId);
+            assert.equal(state.client.currentRoom, null);
+            assert.equal(state.storage.has('ff14tw_current_room'), false);
+            assert.equal(state.finder.listManager.getLength(), keepList ? 1 : 0);
+            assert.deepEqual(closed, ['leaveRoom']);
+        }
+    }
 });
 
 for (const action of ['create', 'join']) {

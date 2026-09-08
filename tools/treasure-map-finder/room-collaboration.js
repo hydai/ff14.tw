@@ -20,6 +20,27 @@ class RoomCollaboration {
             : 'https://ff14-tw-treasure.z54981220.workers.dev/api'    // 生產環境
     };
 
+    // Match the Worker's validateOperations contract before an import changes local storage.
+    // The API integration test checks these rules against the running Worker.
+    static validateMapOperations(operations) {
+        if (!Array.isArray(operations) || operations.length > RoomCollaboration.CONSTANTS.MAX_MAP_OPERATIONS) {
+            throw new Error(FF14Utils.getI18nText('treasure_map_import_wait_for_sync', '請等待隊伍同步完成後再匯入。'));
+        }
+        const validId = id => typeof id === 'string' && /^[a-zA-Z0-9_-]{1,50}$/.test(id);
+        const valid = operations.every(operation => {
+            if (!operation || typeof operation !== 'object') return false;
+            if (operation.type === 'remove') return validId(operation.id);
+            const map = operation.map;
+            return operation.type === 'add' && map && validId(map.id) &&
+                typeof map.type === 'string' && /^g(?:[1-9]|1[0-8])$/.test(map.type) &&
+                typeof map.zone === 'string' && map.zone.trim().length > 0 && map.zone.length <= 50 &&
+                Number.isFinite(map.x) && Number.isFinite(map.y) && map.x >= 0 && map.x <= 50 && map.y >= 0 && map.y <= 50;
+        });
+        if (!valid) {
+            throw new Error(FF14Utils.getI18nText('treasure_map_import_invalid_room_maps', '匯入清單含有隊伍不支援的寶圖資料，請檢查後再試。'));
+        }
+    }
+
     constructor(treasureMapFinder) {
         this.finder = treasureMapFinder;
         this.currentRoom = null;
@@ -119,7 +140,7 @@ class RoomCollaboration {
     }
 
     async request(path, { method = 'GET', body, authenticated = false } = {}) {
-        const headers = { 'Content-Type': 'application/json' };
+        const headers = body === undefined ? {} : { 'Content-Type': 'application/json' };
         if (authenticated) headers.Authorization = `Bearer ${this.memberToken || ''}`;
         const response = await fetch(`${RoomCollaboration.CONSTANTS.API_BASE_URL}${path}`, {
             method, headers,
@@ -459,8 +480,12 @@ class RoomCollaboration {
             this.showToast(FF14Utils.getI18nText('treasure_map_left_room', '已離開隊伍'));
         };
         try {
-            await this.mapSync.flush();
+            const synced = await this.mapSync.flush();
             if (generation !== this.sessionGeneration) return;
+            if (!synced) {
+                this.showToast(FF14Utils.getI18nText('treasure_map_leave_room_sync_failed', '寶圖尚未同步完成，請稍後再試離開隊伍。'), 'error');
+                return;
+            }
             await this.request(`/rooms/${this.currentRoom.roomCode}/leave`, {
                 method: 'POST', authenticated: true, body: { clientRequestId: crypto.randomUUID() }
             });
