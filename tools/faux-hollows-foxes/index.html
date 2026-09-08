@@ -6,8 +6,11 @@
     <title>Faux Hollows Foxes 計算機 - FF14.tw</title>
     <meta name="description" content="計算 FF14 Faux Hollows Foxes 活動的最佳點擊策略">
     <link rel="icon" type="image/x-icon" href="../../assets/images/ff14tw.ico">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../assets/css/tokens.css">
     <link rel="stylesheet" href="../../assets/css/common.css">
-    <link rel="stylesheet" href="../../assets/css/dark-mode-tools.css">
     <link rel="stylesheet" href="../../assets/css/tools-common.css">
     <link rel="stylesheet" href="../../assets/css/components/language-switcher.css">
     <link rel="stylesheet" href="style.css">
@@ -15,11 +18,11 @@
 <body>
     <div id="header-placeholder" data-base-path="../../" data-tool-name="宗長計算機" data-tool-name-key="faux_hollows_header"></div>
     <noscript>
-        <nav style="padding: 1rem; background: #667eea; color: white; text-align: center;">
-            <a href="/" style="color: white; margin: 0 1rem;">首頁</a>
-            <a href="/copyright.html" style="color: white; margin: 0 1rem;">版權聲明</a>
-            <a href="https://github.com/hydai/ff14.tw" target="_blank" rel="noopener noreferrer" style="color: white; margin: 0 1rem;">GitHub</a>
-            <a href="/about.html" style="color: white; margin: 0 1rem;">關於</a>
+        <nav class="noscript-nav">
+            <a href="/" class="noscript-nav-link">首頁</a>
+            <a href="/copyright.html" class="noscript-nav-link">版權聲明</a>
+            <a href="https://github.com/hydai/ff14.tw" target="_blank" rel="noopener noreferrer" class="noscript-nav-link">GitHub</a>
+            <a href="/about.html" class="noscript-nav-link">關於</a>
         </nav>
     </noscript>
 
@@ -27,10 +30,10 @@
         <div class="container">
             <h1 class="visually-hidden" data-i18n="faux_hollows_header">Faux Hollows Foxes 計算機</h1>
             <div class="game-container">
-                <div id="game-hint" class="game-hint">
+                <div id="game-hint" class="game-hint info-message">
                     <p data-i18n="faux_hollows_hint">💡 提示：請先點擊兩個格子設定為障礙物，系統將自動判斷並填充剩餘的障礙物位置</p>
                 </div>
-                <div class="game-info">
+                <div class="game-info card">
                     <div class="info-item">
                         <span class="info-label" data-i18n="faux_hollows_remaining_clicks">剩餘點擊次數</span>：
                         <span id="remaining-clicks" class="info-value">11</span>
@@ -47,7 +50,7 @@
                 </div>
 
                 <div class="controls">
-                    <button id="reset-btn" class="btn btn-primary" data-i18n="faux_hollows_reset">重置遊戲</button>
+                    <button id="reset-btn" class="btn btn-outline" data-i18n="faux_hollows_reset">重置遊戲</button>
                     <div class="btn-group">
                         <button id="undo-btn" class="btn btn-secondary" disabled>
                             <span class="btn-icon">↩️</span> <span data-i18n="faux_hollows_undo">回到上一步</span>
@@ -56,11 +59,11 @@
                             <span class="btn-icon">↪️</span> <span data-i18n="faux_hollows_redo">重做</span>
                         </button>
                     </div>
-                    <button id="toggle-probabilities" class="btn btn-secondary" data-i18n="faux_hollows_hide_prob">隱藏機率</button>
-                    <button id="auto-calculate" class="btn btn-secondary" data-i18n="faux_hollows_calc_best">計算最佳策略</button>
+                    <button id="toggle-probabilities" class="btn btn-secondary">隱藏機率</button>
+                    <button id="auto-calculate" class="btn btn-primary">關閉最佳策略</button>
                 </div>
 
-                <div id="result-panel" class="result-panel" style="display: none;">
+                <div id="result-panel" class="result-panel card" style="display: none;">
                     <h2 data-i18n="faux_hollows_result_title">遊戲結果</h2>
                     <p class="result-score"><span data-i18n="faux_hollows_final_score">最終得分</span>：<span id="final-score">0</span></p>
                     <div id="result-details"></div>
@@ -68,31 +71,37 @@
             </div>
 
             <!-- Popup for cell selection -->
-            <div id="cell-popup" class="popup-overlay" style="display: none;">
-                <div class="popup-content">
-                    <h3 data-i18n="faux_hollows_popup_title">選擇此格類型</h3>
-                    <div class="popup-options">
-                        <button class="popup-btn" data-type="obstacle" data-i18n="faux_hollows_popup_obstacle">🚫 障礙物</button>
-                        <button class="popup-btn" data-type="sword" data-i18n="faux_hollows_popup_sword">⚔️ 劍 (2x3)</button>
-                        <button class="popup-btn" data-type="chest" data-i18n="faux_hollows_popup_chest">📦 寶箱 (2x2)</button>
-                        <button class="popup-btn" data-type="fox" data-i18n="faux_hollows_popup_fox">🦊 宗長 (1x1)</button>
-                        <button class="popup-btn" data-type="empty" data-i18n="faux_hollows_popup_empty">✅ 空格</button>
-                        <button class="popup-btn" data-type="clear" data-i18n="faux_hollows_popup_clear">🗑️ 清除</button>
+            <div id="cell-popup" class="popup-overlay dialog-overlay" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="cell-popup-title">
+                <div class="popup-content dialog">
+                    <div class="dialog-header">
+                        <h3 id="cell-popup-title" class="dialog-title" data-i18n="faux_hollows_popup_title">選擇此格類型</h3>
                     </div>
-
-                    <button class="popup-close" data-i18n="faux_hollows_popup_cancel">取消</button>
+                    <div class="dialog-body">
+                        <div class="popup-options">
+                            <button class="popup-btn" data-type="obstacle" data-i18n="faux_hollows_popup_obstacle">🚫 障礙物</button>
+                            <button class="popup-btn" data-type="sword" data-i18n="faux_hollows_popup_sword">⚔️ 劍 (2x3)</button>
+                            <button class="popup-btn" data-type="chest" data-i18n="faux_hollows_popup_chest">📦 寶箱 (2x2)</button>
+                            <button class="popup-btn" data-type="fox" data-i18n="faux_hollows_popup_fox">🦊 宗長 (1x1)</button>
+                            <button class="popup-btn" data-type="empty" data-i18n="faux_hollows_popup_empty">✅ 空格</button>
+                            <button class="popup-btn" data-type="clear" data-i18n="faux_hollows_popup_clear">🗑️ 清除</button>
+                        </div>
+                    </div>
+                    <div class="dialog-actions">
+                        <button class="btn btn-block popup-close" data-i18n="faux_hollows_popup_cancel">取消</button>
+                    </div>
                 </div>
             </div>
         </div>
 
         <div class="data-source-note">
+            <p data-i18n="faux_hollows_candidate_note">宗長標記只表示候選位置，不代表出現機率；找到宗長後會移除其他候選提示。</p>
             <p><span data-i18n="faux_hollows_data_source">盤面資料來源</span>：<a href="https://www.reddit.com/r/ffxiv/comments/16wl1e7/faux_hollows_fox_location_guide_finished/" target="_blank" rel="noopener noreferrer">r/ffxiv Ylandah</a></p>
         </div>
     </main>
 
     <div id="footer-placeholder" data-base-path="../../"></div>
 
-    <button id="back-to-top" class="back-to-top" data-i18n-attr="aria-label:faux_hollows_back_to_top" aria-label="回到頂部">
+    <button id="back-to-top" class="back-to-top" data-i18n="faux_hollows_back_to_top" data-i18n-attr="aria-label" aria-label="回到頂部">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M18 15l-6-6-6 6"/>
         </svg>

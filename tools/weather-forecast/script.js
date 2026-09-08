@@ -58,8 +58,7 @@ class WeatherForecast {
             showMoreBtn: document.getElementById('showMoreBtn'),
 
             // Actions
-            shareBtn: document.getElementById('shareBtn'),
-            toast: document.getElementById('toast')
+            shareBtn: document.getElementById('shareBtn')
         };
 
         // Initialize
@@ -87,11 +86,21 @@ class WeatherForecast {
         this.startTimeUpdates();
 
         // Initial render based on URL hash
-        if (this.store.state.zoneId) {
-            this.showZoneContent();
-            this.renderWeatherTags();
-            this.updateTimeRangeUI();
-            this.renderResults();
+        this.handleStateChange(this.store.state, 'state');
+
+        // 語言切換時重新渲染側邊欄地區/地點清單、地區名稱／天氣標籤／結果表格。
+        // 側邊欄無論有沒有選取地區都存在，所以 relabelZoneList() 要放在
+        // zoneId 判斷之前、一律執行；後三者都只從 this.store.state 取值，
+        // 不需要另外快取輸入，直接重放跟本函式開頭、handleStateChange('zone') 一樣的呼叫即可
+        if (window.i18n) {
+            window.i18n.onLanguageChange(() => {
+                this.relabelZoneList();
+
+                if (!this.store.state.zoneId) return;
+                this.showZoneContent();
+                this.renderWeatherTags();
+                this.renderResults();
+            });
         }
     }
 
@@ -181,6 +190,7 @@ class WeatherForecast {
             expandIcon.textContent = '▼';
 
             const regionName = document.createElement('span');
+            regionName.className = 'region-name';
             regionName.textContent = regionInfo[lang] || regionInfo.zh;
 
             header.appendChild(expandIcon);
@@ -204,6 +214,34 @@ class WeatherForecast {
     }
 
     /**
+     * 語言切換時重新標記地區選單（地區標題＋地點按鈕）的文字。
+     * 直接改寫既有 DOM 節點的 textContent，不重新呼叫 buildZoneList()：
+     * 後者只會 append、不會先清空，重呼叫會整份選單重複；改用相同節點
+     * 也讓目前展開/收合的地區（.collapsed）與已選取的地點（.active）
+     * 完全不受影響，不需要額外重新套用。
+     */
+    relabelZoneList() {
+        const lang = window.i18n ? window.i18n.currentLanguage : 'zh';
+
+        const headers = this.elements.zoneList.querySelectorAll('.region-header');
+        headers.forEach(header => {
+            const regionInfo = WeatherZoneData.regions[header.dataset.region];
+            const nameSpan = header.querySelector('.region-name');
+            if (regionInfo && nameSpan) {
+                nameSpan.textContent = regionInfo[lang] || regionInfo.zh;
+            }
+        });
+
+        const zoneBtns = this.elements.zoneList.querySelectorAll('.zone-btn');
+        zoneBtns.forEach(btn => {
+            const zone = WeatherZoneData.getZone(btn.dataset.zone);
+            if (zone) {
+                btn.textContent = zone[lang] || zone.zh;
+            }
+        });
+    }
+
+    /**
      * Build the time grid UI
      */
     buildTimeGrid() {
@@ -211,7 +249,7 @@ class WeatherForecast {
 
         for (let i = 0; i < 24; i++) {
             const cell = document.createElement('div');
-            cell.className = 'time-cell';
+            cell.className = 'cell time-cell';
             cell.dataset.hour = i;
             cell.setAttribute('role', 'button');
             cell.setAttribute('tabindex', '0');
@@ -254,7 +292,15 @@ class WeatherForecast {
      */
     handleStateChange(state, changeType) {
         switch (changeType) {
+            case 'state':
             case 'zone':
+                this.isSelectingTimeRange = false;
+                this.timeRangeStart = null;
+                this.updateZoneSelection();
+                if (!state.zoneId) {
+                    this.hideZoneContent();
+                    break;
+                }
                 this.showZoneContent();
                 this.renderWeatherTags();
                 this.updateTimeRangeUI();
@@ -279,9 +325,20 @@ class WeatherForecast {
                 this.renderResults();
                 break;
             case 'reset':
+                this.isSelectingTimeRange = false;
+                this.timeRangeStart = null;
+                this.updateZoneSelection();
                 this.hideZoneContent();
                 break;
         }
+    }
+
+    updateZoneSelection() {
+        this.elements.zoneList.querySelectorAll('.zone-btn').forEach(btn => {
+            const active = btn.dataset.zone === this.store.state.zoneId;
+            btn.classList.toggle(WeatherForecast.CONSTANTS.CSS_CLASSES.ACTIVE, active);
+            btn.setAttribute('aria-pressed', String(active));
+        });
     }
 
     /**
@@ -301,15 +358,6 @@ class WeatherForecast {
         const btn = e.target.closest('.zone-btn');
         if (btn) {
             const zoneId = btn.dataset.zone;
-
-            // Update active state and aria-pressed
-            const allBtns = this.elements.zoneList.querySelectorAll('.zone-btn');
-            allBtns.forEach(b => {
-                b.classList.remove(WeatherForecast.CONSTANTS.CSS_CLASSES.ACTIVE);
-                b.setAttribute('aria-pressed', 'false');
-            });
-            btn.classList.add(WeatherForecast.CONSTANTS.CSS_CLASSES.ACTIVE);
-            btn.setAttribute('aria-pressed', 'true');
 
             // Update store
             this.store.setZone(zoneId);
@@ -415,7 +463,9 @@ class WeatherForecast {
     handleShare() {
         const url = window.location.href;
         navigator.clipboard.writeText(url).then(() => {
-            this.showToast(window.i18n ? window.i18n.getText('weather_copied') : '已複製到剪貼簿');
+            if (typeof FF14Utils !== 'undefined' && FF14Utils.showToast) {
+                FF14Utils.showToast(window.i18n ? window.i18n.getText('weather_copied') : '已複製到剪貼簿', 'success');
+            }
         });
     }
 
@@ -478,7 +528,7 @@ class WeatherForecast {
      */
     createWeatherTag(weather, info, lang) {
         const tag = document.createElement('button');
-        tag.className = 'weather-tag';
+        tag.className = 'chip weather-tag';
         tag.dataset.weather = weather;
         tag.setAttribute('aria-pressed', 'false');
 
@@ -576,6 +626,9 @@ class WeatherForecast {
                 this.elements.resultsTitle.textContent = window.i18n
                     ? window.i18n.getText('weather_results')
                     : '搜尋結果';
+                // 依目前是否有啟用篩選條件而定的兩個 key 之一，交給 i18n manager 在語言切換時
+                // 透過 [data-i18n] 全域重新翻譯；篩選狀態改變時（此函式重新執行）另外同步這個屬性
+                this.elements.resultsTitle.dataset.i18n = 'weather_results';
             } else {
                 // Timetable view (no filters)
                 results = this.search.getUpcomingWeather(zone, Date.now(), this.resultCount);
@@ -584,13 +637,14 @@ class WeatherForecast {
                 this.elements.resultsTitle.textContent = window.i18n
                     ? window.i18n.getText('weather_timetable')
                     : '天氣時刻表';
+                this.elements.resultsTitle.dataset.i18n = 'weather_timetable';
             }
 
             // Hide loading
             this.elements.resultsLoading.style.display = 'none';
 
             if (results.length === 0) {
-                this.elements.noResults.style.display = 'block';
+                this.elements.noResults.style.display = 'flex';
                 return;
             }
 
@@ -686,18 +740,6 @@ class WeatherForecast {
         // Clear and append
         this.elements.resultsBody.textContent = '';
         this.elements.resultsBody.appendChild(fragment);
-    }
-
-    /**
-     * Show toast notification
-     */
-    showToast(message) {
-        this.elements.toast.textContent = message;
-        this.elements.toast.classList.add('show');
-
-        setTimeout(() => {
-            this.elements.toast.classList.remove('show');
-        }, 2000);
     }
 
     /**

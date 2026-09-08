@@ -67,7 +67,12 @@ class I18nManager {
      */
     _detectLanguage() {
         // 1. 檢查 localStorage
-        const stored = localStorage.getItem(I18nManager.CONSTANTS.STORAGE_KEY);
+        let stored = null;
+        try {
+            stored = localStorage.getItem(I18nManager.CONSTANTS.STORAGE_KEY);
+        } catch (error) {
+            console.warn('[i18n] 無法讀取語言偏好，改用瀏覽器語言', error);
+        }
         if (stored && I18nManager.CONSTANTS.SUPPORTED_LANGUAGES.includes(stored)) {
             return stored;
         }
@@ -160,7 +165,11 @@ class I18nManager {
         }
 
         this.currentLanguage = lang;
-        localStorage.setItem(I18nManager.CONSTANTS.STORAGE_KEY, lang);
+        try {
+            localStorage.setItem(I18nManager.CONSTANTS.STORAGE_KEY, lang);
+        } catch (error) {
+            console.warn('[i18n] 無法儲存語言偏好，本次切換仍會生效', error);
+        }
 
         // 更新 HTML lang 屬性
         document.documentElement.lang = lang === 'zh' ? 'zh-Hant' : lang;
@@ -214,6 +223,7 @@ class I18nManager {
      * 更新頁面上所有標記的元素
      */
     updatePageLanguage() {
+        document.documentElement.lang = this.currentLanguage === 'zh' ? 'zh-Hant' : this.currentLanguage;
         // 更新頁面標題（如果有 data-i18n-title 屬性）
         const pageTitleKey = document.documentElement.dataset.i18nTitle;
         if (pageTitleKey) {

@@ -276,15 +276,8 @@ class SearchFilter {
             return time;
         }
 
-        const match = time.match(/^(\d{1,2}):(\d{2})$/);
-        if (match) {
-            const hours = parseInt(match[1], 10);
-            const minutes = parseInt(match[2], 10);
-            if (hours >= 0 && hours < 24 && minutes >= 0 && minutes < 60) {
-                return hours * 60 + minutes;
-            }
-        }
-        return null;
+        const schedule = TimeCalculator.parseSchedule(time);
+        return schedule && !schedule.allDay ? schedule.startMinutes : null;
     }
 
     /**

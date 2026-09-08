@@ -98,6 +98,10 @@ window.TimedGatheringTranslations = {
         copyFailedError: '複製失敗，請手動選取複製',
         invalidListNameError: '清單名稱長度不符合要求',
         fileFormatError: '檔案格式錯誤',
+        fileReadFailed: '無法讀取檔案，請重新選取',
+        listSaveFailed: '無法儲存清單，原有清單未變更',
+        noScheduledItems: '清單沒有可設定鬧鐘的採集時段',
+        macroSkippedItems: '已略過 {count} 個全天或時間無效的項目',
 
         // 時間相關
         timeFormat: '時間',
@@ -250,6 +254,10 @@ window.TimedGatheringTranslations = {
         copyFailedError: 'コピーに失敗しました。手動で選択してコピーしてください',
         invalidListNameError: 'リスト名の長さが要件を満たしていません',
         fileFormatError: 'ファイル形式エラー',
+        fileReadFailed: 'ファイルを読み込めません。もう一度選択してください',
+        listSaveFailed: 'リストを保存できません。既存のリストは変更されていません',
+        noScheduledItems: 'アラームを設定できる採集時間がありません',
+        macroSkippedItems: '終日または時刻が無効な項目を {count} 件スキップしました',
         
         // 時間相關
         timeFormat: '時間',
@@ -402,6 +410,10 @@ window.TimedGatheringTranslations = {
         copyFailedError: 'Copy failed, please select and copy manually',
         invalidListNameError: 'List name length does not meet requirements',
         fileFormatError: 'File format error',
+        fileReadFailed: 'Cannot read the file. Please select it again.',
+        listSaveFailed: 'Cannot save lists. Existing lists were not changed.',
+        noScheduledItems: 'This list has no gathering windows to set alarms for.',
+        macroSkippedItems: 'Skipped {count} all-day items or items with invalid times.',
 
         // Time related
         timeFormat: 'Time',
@@ -459,3 +471,8 @@ window.TimedGatheringTranslations = {
         testNotificationBody: 'This is a test notification, please confirm you can see it'
     }
 };
+
+// 載入翻譯到全域 i18n
+if (window.i18n) {
+    window.i18n.loadTranslations('timed-gathering', window.TimedGatheringTranslations);
+}

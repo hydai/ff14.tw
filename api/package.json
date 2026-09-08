@@ -5,20 +5,28 @@
   "main": "treasure-room-worker.js",
   "type": "module",
   "scripts": {
-    "dev": "wrangler dev --local",
-    "deploy": "wrangler deploy",
-    "tail": "wrangler tail"
+    "dev": "wrangler dev --env development --local",
+    "check:deploy": "wrangler deploy --dry-run --env development && wrangler deploy --dry-run --env production",
+    "deploy": "wrangler deploy --env production",
+    "tail": "wrangler tail --env production",
+    "test": "node --test ../tests/treasure-room-api.test.js"
   },
-  "keywords": ["cloudflare-workers", "ff14"],
+  "keywords": [
+    "cloudflare-workers",
+    "ff14"
+  ],
   "author": "hydai",
   "license": "MIT",
   "engines": {
     "node": ">=22.0.0"
   },
   "devDependencies": {
-    "wrangler": "^4.100.0"
+    "miniflare": "^4.20260730.0",
+    "wrangler": "^4.129.1"
   },
   "overrides": {
-    "esbuild": "0.28.1"
+    "miniflare": {
+      "undici": "^7.29.0"
+    }
   }
 }

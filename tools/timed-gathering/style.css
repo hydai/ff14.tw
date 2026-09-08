@@ -1,910 +1,406 @@
-/* ===================================
-   特殊採集時間管理器樣式
-   =================================== */
+/* ==========================================================================
+   特殊採集時間管理器 — 只寫版面；顏色、圓角、字級一律來自 tokens.css 與共用元件
+   ========================================================================== */
 
-/* CSS 變數定義 - 映射到 common.css 的變數 */
-:root {
-    --primary: var(--primary-color);
-    --primary-dark: #3a7bc8;
-    --bg-primary: var(--bg-secondary);
-    --bg-hover: var(--hover-bg);
-    --bg-tertiary: #f0f4f8;
-}
-
-[data-theme="dark"] {
-    --primary: var(--primary-color);
-    --primary-dark: #4a8fd8;
-    --bg-primary: #1a1d2e;
-    --bg-hover: rgba(255,255,255,0.1);
-    --bg-tertiary: #2d3142;
-}
-
-/* 時間顯示區域 */
+/* 時間與通知：卡片外觀由 .card 提供 */
 .time-display-container {
     display: flex;
-    gap: 1rem;
-    margin-bottom: 1.5rem;
-    justify-content: center;
     flex-wrap: wrap;
+    gap: var(--space-4);
+    margin-bottom: var(--space-6);
 }
 
 .time-display-card {
-    background: var(--bg-secondary);
-    border-radius: 8px;
-    padding: 1rem 2rem;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    min-width: 200px;
+    flex: 1 1 220px;
+    padding: var(--space-4) var(--space-5);
     text-align: center;
-    transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.time-display-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 .time-label {
-    font-size: 0.9rem;
-    color: var(--text-secondary);
-    margin-bottom: 0.5rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-1);
+    margin-bottom: var(--space-2);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
+    letter-spacing: 0.04em;
+    color: var(--color-muted);
 }
 
 .time-value {
-    font-size: 1.8rem;
-    font-weight: 600;
-    color: var(--primary-color);
-    font-family: 'Courier New', monospace;
-    letter-spacing: 2px;
+    font-family: var(--font-mono);
+    font-size: var(--text-2xl);
+    font-weight: var(--weight-bold);
+    line-height: 1;
+    color: var(--color-primary);
 }
 
 .time-value-wrapper {
     display: flex;
-    align-items: center;
+    align-items: baseline;
     justify-content: center;
-    gap: 0.5rem;
+    gap: var(--space-2);
 }
 
 .time-period {
-    font-size: 1.5rem;
-    cursor: help;
-}
-
-/* Dark mode adjustments for time display */
-[data-theme="dark"] .time-display-card {
-    background: var(--bg-primary);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-}
-
-[data-theme="dark"] .time-display-card:hover {
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
-}
-
-[data-theme="dark"] .time-value {
-    color: #6bb1f5;
-}
-
-/* 通知卡片樣式 */
-.notification-card {
-    min-width: 240px;
+    font-size: var(--text-sm);
+    color: var(--color-muted);
 }
 
 .notification-compact {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 0.75rem;
     justify-content: center;
-    margin-top: 0.5rem;
-}
-
-.notification-icon {
-    font-size: 1rem;
-}
-
-/* 調整通知卡片內的開關大小 */
-.notification-card .toggle-switch {
-    transform: scale(0.85);
-    margin: 0;
-}
-
-/* 緊湊型測試按鈕 */
-.notification-card #testNotificationBtn {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.85rem;
-    min-width: auto;
-}
-
-/* Toggle Switch 樣式 */
-.toggle-switch {
-    position: relative;
-    display: inline-block;
-    width: 60px;
-    height: 32px;
-}
-
-.toggle-switch input {
-    opacity: 0;
-    width: 0;
-    height: 0;
-}
-
-.toggle-slider {
-    position: absolute;
-    cursor: pointer;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: #ccc;
-    transition: all 0.4s ease;
-    border-radius: 32px;
-    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.toggle-slider:before {
-    position: absolute;
-    content: "";
-    height: 24px;
-    width: 24px;
-    left: 4px;
-    bottom: 4px;
-    background-color: white;
-    transition: all 0.4s ease;
-    border-radius: 50%;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-}
-
-.toggle-switch input:checked + .toggle-slider {
-    background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
-    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.15);
-}
-
-.toggle-switch input:checked + .toggle-slider:before {
-    transform: translateX(28px);
-}
-
-.toggle-switch:hover .toggle-slider {
-    box-shadow: 0 0 8px rgba(74, 144, 226, 0.3);
-}
-
-/* 緊湊型通知狀態 */
-.notification-status-compact {
-    font-size: 0.85rem;
-    padding: 0.25rem 0.5rem;
-    border-radius: 4px;
-    background: var(--bg-primary);
-    color: var(--text-secondary);
-    min-width: 60px;
-    text-align: center;
-    transition: all 0.3s ease;
-}
-
-.notification-status-compact.status-enabled {
-    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
-    color: white;
-}
-
-.notification-status-compact.status-disabled {
-    background: var(--bg-primary);
-    color: var(--text-secondary);
-}
-
-.notification-status-compact.status-denied {
-    background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
-    color: white;
-}
-
-/* Dark mode adjustments for notification card */
-[data-theme="dark"] .notification-status-compact {
-    background: var(--bg-secondary);
-}
-
-[data-theme="dark"] .notification-status-compact.status-enabled {
-    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
-}
-
-[data-theme="dark"] .notification-status-compact.status-denied {
-    background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
-}
-
-[data-theme="dark"] .toggle-slider {
-    background-color: #4a5568;
-}
-
-[data-theme="dark"] .toggle-switch input:checked + .toggle-slider {
-    background: linear-gradient(135deg, #6bb1f5 0%, #4a8fd8 100%);
-}
-
-[data-theme="dark"] .toggle-switch:hover .toggle-slider {
-    box-shadow: 0 0 12px rgba(107, 177, 245, 0.4);
+    gap: var(--space-3);
 }
 
 /* 工具列 */
 .toolbar {
     display: flex;
-    justify-content: space-between;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 1rem;
-    margin-bottom: 1.5rem;
-    padding: 1rem;
-    background: var(--bg-secondary);
-    border-radius: 8px;
+    justify-content: space-between;
+    gap: var(--space-4);
+    margin-bottom: var(--space-6);
 }
 
 .search-section {
     display: flex;
-    gap: 0.5rem;
-    flex: 1;
+    flex: 1 1 320px;
     max-width: 500px;
+    gap: var(--space-2);
 }
 
-.search-input {
+.search-section .form-control {
     flex: 1;
 }
 
 .toolbar-actions {
     display: flex;
-    gap: 0.5rem;
-    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-2);
 }
 
-/* 語言選擇器 */
-.language-selector {
-    display: flex;
-    gap: 0.25rem;
-    padding: 0.25rem;
-    background: var(--bg-primary);
-    border-radius: 6px;
-    margin-right: 0.5rem;
-}
-
-.language-btn {
-    padding: 0.25rem 0.75rem;
-    font-size: 0.875rem;
-    background: transparent;
-    border: 1px solid transparent;
-    color: var(--text-secondary);
-    transition: all 0.2s ease;
-}
-
-.language-btn:hover {
-    background: var(--bg-secondary);
-    color: var(--text-primary);
-}
-
-.language-btn.active {
-    background: var(--primary);
-    color: white;
-    border-color: var(--primary);
-}
-
-.language-btn.active:hover {
-    background: var(--primary-dark);
-    border-color: var(--primary-dark);
-}
-
-/* 篩選區域 */
+/* 篩選 */
 .filter-section {
-    margin-bottom: 1.5rem;
-    padding: 1rem;
-    background: var(--bg-secondary);
-    border-radius: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-6);
+    margin-bottom: var(--space-6);
 }
 
 .filter-group {
-    margin-bottom: 1rem;
-}
-
-.filter-group:last-child {
-    margin-bottom: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
 }
 
 .filter-label {
-    display: inline-block;
-    margin-right: 1rem;
-    font-weight: 500;
-    color: var(--text-primary);
-    min-width: 80px;
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    color: var(--color-heading);
 }
 
 .filter-tags {
-    display: inline-flex;
-    gap: 0.5rem;
+    display: flex;
     flex-wrap: wrap;
+    gap: var(--space-2);
 }
 
-.tag-icon {
-    margin-right: 0.25rem;
-}
-
-/* 主要內容區 */
+/* 主要內容：兩欄面板，外觀由 .card 提供 */
 .main-content {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 1.5rem;
-    min-height: 500px;
+    gap: var(--space-6);
+    align-items: start;
 }
 
-/* 項目面板 */
+.items-panel,
+.lists-panel {
+    padding: var(--space-6);
+}
+
 .items-panel {
-    background: var(--bg-secondary);
-    border-radius: 8px;
-    padding: 1.5rem;
-    overflow-y: auto;
     max-height: 800px;
+    overflow-y: auto;
 }
 
 .panel-header {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    margin-bottom: 1rem;
-    padding-bottom: 0.75rem;
-    border-bottom: 2px solid var(--border-color);
+    justify-content: space-between;
+    gap: var(--space-4);
+    margin-bottom: var(--space-4);
 }
 
 .panel-header h2 {
     margin: 0;
-    font-size: 1.25rem;
-    color: var(--text-primary);
+    font-size: var(--text-xl);
+    color: var(--color-heading);
 }
 
 .item-count {
-    color: var(--text-secondary);
-    font-size: 0.875rem;
+    font-size: var(--text-sm);
+    color: var(--color-muted);
 }
 
-/* 項目容器 */
 .items-container {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: var(--space-3);
 }
 
-/* 項目卡片 */
+/* 採集物卡片：外觀由 .card 提供 */
 .item-card {
-    background: var(--bg-primary);
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    padding: 1rem;
-    transition: all 0.2s ease;
+    padding: var(--space-4);
+    transition: border-color var(--duration-base) var(--ease), box-shadow var(--duration-base) var(--ease);
 }
 
 .item-card:hover {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    border-color: var(--primary);
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-md);
 }
 
 .item-header {
     display: flex;
+    align-items: flex-start;
     justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.75rem;
+    gap: var(--space-3);
+    margin-bottom: var(--space-2);
 }
 
 .item-title-section {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: var(--space-2);
+    min-width: 0;
 }
 
-.item-type {
-    font-size: 1.25rem;
+.item-type,
+.list-item-type,
+.tag-icon,
+.notification-icon {
+    font-size: var(--text-md);
+    line-height: 1;
 }
 
 .item-name {
     margin: 0;
-    font-size: 1rem;
-    color: var(--text-primary);
-}
-
-.item-time {
-    background: var(--primary);
-    color: white;
-    padding: 0.25rem 0.5rem;
-    border-radius: 4px;
-    font-weight: 500;
-    font-size: 0.875rem;
+    font-size: var(--text-md);
+    font-weight: var(--weight-semibold);
+    color: var(--color-heading);
 }
 
 .item-body {
-    margin-bottom: 0.75rem;
+    margin-bottom: var(--space-3);
 }
 
 .item-info {
     display: flex;
-    gap: 1rem;
     flex-wrap: wrap;
-    font-size: 0.875rem;
-    color: var(--text-secondary);
-    margin-bottom: 0.5rem;
-}
-
-.item-zone,
-.item-coords,
-.item-version {
-    white-space: nowrap;
+    gap: var(--space-2) var(--space-4);
+    font-size: var(--text-sm);
+    color: var(--color-muted);
 }
 
 .item-version {
-    font-weight: 600;
-    color: var(--primary);
-    font-size: 0.9rem;
+    font-weight: var(--weight-semibold);
+    color: var(--color-primary);
 }
 
 .item-description {
-    margin: 0.5rem 0 0 0;
-    font-size: 0.875rem;
-    color: var(--text-secondary);
-    font-style: italic;
+    margin-top: var(--space-2);
+    font-size: var(--text-sm);
+    line-height: var(--leading-normal);
+    color: var(--color-muted);
 }
 
 .item-footer {
     display: flex;
     justify-content: flex-end;
+    gap: var(--space-2);
 }
 
 /* 清單面板 */
 .lists-panel {
-    background: var(--bg-secondary);
-    border-radius: 8px;
-    padding: 1.5rem;
     display: flex;
     flex-direction: column;
 }
 
-/* 清單標籤頁 */
 .list-tabs {
-    display: flex;
-    gap: 0.5rem;
-    margin-bottom: 1rem;
-    padding-bottom: 0.75rem;
-    border-bottom: 2px solid var(--border-color);
-    overflow-x: auto;
-}
-
-.list-tab {
-    padding: 0.5rem 1rem;
-    background: var(--bg-primary);
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    white-space: nowrap;
-    font-size: 0.875rem;
-}
-
-.list-tab:hover {
-    background: var(--bg-hover);
-}
-
-.list-tab.active {
-    background: var(--primary);
-    color: white;
-    border-color: var(--primary);
-}
-
-/* 清單內容 */
-.list-content {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
+    flex-wrap: wrap;
+    margin-bottom: var(--space-4);
 }
 
 .list-header {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    margin-bottom: 1rem;
-    padding-bottom: 0.75rem;
-    border-bottom: 1px solid var(--border-color);
+    justify-content: space-between;
+    gap: var(--space-3);
+    margin-bottom: var(--space-3);
 }
 
-.list-header h3 {
+.list-header h3,
+.macro-header h3 {
     margin: 0;
-    font-size: 1.125rem;
-    color: var(--text-primary);
+    font-size: var(--text-lg);
+    color: var(--color-heading);
 }
 
 .list-actions {
     display: flex;
-    gap: 0.25rem;
+    gap: var(--space-1);
 }
 
-/* 清單項目 */
 .list-items {
-    flex: 1;
-    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
     max-height: 300px;
-    margin-bottom: 1rem;
+    overflow-y: auto;
+    margin-bottom: var(--space-4);
 }
 
+/* 清單項目：.card 是 flex column，這裡要明確改回橫排 */
 .list-item {
     display: flex;
-    justify-content: space-between;
+    flex-direction: row;
     align-items: center;
-    padding: 0.75rem;
-    background: var(--bg-primary);
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
-    margin-bottom: 0.5rem;
-    transition: all 0.2s ease;
-}
-
-.list-item:hover {
-    background: var(--bg-hover);
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: var(--space-2) var(--space-3);
 }
 
 .list-item-info {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 0.75rem;
-    flex: 1;
-}
-
-.list-item-type {
-    font-size: 1rem;
+    gap: var(--space-2);
+    min-width: 0;
 }
 
 .list-item-name {
-    flex: 1;
-    color: var(--text-primary);
+    font-weight: var(--weight-medium);
+    color: var(--color-heading);
 }
 
-.list-item-time {
-    background: var(--bg-tertiary);
-    padding: 0.25rem 0.5rem;
-    border-radius: 4px;
-    font-size: 0.75rem;
-    color: var(--text-secondary);
-}
-
-.list-item-version {
-    background: var(--primary);
-    color: white;
-    padding: 0.15rem 0.4rem;
-    border-radius: 3px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    margin: 0 0.5rem;
-}
-
+/* 空清單（由 security-utils 產生，外觀比照 .empty-state） */
 .empty-list-message {
+    padding: var(--space-6);
+    border: 1px dashed var(--color-border-strong);
+    border-radius: var(--radius-lg);
     text-align: center;
-    padding: 2rem;
-    color: var(--text-secondary);
+    color: var(--color-muted);
 }
 
 .empty-list-message p {
-    margin: 0 0 0.5rem 0;
-    font-size: 1rem;
+    margin: 0 0 var(--space-1);
+    font-weight: var(--weight-semibold);
+    color: var(--color-heading);
 }
 
 .empty-list-message small {
-    font-size: 0.875rem;
-    opacity: 0.8;
+    font-size: var(--text-sm);
 }
 
-/* 巨集區域 */
+/* 巨集匯出 */
 .macro-section {
-    border-top: 1px solid var(--border-color);
-    padding-top: 1rem;
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--color-border);
 }
 
 .macro-header {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    margin-bottom: 1rem;
-}
-
-.macro-header h3 {
-    margin: 0;
-    font-size: 1rem;
-    color: var(--text-primary);
+    justify-content: space-between;
+    gap: var(--space-3);
+    margin-bottom: var(--space-3);
 }
 
 .macro-options {
     display: flex;
-    gap: 1rem;
-    margin-bottom: 1rem;
-}
-
-.macro-output {
-    margin-top: 1rem;
+    flex-wrap: wrap;
+    gap: var(--space-4);
+    margin-bottom: var(--space-3);
 }
 
 .macro-output textarea {
-    font-family: 'Courier New', Courier, monospace;
-    font-size: 0.875rem;
-    line-height: 1.4;
-    resize: vertical;
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
 }
 
-/* 空狀態訊息 */
-.empty-message {
-    text-align: center;
-    padding: 3rem 1rem;
-    color: var(--text-secondary);
+.macro-output .btn-block {
+    margin-top: var(--space-3);
 }
 
-/* 對話框 */
+/* 頁面內提醒：共用 .toast 預設不吃滑鼠事件，這裡要能點擊關閉 */
+.gathering-alert {
+    pointer-events: auto;
+    cursor: pointer;
+}
+
+/* 對話框：外觀由 .dialog-overlay / .dialog 提供，這裡只管 ModalManager 的顯示切換 */
 .dialog-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
     display: none;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
 }
 
 .dialog-overlay.active {
     display: flex;
 }
 
-.dialog {
-    background: white;
-    border-radius: 8px;
-    width: 90%;
-    max-width: 500px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+.text-danger {
+    color: var(--color-danger-text);
+    font-weight: var(--weight-semibold);
 }
 
-.dialog-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1.25rem 1.5rem;
-    border-bottom: 1px solid var(--border-color);
+.text-muted {
+    font-size: var(--text-sm);
+    color: var(--color-muted);
 }
 
-.dialog-header h3 {
-    margin: 0;
-    color: var(--text-primary);
-}
-
-.dialog-close {
-    background: none;
-    border: none;
-    font-size: 1.5rem;
-    cursor: pointer;
-    color: var(--text-secondary);
-    padding: 0;
-    width: 30px;
-    height: 30px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 4px;
-    transition: all 0.2s ease;
-}
-
-.dialog-close:hover {
-    background: var(--bg-secondary);
-    color: var(--text-primary);
-}
-
-.dialog-body {
-    padding: 1.5rem;
-}
-
-.dialog-footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: 0.5rem;
-    padding: 1rem 1.5rem;
-    border-top: 1px solid var(--border-color);
-}
-
-/* 通知 */
-.notification {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    padding: 1rem 1.5rem;
-    border-radius: 6px;
-    background: var(--bg-primary);
-    border: 1px solid var(--border-color);
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    z-index: 2000;
-    opacity: 0;
-    transform: translateX(100%);
-    transition: all 0.3s ease;
-}
-
-.notification.show {
-    opacity: 1;
-    transform: translateX(0);
-}
-
-.notification-success {
-    background: var(--success-bg);
-    border-color: var(--success);
-    color: var(--success);
-}
-
-.notification-error {
-    background: var(--danger-bg);
-    border-color: var(--danger);
-    color: var(--danger);
-}
-
-.notification-warning {
-    background: var(--warning-bg);
-    border-color: var(--warning);
-    color: var(--warning);
-}
-
-.notification-info {
-    background: var(--info-bg);
-    border-color: var(--info);
-    color: var(--info);
-}
-
-/* 深色模式調整 */
-[data-theme="dark"] .item-card {
-    background: var(--bg-secondary);
-}
-
-[data-theme="dark"] .list-item {
-    background: var(--bg-secondary);
-}
-
-[data-theme="dark"] .item-time {
-    background: var(--primary-dark);
-}
-
-[data-theme="dark"] .tag-filter.active {
-    background: var(--primary-dark);
-    border-color: var(--primary-dark);
-}
-
-[data-theme="dark"] .list-tab.active {
-    background: var(--primary-dark);
-    border-color: var(--primary-dark);
-}
-
-[data-theme="dark"] .dialog {
-    background: #2d3748;
-    color: #e2e8f0;
-}
-
-[data-theme="dark"] .dialog-header {
-    border-bottom-color: #4a5568;
-}
-
-[data-theme="dark"] .dialog-footer {
-    border-top-color: #4a5568;
-}
-
-/* 響應式設計 */
-@media (max-width: 1024px) {
+/* 響應式 */
+@media (max-width: 768px) {
     .main-content {
         grid-template-columns: 1fr;
     }
-    
-    .items-panel,
-    .lists-panel {
+
+    .items-panel {
         max-height: 600px;
     }
-}
 
-@media (max-width: 768px) {
     .toolbar {
         flex-direction: column;
         align-items: stretch;
     }
-    
+
     .search-section {
-        max-width: 100%;
+        max-width: none;
     }
-    
-    .toolbar-actions {
-        justify-content: center;
+
+    .toolbar-actions .btn {
+        flex: 1;
     }
-    
-    /* 通知卡片平板響應式 */
-    .time-display-container {
-        flex-direction: column;
-        align-items: stretch;
-    }
-    
-    .time-display-card {
-        width: 100%;
-    }
-    
-    .notification-compact {
-        flex-wrap: nowrap;
-        gap: 0.5rem;
-    }
-    
-    .filter-label {
-        display: block;
-        margin-bottom: 0.5rem;
-    }
-    
-    .item-info {
-        flex-direction: column;
-        gap: 0.25rem;
-    }
-    
-    .list-tabs {
-        flex-wrap: wrap;
-    }
-    
-    .macro-options {
-        flex-direction: column;
-    }
-    
-    .dialog {
-        width: 95%;
+
+    .items-panel,
+    .lists-panel {
+        padding: var(--space-4);
     }
 }
 
 @media (max-width: 480px) {
-    .page-header h1 {
-        font-size: 1.5rem;
-    }
-    
     .time-display-card {
-        min-width: 150px;
-        padding: 0.75rem 1rem;
+        flex-basis: 100%;
     }
-    
-    .time-value {
-        font-size: 1.4rem;
-    }
-    
-    .time-label {
-        font-size: 0.8rem;
-    }
-    
-    /* 通知設定響應式 */
-    .notification-header {
-        flex-direction: column;
-        gap: 1rem;
-    }
-    
-    .notification-info {
-        width: 100%;
-    }
-    
-    .notification-control {
-        width: 100%;
-        justify-content: space-between;
-    }
-    
-    .notification-hint {
-        margin-left: 0;
-        margin-top: 0.5rem;
-    }
-    
-    .toolbar-actions {
-        flex-direction: column;
-    }
-    
-    .toolbar-actions .btn {
-        width: 100%;
-    }
-    
+
     .item-header {
         flex-direction: column;
-        align-items: flex-start;
-        gap: 0.5rem;
     }
-    
-    .list-header {
+
+    .list-item {
         flex-direction: column;
-        align-items: flex-start;
-        gap: 0.5rem;
-    }
-    
-    .list-item-info {
-        flex-wrap: wrap;
+        align-items: stretch;
     }
 }

@@ -14,7 +14,7 @@
 ## 🛠️ 已實作工具
 
 ### 副本資料庫 (`dungeon-database/`)
-- 804 個副本 (2.x - 7.x，640 個可見項目)
+- 803 個副本 (2.x - 7.x，640 個可見項目)
 - 搜尋過濾功能
 - 圖片預覽
 - 鍵盤導航支援
@@ -43,13 +43,14 @@
 - 三段式寶物機率顯示
 
 ### 寶圖搜尋器 (`treasure-map-finder/`)
-- 真實寶圖座標資料庫（219個座標）
-- 支援 G8、G10、G12、G14、G15、G17 等級篩選
+- 真實寶圖座標資料庫（227個座標）
+- 支援 G8、G10、G12、G14、G15、G17、G18 等級篩選
 - 12個地區篩選（含漆黑地區）
 - 個人清單管理（新增、移除、匯出/匯入）
 - 座標複製功能（/pos 指令）
 - 最佳路線規劃功能
 - 自訂輸出格式（支援中文、英文、日文）
+- 隊伍協作：私人操作憑證、多人同步、斷線重試與個人清單帶入
 
 ### Lodestone 角色查詢 (`lodestone-lookup/`)
 - 使用 Lodestone ID 查詢角色資訊
@@ -67,6 +68,22 @@
 - 多清單管理（新增、移除、匯出/匯入）
 - 巨集匯出功能
 - 多語言支援
+
+### 攻略資料 (`guide/`)
+- FF14 新手攻略指南，8 個子頁面：公會、大國防聯軍、副本、風脈、隊伍系統、探索筆記、專屬陸行鳥（含毛色計算機）、目錄首頁
+- 多語言支援
+
+### 檢舉模板產生器 (`report-generator/`)
+- 快速產生不當行為檢舉的模板文字
+- 協助玩家進行申訴
+
+### 巨集轉換器 (`macro-converter/`)
+- FF14 巨集在繁體中文、英文、日文之間互相轉換
+- 資料來源：`data/macro-mappings.json`
+
+### 天氣預報 (`weather-forecast/`)
+- 查看艾歐澤亞各地區的天氣預報
+- 支援搜尋特定天氣條件
 
 ## 🏗️ 技術架構
 
@@ -86,38 +103,62 @@ http://localhost:8000
 
 **需要本地伺服器的工具：**
 - 副本資料庫 (`dungeon-database/`) - 載入 `/data/dungeons.json`
-- 寶圖搜尋器 (`treasure-map-finder/`) - 載入 `/data/treasure-maps.json`
+- 寶圖搜尋器 (`treasure-map-finder/`) - 載入 `/data/aetherytes.json`、`/data/treasure-maps.json`、`/data/zones.json`
 - Lodestone 角色查詢 (`lodestone-lookup/`) - 使用 logstone API
 - 特殊採集時間管理器 (`timed-gathering/`) - 載入 `/data/timed-gathering.json`
+- 巨集轉換器 (`macro-converter/`) - 載入 `/data/macro-mappings.json`
+- 攻略資料 (`guide/`) - 僅陸行鳥毛色頁面載入 `/data/chocobo-colors.json`
 
 **可直接開啟的工具：**
 - 仙人微彩計算機
 - Wondrous Tails 預測器
 - 角色卡產生器
 - Faux Hollows Foxes 計算機
+- 檢舉模板產生器
+- 天氣預報
+
+### 測試與協作 API
+
+使用 Node 24，在專案根目錄執行：
+
+```bash
+npm --prefix api ci
+node --test
+```
+
+測試涵蓋 UI／資料契約、非同步競爭與真實 Miniflare/workerd 的 SQLite Durable Object；需允許本機連接埠。GitHub Actions 會在 push／Pull Request 執行相同測試及 Worker 環境 dry-run。
+
+寶圖協作另開一個終端執行 `npm --prefix api run dev`（本機 API 為 `localhost:8787`），靜態頁面使用 `localhost:8000` 或 `8080`。部署與舊房間過渡方式見 [API 文件](api/README.md)。
 
 ### 專案結構
 ```
 ff14.tw/
 ├── .gitignore              # Git 忽略規則
+├── CNAME                   # GitHub Pages 自訂網域
+├── LICENSE
+├── TERMINOLOGY.md          # FF14 繁中服官方用語對照
 ├── index.html              # 主頁
 ├── about.html              # 關於頁面
 ├── changelog.html          # 修改紀錄頁面
 ├── copyright.html          # 版權聲明頁
-├── api/                    # Cloudflare Workers API
-│   └── treasure-room/      # 寶圖房間協作 API
+├── api/                    # Cloudflare Workers API（寶圖房間協作，含自己的 package.json / wrangler.toml）
+│   └── treasure-room-worker.js
 ├── data/                   # 資料檔案
-│   ├── dungeons.json       # 副本資料庫 (804 筆)
-│   ├── treasure-maps.json  # 寶圖座標資料 (219 筆)
+│   ├── dungeons.json       # 副本資料庫 (803 筆)
+│   ├── treasure-maps.json  # 寶圖座標資料 (227 筆)
+│   ├── macro-mappings.json # 巨集轉換器對照表
 │   ├── timed-gathering.json # 特殊採集點資料
+│   ├── chocobo-colors.json # 陸行鳥毛色配方資料
 │   ├── zones.json          # 地區定義與元資料
 │   ├── aetherytes.json     # 傳送點資料
-│   └── zone-translations.json # 地區名稱翻譯 (zh/en/ja)
+│   ├── zone-translations.json # 地區名稱翻譯 (zh/en/ja)
+│   └── ff14-gp.csv         # GP 值參考資料
 ├── assets/                 # 共用資源
 │   ├── css/
+│   │   ├── tokens.css      # 設計 token（顏色／字級／間距／陰影唯一來源）
 │   │   ├── common.css      # 全域樣式（含漢堡選單）
-│   │   ├── dark-mode-tools.css # 深色模式支援
-│   │   ├── tools-common.css    # 工具共用樣式
+│   │   ├── pages.css       # 關於／版權聲明頁面專用樣式
+│   │   ├── tools-common.css    # 工具共用樣式（@import 匯入 buttons/cards/forms/tags）
 │   │   ├── changelog.css   # 修改紀錄頁面專用樣式
 │   │   └── components/     # UI 元件
 │   │       ├── buttons.css
@@ -126,8 +167,10 @@ ff14.tw/
 │   │       ├── tags.css
 │   │       └── language-switcher.css
 │   ├── js/
-│   │   ├── common.js       # 共用函式庫（含漢堡選單）
+│   │   ├── common.js       # 共用函式庫（含漢堡選單、FF14Utils）
 │   │   ├── security-utils.js # 安全工具（XSS 防護）
+│   │   ├── modal-manager.js  # 對話框管理
+│   │   ├── state-history-manager.js # 狀態歷史管理
 │   │   ├── components/     # 動態載入元件
 │   │   │   ├── nav-template.js     # 導航列模板
 │   │   │   ├── footer-template.js  # 頁尾模板
@@ -136,19 +179,37 @@ ff14.tw/
 │   │       ├── i18n-manager.js
 │   │       └── translations/
 │   │           ├── common.js
-│   │           └── tools/  # 各工具翻譯檔
+│   │           └── tools/  # 各工具翻譯檔（report-generator 尚無）
 │   └── images/             # 圖片資源
 │       ├── ff14tw.ico      # 網站 favicon
-│       └── se/             # Square Enix 官方素材
-│           └── FFXIVJobIcons/  # FF14 職業圖示 (45個)
+│       ├── se/             # Square Enix 官方素材
+│       │   └── FFXIVJobIcons/  # FF14 職業圖示 (45個)
+│       ├── tools/          # 工具用圖片（如副本封面圖說明）
+│       └── ui/             # 介面小圖示
+├── scripts/                # 開發用腳本（不隨網站部署）
+│   ├── generate-macro-mappings.py
+│   ├── add-design-links.mjs
+│   ├── remove-dark-mode-links.mjs
+│   └── replace-noscript-nav.mjs
+├── tests/                  # 15 份 node --test 測試（下列為部分範例）
+│   ├── design-system.test.js
+│   ├── docs.test.js
+│   ├── modal-manager-stack.test.js
+│   ├── pages.test.js
+│   ├── scripts.test.js
+│   └── timed-gathering-eorzea-time.test.js
 └── tools/                  # 工具目錄
     ├── character-card/     # 角色卡產生器
     ├── dungeon-database/   # 副本資料庫
     ├── faux-hollows-foxes/ # Faux Hollows Foxes 計算機
+    ├── guide/              # 攻略資料
     ├── lodestone-lookup/   # Lodestone 角色查詢
+    ├── macro-converter/    # 巨集轉換器
     ├── mini-cactpot/       # 仙人微彩計算機
+    ├── report-generator/   # 檢舉模板產生器
     ├── timed-gathering/    # 特殊採集時間管理器
     ├── treasure-map-finder/# 寶圖搜尋器
+    ├── weather-forecast/   # 天氣預報
     └── wondrous-tails/     # Wondrous Tails 預測器
 ```
 
@@ -177,7 +238,7 @@ ff14.tw/
 
 1. Fork 本專案
 2. 建立功能分支：`git checkout -b feature/new-tool`
-3. 提交變更：`git commit -m 'Add new tool'`
+3. 提交變更：`git commit -m 'feat: add new tool'`
 4. 推送到分支：`git push origin feature/new-tool`
 5. 建立 Pull Request
 

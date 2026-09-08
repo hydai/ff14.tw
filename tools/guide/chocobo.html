@@ -8,16 +8,15 @@
     <link rel="icon" type="image/x-icon" href="../../assets/images/ff14tw.ico">
 
     <!-- Required CSS imports -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../assets/css/tokens.css">
     <link rel="stylesheet" href="../../assets/css/common.css">
-    <link rel="stylesheet" href="../../assets/css/dark-mode-tools.css">
     <link rel="stylesheet" href="../../assets/css/tools-common.css">
     <link rel="stylesheet" href="../../assets/css/components/language-switcher.css">
     <link rel="stylesheet" href="style.css">
 
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
     <!-- Header placeholder -->
@@ -25,11 +24,11 @@
 
     <!-- Noscript fallback -->
     <noscript>
-        <nav style="padding: 1rem; background: #667eea; color: white; text-align: center;">
-            <a href="/" style="color: white; margin: 0 1rem;">首頁</a>
-            <a href="/copyright.html" style="color: white; margin: 0 1rem;">版權聲明</a>
-            <a href="https://github.com/hydai/ff14.tw" target="_blank" rel="noopener noreferrer" style="color: white; margin: 0 1rem;">GitHub</a>
-            <a href="/about.html" style="color: white; margin: 0 1rem;">關於</a>
+        <nav class="noscript-nav">
+            <a href="/" class="noscript-nav-link">首頁</a>
+            <a href="/copyright.html" class="noscript-nav-link">版權聲明</a>
+            <a href="https://github.com/hydai/ff14.tw" target="_blank" rel="noopener noreferrer" class="noscript-nav-link">GitHub</a>
+            <a href="/about.html" class="noscript-nav-link">關於</a>
         </nav>
     </noscript>
 
@@ -151,11 +150,11 @@
                         </div>
 
                         <div class="guide-info-card guide-note">
-                            <strong data-i18n="chocobo_note_title">注意：</strong><span data-i18n="chocobo_feeding_note">建議交替餵食不同水果，避免 RGB 值達到上限。餵食後需等待 6 小時才能看到顏色變化。當你看到「陸行鳥的羽毛正在生長新的羽毛」訊息時，表示顏色即將改變。</span>
+                            <strong data-i18n="chocobo_note_title">注意：</strong><span data-i18n="chocobo_feeding_note">配方依平均 RGB 效果估算，請依建議順序逐顆餵食，避免 RGB 超出上下限。實際顏色可能需要微調；餵食後需等待 6 小時才能看到變化。</span>
                         </div>
 
                         <div class="guide-info-card guide-tip">
-                            <strong data-i18n="chocobo_tip_title">提示：</strong><span data-i18n="chocobo_calculator_credit">染色計算器的顏色資料來源參考自 <a href="https://ffxivchocobo.com/" target="_blank" rel="noopener noreferrer">ffxivchocobo.com</a>，感謝原作者的貢獻。</span>
+                            <strong data-i18n="chocobo_tip_title">提示：</strong><span data-i18n="chocobo_calculator_credit_prefix">染色計算器的顏色資料來源參考自 </span><a href="https://ffxivchocobo.com/" target="_blank" rel="noopener noreferrer">ffxivchocobo.com</a><span data-i18n="chocobo_calculator_credit_suffix">，感謝原作者的貢獻。</span>
                         </div>
 
                         <h2>寄養系統</h2>

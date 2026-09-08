@@ -24,7 +24,6 @@ const FauxHollowsTranslations = {
         faux_hollows_redo: '重做',
         faux_hollows_hide_prob: '隱藏機率',
         faux_hollows_show_prob: '顯示機率',
-        faux_hollows_calc_best: '計算最佳策略',
         faux_hollows_close_best: '關閉最佳策略',
         faux_hollows_show_best: '顯示最佳策略',
 
@@ -41,6 +40,7 @@ const FauxHollowsTranslations = {
         // 結果面板
         faux_hollows_result_title: '遊戲結果',
         faux_hollows_final_score: '最終得分',
+        faux_hollows_score_unit: ' 分',
 
         // 資料來源
         faux_hollows_data_source: '盤面資料來源',
@@ -66,8 +66,21 @@ const FauxHollowsTranslations = {
 
         // 格子內容
         faux_hollows_cell_fox: '狐',
+        faux_hollows_fox_candidate: '宗長候選',
+        faux_hollows_candidate_note: '宗長標記只表示候選位置，不代表出現機率；找到宗長後會移除其他候選提示。',
         faux_hollows_cell_sword: '劍',
-        faux_hollows_cell_chest: '箱'
+        faux_hollows_cell_chest: '箱',
+
+        // 格子無障礙標籤與狀態
+        faux_hollows_cell_label: '第 {n} 格',
+        faux_hollows_cell_state_obstacle: '障礙物',
+        faux_hollows_cell_state_sword: '劍',
+        faux_hollows_cell_state_chest: '寶箱',
+        faux_hollows_cell_state_fox: '宗長',
+        faux_hollows_cell_state_empty: '空格',
+        faux_hollows_cell_state_used: '已用',
+        faux_hollows_cell_state_unknown: '未揭開',
+        faux_hollows_cell_obstacle_prob: '障礙物機率 {value}'
     },
     en: {
         // Page info
@@ -91,7 +104,6 @@ const FauxHollowsTranslations = {
         faux_hollows_redo: 'Redo',
         faux_hollows_hide_prob: 'Hide Probability',
         faux_hollows_show_prob: 'Show Probability',
-        faux_hollows_calc_best: 'Calculate Best Strategy',
         faux_hollows_close_best: 'Close Best Strategy',
         faux_hollows_show_best: 'Show Best Strategy',
 
@@ -108,6 +120,7 @@ const FauxHollowsTranslations = {
         // Result panel
         faux_hollows_result_title: 'Game Result',
         faux_hollows_final_score: 'Final Score',
+        faux_hollows_score_unit: ' pts',
 
         // Data source
         faux_hollows_data_source: 'Board data source',
@@ -133,8 +146,21 @@ const FauxHollowsTranslations = {
 
         // Cell content
         faux_hollows_cell_fox: 'Fox',
+        faux_hollows_fox_candidate: 'Fox candidate',
+        faux_hollows_candidate_note: 'Fox markers show possible locations, not spawn probabilities. Other candidates disappear once the fox is found.',
         faux_hollows_cell_sword: 'Swd',
-        faux_hollows_cell_chest: 'Box'
+        faux_hollows_cell_chest: 'Box',
+
+        // Cell accessible label and state
+        faux_hollows_cell_label: 'Cell {n}',
+        faux_hollows_cell_state_obstacle: 'Obstacle',
+        faux_hollows_cell_state_sword: 'Sword',
+        faux_hollows_cell_state_chest: 'Chest',
+        faux_hollows_cell_state_fox: 'Fox',
+        faux_hollows_cell_state_empty: 'Empty',
+        faux_hollows_cell_state_used: 'Used',
+        faux_hollows_cell_state_unknown: 'Unrevealed',
+        faux_hollows_cell_obstacle_prob: 'Obstacle probability {value}'
     },
     ja: {
         // ページ情報
@@ -158,7 +184,6 @@ const FauxHollowsTranslations = {
         faux_hollows_redo: 'やり直す',
         faux_hollows_hide_prob: '確率を隠す',
         faux_hollows_show_prob: '確率を表示',
-        faux_hollows_calc_best: '最適戦略を計算',
         faux_hollows_close_best: '最適戦略を閉じる',
         faux_hollows_show_best: '最適戦略を表示',
 
@@ -175,6 +200,7 @@ const FauxHollowsTranslations = {
         // 結果パネル
         faux_hollows_result_title: 'ゲーム結果',
         faux_hollows_final_score: '最終スコア',
+        faux_hollows_score_unit: '点',
 
         // データソース
         faux_hollows_data_source: 'ボードデータソース',
@@ -200,8 +226,21 @@ const FauxHollowsTranslations = {
 
         // セル内容
         faux_hollows_cell_fox: '狐',
+        faux_hollows_fox_candidate: '宗長候補',
+        faux_hollows_candidate_note: '宗長の表示は候補位置であり、出現確率ではありません。宗長を発見すると他の候補表示は消えます。',
         faux_hollows_cell_sword: '剣',
-        faux_hollows_cell_chest: '箱'
+        faux_hollows_cell_chest: '箱',
+
+        // セルのアクセシブルラベルと状態
+        faux_hollows_cell_label: 'マス {n}',
+        faux_hollows_cell_state_obstacle: '障害物',
+        faux_hollows_cell_state_sword: '剣',
+        faux_hollows_cell_state_chest: '宝箱',
+        faux_hollows_cell_state_fox: '狐',
+        faux_hollows_cell_state_empty: '空き',
+        faux_hollows_cell_state_used: '使用済み',
+        faux_hollows_cell_state_unknown: '未公開',
+        faux_hollows_cell_obstacle_prob: '障害物確率 {value}'
     }
 };
 

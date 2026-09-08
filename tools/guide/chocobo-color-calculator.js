@@ -30,17 +30,21 @@ class ChocoboColorCalculator {
      * 初始化計算器
      */
     async init() {
-        await this.loadData();
         this.cacheElements();
+        if (!await this.loadData()) {
+            if (this.elements.calculateBtn) this.elements.calculateBtn.disabled = true;
+            return;
+        }
         this.bindEvents();
+
+        // 監聽語言變更；讀取目前語言要放在畫面渲染前，避免第一次載入時畫面停留在中文
+        if (window.i18n) {
+            this.lang = window.i18n.getCurrentLanguage() || 'zh';
+            window.i18n.onLanguageChange(() => this.updateLanguage());
+        }
+
         this.populateSelects();
         this.updatePreviews();
-
-        // 監聽語言變更
-        if (window.i18n) {
-            window.i18n.addObserver(() => this.updateLanguage());
-            this.lang = window.i18n.currentLang || 'zh';
-        }
     }
 
     /**
@@ -66,9 +70,11 @@ class ChocoboColorCalculator {
             for (const fruit of this.fruits) {
                 this.fruitMap.set(fruit.id, fruit);
             }
+            return true;
         } catch (error) {
             console.error('Failed to load chocobo colors data:', error);
             this.showError();
+            return false;
         }
     }
 
@@ -123,6 +129,8 @@ class ChocoboColorCalculator {
     populateSelects() {
         if (!this.elements.currentSelect || !this.elements.targetSelect) return;
 
+        const currentId = this.elements.currentSelect.value || this.defaultColorId;
+        const targetId = this.elements.targetSelect.value || 'snow-white';
         // 清空選單
         this.clearChildren(this.elements.currentSelect);
         this.clearChildren(this.elements.targetSelect);
@@ -140,8 +148,8 @@ class ChocoboColorCalculator {
         });
 
         // 設定預設值
-        this.elements.currentSelect.value = this.defaultColorId;
-        this.elements.targetSelect.value = 'snow-white';
+        this.elements.currentSelect.value = currentId;
+        this.elements.targetSelect.value = targetId;
     }
 
     /**
@@ -190,49 +198,117 @@ class ChocoboColorCalculator {
 
         if (!currentColor || !targetColor) return;
 
-        // 計算 RGB 差值
-        const diff = {
-            r: targetColor.rgb[0] - currentColor.rgb[0],
-            g: targetColor.rgb[1] - currentColor.rgb[1],
-            b: targetColor.rgb[2] - currentColor.rgb[2]
-        };
-
-        // 計算所需水果
-        const requiredFruits = this.calculateRequiredFruits(diff);
-
-        // 顯示結果
-        this.displayResults(requiredFruits);
+        const plan = this.planFeeding(currentColor, targetColor);
+        if (!plan) {
+            this.lastPlan = null;
+            if (this.elements.resultArea) this.elements.resultArea.style.display = 'none';
+            this.showError(this.getTranslation('chocobo_no_safe_recipe', '無法找到不超出 RGB 範圍的配方，請嘗試先染成其他顏色。'));
+            return;
+        }
+        this.elements.calculator?.querySelector('.error-message')?.remove();
+        this.displayResults(plan);
     }
 
     /**
-     * 計算所需水果數量
+     * 水果同時改變三個通道。用三個線性獨立的效果向量求整數用量，
+     * 負用量則選效果完全相反的水果；不將水果名稱與通道效果另寫一份對照。
      */
     calculateRequiredFruits(diff) {
-        const fruits = [];
-        const fruitMap = {
-            r: { positive: 'xelphatol-apple', negative: 'doman-plum' },
-            g: { positive: 'mamook-pear', negative: 'valfruit' },
-            b: { positive: 'oghomoro-berries', negative: 'cieldalaes-pineapple' }
-        };
-
-        for (const channel of ['r', 'g', 'b']) {
-            const value = diff[channel];
-            if (value === 0) continue;
-
-            const fruitId = value > 0 ? fruitMap[channel].positive : fruitMap[channel].negative;
-            fruits.push({
-                fruit: this.getFruitById(fruitId),
-                count: Math.ceil(Math.abs(value) / 5)
-            });
+        const channels = ['r', 'g', 'b'];
+        const basis = ['xelphatol-apple', 'mamook-pear', 'oghomoro-berries'].map(id => this.getFruitById(id));
+        const columns = basis.map(fruit => channels.map(channel => fruit.effect[channel]));
+        const determinant = ([a, b, c]) =>
+            a[0] * (b[1] * c[2] - b[2] * c[1]) -
+            b[0] * (a[1] * c[2] - a[2] * c[1]) +
+            c[0] * (a[1] * b[2] - a[2] * b[1]);
+        const denominator = determinant(columns);
+        const delta = channels.map(channel => diff[channel]);
+        const result = [];
+        for (let i = 0; i < basis.length; i++) {
+            const replaced = columns.map((column, index) => index === i ? delta : column);
+            const amount = determinant(replaced) / denominator;
+            if (!Number.isInteger(amount)) return null;
+            if (amount === 0) continue;
+            const fruit = amount > 0 ? basis[i] : this.fruits.find(candidate =>
+                candidate.effect && channels.every(channel => candidate.effect[channel] === -basis[i].effect[channel]));
+            if (!fruit) return null;
+            result.push({ fruit, count: Math.abs(amount) });
         }
+        return result;
+    }
 
-        return fruits;
+    /**
+     * RGB 以 5 為步長，目標色通常不在可達格點上。從附近格點中選擇
+     * 最接近目標且仍會對應到目標色的點，再安排全程不發生 clipping 的餵食順序。
+     * 這是依平均 RGB 效果的估算，遊戲中的隨機變化仍可能需要後續微調。
+     */
+    planFeeding(currentColor, targetColor) {
+        if (currentColor.id === targetColor.id) return { fruits: [], order: [], rgb: [...currentColor.rgb] };
+        const distance = (a, b) => a.reduce((sum, value, index) => sum + (value - b[index]) ** 2, 0);
+        const nearby = targetColor.rgb.map((value, index) => {
+            const nearest = Math.round((value - currentColor.rgb[index]) / 5);
+            return [-2, -1, 0, 1, 2].map(offset => currentColor.rgb[index] + (nearest + offset) * 5)
+                .filter(channel => channel >= 0 && channel <= 255);
+        });
+        const candidates = [];
+        for (const r of nearby[0]) for (const g of nearby[1]) for (const b of nearby[2]) {
+            const rgb = [r, g, b];
+            const error = distance(rgb, targetColor.rgb);
+            if (this.colors.some(color => color.id !== targetColor.id && distance(rgb, color.rgb) <= error)) continue;
+            const fruits = this.calculateRequiredFruits({
+                r: r - currentColor.rgb[0], g: g - currentColor.rgb[1], b: b - currentColor.rgb[2]
+            });
+            if (fruits) candidates.push({ rgb, error, fruits, count: fruits.reduce((sum, item) => sum + item.count, 0) });
+        }
+        candidates.sort((a, b) => a.error - b.error || a.count - b.count);
+        for (const candidate of candidates) {
+            const order = this.planFeedingOrder(currentColor.rgb, candidate.rgb, candidate.fruits);
+            if (order) return { fruits: candidate.fruits, order, rgb: candidate.rgb };
+        }
+        return null;
+    }
+
+    planFeedingOrder(start, target, fruits) {
+        const remaining = fruits.map(item => item.count);
+        const total = remaining.reduce((sum, count) => sum + count, 0);
+        const failed = new Set();
+        const order = [];
+        const channels = ['r', 'g', 'b'];
+        const visit = rgb => {
+            if (order.length === total) return true;
+            const key = remaining.join(',');
+            if (failed.has(key)) return false;
+            const progress = (order.length + 1) / total;
+            const choices = [];
+            fruits.forEach((item, index) => {
+                if (remaining[index] === 0) return;
+                const next = rgb.map((value, channel) => value + item.fruit.effect[channels[channel]]);
+                if (next.some(value => value < 0 || value > 255)) return;
+                // 接近直線路徑能交替使用水果；遇到邊界時回溯，不能直接截斷 RGB。
+                const deviation = next.reduce((sum, value, channel) =>
+                    sum + (value - (start[channel] + (target[channel] - start[channel]) * progress)) ** 2, 0);
+                choices.push({ index, next, deviation });
+            });
+            choices.sort((a, b) => a.deviation - b.deviation);
+            for (const choice of choices) {
+                remaining[choice.index]--;
+                order.push(fruits[choice.index].fruit);
+                if (visit(choice.next)) return true;
+                order.pop();
+                remaining[choice.index]++;
+            }
+            failed.add(key);
+            return false;
+        };
+        return visit([...start]) ? order : null;
     }
 
     /**
      * 顯示計算結果
      */
-    displayResults(requiredFruits) {
+    displayResults(plan) {
+        const requiredFruits = plan.fruits;
+        this.lastPlan = plan;
         if (!this.elements.resultArea || !this.elements.fruitList) return;
 
         // 清空結果
@@ -285,15 +361,13 @@ class ChocoboColorCalculator {
             this.elements.showOrderBtn.dataset.expanded = 'false';
         }
 
-        // 儲存結果供餵食順序使用
-        this.lastResult = requiredFruits;
     }
 
     /**
      * 切換餵食順序顯示
      */
     toggleFeedingOrder() {
-        if (!this.elements.feedingOrder || !this.lastResult) return;
+        if (!this.elements.feedingOrder || !this.lastPlan) return;
 
         const isExpanded = this.elements.showOrderBtn.dataset.expanded === 'true';
 
@@ -311,27 +385,9 @@ class ChocoboColorCalculator {
      * 產生交替餵食順序
      */
     generateFeedingOrder() {
-        if (!this.elements.feedingOrder || !this.lastResult) return;
+        if (!this.elements.feedingOrder || !this.lastPlan) return;
 
-        // 建立餵食順序（交替餵食不同水果）
-        const order = [];
-        const remaining = this.lastResult.map(item => ({
-            fruit: item.fruit,
-            count: item.count
-        }));
-
-        // 交替取出每種水果
-        let hasRemaining = true;
-        while (hasRemaining) {
-            hasRemaining = false;
-            for (const item of remaining) {
-                if (item.count > 0) {
-                    order.push(item.fruit);
-                    item.count--;
-                    hasRemaining = true;
-                }
-            }
-        }
+        const order = this.lastPlan.order;
 
         // 清空並顯示順序
         this.clearChildren(this.elements.feedingOrder);
@@ -379,8 +435,8 @@ class ChocoboColorCalculator {
      * 取得翻譯文字
      */
     getTranslation(key, fallback) {
-        if (window.i18n && typeof window.i18n.t === 'function') {
-            const translation = window.i18n.t(key);
+        if (window.i18n && typeof window.i18n.getText === 'function') {
+            const translation = window.i18n.getText(key);
             return translation !== key ? translation : fallback;
         }
         return fallback;
@@ -391,13 +447,13 @@ class ChocoboColorCalculator {
      */
     updateLanguage() {
         if (window.i18n) {
-            this.lang = window.i18n.currentLang || 'zh';
+            this.lang = window.i18n.getCurrentLanguage() || 'zh';
         }
         this.populateSelects();
         this.updatePreviews();
 
         // 如果有結果，重新計算以更新語言
-        if (this.lastResult) {
+        if (this.lastPlan) {
             this.calculate();
         }
     }
@@ -405,11 +461,12 @@ class ChocoboColorCalculator {
     /**
      * 顯示錯誤訊息
      */
-    showError() {
+    showError(message) {
         if (this.elements.calculator) {
             const errorDiv = document.createElement('div');
             errorDiv.className = 'error-message';
-            errorDiv.textContent = this.getTranslation('chocobo_load_error', '載入顏色資料失敗，請重新整理頁面再試。');
+            this.elements.calculator.querySelector('.error-message')?.remove();
+            errorDiv.textContent = message || this.getTranslation('chocobo_load_error', '載入顏色資料失敗，請重新整理頁面再試。');
             this.elements.calculator.appendChild(errorDiv);
         }
     }

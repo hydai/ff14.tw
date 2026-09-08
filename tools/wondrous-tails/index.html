@@ -6,8 +6,11 @@
     <title>天書奇談預測器 - FF14.tw</title>
     <meta name="description" content="FF14 天書奇談機率預測工具，計算連線成功機率">
     <link rel="icon" type="image/x-icon" href="../../assets/images/ff14tw.ico">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../assets/css/tokens.css">
     <link rel="stylesheet" href="../../assets/css/common.css">
-    <link rel="stylesheet" href="../../assets/css/dark-mode-tools.css">
     <link rel="stylesheet" href="../../assets/css/tools-common.css">
     <link rel="stylesheet" href="../../assets/css/components/language-switcher.css">
     <link rel="stylesheet" href="style.css">
@@ -15,11 +18,11 @@
 <body>
     <div id="header-placeholder" data-base-path="../../" data-tool-name="天書奇談預測器" data-tool-name-key="wondrous_tails_header"></div>
     <noscript>
-        <nav style="padding: 1rem; background: #667eea; color: white; text-align: center;">
-            <a href="/" style="color: white; margin: 0 1rem;">首頁</a>
-            <a href="/copyright.html" style="color: white; margin: 0 1rem;">版權聲明</a>
-            <a href="https://github.com/hydai/ff14.tw" target="_blank" rel="noopener noreferrer" style="color: white; margin: 0 1rem;">GitHub</a>
-            <a href="/about.html" style="color: white; margin: 0 1rem;">關於</a>
+        <nav class="noscript-nav">
+            <a href="/" class="noscript-nav-link">首頁</a>
+            <a href="/copyright.html" class="noscript-nav-link">版權聲明</a>
+            <a href="https://github.com/hydai/ff14.tw" target="_blank" rel="noopener noreferrer" class="noscript-nav-link">GitHub</a>
+            <a href="/about.html" class="noscript-nav-link">關於</a>
         </nav>
     </noscript>
 
@@ -52,7 +55,7 @@
                     <button class="btn btn-danger" id="reset-btn" data-i18n="wondrous_tails_reset">重置盤面</button>
                 </div>
 
-                <div class="results-panel" id="results-panel" style="display: none;">
+                <div class="results-panel card" id="results-panel" style="display: none;">
                     <h3>🎯 <span data-i18n="wondrous_tails_results_title">連線機率預測</span></h3>
                     <div class="probability-grid">
                         <div class="prob-item">
@@ -68,8 +71,8 @@
                             <div class="prob-value" id="prob-3-lines">0%</div>
                         </div>
                     </div>
-                    <div class="recommendation" id="recommendation">
-                        <h4>💡 <span data-i18n="wondrous_tails_suggestion">建議</span></h4>
+                    <div class="recommendation info-message" id="recommendation">
+                        <h4 class="message-title">💡 <span data-i18n="wondrous_tails_suggestion">建議</span></h4>
                         <p id="recommendation-text" data-i18n="wondrous_tails_default_suggestion">開始放置物件來獲得機率分析和建議</p>
                     </div>
                 </div>

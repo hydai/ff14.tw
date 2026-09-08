@@ -765,6 +765,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // 初始化角色卡
     updateCharacterCard();
 
+    // 語言切換時重新渲染角色名稱／職業欄位留空時的預設字（updateCharacterCard 本身冪等，可安全重複呼叫）
+    if (window.i18n) {
+        window.i18n.onLanguageChange(() => updateCharacterCard());
+    }
+
     // 為輸入欄位添加一些預設的驗證
 
     // 角色名稱長度限制

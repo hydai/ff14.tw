@@ -55,8 +55,10 @@ const GuideTranslations = {
         chocobo_same_color: '目前顏色與目標顏色相同，無需餵食水果。',
         chocobo_note_title: '注意：',
         chocobo_tip_title: '提示：',
-        chocobo_feeding_note: '建議交替餵食不同水果，避免 RGB 值達到上限。餵食後需等待 6 小時才能看到顏色變化。當你看到「陸行鳥的羽毛正在生長新的羽毛」訊息時，表示顏色即將改變。',
-        chocobo_calculator_credit: '染色計算器的顏色資料來源參考自 ffxivchocobo.com，感謝原作者的貢獻。',
+        chocobo_feeding_note: '配方依平均 RGB 效果估算，請依建議順序逐顆餵食，避免 RGB 超出上下限。實際顏色可能需要微調；餵食後需等待 6 小時才能看到變化。',
+        chocobo_no_safe_recipe: '無法找到不超出 RGB 範圍的配方，請嘗試先染成其他顏色。',
+        chocobo_calculator_credit_prefix: '染色計算器的顏色資料來源參考自 ',
+        chocobo_calculator_credit_suffix: '，感謝原作者的貢獻。',
         chocobo_load_error: '載入顏色資料失敗，請重新整理頁面再試。',
 
         // 準備中
@@ -115,8 +117,10 @@ const GuideTranslations = {
         chocobo_same_color: 'Current and target colors are the same. No fruits needed.',
         chocobo_note_title: 'Note:',
         chocobo_tip_title: 'Tip:',
-        chocobo_feeding_note: 'Alternate between different fruits to avoid maxing out RGB values. Color changes take 6 hours after feeding. When you see the message about your chocobo growing new feathers, it confirms the color will change.',
-        chocobo_calculator_credit: 'Color data sourced from ffxivchocobo.com. Thanks to the original author.',
+        chocobo_feeding_note: 'Recipes use average RGB effects. Feed one fruit at a time in the suggested order to keep RGB values within their limits. The resulting color may need adjustment; changes appear 6 hours after feeding.',
+        chocobo_no_safe_recipe: 'No recipe within the RGB limits was found. Try an intermediate color first.',
+        chocobo_calculator_credit_prefix: 'Color data sourced from ',
+        chocobo_calculator_credit_suffix: '. Thanks to the original author.',
         chocobo_load_error: 'Failed to load color data. Please refresh the page and try again.',
 
         // Coming soon
@@ -175,8 +179,10 @@ const GuideTranslations = {
         chocobo_same_color: '現在の色と目標の色が同じです。餌は必要ありません。',
         chocobo_note_title: '注意：',
         chocobo_tip_title: 'ヒント：',
-        chocobo_feeding_note: 'RGB値が上限に達しないよう、異なる餌を交互に与えてください。色の変更には餌やり後6時間かかります。「チョコボの羽が生え変わり始めた」というメッセージが表示されれば、色の変更が確定です。',
-        chocobo_calculator_credit: 'カラーデータはffxivchocobo.comを参考にしています。原作者に感謝します。',
+        chocobo_feeding_note: '平均的なRGB変化量による目安です。RGB値が上下限を超えないよう、推奨順序で1個ずつ与えてください。実際の色は微調整が必要な場合があります。変化は餌やりの6時間後に現れます。',
+        chocobo_no_safe_recipe: 'RGBの範囲内で使える組み合わせが見つかりません。別の色を経由してみてください。',
+        chocobo_calculator_credit_prefix: 'カラーデータは',
+        chocobo_calculator_credit_suffix: 'を参考にしています。原作者に感謝します。',
         chocobo_load_error: 'カラーデータの読み込みに失敗しました。ページを更新して再試行してください。',
 
         // 準備中

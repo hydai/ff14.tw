@@ -1,5 +1,31 @@
 // Eorzea Time Calculator Module
 class TimeCalculator {
+    /** Parse stored schedules once for notifications, filtering and macro export. */
+    static parseSchedule(time, duration = 55) {
+        if (typeof time !== 'string' || !Number.isFinite(duration) || duration <= 0 || duration > 1440) {
+            return null;
+        }
+        if (time.trim() === '全天') {
+            return { startMinutes: 0, durationMinutes: 1440, allDay: true };
+        }
+
+        const match = time.trim().match(/^(\d{1,2}):(\d{2})(?:\s*-\s*(\d{1,2}):(\d{2}))?$/);
+        if (!match) return null;
+        const startHour = Number(match[1]);
+        const startMinute = Number(match[2]);
+        if (startHour > 23 || startMinute > 59) return null;
+        const startMinutes = startHour * 60 + startMinute;
+
+        let durationMinutes = duration;
+        if (match[3] !== undefined) {
+            const endHour = Number(match[3]);
+            const endMinute = Number(match[4]);
+            if (endHour > 24 || endMinute > 59 || (endHour === 24 && endMinute !== 0)) return null;
+            durationMinutes = (endHour * 60 + endMinute - startMinutes + 1440) % 1440 || 1440;
+        }
+        return { startMinutes, durationMinutes, allDay: durationMinutes === 1440 };
+    }
+
     constructor() {
         // Constants for ET calculation
         this.EORZEA_MULTIPLIER = 3600 / 175; // 1 ET hour = 175 real seconds
@@ -22,22 +48,15 @@ class TimeCalculator {
     }
     
     /**
-     * Calculate Eorzea Time from JST (UTC+9)
+     * Calculate Eorzea Time from a Unix timestamp
      * ET runs 20.571428571 times faster than real time
+     * @param {number} timestamp - Unix timestamp in milliseconds
      * @returns {Object} Object with hours, minutes, seconds
      */
-    getEorzeaTime() {
-        // Get current time in milliseconds
-        const now = Date.now();
-        
-        // Convert to JST (UTC+9) for server time
-        const jstOffset = 9 * 60 * 60 * 1000; // 9 hours in milliseconds
-        const utcTime = now + (new Date().getTimezoneOffset() * 60 * 1000);
-        const jstTime = utcTime + jstOffset;
-        
-        // Calculate Eorzea time
-        // ET epoch starts at Unix epoch (1970-01-01 00:00:00 UTC)
-        const eorzeaMilliseconds = jstTime * this.EORZEA_MULTIPLIER;
+    getEorzeaTime(timestamp = Date.now()) {
+        // ET epoch starts at Unix epoch (1970-01-01 00:00:00 UTC).
+        // Unix timestamps are timezone-independent, so no LT/ST offset is needed.
+        const eorzeaMilliseconds = timestamp * this.EORZEA_MULTIPLIER;
         
         // Convert to ET date
         const eorzeaDate = new Date(eorzeaMilliseconds);

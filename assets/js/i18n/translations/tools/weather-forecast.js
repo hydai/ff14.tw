@@ -14,22 +14,6 @@ const WeatherForecastTranslations = {
         weather_select_zone: '選擇地區',
         weather_select_zone_hint: '點擊地區按鈕開始查看天氣',
 
-        // 區域名稱
-        region_la_noscea: '拉諾西亞',
-        region_black_shroud: '黑衣森林',
-        region_thanalan: '薩納蘭',
-        region_coerthas: '庫爾札斯',
-        region_mor_dhona: '摩杜納',
-        region_abalathia: '阿巴拉提亞',
-        region_dravania: '龍堡',
-        region_gyr_abania: '基拉巴尼亞',
-        region_othard: '奧薩德',
-        region_norvrandt: '諾弗蘭特',
-        region_ilsabard: '伊爾薩巴德',
-        region_the_sea_of_stars: '星海',
-        region_the_world_unsundered: '未分離的世界',
-        region_tural: '圖拉爾',
-
         // 過濾器
         weather_filter_title: '過濾條件',
         weather_desired_weather: '目標天氣',
@@ -115,22 +99,6 @@ const WeatherForecastTranslations = {
         weather_select_zone: 'Select Zone',
         weather_select_zone_hint: 'Click a zone button to view weather',
 
-        // Region names
-        region_la_noscea: 'La Noscea',
-        region_black_shroud: 'The Black Shroud',
-        region_thanalan: 'Thanalan',
-        region_coerthas: 'Coerthas',
-        region_mor_dhona: 'Mor Dhona',
-        region_abalathia: "Abalathia's Spine",
-        region_dravania: 'Dravania',
-        region_gyr_abania: 'Gyr Abania',
-        region_othard: 'Othard',
-        region_norvrandt: 'Norvrandt',
-        region_ilsabard: 'Ilsabard',
-        region_the_sea_of_stars: 'The Sea of Stars',
-        region_the_world_unsundered: 'The World Unsundered',
-        region_tural: 'Tural',
-
         // Filters
         weather_filter_title: 'Filters',
         weather_desired_weather: 'Target Weather',
@@ -215,22 +183,6 @@ const WeatherForecastTranslations = {
         // 地域選択
         weather_select_zone: '地域を選択',
         weather_select_zone_hint: '地域ボタンをクリックして天気を表示',
-
-        // 地域名
-        region_la_noscea: 'ラノシア',
-        region_black_shroud: '黒衣森',
-        region_thanalan: 'ザナラーン',
-        region_coerthas: 'クルザス',
-        region_mor_dhona: 'モードゥナ',
-        region_abalathia: 'アバラシア',
-        region_dravania: 'ドラヴァニア',
-        region_gyr_abania: 'ギラバニア',
-        region_othard: 'オサード',
-        region_norvrandt: 'ノルヴラント',
-        region_ilsabard: 'イルサバード',
-        region_the_sea_of_stars: '星海',
-        region_the_world_unsundered: '未分裂の世界',
-        region_tural: 'トラル',
 
         // フィルター
         weather_filter_title: 'フィルター',

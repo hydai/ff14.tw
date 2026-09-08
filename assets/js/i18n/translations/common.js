@@ -54,6 +54,9 @@ const CommonTranslations = {
         label_none: '無',
         label_yes: '是',
         label_no: '否',
+        // 標籤片段分隔符（依語言調整標點：中日文全形，英文半形＋空白）
+        label_sep_colon: '：',
+        label_sep_comma: '，',
 
         // 深色模式
         theme_toggle_dark: '切換至深色模式',
@@ -126,6 +129,8 @@ const CommonTranslations = {
         label_none: 'None',
         label_yes: 'Yes',
         label_no: 'No',
+        label_sep_colon: ': ',
+        label_sep_comma: ', ',
 
         // Dark mode
         theme_toggle_dark: 'Switch to dark mode',
@@ -198,6 +203,8 @@ const CommonTranslations = {
         label_none: 'なし',
         label_yes: 'はい',
         label_no: 'いいえ',
+        label_sep_colon: '：',
+        label_sep_comma: '、',
 
         // ダークモード
         theme_toggle_dark: 'ダークモードに切り替え',

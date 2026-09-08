@@ -14,6 +14,7 @@ const WondrousTailsTranslations = {
         // 格子資訊
         wondrous_tails_placed: '已放置物件',
         wondrous_tails_objects: '個',
+        wondrous_tails_cell_label: '第 {n} 格',
 
         // 按鈕
         wondrous_tails_reset: '重置盤面',
@@ -53,6 +54,7 @@ const WondrousTailsTranslations = {
         // Grid info
         wondrous_tails_placed: 'Stickers placed',
         wondrous_tails_objects: '',
+        wondrous_tails_cell_label: 'Cell {n}',
 
         // Button
         wondrous_tails_reset: 'Reset Board',
@@ -92,6 +94,7 @@ const WondrousTailsTranslations = {
         // グリッド情報
         wondrous_tails_placed: '配置済みシール',
         wondrous_tails_objects: '個',
+        wondrous_tails_cell_label: 'マス {n}',
 
         // ボタン
         wondrous_tails_reset: 'ボードをリセット',

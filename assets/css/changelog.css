@@ -1,78 +1,21 @@
-/* Changelog Page Styles */
-
-/* Dark mode 支援 */
-[data-theme="dark"] .changelog-container {
-    background-color: var(--bg-secondary);
-}
-
-[data-theme="dark"] .version-card {
-    background-color: var(--card-bg);
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-}
-
-[data-theme="dark"] .version-card:hover {
-    box-shadow: 0 8px 16px rgba(255, 255, 255, 0.1);
-}
-
-[data-theme="dark"] .version-header {
-    background-color: var(--bg-color);
-}
-
-[data-theme="dark"] .version-date {
-    color: var(--text-secondary);
-}
-
-[data-theme="dark"] .changelog-list li {
-    color: var(--text-color);
-}
-
-[data-theme="dark"] .changelog-list li::before {
-    color: var(--primary-color);
-}
-
-[data-theme="dark"] .tag {
-    background-color: var(--bg-color);
-    color: var(--text-color);
-}
-
-[data-theme="dark"] .tag.feature {
-    background: linear-gradient(135deg, #059669 0%, #047857 100%);
-    color: white;
-}
-
-[data-theme="dark"] .tag.ui {
-    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-    color: white;
-}
-
-[data-theme="dark"] .tag.fix {
-    background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
-    color: white;
-}
-
-[data-theme="dark"] .tag.style {
-    background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
-    color: white;
-}
-
-[data-theme="dark"] .tag.refactor {
-    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
-    color: white;
-}
+/* ==========================================================================
+   修改紀錄頁面 — 只寫版面；顏色、圓角、字級一律來自 tokens.css 與共用元件
+   標籤（新增／改善／修正）由 components/tags.css 提供
+   ========================================================================== */
 
 .subtitle {
-    color: var(--text-secondary);
-    font-size: 1.1rem;
-    margin-bottom: 2rem;
+    margin-bottom: var(--space-7);
+    font-size: var(--text-lg);
     text-align: center;
+    color: var(--color-muted);
 }
 
-/* Layout with TOC */
+/* 版面：左側目錄＋內容 */
 .changelog-layout {
-    display: flex;
-    gap: 3rem;
-    align-items: flex-start;
     position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-9);
 }
 
 .changelog-content-wrapper {
@@ -85,30 +28,31 @@
     margin: 0 auto;
 }
 
-/* TOC Sidebar */
+/* 目錄側欄 */
 .toc-sidebar {
     position: sticky;
-    top: 2rem;
-    width: 250px;
+    top: var(--space-7);
     flex-shrink: 0;
-    max-height: calc(100vh - 4rem);
+    width: 250px;
+    max-height: calc(100vh - var(--space-10));
     overflow-y: auto;
 }
 
 .toc-container {
-    background: var(--card-bg, white);
-    border-radius: var(--border-radius-lg, 10px);
-    padding: 1.5rem;
-    box-shadow: var(--shadow-md, 0 2px 10px rgba(0,0,0,0.1));
+    padding: var(--space-6);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
 }
 
 .toc-title {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--primary-color);
-    margin: 0 0 1rem 0;
-    padding-bottom: 0.5rem;
-    border-bottom: 2px solid var(--primary-color);
+    margin: 0 0 var(--space-4);
+    padding-bottom: var(--space-2);
+    border-bottom: 2px solid var(--color-primary);
+    font-size: var(--text-lg);
+    font-weight: var(--weight-semibold);
+    color: var(--color-heading);
 }
 
 .toc-nav {
@@ -117,209 +61,169 @@
 }
 
 .toc-link {
-    color: var(--text-color);
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-sm);
+    color: var(--color-text);
+    font-size: var(--text-sm);
+    line-height: var(--leading-snug);
     text-decoration: none;
-    padding: 0.5rem 0.75rem;
-    border-radius: var(--border-radius-sm, 5px);
-    transition: all 0.2s ease;
-    font-size: 0.9rem;
-    line-height: 1.4;
+    transition: background-color var(--duration-base) var(--ease), color var(--duration-base) var(--ease);
 }
 
 .toc-link:hover {
-    background: var(--gray-100, #f5f5f5);
-    color: var(--primary-color);
+    background: var(--color-primary-tint);
+    color: var(--color-primary);
 }
 
 .toc-link.active {
-    background: var(--primary-color);
-    color: white;
-    font-weight: 500;
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+    font-weight: var(--weight-medium);
 }
 
 .toc-level-1 {
-    font-weight: 500;
+    font-weight: var(--weight-medium);
 }
 
 .toc-level-2 {
-    font-size: 0.85rem;
-    margin-left: 1rem;
-    color: var(--gray-600, #666);
+    margin-left: var(--space-4);
+    font-size: var(--text-xs);
+    color: var(--color-muted);
 }
 
 .toc-level-2:hover {
-    color: var(--primary-color);
+    color: var(--color-primary);
 }
 
 .toc-level-2.active {
-    color: white;
+    color: var(--color-on-primary);
 }
 
 .toc-sublist {
     display: flex;
     flex-direction: column;
-    margin-bottom: 0.5rem;
+    margin-bottom: var(--space-2);
 }
 
-/* Scrollbar for TOC */
 .toc-sidebar::-webkit-scrollbar {
     width: 6px;
 }
 
 .toc-sidebar::-webkit-scrollbar-track {
-    background: var(--gray-100, #f1f1f1);
-    border-radius: 3px;
+    background: var(--color-surface-2);
+    border-radius: var(--radius-sm);
 }
 
 .toc-sidebar::-webkit-scrollbar-thumb {
-    background: var(--gray-400, #888);
-    border-radius: 3px;
+    background: var(--color-border-strong);
+    border-radius: var(--radius-sm);
 }
 
 .toc-sidebar::-webkit-scrollbar-thumb:hover {
-    background: var(--gray-600, #555);
+    background: var(--color-muted);
 }
 
+/* 年份與版本卡片 */
 .changelog-section {
-    margin-bottom: 3rem;
+    margin-bottom: var(--space-9);
 }
 
 .changelog-year {
-    font-size: 2rem;
-    font-weight: 600;
-    color: var(--primary-color);
-    margin-bottom: 1.5rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 2px solid var(--primary-color);
+    margin-bottom: var(--space-6);
+    padding-bottom: var(--space-2);
+    border-bottom: 2px solid var(--color-primary);
+    font-size: var(--text-3xl);
+    font-weight: var(--weight-semibold);
+    color: var(--color-heading);
 }
 
 .changelog-entry {
-    background: var(--card-bg);
-    border-radius: var(--border-radius-lg);
-    box-shadow: var(--shadow-lg);
-    margin-bottom: 2rem;
+    margin-bottom: var(--space-7);
     overflow: hidden;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.changelog-entry:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-xl);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
 }
 
 .changelog-header {
-    background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
-    color: white;
-    padding: 1.5rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    padding: var(--space-5) var(--space-6);
+    background: var(--color-primary);
+    color: var(--color-on-primary);
 }
 
 .changelog-version {
-    font-size: 1.25rem;
-    font-weight: 600;
     margin: 0;
+    font-size: var(--text-xl);
+    font-weight: var(--weight-semibold);
 }
 
 .changelog-date {
-    font-size: 0.9rem;
+    font-size: var(--text-sm);
+    font-weight: var(--weight-normal);
     opacity: 0.9;
-    font-weight: 400;
 }
 
 .changelog-content {
-    padding: 1.5rem;
+    padding: var(--space-6);
 }
 
 .changelog-content h4 {
-    color: var(--primary-color);
-    font-size: 1.1rem;
-    font-weight: 600;
-    margin: 0 0 0.75rem 0;
-    padding-bottom: 0.25rem;
-    border-bottom: 1px solid var(--border-color);
+    margin: 0 0 var(--space-3);
+    padding-bottom: var(--space-1);
+    border-bottom: 1px solid var(--color-border);
+    font-size: var(--text-lg);
+    font-weight: var(--weight-semibold);
+    color: var(--color-heading);
 }
 
 .changelog-content h4:not(:first-child) {
-    margin-top: 1.5rem;
+    margin-top: var(--space-6);
 }
 
 .changelog-content ul {
-    list-style: none;
-    padding: 0;
     margin: 0;
+    padding: 0;
+    list-style: none;
 }
 
 .changelog-content li {
-    margin: 0.5rem 0;
-    padding-left: 0.5rem;
-    line-height: 1.6;
+    margin: var(--space-2) 0;
+    padding-left: var(--space-2);
+    line-height: var(--leading-normal);
 }
 
-/* Tags */
-.tag {
-    display: inline-block;
-    padding: 0.2rem 0.6rem;
-    border-radius: var(--border-radius-sm);
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-right: 0.5rem;
-    vertical-align: middle;
+.changelog-content .tag {
+    margin-right: var(--space-2);
 }
 
-.tag-new {
-    background: linear-gradient(135deg, #10b981, #059669);
-    color: white;
-}
-
-.tag-improved {
-    background: linear-gradient(135deg, #3b82f6, #2563eb);
-    color: white;
-}
-
-.tag-fixed {
-    background: linear-gradient(135deg, #f59e0b, #d97706);
-    color: white;
-}
-
-.tag-info {
-    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
-    color: white;
-}
-
-.tag-security {
-    background: linear-gradient(135deg, #ef4444, #dc2626);
-    color: white;
-}
-
-/* Update Notice */
+/* 更新說明 */
 .update-notice {
-    background: var(--card-bg);
-    border-radius: var(--border-radius-lg);
-    padding: 2rem;
-    margin-top: 3rem;
+    margin-top: var(--space-9);
+    padding: var(--space-7);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-left: 4px solid var(--color-primary);
+    border-radius: var(--radius-lg);
     box-shadow: var(--shadow-md);
-    border-left: 4px solid var(--primary-color);
 }
 
 .update-notice h3 {
-    color: var(--primary-color);
-    margin-top: 0;
-    margin-bottom: 1rem;
+    margin: 0 0 var(--space-4);
+    color: var(--color-heading);
 }
 
 .update-notice p {
-    margin-bottom: 1rem;
-    line-height: 1.6;
+    margin-bottom: var(--space-4);
+    line-height: var(--leading-normal);
 }
 
 .update-notice a {
-    color: var(--primary-color);
+    font-weight: var(--weight-medium);
     text-decoration: none;
-    font-weight: 500;
 }
 
 .update-notice a:hover {
@@ -327,44 +231,43 @@
 }
 
 .tag-legend {
-    margin-top: 1.5rem;
+    margin-top: var(--space-6);
 }
 
 .tag-legend h4 {
-    color: var(--primary-color);
-    margin-bottom: 0.75rem;
-    font-size: 1rem;
+    margin-bottom: var(--space-3);
+    font-size: var(--text-md);
+    color: var(--color-heading);
 }
 
 .tag-legend ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 0.5rem;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
 }
 
 .tag-legend li {
     display: flex;
     align-items: center;
     margin: 0;
-    padding: 0.25rem 0;
+    padding: var(--space-1) 0;
 }
 
 .tag-legend .tag {
-    margin-right: 0.5rem;
-    margin-bottom: 0;
+    margin-right: var(--space-2);
 }
 
-/* Responsive Design */
+/* 響應式（1024px 是目錄側欄的版面斷點，不是工具格線） */
 @media (max-width: 1024px) {
     .toc-sidebar {
         width: 200px;
     }
-    
+
     .changelog-layout {
-        gap: 2rem;
+        gap: var(--space-7);
     }
 }
 
@@ -372,62 +275,53 @@
     .changelog-layout {
         flex-direction: column;
     }
-    
+
     .toc-sidebar {
         position: relative;
         top: 0;
         width: 100%;
         max-height: none;
-        margin-bottom: 2rem;
+        margin-bottom: var(--space-7);
     }
-    
+
     .toc-container {
         max-height: 300px;
         overflow-y: auto;
     }
-    
+
     .changelog-header {
         flex-direction: column;
         align-items: flex-start;
-        gap: 0.5rem;
+        gap: var(--space-2);
     }
-    
+
     .changelog-version {
-        font-size: 1.1rem;
+        font-size: var(--text-lg);
     }
-    
-    .changelog-date {
-        font-size: 0.85rem;
-    }
-    
+
     .changelog-year {
-        font-size: 1.75rem;
+        font-size: var(--text-2xl);
     }
-    
+
     .tag-legend ul {
         grid-template-columns: 1fr;
     }
-    
+
     .update-notice {
-        padding: 1.5rem;
+        padding: var(--space-6);
     }
 }
 
 @media (max-width: 480px) {
     .changelog-content {
-        padding: 1rem;
+        padding: var(--space-4);
     }
-    
+
     .changelog-header {
-        padding: 1rem;
+        padding: var(--space-4);
     }
-    
+
     .changelog-year {
-        font-size: 1.5rem;
-    }
-    
-    .tag {
-        font-size: 0.7rem;
-        padding: 0.15rem 0.4rem;
+        font-size: var(--text-xl);
     }
 }

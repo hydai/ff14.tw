@@ -14,25 +14,34 @@ class UIDialogManager {
         }
     };
 
+    // 動態對話框標題 id 的流水號（單調遞增，避免同一毫秒內產生重複 id）
+    static dialogTitleSeq = 0;
+
     constructor() {
-        // 儲存所有對話框的參考
-        this.dialogs = new Map();
         this.modalManager = new ModalManager();
 
-        // 儲存回調函數
-        this.callbacks = {
-            onMapDetailClose: null,
-            onRouteClose: null,
-            onFormatSave: null
-        };
-
-        this.formatPreviewHandler = null;
+        // 格式面板疊在路線面板上，兩者必須同時開著，因此需要各自的 ModalManager 實例
+        //（單一實例一次只管理一個視窗）。堆疊會保證 Escape／焦點陷阱只作用在最上層。
+        this.formatModalManager = new ModalManager();
 
         // Map to store cleanup functions for panels
         this.cleanupHandlers = new Map();
 
+        // 目前開啟中的對話框種類與其原始呼叫資料（地圖詳細視窗／路線結果面板），
+        // 語言切換時用來重新以目前語言渲染其動態文字（見 refreshActiveDialog）
+        this.activeDialog = null;
+
+        // 關閉鈕的固定監聽器參考（見 showRouteResult／showMapDetail）
+        this._boundHideRouteResult = null;
+        this._boundHideMapDetail = null;
+
         // 初始化 DOM 元素參考
         this.initializeElements();
+
+        // 語言切換時，重繪目前開啟中的對話框（若有）
+        if (window.i18n) {
+            window.i18n.onLanguageChange(() => this.refreshActiveDialog());
+        }
     }
 
     /**
@@ -54,7 +63,7 @@ class UIDialogManager {
             panel: document.getElementById('routePanel'),
             summary: document.getElementById('routeSummary'),
             steps: document.getElementById('routeSteps'),
-            closeBtn: document.getElementById('closeRoutePanel')
+            closeBtn: document.getElementById('closeRoutePanelBtn')
         };
 
         // 格式設定面板元素
@@ -80,52 +89,29 @@ class UIDialogManager {
 
         if (!elements.modal) return;
 
+        // 快取這次開啟的資料，語言切換時（見 refreshActiveDialog）重新以目前語言渲染
+        this.activeDialog = { kind: 'mapDetail', map, options };
+
         // 設置圖片路徑
         const filePrefix = zoneManager?.getFilePrefix(map.zoneId) || map.zone;
         elements.img.src = `images/maps/map-${filePrefix}.webp`;
 
         // 設置標題和座標
-        const translations = zoneManager?.getZoneNames(map.zoneId) || { zh: map.zone };
-        elements.title.textContent = `${map.level.toUpperCase()} - ${translations.zh || map.zone}`;
-        elements.coords.textContent = FF14Utils.getI18nText('treasure_map_pos_placeholder', `座標：${CoordinateUtils.formatCoordinatesForDisplay(map.coords)}`, {
-            coords: CoordinateUtils.formatCoordinatesForDisplay(map.coords)
-        });
+        this._renderMapDetailHeader(map, zoneManager);
 
-        // 載入寶圖標記圖示
-        const markIcon = new Image();
-        markIcon.src = 'images/ui/mark.png';
-        
-        // 圖片載入完成後處理
+        // 圖片載入完成後處理；標記圖示的載入與繪製交給 _loadAndDrawMarkers()，
+        // 語言切換後的 refreshActiveDialog() 也會呼叫同一個方法重繪，避免兩處各自維護一份繪製邏輯
         const imageLoadHandler = () => {
             const canvas = elements.canvas;
             const ctx = canvas.getContext('2d');
-            
+
             // 設置 canvas 大小與圖片相同
             canvas.width = elements.img.naturalWidth;
             canvas.height = elements.img.naturalHeight;
-            
-            // 清除畫布
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // 當標記圖示也載入完成後繪製
-            markIcon.onload = () => {
-                this.drawMapMarkers(ctx, canvas, map, markIcon, {
-                    zoneManager,
-                    aetheryteData,
-                    aetheryteIcon,
-                    getAetherytesForZone
-                });
-            };
-            
-            // 如果標記圖示已經載入過，直接繪製
-            if (markIcon.complete) {
-                this.drawMapMarkers(ctx, canvas, map, markIcon, {
-                    zoneManager,
-                    aetheryteData,
-                    aetheryteIcon,
-                    getAetherytesForZone
-                });
-            }
+
+            // 畫布的清除與標記繪製交給 _loadAndDrawMarkers()
+
+            this._loadAndDrawMarkers(map, { zoneManager, aetheryteData, aetheryteIcon, getAetherytesForZone });
         };
         
         // 設置圖片載入事件
@@ -135,10 +121,11 @@ class UIDialogManager {
         }
 
         // 設置關閉按鈕事件
-        // Note: closeHandler is registered here and cleaned up in ModalManager's onClose callback.
-        // For the shared event-listener lifecycle pattern, see ModalManager documentation.
-        const closeHandler = () => this.hideMapDetail();
-        elements.closeBtn.addEventListener('click', closeHandler);
+        // 與 showRouteResult 相同：固定用同一個函式參考掛載，避免重複開啟時監聽器累積
+        if (!this._boundHideMapDetail) {
+            this._boundHideMapDetail = () => this.hideMapDetail();
+        }
+        elements.closeBtn.addEventListener('click', this._boundHideMapDetail);
 
         // 使用 ModalManager 顯示對話框
         // 現在 modal 本身就是遮罩層，ModalManager 可以自動處理點擊關閉
@@ -147,11 +134,27 @@ class UIDialogManager {
             closeOnOverlayClick: true,
             closeOnEsc: true,
             onClose: () => {
-                elements.closeBtn.removeEventListener('click', closeHandler);
-                if (this.callbacks.onMapDetailClose) {
-                    this.callbacks.onMapDetailClose();
+                elements.closeBtn.removeEventListener('click', this._boundHideMapDetail);
+                if (this.activeDialog?.kind === 'mapDetail') {
+                    this.activeDialog = null;
                 }
             }
+        });
+    }
+
+    /**
+     * 渲染地圖詳細視窗的標題與座標；showMapDetail() 與語言切換後的
+     * refreshActiveDialog() 共用同一份邏輯，確保兩者輸出一致
+     */
+    _renderMapDetailHeader(map, zoneManager) {
+        const elements = this.mapDetailElements;
+
+        // 依目前介面語言挑選地區名稱，找不到對應語言時退回中文（與 renderMyList() 一致）
+        const translations = zoneManager?.getZoneNames(map.zoneId) || { zh: map.zone };
+        const currentLang = window.i18n.getCurrentLanguage();
+        elements.title.textContent = `${map.level.toUpperCase()} - ${translations[currentLang] || translations.zh || map.zone}`;
+        elements.coords.textContent = FF14Utils.getI18nText('treasure_map_pos_placeholder', `座標：${CoordinateUtils.formatCoordinatesForDisplay(map.coords)}`, {
+            coords: CoordinateUtils.formatCoordinatesForDisplay(map.coords)
         });
     }
 
@@ -209,7 +212,8 @@ class UIDialogManager {
                 ctx.strokeStyle = 'black';
                 ctx.lineWidth = 6;  // 3px * 2 = 6px (加粗描邊)
                 
-                const text = aetheryte.name.zh || aetheryte.name.en;
+                const currentLang = window.i18n.getCurrentLanguage();
+                const text = aetheryte.name[currentLang] || aetheryte.name.zh || aetheryte.name.en;
                 const textWidth = ctx.measureText(text).width;
                 const textX = imageCoords.x - textWidth / 2;
                 const textY = imageCoords.y + iconSize / 2 + 30;  // 10px * 3 = 30px
@@ -217,6 +221,28 @@ class UIDialogManager {
                 ctx.strokeText(text, textX, textY);
                 ctx.fillText(text, textX, textY);
             });
+        }
+    }
+
+    /**
+     * 建立寶圖標記圖示並繪製到 canvas；showMapDetail() 初次開啟與語言切換後的
+     * refreshActiveDialog() 重繪都呼叫這裡，避免兩處各自維護一份繪製邏輯
+     */
+    _loadAndDrawMarkers(map, options) {
+        const canvas = this.mapDetailElements.canvas;
+        const ctx = canvas.getContext('2d');
+        const markIcon = new Image();
+        markIcon.src = 'images/ui/mark.png';
+
+        const draw = () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            this.drawMapMarkers(ctx, canvas, map, markIcon, options);
+        };
+
+        if (markIcon.complete) {
+            draw();
+        } else {
+            markIcon.onload = draw;
         }
     }
 
@@ -241,11 +267,17 @@ class UIDialogManager {
         const { title = defaultTitle, instruction = defaultInstruction } = options;
 
         // 建立對話框內容
-        const contentElement = this._createExportDialogContent(content, instruction);
+        // 只有在呼叫端沒有自訂標題／說明文字時才掛 data-i18n key
+        const contentElement = this._createExportDialogContent(
+            content,
+            instruction,
+            instruction === defaultInstruction ? 'treasure_map_export_instruction' : undefined
+        );
 
         // 建立帶有 overlay 的對話框
         const { overlay, dialog } = this.createDialogWithOverlay({
             title,
+            titleKey: title === defaultTitle ? 'treasure_map_export_title' : undefined,
             content: contentElement
         });
 
@@ -305,17 +337,20 @@ class UIDialogManager {
      * 建立匯出對話框內容
      * @private
      */
-    _createExportDialogContent(content, instruction) {
+    _createExportDialogContent(content, instruction, instructionKey) {
         const container = document.createElement('div');
 
         const instructionP = document.createElement('p');
         instructionP.className = 'ui-dialog-instruction';
         instructionP.textContent = instruction;
+        if (instructionKey) {
+            instructionP.dataset.i18n = instructionKey;
+        }
         container.appendChild(instructionP);
 
         const textarea = document.createElement('textarea');
         textarea.id = 'exportTextarea';
-        textarea.className = 'ui-dialog-textarea';
+        textarea.className = 'ui-dialog-textarea form-control';
         textarea.readOnly = true;
         textarea.value = content;
         container.appendChild(textarea);
@@ -327,12 +362,14 @@ class UIDialogManager {
         copyBtn.className = 'btn btn-primary';
         copyBtn.id = 'exportCopyBtn';
         copyBtn.textContent = FF14Utils.getI18nText('treasure_map_copy_route', '複製');
+        copyBtn.dataset.i18n = 'treasure_map_copy_route';
         buttonContainer.appendChild(copyBtn);
 
         const closeBtn = document.createElement('button');
         closeBtn.className = 'btn btn-secondary';
         closeBtn.id = 'exportCloseBtn';
         closeBtn.textContent = FF14Utils.getI18nText('treasure_map_close', '關閉');
+        closeBtn.dataset.i18n = 'treasure_map_close';
         buttonContainer.appendChild(closeBtn);
 
         container.appendChild(buttonContainer);
@@ -365,11 +402,18 @@ class UIDialogManager {
         const { title = defaultTitle, instruction = defaultInstruction, placeholder = defaultPlaceholder } = options;
 
         // 建立對話框內容
-        const contentElement = this._createImportDialogContent(instruction, placeholder);
+        // 同 showExportDialog()：只有在呼叫端沒有自訂文字時才掛 data-i18n key
+        const contentElement = this._createImportDialogContent(
+            instruction,
+            placeholder,
+            instruction === defaultInstruction ? 'treasure_map_import_instruction' : undefined,
+            placeholder === defaultPlaceholder ? 'treasure_map_import_placeholder' : undefined
+        );
 
         // 建立帶有 overlay 的對話框
         const { overlay, dialog } = this.createDialogWithOverlay({
             title,
+            titleKey: title === defaultTitle ? 'treasure_map_import_title' : undefined,
             content: contentElement
         });
 
@@ -408,18 +452,25 @@ class UIDialogManager {
      * 建立匯入對話框內容
      * @private
      */
-    _createImportDialogContent(instruction, placeholder) {
+    _createImportDialogContent(instruction, placeholder, instructionKey, placeholderKey) {
         const container = document.createElement('div');
 
         const instructionP = document.createElement('p');
         instructionP.className = 'ui-dialog-instruction';
         instructionP.textContent = instruction;
+        if (instructionKey) {
+            instructionP.dataset.i18n = instructionKey;
+        }
         container.appendChild(instructionP);
 
         const textarea = document.createElement('textarea');
         textarea.id = 'importTextarea';
-        textarea.className = 'ui-dialog-textarea';
+        textarea.className = 'ui-dialog-textarea form-control';
         textarea.placeholder = placeholder;
+        if (placeholderKey) {
+            textarea.dataset.i18n = placeholderKey;
+            textarea.dataset.i18nAttr = 'placeholder';
+        }
         container.appendChild(textarea);
 
         const buttonContainer = document.createElement('div');
@@ -429,12 +480,14 @@ class UIDialogManager {
         confirmBtn.className = 'btn btn-primary';
         confirmBtn.id = 'importConfirmBtn';
         confirmBtn.textContent = FF14Utils.getI18nText('treasure_map_confirm', '匯入');
+        confirmBtn.dataset.i18n = 'treasure_map_confirm';
         buttonContainer.appendChild(confirmBtn);
 
         const cancelBtn = document.createElement('button');
         cancelBtn.className = 'btn btn-secondary';
         cancelBtn.id = 'importCancelBtn';
         cancelBtn.textContent = FF14Utils.getI18nText('treasure_map_cancel', '取消');
+        cancelBtn.dataset.i18n = 'treasure_map_cancel';
         buttonContainer.appendChild(cancelBtn);
 
         container.appendChild(buttonContainer);
@@ -450,14 +503,47 @@ class UIDialogManager {
     showRouteResult(result, options = {}) {
         const elements = this.routePanelElements;
         if (!elements.panel) return;
-        
+
+        // 快取這次開啟的資料，語言切換時（見 refreshActiveDialog）重新以目前語言渲染
+        this.activeDialog = { kind: 'routeResult', result, options };
+        this._renderRouteContent(result, options);
+
+        // 每次開啟都會再掛一次關閉鈕的監聽器；ModalManager.show() 對「已經開著的同一個元素」
+        // 會直接 return、不更新 onClose，重複生成路線時舊的監聽器就會累積。
+        // 固定用同一個函式參考掛載——addEventListener 對同一個參考不會重複註冊。
+        if (!this._boundHideRouteResult) {
+            this._boundHideRouteResult = () => this.hideRouteResult();
+        }
+        elements.closeBtn.addEventListener('click', this._boundHideRouteResult);
+
+        // 顯示面板
+        this.modalManager.show(elements.panel, {
+            useClass: UIDialogManager.CONSTANTS.CSS_CLASSES.ACTIVE,
+            closeOnOverlayClick: false,
+            onClose: () => {
+                // 格式面板若還開著，ModalManager.hide() 的連鎖關閉已經在進入這裡之前
+                // 由上而下把它收掉並把焦點還給「自訂格式」按鈕，這裡不需要（也不可以）再插手。
+                elements.closeBtn.removeEventListener('click', this._boundHideRouteResult);
+                if (this.activeDialog?.kind === 'routeResult') {
+                    this.activeDialog = null;
+                }
+            }
+        });
+    }
+
+    /**
+     * 渲染路線結果面板的摘要與步驟列表；showRouteResult() 與語言切換後的
+     * refreshActiveDialog() 共用同一份邏輯，確保兩者輸出一致
+     */
+    _renderRouteContent(result, options) {
+        const elements = this.routePanelElements;
         const { onStepCopy, getZoneName } = options;
-        
+
         // 生成摘要
         const summaryElement = this.generateRouteSummary(result, getZoneName);
         SecurityUtils.clearElement(elements.summary);
         elements.summary.appendChild(summaryElement);
-        
+
         // 生成步驟列表
         SecurityUtils.clearElement(elements.steps);
         result.route.forEach((step, index) => {
@@ -467,21 +553,22 @@ class UIDialogManager {
             });
             elements.steps.appendChild(stepElement);
         });
+    }
 
-        const closeHandler = () => this.hideRouteResult();
-        elements.closeBtn.addEventListener('click', closeHandler);
+    /**
+     * 語言切換時，依目前開啟的對話框種類重新以目前語言渲染其動態文字
+     * （地圖詳細視窗的座標提示與標題；路線結果面板的摘要與每個步驟）
+     */
+    refreshActiveDialog() {
+        if (!this.activeDialog) return;
 
-        // 顯示面板
-        this.modalManager.show(elements.panel, {
-            useClass: UIDialogManager.CONSTANTS.CSS_CLASSES.ACTIVE,
-            closeOnOverlayClick: false,
-            onClose: () => {
-                elements.closeBtn.removeEventListener('click', closeHandler);
-                if (this.callbacks.onRouteClose) {
-                    this.callbacks.onRouteClose();
-                }
-            }
-        });
+        if (this.activeDialog.kind === 'mapDetail') {
+            const { map, options } = this.activeDialog;
+            this._renderMapDetailHeader(map, options.zoneManager);
+            this._loadAndDrawMarkers(map, options);
+        } else if (this.activeDialog.kind === 'routeResult') {
+            this._renderRouteContent(this.activeDialog.result, this.activeDialog.options);
+        }
     }
 
     /**
@@ -498,6 +585,7 @@ class UIDialogManager {
         const titleP = document.createElement('p');
         const strong = document.createElement('strong');
         strong.textContent = FF14Utils.getI18nText('treasure_map_route_summary', '路線摘要：');
+        strong.dataset.i18n = 'treasure_map_route_summary';
         titleP.appendChild(strong);
         summaryDiv.appendChild(titleP);
 
@@ -541,7 +629,12 @@ class UIDialogManager {
 
             const textSpan = document.createElement('span');
             textSpan.className = 'step-text';
-            const aetheryteName = aetheryteNames.zh || aetheryteNames;
+            // step.to／aetheryteNames 實際型別是 { zh, en, ja }，依目前介面語言挑選名稱，
+            // 找不到對應語言時退回中文（與 script.js 的 getZoneName()／renderMyList() 一致）
+            const currentLang = window.i18n.getCurrentLanguage();
+            const aetheryteName = (aetheryteNames && typeof aetheryteNames === 'object')
+                ? (aetheryteNames[currentLang] || aetheryteNames.zh)
+                : aetheryteNames;
             textSpan.textContent = FF14Utils.getI18nText('treasure_map_route_teleport_to', `傳送至 ${aetheryteName}`, { name: aetheryteName });
 
             const coordsSpan = document.createElement('span');
@@ -574,7 +667,7 @@ class UIDialogManager {
         const copyBtn = document.createElement('button');
         copyBtn.className = 'btn btn-sm btn-copy';
         copyBtn.textContent = '📋';
-        copyBtn.title = '複製';
+        copyBtn.title = FF14Utils.getI18nText('treasure_map_route_step_copy_title', '複製');
         copyBtn.onclick = () => {
             if (onStepCopy) {
                 onStepCopy(step, index, total);
@@ -641,8 +734,23 @@ class UIDialogManager {
         };
         this.cleanupHandlers.set(panelId, cleanup);
 
-        // 顯示面板
-        elements.panel.classList.add(UIDialogManager.CONSTANTS.CSS_CLASSES.ACTIVE);
+        // 顯示面板：格式面板疊在路線面板正上方（兩者同為 position:fixed 置中、
+        // 格式面板的 z-index 更高；高度依內容而定，路線面板較長時上下仍可能露出一截），
+        // 因此把它當成一個正常的堆疊模態視窗——
+        // 有自己的焦點陷阱，Escape 只關自己（由 ModalManager 的共用堆疊保證），
+        // 關閉時焦點自動還給開啟它的「自訂格式」按鈕。
+        // 需要獨立的 formatModalManager，因為 this.modalManager 正拿著路線面板。
+        this.formatModalManager.show(elements.panel, {
+            useClass: UIDialogManager.CONSTANTS.CSS_CLASSES.ACTIVE,
+            closeOnOverlayClick: false,   // 格式面板本身沒有遮罩層
+            onClose: () => {
+                const handler = this.cleanupHandlers.get(panelId);
+                if (typeof handler === 'function') {
+                    handler();
+                }
+                this.cleanupHandlers.delete(panelId);
+            }
+        });
 
         // 初始預覽
         formatPreviewHandler();
@@ -650,23 +758,11 @@ class UIDialogManager {
 
     /**
      * 隱藏格式設定面板
+     * 事件監聽器的清理都在 showFormatPanel 註冊的 onClose 裡完成、焦點還原由 ModalManager 負責
+     * （見 ModalManager 的事件監聽器生命週期說明）。重複呼叫無副作用。
      */
     hideFormatPanel() {
-        const elements = this.formatPanelElements;
-        if (elements.panel) {
-            elements.panel.classList.remove(UIDialogManager.CONSTANTS.CSS_CLASSES.ACTIVE);
-        }
-
-        const panelId = 'formatPanel';
-
-        // 移除事件監聽器
-        if (this.cleanupHandlers.has(panelId)) {
-            const cleanup = this.cleanupHandlers.get(panelId);
-            if (typeof cleanup === 'function') {
-                cleanup();
-            }
-            this.cleanupHandlers.delete(panelId);
-        }
+        this.formatModalManager.hide();
     }
 
     /**
@@ -702,21 +798,32 @@ class UIDialogManager {
      * @returns {Object} { overlay, dialog } - 遮罩層和對話框元素
      */
     createDialogWithOverlay(options) {
-        const { title, content, className = '' } = options;
+        const { title, titleKey, content, className = '' } = options;
 
         // 建立遮罩層
+        // ARIA 一律掛在遮罩層（交給 ModalManager 的那一層），內層 .ui-dialog 維持沒有 role 的容器
         const overlay = document.createElement('div');
-        overlay.className = 'ui-dialog-overlay';
+        overlay.className = 'ui-dialog-overlay dialog-overlay';
+        overlay.setAttribute('role', 'dialog');
+        overlay.setAttribute('aria-modal', 'true');
         // Z-index handled by CSS class or default
 
         // 建立對話框
         const dialog = document.createElement('div');
-        dialog.className = `ui-dialog ${className}`;
+        dialog.className = `ui-dialog dialog ${className}`;
 
         if (title) {
+            const titleId = `ui-dialog-title-${++UIDialogManager.dialogTitleSeq}`;
             const titleElement = document.createElement('h3');
+            titleElement.id = titleId;
             titleElement.textContent = title;
+            // 靜態標題文字：掛上 data-i18n，讓 window.i18n.setLanguage() 之後切換語言時
+            // 能透過全域的 [data-i18n] 重新套用，不需要在本檔另外寫 observer
+            if (titleKey) {
+                titleElement.dataset.i18n = titleKey;
+            }
             dialog.appendChild(titleElement);
+            overlay.setAttribute('aria-labelledby', titleId);
         }
 
         if (content) {
@@ -732,60 +839,6 @@ class UIDialogManager {
         overlay.appendChild(dialog);
 
         return { overlay, dialog };
-    }
-
-    /**
-     * 建立通用對話框 (無遮罩層，保留向後相容)
-     * @deprecated 建議使用 createDialogWithOverlay
-     */
-    createDialog(options) {
-        const { title, content, className = '' } = options;
-
-        const dialog = document.createElement('div');
-        dialog.className = `ui-dialog fixed-center ${className}`;
-
-        if (title) {
-            const titleElement = document.createElement('h3');
-            titleElement.textContent = title;
-            dialog.appendChild(titleElement);
-        }
-
-        if (content) {
-            const contentDiv = document.createElement('div');
-            // Check if content is a string or DOM element
-            if (typeof content === 'string') {
-                contentDiv.textContent = content;
-            } else if (content instanceof HTMLElement) {
-                contentDiv.appendChild(content);
-            }
-            dialog.appendChild(contentDiv);
-        }
-
-        return dialog;
-    }
-
-    /**
-     * 設置回調函數
-     */
-    setCallbacks(callbacks) {
-        Object.assign(this.callbacks, callbacks);
-    }
-
-    /**
-     * 關閉所有對話框
-     */
-    closeAll() {
-        // 使用 ModalManager 關閉當前開啟的 modal
-        this.modalManager.hide();
-
-        this.hideMapDetail();
-        this.hideRouteResult();
-        this.hideFormatPanel();
-
-        // 移除所有動態建立的對話框和遮罩層
-        document.querySelectorAll('.ui-dialog-overlay, .ui-dialog').forEach(element => {
-            element.remove();
-        });
     }
 }
 

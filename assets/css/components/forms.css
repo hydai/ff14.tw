@@ -1,10 +1,9 @@
-/* ===================================
-   表單元件樣式 (Form Components)
-   =================================== */
-
-/* 表單群組 */
+/* ==========================================================================
+   表單控制項 — 規格：設計系統畫布「元件 03 表單」
+   輸入框、下拉、按鈕同高（sm 32 / md 40 / lg 48），焦點環一致。
+   ========================================================================== */
 .form-group {
-    margin-bottom: 1.5rem;
+    margin-bottom: var(--space-6);
 }
 
 .form-group:last-child {
@@ -13,327 +12,193 @@
 
 .form-label {
     display: block;
-    margin-bottom: 0.5rem;
-    font-weight: 500;
-    color: var(--text-color, #212529);
+    margin-bottom: var(--space-2);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    color: var(--color-heading);
 }
 
 .form-label.required::after {
     content: " *";
-    color: var(--danger-color, #dc3545);
+    color: var(--color-danger);
 }
 
-/* 基礎輸入框樣式 */
+/* 輸入框 */
 .form-control {
     display: block;
     width: 100%;
-    padding: 0.75rem 1rem;
-    font-size: 1rem;
+    height: var(--control-md);
+    padding: 0 var(--space-3);
+    font-family: var(--font-sans);
+    font-size: var(--text-md);
     line-height: 1.5;
-    color: var(--text-color, #495057);
-    background-color: var(--input-bg, #fff);
+    color: var(--color-text);
+    background-color: var(--color-surface);
     background-clip: padding-box;
-    border: 1px solid var(--border-color, #ced4da);
-    border-radius: var(--border-radius, 6px);
-    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-md);
+    transition: border-color var(--duration-fast) var(--ease), box-shadow var(--duration-fast) var(--ease);
 }
 
-/* 輸入框焦點狀態 */
+.form-control::placeholder {
+    color: var(--color-muted);
+    opacity: 1;
+}
+
 .form-control:focus {
-    color: var(--text-color, #495057);
-    background-color: var(--input-bg, #fff);
-    border-color: var(--primary-color, #4a90e2);
+    color: var(--color-text);
+    background-color: var(--color-surface);
+    border-color: var(--color-primary);
     outline: 0;
-    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.25);
+    box-shadow: var(--ring-primary);
 }
 
-/* 輸入框禁用狀態 */
 .form-control:disabled,
 .form-control[readonly] {
-    background-color: var(--input-disabled-bg, #e9ecef);
-    opacity: 1;
+    background-color: var(--color-surface-2);
+    color: var(--color-muted);
     cursor: not-allowed;
 }
 
-/* 輸入框尺寸變體 */
+/* 尺寸 */
 .form-control-sm {
-    padding: 0.5rem 0.75rem;
-    font-size: 0.875rem;
-    border-radius: var(--border-radius-sm, 4px);
+    height: var(--control-sm);
+    padding: 0 var(--space-3);
+    font-size: var(--text-sm);
 }
 
 .form-control-lg {
-    padding: 1rem 1.25rem;
-    font-size: 1.125rem;
-    border-radius: var(--border-radius-lg, 8px);
+    height: var(--control-lg);
+    padding: 0 var(--space-4);
+    font-size: var(--text-lg);
 }
 
-/* 文字區域 */
+/* 多行文字 */
 textarea.form-control {
-    min-height: calc(1.5em + 1.5rem + 2px);
+    height: auto;
+    min-height: calc(var(--control-md) * 2.4);
+    padding: var(--space-2) var(--space-3);
     resize: vertical;
 }
 
-/* 選擇框 */
+/* 下拉：箭頭用兩段漸層畫出，顏色跟 token */
 select.form-control {
-    padding-right: 2.5rem;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 0.75rem center;
-    background-size: 16px 12px;
     appearance: none;
+    padding-right: var(--control-md);
+    background-image:
+        linear-gradient(45deg, transparent 50%, var(--color-muted) 50%),
+        linear-gradient(135deg, var(--color-muted) 50%, transparent 50%);
+    background-position:
+        calc(100% - 18px) 50%,
+        calc(100% - 12px) 50%;
+    background-size: 6px 6px, 6px 6px;
+    background-repeat: no-repeat;
+    cursor: pointer;
 }
 
-/* 檔案輸入 */
-.form-control-file {
-    display: block;
-    width: 100%;
+select.form-control:disabled {
+    cursor: not-allowed;
 }
 
-/* 搜尋框 */
+/* 搜尋框（有圖示時才留左內距） */
 .search-box {
     position: relative;
-    margin-bottom: 1.5rem;
+    margin-bottom: var(--space-6);
 }
 
-.search-input {
-    padding-left: 2.75rem;
+.search-box .search-input {
+    padding-left: var(--control-md);
 }
 
 .search-icon {
     position: absolute;
-    left: 1rem;
+    left: var(--space-3);
     top: 50%;
     transform: translateY(-50%);
-    color: var(--text-muted, #6c757d);
+    color: var(--color-muted);
     pointer-events: none;
 }
 
-/* 輸入群組 */
-.input-group {
-    position: relative;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: stretch;
-    width: 100%;
+/* 說明與驗證 */
+.form-text {
+    display: block;
+    margin-top: var(--space-1);
+    font-size: var(--text-sm);
+    color: var(--color-muted);
 }
 
-.input-group > .form-control {
-    position: relative;
-    flex: 1 1 auto;
-    width: 1%;
-    min-width: 0;
-}
-
-.input-group-prepend,
-.input-group-append {
-    display: flex;
-}
-
-.input-group-text {
-    display: flex;
-    align-items: center;
-    padding: 0.75rem 1rem;
-    font-size: 1rem;
-    font-weight: 400;
-    line-height: 1.5;
-    color: var(--text-color, #495057);
-    text-align: center;
-    white-space: nowrap;
-    background-color: var(--gray-100, #f8f9fa);
-    border: 1px solid var(--border-color, #ced4da);
-}
-
-.input-group-prepend .input-group-text {
-    border-top-right-radius: 0;
-    border-bottom-right-radius: 0;
-}
-
-.input-group-append .input-group-text {
-    border-top-left-radius: 0;
-    border-bottom-left-radius: 0;
-}
-
-.input-group > .form-control:not(:first-child) {
-    border-top-left-radius: 0;
-    border-bottom-left-radius: 0;
-}
-
-.input-group > .form-control:not(:last-child) {
-    border-top-right-radius: 0;
-    border-bottom-right-radius: 0;
-}
-
-/* 表單驗證狀態 */
 .form-control.is-valid {
-    border-color: var(--success-color, #28a745);
-}
-
-.form-control.is-valid:focus {
-    border-color: var(--success-color, #28a745);
-    box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.25);
+    border-color: var(--color-success);
 }
 
 .form-control.is-invalid {
-    border-color: var(--danger-color, #dc3545);
+    border-color: var(--color-danger);
 }
 
 .form-control.is-invalid:focus {
-    border-color: var(--danger-color, #dc3545);
-    box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.25);
+    border-color: var(--color-danger);
+    box-shadow: var(--ring-danger);
 }
 
-/* 表單提示文字 */
-.form-text {
-    display: block;
-    margin-top: 0.25rem;
-    font-size: 0.875rem;
-    color: var(--text-muted, #6c757d);
-}
-
+.valid-feedback,
 .invalid-feedback {
     display: none;
     width: 100%;
-    margin-top: 0.25rem;
-    font-size: 0.875rem;
-    color: var(--danger-color, #dc3545);
+    margin-top: var(--space-1);
+    font-size: var(--text-sm);
 }
 
+.valid-feedback {
+    color: var(--color-success-text);
+}
+
+.invalid-feedback {
+    color: var(--color-danger-text);
+}
+
+.form-control.is-valid ~ .valid-feedback,
 .form-control.is-invalid ~ .invalid-feedback {
     display: block;
 }
 
-.valid-feedback {
-    display: none;
-    width: 100%;
-    margin-top: 0.25rem;
-    font-size: 0.875rem;
-    color: var(--success-color, #28a745);
-}
-
-.form-control.is-valid ~ .valid-feedback {
-    display: block;
-}
-
-/* 橫向表單 */
-.form-row {
-    display: flex;
-    flex-wrap: wrap;
-    margin-right: -0.5rem;
-    margin-left: -0.5rem;
-}
-
-.form-row > .form-group {
-    padding-right: 0.5rem;
-    padding-left: 0.5rem;
-}
-
-/* 內聯表單 */
-.form-inline {
-    display: flex;
-    flex-flow: row wrap;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.form-inline .form-control {
-    display: inline-block;
-    width: auto;
-    vertical-align: middle;
-}
-
-/* 核取方塊和單選按鈕 */
+/* 核取方塊與單選（原生元件，顏色用 accent-color 跟主色） */
 .form-check {
-    position: relative;
-    display: block;
-    padding-left: 1.25rem;
-    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-bottom: var(--space-2);
+    font-size: var(--text-sm);
+    color: var(--color-text);
 }
 
 .form-check-input {
-    position: absolute;
-    margin-top: 0.3rem;
-    margin-left: -1.25rem;
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    flex-shrink: 0;
+    accent-color: var(--color-primary);
+    cursor: pointer;
 }
 
 .form-check-label {
-    margin-bottom: 0;
+    margin: 0;
     cursor: pointer;
 }
 
 .form-check-inline {
     display: inline-flex;
+    margin-right: var(--space-3);
+}
+
+/* 橫向表單 */
+.form-inline {
+    display: flex;
+    flex-flow: row wrap;
     align-items: center;
-    padding-left: 0;
-    margin-right: 0.75rem;
+    gap: var(--space-2);
 }
 
-.form-check-inline .form-check-input {
-    position: static;
-    margin-top: 0;
-    margin-right: 0.3125rem;
-    margin-left: 0;
-}
-
-/* 範圍滑桿 */
-.form-range {
-    width: 100%;
-    height: 1.5rem;
-    padding: 0;
-    background-color: transparent;
-    appearance: none;
-}
-
-.form-range:focus {
-    outline: 0;
-}
-
-.form-range::-webkit-slider-thumb {
-    width: 1rem;
-    height: 1rem;
-    background-color: var(--primary-color, #4a90e2);
-    border: 0;
-    border-radius: 1rem;
-    appearance: none;
-}
-
-.form-range::-webkit-slider-runnable-track {
-    width: 100%;
-    height: 0.5rem;
-    color: transparent;
-    cursor: pointer;
-    background-color: var(--gray-300, #dee2e6);
-    border-color: transparent;
-    border-radius: 1rem;
-}
-
-/* Dark Mode 支援 */
-[data-theme="dark"] .form-control {
-    color: var(--dark-text-color, #e2e8f0);
-    background-color: var(--dark-input-bg, #2d3748);
-    border-color: var(--dark-border-color, #4a5568);
-}
-
-[data-theme="dark"] .form-control:focus {
-    background-color: var(--dark-input-bg, #2d3748);
-    border-color: var(--primary-color, #4a90e2);
-}
-
-[data-theme="dark"] .form-control:disabled,
-[data-theme="dark"] .form-control[readonly] {
-    background-color: var(--dark-input-disabled-bg, #1a202c);
-}
-
-[data-theme="dark"] select.form-control {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%23e2e8f0' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3E%3C/svg%3E");
-}
-
-[data-theme="dark"] .input-group-text {
-    color: var(--dark-text-color, #e2e8f0);
-    background-color: var(--dark-gray-700, #374151);
-    border-color: var(--dark-border-color, #4a5568);
-}
-
-[data-theme="dark"] .form-text {
-    color: var(--dark-text-muted, #9ca3af);
+.form-inline .form-control {
+    display: inline-block;
+    width: auto;
 }

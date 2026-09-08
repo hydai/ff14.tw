@@ -7,7 +7,8 @@ class DungeonDatabase {
         DISPLAY_STATES: {
             BLOCK: 'block',
             NONE: 'none',
-            GRID: 'grid'
+            GRID: 'grid',
+            FLEX: 'flex'
         },
         CSS_CLASSES: {
             DUNGEON_CARD: 'dungeon-card',
@@ -77,13 +78,14 @@ class DungeonDatabase {
     }
 
     showError(message) {
-        const { BLOCK, NONE } = DungeonDatabase.CONSTANTS.DISPLAY_STATES;
+        const { FLEX, NONE } = DungeonDatabase.CONSTANTS.DISPLAY_STATES;
         SecurityUtils.clearElement(this.elements.noResults);
         const p = document.createElement('p');
-        p.style.color = 'var(--accent-color)';
+        p.className = 'empty-state-text';
+        p.style.color = 'var(--color-danger-text)';
         p.textContent = message;
         this.elements.noResults.appendChild(p);
-        this.setElementDisplay(this.elements.noResults, BLOCK);
+        this.setElementDisplay(this.elements.noResults, FLEX);
         this.setElementDisplay(this.elements.dungeonList, NONE);
     }
 
@@ -347,11 +349,11 @@ class DungeonDatabase {
 
     renderDungeons() {
         const container = this.elements.dungeonList;
-        const { BLOCK, NONE, GRID } = DungeonDatabase.CONSTANTS.DISPLAY_STATES;
-        
+        const { FLEX, NONE, GRID } = DungeonDatabase.CONSTANTS.DISPLAY_STATES;
+
         if (this.filteredDungeons.length === 0) {
             this.setElementDisplay(container, NONE);
-            this.setElementDisplay(this.elements.noResults, BLOCK);
+            this.setElementDisplay(this.elements.noResults, FLEX);
             return;
         }
 
@@ -376,9 +378,9 @@ class DungeonDatabase {
         
         // Create main card container
         const card = document.createElement('div');
-        card.className = DUNGEON_CARD;
+        card.className = `${DUNGEON_CARD} card hoverable clickable`;
         card.dataset.id = dungeon.id;
-        
+
         // Create image section
         const imageDiv = document.createElement('div');
         imageDiv.className = 'dungeon-image';
@@ -400,14 +402,17 @@ class DungeonDatabase {
             imageDiv.appendChild(img);
             
             const placeholder = document.createElement('div');
-            placeholder.className = 'image-placeholder';
+            placeholder.className = 'image-placeholder card-placeholder';
             placeholder.style.display = 'none';
             const placeholderText = document.createElement('span');
             placeholderText.textContent = FF14Utils.getI18nText('dungeon_db_image_loading', '圖片載入中...');
+            placeholderText.dataset.i18n = 'dungeon_db_image_loading';
             placeholder.appendChild(placeholderText);
             imageDiv.appendChild(placeholder);
         } else {
+            imageDiv.classList.add('card-placeholder');
             imageDiv.textContent = FF14Utils.getI18nText('dungeon_db_image_preparing', '圖片準備中');
+            imageDiv.dataset.i18n = 'dungeon_db_image_preparing';
         }
 
         card.appendChild(imageDiv);
@@ -427,7 +432,7 @@ class DungeonDatabase {
         header.appendChild(title);
         
         const level = document.createElement('span');
-        level.className = 'dungeon-level';
+        level.className = 'dungeon-level tag tag-solid tag-primary';
         level.textContent = `Lv.${dungeon.level}`;
         header.appendChild(level);
         
@@ -438,12 +443,12 @@ class DungeonDatabase {
         meta.className = 'dungeon-meta';
         
         const type = document.createElement('span');
-        type.className = 'dungeon-type';
+        type.className = 'dungeon-type tag tag-primary';
         type.textContent = dungeon.type;
         meta.appendChild(type);
         
         const expansion = document.createElement('span');
-        expansion.className = 'dungeon-expansion';
+        expansion.className = 'dungeon-expansion tag';
         expansion.textContent = dungeon.expansion;
         meta.appendChild(expansion);
         
@@ -455,6 +460,7 @@ class DungeonDatabase {
 
         const rewardsTitle = document.createElement('h4');
         rewardsTitle.textContent = FF14Utils.getI18nText('dungeon_db_reward', '獎勵');
+        rewardsTitle.dataset.i18n = 'dungeon_db_reward';
         rewards.appendChild(rewardsTitle);
 
         const rewardItem = document.createElement('div');
@@ -463,6 +469,7 @@ class DungeonDatabase {
         const rewardName = document.createElement('span');
         rewardName.className = 'reward-name';
         rewardName.textContent = FF14Utils.getI18nText('dungeon_db_tombstone', '神典石');
+        rewardName.dataset.i18n = 'dungeon_db_tombstone';
         rewardItem.appendChild(rewardName);
 
         const rewardValue = document.createElement('span');
@@ -480,6 +487,7 @@ class DungeonDatabase {
 
             const dropsTitle = document.createElement('h4');
             dropsTitle.textContent = FF14Utils.getI18nText('dungeon_db_special_drops', '特殊掉落物');
+            dropsTitle.dataset.i18n = 'dungeon_db_special_drops';
             specialDrops.appendChild(dropsTitle);
 
             const dropsList = document.createElement('div');
@@ -487,7 +495,7 @@ class DungeonDatabase {
             
             dungeon.specialDrops.forEach(drop => {
                 const dropItem = document.createElement('span');
-                dropItem.className = DungeonDatabase.CONSTANTS.CSS_CLASSES.DROP_ITEM;
+                dropItem.className = `${DungeonDatabase.CONSTANTS.CSS_CLASSES.DROP_ITEM} tag tag-warning`;
                 dropItem.textContent = drop;
                 dropsList.appendChild(dropItem);
             });
@@ -502,6 +510,7 @@ class DungeonDatabase {
 
         const mechanicsLabel = document.createElement('strong');
         mechanicsLabel.textContent = FF14Utils.getI18nText('dungeon_db_mechanics', '機制說明：');
+        mechanicsLabel.dataset.i18n = 'dungeon_db_mechanics';
         mechanicsDiv.appendChild(mechanicsLabel);
 
         const highlightedMechanics = this.highlightSearchTermsDOM(dungeon.mechanics, this.currentSearchTerm);

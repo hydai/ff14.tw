@@ -70,22 +70,6 @@ class TimedGatheringManager {
 
     async initialize() {
         try {
-            // Explicitly load translations for this tool.
-            if (window.i18n && window.TimedGatheringTranslations) {
-                window.i18n.loadTranslations('timed-gathering', window.TimedGatheringTranslations);
-                // Re-apply i18n because this tool's translation namespace is loaded after the global
-                // i18n initialization. At this point, some timed-gathering UI elements may already
-                // have been rendered with data-i18n attributes, and they will not be translated
-                // until we trigger a page-wide language update.
-                //
-                // This call is the intended pattern for tools that load their translation namespace
-                // lazily after the main i18n setup: first register the namespace, then invoke
-                // updatePageLanguage() so existing DOM nodes are re-processed.
-                // If the i18n bootstrapping flow is refactored in the future to load all namespaces
-                // up front, this explicit re-application step may no longer be necessary.
-                window.i18n.updatePageLanguage();
-            }
-
             // 初始化模組
             this.listManager = new ListManager();
             this.modalManager = new ModalManager();
@@ -173,11 +157,25 @@ class TimedGatheringManager {
 
     initializeEvents() {
         // 語言切換
-        this.elements.languageButtons.forEach(btn => {
-            btn.addEventListener('click', () => {
-                const lang = btn.dataset.lang;
-                this.switchLanguage(lang);
-            });
+        // 這些 .language-btn 是共用 header 切換器（nav-template.js／layout-loader.js 載入）插入的按鈕，
+        // 點擊時已經由 I18nManager._initializeLanguageSwitcher() 掛在 .language-switcher 容器上的
+        // 委派監聽器負責呼叫 window.i18n.setLanguage()，這裡不再另外掛一份按鈕點擊監聽器
+        // （實測過：若兩邊都掛，同一次點擊 setLanguage() 會被呼叫兩次，下面的 observer 也會跟著
+        // 重繪兩次）。這個 TimedGatheringManager 是全站 12 個工具裡唯一有自己 .language-btn
+        // 監聽器的（其餘工具都只靠共用 header 的委派監聽器 + 自己的 onLanguageChange observer），
+        // 屬於既有的重複邏輯，這裡一併拿掉、統一成跟其他工具一樣的寫法。
+        // 重繪統一交給下面註冊的 onLanguageChange observer，不論語言變更是從共用 header 的按鈕，
+        // 還是其他呼叫 window.i18n.setLanguage() 的地方觸發，都只會重繪一次；observer 本身不會呼叫
+        // setLanguage()／switchLanguage()，所以不會有「setLanguage → 通知 observer → 又呼叫
+        // setLanguage」的遞迴風險。
+        // 語言切換時重新以目前語言重繪：按鈕狀態、右側顯示、清單畫面與通知狀態文字
+        // （呼叫的方法與順序沿用原本 switchLanguage() 的重繪部分，只是不再由這裡呼叫 setLanguage()）
+        window.i18n.onLanguageChange((lang) => {
+            this.currentLanguage = lang;
+            this.updateLanguageButtons();
+            this.updateDisplay();
+            this.updateListDisplay();
+            this.updateNotificationStatus();
         });
 
         // 初始化語言按鈕狀態
@@ -194,7 +192,7 @@ class TimedGatheringManager {
         });
 
         // 類型篩選
-        this.elements.typeFilters.querySelectorAll('.tag-filter').forEach(tag => {
+        this.elements.typeFilters.querySelectorAll('.chip').forEach(tag => {
             tag.addEventListener('click', () => {
                 tag.classList.toggle('active');
                 this.applyFilters();
@@ -202,7 +200,7 @@ class TimedGatheringManager {
         });
 
         // 資料片篩選
-        this.elements.expansionFilters.querySelectorAll('.tag-filter').forEach(tag => {
+        this.elements.expansionFilters.querySelectorAll('.chip').forEach(tag => {
             tag.addEventListener('click', () => {
                 tag.classList.toggle('active');
                 this.applyFilters();
@@ -261,6 +259,20 @@ class TimedGatheringManager {
             }
         });
         */
+
+        // 方向鍵在清單分頁間移動並直接切換
+        this.elements.listTabs.addEventListener('keydown', (e) => {
+            if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+            const tabs = Array.from(this.elements.listTabs.querySelectorAll('.list-tab'));
+            const currentIndex = tabs.indexOf(document.activeElement);
+            if (currentIndex === -1) return;
+            e.preventDefault();
+            const nextIndex = e.key === 'ArrowRight'
+                ? (currentIndex + 1) % tabs.length
+                : (currentIndex - 1 + tabs.length) % tabs.length;
+            tabs[nextIndex].focus();
+            tabs[nextIndex].click();
+        });
     }
 
     initializeNotifications() {
@@ -268,11 +280,13 @@ class TimedGatheringManager {
         const notificationStatus = document.getElementById('notificationStatus');
         const testNotificationBtn = document.getElementById('testNotificationBtn');
 
-        // 初始化通知狀態
-        if (this.notificationManager.enabled) {
-            notificationToggle.checked = true;
-        }
+        // Notification support is optional; gathering lists still work without it.
+        const state = this.notificationManager.getNotificationState();
+        notificationToggle.checked = state.enabled;
+        notificationToggle.disabled = !state.supported;
+        testNotificationBtn.disabled = !state.supported;
         this.updateNotificationStatus();
+        if (!state.supported) return;
 
         // 通知開關事件
         notificationToggle.addEventListener('change', async () => {
@@ -305,27 +319,17 @@ class TimedGatheringManager {
             const status = this.notificationManager.getNotificationStatus();
             notificationStatus.textContent = status;
 
-            // 根據狀態設定樣式 - 支援兩種樣式類名
-            const statusClasses = ['status-enabled', 'status-disabled', 'status-denied'];
+            // 根據狀態設定徽章樣式（共用 .tag）
+            const statusClasses = ['tag-solid', 'tag-success', 'tag-danger'];
             notificationStatus.classList.remove(...statusClasses);
 
-            if (this.notificationManager.enabled) {
-                notificationStatus.classList.add('status-enabled');
-            } else if (Notification.permission === 'denied') {
-                notificationStatus.classList.add('status-denied');
-            } else {
-                notificationStatus.classList.add('status-disabled');
+            const state = this.notificationManager.getNotificationState();
+            if (state.enabled) {
+                notificationStatus.classList.add('tag-solid', 'tag-success');
+            } else if (state.permission === 'denied') {
+                notificationStatus.classList.add('tag-solid', 'tag-danger');
             }
         }
-    }
-
-    switchLanguage(lang) {
-        this.currentLanguage = lang;
-        window.i18n.setLanguage(lang);
-        this.updateLanguageButtons();
-        this.updateDisplay();
-        this.updateListDisplay();
-        this.updateNotificationStatus(); // 更新通知狀態文字
     }
 
     updateLanguageButtons() {
@@ -344,12 +348,11 @@ class TimedGatheringManager {
     }
 
     applyFilters() {
-        // Sanitize search input to prevent XSS
-        const rawSearchTerm = this.elements.searchInput.value;
-        const searchTerm = SecurityUtils.sanitizeInput(rawSearchTerm).toLowerCase();
-        const activeTypes = Array.from(this.elements.typeFilters.querySelectorAll('.tag-filter.active'))
+        // Search operates on text, just like the dataset and textContent rendering.
+        const searchTerm = this.elements.searchInput.value.trim().toLowerCase();
+        const activeTypes = Array.from(this.elements.typeFilters.querySelectorAll('.chip.active'))
             .map(tag => tag.dataset.type);
-        const activeExpansions = Array.from(this.elements.expansionFilters.querySelectorAll('.tag-filter.active'))
+        const activeExpansions = Array.from(this.elements.expansionFilters.querySelectorAll('.chip.active'))
             .map(tag => tag.dataset.expansion);
 
         this.filteredData = this.searchFilter.filter(this.data, {
@@ -372,7 +375,7 @@ class TimedGatheringManager {
 
         if (this.filteredData.length === 0) {
             const emptyMessage = document.createElement('div');
-            emptyMessage.className = 'empty-message';
+            emptyMessage.className = 'empty-state';
             emptyMessage.textContent = FF14Utils.getI18nText('noItemsFound', 'No items match the criteria');
             container.appendChild(emptyMessage);
             return;
@@ -386,7 +389,7 @@ class TimedGatheringManager {
 
     createItemCard(item) {
         const card = document.createElement('div');
-        card.className = 'item-card';
+        card.className = 'item-card card';
         card.dataset.itemId = item.id;
 
         const typeIcon = this.getTypeIcon(item.type);
@@ -413,7 +416,7 @@ class TimedGatheringManager {
         header.appendChild(titleSection);
 
         const timeSpan = document.createElement('span');
-        timeSpan.className = 'item-time';
+        timeSpan.className = 'item-time tag tag-solid tag-primary';
         timeSpan.textContent = item.time;
         header.appendChild(timeSpan);
 
@@ -533,7 +536,7 @@ class TimedGatheringManager {
 
     createListItem(item) {
         const div = document.createElement('div');
-        div.className = 'list-item';
+        div.className = 'list-item card';
         div.dataset.itemId = item.id;
 
         const info = document.createElement('div');
@@ -552,12 +555,12 @@ class TimedGatheringManager {
         info.appendChild(name);
 
         const version = document.createElement('span');
-        version.className = 'list-item-version';
+        version.className = 'list-item-version tag tag-solid tag-primary';
         version.textContent = `v${item.expansion}`;
         info.appendChild(version);
 
         const time = document.createElement('span');
-        time.className = 'list-item-time';
+        time.className = 'list-item-time tag';
         time.textContent = item.time;
         info.appendChild(time);
 
@@ -588,7 +591,8 @@ class TimedGatheringManager {
         this.renderListTabs(lists);
 
         if (lists.length > 0) {
-            this.switchToList(lists[0].id);
+            const selectedList = lists.find(list => list.id === this.currentListId) || lists[0];
+            this.switchToList(selectedList.id);
         }
     }
 
@@ -596,15 +600,20 @@ class TimedGatheringManager {
         const container = this.elements.listTabs;
         SecurityUtils.clearElement(container);
 
+        container.setAttribute('role', 'tablist');
         lists.forEach(list => {
             const tab = document.createElement('button');
-            tab.className = 'list-tab';
+            tab.className = 'tab list-tab';
             tab.dataset.listId = list.id;
             tab.textContent = list.name;
+            tab.id = `tab-list-${list.id}`;
+            tab.setAttribute('role', 'tab');
+            tab.setAttribute('aria-controls', 'listItems');
 
-            if (list.id === this.currentListId) {
-                tab.classList.add('active');
-            }
+            const isActive = list.id === this.currentListId;
+            tab.classList.toggle('active', isActive);
+            tab.setAttribute('aria-selected', String(isActive));
+            tab.tabIndex = isActive ? 0 : -1;
 
             tab.addEventListener('click', () => {
                 this.switchToList(list.id);
@@ -623,8 +632,13 @@ class TimedGatheringManager {
 
             // 更新標籤頁狀態
             this.elements.listTabs.querySelectorAll('.list-tab').forEach(tab => {
-                tab.classList.toggle('active', tab.dataset.listId === listId);
+                const isActive = tab.dataset.listId === listId;
+                tab.classList.toggle('active', isActive);
+                tab.setAttribute('aria-selected', String(isActive));
+                tab.tabIndex = isActive ? 0 : -1;
             });
+            this.elements.listItems.setAttribute('role', 'tabpanel');
+            this.elements.listItems.setAttribute('aria-labelledby', `tab-list-${listId}`);
 
             // 更新清單顯示
             this.updateListDisplay();
@@ -670,8 +684,7 @@ class TimedGatheringManager {
                 return;
             }
 
-            // Sanitize the name to prevent XSS
-            const name = SecurityUtils.sanitizeInput(rawName);
+            const name = rawName;
 
             if (name) {
                 const result = this.listManager.createList(name);
@@ -717,8 +730,7 @@ class TimedGatheringManager {
                 return;
             }
 
-            // Sanitize the name to prevent XSS
-            const newName = SecurityUtils.sanitizeInput(rawName);
+            const newName = rawName;
 
             if (newName && newName !== currentList.name) {
                 const result = this.listManager.renameList(this.currentListId, newName);
@@ -845,6 +857,20 @@ class TimedGatheringManager {
 
         const macro = this.macroExporter.generate(list.items, options);
 
+        const skippedCount = list.items.filter(item => {
+            const schedule = TimeCalculator.parseSchedule(item.time, item.duration);
+            return !schedule || schedule.allDay;
+        }).length;
+        if (!macro) {
+            this.elements.macroText.value = '';
+            this.elements.macroOutput.style.display = 'none';
+            FF14Utils.showToast(FF14Utils.getI18nText('noScheduledItems', '清單沒有可設定鬧鐘的採集時段'), 'info');
+            return;
+        }
+        if (skippedCount > 0) {
+            FF14Utils.showToast(FF14Utils.getI18nText('macroSkippedItems', '已略過 {count} 個全天或時間無效的項目', { count: skippedCount }), 'info');
+        }
+
         this.elements.macroText.value = macro;
         this.elements.macroOutput.style.display = 'block';
 
@@ -916,18 +942,8 @@ class TimedGatheringManager {
         const reader = new FileReader();
 
         reader.onload = (e) => {
-            // Define schema for import data
-            const importSchema = {
-                required: ['version', 'lists'],
-                properties: {
-                    version: { type: 'string' },
-                    lists: { type: 'array', minItems: 0 },
-                    exportDate: { type: 'string' }
-                }
-            };
-
-            // Use safe JSON parsing with schema validation
-            const parseResult = SecurityUtils.safeJSONParse(e.target.result, importSchema);
+            // ListManager owns the nested validation contract shared with storage/export.
+            const parseResult = SecurityUtils.safeJSONParse(e.target.result);
 
             if (!parseResult.success) {
                 console.error('匯入失敗:', parseResult.error);
@@ -947,6 +963,10 @@ class TimedGatheringManager {
             } else {
                 FF14Utils.showToast(result.message, 'error');
             }
+        };
+
+        reader.onerror = () => {
+            FF14Utils.showToast(FF14Utils.getI18nText('fileReadFailed', '無法讀取檔案，請重新選取'), 'error');
         };
 
         reader.readAsText(file);

@@ -6,18 +6,23 @@
     <title>修改紀錄 - FF14.tw</title>
     <meta name="description" content="FF14.tw 網站功能更新與修改紀錄">
     <link rel="icon" type="image/x-icon" href="assets/images/ff14tw.ico">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/tokens.css">
     <link rel="stylesheet" href="assets/css/common.css">
+    <link rel="stylesheet" href="assets/css/components/tags.css">
     <link rel="stylesheet" href="assets/css/changelog.css">
     <link rel="stylesheet" href="assets/css/components/language-switcher.css">
 </head>
 <body>
     <div id="header-placeholder" data-base-path="/"></div>
     <noscript>
-        <nav style="padding: 1rem; background: #667eea; color: white; text-align: center;">
-            <a href="/" style="color: white; margin: 0 1rem;">首頁</a>
-            <a href="/copyright.html" style="color: white; margin: 0 1rem;">版權聲明</a>
-            <a href="https://github.com/hydai/ff14.tw" target="_blank" rel="noopener noreferrer" style="color: white; margin: 0 1rem;">GitHub</a>
-            <a href="/about.html" style="color: white; margin: 0 1rem;">關於</a>
+        <nav class="noscript-nav">
+            <a href="/" class="noscript-nav-link">首頁</a>
+            <a href="/copyright.html" class="noscript-nav-link">版權聲明</a>
+            <a href="https://github.com/hydai/ff14.tw" target="_blank" rel="noopener noreferrer" class="noscript-nav-link">GitHub</a>
+            <a href="/about.html" class="noscript-nav-link">關於</a>
         </nav>
     </noscript>
 
@@ -39,6 +44,151 @@
                 <p class="subtitle" data-i18n="changelog_hero_subtitle">記錄 FF14.tw 的功能更新與改進</p>
 
                 <div class="changelog-container">
+                <!-- 2026年9月 -->
+                <section class="changelog-section">
+                    <h2 class="changelog-year">2026年9月</h2>
+
+                    <article class="changelog-entry">
+                        <div class="changelog-header">
+                            <h3 class="changelog-version">v2.17.0</h3>
+                            <time class="changelog-date" datetime="2026-09-08">2026年9月8日</time>
+                        </div>
+                        <div class="changelog-content">
+                            <ul>
+                                <li><span class="tag tag-warning">修正</span> 寶圖隊伍建立與加入會保留選擇帶入的個人清單；多人同步與斷線重試不再互相覆蓋，成員操作改用私人憑證驗證。舊隊伍的寶圖保留在本機，可重新建立隊伍</li>
+                                <li><span class="tag tag-warning">修正</span> 特殊採集清單的備份可重新匯入，異常檔案不會覆蓋既有清單；支援區間與跨日時段的鬧鐘巨集，全天項目不再產生無效鬧鐘，不支援通知的瀏覽器仍可正常使用工具</li>
+                                <li><span class="tag tag-warning">修正</span> 陸行鳥毛色配方納入水果對三個色彩通道的完整效果，提供逐步餵食順序；宗長位置以候選提示顯示，避免誤標為保證命中</li>
+                                <li><span class="tag tag-warning">修正</span> Lodestone 部分資料暫時無法取得時仍顯示角色主資料；切換角色與翻頁後，較晚回傳的舊查詢不會蓋掉新結果</li>
+                                <li><span class="tag tag-warning">修正</span> 瀏覽器限制儲存時仍可切換語言；天氣預報的分享網址、上一頁與重置操作會同步更新篩選介面</li>
+                            </ul>
+                        </div>
+                    </article>
+
+                    <article class="changelog-entry">
+                        <div class="changelog-header">
+                            <h3 class="changelog-version">v2.16.4</h3>
+                            <time class="changelog-date" datetime="2026-09-02">2026年9月2日</time>
+                        </div>
+                        <div class="changelog-content">
+                            <ul>
+                                <li><span class="tag tag-info">改善</span> 手機版導覽選單開關改為滑入／滑出動畫，關閉中的選單不再能被點到</li>
+                                <li><span class="tag tag-warning">修正</span> 寶圖搜尋器「我的清單」關閉後的滑出動畫期間不再能被點擊或聚焦</li>
+                            </ul>
+                        </div>
+                    </article>
+
+                    <article class="changelog-entry">
+                        <div class="changelog-header">
+                            <h3 class="changelog-version">v2.16.3</h3>
+                            <time class="changelog-date" datetime="2026-09-02">2026年9月2日</time>
+                        </div>
+                        <div class="changelog-content">
+                            <ul>
+                                <li><span class="tag tag-info">改善</span> 寶圖搜尋器的路線、匯出、匯入與自訂格式視窗改為疊在「我的清單」上開啟：Escape 一次只關最上層，關閉後回到清單，鍵盤焦點不再落到看不見的按鈕</li>
+                                <li><span class="tag tag-warning">修正</span> 寶圖搜尋器在英文／日文介面下，我的清單、路線、自訂格式、隊伍協作區塊與對話框、匯入與同步提示、隊伍歷史紀錄都會顯示對應語言</li>
+                                <li><span class="tag tag-warning">修正</span> 宗長計算機回到上一步讓點擊數低於門檻時，結果面板會一併收起</li>
+                                <li><span class="tag tag-warning">修正</span> Lodestone 角色查詢的裝備與成就區塊在手機寬度不再水平溢出</li>
+                            </ul>
+                        </div>
+                    </article>
+                </section>
+
+                <!-- 2026年8月 -->
+                <section class="changelog-section">
+                    <h2 class="changelog-year">2026年8月</h2>
+
+                    <article class="changelog-entry">
+                        <div class="changelog-header">
+                            <h3 class="changelog-version">v2.16.2</h3>
+                            <time class="changelog-date" datetime="2026-08-31">2026年8月31日</time>
+                        </div>
+                        <div class="changelog-content">
+                            <ul>
+                                <li><span class="tag tag-warning">修正</span> 切換語言後，副本資料庫卡片、角色卡預設文字、天氣預報結果與側欄、巨集轉換器提示、仙人微彩／天書奇談／宗長計算機的結果與按鈕、寶圖搜尋器的對話框與路線文字都會跟著更新</li>
+                                <li><span class="tag tag-warning">修正</span> Lodestone 角色查詢的裝備部位名稱在英文／日文介面顯示正確語言；特殊採集時間管理器不再在載入時出現翻譯警告</li>
+                                <li><span class="tag tag-info">改善</span> 寶圖搜尋器的預設巨集模板依介面語言、地圖標記與提示文字跟著語言切換</li>
+                            </ul>
+                        </div>
+                    </article>
+
+                    <article class="changelog-entry">
+                        <div class="changelog-header">
+                            <h3 class="changelog-version">v2.16.1</h3>
+                            <time class="changelog-date" datetime="2026-08-29">2026年8月29日</time>
+                        </div>
+                        <div class="changelog-content">
+                            <ul>
+                                <li><span class="tag tag-warning">修正</span> 陸行鳥毛色計算器載入時的錯誤，語言切換後選單與結果會跟著翻譯</li>
+                                <li><span class="tag tag-warning">修正</span> 宗長計算機回到上一步／重做時，已用的格子不會再被重新啟用</li>
+                                <li><span class="tag tag-warning">修正</span> 寶圖搜尋器「我的清單」面板可用鍵盤操作（開啟時焦點移入、Escape 關閉、焦點回到按鈕）；語言切換後總覽與卡片按鈕不再殘留舊語言；英文／日文介面的無障礙標籤改用各語言的標點</li>
+                            </ul>
+                        </div>
+                    </article>
+
+                    <article class="changelog-entry">
+                        <div class="changelog-header">
+                            <h3 class="changelog-version">v2.16.0</h3>
+                            <time class="changelog-date" datetime="2026-08-27">2026年8月27日</time>
+                        </div>
+                        <div class="changelog-content">
+                            <ul>
+                                <li><span class="tag tag-info">改善</span> 無障礙：對話框與圖示按鈕加上輔助科技可讀的名稱；宗長計算機、仙人微彩計算機、天書奇談預測器的棋盤格子與 Lodestone 總覽卡片可以用鍵盤操作（Tab、Enter、空白鍵）；Lodestone 角色查詢、寶圖搜尋器、特殊採集時間管理器的頁籤支援左右方向鍵</li>
+                                <li><span class="tag tag-info">改善</span> 寶圖搜尋器的寶圖卡片新增「複製座標」按鈕，「自訂格式」面板可用 Escape 關閉並會把焦點還給原本的按鈕</li>
+                                <li><span class="tag tag-warning">修正</span> Lodestone 角色查詢的職業識別色對比度不足，改為符合無障礙標準的顏色</li>
+                                <li><span class="tag tag-warning">修正</span> 版權聲明頁的強調文字與陸行鳥攻略的染色計算器來源連結在切換語言後消失</li>
+                            </ul>
+                        </div>
+                    </article>
+
+                    <article class="changelog-entry">
+                        <div class="changelog-header">
+                            <h3 class="changelog-version">v2.15.0</h3>
+                            <time class="changelog-date" datetime="2026-08-27">2026年8月27日</time>
+                        </div>
+                        <div class="changelog-content">
+                            <ul>
+                                <li><span class="tag tag-info">改善</span> 設計系統全站完成：宗長計算機、Lodestone 角色查詢、角色卡產生器、寶圖搜尋器與首頁、關於、版權聲明、修改紀錄頁面全部改用統一的顏色、元件與深色模式</li>
+                                <li><span class="tag tag-warning">修正</span> 寶圖搜尋器：次要按鈕白字看不見、「生成路線」無法開啟、深色模式對話框半白、卡片沒有圓角</li>
+                                <li><span class="tag tag-warning">修正</span> Lodestone 角色查詢：淺色模式下搜尋框與資訊卡片沒有底色；宗長計算機：回到上一步後機率顯示壞掉、格子與視窗沒有圓角</li>
+                                <li><span class="tag tag-warning">修正</span> 修改紀錄頁「新增」「修正」標籤沒有顏色；首頁「施工中」「即將推出」徽章文字對比不足；攻略資料的職能分類表格沒有樣式</li>
+                                <li><span class="tag tag-info">改善</span> 深色模式下的捲軸與原生表單控制項自動配色；角色卡產生器的卡片成品維持原本的設計，不受站台主題影響</li>
+                            </ul>
+                        </div>
+                    </article>
+
+                    <article class="changelog-entry">
+                        <div class="changelog-header">
+                            <h3 class="changelog-version">v2.14.0</h3>
+                            <time class="changelog-date" datetime="2026-08-26">2026年8月26日</time>
+                        </div>
+                        <div class="changelog-content">
+                            <ul>
+                                <li><span class="tag tag-info">改善</span> 副本資料庫、特殊採集時間管理器、天氣預報、天書奇談預測器、仙人微彩計算機改用設計系統：卡片、篩選膠囊、標籤、表格、頁籤、開關、對話框與空狀態全站一致，深色模式不再各自調色</li>
+                                <li><span class="tag tag-warning">修正</span> 仙人微彩計算機：九宮格、線條指示與數字選擇視窗在淺色模式下沒有底色與邊框；「最佳揭開」改用主色標示</li>
+                                <li><span class="tag tag-warning">修正</span> 副本資料庫：搜尋框未套用共用樣式、獎勵文字對比不足；資料來源改用統一的說明面板樣式</li>
+                                <li><span class="tag tag-warning">修正</span> 天氣預報：目前時間列在深色模式下白字看不清；特殊採集時間管理器：頁首語言切換器被工具樣式覆寫、標題顏色未套用</li>
+                                <li><span class="tag tag-info">改善</span> 天氣預報與特殊採集時間管理器的通知改用右上角的統一提示</li>
+                            </ul>
+                        </div>
+                    </article>
+
+                    <article class="changelog-entry">
+                        <div class="changelog-header">
+                            <h3 class="changelog-version">v2.13.0</h3>
+                            <time class="changelog-date" datetime="2026-08-26">2026年8月26日</time>
+                        </div>
+                        <div class="changelog-content">
+                            <ul>
+                                <li><span class="tag tag-success">新增</span> 設計系統：全站顏色、字級、圓角、陰影改由同一份 token 定義，深色模式一併統一</li>
+                                <li><span class="tag tag-info">改善</span> 按鈕、表單、標籤、卡片、訊息改用統一元件；主色改為對比度合格的靛藍，次要按鈕不再顯示為橘色</li>
+                                <li><span class="tag tag-info">改善</span> 每一頁統一載入 Noto Sans TC 字型</li>
+                                <li><span class="tag tag-info">改善</span> 巨集轉換器、檢舉模板產生器、攻略資料改用設計系統</li>
+                                <li><span class="tag tag-warning">修正</span> 副本資料庫深色模式下標題與底色同色而看不見、巨集轉換器面板沒有底色、特殊採集時間管理器搜尋框左側留白</li>
+                            </ul>
+                        </div>
+                    </article>
+                </section>
+
                 <!-- 2026年3月 -->
                 <section class="changelog-section">
                     <h2 class="changelog-year">2026年3月</h2>

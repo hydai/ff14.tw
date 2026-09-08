@@ -55,6 +55,7 @@ class NotificationManager {
         this.audioContext = null;
         
         this.loadSettings();
+        this.enabled = this.getNotificationState().enabled;
     }
 
     /**
@@ -154,73 +155,27 @@ class NotificationManager {
             const timeLabel = FF14Utils.getI18nText('visualNotificationTime', '時間');
             const locationLabel = FF14Utils.getI18nText('visualNotificationLocation', '地點');
 
-            // 創建頁面內通知元素
+            // 頁面內提醒：使用共用的 .toast（右上角），保留 8 秒自動關閉與點擊關閉
             const notification = document.createElement('div');
-            notification.className = 'gathering-alert';
-            notification.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                background: linear-gradient(135deg, #4CAF50, #45a049);
-                color: white;
-                padding: 15px 20px;
-                border-radius: 8px;
-                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-                z-index: 10000;
-                max-width: 350px;
-                animation: slideIn 0.3s ease-out;
-                cursor: pointer;
-            `;
+            notification.className = 'toast toast-success gathering-alert';
+            notification.setAttribute('role', 'status');
+            notification.textContent = `${visualTitle}\n${visualBody}\n${timeLabel}: ${item.time} | ${locationLabel}: ${zone}`;
 
-            const title = document.createElement('div');
-            title.style.cssText = 'font-weight: bold; margin-bottom: 5px; font-size: 16px;';
-            title.textContent = visualTitle;
-
-            const body = document.createElement('div');
-            body.style.cssText = 'font-size: 14px;';
-            body.textContent = visualBody;
-            
-            const time = document.createElement('div');
-            time.style.cssText = 'font-size: 12px; margin-top: 5px; opacity: 0.9;';
-            time.textContent = `${timeLabel}: ${item.time} | ${locationLabel}: ${zone}`;
-            
-            notification.appendChild(title);
-            notification.appendChild(body);
-            notification.appendChild(time);
-            
-            // 點擊關閉
-            notification.onclick = () => {
-                notification.style.animation = 'slideOut 0.3s ease-in';
+            const dismiss = () => {
+                if (!notification.parentNode) return;
+                notification.classList.remove('show');
                 setTimeout(() => notification.remove(), 300);
             };
-            
+
+            notification.addEventListener('click', dismiss);
             document.body.appendChild(notification);
-            
-            // 自動移除
-            setTimeout(() => {
-                if (notification.parentNode) {
-                    notification.style.animation = 'slideOut 0.3s ease-in';
-                    setTimeout(() => notification.remove(), 300);
-                }
-            }, 8000);
-            
-            // 添加動畫樣式
-            if (!document.getElementById('gathering-alert-styles')) {
-                const style = document.createElement('style');
-                style.id = 'gathering-alert-styles';
-                style.textContent = `
-                    @keyframes slideIn {
-                        from { transform: translateX(400px); opacity: 0; }
-                        to { transform: translateX(0); opacity: 1; }
-                    }
-                    @keyframes slideOut {
-                        from { transform: translateX(0); opacity: 1; }
-                        to { transform: translateX(400px); opacity: 0; }
-                    }
-                `;
-                document.head.appendChild(style);
-            }
-            
+            // 背景分頁會暫停 requestAnimationFrame：8 秒倒數要等真的顯示後才開始，
+            // 否則使用者切回來時提醒可能已被移除
+            requestAnimationFrame(() => {
+                notification.classList.add('show');
+                setTimeout(dismiss, 8000);
+            });
+
             NotificationManager.log('success', '📢 頁面視覺通知已顯示');
         } catch (error) {
             NotificationManager.log('error', '顯示視覺通知失敗', error);
@@ -235,7 +190,7 @@ class NotificationManager {
             const stored = localStorage.getItem(NotificationManager.CONSTANTS.STORAGE_KEY);
             if (stored) {
                 const settings = JSON.parse(stored);
-                this.enabled = settings.enabled || false;
+                this.enabled = settings.enabled === true;
             }
         } catch (error) {
             console.error('載入通知設定失敗:', error);
@@ -261,7 +216,7 @@ class NotificationManager {
      * @returns {Promise<boolean>} 是否獲得權限
      */
     async requestPermission() {
-        if (!('Notification' in window)) {
+        if (!this.getNotificationState().supported) {
             NotificationManager.log('error', '此瀏覽器不支援通知功能');
             return false;
         }
@@ -401,6 +356,8 @@ class NotificationManager {
         NotificationManager.log('check', `正在檢查 ${this.currentList.length} 個物品`);
 
         this.currentList.forEach(item => {
+            // All-day gathering has no opening transition to notify about.
+            if (TimeCalculator.parseSchedule(item.time, item.duration)?.allDay) return;
             // 檢查物品是否在採集窗口內
             const isInWindow = this.isInGatheringWindow(item, currentET);
             
@@ -445,15 +402,13 @@ class NotificationManager {
 
     /**
      * 獲取艾歐爾傑亞時間
+     * @param {number} timestamp Unix 時間戳（毫秒）
      * @returns {Object} ET時間物件
      */
-    getEorzeaTime() {
+    getEorzeaTime(timestamp = Date.now()) {
         const EORZEA_MULTIPLIER = 3600 / 175;
-        const now = Date.now();
-        const jstOffset = 9 * 60 * 60 * 1000;
-        const utcTime = now + (new Date().getTimezoneOffset() * 60 * 1000);
-        const jstTime = utcTime + jstOffset;
-        const eorzeaMilliseconds = jstTime * EORZEA_MULTIPLIER;
+        // Unix 時間戳與時區無關，不需要套用 LT 或 ST 偏移。
+        const eorzeaMilliseconds = timestamp * EORZEA_MULTIPLIER;
         const eorzeaDate = new Date(eorzeaMilliseconds);
         
         return {
@@ -470,180 +425,21 @@ class NotificationManager {
      * @returns {number} 剩餘秒數
      */
     getTimeUntilGathering(item, currentET) {
-        // 解析採集時間（支援 "HH:MM" 和 "HH:MM-HH:MM" 格式）
-        let startTime = item.time;
-        let endTime = null;
-        
-        // 檢查是否為時間範圍格式
-        if (item.time.includes('-')) {
-            const [start, end] = item.time.split('-');
-            startTime = start.trim();
-            endTime = end.trim();
-        }
-        
-        // 解析開始時間
-        const timeParts = startTime.split(':');
-        if (timeParts.length !== 2) {
-            console.warn(`無效的時間格式: ${item.time}`);
-            return -1;
-        }
-        
-        const startHour = parseInt(timeParts[0]);
-        const startMinute = parseInt(timeParts[1]);
-        
-        if (isNaN(startHour) || isNaN(startMinute)) {
-            console.warn(`無法解析時間: ${startTime}`);
-            return -1;
-        }
-        
-        // 計算當前ET時間的總分鐘數
-        const currentMinutes = currentET.hours * 60 + currentET.minutes;
-        
-        // 計算採集開始時間的總分鐘數
-        const startMinutes = startHour * 60 + startMinute;
-        
-        // 如果有結束時間，檢查是否在採集窗口內
-        if (endTime) {
-            const endParts = endTime.split(':');
-            if (endParts.length === 2) {
-                const endHour = parseInt(endParts[0]);
-                const endMinute = parseInt(endParts[1]);
-                if (!isNaN(endHour) && !isNaN(endMinute)) {
-                    let endMinutes = endHour * 60 + endMinute;
-                    
-                    // 處理跨日的時間範圍
-                    if (endMinutes < startMinutes) {
-                        endMinutes += 24 * 60;
-                    }
-                    
-                    // 檢查當前時間是否在採集窗口內
-                    let adjustedCurrentMinutes = currentMinutes;
-                    if (endMinutes > 24 * 60 && currentMinutes < startMinutes) {
-                        adjustedCurrentMinutes += 24 * 60;
-                    }
-                    
-                    if (adjustedCurrentMinutes >= startMinutes && adjustedCurrentMinutes < endMinutes) {
-                        // 已經在採集窗口內，不需要通知
-                        return -1;
-                    }
-                }
-            }
-        }
-        
-        // 計算時間差（考慮跨日情況）
-        let minutesUntilStart = startMinutes - currentMinutes;
-        if (minutesUntilStart < 0) {
-            minutesUntilStart += 24 * 60; // 加上一天的分鐘數
-        }
-        
-        // 如果有持續時間，檢查是否太接近結束時間
-        if (item.duration && item.duration > 0) {
-            // 如果剩餘時間超過 24 小時減去持續時間，表示採集窗口快結束了
-            if (minutesUntilStart > (24 * 60 - item.duration)) {
-                // 採集窗口即將結束，不適合發送通知
-                return -1;
-            }
-        }
-        
-        // 轉換為實際秒數（ET時間流速）
-        const realSeconds = (minutesUntilStart * 60) / (3600 / 175);
-        
-        return realSeconds;
+        const schedule = TimeCalculator.parseSchedule(item.time, item.duration);
+        if (!schedule || schedule.allDay || this.isInGatheringWindow(item, currentET)) return -1;
+        const currentMinutes = currentET.hours * 60 + currentET.minutes + (currentET.seconds || 0) / 60;
+        const minutesUntilStart = (schedule.startMinutes - currentMinutes + 1440) % 1440;
+        return minutesUntilStart * 175 / 60;
     }
 
-    /**
-     * 判斷物品是否在採集窗口內
-     * @param {Object} item 採集物項目
-     * @param {Object} currentET 當前ET時間
-     * @returns {boolean} 是否在採集窗口內
-     */
+    /** Check a normalized schedule, including ranges that cross midnight. */
     isInGatheringWindow(item, currentET) {
-        // 解析採集時間（支援 "HH:MM" 和 "HH:MM-HH:MM" 格式）
-        let startTime = item.time;
-        let endTime = null;
-        
-        // 檢查是否為時間範圍格式
-        if (item.time.includes('-')) {
-            const [start, end] = item.time.split('-');
-            startTime = start.trim();
-            endTime = end.trim();
-        }
-        
-        // 解析開始時間
-        const timeParts = startTime.split(':');
-        if (timeParts.length !== 2) {
-            NotificationManager.log('error', `無效的時間格式: ${item.time}`);
-            return false;
-        }
-        
-        const startHour = parseInt(timeParts[0]);
-        const startMinute = parseInt(timeParts[1]);
-        
-        if (isNaN(startHour) || isNaN(startMinute)) {
-            NotificationManager.log('error', `無法解析時間: ${startTime}`);
-            return false;
-        }
-        
-        // 計算當前ET時間的總分鐘數
-        const currentMinutes = currentET.hours * 60 + currentET.minutes;
-        
-        // 計算採集開始時間的總分鐘數
-        const startMinutes = startHour * 60 + startMinute;
-        
-        // 計算結束時間（如果沒有指定，使用 duration 或預設 55 分鐘）
-        let endMinutes;
-        if (endTime) {
-            const endParts = endTime.split(':');
-            if (endParts.length === 2) {
-                const endHour = parseInt(endParts[0]);
-                const endMinute = parseInt(endParts[1]);
-                if (!isNaN(endHour) && !isNaN(endMinute)) {
-                    endMinutes = endHour * 60 + endMinute;
-                }
-            }
-        }
-        
-        if (!endMinutes) {
-            // 如果沒有結束時間，使用 duration（預設 55 分鐘）
-            const duration = item.duration || 55;
-            endMinutes = startMinutes + duration;
-        }
-        
-        // 處理跨日的時間範圍
-        if (endMinutes <= startMinutes) {
-            endMinutes += 24 * 60;
-        }
-        
-        // 檢查當前時間是否在採集窗口內
-        let adjustedCurrentMinutes = currentMinutes;
-        
-        // 如果結束時間跨日，且當前時間小於開始時間，調整當前時間
-        if (endMinutes > 24 * 60 && currentMinutes < startMinutes) {
-            adjustedCurrentMinutes += 24 * 60;
-        }
-        
-        const isInWindow = adjustedCurrentMinutes >= startMinutes && adjustedCurrentMinutes < endMinutes;
-        
-        // 詳細日誌記錄
-        if (NotificationManager.CONSTANTS.DEBUG_MODE) {
-            const debugInfo = {
-                物品: item.name,
-                採集時間: item.time,
-                當前ET: `${currentET.hours}:${String(currentET.minutes).padStart(2, '0')}`,
-                開始分鐘: startMinutes,
-                結束分鐘: endMinutes,
-                當前分鐘: currentMinutes,
-                調整後當前分鐘: adjustedCurrentMinutes,
-                是否在窗口內: isInWindow
-            };
-            
-            if (isInWindow) {
-                NotificationManager.log('success', `✅ ${item.name} 在採集窗口內`, debugInfo);
-            }
-        }
-        
-        // 返回是否在窗口內
-        return isInWindow;
+        const schedule = TimeCalculator.parseSchedule(item.time, item.duration);
+        if (!schedule) return false;
+        if (schedule.allDay) return true;
+        const currentMinutes = currentET.hours * 60 + currentET.minutes + (currentET.seconds || 0) / 60;
+        const elapsedMinutes = (currentMinutes - schedule.startMinutes + 1440) % 1440;
+        return elapsedMinutes < schedule.durationMinutes;
     }
 
     /**
@@ -832,23 +628,26 @@ class NotificationManager {
     }
 
     /**
-     * 獲取通知狀態
-     * @returns {string} 狀態文字
+     * 獲取通知支援能力、權限與實際啟用狀態
+     * @returns {Object} 通知狀態
      */
+    getNotificationState() {
+        const supported = typeof window.Notification === 'function';
+        const permission = supported ? window.Notification.permission : 'unsupported';
+        return { supported, permission, enabled: supported && permission === 'granted' && this.enabled };
+    }
+
     getNotificationStatus() {
-        if (!('Notification' in window)) {
+        const state = this.getNotificationState();
+        if (!state.supported) {
             return FF14Utils.getI18nText('notificationNotSupported', '瀏覽器不支援通知');
         }
-
-        if (Notification.permission === 'denied') {
+        if (state.permission === 'denied') {
             return FF14Utils.getI18nText('notificationPermissionDenied', '通知權限被拒絕');
         }
-
-        if (this.enabled) {
-            return FF14Utils.getI18nText('notificationEnabled', '通知已啟用');
-        }
-
-        return FF14Utils.getI18nText('notificationDisabled', '通知已停用');
+        return state.enabled
+            ? FF14Utils.getI18nText('notificationEnabled', '通知已啟用')
+            : FF14Utils.getI18nText('notificationDisabled', '通知已停用');
     }
 
     /**
@@ -856,6 +655,7 @@ class NotificationManager {
      * 用於診斷通知問題
      */
     testNotification() {
+        if (!this.getNotificationState().supported) return;
         NotificationManager.log('info', '🧪 開始測試通知功能');
         
         // 檢查環境

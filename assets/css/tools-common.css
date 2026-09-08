@@ -1,32 +1,35 @@
-/* ===================================
-   工具共用樣式 (Common Tool Styles)
-   =================================== */
-
-/* 引入元件樣式 */
+/* ==========================================================================
+   工具頁共用樣式 — 載入狀態、訊息、toast
+   元件本體由 components/*.css 提供（在此彙整載入）
+   ========================================================================== */
 @import url('components/buttons.css');
 @import url('components/cards.css');
 @import url('components/forms.css');
 @import url('components/tags.css');
 
-/* 工具頁面基礎樣式 */
+/* 工具頁基礎 */
 .tool-content {
-    padding: var(--spacing-xl, 2rem) 0;
+    padding: var(--space-7) 0;
 }
 
 /* 載入狀態 */
 .loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-3);
+    padding: var(--space-9) var(--space-4);
+    color: var(--color-muted);
     text-align: center;
-    padding: 3rem;
-    color: var(--text-secondary, #6c757d);
 }
 
 .loading-spinner {
-    display: inline-block;
-    width: 2rem;
-    height: 2rem;
-    border: 3px solid var(--gray-200, #e9ecef);
-    border-top-color: var(--primary-color, #4a90e2);
-    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--color-border);
+    border-top-color: var(--color-primary);
+    border-radius: var(--radius-full);
     animation: spin 0.8s linear infinite;
 }
 
@@ -34,74 +37,417 @@
     to { transform: rotate(360deg); }
 }
 
-/* 錯誤訊息 */
-.error-message {
-    background-color: var(--danger-light, #f8d7da);
-    color: var(--danger-dark, #721c24);
-    padding: 1rem;
-    border-radius: 6px;
-    margin: 1rem 0;
-    border: 1px solid var(--danger-border, #f5c6cb);
-}
-
-/* 成功訊息 */
-.success-message {
-    background-color: var(--success-light, #d4edda);
-    color: var(--success-dark, #155724);
-    padding: 1rem;
-    border-radius: 6px;
-    margin: 1rem 0;
-    border: 1px solid var(--success-border, #c3e6cb);
-}
-
-/* 資訊訊息 */
-.info-message {
-    background-color: var(--info-light, #d1ecf1);
-    color: var(--info-dark, #0c5460);
-    padding: 1rem;
-    border-radius: 6px;
-    margin: 1rem 0;
-    border: 1px solid var(--info-border, #bee5eb);
-}
-
-/* 警告訊息 */
+/* 訊息（四種語意，同一形狀） */
+.error-message,
+.success-message,
+.info-message,
 .warning-message {
-    background-color: var(--warning-light, #fff3cd);
-    color: var(--warning-dark, #856404);
-    padding: 1rem;
-    border-radius: 6px;
-    margin: 1rem 0;
-    border: 1px solid var(--warning-border, #ffeaa7);
+    padding: var(--space-3) var(--space-4);
+    margin: var(--space-4) 0;
+    border: 1px solid;
+    border-radius: var(--radius-md);
+    font-size: var(--text-sm);
+    line-height: 1.5;
 }
 
-/* Toast 通知訊息 */
+.error-message {
+    background: var(--color-danger-tint);
+    border-color: var(--color-danger-border);
+    color: var(--color-danger-text);
+}
+
+.success-message {
+    background: var(--color-success-tint);
+    border-color: var(--color-success-border);
+    color: var(--color-success-text);
+}
+
+.info-message {
+    background: var(--color-info-tint);
+    border-color: var(--color-info-border);
+    color: var(--color-info-text);
+}
+
+.warning-message {
+    background: var(--color-warning-tint);
+    border-color: var(--color-warning-border);
+    color: var(--color-warning-text);
+}
+
+.message-title {
+    display: block;
+    font-weight: var(--weight-semibold);
+}
+
+/* Toast 通知（右上角，3 秒後由 JS 移除） */
 .toast {
     position: fixed;
-    top: 20px;
-    right: 20px;
-    padding: 12px 24px;
-    border-radius: 6px;
-    color: white;
-    font-weight: 500;
-    z-index: 9999;
+    top: var(--space-5);
+    right: var(--space-5);
+    z-index: var(--z-toast);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    max-width: min(360px, calc(100vw - var(--space-8)));
+    padding: 10px 18px;
+    border-radius: var(--radius-md);
+    background: var(--color-heading);
+    color: var(--color-surface);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    line-height: 1.4;
+    box-shadow: var(--shadow-lg);
     opacity: 0;
     transform: translateY(-20px);
-    transition: all 0.3s ease;
+    transition: opacity var(--duration-slow) var(--ease), transform var(--duration-slow) var(--ease);
     white-space: pre-line;
+    pointer-events: none;
+}
+
+.toast.show {
+    opacity: 1;
+    transform: translateY(0);
 }
 
 .toast-success {
-    background-color: #27ae60;
+    background: var(--color-success);
+    color: var(--color-on-success);
 }
 
 .toast-error {
-    background-color: #e74c3c;
+    background: var(--color-danger);
+    color: var(--color-on-danger);
 }
 
 .toast-warning {
-    background-color: #f39c12;
+    background: var(--color-warning);
+    color: var(--color-on-warning);
 }
 
 .toast-info {
-    background-color: #3498db;
+    background: var(--color-info);
+    color: var(--color-on-info);
+}
+
+/* ==========================================================================
+   頁籤、開關、進度條、互動格子、表格、空狀態、對話框
+   規格：設計系統畫布「元件 05 訊息與狀態」與「元件 08 頁籤、開關、進度與互動格子」
+   ========================================================================== */
+
+/* 頁籤（<div class="tabs"><button class="tab active">…</button>…</div>） */
+.tabs {
+    display: flex;
+    gap: var(--space-1);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.tab {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: var(--control-md);
+    padding: 0 var(--space-4);
+    margin-bottom: -1px;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+    background: transparent;
+    color: var(--color-muted);
+    font-family: var(--font-sans);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    line-height: 1;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: color var(--duration-base) var(--ease), border-color var(--duration-base) var(--ease);
+}
+
+.tab:hover {
+    color: var(--color-primary);
+}
+
+.tab:focus-visible {
+    outline: none;
+    box-shadow: var(--ring-primary);
+}
+
+.tab.active {
+    color: var(--color-primary);
+    border-bottom-color: var(--color-primary);
+    font-weight: var(--weight-semibold);
+}
+
+/* 開關（<label class="toggle"><input type="checkbox"><span class="toggle-track"></span>文字</label>） */
+.toggle {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: var(--text-sm);
+    color: var(--color-text);
+    cursor: pointer;
+}
+
+.toggle input {
+    position: absolute;
+    width: 0;
+    height: 0;
+    opacity: 0;
+}
+
+.toggle-track {
+    position: relative;
+    flex-shrink: 0;
+    width: 44px;
+    height: 24px;
+    border-radius: var(--radius-full);
+    background: var(--color-border-strong);
+    transition: background-color var(--duration-base) var(--ease);
+}
+
+.toggle-track::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    border-radius: var(--radius-full);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-sm);
+    transition: transform var(--duration-base) var(--ease);
+}
+
+.toggle input:checked + .toggle-track {
+    background: var(--color-primary);
+}
+
+.toggle input:checked + .toggle-track::after {
+    transform: translateX(20px);
+}
+
+.toggle input:focus-visible + .toggle-track {
+    box-shadow: var(--ring-primary);
+}
+
+.toggle input:disabled + .toggle-track {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+/* 進度條（<div class="progress"><div class="progress-bar" style="width: 35%"></div></div>） */
+.progress {
+    height: 8px;
+    border-radius: var(--radius-full);
+    background: var(--color-border);
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    border-radius: var(--radius-full);
+    background: var(--color-primary);
+    transition: width var(--duration-slow) var(--ease);
+}
+
+/* 互動格子（計算型工具的棋盤格；尺寸由工具的 grid 決定） */
+.cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    color: var(--color-text);
+    font-weight: var(--weight-bold);
+    cursor: pointer;
+    user-select: none;
+    transition: background-color var(--duration-base) var(--ease), border-color var(--duration-base) var(--ease), color var(--duration-base) var(--ease), box-shadow var(--duration-base) var(--ease);
+}
+
+.cell:hover {
+    border-color: var(--color-primary);
+    background: var(--color-primary-tint);
+}
+
+.cell:focus-visible {
+    outline: none;
+    box-shadow: var(--ring-primary);
+}
+
+.cell.selected,
+.cell.revealed {
+    border: 2px solid var(--color-primary);
+    background: var(--color-primary-tint);
+    color: var(--color-primary);
+}
+
+.cell.best {
+    border: 2px solid var(--color-primary);
+    color: var(--color-primary);
+    animation: cell-glow 2s ease-in-out infinite;
+}
+
+.cell.disabled,
+.cell:disabled {
+    background: var(--color-surface-2);
+    color: var(--color-muted);
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.cell-label {
+    font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
+    letter-spacing: 0.04em;
+    color: var(--color-muted);
+}
+
+@keyframes cell-glow {
+    0%, 100% { box-shadow: var(--glow-primary); }
+    50% { box-shadow: var(--glow-primary-strong); }
+}
+
+/* 表格（<div class="table-wrap"><table class="table">…</table></div>） */
+.table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--text-sm);
+}
+
+.table th {
+    padding: 10px var(--space-4);
+    text-align: left;
+    font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
+    letter-spacing: 0.04em;
+    color: var(--color-heading);
+    background: var(--color-surface-2);
+    border-bottom: 1px solid var(--color-border);
+    white-space: nowrap;
+}
+
+.table td {
+    padding: 10px var(--space-4);
+    color: var(--color-text);
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+    vertical-align: middle;
+}
+
+.table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.table tbody tr:hover td {
+    background: var(--color-surface-2);
+}
+
+/* 空狀態（可選的 .empty-state-icon 放 emoji） */
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-6) var(--space-7);
+    border: 1px dashed var(--color-border-strong);
+    border-radius: var(--radius-lg);
+    text-align: center;
+    color: var(--color-muted);
+}
+
+.empty-state-icon {
+    font-size: var(--text-4xl);
+    line-height: 1;
+}
+
+.empty-state-title {
+    font-size: var(--text-md);
+    font-weight: var(--weight-semibold);
+    color: var(--color-heading);
+}
+
+.empty-state-text {
+    font-size: var(--text-sm);
+}
+
+/* 對話框（<div class="dialog-overlay"><div class="dialog" role="dialog">…</div></div>） */
+.dialog-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-overlay);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-4);
+    background: var(--color-overlay);
+}
+
+.dialog {
+    width: 100%;
+    max-width: 480px;
+    max-height: calc(100vh - var(--space-8));
+    overflow: auto;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xl);
+}
+
+.dialog-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    padding: var(--space-4) var(--space-5);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.dialog-title {
+    margin: 0;
+    font-size: var(--text-lg);
+    font-weight: var(--weight-semibold);
+    color: var(--color-heading);
+}
+
+.dialog-body {
+    padding: var(--space-5);
+}
+
+.dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-5);
+    border-top: 1px solid var(--color-border);
+    background: var(--color-surface-2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .loading-spinner {
+        animation-duration: 1.6s;
+    }
+
+    .toast,
+    .tab,
+    .toggle-track,
+    .toggle-track::after,
+    .progress-bar,
+    .cell {
+        transition: none;
+    }
+
+    .cell.best {
+        animation: none;
+        box-shadow: var(--glow-primary);
+    }
 }
