@@ -989,8 +989,18 @@ class TreasureMapFinder {
                 merge = confirm(confirmMessage);
             }
             
-            // 使用 ListManager 的匯入功能
-            const result = this.listManager.import(text, merge);
+            // Validate the projected room size and operation batch before committing the import.
+            const collaboration = this.roomCollaboration?.currentRoom ? this.roomCollaboration : null;
+            const result = this.listManager.import(text, merge, {
+                maxItems: collaboration ? RoomCollaboration.CONSTANTS.MAX_MAPS : Infinity,
+                validate: maps => {
+                    if (!collaboration) return;
+                    const operations = collaboration.mapSync.getOperations(maps.map(map => this.toRoomMap(map)));
+                    if (operations.length > RoomCollaboration.CONSTANTS.MAX_MAP_OPERATIONS) {
+                        throw new Error(FF14Utils.getI18nText('treasure_map_import_wait_for_sync', '請等待隊伍同步完成後再匯入。'));
+                    }
+                }
+            });
             
             if (result.success) {
                 FF14Utils.showToast(result.message, 'success');

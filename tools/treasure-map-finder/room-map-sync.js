@@ -51,8 +51,7 @@ class RoomMapSync {
     }
 
     // Compare against the projected view, including edits already awaiting acknowledgement.
-    replaceLocal(maps) {
-        if (!this.room) return Promise.resolve(false);
+    getOperations(maps) {
         const previous = new Map(this.getMaps().map(map => [map.id, map]));
         const next = new Map(maps.map(map => [map.id, map]));
         const operations = [];
@@ -62,7 +61,12 @@ class RoomMapSync {
         for (const [id, map] of next) {
             if (!previous.has(id)) operations.push({ type: 'add', map });
         }
-        return this.enqueue(operations);
+        return operations;
+    }
+
+    replaceLocal(maps) {
+        if (!this.room) return Promise.resolve(false);
+        return this.enqueue(this.getOperations(maps));
     }
 
     enqueue(operations) {

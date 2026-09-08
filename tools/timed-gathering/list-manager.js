@@ -4,6 +4,8 @@ class ListManager {
         STORAGE_KEY: 'ff14tw_timed_gathering_lists',
         STORAGE_VERSION: '1.0',
         DEFAULT_LIST_ID: 'default',
+        // Version 1.0 stored these labels before it recorded placeholder state.
+        LEGACY_DEFAULT_LIST_NAMES: ['預設清單', 'デフォルトリスト', 'Default List'],
         MAX_LIST_NAME_LENGTH: 50,
         MAX_LISTS: 10,
         MAX_ITEMS_PER_LIST: 100
@@ -30,6 +32,7 @@ class ListManager {
             id: ListManager.CONSTANTS.DEFAULT_LIST_ID,
             name: defaultName,
             items: [],
+            isPlaceholder: true,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
         };
@@ -48,8 +51,9 @@ class ListManager {
         const stringFields = ['nameJp', 'nameEn', 'zoneJp', 'zoneEn', 'location', 'locationJp', 'locationEn', 'coordinates', 'macroFormat', 'expansion', 'description'];
         for (const [id, list] of entries) {
             if (!/^[A-Za-z0-9_-]{1,100}$/.test(id) || ['__proto__', 'prototype', 'constructor'].includes(id) ||
-                !isRecord(list) || list.id !== id || !isText(list.name) || list.name.trim().length > ListManager.CONSTANTS.MAX_LIST_NAME_LENGTH ||
+                !isRecord(list) || list.id !== id || !isText(list.name) ||
                 !Array.isArray(list.items) || list.items.length > ListManager.CONSTANTS.MAX_ITEMS_PER_LIST ||
+                (list.isPlaceholder !== undefined && typeof list.isPlaceholder !== 'boolean') ||
                 !validDate(list.createdAt) || !validDate(list.updatedAt)) return null;
 
             const items = [];
@@ -72,11 +76,36 @@ class ListManager {
             }
             lists[id] = {
                 id, name: list.name.trim(), items,
+                isPlaceholder: id === ListManager.CONSTANTS.DEFAULT_LIST_ID && items.length === 0 &&
+                    (list.isPlaceholder === true || (list.isPlaceholder === undefined &&
+                        ListManager.CONSTANTS.LEGACY_DEFAULT_LIST_NAMES.includes(list.name.trim()))),
                 createdAt: list.createdAt || new Date().toISOString(),
                 updatedAt: list.updatedAt || new Date().toISOString()
             };
         }
+        // The old importer appended collision suffixes beyond the name limit. Normalize
+        // those names without rejecting their lists or changing existing bounded names.
+        const usedNames = new Set(Object.values(lists)
+            .filter(list => list.name.length <= ListManager.CONSTANTS.MAX_LIST_NAME_LENGTH)
+            .map(list => list.name));
+        for (const list of Object.values(lists)) {
+            if (list.name.length > ListManager.CONSTANTS.MAX_LIST_NAME_LENGTH) {
+                list.name = ListManager.uniqueListName(list.name, usedNames);
+                usedNames.add(list.name);
+            }
+        }
         return lists;
+    }
+
+    static uniqueListName(name, usedNames) {
+        const maxLength = ListManager.CONSTANTS.MAX_LIST_NAME_LENGTH;
+        let candidate = name.slice(0, maxLength);
+        let suffix = 1;
+        while (usedNames.has(candidate)) {
+            const ending = ` (${suffix++})`;
+            candidate = name.slice(0, maxLength - ending.length) + ending;
+        }
+        return candidate;
     }
 
     /**
@@ -196,6 +225,7 @@ class ListManager {
             id: listId,
             name: name.trim(),
             items: [],
+            isPlaceholder: false,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
         };
@@ -252,6 +282,7 @@ class ListManager {
         }
         
         list.name = newName.trim();
+        list.isPlaceholder = false;
         list.updatedAt = new Date().toISOString();
         this.saveToStorage();
         
@@ -312,6 +343,7 @@ class ListManager {
         }
         
         list.items = [];
+        list.isPlaceholder = false;
         list.updatedAt = new Date().toISOString();
         this.saveToStorage();
         
@@ -380,6 +412,7 @@ class ListManager {
             addedAt: new Date().toISOString()
         });
         
+        list.isPlaceholder = false;
         list.updatedAt = new Date().toISOString();
         this.saveToStorage();
         
@@ -415,6 +448,7 @@ class ListManager {
         }
         
         list.items.splice(index, 1);
+        list.isPlaceholder = false;
         list.updatedAt = new Date().toISOString();
         this.saveToStorage();
         
@@ -464,6 +498,7 @@ class ListManager {
         const item = list.items.splice(fromIndex, 1)[0];
         list.items.splice(toIndex, 0, item);
         
+        list.isPlaceholder = false;
         list.updatedAt = new Date().toISOString();
         this.saveToStorage();
         
@@ -497,10 +532,9 @@ class ListManager {
         }
         const currentLists = Object.assign(Object.create(null), this.lists);
         const defaultList = currentLists[ListManager.CONSTANTS.DEFAULT_LIST_ID];
-        const defaultName = FF14Utils.getI18nText('defaultListName', 'Default List');
         // A new browser starts with an empty placeholder; it must not prevent restoring ten lists.
         if (Object.keys(incoming).length > 0 && Object.keys(currentLists).length === 1 &&
-            defaultList?.items.length === 0 && defaultList.name === defaultName) {
+            defaultList?.items.length === 0 && defaultList.isPlaceholder) {
             delete currentLists[ListManager.CONSTANTS.DEFAULT_LIST_ID];
         }
         if (Object.keys(currentLists).length + Object.keys(incoming).length > ListManager.CONSTANTS.MAX_LISTS) {
@@ -515,13 +549,8 @@ class ListManager {
         for (const [id, importedList] of Object.entries(incoming)) {
             let newListId = id;
             if (Object.hasOwn(merged, newListId)) newListId = this.generateListId(merged);
-            let listName = importedList.name;
-            let suffix = 1;
-            while (Object.values(merged).some(list => list.name === listName)) {
-                const ending = ` (${suffix++})`;
-                listName = importedList.name.slice(0, ListManager.CONSTANTS.MAX_LIST_NAME_LENGTH - ending.length) + ending;
-            }
-            merged[newListId] = { ...importedList, id: newListId, name: listName, updatedAt: new Date().toISOString() };
+            const listName = ListManager.uniqueListName(importedList.name, new Set(Object.values(merged).map(list => list.name)));
+            merged[newListId] = { ...importedList, id: newListId, name: listName, isPlaceholder: false, updatedAt: new Date().toISOString() };
         }
         try {
             this.saveToStorage(merged);
@@ -623,6 +652,7 @@ class ListManager {
             }
         }
         
+        targetList.isPlaceholder = false;
         targetList.updatedAt = new Date().toISOString();
         this.saveToStorage();
         

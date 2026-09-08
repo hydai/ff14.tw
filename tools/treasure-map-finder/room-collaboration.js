@@ -4,6 +4,7 @@ class RoomCollaboration {
         ROOM_CODE_LENGTH: 6,
         MAX_MEMBERS: 8,
         MAX_MAPS: 8,
+        MAX_MAP_OPERATIONS: 16,
         POLL_INTERVAL: {
             ACTIVE: 2000,      // 2秒
             IDLE: 10000,       // 10秒

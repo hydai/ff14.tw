@@ -20,7 +20,7 @@ function setup(respond) {
         document: { addEventListener() {}, getElementById: () => element(), querySelectorAll: () => [] },
         localStorage: { getItem: key => storage.get(key) || null, setItem: (key, value) => storage.set(key, value), removeItem: key => storage.delete(key) },
         console: { log() {}, warn() {}, error() {} },
-        FF14Utils: { getI18nText: (key, fallback) => fallback, showToast: message => toasts.push(message) },
+        FF14Utils: { getI18nText: (key, fallback, values = {}) => fallback.replace(/\{(\w+)\}/g, (_, name) => values[name]), showToast: message => toasts.push(message) },
         URL, URLSearchParams, crypto: webcrypto, ModalManager: class {},
         confirm: () => false, setTimeout, clearTimeout,
         fetch: async (url, options = {}) => {
@@ -47,7 +47,7 @@ function setup(respond) {
         client.startPolling = () => {};
     `, context);
     context.finder.maps = [sample];
-    return { ...context, storage, requests, toasts };
+    return { ...context, context, storage, requests, toasts };
 }
 
 test('creating a room uses ListManager, atomically submits retained maps and persists private credentials', async () => {
@@ -81,6 +81,75 @@ test('joining uses the returned member credential and subsequent edits send auth
     assert.equal(update.body.operations[0].map.id, sample.id);
     assert.equal(update.body.treasureMaps, undefined);
     assert.equal(state.client.currentRoom.revision, 1);
+});
+
+const importMaps = (count, prefix = 'import') => Array.from({ length: count }, (_, index) => ({ ...sample, id: `${prefix}_${index}` }));
+
+test('oversized room imports fail before changing maps, storage or sending operations', async () => {
+    for (const [merge, initialCount, incomingCount] of [[false, 1, 9], [false, 8, 17], [true, 8, 1]]) {
+        const state = setup(() => ({ status: 400, body: { code: 'MAP_LIMIT', error: 'Map limit' } }));
+        state.context.confirm = () => merge;
+        const initial = importMaps(initialCount, 'initial');
+        state.client.adoptSession(room(initial.map(map => state.finder.toRoomMap(map))), member, TOKEN);
+        const before = JSON.stringify(state.finder.listManager.getList());
+        const stored = [...state.storage];
+        await state.finder.importFromText(JSON.stringify({ maps: importMaps(incomingCount) }));
+        assert.equal(state.requests.length, 0);
+        assert.equal(JSON.stringify(state.finder.listManager.getList()), before);
+        assert.deepEqual([...state.storage], stored);
+        assert.equal(state.client.mapSync.pending.length, 0);
+        assert.equal(state.toasts.length, 1);
+        assert.match(state.toasts[0], /清單已滿/);
+    }
+});
+
+test('room imports deduplicate before capacity checks and a full replacement uses at most sixteen operations', async () => {
+    for (const merge of [false, true]) {
+        const initial = importMaps(8, 'initial');
+        const incoming = merge ? initial : importMaps(8);
+        const state = setup(() => ({ body: room(incoming.map(map => state.finder.toRoomMap(map)), [member], 1) }));
+        state.context.confirm = () => merge;
+        state.client.adoptSession(room(initial.map(map => state.finder.toRoomMap(map))), member, TOKEN);
+        await state.finder.importFromText(JSON.stringify({ maps: [...incoming, incoming[0]] }));
+        assert.equal(state.finder.listManager.getLength(), 8);
+        assert.deepEqual(Array.from(state.finder.listManager.getList(), map => map.id), incoming.map(map => map.id));
+        assert.equal(state.requests.length, merge ? 0 : 1);
+        if (!merge) {
+            assert.equal(state.requests[0].body.operations.length, 16);
+            assert.equal(state.requests[0].body.operations.filter(operation => operation.type === 'remove').length, 8);
+            assert.equal(state.requests[0].body.operations.filter(operation => operation.type === 'add').length, 8);
+        }
+        assert.match(state.toasts.at(-1), /匯入/);
+    }
+});
+
+test('an import exceeding the operation limit leaves concurrent pending edits intact', async () => {
+    const state = setup(() => { throw new Error('An oversized import must not be sent'); });
+    const initial = importMaps(8, 'initial');
+    const pending = [{ clientRequestId: 'pending', operations: [{ type: 'add', map: state.finder.toRoomMap(sample) }] }];
+    // A remote addition can fill the room while a local addition still awaits acknowledgement.
+    state.client.adoptSession(room(initial.map(map => state.finder.toRoomMap(map))), member, TOKEN, pending);
+    const before = JSON.stringify(state.finder.listManager.getList());
+    const stored = [...state.storage];
+    await state.finder.importFromText(JSON.stringify({ maps: importMaps(8) }));
+    assert.equal(state.requests.length, 0);
+    assert.equal(JSON.stringify(state.finder.listManager.getList()), before);
+    assert.deepEqual([...state.storage], stored);
+    assert.deepEqual(state.client.mapSync.pending, pending);
+    assert.match(state.toasts.at(-1), /等待隊伍同步/);
+});
+
+test('personal imports can exceed the room limit and storage failure leaves the previous list intact', async () => {
+    const state = setup(() => { throw new Error('Personal imports must not call the API'); });
+    await state.finder.importFromText(JSON.stringify({ maps: importMaps(17) }));
+    assert.equal(state.finder.listManager.getLength(), 17);
+    const before = state.finder.listManager.getList();
+    const stored = [...state.storage];
+    state.localStorage.setItem = () => { throw new Error('Quota exceeded'); };
+    await state.finder.importFromText(JSON.stringify({ maps: [sample] }));
+    assert.deepEqual(state.finder.listManager.getList(), before);
+    assert.deepEqual([...state.storage], stored);
+    assert.equal(state.requests.length, 0);
 });
 
 test('failed room creation preserves the personal list and retries the same request ID', async () => {

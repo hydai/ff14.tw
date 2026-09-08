@@ -147,6 +147,78 @@ test('a full ten-list backup can restore into a fresh browser without losing a l
     }
 });
 
+test('legacy import collision names normalize without losing saved lists, items or valid names', () => {
+    const env = createEnvironment();
+    const source = new env.ListManager();
+    source.addToList('default', items[0]);
+    const originalList = clone(source.exportLists()).lists.default;
+    const base = 'A'.repeat(50);
+    const boundedCollision = `${'A'.repeat(46)} (1)`;
+    const names = [base, `${base} (1)`, boundedCollision, `${base} (1) (1)`];
+    const backup = { version: '1.0', lists: Object.fromEntries(names.map((name, index) => [
+        `legacy_${index}`, { ...clone(originalList), id: `legacy_${index}`, name }
+    ])) };
+    const stored = JSON.stringify(backup);
+    env.storage.set(env.ListManager.CONSTANTS.STORAGE_KEY, stored);
+    const loaded = new env.ListManager();
+    assert.equal(loaded.storageLoadFailed, false);
+    assert.equal(loaded.getAllLists().length, names.length);
+    assert.equal(loaded.getList('legacy_0').name, base);
+    assert.equal(loaded.getList('legacy_2').name, boundedCollision);
+    assert.equal(new Set(loaded.getAllLists().map(list => list.name)).size, names.length);
+    for (const list of loaded.getAllLists()) {
+        assert.ok(list.name.length <= 50);
+        assert.deepEqual(clone(list.items), originalList.items);
+    }
+    assert.equal(env.storage.get(env.ListManager.CONSTANTS.STORAGE_KEY), stored, 'loading does not overwrite the original backup');
+    loaded.addToList('legacy_1', items[1]);
+    const reloaded = new env.ListManager();
+    assert.equal(reloaded.getAllLists().length, names.length);
+    assert.equal(reloaded.getList('legacy_1').items.length, 2);
+    const fresh = new (createEnvironment().ListManager)();
+    assert.equal(fresh.importLists(backup).success, true);
+    assert.equal(fresh.getAllLists().length, names.length);
+});
+
+test('an untouched default remains replaceable after language changes and reloads, including legacy storage', () => {
+    const full = { version: '1.0', lists: {} };
+    for (let i = 0; i < 10; i++) full.lists[`list_${i}`] = { id: `list_${i}`, name: `List ${i}`, items: [] };
+    for (const defaultName of ['預設清單', 'デフォルトリスト', 'Default List']) {
+        for (const legacy of [false, true]) {
+            const env = createEnvironment();
+            const translate = env.context.FF14Utils.getI18nText;
+            env.context.FF14Utils.getI18nText = (key, ...args) => key === 'defaultListName' ? defaultName : translate(key, ...args);
+            const fresh = new env.ListManager();
+            if (legacy) {
+                const stored = clone(fresh.exportLists());
+                delete stored.lists.default.isPlaceholder;
+                env.storage.set(env.ListManager.CONSTANTS.STORAGE_KEY, JSON.stringify(stored));
+            }
+            env.context.FF14Utils.getI18nText = (key, ...args) => key === 'defaultListName' ? 'Changed language' : translate(key, ...args);
+            const reloaded = new env.ListManager();
+            assert.equal(reloaded.importLists(full).success, true, `${defaultName}, legacy=${legacy}`);
+            assert.equal(reloaded.getAllLists().length, 10);
+        }
+    }
+});
+
+test('a renamed or previously used default list is preserved even when it is empty again', () => {
+    const full = { version: '1.0', lists: {} };
+    for (let i = 0; i < 10; i++) full.lists[`list_${i}`] = { id: `list_${i}`, name: `List ${i}`, items: [] };
+    for (const edit of [
+        manager => { manager.renameList('default', 'My list'); manager.renameList('default', 'Default List'); },
+        manager => { manager.addToList('default', items[0]); manager.clearList('default'); }
+    ]) {
+        const env = createEnvironment();
+        edit(new env.ListManager());
+        const reloaded = new env.ListManager();
+        const before = env.storage.get(env.ListManager.CONSTANTS.STORAGE_KEY);
+        assert.equal(reloaded.importLists(full).success, false);
+        assert.equal(reloaded.getAllLists().length, 1);
+        assert.equal(env.storage.get(env.ListManager.CONSTANTS.STORAGE_KEY), before);
+    }
+});
+
 test('without Notification API the complete controller still loads data and lists', async () => {
     const env = createEnvironment();
     const app = await initializeController(env);
