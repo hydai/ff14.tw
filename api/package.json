@@ -17,9 +17,12 @@
   ],
   "author": "hydai",
   "license": "MIT",
+  "engines": {
+    "node": "^22.13.0 || >=24.0.0"
+  },
   "devDependencies": {
-    "miniflare": "^4.20260722.0",
-    "wrangler": "^4.114.0"
+    "miniflare": "^4.20260730.0",
+    "wrangler": "^4.129.1"
   },
   "overrides": {
     "miniflare": {

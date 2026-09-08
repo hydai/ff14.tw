@@ -2,6 +2,8 @@
 
 Cloudflare Worker + 每房間 SQLite Durable Object。安全與部署／遷移說明見 [SECURITY.md](SECURITY.md)。
 
+支援 Node.js 22.13 以上的 22.x，或 Node.js 24 以上；建議使用 Node.js 24，並以 `npm ci` 安裝 lockfile 中的依賴。測試直接使用 `node:sqlite`，Node.js 22.13 起才不需要 `--experimental-sqlite` 旗標。CI 同時驗證最低支援版本 22.13.0 與 Node.js 24。
+
 ## Cloudflare Workers Builds 設定
 
 在 Worker 的 **Settings > Build** 設定以下欄位；這些設定儲存在 Cloudflare，修改儲存庫不會自動更新。

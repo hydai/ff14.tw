@@ -51,4 +51,4 @@ npm run deploy
 
 尚未套用的 Durable Object migration 無法用 `wrangler versions upload` 上傳，會回報 Cloudflare API 錯誤 10211；必須由正式的 `npm run deploy` 套用。dry-run 只驗證本機 bundle/config，不會驗證或變更遠端 migration 狀態。Cloudflare Workers Builds 的正式／非正式分支命令設定見 [README.md](README.md#cloudflare-workers-builds-設定)。
 
-開發依賴維持 Miniflare 4；`package.json` 的 scoped override 將其 Undici 升至同主版號的 `^7.29.0`，修補上游 7.28.0 的安全問題。未來升級 Miniflare 且其依賴已包含修正版時，可移除此 override；更新後執行 `npm audit`、`npm test` 與上述 dry-run。
+Wrangler 更新至 `4.129.1`；測試直接使用的 Miniflare 更新至最新穩定 4.x（`4.20260730.0`）。Miniflare 的 `latest` 標籤目前指向 `5.20260907.0-alpha`，也是此版 Wrangler 官方指定的相依版本；lockfile 因此同時保留兩個版本，各自使用對應的 workerd。直接使用的 Miniflare 4 仍依賴 Undici 7.28.0，`package.json` 的 scoped override 將其升至同主版號的 `^7.29.0`，修補已知安全問題。待所有 Miniflare 相依版本均包含修正版時，可移除此 override；更新後執行 `npm audit`、`npm test` 與上述 dry-run。
