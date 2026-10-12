@@ -521,3 +521,55 @@ test('a delayed poll 404 cannot cancel the successful leave-and-clear flow', asy
     assert.deepEqual(closed, ['leaveRoom']);
     assert.equal(state.client.currentRoom, null);
 });
+
+test('離開隊伍後清單面板回到清單分頁，歷史內容隱藏', () => {
+    const { context, client } = setup(async () => ({ body: {} }));
+    // classList.toggle 與瀏覽器一致：有 force 時依 force 加入或移除，沒有才反轉
+    const fakeElement = (...initialClasses) => {
+        const classes = new Set(initialClasses), attributes = new Map();
+        return {
+            dataset: {}, tabIndex: 0,
+            classList: {
+                add: name => classes.add(name),
+                remove: name => classes.delete(name),
+                contains: name => classes.has(name),
+                toggle(name, force = !classes.has(name)) {
+                    if (force) classes.add(name); else classes.delete(name);
+                    return force;
+                }
+            },
+            setAttribute: (name, value) => attributes.set(name, String(value)),
+            getAttribute: name => attributes.get(name) ?? null
+        };
+    };
+    const elements = new Map();
+    context.document.getElementById = id => {
+        if (!elements.has(id)) elements.set(id, fakeElement());
+        return elements.get(id);
+    };
+    const tabButton = (tab, active) => {
+        const button = fakeElement(...(active ? ['active'] : []));
+        button.dataset.tab = tab;
+        button.tabIndex = active ? 0 : -1;
+        button.setAttribute('aria-selected', active);
+        return button;
+    };
+    // 離開前停在「歷史」分頁：歷史鈕為作用中，清單內容被隱藏、歷史內容顯示
+    const listButton = tabButton('list', false), historyButton = tabButton('history', true);
+    context.document.querySelectorAll = selector => selector === '.tab-btn' ? [listButton, historyButton] : [];
+    const listContent = context.document.getElementById('listContent');
+    const historyContent = context.document.getElementById('historyContent');
+    listContent.classList.add('hidden');
+
+    client.currentRoom = null;
+    client.elements = { roomSection: fakeElement(), roomStatus: fakeElement() };
+    vm.runInContext('RoomCollaboration.prototype.updateRoomUI.call(client)', context);
+
+    assert.equal(listContent.classList.contains('hidden'), false);
+    assert.equal(historyContent.classList.contains('hidden'), true);
+    assert.equal(listButton.getAttribute('aria-selected'), 'true');
+    assert.equal(historyButton.getAttribute('aria-selected'), 'false');
+    assert.equal(listButton.classList.contains('active'), true);
+    assert.equal(historyButton.classList.contains('active'), false);
+    assert.deepEqual([listButton.tabIndex, historyButton.tabIndex], [0, -1]);
+});
