@@ -97,6 +97,13 @@ class LodestoneCharacterLookup {
         window.i18n.onLanguageChange(() => this.updateOverviewCardLabels());
     }
 
+    // 先找角色頁網址裡的 ID，避免把網址其他部分的數字（如 ?page=2）併進 ID；找不到才只留下數字
+    static extractCharacterId(text) {
+        const value = String(text);
+        const match = value.match(/lodestone\/character\/(\d+)/);
+        return match ? match[1] : value.replace(/[^0-9]/g, '');
+    }
+
     initializeEvents() {
         this.elements.searchBtn.addEventListener('click', () => this.searchCharacter());
         this.elements.characterId.addEventListener('keypress', (e) => {
@@ -105,9 +112,9 @@ class LodestoneCharacterLookup {
             }
         });
 
-        // Only allow numbers in the input
+        // Only allow numbers in the input; a pasted profile URL is reduced to its character ID
         this.elements.characterId.addEventListener('input', (e) => {
-            e.target.value = e.target.value.replace(/[^0-9]/g, '');
+            e.target.value = LodestoneCharacterLookup.extractCharacterId(e.target.value);
         });
         
         // Tab navigation
@@ -237,7 +244,9 @@ class LodestoneCharacterLookup {
     }
 
     async searchCharacter() {
-        const characterId = this.elements.characterId.value.trim();
+        // 送出前同樣正規化並寫回輸入框，讓使用者看到實際查詢的 ID
+        const characterId = LodestoneCharacterLookup.extractCharacterId(this.elements.characterId.value);
+        this.elements.characterId.value = characterId;
         if (!characterId || !/^\d+$/.test(characterId)) {
             this.showError(FF14Utils.getI18nText(characterId ? 'lodestone_error_invalid_id' : 'lodestone_error_no_id',
                 characterId ? '角色 ID 必須是數字' : '請輸入角色 ID'));
