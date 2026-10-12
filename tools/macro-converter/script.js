@@ -71,6 +71,8 @@ class MacroConverter {
             window.i18n.onLanguageChange((newLang) => {
                 this._setTargetLang(newLang);
                 this.setOutputPlaceholder();
+                // Setting the dropdown from code fires no change event, so convert again here
+                this.convert();
             });
         }
     }
@@ -100,6 +102,9 @@ class MacroConverter {
     bindEvents() {
         // Convert button
         this.elements.convertBtn.addEventListener('click', () => this.convert());
+
+        // Changing the target language converts again, so the output never keeps the old language
+        this.elements.targetLang.addEventListener('change', () => this.convert());
 
         // Copy output
         this.elements.copyOutput.addEventListener('click', () => this.copyToClipboard());
