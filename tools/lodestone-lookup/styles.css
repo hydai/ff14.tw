@@ -38,6 +38,7 @@
 
 .search-hint p {
     margin: var(--space-1) 0;
+    overflow-wrap: anywhere;
 }
 
 .search-hint strong {

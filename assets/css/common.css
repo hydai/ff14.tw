@@ -198,7 +198,7 @@ textarea:focus {
 /* 主要內容區域 */
 .main {
     min-height: calc(100vh - 120px);
-    padding: var(--space-7) 0;
+    padding-block: var(--space-7);
 }
 
 /* 首頁、關於、版權聲明共用的 hero（顏色由 --hero-* token 提供，深色模式自動換色） */
