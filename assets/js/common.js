@@ -450,6 +450,18 @@ function initHamburgerMenu() {
     });
 }
 
+// 放置主題切換鈕：手機版（且有漢堡選單）插入到漢堡選單前，否則放在導覽列最後。
+// 手機版的導覽列是收起來的抽屜，切換鈕留在裡面就看不到，所以桌機與手機之間要搬同一顆按鈕
+function placeThemeToggle(themeToggle, nav, hamburger, isMobile) {
+    if (isMobile && hamburger) {
+        // 手機版：插入到漢堡選單前
+        hamburger.parentNode.insertBefore(themeToggle, hamburger);
+    } else {
+        // 桌面版：插入到導航列最後
+        nav.appendChild(themeToggle);
+    }
+}
+
 // 初始化主題切換功能
 function initThemeToggle() {
     const nav = document.querySelector('.nav');
@@ -470,14 +482,14 @@ function initThemeToggle() {
         window.themeManager.toggle();
     });
 
-    // 根據螢幕大小決定插入位置
-    if (window.innerWidth <= 768 && hamburger) {
-        // 手機版：插入到漢堡選單前
-        hamburger.parentNode.insertBefore(themeToggle, hamburger);
-    } else {
-        // 桌面版：插入到導航列最後
-        nav.appendChild(themeToggle);
-    }
+    // 根據螢幕大小決定插入位置；視窗跨過手機斷點時（例如手機橫拿轉直拿）要跟著搬，
+    // 否則切換鈕會留在手機版收起來的導覽列抽屜裡。沒有 matchMedia 時退回 innerWidth 判斷（只決定初始位置）
+    const mobileQuery = window.matchMedia?.('(max-width: 768px)');
+    const isMobileViewport = () => (mobileQuery ? mobileQuery.matches : window.innerWidth <= 768);
+    placeThemeToggle(themeToggle, nav, hamburger, isMobileViewport());
+    mobileQuery?.addEventListener('change', () => {
+        placeThemeToggle(themeToggle, nav, hamburger, isMobileViewport());
+    });
 
     // 初次更新按鈕圖標
     window.themeManager.updateThemeToggleButtons();
