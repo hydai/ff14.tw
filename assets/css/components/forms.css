@@ -1,6 +1,7 @@
 /* ==========================================================================
    表單控制項 — 規格：設計系統畫布「元件 03 表單」
    輸入框、下拉、按鈕同高（sm 32 / md 40 / lg 48），焦點環一致。
+   flex 直排時 height 會被 flex-basis 取代，min-height 才能保住控制項高度。
    ========================================================================== */
 .form-group {
     margin-bottom: var(--space-6);
@@ -28,6 +29,7 @@
     display: block;
     width: 100%;
     height: var(--control-md);
+    min-height: var(--control-md);
     padding: 0 var(--space-3);
     font-family: var(--font-sans);
     font-size: var(--text-md);
@@ -63,12 +65,14 @@
 /* 尺寸 */
 .form-control-sm {
     height: var(--control-sm);
+    min-height: var(--control-sm);
     padding: 0 var(--space-3);
     font-size: var(--text-sm);
 }
 
 .form-control-lg {
     height: var(--control-lg);
+    min-height: var(--control-lg);
     padding: 0 var(--space-4);
     font-size: var(--text-lg);
 }
