@@ -159,6 +159,7 @@
     margin: 0;
     font-size: var(--text-xl);
     font-weight: var(--weight-semibold);
+    color: inherit;
 }
 
 .changelog-date {

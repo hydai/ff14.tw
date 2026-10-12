@@ -375,3 +375,7 @@ test('按鈕與輸入框在 flex 直排裡不會被壓扁：設定 height 的元
         }
     }
 });
+
+test('修改紀錄的版本標題沿用標頭的前景色，不被全域 h3 顏色蓋掉', () => {
+    assert.match(block(stripComments(read('assets/css/changelog.css')), '.changelog-version'), /(?:^|[;\s])color:\s*inherit/);
+});
