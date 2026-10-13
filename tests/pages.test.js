@@ -93,3 +93,20 @@ test('沒有頁面連結 dark-mode-tools.css', () => {
         assert.doesNotMatch(fs.readFileSync(page, 'utf8'), /dark-mode-tools\.css/, `${rel(page)} 仍連結 dark-mode-tools.css`);
     }
 });
+
+test('有頁首的頁面都在 nav-template.js 之前載入 tools-registry.js，且 layout-loader.js 在 common.js 之前', () => {
+    let checked = 0;
+    for (const page of pages) {
+        const html = fs.readFileSync(page, 'utf8');
+        if (!html.includes('id="header-placeholder"')) continue;
+        checked++;
+        const registryAt = html.indexOf('assets/js/components/tools-registry.js');
+        const navAt = html.indexOf('assets/js/components/nav-template.js');
+        const loaderAt = html.indexOf('assets/js/components/layout-loader.js');
+        const commonAt = html.indexOf('assets/js/common.js');
+        assert.notEqual(registryAt, -1, `${rel(page)} 沒有載入 tools-registry.js`);
+        assert.ok(registryAt < navAt, `${rel(page)} 的 tools-registry.js 必須排在 nav-template.js 之前`);
+        assert.ok(loaderAt !== -1 && loaderAt < commonAt, `${rel(page)} 的 layout-loader.js 必須排在 common.js 之前`);
+    }
+    assert.ok(checked >= 23, `只檢查到 ${checked} 頁`);
+});
