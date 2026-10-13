@@ -512,48 +512,28 @@ function initHamburgerMenu() {
     });
 }
 
-// 放置主題切換鈕：手機版（且有漢堡選單）插入到漢堡選單前，否則放在導覽列最後。
-// 手機版的導覽列是收起來的抽屜，切換鈕留在裡面就看不到，所以桌機與手機之間要搬同一顆按鈕
-function placeThemeToggle(themeToggle, nav, hamburger, isMobile) {
-    if (isMobile && hamburger) {
-        // 手機版：插入到漢堡選單前
-        hamburger.parentNode.insertBefore(themeToggle, hamburger);
-    } else {
-        // 桌面版：插入到導航列最後
-        nav.appendChild(themeToggle);
-    }
-}
-
 // 初始化主題切換功能
 function initThemeToggle() {
-    const nav = document.querySelector('.nav');
-    const hamburger = document.querySelector('.hamburger');
+    const headerContainer = document.querySelector('.header .container');
 
-    if (!nav) return;
+    if (!headerContainer) return;
 
     // 創建主題切換按鈕
     const themeToggle = document.createElement('button');
     themeToggle.className = 'theme-toggle';
     themeToggle.setAttribute('type', 'button');
 
-    // 設置初始圖標
-    window.themeManager.updateThemeToggleButtons();
-
     // 綁定點擊事件
     themeToggle.addEventListener('click', () => {
         window.themeManager.toggle();
     });
 
-    // 根據螢幕大小決定插入位置；視窗跨過手機斷點時（例如手機橫拿轉直拿）要跟著搬，
-    // 否則切換鈕會留在手機版收起來的導覽列抽屜裡。沒有 matchMedia 時退回 innerWidth 判斷（只決定初始位置）
-    const mobileQuery = window.matchMedia?.('(max-width: 768px)');
-    const isMobileViewport = () => (mobileQuery ? mobileQuery.matches : window.innerWidth <= 768);
-    placeThemeToggle(themeToggle, nav, hamburger, isMobileViewport());
-    mobileQuery?.addEventListener('change', () => {
-        placeThemeToggle(themeToggle, nav, hamburger, isMobileViewport());
-    });
+    // 切換鈕只放這一次：頁首容器裡、漢堡選單前面（沒有漢堡選單時接在最後），不放進導覽列。
+    // 桌機與手機的位置都由 CSS 決定（見 common.css），不隨視窗大小搬動：
+    // 搬動一顆有焦點的按鈕會讓焦點掉回頁面最上面
+    headerContainer.insertBefore(themeToggle, headerContainer.querySelector('.hamburger'));
 
-    // 初次更新按鈕圖標
+    // 更新按鈕圖標：要等按鈕放進文件之後，updateThemeToggleButtons() 只處理文件裡的 .theme-toggle
     window.themeManager.updateThemeToggleButtons();
 }
 
@@ -574,23 +554,6 @@ document.addEventListener('DOMContentLoaded', function () {
             window.themeManager.updateThemeToggleButtons();
         });
     }
-
-    // 為所有工具卡片添加點擊效果
-    const toolCards = document.querySelectorAll('.tool-card');
-    toolCards.forEach(card => {
-        card.addEventListener('click', function (e) {
-            // 如果點擊的是連結，不需要額外處理
-            if (this.tagName === 'A') {
-                return;
-            }
-
-            // 否則查找卡片內的連結
-            const link = this.querySelector('a');
-            if (link) {
-                window.location.href = link.href;
-            }
-        });
-    });
 
     // 添加返回頂部按鈕
     const backToTopBtn = document.createElement('button');

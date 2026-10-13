@@ -130,6 +130,10 @@ textarea:focus {
     display: inline-flex;
     align-items: baseline;
     gap: var(--space-2);
+    /* 頁首空間不夠時由 logo 先縮短（導覽列與切換鈕不縮）；
+       flex 項目預設不能比內容窄，放寬後裡面的工具名稱才縮得起來 */
+    flex: 0 1 auto;
+    min-width: 0;
     color: var(--header-text);
     text-decoration: none;
     font-size: var(--text-3xl);
@@ -142,12 +146,7 @@ textarea:focus {
     color: var(--header-text);
 }
 
-.logo-main {
-    font-size: inherit;
-}
-
 .logo-separator,
-.logo-tool,
 .logo-tool-name {
     font-size: var(--text-xl);
     font-weight: var(--weight-normal);
@@ -155,6 +154,17 @@ textarea:focus {
 
 .logo-separator {
     opacity: 0.7;
+}
+
+/* 工具名稱放不下時截成「…」。logo 的 line-height 是 1，行盒只有 1em 高，overflow: hidden 會把 g、p、y 的下緣削掉；
+   上下各補 0.25em 的內距把裁切範圍加大，再用負的外距抵銷，版面（包含與 FF14.tw 的基線對齊）維持原樣 */
+.logo-tool-name {
+    min-width: 0;
+    padding-block: 0.25em;
+    margin-block: -0.25em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 /* 工具頁面標題隱藏（工具名稱顯示在 logo 旁） */
@@ -174,6 +184,7 @@ textarea:focus {
     display: flex;
     align-items: center;
     gap: var(--space-2);
+    margin-left: auto; /* 導覽列與後面的主題切換鈕一起靠右 */
 }
 
 /* 「工具 ▾」按鈕：button 的預設外觀先清掉（要排在下面共用規則之前，font: inherit 才不會蓋掉 line-height） */
@@ -559,6 +570,7 @@ textarea:focus {
 /* Dark mode 切換按鈕 */
 .theme-toggle {
     display: flex;
+    flex: none; /* 桌機是頁首的 flex 項目，頁首擠的時候不能被壓扁 */
     align-items: center;
     justify-content: center;
     width: var(--control-md);
@@ -785,7 +797,6 @@ textarea:focus {
     }
 
     .logo-separator,
-    .logo-tool,
     .logo-tool-name {
         font-size: var(--text-md);
     }
@@ -808,9 +819,27 @@ textarea:focus {
     }
 
     .logo-separator,
-    .logo-tool,
     .logo-tool-name {
         font-size: var(--text-sm);
+    }
+}
+
+/* 桌機最窄的一段（769～899px）：導覽列和切換鈕幾乎佔滿頁首，留給工具名稱的寬度約是「視窗寬 − 773px」
+   （英文、日文的導覽列較寬，約是「視窗寬 − 820px」）：769px 時是 0，899px 也只有 80～125px，
+   截成「…」也認不出是哪個工具，所以連同前面的分隔線整段隱藏，頁首只留 FF14.tw
+   （工具名稱仍在 <title> 與工具選單裡）。900px 起至少有 80px，放不下的部分由 .logo-tool-name 截成「…」 */
+@media (min-width: 769px) and (max-width: 899px) {
+    .logo-separator,
+    .logo-tool-name {
+        display: none;
+    }
+}
+
+/* 769～799px：英文、日文的導覽列比頁首寬，FF14.tw 與第一個連結只差 2～4px（實測，含 15px 捲軸）；連結左右內距縮成 12px，四個項目共省 32px */
+@media (min-width: 769px) and (max-width: 799px) {
+    .nav > a,
+    .nav-tools-toggle {
+        padding-inline: var(--space-3);
     }
 }
 

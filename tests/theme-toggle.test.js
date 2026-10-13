@@ -2,171 +2,148 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const vm = require('node:vm');
 
-// 最小 DOM 替身（不需要 jsdom）：只實作 initThemeToggle() 會碰到的樹狀操作。
-// 搬移已經有父節點的元素時，會先從舊父節點的 children 移除，和瀏覽器的行為一致。
-function detach(node) {
-    const parent = node.parentNode;
-    if (!parent) return;
-    parent.children.splice(parent.children.indexOf(node), 1);
-    node.parentNode = null;
-}
+const { createFakeDom } = require('./helpers/fake-dom.js');
 
-function createElement(tag) {
-    return {
-        tag,
-        className: '',
-        attributes: {},
-        listeners: {},
-        children: [],
-        parentNode: null,
-        setAttribute(name, value) { this.attributes[name] = String(value); },
-        addEventListener(type, listener) { (this.listeners[type] ||= []).push(listener); },
-        appendChild(child) {
-            detach(child);
-            this.children.push(child);
-            child.parentNode = this;
-            return child;
-        },
-        insertBefore(child, reference) {
-            detach(child);
-            const index = reference == null ? this.children.length : this.children.indexOf(reference);
-            assert.notEqual(index, -1, 'insertBefore 的參考節點必須是這個父節點的子節點');
-            this.children.splice(index, 0, child);
-            child.parentNode = this;
-            return child;
-        },
-        get previousSibling() {
-            const siblings = this.parentNode?.children ?? [];
-            return siblings[siblings.indexOf(this) - 1] ?? null;
-        }
-    };
-}
+const ROOT = path.join(__dirname, '..');
+const read = (relPath) => fs.readFileSync(path.join(ROOT, relPath), 'utf8');
 
-// 斷言訊息用：只印出 <tag.class>。assert 的差異輸出會把 parentNode／children 互相參照的整棵樹都印出來，
-// 所以位置的斷言一律用 assert.ok(a === b, 訊息)，把「實際在哪裡」寫進訊息。
-function label(node) {
-    return node ? `<${node.tag}${node.className ? `.${node.className}` : ''}>` : String(node);
-}
+// 斷言訊息用：只印出 <tag.class>。assert 的差異輸出會把 parentNode／childNodes 互相參照的整棵樹都印出來，
+// 所以元素的比對一律先轉成這種標籤字串，或用 assert.ok(a === b, 訊息)
+const label = (node) => (node ? `<${node.tagName.toLowerCase()}${node.className ? `.${node.className.split(/\s+/).join('.')}` : ''}>` : String(node));
 
-// 組出只有導覽列與漢堡鈕的頁首，載入真正的 assets/js/common.js 後呼叫 initThemeToggle()。
-// header 對應真實頁面裡的 `.header .container`：漢堡鈕被加進去的容器，也是手機版切換鈕的位置。
-// matchMedia 替身只認 `(max-width: Npx)`；resize() 更新寬度後，像瀏覽器一樣
-// 只在 matches 真的改變時才通知 change 監聽器。
-// withMatchMedia: false 模擬沒有 matchMedia 的環境；withHamburger: false 模擬沒有漢堡鈕的頁首。
-function createPage(width, { withMatchMedia = true, withHamburger = true } = {}) {
-    const created = [];
-    const mediaQueries = [];
-    const header = createElement('div');
-    header.className = 'header';
-    const nav = createElement('nav');
-    nav.className = 'nav';
-    const hamburger = withHamburger ? createElement('button') : null;
-    header.appendChild(nav);
-    if (hamburger) {
-        hamburger.className = 'hamburger';
-        header.appendChild(hamburger);
-    }
-    // 導覽列本來就有連結與語言切換器，切換鈕在桌機要接在它們後面
-    nav.appendChild(createElement('a'));
-    nav.appendChild(createElement('div'));
-
-    const context = vm.createContext({
-        console,
-        innerWidth: width,
-        document: {
-            addEventListener() {},
-            createElement(tag) {
-                const node = createElement(tag);
-                created.push(node);
-                return node;
-            },
-            querySelector(selector) { return { '.nav': nav, '.hamburger': hamburger }[selector] ?? null; }
-        }
-    });
-    if (withMatchMedia) {
-        context.matchMedia = (query) => {
-            const parsed = /^\(max-width:\s*(\d+)px\)$/.exec(query);
-            if (!parsed) throw new Error(`matchMedia 替身只支援 (max-width: Npx)，收到：${query}`);
-            const maxWidth = Number(parsed[1]);
-            const mediaQuery = {
-                media: query,
-                maxWidth,
-                matches: context.innerWidth <= maxWidth,
-                listeners: [],
-                addEventListener(type, listener) { if (type === 'change') this.listeners.push(listener); }
-            };
-            mediaQueries.push(mediaQuery);
-            return mediaQuery;
+// matchMedia 替身：依 window.innerWidth 算 `(max-width: Npx)` 的 matches，並記錄所有被建立的查詢與 change 監聽器。
+// resize(寬度) 和瀏覽器一樣：更新 innerWidth、只在 matches 真的改變時通知 change 監聽器，最後派送 window 的 resize 事件。
+// 切換鈕不該再靠它判斷手機寬度，所以正確的實作不會建立任何查詢
+function installMatchMedia(window) {
+    const queries = [];
+    window.matchMedia = (query) => {
+        const parsed = /^\(max-width:\s*(\d+)px\)$/.exec(query);
+        if (!parsed) throw new Error(`matchMedia 替身只支援 (max-width: Npx)，收到：${query}`);
+        const mediaQuery = {
+            media: query,
+            maxWidth: Number(parsed[1]),
+            matches: window.innerWidth <= Number(parsed[1]),
+            listeners: [],
+            addEventListener(type, listener) { if (type === 'change') this.listeners.push(listener); },
+            removeEventListener(type, listener) { this.listeners = this.listeners.filter((entry) => entry !== listener); }
         };
-    }
-    context.window = context;
-    context.themeManager = { updateThemeToggleButtons() {}, toggle() {} };
-    vm.runInContext(fs.readFileSync(path.resolve(__dirname, '../assets/js/common.js'), 'utf8'), context, { filename: 'common.js' });
-    vm.runInContext('initThemeToggle()', context);
-
-    const toggle = created.find((node) => node.className === 'theme-toggle');
-    assert.ok(toggle, 'initThemeToggle() 應該建立 .theme-toggle 按鈕');
+        queries.push(mediaQuery);
+        return mediaQuery;
+    };
     return {
-        header, nav, hamburger, toggle,
-        resize(nextWidth) {
-            context.innerWidth = nextWidth;
-            for (const mediaQuery of mediaQueries) {
-                const matches = nextWidth <= mediaQuery.maxWidth;
+        queries,
+        changeListenerCount: () => queries.reduce((sum, mediaQuery) => sum + mediaQuery.listeners.length, 0),
+        resize(width) {
+            window.innerWidth = width;
+            for (const mediaQuery of queries) {
+                const matches = width <= mediaQuery.maxWidth;
                 if (matches === mediaQuery.matches) continue;
                 mediaQuery.matches = matches;
                 for (const listener of mediaQuery.listeners) listener({ type: 'change', media: mediaQuery.media, matches });
             }
+            window.dispatchEvent(new window.Event('resize'));
         }
     };
 }
 
-// 桌機版位置：導覽列最後
-function assertAtNavEnd({ toggle, nav, header }) {
-    assert.ok(toggle.parentNode === nav, `切換鈕要在導覽列裡（實際在 ${label(toggle.parentNode)}）`);
-    assert.ok(nav.children.at(-1) === toggle, `切換鈕要排在導覽列最後（實際最後一個是 ${label(nav.children.at(-1))}）`);
-    assert.ok(!header.children.includes(toggle), '切換鈕不該同時出現在頁首容器');
+// 和真實頁面一樣：body 放 header.header > div.container，裡面是 logo、nav.nav，☰ 已經由 initHamburgerMenu() 接在最後。
+// 載入真正的 common.js 後直接呼叫 initThemeToggle()（它的頂層只定義東西並登記 DOMContentLoaded）。
+// themeManager 替身記錄每次 updateThemeToggleButtons() 被呼叫時文件裡有幾顆 .theme-toggle：
+// 真正的實作只會更新「已經在文件裡」的按鈕，切換鈕要先放進頁首、再更新圖示
+function setup({ innerWidth = 1024, withHamburger = true, withHeader = true } = {}) {
+    const dom = createFakeDom({ innerWidth });
+    const { document, window } = dom;
+    const media = installMatchMedia(window);
+    const themeManager = {
+        togglesInDocumentAtUpdate: [],
+        toggleCalls: 0,
+        updateThemeToggleButtons() { this.togglesInDocumentAtUpdate.push(document.querySelectorAll('.theme-toggle').length); },
+        toggle() { this.toggleCalls += 1; }
+    };
+    window.themeManager = themeManager;
+
+    const logo = dom.el('a', { class: 'logo', href: '/' }, 'FF14.tw');
+    const nav = dom.el('nav', { id: 'site-nav', class: 'nav' }, dom.el('a', { href: '/' }, '首頁'), dom.el('div', { class: 'language-switcher' }));
+    const hamburger = withHamburger ? dom.el('button', { type: 'button', class: 'hamburger' }) : null;
+    const container = dom.el('div', { class: 'container' }, logo, nav, ...(hamburger ? [hamburger] : []));
+    // 沒有頁首時，導覽列單獨放在 body：只有 `.header .container` 才是切換鈕該去的地方
+    if (withHeader) document.body.appendChild(dom.el('header', { class: 'header' }, container));
+    else document.body.appendChild(nav);
+
+    dom.load('assets/js/common.js');
+    window.initThemeToggle();
+    return { dom, document, window, media, themeManager, container, logo, nav, hamburger };
 }
 
-// 手機版位置：頁首容器裡、緊貼在漢堡鈕前面
-function assertBeforeHamburger({ toggle, nav, header, hamburger }) {
-    assert.ok(toggle.parentNode === header, `切換鈕要搬到頁首容器，不能留在手機版收起來的導覽列抽屜裡（實際在 ${label(toggle.parentNode)}）`);
-    assert.ok(hamburger.previousSibling === toggle, `切換鈕要緊貼在漢堡鈕前面（實際前一個是 ${label(hamburger.previousSibling)}）`);
-    assert.ok(!nav.children.includes(toggle), '切換鈕不該還留在導覽列裡');
+for (const innerWidth of [1024, 390]) {
+    test(`主題切換鈕只建立一次，放在頁首容器、☰ 前面，不在導覽列裡（視窗寬 ${innerWidth}px）`, () => {
+        const { document, container, nav } = setup({ innerWidth });
+
+        const toggles = document.querySelectorAll('.theme-toggle');
+        assert.equal(toggles.length, 1, '整頁只有一顆 .theme-toggle');
+        assert.deepEqual(container.children.map(label), ['<a.logo>', '<nav.nav>', '<button.theme-toggle>', '<button.hamburger>'], '頁首容器的順序：logo、導覽列、切換鈕、☰');
+        assert.equal(nav.querySelectorAll('.theme-toggle').length, 0, '手機版的導覽列是收起來的抽屜，切換鈕不能放在裡面');
+        assert.equal(toggles[0].getAttribute('type'), 'button', '沒有 type 的 button 放在表單裡會送出表單');
+    });
 }
 
-test('主題切換鈕在桌機與手機寬度之間切換時，會移到正確的位置', () => {
-    // 桌機寬度載入：切換鈕在導覽列最後
-    const page = createPage(1024);
-    assertAtNavEnd(page);
+test('跨過 768px 時切換鈕不會被搬動', () => {
+    const { container, media } = setup({ innerWidth: 1024 });
+    const toggle = container.querySelector('.theme-toggle');
+    const order = container.children.map(label);
+    assert.ok(toggle, '前提：切換鈕在頁首容器裡');
 
-    // 手機橫拿轉直拿：跨過 768px 斷點，切換鈕要離開導覽列、排到漢堡鈕前面
-    page.resize(390);
-    assertBeforeHamburger(page);
+    assert.equal(media.queries.length, 0, '位置由 CSS 決定，JS 不需要 matchMedia');
+    assert.equal(media.changeListenerCount(), 0, '沒有 change 監聽器，視窗大小改變時就不會搬動切換鈕');
 
-    // 轉回橫拿：回到導覽列最後
-    page.resize(1024);
-    assertAtNavEnd(page);
+    // 手機橫拿轉直拿、再轉回來：搬動有焦點的按鈕會讓焦點掉回頁面最上面，所以不搬
+    for (const width of [390, 768, 769, 1024]) {
+        media.resize(width);
+        assert.ok(container.querySelector('.theme-toggle') === toggle, `視窗改成 ${width}px 後仍是同一顆切換鈕`);
+        assert.deepEqual(container.children.map(label), order, `視窗改成 ${width}px 後順序不變`);
+    }
+});
 
-    // 斷點與 assets/css/common.css 的 @media (max-width: 768px) 一致：768 算手機、769 算桌機
-    page.resize(768);
-    assertBeforeHamburger(page);
-    page.resize(769);
-    assertAtNavEnd(page);
+test('頁首沒有 ☰ 時，切換鈕接在頁首容器最後', () => {
+    const { document, container, nav } = setup({ withHamburger: false });
 
-    // 一開始就在手機寬度載入：直接放在漢堡鈕前面
-    assertBeforeHamburger(createPage(390));
+    assert.equal(document.querySelectorAll('.theme-toggle').length, 1);
+    assert.deepEqual(container.children.map(label), ['<a.logo>', '<nav.nav>', '<button.theme-toggle>']);
+    assert.equal(nav.querySelectorAll('.theme-toggle').length, 0);
+});
 
-    // 沒有 matchMedia 的環境退回 innerWidth 判斷（只能決定載入時的位置）
-    assertBeforeHamburger(createPage(390, { withMatchMedia: false }));
-    assertAtNavEnd(createPage(1024, { withMatchMedia: false }));
+test('找不到 .header .container 時直接結束，不會把切換鈕放到別處', () => {
+    const { document, media, themeManager } = setup({ withHeader: false });
 
-    // 頁首沒有漢堡鈕時，手機寬度也只能留在導覽列，來回切換都不會出錯
-    const withoutHamburger = createPage(390, { withHamburger: false });
-    assertAtNavEnd(withoutHamburger);
-    withoutHamburger.resize(1024);
-    assertAtNavEnd(withoutHamburger);
-    withoutHamburger.resize(390);
-    assertAtNavEnd(withoutHamburger);
+    assert.equal(document.querySelectorAll('.theme-toggle').length, 0, '只有導覽列、沒有頁首容器：不建立切換鈕');
+    assert.equal(themeManager.togglesInDocumentAtUpdate.length, 0, '沒有按鈕可更新');
+    assert.equal(media.queries.length, 0);
+});
+
+test('切換鈕放進頁首之後才更新圖示，按下會切換主題', () => {
+    const { document, themeManager } = setup();
+    const toggle = document.querySelector('.theme-toggle');
+
+    // updateThemeToggleButtons() 只更新文件裡的 .theme-toggle：最後一次更新時按鈕要已經在文件裡，才拿得到圖示與 aria-label
+    assert.ok(themeManager.togglesInDocumentAtUpdate.length >= 1, '至少更新一次圖示');
+    assert.equal(themeManager.togglesInDocumentAtUpdate.at(-1), 1, `最後一次更新時切換鈕已在文件裡（每次更新時文件裡的切換鈕數：${themeManager.togglesInDocumentAtUpdate.join(', ')}）`);
+
+    assert.equal(themeManager.toggleCalls, 0);
+    toggle.click();
+    assert.equal(themeManager.toggleCalls, 1);
+});
+
+test('common.js 不再有 placeThemeToggle 與首頁卡片的點擊處理', () => {
+    const src = read('assets/js/common.js');
+    assert.ok(!src.includes('placeThemeToggle'));
+    assert.ok(!src.includes("querySelectorAll('.tool-card')"));
+});
+
+test('common.css 沒有 .logo-main 與 .logo-tool 這兩個沒人用的樣式', () => {
+    const css = read('assets/css/common.css');
+    // 不用 assert.doesNotMatch：失敗時它會把整份 CSS 印出來
+    assert.ok(!/\.logo-main(?![\w-])/.test(css), 'nav-template.js 不會產生 .logo-main');
+    // .logo-tool-name 仍在使用（nav-template.js 產生），所以不能只比對前綴
+    assert.ok(!/\.logo-tool(?![\w-])/.test(css), 'nav-template.js 不會產生 .logo-tool（工具名稱是 .logo-tool-name）');
 });
