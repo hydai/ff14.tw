@@ -160,7 +160,7 @@ window.TimedGatheringTranslations = {
     },
     ja: {
         // 頁面標題和標頭
-        pageTitle: 'タイムド採集管理ツール',
+        pageTitle: 'タイムド採集管理',
         pageDescription: 'FF14 タイムド採集管理ツール、検索、複数リスト管理、マクロエクスポート機能対応',
         
         // 時間顯示

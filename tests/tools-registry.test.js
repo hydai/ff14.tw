@@ -13,7 +13,7 @@ const LANGS = ['zh', 'en', 'ja'];
 const COMMON_FILE = 'assets/js/i18n/translations/common.js';
 const INDEX_FILE = 'assets/js/i18n/translations/index.js';
 
-// ---------- 最小 HTML 解析（只給首頁工具卡的比對用，不假設屬性順序或固定的標籤字串） ----------
+// ---------- 最小 HTML 解析（給首頁工具卡與工具頁頁首的比對用，不假設屬性順序或固定的標籤字串） ----------
 function parseAttrs(source) {
     const attrs = {};
     for (const m of source.matchAll(/([^\s"'<>/=]+)\s*=\s*(?:"([^"]*)"|'([^']*)')/g)) attrs[m[1]] = m[2] ?? m[3];
@@ -139,4 +139,58 @@ test('首頁的工具卡和登錄表一一對應（順序、href、標題鍵、z
         assert.equal(textOf(title.inner), tool.name, `${tool.id} 卡片的 zh 標題`);
         assert.equal(textOf(icon.inner), tool.icon, `${tool.id} 卡片的圖示`);
     });
+});
+
+// 遞迴列出 dir（相對於專案根目錄）底下所有 .html，回傳以 / 分隔的相對路徑
+function listHtmlFiles(dir, out = []) {
+    for (const entry of fs.readdirSync(path.join(ROOT, dir), { withFileTypes: true })) {
+        const rel = `${dir}/${entry.name}`;
+        if (entry.isDirectory()) listHtmlFiles(rel, out);
+        else if (entry.name.endsWith('.html')) out.push(rel);
+    }
+    return out;
+}
+
+test('每個工具頁頁首的工具名稱和登錄表一致（zh 預設文字與 zh/en/ja 翻譯）', () => {
+    const common = Object.fromEntries(LANGS.map(lang => [lang, translationValues(COMMON_FILE, lang)]));
+
+    // 含 #header-placeholder 的工具頁：取出它的屬性，以及頁面依序載入的 <script src>
+    const pages = [];
+    for (const rel of listHtmlFiles('tools').sort()) {
+        let header = null;
+        const scripts = [];
+        for (const open of read(rel).matchAll(/<([a-zA-Z][\w-]*)\b([^>]*)>/g)) {
+            const attrs = parseAttrs(open[2]);
+            if (attrs.id === 'header-placeholder') header = attrs;
+            if (open[1].toLowerCase() === 'script' && attrs.src) scripts.push(attrs.src);
+        }
+        if (header) pages.push({ rel, header, scripts });
+    }
+    assert.ok(pages.length >= 19, `只找到 ${pages.length} 個含 #header-placeholder 的工具頁，解析可能失效`);
+
+    for (const { rel, header, scripts } of pages) {
+        const tool = ToolsRegistry.findByPath('/' + rel);
+        assert.ok(tool, `${rel} 在登錄表裡找不到對應的工具`);
+        assert.equal(header['data-tool-name'], tool.name, `${rel} 的 data-tool-name 要和登錄表的 name 相同`);
+
+        const nameKey = header['data-tool-name-key'];
+        if (!nameKey) continue; // 檢舉模板產生器沒有載入 i18n，只比對上面的 zh 預設文字
+
+        // 這一頁實際載入的翻譯檔（路徑相對於頁面所在目錄）。i18n-manager 以 Object.assign 合併，
+        // 所以依載入順序合併，後載入的覆蓋先載入的
+        const loaded = scripts
+            .map(src => path.posix.join(path.posix.dirname(rel), src))
+            .filter(file => file.startsWith('assets/js/i18n/translations/'));
+        for (const lang of LANGS) {
+            const expected = common[lang].get(tool.i18nKey);
+            assert.ok(expected, `${COMMON_FILE} 的 ${lang} 語系缺少 ${tool.i18nKey}`);
+
+            const merged = new Map();
+            for (const file of loaded) {
+                for (const [key, value] of translationValues(file, lang)) merged.set(key, value);
+            }
+            assert.ok(merged.has(nameKey), `${rel} 載入的翻譯檔（${loaded.join('、')}）在 ${lang} 語系都沒有定義 ${nameKey}`);
+            assert.equal(merged.get(nameKey), expected, `${rel} 的 ${nameKey}（${lang}）要和 ${COMMON_FILE} 的 ${tool.i18nKey} 相同`);
+        }
+    }
 });

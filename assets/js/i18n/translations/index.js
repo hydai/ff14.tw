@@ -108,7 +108,7 @@ const IndexTranslations = {
 
         tool_character_card_desc: 'カスタムFF14キャラクターカードを作成、画像アップロードとテンプレート対応',
 
-        tool_faux_hollows_desc: 'まぼろし革細工師イベントの最適クリック戦略を計算',
+        tool_faux_hollows_desc: '幻フォールスホローの最適クリック戦略を計算',
 
         tool_treasure_map_desc: '宝の地図の位置をフィルターと個人リストで素早く検索',
 
