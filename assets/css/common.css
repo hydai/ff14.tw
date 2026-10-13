@@ -627,7 +627,9 @@ textarea:focus {
 @media (max-width: 768px) {
     .header .container {
         position: relative;
-        padding-right: 60px; /* 為漢堡選單預留空間 */
+        /* 右側留給兩顆絕對定位的按鈕：右邊留白、☰（寬 41px = 25px 的線條 + 兩側各 --space-2 內距）、
+           --space-2 的間距、主題切換鈕（--control-md）。內距加到這個總寬，空間不夠時是 logo 先被擠短，不會壓到按鈕 */
+        padding-right: calc(var(--container-gutter) + 41px + var(--space-2) + var(--control-md));
     }
 
     .hamburger {
@@ -638,9 +640,10 @@ textarea:focus {
         transform: translateY(-50%);
     }
 
+    /* 緊貼在 ☰（寬 41px）左邊，中間留 --space-2 */
     .theme-toggle {
         position: absolute;
-        right: 60px;
+        right: calc(var(--container-gutter) + 41px + var(--space-2));
         top: 50%;
         transform: translateY(-50%);
     }
@@ -650,8 +653,11 @@ textarea:focus {
         position: fixed;
         top: 0;
         right: -100%;
-        width: 250px;
+        width: min(320px, 85vw);
         height: 100vh;
+        /* iOS Safari 的 100vh 是工具列收起來時的大視窗高度，抽屜開著時頁面被鎖住捲動、工具列縮不回去，
+           抽屜底部（含語言切換）會被擋在工具列下面；dvh 隨工具列變動。不認得 dvh 的瀏覽器忽略這行，沿用上面的 100vh */
+        height: 100dvh;
         background: var(--header-bg);
         flex-direction: column;
         align-items: stretch;
@@ -797,10 +803,6 @@ textarea:focus {
 }
 
 @media (max-width: 480px) {
-    .header .container {
-        padding-right: 50px;
-    }
-
     .logo {
         font-size: var(--text-lg);
     }
