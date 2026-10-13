@@ -15,6 +15,7 @@ const CommonTranslations = {
         // 頁尾
         footer_copyright: '本站非官方網站，與 Square Enix 無關',
         footer_made_with: 'Made with ❤️ by hydai',
+        footer_report_issue: '回報問題',
 
         // 工具名稱（全站共用：工具選單、首頁、404）
         tool_mini_cactpot_title: '仙人微彩計算機',
@@ -105,6 +106,7 @@ const CommonTranslations = {
         // Footer
         footer_copyright: 'Unofficial site, not affiliated with Square Enix',
         footer_made_with: 'Made with ❤️ by hydai',
+        footer_report_issue: 'Report an issue',
 
         // Tool names (shared site-wide: tools menu, home page, 404)
         tool_mini_cactpot_title: 'Mini Cactpot Calculator',
@@ -194,6 +196,7 @@ const CommonTranslations = {
         // フッター
         footer_copyright: '非公式サイト、スクウェア・エニックスとは無関係',
         footer_made_with: 'Made with ❤️ by hydai',
+        footer_report_issue: '不具合を報告',
 
         // ツール名（サイト共通：ツールメニュー、ホーム、404）
         tool_mini_cactpot_title: 'ミニくじテンダー計算機',
