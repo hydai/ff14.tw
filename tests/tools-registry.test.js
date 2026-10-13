@@ -125,7 +125,8 @@ test('findByPath 以工具目錄比對路徑開頭', () => {
 });
 
 test('首頁的工具卡和登錄表一一對應（順序、href、標題鍵、zh 標題、圖示）', () => {
-    // 只有 <a> 才是可點的工具卡；<div class="tool-card coming-soon"> 這種即將推出的卡片不在登錄表裡
+    // 工具卡是首頁上 class 含 tool-card 的 <a>：每張都是可點的連結（沒有不能點的卡片，home-page.test.js 守住），
+    // 只取 <a>，讓卡片和登錄表的工具一一對應
     const cards = elementsByClass(read('index.html'), 'tool-card').filter(el => el.tag === 'a');
     assert.equal(cards.length, ToolsRegistry.tools.length, '首頁的工具卡數量要等於登錄表');
 

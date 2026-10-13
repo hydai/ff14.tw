@@ -20,7 +20,7 @@ const IndexTranslations = {
 
         tool_wondrous_tails_desc: '分析天書奇談盤面，計算連線成功機率，協助決策是否重置',
 
-        tool_dungeon_database_desc: '完整的FF14副本資訊查詢，包含獎勵、機制說明和攻略指南',
+        tool_dungeon_database_desc: '完整的FF14副本資訊查詢，包含獎勵與機制說明',
 
         tool_character_card_desc: '創造專屬的FF14角色卡片，支援圖片上傳、多版型和自訂背景',
 
@@ -42,13 +42,14 @@ const IndexTranslations = {
 
         tool_tc_shop_desc: '統計已購買的商城道具，協助管理官方商城消費紀錄',
 
-        tool_equipment_analyzer_title: '裝備分析器',
-        tool_equipment_analyzer_desc: '分析裝備屬性和配裝建議，提供最佳配裝方案',
-
-        // 狀態標籤
-        status_coming_soon: '⏳ 即將推出',
+        // 狀態標籤（標題旁）
         status_under_construction: '🚧 施工中',
-        status_unavailable: '⚠️ 繁中版不支援'
+        status_intl_only: '僅限國際版角色',
+        tag_external_site: '外部網站 ↗',
+
+        // 說明下方寫出缺什麼
+        status_dungeon_mechanics_pending: '部分副本的機制說明待補',
+        status_guide_pages_pending: '公會、副本、風脈、探索筆記 4 頁撰寫中'
     },
     en: {
         // Page info
@@ -68,7 +69,7 @@ const IndexTranslations = {
 
         tool_wondrous_tails_desc: 'Analyze Wondrous Tails board, calculate line completion probability',
 
-        tool_dungeon_database_desc: 'Complete FF14 dungeon info with rewards, mechanics, and guides',
+        tool_dungeon_database_desc: 'Complete FF14 dungeon info with rewards and mechanics',
 
         tool_character_card_desc: 'Create custom FF14 character cards with image upload and templates',
 
@@ -90,13 +91,14 @@ const IndexTranslations = {
 
         tool_tc_shop_desc: 'Track purchased shop items and manage your official store spending history',
 
-        tool_equipment_analyzer_title: 'Equipment Analyzer',
-        tool_equipment_analyzer_desc: 'Analyze equipment stats and provide optimal gear recommendations',
-
-        // Status badges
-        status_coming_soon: '⏳ Coming Soon',
+        // Status tags (next to the title)
         status_under_construction: '🚧 WIP',
-        status_unavailable: '⚠️ Not Available (TW)'
+        status_intl_only: 'Global servers only',
+        tag_external_site: 'External site ↗',
+
+        // What is missing (below the description)
+        status_dungeon_mechanics_pending: 'Some dungeon mechanics are not written yet',
+        status_guide_pages_pending: 'Guild, dungeon, aether current and sightseeing pages are in progress'
     },
     ja: {
         // ページ情報
@@ -116,7 +118,7 @@ const IndexTranslations = {
 
         tool_wondrous_tails_desc: 'クロの空想帳のボードを分析し、ライン完成確率を計算',
 
-        tool_dungeon_database_desc: 'FF14ダンジョン情報、報酬、ギミック説明を含む完全なガイド',
+        tool_dungeon_database_desc: 'FF14ダンジョン情報。報酬とギミック説明を収録',
 
         tool_character_card_desc: 'カスタムFF14キャラクターカードを作成、画像アップロードとテンプレート対応',
 
@@ -138,13 +140,14 @@ const IndexTranslations = {
 
         tool_tc_shop_desc: '購入済みショップアイテムを統計し、公式ストアの消費履歴を管理',
 
-        tool_equipment_analyzer_title: '装備分析器',
-        tool_equipment_analyzer_desc: '装備ステータスを分析し、最適な装備を提案',
-
-        // ステータスバッジ
-        status_coming_soon: '⏳ 近日公開',
+        // ステータスタグ（タイトルの横）
         status_under_construction: '🚧 工事中',
-        status_unavailable: '⚠️ 繁体字版未対応'
+        status_intl_only: 'グローバル版キャラクターのみ',
+        tag_external_site: '外部サイト ↗',
+
+        // 足りない内容（説明の下）
+        status_dungeon_mechanics_pending: '一部ダンジョンのギミック解説は準備中',
+        status_guide_pages_pending: 'ギルド・ダンジョン・風脈・探検手帳の4ページは準備中'
     }
 };
 

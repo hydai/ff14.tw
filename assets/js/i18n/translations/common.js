@@ -89,11 +89,7 @@ const CommonTranslations = {
         time_today: '今天',
         time_hour: '小時',
         time_minute: '分鐘',
-        time_second: '秒',
-
-        // 狀態標籤
-        status_under_construction: '🚧 施工中',
-        status_coming_soon: '即將推出'
+        time_second: '秒'
     },
     en: {
         // Navigation
@@ -180,11 +176,7 @@ const CommonTranslations = {
         time_today: 'Today',
         time_hour: 'hour',
         time_minute: 'minute',
-        time_second: 'second',
-
-        // Status labels
-        status_under_construction: '🚧 Under Construction',
-        status_coming_soon: 'Coming Soon'
+        time_second: 'second'
     },
     ja: {
         // ナビゲーション
@@ -271,11 +263,7 @@ const CommonTranslations = {
         time_today: '今日',
         time_hour: '時間',
         time_minute: '分',
-        time_second: '秒',
-
-        // ステータスラベル
-        status_under_construction: '🚧 工事中',
-        status_coming_soon: '近日公開'
+        time_second: '秒'
     }
 };
 

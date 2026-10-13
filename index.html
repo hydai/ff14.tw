@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="assets/css/tokens.css">
     <link rel="stylesheet" href="assets/css/common.css">
     <link rel="stylesheet" href="assets/css/components/language-switcher.css">
+    <link rel="stylesheet" href="assets/css/components/tags.css">
 </head>
 <body>
     <div id="header-placeholder" data-base-path="/"></div>
@@ -40,93 +41,113 @@
                 <h2 class="section-label" data-i18n="home_all_tools_title">所有工具</h2>
                 <div class="tools-grid">
                     <a href="tools/mini-cactpot/index.html" class="tool-card available">
-                        <div class="tool-icon">🎰</div>
-                        <h3 class="tool-title" data-i18n="tool_mini_cactpot_title">仙人微彩計算機</h3>
+                        <div class="tool-icon" aria-hidden="true">🎰</div>
+                        <div class="tool-heading">
+                            <h3 class="tool-title" data-i18n="tool_mini_cactpot_title">仙人微彩計算機</h3>
+                        </div>
                         <p class="tool-description" data-i18n="tool_mini_cactpot_desc">分析仙人微彩最佳策略，計算期望值並推薦最佳線條選擇</p>
                     </a>
 
                     <a href="tools/wondrous-tails/index.html" class="tool-card available">
-                        <div class="tool-icon">📋</div>
-                        <h3 class="tool-title" data-i18n="tool_wondrous_tails_title">天書奇談預測器</h3>
+                        <div class="tool-icon" aria-hidden="true">📋</div>
+                        <div class="tool-heading">
+                            <h3 class="tool-title" data-i18n="tool_wondrous_tails_title">天書奇談預測器</h3>
+                        </div>
                         <p class="tool-description" data-i18n="tool_wondrous_tails_desc">分析天書奇談盤面，計算連線成功機率，協助決策是否重置</p>
                     </a>
 
                     <a href="tools/dungeon-database/index.html" class="tool-card available">
-                        <span class="status-badge under-construction" data-i18n="status_under_construction">🚧 施工中</span>
-                        <div class="tool-icon">🏰</div>
-                        <h3 class="tool-title" data-i18n="tool_dungeon_database_title">副本資料庫</h3>
-                        <p class="tool-description" data-i18n="tool_dungeon_database_desc">完整的FF14副本資訊查詢，包含獎勵、機制說明和攻略指南</p>
+                        <div class="tool-icon" aria-hidden="true">🏰</div>
+                        <div class="tool-heading">
+                            <h3 class="tool-title" data-i18n="tool_dungeon_database_title">副本資料庫</h3>
+                        </div>
+                        <p class="tool-description" data-i18n="tool_dungeon_database_desc">完整的FF14副本資訊查詢，包含獎勵與機制說明</p>
+                        <p class="tool-status" data-i18n="status_dungeon_mechanics_pending">部分副本的機制說明待補</p>
                     </a>
 
                     <a href="tools/character-card/index.html" class="tool-card available">
-                        <span class="status-badge under-construction" data-i18n="status_under_construction">🚧 施工中</span>
-                        <div class="tool-icon">🎴</div>
-                        <h3 class="tool-title" data-i18n="tool_character_card_title">角色卡產生器</h3>
+                        <div class="tool-icon" aria-hidden="true">🎴</div>
+                        <div class="tool-heading">
+                            <h3 class="tool-title" data-i18n="tool_character_card_title">角色卡產生器</h3>
+                            <span class="tag tag-warning tool-tag" data-i18n="status_under_construction">🚧 施工中</span>
+                        </div>
                         <p class="tool-description" data-i18n="tool_character_card_desc">創造專屬的FF14角色卡片，支援圖片上傳、多版型和自訂背景</p>
                     </a>
 
                     <a href="tools/faux-hollows-foxes/index.html" class="tool-card available">
-                        <div class="tool-icon">🦊</div>
-                        <h3 class="tool-title" data-i18n="tool_faux_hollows_title">宗長計算機</h3>
+                        <div class="tool-icon" aria-hidden="true">🦊</div>
+                        <div class="tool-heading">
+                            <h3 class="tool-title" data-i18n="tool_faux_hollows_title">宗長計算機</h3>
+                        </div>
                         <p class="tool-description" data-i18n="tool_faux_hollows_desc">計算 FF14 Faux Hollows Foxes 活動的最佳點擊策略</p>
                     </a>
 
                     <a href="tools/treasure-map-finder/index.html" class="tool-card available">
-                        <span class="status-badge under-construction" data-i18n="status_under_construction">🚧 施工中</span>
-                        <div class="tool-icon">🗺️</div>
-                        <h3 class="tool-title" data-i18n="tool_treasure_map_title">寶圖搜尋器</h3>
+                        <div class="tool-icon" aria-hidden="true">🗺️</div>
+                        <div class="tool-heading">
+                            <h3 class="tool-title" data-i18n="tool_treasure_map_title">寶圖搜尋器</h3>
+                        </div>
                         <p class="tool-description" data-i18n="tool_treasure_map_desc">快速查詢寶圖位置，支援多條件篩選與個人清單管理</p>
                     </a>
 
                     <a href="tools/lodestone-lookup/index.html" class="tool-card available">
-                        <span class="status-badge unavailable" data-i18n="status_unavailable">⚠️ 繁中版不支援</span>
-                        <div class="tool-icon">🔍</div>
-                        <h3 class="tool-title" data-i18n="tool_lodestone_title">Lodestone 角色查詢</h3>
+                        <div class="tool-icon" aria-hidden="true">🔍</div>
+                        <div class="tool-heading">
+                            <h3 class="tool-title" data-i18n="tool_lodestone_title">Lodestone 角色查詢</h3>
+                            <span class="tag tag-info tool-tag" data-i18n="status_intl_only">僅限國際版角色</span>
+                        </div>
                         <p class="tool-description" data-i18n="tool_lodestone_desc">使用 Lodestone ID 查詢 FF14 角色資訊，查看職業等級與成就</p>
                     </a>
 
                     <a href="tools/timed-gathering/index.html" class="tool-card available">
-                        <div class="tool-icon">⏰</div>
-                        <h3 class="tool-title" data-i18n="tool_timed_gathering_title">特殊採集時間管理器</h3>
+                        <div class="tool-icon" aria-hidden="true">⏰</div>
+                        <div class="tool-heading">
+                            <h3 class="tool-title" data-i18n="tool_timed_gathering_title">特殊採集時間管理器</h3>
+                        </div>
                         <p class="tool-description" data-i18n="tool_timed_gathering_desc">管理 FF14 特殊採集時間，支援搜尋、多清單管理與巨集匯出</p>
                     </a>
 
                     <a href="tools/guide/index.html" class="tool-card available">
-                        <div class="tool-icon">📖</div>
-                        <h3 class="tool-title" data-i18n="tool_guide_title">攻略資料</h3>
+                        <div class="tool-icon" aria-hidden="true">📖</div>
+                        <div class="tool-heading">
+                            <h3 class="tool-title" data-i18n="tool_guide_title">攻略資料</h3>
+                        </div>
                         <p class="tool-description" data-i18n="tool_guide_desc">FF14 新手攻略指南，包含公會、軍階、副本、風脈與探索筆記說明</p>
+                        <p class="tool-status" data-i18n="status_guide_pages_pending">公會、副本、風脈、探索筆記 4 頁撰寫中</p>
                     </a>
 
                     <a href="tools/report-generator/index.html" class="tool-card available">
-                        <div class="tool-icon">📝</div>
-                        <h3 class="tool-title" data-i18n="tool_report_generator_title">檢舉模板產生器</h3>
+                        <div class="tool-icon" aria-hidden="true">📝</div>
+                        <div class="tool-heading">
+                            <h3 class="tool-title" data-i18n="tool_report_generator_title">檢舉模板產生器</h3>
+                        </div>
                         <p class="tool-description" data-i18n="tool_report_generator_desc">快速產生不當行為檢舉的模板文字，協助您進行申訴</p>
                     </a>
 
                     <a href="tools/macro-converter/index.html" class="tool-card available">
-                        <div class="tool-icon">🔄</div>
-                        <h3 class="tool-title" data-i18n="tool_macro_converter_title">巨集轉換器</h3>
+                        <div class="tool-icon" aria-hidden="true">🔄</div>
+                        <div class="tool-heading">
+                            <h3 class="tool-title" data-i18n="tool_macro_converter_title">巨集轉換器</h3>
+                        </div>
                         <p class="tool-description" data-i18n="tool_macro_converter_desc">將 FF14 巨集在繁體中文、英文、日文之間轉換</p>
                     </a>
 
                     <a href="tools/weather-forecast/index.html" class="tool-card available">
-                        <div class="tool-icon">🌤️</div>
-                        <h3 class="tool-title" data-i18n="tool_weather_forecast_title">天氣預報</h3>
+                        <div class="tool-icon" aria-hidden="true">🌤️</div>
+                        <div class="tool-heading">
+                            <h3 class="tool-title" data-i18n="tool_weather_forecast_title">天氣預報</h3>
+                        </div>
                         <p class="tool-description" data-i18n="tool_weather_forecast_desc">查看艾歐澤亞各地區的天氣預報，搜尋特定天氣條件</p>
                     </a>
 
-                    <a href="https://tc-shop.ff14.tw" class="tool-card available">
-                        <div class="tool-icon">🛒</div>
-                        <h3 class="tool-title" data-i18n="tool_tc_shop_title">水晶商城清單</h3>
+                    <a href="https://tc-shop.ff14.tw" class="tool-card available" target="_blank" rel="noopener noreferrer">
+                        <div class="tool-icon" aria-hidden="true">🛒</div>
+                        <div class="tool-heading">
+                            <h3 class="tool-title" data-i18n="tool_tc_shop_title">水晶商城清單</h3>
+                            <span class="tag tool-tag" data-i18n="tag_external_site">外部網站 ↗</span>
+                        </div>
                         <p class="tool-description" data-i18n="tool_tc_shop_desc">統計已購買的商城道具，協助管理官方商城消費紀錄</p>
                     </a>
-
-                    <div class="tool-card coming-soon">
-                        <span class="status-badge coming-soon" data-i18n="status_coming_soon">即將推出</span>
-                        <div class="tool-icon">⚔️</div>
-                        <h3 class="tool-title" data-i18n="tool_equipment_analyzer_title">裝備分析器</h3>
-                        <p class="tool-description" data-i18n="tool_equipment_analyzer_desc">分析裝備屬性和配裝建議，提供最佳配裝方案</p>
-                    </div>
                 </div>
             </section>
 
