@@ -75,3 +75,52 @@ test('切換語言保留使用者選的目前及目標色', () => {
     assert.equal(calc.elements.currentSelect.value, 'soot-black');
     assert.equal(calc.elements.targetSelect.value, 'coral-pink');
 });
+
+test('按過計算之後，改選任一顏色會立刻重算；還沒算過時只更新色點', () => {
+    const calc = calculator();
+    const shown = [];
+    calc.displayResults = plan => { calc.lastPlan = plan; shown.push(plan.order.length); };
+    calc.updatePreviews = () => {};
+    calc.elements.currentSelect = { value: 'desert-yellow' };
+    calc.elements.targetSelect = { value: 'snow-white' };
+    calc.handleSelectionChange();
+    assert.deepEqual(shown, []);
+    calc.calculate();
+    calc.elements.targetSelect.value = 'morbol-green';
+    calc.handleSelectionChange();
+    assert.deepEqual(shown, [34, 80]);
+});
+
+test('選單 change 事件：還沒按計算只更新色點，按過之後改色會重算', () => {
+    const calc = calculator();
+    const listeners = {};
+    const makeSelect = (name, value) => ({ value, addEventListener(type, handler) { listeners[`${name}:${type}`] = handler; } });
+    calc.elements.currentSelect = makeSelect('current', 'desert-yellow');
+    calc.elements.targetSelect = makeSelect('target', 'snow-white');
+    calc.elements.currentPreview = { style: {} };
+    calc.elements.targetPreview = { style: {} };
+    const shown = [];
+    calc.displayResults = plan => { calc.lastPlan = plan; shown.push(plan.order.length); };
+
+    // 走真正的 bindEvents()：兩個選單的 change 都要接到 handleSelectionChange()
+    calc.bindEvents();
+    assert.equal(typeof listeners['current:change'], 'function');
+    assert.equal(typeof listeners['target:change'], 'function');
+
+    // 還沒按過計算：只更新色點，不產生結果
+    calc.elements.targetSelect.value = 'morbol-green';
+    listeners['target:change']();
+    assert.deepEqual(shown, []);
+    assert.equal(calc.elements.targetPreview.style.backgroundColor, 'rgb(25, 41, 17)');
+
+    // 按過計算之後，任一個選單改變都會立刻重算，色點也一起更新
+    calc.calculate();
+    calc.elements.currentSelect.value = 'soot-black';
+    listeners['current:change']();
+    assert.equal(shown.length, 2);
+    assert.equal(calc.elements.currentPreview.style.backgroundColor, 'rgb(43, 41, 35)');
+    calc.elements.targetSelect.value = 'snow-white';
+    listeners['target:change']();
+    assert.equal(shown.length, 3);
+    assert.equal(calc.elements.targetPreview.style.backgroundColor, 'rgb(228, 223, 208)');
+});

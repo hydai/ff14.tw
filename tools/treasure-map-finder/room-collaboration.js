@@ -779,8 +779,6 @@ class RoomCollaboration {
     // 設定標籤頁切換
     setupTabSwitching() {
         const panelTabs = document.getElementById('panelTabs');
-        const listContent = document.getElementById('listContent');
-        const historyContent = document.getElementById('historyContent');
 
         if (!panelTabs) return;
 
@@ -788,26 +786,7 @@ class RoomCollaboration {
             const tabBtn = e.target.closest('.tab-btn');
             if (!tabBtn) return;
 
-            // 更新按鈕狀態
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.classList.remove('active');
-                btn.setAttribute('aria-selected', 'false');
-                btn.tabIndex = -1;
-            });
-            tabBtn.classList.add('active');
-            tabBtn.setAttribute('aria-selected', 'true');
-            tabBtn.tabIndex = 0;
-
-            // 切換內容
-            const tab = tabBtn.dataset.tab;
-            if (tab === 'list') {
-                listContent.classList.remove('hidden');
-                historyContent.classList.add('hidden');
-            } else if (tab === 'history') {
-                listContent.classList.add('hidden');
-                historyContent.classList.remove('hidden');
-                this.renderHistory();
-            }
+            this.showPanelTab(tabBtn.dataset.tab);
         });
 
         // 方向鍵在分頁間移動並直接切換
@@ -823,6 +802,23 @@ class RoomCollaboration {
             tabs[nextIndex].focus();
             tabs[nextIndex].click();
         });
+    }
+
+    // 切換清單面板的標籤頁：同步所有標籤按鈕的狀態與對應內容的顯示
+    showPanelTab(tab) {
+        const showHistory = tab === 'history';
+
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            const isActive = btn.dataset.tab === tab;
+            btn.classList.toggle('active', isActive);
+            btn.setAttribute('aria-selected', String(isActive));
+            btn.tabIndex = isActive ? 0 : -1;
+        });
+
+        document.getElementById('listContent')?.classList.toggle('hidden', showHistory);
+        document.getElementById('historyContent')?.classList.toggle('hidden', !showHistory);
+
+        if (showHistory) this.renderHistory();
     }
 
     // 渲染操作歷史
@@ -912,6 +908,9 @@ class RoomCollaboration {
             if (panelTabs) {
                 panelTabs.classList.add('hidden');
             }
+
+            // 標籤頁隱藏後無法再切換，離開隊伍時要讓面板回到「清單」，否則會卡在歷史內容
+            this.showPanelTab('list');
         }
     }
 

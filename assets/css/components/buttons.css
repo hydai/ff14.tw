@@ -2,6 +2,7 @@
    按鈕 — 規格：設計系統畫布「元件 01 按鈕」
    高度 sm 32 / md 40 / lg 48；同一畫面最多一顆 .btn-primary。
    純 .btn（無變體）= 次要按鈕。
+   flex 直排時 height 會被 flex-basis 取代，min-height 才能保住控制項高度。
    ========================================================================== */
 .btn {
     display: inline-flex;
@@ -9,6 +10,7 @@
     justify-content: center;
     gap: var(--space-2);
     height: var(--control-md);
+    min-height: var(--control-md);
     padding: 0 var(--space-5);
     border: 1px solid var(--color-border-strong);
     border-radius: var(--radius-md);
@@ -135,6 +137,7 @@
 /* 尺寸 */
 .btn-sm {
     height: var(--control-sm);
+    min-height: var(--control-sm);
     padding: 0 var(--space-4);
     gap: var(--space-1);
     font-size: var(--text-sm);
@@ -142,6 +145,7 @@
 
 .btn-lg {
     height: var(--control-lg);
+    min-height: var(--control-lg);
     padding: 0 var(--space-7);
     font-size: var(--text-lg);
 }
@@ -224,6 +228,7 @@
 .btn-close {
     width: var(--control-sm);
     height: var(--control-sm);
+    min-height: var(--control-sm);
     padding: 0;
     border-color: transparent;
     background: transparent;

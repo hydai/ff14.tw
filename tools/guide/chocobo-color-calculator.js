@@ -101,10 +101,10 @@ class ChocoboColorCalculator {
      */
     bindEvents() {
         if (this.elements.currentSelect) {
-            this.elements.currentSelect.addEventListener('change', () => this.updatePreviews());
+            this.elements.currentSelect.addEventListener('change', () => this.handleSelectionChange());
         }
         if (this.elements.targetSelect) {
-            this.elements.targetSelect.addEventListener('change', () => this.updatePreviews());
+            this.elements.targetSelect.addEventListener('change', () => this.handleSelectionChange());
         }
         if (this.elements.calculateBtn) {
             this.elements.calculateBtn.addEventListener('click', () => this.calculate());
@@ -171,6 +171,14 @@ class ChocoboColorCalculator {
     }
 
     /**
+     * 選單改變時更新色點；已經按過計算，就立即重算，避免結果停在舊的配方
+     */
+    handleSelectionChange() {
+        this.updatePreviews();
+        if (this.hasCalculated) this.calculate();
+    }
+
+    /**
      * 根據 ID 取得顏色資料 (O(1) Map 查詢)
      */
     getColorById(id) {
@@ -198,6 +206,7 @@ class ChocoboColorCalculator {
 
         if (!currentColor || !targetColor) return;
 
+        this.hasCalculated = true;
         const plan = this.planFeeding(currentColor, targetColor);
         if (!plan) {
             this.lastPlan = null;

@@ -260,6 +260,13 @@ class ReportGenerator {
         // 更新字數統計
         this.updateCharacterCount(template);
 
+        // 超過字數上限時不自動複製、也不顯示成功訊息，改請使用者回頭精簡事件細節
+        if (template.length > ReportGenerator.MAX_CHAR_LIMIT) {
+            this.showError(`模板超過 ${ReportGenerator.MAX_CHAR_LIMIT} 字上限（目前 ${template.length} 字），請把「事件細節」精簡約 ${template.length - ReportGenerator.MAX_CHAR_LIMIT} 字後再產生。`);
+            this.elements.details.focus();
+            return;
+        }
+
         // 自動複製到剪貼簿
         this.copyToClipboard(true);
 

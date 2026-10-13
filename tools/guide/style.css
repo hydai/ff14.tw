@@ -69,7 +69,7 @@
     gap: var(--space-8);
     align-items: flex-start;
     position: relative;
-    padding: var(--space-7) 0;
+    padding-block: var(--space-7);
 }
 
 .guide-content-wrapper {
@@ -506,6 +506,7 @@
 
     .guide-layout {
         flex-direction: column;
+        align-items: stretch;
         gap: var(--space-6);
     }
 

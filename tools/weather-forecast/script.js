@@ -23,6 +23,7 @@ class WeatherForecast {
         // State
         this.resultCount = WeatherForecast.CONSTANTS.INITIAL_RESULTS;
         this.timeUpdateInterval = null;
+        this.currentPeriodStart = null;
         this.timeRangeStart = null;
         this.isSelectingTimeRange = false;
 
@@ -265,9 +266,12 @@ class WeatherForecast {
      * Start time update interval
      */
     startTimeUpdates() {
+        // 先記下目前所在的天氣期，之後每秒比對，換期時由 refreshOnPeriodChange() 重畫結果表
+        this.currentPeriodStart = WeatherCalculator.getWeatherPeriodStart(Date.now());
         this.updateTimeDisplay();
         this.timeUpdateInterval = setInterval(() => {
             this.updateTimeDisplay();
+            this.refreshOnPeriodChange(Date.now());
         }, WeatherForecast.CONSTANTS.TIME_UPDATE_INTERVAL);
     }
 
@@ -285,6 +289,24 @@ class WeatherForecast {
         const hours = String(localTime.getHours()).padStart(2, '0');
         const minutes = String(localTime.getMinutes()).padStart(2, '0');
         this.elements.currentLT.textContent = `${hours}:${minutes}`;
+    }
+
+    /**
+     * 天氣每 8 個艾歐澤亞小時（1,400 秒）換一期。結果表只在篩選條件改變時才重畫，
+     * 停在頁面上不動的話，「目前」那一列會一直停在已過期的天氣；這裡由每秒的計時器
+     * 呼叫，只在換期時重畫。以期別起點比對：分頁在背景時瀏覽器會降頻計時器並暫停 rAF，
+     * 回到前景時排隊中的重畫會依序執行，畫面最後一定停在最新的一期。
+     * @param {number} now - 目前的 Unix 毫秒時間戳
+     * @returns {boolean} 是否已換期
+     */
+    refreshOnPeriodChange(now) {
+        const periodStart = WeatherCalculator.getWeatherPeriodStart(now);
+        if (periodStart === this.currentPeriodStart) return false;
+
+        this.currentPeriodStart = periodStart;
+        // 沒選地區就沒有結果表可畫；之後選了地區會自己重畫
+        if (this.store.state.zoneId) this.renderResults();
+        return true;
     }
 
     /**

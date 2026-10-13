@@ -377,6 +377,7 @@
     }
 
     .search-section {
+        flex: none;
         max-width: none;
     }
 

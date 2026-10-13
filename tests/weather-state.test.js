@@ -4,10 +4,11 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 
-function createWeatherPage(hash = '') {
+function createWeatherPage(hash = '', { now } = {}) {
     const elements = new Map();
     const listeners = new Map();
     const frames = [];
+    const intervals = [];
     function element(tag = 'div') {
         const node = {
             tag, children: [], className: '', attributes: {}, dataset: {}, style: {},
@@ -40,11 +41,13 @@ function createWeatherPage(hash = '') {
         i18n: { currentLanguage: 'zh', onLanguageChange() {}, getText: key => key },
         addEventListener(type, callback) { if (!listeners.has(type)) listeners.set(type, new Set()); listeners.get(type).add(callback); },
         removeEventListener(type, callback) { listeners.get(type)?.delete(callback); },
-        setInterval: () => 1, clearInterval() {},
+        setInterval(callback) { intervals.push(callback); return intervals.length; }, clearInterval() {},
         requestAnimationFrame(callback) { frames.push(callback); },
         history: { replaceState(_state, _title, url) { context.location.hash = url.startsWith('#') ? url : ''; } }
     });
     context.window = context;
+    context.__now = now ?? Date.now();
+    vm.runInContext('Date.now = () => globalThis.__now', context);
     for (const name of ['zone-data', 'weather-calculator', 'weather-store', 'weather-search', 'script']) {
         vm.runInContext(fs.readFileSync(path.resolve(__dirname, `../tools/weather-forecast/${name}.js`), 'utf8'), context, { filename: `${name}.js` });
     }
@@ -53,7 +56,8 @@ function createWeatherPage(hash = '') {
     flush();
     return {
         app, context, elements, flush,
-        changeHash(nextHash) { context.location.hash = nextHash; for (const callback of listeners.get('hashchange') || []) callback(); flush(); }
+        changeHash(nextHash) { context.location.hash = nextHash; for (const callback of listeners.get('hashchange') || []) callback(); flush(); },
+        tick(ms) { context.__now += ms; for (const callback of intervals) callback(); flush(); }
     };
 }
 
@@ -110,4 +114,20 @@ test('invalid or cleared hash resets visible selection, and a later valid hash r
         assert.equal(page.elements.get('timeRangeText').textContent, '00:00 - 24:00');
         assert.equal(page.elements.get('resultsBody').children.length, 24);
     }
+});
+
+test('停留在頁面上，天氣換期後結果表自動往前推一期，同一期內不重畫', () => {
+    const PERIOD = 1_400_000;
+    const page = createWeatherPage('#limsa-lominsa', { now: PERIOD * 1_257_143 + PERIOD / 2 });
+    const times = () => page.elements.get('resultsBody').children.map(row => row.children[0].textContent);
+    const before = times();
+    const firstRow = page.elements.get('resultsBody').children[0];
+    page.tick(1_000);
+    assert.equal(page.elements.get('resultsBody').children[0], firstRow);
+    page.tick(PERIOD);
+    assert.equal(times()[0], before[1]);
+    assert.ok(page.elements.get('resultsBody').children[0].classList.contains('current-weather'));
+    const rowAfterChange = page.elements.get('resultsBody').children[0];
+    page.tick(1_000);
+    assert.equal(page.elements.get('resultsBody').children[0], rowAfterChange);
 });

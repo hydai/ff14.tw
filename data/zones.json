@@ -35,7 +35,9 @@
           "filePrefix": "kozamauka",
           "aetherytes": [
             "ok_hanu",
-            "earthenshire"
+            "earthenshire",
+            "many_fires",
+            "dock_poga"
           ]
         },
         {
@@ -48,7 +50,7 @@
           "normalizedName": "yaktel",
           "filePrefix": "yaktel",
           "aetherytes": [
-            "iq_rrax",
+            "iq_br_aak",
             "mamook"
           ]
         },
@@ -63,7 +65,8 @@
           "filePrefix": "shaaloani",
           "aetherytes": [
             "hhusatahwi",
-            "shaaloani"
+            "meyhane",
+            "sheshenewezi_springs"
           ]
         },
         {
@@ -76,8 +79,9 @@
           "normalizedName": "heritagefound",
           "filePrefix": "heritagefound",
           "aetherytes": [
-            "mehwahjaxas",
-            "xagjhalyokawak"
+            "the_outskirts",
+            "electrope_strike",
+            "yyasulani_station"
           ]
         },
         {
@@ -90,9 +94,9 @@
           "normalizedName": "livingmemory",
           "filePrefix": "livingmemory",
           "aetherytes": [
-            "electrope_strike",
-            "leynode_lemniscate",
-            "leynode_mnemo"
+            "leynode_mnemes",
+            "leynode_aero",
+            "leynode_pyro"
           ]
         }
       ]
@@ -117,8 +121,9 @@
           "normalizedName": "labyrinthos",
           "filePrefix": "labyrinthos",
           "aetherytes": [
-            "archon_lounge",
-            "sharlayan_hamlet"
+            "the_archeion",
+            "sharlayan_hamlet",
+            "aporia"
           ]
         },
         {
@@ -132,6 +137,7 @@
           "filePrefix": "thavnair",
           "aetherytes": [
             "yedlihmad",
+            "great_work",
             "palaka_stand"
           ]
         },
@@ -187,8 +193,9 @@
           "normalizedName": "ultimathule",
           "filePrefix": "ultimathule",
           "aetherytes": [
-            "reah_tahra",
-            "base_omicron"
+            "reahs_tahra",
+            "base_omicron",
+            "ostrakon_deka_hexi"
           ]
         }
       ]
@@ -242,7 +249,8 @@
           "filePrefix": "amharaeng",
           "aetherytes": [
             "twine",
-            "mord_souq"
+            "mord_souq",
+            "inn_at_journeys_head"
           ]
         },
         {
@@ -256,7 +264,8 @@
           "filePrefix": "ilmheg",
           "aetherytes": [
             "lydha_lran",
-            "pla_enni"
+            "pla_enni",
+            "wolekdorf"
           ]
         },
         {
@@ -283,8 +292,8 @@
           "normalizedName": "thetempest",
           "filePrefix": "thetempest",
           "aetherytes": [
-            "ondo_cups",
-            "macarenses_angle"
+            "the_ondo_cups",
+            "the_macarenses_angle"
           ]
         }
       ]
@@ -391,8 +400,9 @@
           "normalizedName": "theazimsteppe",
           "filePrefix": "theazimsteppe",
           "aetherytes": [
+            "dhoro_iloh",
             "dawn_throne",
-            "dhoro_iloh"
+            "reunion"
           ]
         }
       ]
@@ -417,7 +427,7 @@
           "normalizedName": "coerthaswesternhighlands",
           "filePrefix": "coerthaswesternhighlands",
           "aetherytes": [
-            "falcon_nest"
+            "falcons_nest"
           ]
         }
       ]
@@ -634,6 +644,7 @@
       "yaktel": "tural",
       "shaaloani": "tural",
       "heritagefound": "tural",
+      "livingmemory": "tural",
       "labyrinthos": "ilsabard",
       "thavnair": "ilsabard",
       "garlemald": "ilsabard",

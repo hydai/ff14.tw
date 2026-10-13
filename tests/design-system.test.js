@@ -363,3 +363,19 @@ test('每個 role="tablist" 都至少有一個帶 aria-selected 的 role="tab"',
     }
     assert.ok(tablistCount > 0, '沒有找到任何 role="tablist"，測試可能失效');
 });
+
+test('按鈕與輸入框在 flex 直排裡不會被壓扁：設定 height 的元件規則都要有同值的 min-height', () => {
+    for (const file of ['assets/css/components/buttons.css', 'assets/css/components/forms.css']) {
+        const css = stripComments(read(file));
+        for (const m of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+            const height = m[2].match(/(?:^|[;\s])height:\s*(var\(--control-[a-z]+\))/);
+            if (!height) continue;
+            const min = m[2].match(/min-height:\s*(var\(--control-[a-z]+\))/);
+            assert.equal(min?.[1], height[1], `${file} 的 ${m[1].trim()} 設了 height: ${height[1]}，需要同值的 min-height`);
+        }
+    }
+});
+
+test('修改紀錄的版本標題沿用標頭的前景色，不被全域 h3 顏色蓋掉', () => {
+    assert.match(block(stripComments(read('assets/css/changelog.css')), '.changelog-version'), /(?:^|[;\s])color:\s*inherit/);
+});

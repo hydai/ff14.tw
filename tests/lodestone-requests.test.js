@@ -211,3 +211,36 @@ test('新查詢會清除舊公會、時間戳、特殊內容及分頁狀態', as
     assert.equal(lookup.elements.dataTimestamp.classList.contains('hidden'), true);
     assert.equal(lookup.elements.fcEstateInfo.classList.contains('hidden'), true);
 });
+
+test('貼上角色頁網址或「ID 12345678」都查詢正確的角色 ID', async () => {
+    for (const [input, expected] of [
+        ['https://na.finalfantasyxiv.com/lodestone/character/12345678/', '12345678'],
+        ['ID 12345678', '12345678'],
+        ['https://jp.finalfantasyxiv.com/lodestone/character/23456789/achievement/?page=2', '23456789']
+    ]) {
+        const { lookup, calls } = fixture();
+        lookup.elements.characterId.value = input;
+        await lookup.searchCharacter();
+        assert.equal(calls[0].url.pathname, `/character/${expected}`);
+        assert.equal(lookup.elements.characterId.value, expected);
+    }
+});
+
+test('貼上網址時輸入框立即換成角色 ID（input 事件）', () => {
+    const { lookup } = fixture();
+    const handlers = {};
+    lookup.elements.characterId.addEventListener = (type, handler) => { handlers[type] = handler; };
+    lookup.elements.searchBtn.addEventListener = () => {};
+    lookup.elements.tabNavigation.addEventListener = () => {};
+    lookup.elements.tabButtons = [];
+    lookup.initializeEvents();
+    assert.equal(typeof handlers.input, 'function');
+    for (const [input, expected] of [
+        ['https://jp.finalfantasyxiv.com/lodestone/character/23456789/achievement/?page=2', '23456789'],
+        ['ID 12345678', '12345678']
+    ]) {
+        const target = { value: input };
+        handlers.input({ target });
+        assert.equal(target.value, expected);
+    }
+});
