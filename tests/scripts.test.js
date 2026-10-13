@@ -3,6 +3,8 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
+const { translationKeySet } = require('./helpers/translation-parsers.js');
+
 const ROOT = path.join(__dirname, '..');
 const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
 
@@ -18,32 +20,6 @@ function listFiles(dir, exts, out = []) {
 
 // 掃描 assets/、tools/ 底下所有 .js（此範圍本來就不含 tests/、node_modules/）
 const SCRIPT_FILES = [...listFiles('assets', ['.js']), ...listFiles('tools', ['.js'])];
-
-// 取出翻譯檔裡 `lang: {`…對應 `}` 的區塊（只有一層巢狀字串屬性，作法比照 design-system.test.js 的 block()）
-// 提升到模組層級（原本寫在下面 TARGETS 測試的函式本體內），讓新增的頁面級 data-i18n 測試也能共用，
-// 行為與提升前完全相同，TARGETS 測試本身不需要跟著修改呼叫方式。
-function jsBlock(code, lang) {
-    const start = code.indexOf(`${lang}: {`);
-    if (start === -1) return null;
-    const openBrace = code.indexOf('{', start);
-    let i = openBrace;
-    let depth = 0;
-    for (; i < code.length; i++) {
-        if (code[i] === '{') depth++;
-        else if (code[i] === '}') { depth--; if (depth === 0) break; }
-    }
-    return code.slice(openBrace, i + 1);
-}
-// 只認「行首縮排 + 識別字 + 冒號 + 引號」的鍵值宣告，避免英文譯文裡「Label:」這類字面值被誤判成 key
-function jsKeys(blockText) {
-    const set = new Set();
-    if (!blockText) return set;
-    for (const m of blockText.matchAll(/^\s*(\w+):\s*['"]/gm)) set.add(m[1]);
-    return set;
-}
-function translationKeySet(file, lang) {
-    return jsKeys(jsBlock(read(file), lang));
-}
 
 // 遞迴列出 dir（相對於 ROOT）底下所有 .html，回傳相對路徑（listFiles 已有副檔名清單版本，
 // 這裡另外寫一個不篩副檔名、只找 .html 的版本，供下面的全站 data-i18n 測試使用）
@@ -87,7 +63,7 @@ test('TARGETS 列出的工具 data-i18n／getI18nText 鍵值存在於 common.js 
         { html: 'tools/macro-converter/index.html', js: 'tools/macro-converter/script.js', translations: 'assets/js/i18n/translations/tools/macro-converter.js', keyPrefix: 'macro_converter_' }
     ];
 
-    // jsBlock／jsKeys／translationKeySet 已提升到模組層級（見檔案上方），這裡不再重複定義
+    // translationKeySet 來自 tests/helpers/translation-parsers.js（見檔案上方的 require），這裡不再重複定義
 
     const KEY_ATTR_RE = /\sdata-i18n(?:-html)?="([^"]+)"/g;
     const JS_KEY_RES = [

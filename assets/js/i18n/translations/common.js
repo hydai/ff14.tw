@@ -16,6 +16,21 @@ const CommonTranslations = {
         footer_copyright: '本站非官方網站，與 Square Enix 無關',
         footer_made_with: 'Made with ❤️ by hydai',
 
+        // 工具名稱（全站共用：工具選單、首頁、404）
+        tool_mini_cactpot_title: '仙人微彩計算機',
+        tool_wondrous_tails_title: '天書奇談預測器',
+        tool_dungeon_database_title: '副本資料庫',
+        tool_character_card_title: '角色卡產生器',
+        tool_faux_hollows_title: '宗長計算機',
+        tool_treasure_map_title: '寶圖搜尋器',
+        tool_lodestone_title: 'Lodestone 角色查詢',
+        tool_timed_gathering_title: '特殊採集時間管理器',
+        tool_guide_title: '攻略資料',
+        tool_report_generator_title: '檢舉模板產生器',
+        tool_macro_converter_title: '巨集轉換器',
+        tool_weather_forecast_title: '天氣預報',
+        tool_tc_shop_title: '水晶商城清單',
+
         // 通用按鈕
         btn_reset: '重置',
         btn_confirm: '確認',
@@ -91,6 +106,21 @@ const CommonTranslations = {
         footer_copyright: 'Unofficial site, not affiliated with Square Enix',
         footer_made_with: 'Made with ❤️ by hydai',
 
+        // Tool names (shared site-wide: tools menu, home page, 404)
+        tool_mini_cactpot_title: 'Mini Cactpot Calculator',
+        tool_wondrous_tails_title: 'Wondrous Tails Predictor',
+        tool_dungeon_database_title: 'Dungeon Database',
+        tool_character_card_title: 'Character Card Generator',
+        tool_faux_hollows_title: 'Faux Hollows Calculator',
+        tool_treasure_map_title: 'Treasure Map Finder',
+        tool_lodestone_title: 'Lodestone Lookup',
+        tool_timed_gathering_title: 'Timed Gathering Manager',
+        tool_guide_title: 'Game Guide',
+        tool_report_generator_title: 'Report Generator',
+        tool_macro_converter_title: 'Macro Converter',
+        tool_weather_forecast_title: 'Weather Forecast',
+        tool_tc_shop_title: 'Crystal Shop List',
+
         // Common buttons
         btn_reset: 'Reset',
         btn_confirm: 'Confirm',
@@ -164,6 +194,21 @@ const CommonTranslations = {
         // フッター
         footer_copyright: '非公式サイト、スクウェア・エニックスとは無関係',
         footer_made_with: 'Made with ❤️ by hydai',
+
+        // ツール名（サイト共通：ツールメニュー、ホーム、404）
+        tool_mini_cactpot_title: 'ミニくじテンダー計算機',
+        tool_wondrous_tails_title: 'クロの空想帳予測器',
+        tool_dungeon_database_title: 'ダンジョンデータベース',
+        tool_character_card_title: 'キャラクターカード生成',
+        tool_faux_hollows_title: '幻フォールスホロー計算機',
+        tool_treasure_map_title: '宝の地図検索',
+        tool_lodestone_title: 'Lodestone 検索',
+        tool_timed_gathering_title: 'タイムド採集管理',
+        tool_guide_title: '攻略情報',
+        tool_report_generator_title: '通報テンプレート生成',
+        tool_macro_converter_title: 'マクロ変換ツール',
+        tool_weather_forecast_title: '天気予報',
+        tool_tc_shop_title: 'クリスタルショップリスト',
 
         // 共通ボタン
         btn_reset: 'リセット',
