@@ -1,5 +1,5 @@
 /* ==========================================================================
-   關於、版權聲明頁面 — 只寫版面；顏色、圓角、字級一律來自 tokens.css
+   關於、版權聲明、404 頁面 — 只寫版面；顏色、圓角、字級一律來自 tokens.css
    ========================================================================== */
 
 .about-content,
@@ -211,5 +211,74 @@
         gap: var(--space-2);
         font-size: var(--text-xl);
         text-align: center;
+    }
+}
+
+/* ==========================================================================
+   404 頁 — GitHub Pages 會在任何不存在的網址顯示 404.html
+   工具清單裡每個連結的外觀（.not-found-tool*）在 common.css，和首頁的「最近使用」共用同一組規則
+   ========================================================================== */
+
+/* 訊息區：置中 */
+.not-found {
+    padding-block: var(--space-9) var(--space-8);
+    text-align: center;
+}
+
+/* 「404」要寫成 .not-found .not-found-code（權重 0,2,0）：單獨的 .not-found-code（0,1,0）比下面的
+   .not-found p（0,1,1）弱，顏色、字級與下方間距都會被 .not-found p 蓋掉 */
+.not-found .not-found-code {
+    margin-bottom: var(--space-2);
+    font-size: var(--text-5xl);
+    font-weight: var(--weight-bold);
+    line-height: var(--leading-tight);
+    color: var(--color-primary);
+}
+
+.not-found h1 {
+    margin-bottom: var(--space-3);
+}
+
+.not-found p {
+    margin: 0 auto var(--space-6);
+    font-size: var(--text-lg);
+    color: var(--color-muted);
+}
+
+/* 工具清單：小標置中，桌機 3 欄、≤768px 2 欄、≤480px 1 欄（minmax(0, …) 讓欄寬能縮到比內容窄，名稱放不下時才會截成「…」） */
+.not-found-tools .section-label {
+    text-align: center;
+}
+
+.not-found-list {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-3);
+    max-width: var(--container-narrow);
+    margin: 0 auto;
+}
+
+/* 外部網站名稱後面的 ↗ */
+.not-found-tool-ext {
+    flex: none;
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+}
+
+@media (max-width: 768px) {
+    .not-found {
+        padding-block: var(--space-6) var(--space-5);
+    }
+
+    .not-found-list {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+/* 手機單欄：2 欄時 390px 寬的名稱只剩約 95px，大半被截成「…」；單欄有約 280px，13 個名稱在 zh／en／ja 都放得下。
+   要排在上面 768px 的規則後面：≤480px 時兩個 @media 都成立，同樣權重的規則後寫的才會贏 */
+@media (max-width: 480px) {
+    .not-found-list {
+        grid-template-columns: minmax(0, 1fr);
     }
 }

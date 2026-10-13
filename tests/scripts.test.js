@@ -32,10 +32,10 @@ function listHtmlFiles(dir, out = []) {
     return out;
 }
 // 全站會套用 i18n 的頁面：tools/ 底下所有 .html（含 12 個工具的 index.html 與 guide/ 的 8 個子頁面）
-// 加上 4 個根頁面；api/test.html 不是玩家頁面，不列入
+// 加上 4 個根頁面與 404 頁；api/test.html 不是玩家頁面，不列入
 const ALL_I18N_PAGES = [
     ...listHtmlFiles('tools'),
-    'index.html', 'about.html', 'changelog.html', 'copyright.html'
+    'index.html', 'about.html', 'changelog.html', 'copyright.html', '404.html'
 ];
 
 test('assets 與 tools 底下的 .js 不得使用 innerHTML／outerHTML／insertAdjacentHTML', () => {
@@ -181,10 +181,11 @@ test('tools/**/*.html 與根頁面用到的 data-i18n 鍵值都能在該頁引�
             }
         }
     }
-    // 目前 23 頁裡有 22 頁貢獻了 data-i18n 鍵值（僅 report-generator 尚未使用 i18n，貢獻 0 是預期行為）。
+    // 目前 24 頁裡有 23 頁貢獻了 data-i18n 鍵值（僅 report-generator 尚未使用 i18n，貢獻 0 是預期行為）。
     // 用「精確頁數」取代寬鬆的下限，掃描邏輯若不小心漏頁會立刻在這裡發現，而不必等 checked 累積夠大的落差才觸發。
-    assert.strictEqual(pagesWithKeys, 22, `貢獻 data-i18n 鍵值的頁面數應該是 22（目前 ${pagesWithKeys}），頁面數若有變動需要一併檢視這個守門測試`);
-    // checked 目前是 1149；門檻從 1000 收緊到 1100，讓漏掃能在少數頁面／鍵值就觸發，不用累積到近 150 筆落差
+    assert.strictEqual(pagesWithKeys, 23, `貢獻 data-i18n 鍵值的頁面數應該是 23（目前 ${pagesWithKeys}），頁面數若有變動需要一併檢視這個守門測試`);
+    // 門檻是 (頁面,語言,鍵值) 組合數的下限，用來擋住掃描整批漏頁；實際數量會隨頁面與翻譯鍵增加（失敗訊息會印出目前的值），
+    // 離門檻太遠時漏掃一兩頁就抓不到，可以跟著調高
     assert.ok(checked > 1100, `檢查的 (頁面,語言,鍵值) 組合數不應該太少（目前 ${checked}）`);
 });
 

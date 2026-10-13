@@ -359,7 +359,9 @@ textarea:focus {
     gap: var(--space-3);
 }
 
-.recent-tool {
+/* 工具連結的外觀：404 頁的工具清單（.not-found-tool*）共用同一組規則，用選擇器分組，不複製宣告 */
+.recent-tool,
+.not-found-tool {
     display: flex;
     align-items: center;
     gap: var(--space-2);
@@ -373,12 +375,14 @@ textarea:focus {
     text-decoration: none;
 }
 
-.recent-tool:hover {
+.recent-tool:hover,
+.not-found-tool:hover {
     border-color: var(--color-primary);
     color: var(--color-text);
 }
 
-.recent-tool-icon {
+.recent-tool-icon,
+.not-found-tool-icon {
     flex: none;
     width: 1.5em;
     font-size: var(--text-xl);
@@ -387,7 +391,8 @@ textarea:focus {
 }
 
 /* 名稱太長時截成「…」：flex 項目預設不能比內容窄，要放寬 min-width 才縮得起來 */
-.recent-tool-name {
+.recent-tool-name,
+.not-found-tool-name {
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;

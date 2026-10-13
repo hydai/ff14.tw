@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh-Hant" data-i18n-title="not_found_title">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex">
+    <title>找不到這個頁面 - FF14.tw</title>
+    <link rel="icon" type="image/x-icon" href="/assets/images/ff14tw.ico">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/assets/css/tokens.css">
+    <link rel="stylesheet" href="/assets/css/common.css">
+    <link rel="stylesheet" href="/assets/css/components/language-switcher.css">
+    <link rel="stylesheet" href="/assets/css/components/buttons.css">
+    <link rel="stylesheet" href="/assets/css/pages.css">
+</head>
+<body>
+    <div id="header-placeholder" data-base-path="/" data-page="404"></div>
+    <noscript>
+        <nav class="noscript-nav">
+            <a href="/" class="noscript-nav-link">首頁</a>
+            <a href="/copyright.html" class="noscript-nav-link">版權聲明</a>
+            <a href="https://github.com/hydai/ff14.tw" target="_blank" rel="noopener noreferrer" class="noscript-nav-link">GitHub</a>
+            <a href="/about.html" class="noscript-nav-link">關於</a>
+        </nav>
+    </noscript>
+
+    <main class="main">
+        <div class="container">
+            <section class="not-found">
+                <p class="not-found-code">404</p>
+                <h1 data-i18n="not_found_title">找不到這個頁面</h1>
+                <p data-i18n="not_found_text">網址可能打錯了，或這個頁面已經搬家。</p>
+                <a href="/" class="btn btn-primary btn-lg" data-i18n="not_found_home">回首頁</a>
+            </section>
+
+            <section class="not-found-tools" hidden>
+                <h2 class="section-label" data-i18n="not_found_tools_title">或直接選一個工具</h2>
+                <div class="not-found-list" id="notFoundTools"></div>
+            </section>
+        </div>
+    </main>
+
+    <div id="footer-placeholder" data-base-path="/"></div>
+
+    <script src="/assets/js/i18n/i18n-manager.js"></script>
+    <script src="/assets/js/i18n/translations/common.js"></script>
+    <script src="/assets/js/i18n/translations/not-found.js"></script>
+    <script src="/assets/js/components/tools-registry.js"></script>
+    <script src="/assets/js/components/nav-template.js"></script>
+    <script src="/assets/js/components/footer-template.js"></script>
+    <script src="/assets/js/components/layout-loader.js"></script>
+    <script src="/assets/js/common.js"></script>
+    <script src="/assets/js/not-found.js"></script>
+</body>
+</html>
