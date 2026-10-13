@@ -238,3 +238,132 @@ test('首頁載入 components/tags.css，卡片用到的 .tag 變體都在裡面
         assert.match(tagsCss, new RegExp(`\\.${cls}\\s*[,{]`), `tags.css 沒有定義 .${cls}`);
     }
 });
+
+// ---------- 版面（assets/css/common.css） ----------
+// 把 CSS 攤平成 [{ media, selectors, body }]：media 是外層 @media 的條件，不在 @media 裡就是 null
+function cssRules(css) {
+    const rules = [];
+    const scan = (text, media) => {
+        for (const m of text.matchAll(/([^{}]+)\{((?:[^{}]|\{[^{}]*\})*)\}/g)) {
+            const head = m[1].trim();
+            if (head.startsWith('@media')) scan(m[2], head.slice('@media'.length).trim());
+            else rules.push({ media, selectors: head.split(',').map((s) => s.trim()), body: m[2] });
+        }
+    };
+    scan(css, null);
+    return rules;
+}
+const commonRules = cssRules(stripComments(read('assets/css/common.css')));
+const MOBILE = '(max-width: 768px)';
+
+// 某個選擇器（在指定的 @media 裡）所有規則的宣告合在一起
+function declarations(selector, media = null) {
+    const found = commonRules.filter((r) => r.media === media && r.selectors.includes(selector));
+    assert.ok(found.length > 0, `common.css 找不到 ${selector}${media ? `（@media ${media}）` : ''} 的規則`);
+    return found.map((r) => r.body).join(';');
+}
+
+test('hero 縮小只套用在首頁', () => {
+    const heroClasses = (file) => {
+        const m = read(file).match(/<section\b[^>]*\bclass="([^"]*\bhero\b[^"]*)"/);
+        assert.ok(m, `${file} 找不到 hero 區塊`);
+        return m[1].split(/\s+/);
+    };
+    assert.ok(heroClasses('index.html').includes('hero-compact'), '首頁的 hero 要有 hero-compact');
+    for (const file of ['about.html', 'copyright.html']) {
+        assert.ok(!heroClasses(file).includes('hero-compact'), `${file} 的 hero 維持原樣`);
+    }
+    for (const file of fs.readdirSync(ROOT).filter((name) => name.endsWith('.html') && name !== 'index.html')) {
+        assert.ok(!read(file).includes('hero-compact'), `${file} 不該用到 hero-compact`);
+    }
+
+    // 縮小的樣式都寫在 .hero-compact 底下，不改共用的 .hero
+    const compact = commonRules.filter((r) => r.selectors.some((s) => s.includes('hero-compact')));
+    assert.ok(compact.length > 0, 'common.css 沒有 .hero-compact 的規則');
+    for (const rule of compact) {
+        for (const selector of rule.selectors) assert.match(selector, /^\.hero-compact(?:\s|$)/, `${selector} 要以 .hero-compact 開頭`);
+    }
+
+    // 桌機：標題 --text-3xl、副標 --text-md；手機：標題 --text-xl、副標 --text-sm；中文標題不從詞中間斷行
+    assert.match(declarations('.hero-compact h1'), /font-size:\s*var\(--text-3xl\)/);
+    assert.match(declarations('.hero-compact p'), /font-size:\s*var\(--text-md\)/);
+    assert.match(declarations('.hero-compact h1', MOBILE), /font-size:\s*var\(--text-xl\)/);
+    assert.match(declarations('.hero-compact p', MOBILE), /font-size:\s*var\(--text-sm\)/);
+    assert.match(declarations('.hero-compact'), /word-break:\s*keep-all/);
+    // keep-all 讓整段日文副標變成一個不能斷的詞：320px 寬時比 hero 還寬，要允許真的放不下才斷行
+    assert.match(declarations('.hero-compact'), /overflow-wrap:\s*anywhere/);
+});
+
+test('首頁版面：工具格、精簡工具卡、標題列與缺什麼說明的數值', () => {
+    // 工具格：桌機自動排欄（每欄至少 260px），手機單欄
+    assert.match(declarations('.tools-grid'), /grid-template-columns:\s*repeat\(auto-fill,\s*minmax\(260px,\s*1fr\)\)/);
+    assert.match(declarations('.tools-grid'), /gap:\s*var\(--space-4\)/);
+    assert.match(declarations('.tools-grid', MOBILE), /grid-template-columns:\s*1fr\s*(?:;|$)/);
+    assert.match(declarations('.tools-grid', MOBILE), /gap:\s*var\(--space-2\)/);
+
+    // 工具卡：圖示在左的 grid；圖示要明確跨 3 列（沒有顯式的列，grid-row: 1 / -1 只會佔 1 列）
+    const card = declarations('.tool-card');
+    assert.match(card, /display:\s*grid/);
+    assert.match(card, /grid-template-columns:\s*auto\s+minmax\(0,\s*1fr\)/);
+    assert.match(card, /padding:\s*var\(--space-4\)\s+var\(--space-5\)/);
+    assert.match(declarations('.tool-card', MOBILE), /padding:\s*var\(--space-2\)\s+var\(--space-4\)/);
+    assert.match(declarations('.tool-icon'), /grid-row:\s*1\s*\/\s*span\s*3/);
+
+    // 標題列：flex、可換行，標籤跟在標題後面
+    const heading = declarations('.tool-heading');
+    assert.match(heading, /display:\s*flex/);
+    assert.match(heading, /flex-wrap:\s*wrap/);
+    assert.match(heading, /gap:\s*var\(--space-1\)\s+var\(--space-2\)/);
+
+    // 標題行高 --leading-tight，說明行高 --leading-snug；說明桌機最多 2 行、手機 1 行
+    assert.match(declarations('.tool-title'), /line-height:\s*var\(--leading-tight\)/);
+    const description = declarations('.tool-description');
+    assert.match(description, /line-height:\s*var\(--leading-snug\)/);
+    assert.match(description, /-webkit-line-clamp:\s*2(?!\d)/);
+    assert.match(declarations('.tool-description', MOBILE), /-webkit-line-clamp:\s*1(?!\d)/);
+
+    // 缺什麼說明：--text-xs、警告色的文字
+    const status = declarations('.tool-status');
+    assert.match(status, /font-size:\s*var\(--text-xs\)/);
+    assert.match(status, /color:\s*var\(--color-warning-text\)/);
+});
+
+test('手機版的工具格與工具卡規則只在一處定義，後面的重複定義不會蓋掉它', () => {
+    // 同樣的選擇器在 @media (max-width: 768px) 與 (max-width: 480px) 各寫一份時，
+    // 手機寬度下後寫的會贏；這幾個選擇器的手機規則只能有一份
+    for (const selector of ['.tools-grid', '.tool-card', '.tool-icon', '.tool-title', '.tool-description']) {
+        const mobile = commonRules.filter((r) => r.media && /max-width/.test(r.media) && r.selectors.includes(selector));
+        assert.deepEqual(mobile.map((r) => r.media), [MOBILE], `${selector} 的手機規則只該在 @media ${MOBILE} 出現一次`);
+    }
+});
+
+test('手機版縮小上下內距只套用在首頁的 main.home-main，其他頁面的 .main 不變', () => {
+    // 所有頁面（根目錄與 tools/ 底下）的 <main> class：只有首頁多一個 home-main
+    const htmlFiles = (dir, out = []) => {
+        for (const entry of fs.readdirSync(path.join(ROOT, dir), { withFileTypes: true })) {
+            const rel = path.posix.join(dir, entry.name);
+            if (entry.isDirectory()) htmlFiles(rel, out);
+            else if (entry.name.endsWith('.html')) out.push(rel);
+        }
+        return out;
+    };
+    const pages = [...fs.readdirSync(ROOT).filter((name) => name.endsWith('.html')), ...htmlFiles('tools')];
+    assert.ok(pages.length >= 22, `只找到 ${pages.length} 頁，解析可能失效`);
+    for (const file of pages) {
+        const m = read(file).match(/<main\b[^>]*\bclass="([^"]*)"/);
+        assert.ok(m, `${file} 找不到 <main class="…">`);
+        const classes = m[1].split(/\s+/);
+        assert.ok(classes.includes('main'), `${file} 的 <main> 要有 main`);
+        assert.equal(classes.includes('home-main'), file === 'index.html', `${file} 的 <main> ${file === 'index.html' ? '要有' : '不該有'} home-main`);
+    }
+
+    // 縮小的內距只寫在 .home-main，而且只在手機版（桌機沿用 .main 的 --space-7）
+    assert.match(declarations('.home-main', MOBILE), /padding-block:\s*var\(--space-4\)/);
+    const homeMain = commonRules.filter((r) => r.selectors.some((s) => s.includes('home-main')));
+    assert.deepEqual(homeMain.map((r) => r.media), [MOBILE], '.home-main 的規則只該在 @media (max-width: 768px) 出現一次');
+
+    // 共用的 .main 沒變：基準規則還是 --space-7，手機版（任何 max-width 區塊）也沒有再改它
+    assert.match(declarations('.main'), /padding-block:\s*var\(--space-7\)/);
+    const mobileMain = commonRules.filter((r) => r.media && /max-width/.test(r.media) && r.selectors.some((s) => /(^|[\s.])main$/.test(s)));
+    assert.deepEqual(mobileMain.map((r) => r.selectors), [], '手機版不該有 .main 的規則（只有首頁的 .home-main）');
+});

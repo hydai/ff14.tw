@@ -407,18 +407,24 @@ textarea:focus {
 
 .tools-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: var(--space-7);
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: var(--space-4);
     max-width: 1200px;
     margin: 0 auto;
 }
 
-/* 工具卡：hover 上浮 4px、主色邊框、品牌漸層頂線展開 */
+/* 工具卡（精簡版）：左邊圖示，右邊由上而下是標題列、說明、選用的「缺什麼」說明。
+   hover 上浮 4px、主色邊框、品牌漸層頂線展開 */
 .tool-card {
     position: relative;
-    display: block;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: var(--space-4);
+    /* 同一排的卡片會被拉到一樣高：內容留在中間，列不跟著被撐開 */
+    align-content: center;
+    align-items: center;
     overflow: hidden;
-    padding: var(--space-7) var(--space-6);
+    padding: var(--space-4) var(--space-5);
     background: var(--color-surface);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
@@ -455,32 +461,66 @@ textarea:focus {
     cursor: pointer;
 }
 
+/* 圖示佔左欄、跨標題列／說明／缺什麼說明三列。沒有顯式的列，grid-row: 1 / -1 只會佔 1 列，所以寫 span 3；
+   沒有「缺什麼」說明的卡片，第 3 列是空的、高度 0 */
 .tool-icon {
-    display: block;
-    margin-bottom: var(--space-5);
-    font-size: var(--text-5xl);
+    grid-column: 1;
+    grid-row: 1 / span 3;
+    width: var(--control-md);
+    font-size: var(--text-3xl);
     line-height: 1;
     text-align: center;
 }
 
+.tool-heading,
+.tool-description,
+.tool-status {
+    grid-column: 2;
+}
+
+/* 標題列：標題後面接選用的標籤（.tag），放不下時標籤換到下一行 */
+.tool-heading {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-1) var(--space-2);
+}
+
 .tool-title {
-    margin-bottom: var(--space-3);
-    font-size: var(--text-xl);
+    margin: 0;
+    font-size: var(--text-lg);
     font-weight: var(--weight-semibold);
-    line-height: var(--leading-snug);
-    text-align: center;
+    line-height: var(--leading-tight);
     color: var(--color-heading);
 }
 
+/* 說明桌機最多 2 行，手機 1 行，太長就截成「…」 */
 .tool-description {
-    margin: 0;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    margin: var(--space-1) 0 0;
     font-size: var(--text-sm);
-    line-height: var(--leading-normal);
-    text-align: center;
+    line-height: var(--leading-snug);
     color: var(--color-muted);
 }
 
+/* 說明下方寫出缺什麼（副本資料庫、攻略資料） */
+.tool-status {
+    margin: var(--space-1) 0 0;
+    font-size: var(--text-xs);
+    line-height: var(--leading-snug);
+    color: var(--color-warning-text);
+}
+
 @media (max-width: 768px) {
+    /* 首頁的 <main class="main home-main">：手機版上下內距縮成 --space-4，第一個畫面才放得下更多工具。
+       .main 每一頁都用，所以只在首頁多加 home-main，不改 .main 本身；要放在 .main 之後，同優先序時後寫的才會贏 */
+    .home-main {
+        padding-block: var(--space-4);
+    }
+
     .hero {
         margin-bottom: var(--space-9);
         padding: var(--space-9) var(--space-6);
@@ -494,21 +534,28 @@ textarea:focus {
         font-size: var(--text-lg);
     }
 
+    /* 手機：單欄的橫向精簡列（32px 圖示在左），說明只留 1 行 */
     .tools-grid {
         grid-template-columns: 1fr;
-        gap: var(--space-6);
+        gap: var(--space-2);
     }
 
     .tool-card {
-        padding: var(--space-7) var(--space-6);
+        column-gap: var(--space-3);
+        padding: var(--space-2) var(--space-4);
     }
 
     .tool-icon {
-        font-size: var(--text-4xl);
+        width: var(--control-sm);
+        font-size: var(--text-2xl);
     }
 
     .tool-title {
-        font-size: var(--text-lg);
+        font-size: var(--text-md);
+    }
+
+    .tool-description {
+        -webkit-line-clamp: 1;
     }
 }
 
@@ -524,13 +571,42 @@ textarea:focus {
     .hero p {
         font-size: var(--text-md);
     }
+}
 
-    .tools-grid {
-        gap: var(--space-4);
+/* 首頁 hero 的精簡版（section.hero.hero-compact）：桌機約 120px 高、手機約 100px。
+   about／copyright 的 .hero 不加這個 class，維持原樣。
+   要放在上面 .hero 的響應式規則之後：選擇器的優先序相同時，後寫的才會贏 */
+.hero-compact {
+    margin-bottom: var(--space-6);
+    padding: var(--space-6) var(--space-7);
+    /* 中文標題不從詞中間斷成「工」與「具箱」兩行。keep-all 會讓沒有標點的日文副標變成一個不能斷的詞，
+       320px 寬時比 hero 還寬，所以真的放不下的時候才允許在任意處斷行，不要溢出 */
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+}
+
+.hero-compact h1 {
+    margin-bottom: var(--space-2);
+    font-size: var(--text-3xl);
+}
+
+.hero-compact p {
+    font-size: var(--text-md);
+}
+
+@media (max-width: 768px) {
+    .hero-compact {
+        margin-bottom: var(--space-4);
+        padding: var(--space-3) var(--space-4);
     }
 
-    .tool-card {
-        padding: var(--space-6);
+    .hero-compact h1 {
+        margin-bottom: var(--space-1);
+        font-size: var(--text-xl);
+    }
+
+    .hero-compact p {
+        font-size: var(--text-sm);
     }
 }
 
@@ -833,11 +909,6 @@ textarea:focus {
     .logo-separator,
     .logo-tool-name {
         font-size: var(--text-md);
-    }
-
-    .tools-grid {
-        grid-template-columns: 1fr;
-        gap: var(--space-4);
     }
 
     /* 返回頂端鈕固定在右下角（距底 --space-5、高 --control-lg）；
