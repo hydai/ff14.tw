@@ -1,4 +1,4 @@
-# Faux Hollows Foxes 計算機
+# 宗長計算機
 
 專為 Final Fantasy XIV 玩家設計的 Faux Hollows Foxes 活動智慧計算工具，提供最佳點擊策略建議。
 

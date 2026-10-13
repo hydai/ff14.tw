@@ -18,8 +18,8 @@ FF14.tw is a multi-tool website for Final Fantasy XIV players in Taiwan, providi
 
 ## Project Statistics
 
-- **HTML Files**: 24 total — 19 across 12 tool directories (11 single-page tools + `guide/` with 8 pages) + 4 main pages (`index.html`, `about.html`, `changelog.html`, `copyright.html`) + 1 API test harness (`api/test.html`)
-- **JavaScript Files**: 80 total — 36 tool scripts + 4 shared utilities (`assets/js/`) + 17 i18n (manager + translations) + 3 layout components (`assets/js/components/`) + 19 test files (`tests/*.test.js`) + 1 Cloudflare Worker (`api/treasure-room-worker.js`); plus 3 Node build scripts (`scripts/*.mjs`, not shipped to the site)
+- **HTML Files**: 25 total — 19 across 12 tool directories (11 single-page tools + `guide/` with 8 pages) + 5 root pages (`index.html`, `about.html`, `changelog.html`, `copyright.html`, `404.html`) + 1 API test harness (`api/test.html`)
+- **JavaScript Files**: 94 total — 36 tool scripts + 6 shared utilities (`assets/js/`) + 18 i18n (manager + translations) + 4 layout components (`assets/js/components/`) + 27 test files (`tests/*.test.js`) + 2 test helpers (`tests/helpers/`, not test files) + 1 Cloudflare Worker (`api/treasure-room-worker.js`); plus 3 Node build scripts (`scripts/*.mjs`, not shipped to the site)
 - **CSS Files**: 23 (shared + components + tool-specific)
 - **JSON Data Files**: 8 (total ~25,600 lines); `/data/` also has one non-JSON `ff14-gp.csv`
 - **Total Dungeons**: 803 entries (data file's own `metadata.totalDungeons` field still says 804 — pre-existing inconsistency inside `dungeons.json` itself, not a doc bug)
@@ -41,6 +41,8 @@ npx serve .
 php -S localhost:8000
 ```
 
+**404 頁：** GitHub Pages 會對任何不存在的網址顯示根目錄的 `404.html`，但 `python3 -m http.server` 不會（不存在的網址只會得到它內建的錯誤頁）。本機要檢查 404 頁時，從專案根目錄啟動伺服器後直接開 `http://localhost:8000/404.html`（頁面的樣式、腳本與連結都是根目錄絕對路徑，不能用 `file://` 開啟）。
+
 **CORS Requirements:**
 Tools that fetch JSON data require a local server:
 - 副本資料庫 (`dungeon-database/`) - loads `/data/dungeons.json`
@@ -54,12 +56,23 @@ Tools that work without server (can open HTML directly):
 - 仙人微彩計算機
 - Wondrous Tails 預測器
 - 角色卡產生器
-- Faux Hollows Foxes 計算機
+- 宗長計算機
 - 檢舉模板產生器
 - 天氣預報
 - 攻略資料（陸行鳥毛色頁面除外）
 
-**Testing:** Node 24；先執行 `npm --prefix api ci` 安裝 Miniflare/workerd，再執行 `node --test`（Node 內建 test runner，自動執行 `tests/*.test.js`）。`tests/design-system.test.js` 守住設計系統規則（token 完整性、對比度、token-clean 檔案清單）；`tests/pages.test.js` 守住每一頁的載入順序與字型；`tests/timed-gathering-eorzea-time.test.js` 守住艾歐澤亞時間換算在不同時區下的一致性；`tests/scripts.test.js` 守住 `assets/`、`tools/` 底下的 JS 不得使用 `innerHTML`；`tests/docs.test.js` 守住 CLAUDE.md／README 的副本數、寶圖座標數與 JSON 資料檔案數這幾個關鍵統計數字不會與 `/data` 底下的實際資料脫節；`tests/modal-manager-stack.test.js` 用最小 DOM 替身（不需 jsdom）守住 `ModalManager` 的共用堆疊行為：只有最上層回應 Escape／焦點陷阱、關閉下層時由上而下連鎖收合、焦點依序回捲。新增行為測試涵蓋寶圖前後端契約、SQLite Durable Object 並行與權限、備份還原、通知降級、時間解析、陸行鳥全部色對、宗長候選、Lodestone 請求競爭、i18n 儲存與天氣網址狀態。`tests/design-system.test.js` 另守住按鈕與輸入框的 `min-height`（flex 直排時不被壓扁）；`tests/treasure-route-aetherytes.test.js` 守住每個有寶圖的地區都能算出傳送點。Worker 測試需要允許 localhost 連接埠；`.github/workflows/test.yml` 在 push／PR 自動執行全套測試與兩個 Worker 環境的 dry-run。每次 commit 前執行。網站主體沒有 package.json、bundler 或 linter（`api/` 的 Cloudflare Worker 子專案另有自己的 `package.json`／`wrangler`，與網站建置無關）。
+**Testing:** Node 24；先執行 `npm --prefix api ci` 安裝 Miniflare/workerd，再執行 `node --test`（Node 內建 test runner，自動執行 `tests/*.test.js`）。`tests/design-system.test.js` 守住設計系統規則（token 完整性、對比度、token-clean 檔案清單）；`tests/pages.test.js` 守住每一頁的 CSS 載入順序（`tokens.css` 在 `common.css` 之前）與字型，以及有頁首的頁面（至少 23 頁）的 JS 載入順序：`tools-registry.js` 必須排在 `nav-template.js` 之前、`layout-loader.js` 必須排在 `common.js` 之前；`tests/timed-gathering-eorzea-time.test.js` 守住艾歐澤亞時間換算在不同時區下的一致性；`tests/scripts.test.js` 守住 `assets/`、`tools/` 底下的 JS 不得使用 `innerHTML`；`tests/docs.test.js` 守住 CLAUDE.md／README 的副本數、寶圖座標數與 JSON 資料檔案數這幾個關鍵統計數字不會與 `/data` 底下的實際資料脫節；`tests/modal-manager-stack.test.js` 用最小 DOM 替身（不需 jsdom）守住 `ModalManager` 的共用堆疊行為：只有最上層回應 Escape／焦點陷阱、關閉下層時由上而下連鎖收合、焦點依序回捲。新增行為測試涵蓋寶圖前後端契約、SQLite Durable Object 並行與權限、備份還原、通知降級、時間解析、陸行鳥全部色對、宗長候選、Lodestone 請求競爭、i18n 儲存與天氣網址狀態。`tests/design-system.test.js` 另守住按鈕與輸入框的 `min-height`（flex 直排時不被壓扁）；`tests/treasure-route-aetherytes.test.js` 守住每個有寶圖的地區都能算出傳送點。Worker 測試需要允許 localhost 連接埠；`.github/workflows/test.yml` 在 push／PR 自動執行全套測試與兩個 Worker 環境的 dry-run。每次 commit 前執行。網站主體沒有 package.json、bundler 或 linter（`api/` 的 Cloudflare Worker 子專案另有自己的 `package.json`／`wrangler`，與網站建置無關）。
+
+**導覽列、頁尾、首頁與 404 頁的測試：** 共用兩個輔助模組：`tests/helpers/fake-dom.js`（不需 jsdom 的最小 DOM 替身，在 vm 裡執行真正的瀏覽器腳本）與 `tests/helpers/translation-parsers.js`（翻譯檔的鍵值解析）。它們不是測試檔，`node --test` 不會直接執行。
+- `tests/tools-registry.test.js`：登錄表依首頁順序列出 13 個工具、站內網址存在、名稱鍵在 `common.js` 的 zh／en／ja 都有；首頁工具卡與每個工具頁頁首的名稱都要和登錄表一致
+- `tests/footer-template.test.js`：頁尾連結的順序與屬性、版權年份、沒有 i18n 時顯示 zh 文字
+- `tests/nav-tools-menu.test.js`：導覽列順序、工具面板的內容、目前工具的標示（404 頁不標示）、面板的開關與焦點行為
+- `tests/hamburger-menu.test.js`：☰ 的 `aria-expanded`／`aria-controls`、焦點進出、Escape／遮罩／焦點移出關閉、視窗放寬時重置
+- `tests/recent-tools.test.js`：最近使用的記錄與讀取（含毀損資料、儲存空間不能用）、記錄時機、首頁「最近使用」的顯示與語言切換
+- `tests/home-page.test.js`：首頁工具卡的結構與狀態標示、翻譯鍵與預設文字、hero 縮小與版面數值
+- `tests/not-found-page.test.js`：404 頁的絕對路徑、載入順序、頁面結構、翻譯、工具清單與樣式
+- `tests/fake-dom.test.js`：守住 `fake-dom.js` 本身的行為（事件的捕獲／冒泡、焦點與 `inert`、選擇器、屬性等）
+- `tests/theme-toggle.test.js` 也改用 `fake-dom.js`：主題切換鈕只建立一次，跨過 768px 不搬動
 
 ## Core Patterns
 
@@ -152,6 +165,7 @@ HTML Structure:
    <script src="../../assets/js/i18n/i18n-manager.js"></script>
    <script src="../../assets/js/i18n/translations/common.js"></script>
    <script src="../../assets/js/i18n/translations/tools/[tool-name].js"></script>
+   <script src="../../assets/js/components/tools-registry.js"></script>
    <script src="../../assets/js/components/nav-template.js"></script>
    <script src="../../assets/js/components/footer-template.js"></script>
    <script src="../../assets/js/components/layout-loader.js"></script>
@@ -183,8 +197,12 @@ HTML Structure:
    - **Loading states**: Use `.loading`, `.loading-spinner`
    - **Messages**: Use `.error-message`, `.success-message`, `.info-message`, `.warning-message`
 5. Follow the class-based JavaScript architecture pattern
-6. Add tool card to main `index.html`
-7. Update changelog.html with new version entry
+6. Register the tool in `assets/js/components/tools-registry.js` (the single tool list behind the header 工具 ▾ panel, the homepage "最近使用" row and the 404 page). The order there is the homepage card order, and `tests/tools-registry.test.js` compares the registry with the rest:
+   - the entry: `id` (the directory name under `tools/`), `href`, `icon`, `i18nKey`, zh `name`
+   - the zh/en/ja name key `tool_*_title` in `translations/common.js` (not `index.js`); its zh value must equal the registry `name`
+   - the tool page: `data-tool-name` on `#header-placeholder` must equal the registry `name`, and the header key it points to (`data-tool-name-key`) must have the same zh/en/ja text as the `common.js` name
+7. Add tool card to main `index.html`, at the same position and with the same icon and title key as in the registry
+8. Update changelog.html with new version entry
 
 ## Shared Component System
 
@@ -476,11 +494,12 @@ The project supports 3 languages via the I18nManager class:
 /assets/js/i18n/
 ├── i18n-manager.js          # I18nManager 類別
 └── translations/
-    ├── common.js            # 共用翻譯（導航、頁尾）
+    ├── common.js            # 共用翻譯（導航、頁尾、13 個工具名稱 tool_*_title）
     ├── index.js             # 首頁翻譯
     ├── about.js             # 關於頁面翻譯
     ├── changelog.js         # 修改紀錄頁面翻譯
     ├── copyright.js         # 版權聲明頁面翻譯
+    ├── not-found.js         # 404 頁翻譯
     └── tools/               # 工具翻譯（report-generator 目前未使用 i18n，沒有對應檔案）
         ├── character-card.js
         ├── dungeon-database.js
@@ -598,9 +617,12 @@ async loadModules() {
 ### Dynamic Layout Components
 Navigation and footer are now loaded dynamically via JavaScript components in `/assets/js/components/`:
 
-- **nav-template.js**: Creates navigation bar with logo, nav links, and language switcher
-- **footer-template.js**: Creates footer with copyright and links
-- **layout-loader.js**: Orchestrates loading of both components, handles i18n integration
+- **tools-registry.js**: The single tool list (13 tools in homepage card order; 水晶商城清單 is `external`) with `findById`, `findByPath`, `readRecent` and `recordVisit`. The header 工具 ▾ panel, the homepage "最近使用" row and the 404 tool list all read it. Recent tools live in `localStorage['ff14tw_recent_tools']` (newest first, one entry per tool, at most 4; external tools, unknown ids, site pages and the 404 page are never recorded; every storage access is wrapped in try/catch)
+- **nav-template.js**: Creates navigation bar with logo, nav links, the 工具 ▾ button and panel (`initToolsMenu()` makes them work), and language switcher
+- **footer-template.js**: Creates footer with site links, disclaimer and copyright
+- **layout-loader.js**: Orchestrates loading of both components (marking the current tool in the header), records the current tool as recently used, handles i18n integration
+
+Every page with a header must load `tools-registry.js` before `nav-template.js` (the header reads `window.ToolsRegistry`) and `layout-loader.js` before `common.js` (`common.js` adds ☰ and the theme toggle to the header the loader built); `tests/pages.test.js` enforces both.
 
 All pages use placeholder elements that are replaced at runtime:
 ```html
@@ -613,22 +635,24 @@ All pages use placeholder elements that are replaced at runtime:
 
 **Placeholder attributes:**
 - `data-base-path`: Base path for relative URLs (e.g., "/" for root, "../../" for tools)
-- `data-tool-name`: Tool name to display in logo (e.g., "FF14.tw | 副本資料庫")
+- `data-tool-name`: Tool name to display in logo (e.g., "FF14.tw | 副本資料庫"); on a tool page it must equal that tool's registry `name`
 - `data-tool-name-key`: i18n key for tool name translation
+- `data-page`: Optional page type on the header placeholder. Only `404.html` sets it (`data-page="404"`): the loader then skips the URL-to-tool lookup, so no tool is marked as current and nothing is recorded as recently used. GitHub Pages shows the 404 page at whatever URL was mistyped (e.g. `/tools/weather-forecast/typo`), which would otherwise match a tool's directory
 
 ### Navigation Structure (Generated by nav-template.js)
-The navigation includes:
-- Logo with optional tool name
-- Navigation links: 首頁, 版權聲明, GitHub, 關於
+The navigation includes, in this order:
+- Logo with optional tool name (at 769–899px the tool name and its separator are hidden so the header does not overflow; the name stays in the page title and in the tools panel)
+- Navigation links: 首頁, 工具 ▾, 修改紀錄, 版權聲明 (關於 and GitHub are in the footer)
+- 工具 ▾: a button (`aria-expanded`, `aria-controls="nav-tools-menu"`) that opens a panel listing every registry tool in registry order (a floating 3-column panel on desktop). The current tool's link gets `active` and `aria-current="page"` (the button gets `active` too); 水晶商城清單 is external, so it opens a new tab and shows ↗. The panel closes on Escape (focus returns to the button), a press outside, Tab moving out, the page coming back from the back/forward cache, choosing a link that opens a new tab such as 水晶商城清單 (in these two cases focus returns to the button if it was in the panel), or the window narrowing to the drawer layout (≤768px; focus in the header nav then moves to ☰, see below); it is not a dialog (no focus trap, no scroll lock)
 - Language switcher (ZH-TW, EN, JP)
-- Mobile hamburger menu
+- Theme toggle: created once by `initThemeToggle()` in `common.js`, inside `.header .container` right before ☰; CSS positions it and it never moves across 768px
+- Mobile hamburger menu (≤768px): ☰ has `aria-expanded` and `aria-controls`. The drawer (`min(320px, 85vw)` wide) shows the always-expanded tool list first (the 工具 ▾ button is hidden there), then 首頁 · 修改紀錄 · 版權聲明 and the language switcher. The drawer's 首頁 is a second link placed after the tool list (`.nav-drawer-only`; the header's first 首頁 is `.nav-desktop-only` and hidden in the drawer), so what the drawer shows, the Tab order and the screen-reader order all follow the DOM — don't reorder the drawer with CSS `order`. Opening moves focus to the first tool link; Escape, the overlay, ☰ again, or focus leaving the drawer closes it (the first three return focus to ☰); coming back from the back/forward cache or choosing a link that opens a new tab (水晶商城清單) also closes it, returning focus to ☰ if it was in the drawer. Crossing 768px moves focus that would otherwise be lost: into the drawer layout, focus in the header nav moves to ☰; back to desktop, focus on ☰ or a drawer tool link moves to 工具 ▾, and focus on the drawer's 首頁 moves to the desktop 首頁. This runs in a `matchMedia` change listener (`initHamburgerMenu()`), which fires before the browser drops focus from elements that have just become hidden; the 250ms-debounced resize reset is too late for that
 
 ### Footer Structure (Generated by footer-template.js)
-The footer includes:
-- Copyright notice
+The footer has three rows:
+- Site links: 修改紀錄 · 回報問題 (GitHub Issues, new tab) · 關於 · 版權聲明 · GitHub (new tab). External links show ↗ in a separate `span.external-mark` and carry `data-i18n` on an inner `span`, so switching languages never wipes the ↗
 - Disclaimer text
-- Made with ❤️ by hydai
-- Changelog link
+- `© 2024–<current year> FF14.tw · Made with ❤️ by hydai` (the end year is computed; `createDOM({ year })` overrides it)
 
 ## Advanced Patterns
 
@@ -790,7 +814,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 2. **Dungeon Database** (`dungeon-database/`): 803 dungeons with multi-select filtering
 3. **Mini Cactpot Calculator** (`mini-cactpot/`): 3x3 lottery probability calculator
 4. **Wondrous Tails Predictor** (`wondrous-tails/`): 4x4 bingo probability calculator
-5. **Faux Hollows Foxes** (`faux-hollows-foxes/`): 6x6 treasure hunting puzzle solver
+5. **Faux Hollows Calculator（宗長計算機）** (`faux-hollows-foxes/`): 6x6 treasure hunting puzzle solver
 6. **Treasure Map Finder** (`treasure-map-finder/`): 227 treasure map coordinates with route planning (G8/G10/G12/G14/G15/G17/G18)
 7. **Lodestone Lookup** (`lodestone-lookup/`): Character information lookup using Lodestone ID with complete stats, jobs, and equipment display
 8. **Timed Gathering Manager** (`timed-gathering/`): Eorzea time-based gathering node tracker with multi-list management and macro export

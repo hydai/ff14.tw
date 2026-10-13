@@ -1,5 +1,5 @@
 /**
- * FF14.tw Faux Hollows Foxes 計算機翻譯檔
+ * FF14.tw 宗長計算機翻譯檔
  */
 const FauxHollowsTranslations = {
     zh: {
