@@ -11,6 +11,10 @@ const IndexTranslations = {
         hero_title: 'Final Fantasy XIV 工具箱',
         hero_subtitle: '提供各種FF14相關的實用工具，讓你的艾歐澤亞冒險更加便利！',
 
+        // 區塊小標
+        home_recent_title: '最近使用',
+        home_all_tools_title: '所有工具',
+
         // 工具卡片
         tool_mini_cactpot_desc: '分析仙人微彩最佳策略，計算期望值並推薦最佳線條選擇',
 
@@ -55,6 +59,10 @@ const IndexTranslations = {
         hero_title: 'Final Fantasy XIV Toolbox',
         hero_subtitle: 'Useful tools for your adventures in Eorzea!',
 
+        // Section labels
+        home_recent_title: 'Recently used',
+        home_all_tools_title: 'All tools',
+
         // Tool cards
         tool_mini_cactpot_desc: 'Analyze the best Mini Cactpot strategy and recommend optimal line choices',
 
@@ -98,6 +106,10 @@ const IndexTranslations = {
         // Hero セクション
         hero_title: 'ファイナルファンタジーXIV ツールボックス',
         hero_subtitle: 'エオルゼアの冒険に役立つ便利なツール！',
+
+        // セクション見出し
+        home_recent_title: '最近使ったツール',
+        home_all_tools_title: 'すべてのツール',
 
         // ツールカード
         tool_mini_cactpot_desc: 'ミニくじテンダーの最適戦略を分析し、期待値を計算',

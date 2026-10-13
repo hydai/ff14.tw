@@ -37,6 +37,7 @@ class LayoutLoader {
 
         this._loadHeader(options);
         this._loadFooter(options);
+        this._recordRecentTool(options);
 
         document.body.classList.add(LayoutLoader.CONSTANTS.LOADED_CLASS);
 
@@ -130,6 +131,16 @@ class LayoutLoader {
 
         // 替換 placeholder
         placeholder.replaceWith(footer);
+    }
+
+    /**
+     * 把目前所在的工具記成「最近使用」（首頁的最近使用列會讀它）。
+     * 站務頁與 404 頁的 currentToolId 是 null，所以不會記錄
+     * @param {Object} options - _getOptions() 的結果
+     */
+    _recordRecentTool(options) {
+        if (!options.currentToolId) return;
+        window.ToolsRegistry?.recordVisit(options.currentToolId);
     }
 
     /**

@@ -338,6 +338,68 @@ textarea:focus {
     opacity: 0.95;
 }
 
+/* 首頁區塊小標：「最近使用」「所有工具」 */
+.section-label {
+    margin-bottom: var(--space-3);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    color: var(--color-muted);
+}
+
+/* 首頁最近使用：最多 4 個工具的連結。
+   .recent-tools 本身不設 display：作者樣式的 display 會蓋過瀏覽器內建的 [hidden] { display: none }，
+   第一次來的玩家就會看到空的區塊；排版（grid）放在 .recent-list */
+.recent-tools {
+    margin-bottom: var(--space-7);
+}
+
+.recent-list {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--space-3);
+}
+
+.recent-tool {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: var(--control-lg);
+    padding: var(--space-2) var(--space-4);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    color: var(--color-text);
+    text-decoration: none;
+}
+
+.recent-tool:hover {
+    border-color: var(--color-primary);
+    color: var(--color-text);
+}
+
+.recent-tool-icon {
+    flex: none;
+    width: 1.5em;
+    font-size: var(--text-xl);
+    line-height: 1;
+    text-align: center;
+}
+
+/* 名稱太長時截成「…」：flex 項目預設不能比內容窄，要放寬 min-width 才縮得起來 */
+.recent-tool-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+    .recent-list {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
 /* 首頁工具區 */
 .tools-section {
     margin-bottom: var(--space-10);

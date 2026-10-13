@@ -12,6 +12,11 @@
  *
  * 新增工具時：在這裡登錄、在 common.js 補三語的名稱鍵、在 index.html 補工具卡；
  * tests/tools-registry.test.js 會比對這三處。
+ *
+ * 最近使用：工具頁載入時由 layout-loader 呼叫 recordVisit(id) 記錄，首頁（home.js）用 readRecent() 讀出來顯示。
+ * 存在 localStorage['ff14tw_recent_tools']，格式是 JSON 陣列 [{ "id": "weather-forecast", "t": 1760342400000 }, …]，
+ * 最新的在前、同一工具只留一筆、最多 MAX_RECENT 筆；外部網站不記錄。
+ * 所有儲存空間的存取都吞掉例外：無痕模式、被封鎖、資料毀損時，最近使用只是沒有資料，不影響頁面。
  */
 const ToolsRegistry = {
     tools: Object.freeze([
@@ -29,6 +34,10 @@ const ToolsRegistry = {
         { id: 'weather-forecast', href: 'tools/weather-forecast/index.html', icon: '🌤️', i18nKey: 'tool_weather_forecast_title', name: '天氣預報' },
         { id: 'tc-shop', href: 'https://tc-shop.ff14.tw', icon: '🛒', i18nKey: 'tool_tc_shop_title', name: '水晶商城清單', external: true }
     ]),
+
+    // 最近使用的儲存鍵與筆數上限
+    STORAGE_KEY: 'ff14tw_recent_tools',
+    MAX_RECENT: 4,
 
     /**
      * 依 id 找工具
@@ -51,6 +60,84 @@ const ToolsRegistry = {
             const directory = tool.href.slice(0, tool.href.lastIndexOf('/') + 1); // 例如 'tools/guide/'
             return pathname.startsWith('/' + directory);
         }) || null;
+    },
+
+    /**
+     * 讀出最近使用的工具，最新的在前
+     * @param {Storage} [storage] - 儲存空間；省略時用 window.localStorage
+     * @returns {Array<Object>} 登錄表裡的工具物件：只有站內工具、不重複、最多 MAX_RECENT 個；
+     *   沒有紀錄、資料毀損、取不到儲存空間時回傳 []
+     */
+    readRecent(storage) {
+        const store = ToolsRegistry._resolveStorage(storage);
+        if (!store) return [];
+        return ToolsRegistry._readEntries(store)
+            .slice(0, ToolsRegistry.MAX_RECENT)
+            .map((entry) => ToolsRegistry.findById(entry.id));
+    },
+
+    /**
+     * 記錄一次使用：放到最前面、刪掉同一工具的舊紀錄、只留 MAX_RECENT 筆後寫回。
+     * 未知的 id 與外部網站不記錄；任何儲存空間的錯誤都吞掉。
+     * @param {string} id - 工具 id
+     * @param {Object} [options]
+     * @param {Storage} [options.storage] - 儲存空間；省略時用 window.localStorage
+     * @param {number} [options.now] - 這次使用的時間（毫秒），預設現在
+     */
+    recordVisit(id, { storage, now = Date.now() } = {}) {
+        const tool = ToolsRegistry.findById(id);
+        if (!tool || tool.external) return;
+        const store = ToolsRegistry._resolveStorage(storage);
+        if (!store) return;
+
+        // 讀不到或毀損的舊資料算沒有紀錄，這次的紀錄會把它蓋掉
+        const previous = ToolsRegistry._readEntries(store).filter((entry) => entry.id !== tool.id);
+        try {
+            store.setItem(ToolsRegistry.STORAGE_KEY, JSON.stringify([{ id: tool.id, t: now }, ...previous].slice(0, ToolsRegistry.MAX_RECENT)));
+        } catch (error) {
+            // 寫不進去（無痕模式、容量已滿、被封鎖）就略過，最近使用只是方便功能
+        }
+    },
+
+    /**
+     * 決定要用的儲存空間：呼叫端有給（包含 null，表示沒有儲存空間）就用它，沒給就用 window.localStorage。
+     * 封鎖儲存空間的瀏覽器光是讀 window.localStorage 就會丟例外，所以包 try/catch。
+     * @param {Storage|null} [storage]
+     * @returns {Storage|null} 取不到時回傳 null
+     */
+    _resolveStorage(storage) {
+        if (storage !== undefined) return storage;
+        try {
+            return (typeof window !== 'undefined' && window.localStorage) || null;
+        } catch (error) {
+            return null;
+        }
+    },
+
+    /**
+     * 讀出儲存空間裡的紀錄 [{ id, t }]，最新的在前，並整理成合格的資料：
+     * 只留登錄表裡的站內工具、同一工具只留第一筆、沒有時間戳記的補 0。沒有紀錄、
+     * JSON 毀損、不是陣列、store 丟例外時回傳 []。
+     * @param {Storage} store
+     * @returns {Array<{id: string, t: number}>}
+     */
+    _readEntries(store) {
+        try {
+            const saved = JSON.parse(store.getItem(ToolsRegistry.STORAGE_KEY));
+            if (!Array.isArray(saved)) return [];
+
+            const seen = new Set();
+            const entries = [];
+            for (const item of saved) {
+                const tool = ToolsRegistry.findById(item?.id);
+                if (!tool || tool.external || seen.has(tool.id)) continue;
+                seen.add(tool.id);
+                entries.push({ id: tool.id, t: Number.isFinite(item.t) ? item.t : 0 });
+            }
+            return entries;
+        } catch (error) {
+            return [];
+        }
     }
 };
 
