@@ -118,6 +118,7 @@ textarea:focus {
 }
 
 .header .container {
+    position: relative; /* 桌機的工具面板以它定位 */
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -175,7 +176,20 @@ textarea:focus {
     gap: var(--space-2);
 }
 
-.nav a {
+/* 「工具 ▾」按鈕：button 的預設外觀先清掉（要排在下面共用規則之前，font: inherit 才不會蓋掉 line-height） */
+.nav-tools-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    border: none;
+    background: none;
+    font: inherit;
+    cursor: pointer;
+}
+
+/* 導覽連結與「工具 ▾」按鈕共用外觀。只套用在 .nav 的直屬連結：面板裡的工具連結（.tools-menu-link）樣式另外定義 */
+.nav > a,
+.nav-tools-toggle {
     color: var(--header-text);
     text-decoration: none;
     padding: var(--space-2) var(--space-4);
@@ -185,14 +199,99 @@ textarea:focus {
     transition: background-color var(--duration-base) var(--ease);
 }
 
-.nav a:hover {
+.nav > a:hover,
+.nav-tools-toggle:hover {
     background-color: var(--nav-hover);
     color: var(--header-text);
 }
 
-.nav a.active {
+.nav > a.active,
+.nav-tools-toggle.active {
     background-color: var(--nav-active);
     font-weight: var(--weight-semibold);
+}
+
+.nav-tools-caret {
+    font-size: var(--text-xs);
+    transition: transform var(--duration-base) var(--ease);
+}
+
+.nav-tools-toggle[aria-expanded="true"] .nav-tools-caret {
+    transform: rotate(180deg);
+}
+
+/* 手機抽屜裡的「工具」小標；桌機用上面的按鈕，所以不顯示 */
+.nav-section-label {
+    display: none;
+}
+
+/* 抽屜用的首頁（nav-template.js 把它排在工具清單之後）；桌機用排在最前面的那一個 */
+.nav > a.nav-drawer-only {
+    display: none;
+}
+
+/* 工具面板（桌機）：頁首下方、靠右對齊，寬度不超過兩側留白內的範圍，3 欄 */
+.tools-menu {
+    position: absolute;
+    top: calc(100% + var(--space-2));
+    right: var(--container-gutter);
+    z-index: var(--z-header);
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-1);
+    width: min(640px, calc(100% - 2 * var(--container-gutter)));
+    padding: var(--space-3);
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xl);
+}
+
+/* 上面設了 display，作者樣式會蓋過瀏覽器內建的 [hidden] { display: none }，所以收合要自己寫 */
+.tools-menu[hidden] {
+    display: none;
+}
+
+.tools-menu-link {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: var(--control-lg);
+    padding: var(--space-2);
+    border-radius: var(--radius-md);
+    color: var(--color-text);
+    text-decoration: none;
+    line-height: var(--leading-snug);
+    transition: background-color var(--duration-base) var(--ease);
+}
+
+.tools-menu-link:hover {
+    background-color: var(--color-hover);
+    color: var(--color-text);
+}
+
+.tools-menu-link.active {
+    background-color: var(--color-primary-tint);
+    color: var(--color-primary);
+    font-weight: var(--weight-semibold);
+}
+
+.tools-menu-icon {
+    flex: none;
+    width: 1.5em;
+    font-size: var(--text-lg);
+    line-height: 1;
+    text-align: center;
+}
+
+.tools-menu-name {
+    min-width: 0;
+}
+
+.tools-menu-ext {
+    flex: none;
+    font-size: var(--text-sm);
+    color: var(--color-muted);
 }
 
 /* 主要內容區域 */
@@ -577,10 +676,72 @@ textarea:focus {
         transition: right var(--duration-slow) var(--ease), visibility 0s;
     }
 
-    .nav a {
+    /* 抽屜內的順序就是 DOM 順序：「工具」小標 → 工具清單 → 首頁、修改紀錄、版權聲明 → 語言切換。
+       桌機用的首頁與「工具 ▾」按鈕在抽屜裡不顯示，改顯示排在工具清單之後的那個首頁（見 nav-template.js）。
+       不用 order 重新排序：order 只改畫面順序，Tab 與螢幕閱讀器仍照 DOM 順序走 */
+    .nav > a {
         width: 100%;
         text-align: left;
         padding: var(--space-3) var(--space-4);
+    }
+
+    .nav > a.nav-desktop-only {
+        display: none;
+    }
+
+    .nav > a.nav-drawer-only {
+        display: block;
+    }
+
+    .nav-section-label {
+        display: block;
+        padding: 0 var(--space-4);
+        font-size: var(--text-sm);
+        font-weight: var(--weight-semibold);
+    }
+
+    /* 工具清單在抽屜裡永遠展開，不需要按鈕 */
+    .nav-tools-toggle {
+        display: none;
+    }
+
+    /* 工具清單：從桌機的浮動面板改成抽屜裡的靜態直向清單 */
+    .nav .tools-menu {
+        position: static;
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-1);
+        width: auto;
+        padding: 0;
+        background: none;
+        border: none;
+        border-radius: 0;
+        box-shadow: none;
+    }
+
+    /* 手機版的清單不能被 hidden 收起來（hidden 只是桌機面板的收合狀態）：明確覆寫桌機的 .tools-menu[hidden] { display: none } */
+    .nav .tools-menu[hidden] {
+        display: flex;
+    }
+
+    .tools-menu-link {
+        min-height: 44px;
+        padding: var(--space-2) var(--space-4);
+        color: var(--header-text);
+    }
+
+    .tools-menu-link:hover {
+        background-color: var(--nav-hover);
+        color: var(--header-text);
+    }
+
+    .tools-menu-link.active {
+        background-color: var(--nav-active);
+        color: var(--header-text);
+    }
+
+    .tools-menu-ext {
+        color: var(--header-text);
     }
 
     /* 遮罩層 */
@@ -666,7 +827,8 @@ textarea:focus {
 @media (prefers-reduced-motion: reduce) {
     *,
     .tool-card,
-    .back-to-top {
+    .back-to-top,
+    .nav-tools-caret {
         transition: none;
     }
 

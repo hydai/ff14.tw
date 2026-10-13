@@ -7,6 +7,7 @@ const CommonTranslations = {
         // 導航列
         nav_menu: '選單',
         nav_home: '首頁',
+        nav_tools: '工具',
         nav_copyright: '版權聲明',
         nav_github: 'GitHub',
         nav_about: '關於',
@@ -98,6 +99,7 @@ const CommonTranslations = {
         // Navigation
         nav_menu: 'Menu',
         nav_home: 'Home',
+        nav_tools: 'Tools',
         nav_copyright: 'Copyright',
         nav_github: 'GitHub',
         nav_about: 'About',
@@ -188,6 +190,7 @@ const CommonTranslations = {
         // ナビゲーション
         nav_menu: 'メニュー',
         nav_home: 'ホーム',
+        nav_tools: 'ツール',
         nav_copyright: '著作権表示',
         nav_github: 'GitHub',
         nav_about: '概要',
