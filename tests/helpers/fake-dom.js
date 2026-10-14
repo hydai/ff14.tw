@@ -113,6 +113,10 @@ class Node extends Target {
         this.childNodes = [];
     }
 
+    // 包含文字節點（和 firstElementChild 不同）；沒有子節點時是 null。共用的 SecurityUtils.clearElement() 靠 firstChild 清空
+    get firstChild() { return this.childNodes[0] ?? null; }
+    get lastChild() { return this.childNodes.at(-1) ?? null; }
+
     contains(other) {
         for (let node = other; node; node = node.parentNode) if (node === this) return true;
         return false;

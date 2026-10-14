@@ -631,6 +631,29 @@ test('children、childNodes、兄弟節點，以及 remove、replaceWith、conta
     assert.ok(dom.document.contains(dom.document.body));
 });
 
+test('firstChild、lastChild 包含文字節點，沒有子節點時是 null；共用的 SecurityUtils.clearElement() 靠它們清空子節點', () => {
+    const dom = createFakeDom();
+    const em = dom.el('em', {}, '中');
+    const root = dom.el('p', {}, '前', em, '後');
+
+    assert.equal(root.firstChild.nodeType, 3, 'firstChild 不跳過文字節點（和 firstElementChild 不同）');
+    assert.equal(root.firstChild.textContent, '前');
+    assert.equal(root.lastChild.textContent, '後');
+    assert.ok(em.firstChild === em.lastChild && em.firstChild.textContent === '中', '只有一個子節點時兩者相同');
+    assert.ok(dom.el('p').firstChild === null && dom.el('p').lastChild === null);
+    assert.ok(dom.document.createTextNode('字').firstChild === null, '文字節點沒有子節點');
+    root.removeChild(root.firstChild);
+    assert.ok(root.firstChild === em, '跟著 childNodes 變動');
+    root.appendChild(dom.el('b'));
+    assert.equal(root.lastChild.tagName, 'B');
+
+    // 工具頁面的程式都用 assets/js/security-utils.js 的 clearElement() 清空容器（while (element.firstChild) removeChild）
+    dom.load('assets/js/security-utils.js');
+    run(dom, 'SecurityUtils').clearElement(root);
+    assert.equal(root.childNodes.length, 0);
+    assert.equal(em.parentNode, null, '被清掉的子節點脫離父節點');
+});
+
 test('選擇器：tag、#id、.class、[attr]、[attr="v"] 的複合寫法', () => {
     const dom = createFakeDom();
     const { document } = dom;

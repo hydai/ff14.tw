@@ -299,7 +299,8 @@
     color: var(--color-heading);
 }
 
-/* 結果：選了等級就全部列出（不分頁），桌機 4 欄、手機 2 欄 */
+/* 結果：選了等級就全部列出（不分頁）。桌機 4 欄；769–1023px 3 欄（4 欄時卡片太窄，座標與按鈕會擠成兩行）；
+   手機 2 欄（見最下面的響應式，要寫在 3 欄這條之後，同優先序靠順序勝出） */
 .treasure-grid {
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -307,50 +308,46 @@
     margin-bottom: var(--space-7);
 }
 
-/* 寶圖卡片：外觀與 hover 由 .card.hoverable.clickable 提供 */
-.treasure-card {
+@media (max-width: 1023px) {
+    .treasure-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+/* 寶圖卡片：外觀來自共用的 .card；整張卡不是點擊熱區，只有縮圖與兩顆按鈕可以按 */
+.tm-card-body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: var(--space-1);
+    padding: var(--space-3);
+}
+
+/* 縮圖是按鈕（點了開詳細地圖）：右上角等級，右下角放大鏡提示。比例照縮圖檔（207×174）。
+   瀏覽器給按鈕自己的字型（Arial），font: inherit 讓裡面的等級徽章沿用網站的字型 */
+.tm-thumb {
     position: relative;
-    min-height: 320px;
-}
-
-.treasure-card::before {
-    content: "點擊複製座標";
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    z-index: 1;
-    padding: var(--space-2) var(--space-4);
-    border-radius: var(--radius-sm);
-    background: var(--color-heading);
-    color: var(--color-bg);
-    font-size: var(--text-sm);
-    white-space: nowrap;
-    transform: translate(-50%, -50%);
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity var(--duration-base) var(--ease);
-}
-
-.treasure-card:hover::before {
-    opacity: 1;
-}
-
-.card-image-wrapper {
-    position: relative;
+    display: block;
     width: 100%;
-    padding-top: 75%; /* 4:3，藏寶圖截圖的比例 */
-    overflow: hidden;
+    aspect-ratio: 207 / 174;
+    padding: 0;
+    border: 0;
     background: var(--color-surface-2);
+    font: inherit;
+    cursor: zoom-in;
 }
 
-.card-image-wrapper img {
-    position: absolute;
-    top: 0;
-    left: 0;
+.tm-thumb img {
+    display: block;
     width: 100%;
     height: 100%;
-    object-fit: contain;
-    object-position: center;
+    object-fit: cover;
+}
+
+/* .card 有 overflow: hidden，畫在縮圖外面的焦點框會被切掉：往內畫，蓋在圖片上 */
+.tm-thumb:focus-visible {
+    outline: 3px solid var(--color-primary);
+    outline-offset: -3px;
 }
 
 .map-level-badge {
@@ -363,59 +360,84 @@
     color: var(--color-bg);
     font-size: var(--text-xs);
     font-weight: var(--weight-semibold);
+    line-height: 1;
 }
 
-.card-content {
+.tm-thumb-zoom {
+    position: absolute;
+    right: var(--space-2);
+    bottom: var(--space-2);
+    display: grid;
+    place-items: center;
+    width: var(--control-sm);
+    height: var(--control-sm);
+    border-radius: var(--radius-full);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-sm);
+    font-size: var(--text-sm);
+    line-height: 1;
+}
+
+/* 標題列：地名（太長就換行）＋編號 */
+.tm-card-title {
     display: flex;
-    flex: 1;
-    flex-direction: column;
-    padding: var(--space-4);
-}
-
-.map-zone {
-    margin: 0 0 var(--space-3);
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-2);
     line-height: var(--leading-snug);
 }
 
-.zone-zh {
-    margin-bottom: 2px;
-    font-size: var(--text-sm);
+.tm-zone {
+    min-width: 0;
     font-weight: var(--weight-semibold);
     color: var(--color-heading);
 }
 
-.zone-en,
-.zone-ja {
-    font-size: var(--text-xs);
+.tm-index {
+    flex: none;
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+.tm-coords {
+    margin: 0;
+    font-size: var(--text-sm);
+    color: var(--color-text);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.tm-nearest {
+    margin: 0;
+    font-size: var(--text-sm);
+    line-height: var(--leading-snug);
     color: var(--color-muted);
 }
 
-.zone-en {
-    margin-bottom: 2px;
-}
-
-.zone-ja {
-    font-style: italic;
-}
-
-.map-coords {
-    margin-bottom: var(--space-2);
-    font-family: var(--font-mono);
-    font-size: var(--text-xs);
-    color: var(--color-muted);
-}
-
-.treasure-card-actions {
+/* 按鈕列貼在卡片底部，同一排卡片的按鈕對齊 */
+.tm-card-actions {
     display: flex;
-    flex-wrap: wrap;
     gap: var(--space-2);
     margin-top: auto;
     padding-top: var(--space-2);
 }
 
-.treasure-card-actions .btn {
+/* 卡片的規則都掛在 .tm-card 底下：.btn-add-to-list 也是隊伍連線中停用加入鈕的掛鉤，別處用到時不受影響 */
+.tm-card .btn-add-to-list {
     flex: 1;
-    white-space: nowrap;
+}
+
+.tm-copy {
+    flex: none;
+}
+
+/* 已加入：成功色調。滑過去時共用 .btn:hover:not(:disabled) 會換掉底色與字色，所以 hover 也要寫一次 */
+.tm-card .btn-add-to-list.is-added,
+.tm-card .btn-add-to-list.is-added:hover:not(:disabled) {
+    border-color: var(--color-success-border);
+    background: var(--color-success-tint);
+    color: var(--color-success-text);
 }
 
 /* 我的清單：右側抽屜 */
@@ -1126,17 +1148,26 @@
         gap: var(--space-3);
     }
 
-    .treasure-card {
-        min-height: auto;
+    /* 兩欄的卡片在 390px 寬的手機上只有 169px：內距、按鈕間距與加入鈕的左右內距縮小，
+       三種語言的「加入清單」（最長是日文）都和複製鈕排得進一行；再窄就截短加入鈕的文字（最後手段），
+       不讓複製鈕被擠出卡片（卡片的 overflow: hidden 會把它切掉） */
+    .tm-card-body {
+        padding: var(--space-2);
     }
 
-    .treasure-card-actions {
-        flex-direction: column;
-        gap: var(--space-2);
+    .tm-card-actions {
+        gap: var(--space-1);
     }
 
-    .treasure-card-actions .btn-icon {
-        display: none;
+    .tm-card .btn-add-to-list {
+        min-width: 0;
+        padding-inline: var(--space-1);
+    }
+
+    .tm-card .btn-add-to-list .btn-text {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .my-list-panel {

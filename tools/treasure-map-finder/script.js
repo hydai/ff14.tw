@@ -31,33 +31,47 @@ class TreasureMapFinder {
             clearAllBtn: document.getElementById('clearAllBtn')
         };
 
-        // 語言切換時重新以目前語言重繪清單（移除按鈕的 aria-label 帶有地區與座標，需要重組）
-        window.i18n.onLanguageChange(() => {
-            this.renderMyList();
-
-            // 「40 張 G17 寶圖」是帶參數的文字，地區 chip 的地名也跟著語言走，切換語言時重新組一次
-            this.updateResultCount();
-            this.filterManager.renderZoneChips();
-
-            // 預設範本跟語言走，使用者自訂的不動：只有目前仍是「預設值」
-            // （this.formatSettingsAreDefault，見 loadFormatSettings／saveFormatSettings／
-            // resetFormatSettings）才重新計算 getDefaultFormats()；已存過自訂內容一律略過，
-            // 且這裡只更新記憶體中的 this.formatSettings 與（若面板開著）UI 顯示，
-            // 絕不寫入 localStorage
-            if (this.formatSettingsAreDefault) {
-                this.formatSettings = this.getDefaultFormats();
-
-                const formatPanel = this.uiDialogManager.formatPanelElements?.panel;
-                if (formatPanel?.classList.contains(UIDialogManager.CONSTANTS.CSS_CLASSES.ACTIVE)) {
-                    this.uiDialogManager.setFormatValues(this.formatSettings);
-                    this.updateFormatPreview();
-                }
-            }
-        });
+        window.i18n.onLanguageChange(() => this.handleLanguageChange());
 
         this.ready = this.init();
     }
-    
+
+    // 切換語言：帶參數或由程式組出來的文字（卡片、清單、結果張數、地區 chip、清單入口）用新語言重畫一次。
+    // 固定字串由 i18n manager 依 [data-i18n] 重新翻譯；詳細地圖與路線面板由 UIDialogManager 自己的
+    // 語言監聽（refreshActiveDialog）處理
+    handleLanguageChange() {
+        // 移除按鈕的 aria-label 帶有地區與座標，需要重組
+        this.renderMyList();
+
+        // 卡片的地名、最近傳送點與按鈕文字都跟著語言走：整格重畫。資料還沒載入（載入中）
+        // 或載入失敗（showError() 的錯誤訊息）時結果格裡不是卡片，不動它
+        if (this.maps.length > 0) {
+            this.displayMaps();
+        }
+
+        // 「40 張 G17 寶圖」是帶參數的文字，地區 chip 的地名也跟著語言走，切換語言時重新組一次
+        this.updateResultCount();
+        this.filterManager.renderZoneChips();
+
+        // 清單入口的標籤帶張數參數，不能用 data-i18n
+        this.updateListEntry();
+
+        // 預設範本跟語言走，使用者自訂的不動：只有目前仍是「預設值」
+        // （this.formatSettingsAreDefault，見 loadFormatSettings／saveFormatSettings／
+        // resetFormatSettings）才重新計算 getDefaultFormats()；已存過自訂內容一律略過，
+        // 且這裡只更新記憶體中的 this.formatSettings 與（若面板開著）UI 顯示，
+        // 絕不寫入 localStorage
+        if (this.formatSettingsAreDefault) {
+            this.formatSettings = this.getDefaultFormats();
+
+            const formatPanel = this.uiDialogManager.formatPanelElements?.panel;
+            if (formatPanel?.classList.contains(UIDialogManager.CONSTANTS.CSS_CLASSES.ACTIVE)) {
+                this.uiDialogManager.setFormatValues(this.formatSettings);
+                this.updateFormatPreview();
+            }
+        }
+    }
+
     async init() {
         try {
             // 一開始就顯示「載入中」：地區與傳送點資料（zoneManager）載入時也算在內
@@ -287,142 +301,134 @@ class TreasureMapFinder {
         }
     }
     
+    // 一張寶圖卡：縮圖（按鈕，開詳細地圖）、目前語言的地名與編號、座標、最近傳送點、「加入清單」與複製。
+    // 整張卡不是點擊熱區（以前點卡片就複製，觸控裝置容易誤觸）。裡面的字由程式依目前語言組出來，
+    // 不掛 data-i18n：切換語言時 handleLanguageChange() 整格重畫
     createMapCard(map) {
-        const card = document.createElement('div');
-        card.className = 'treasure-card card hoverable clickable';
+        const card = document.createElement('article');
+        card.className = 'treasure-card tm-card card';
         card.dataset.mapId = map.id;
-        
-        const isInList = this.listManager.has(map.id);
-        
-        // 建立圖片容器
-        const imageWrapper = document.createElement('div');
-        imageWrapper.className = 'card-image-wrapper';
-        
-        const img = document.createElement('img');
-        img.src = map.thumbnail;
-        img.alt = map.levelName;
-        img.loading = 'lazy';
-        img.onerror = function() {
-            this.src = '/assets/images/treasure-map-placeholder.png';
-        };
-        imageWrapper.appendChild(img);
-        
-        const levelBadge = document.createElement('span');
-        levelBadge.className = 'map-level-badge';
-        levelBadge.textContent = map.level.toUpperCase();
-        imageWrapper.appendChild(levelBadge);
-        
-        // 建立內容區域
-        const content = document.createElement('div');
-        content.className = 'card-content';
-        
-        const zoneTitle = document.createElement('div');
-        zoneTitle.className = 'map-zone';
-        
-        // 取得翻譯資料
-        const translations = zoneManager.getZoneNames(map.zoneId) || { zh: map.zone, en: map.zone, ja: map.zone };
-        
-        // 建立多語言顯示
-        if (translations.zh || translations.en || translations.ja) {
-            const zhSpan = document.createElement('div');
-            zhSpan.className = 'zone-zh';
-            zhSpan.textContent = translations.zh || map.zone;
-            zoneTitle.appendChild(zhSpan);
-            
-            const enSpan = document.createElement('div');
-            enSpan.className = 'zone-en';
-            enSpan.textContent = translations.en || map.zone;
-            zoneTitle.appendChild(enSpan);
-            
-            const jaSpan = document.createElement('div');
-            jaSpan.className = 'zone-ja';
-            jaSpan.textContent = translations.ja || '';
-            zoneTitle.appendChild(jaSpan);
-        } else {
-            // 沒有翻譯資料時使用原始名稱
-            zoneTitle.textContent = map.zone;
-        }
-        
-        content.appendChild(zoneTitle);
-        
-        const coords = document.createElement('p');
-        coords.className = 'map-coords';
-        coords.textContent = CoordinateUtils.formatCoordinatesForDisplay(map.coords);
-        content.appendChild(coords);
-        
-        // 建立按鈕區域
-        const actions = document.createElement('div');
-        actions.className = 'treasure-card-actions';
-        
-        // 詳細地圖按鈕
-        const detailBtn = document.createElement('button');
-        detailBtn.className = 'btn btn-secondary btn-sm btn-view-detail';
-        detailBtn.title = FF14Utils.getI18nText('treasure_map_view_detail_tooltip', '查看詳細地圖');
-        // 固定字串（無插值），交給 i18n manager 在語言切換時透過 [data-i18n]／[data-i18n-html] 全域重新翻譯，
-        // 不必依賴這裡的語言監聽（目前只會重繪「我的清單」）
-        detailBtn.setAttribute('data-i18n', 'treasure_map_view_detail_tooltip');
-        detailBtn.setAttribute('data-i18n-attr', 'title');
-        SecurityUtils.updateButtonContent(detailBtn, '🗺️', FF14Utils.getI18nText('treasure_map_view_detail', '詳細地圖'));
-        detailBtn.setAttribute('data-i18n-html', 'treasure_map_view_detail');
-        detailBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
+        const zoneName = this.getZoneName(map.zoneId);
+
+        // 縮圖本身就是按鈕：圖片只是裝飾（alt 空白），名稱由 aria-label 說明這顆按鈕做什麼。
+        // 按鈕裡的內容會被 aria-label 取代，所以名稱要帶上等級（多選等級時螢幕閱讀器才聽得到每張卡的等級）
+        const grade = map.level.toUpperCase();
+        const thumb = document.createElement('button');
+        thumb.type = 'button';
+        thumb.className = 'tm-thumb';
+        thumb.setAttribute('aria-label', FF14Utils.getI18nText('treasure_map_open_detail', '放大 {grade} {zone} #{index}', {
+            grade,
+            zone: zoneName,
+            index: map.index
+        }));
+        thumb.addEventListener('click', () => {
             this.uiDialogManager.showMapDetail(map, {
                 zoneManager: zoneManager,
                 aetheryteIcon: this.aetheryteIcon
             });
         });
-        actions.appendChild(detailBtn);
-        
-        // 加入清單按鈕
+
+        const img = document.createElement('img');
+        img.src = map.thumbnail;
+        img.setAttribute('alt', '');
+        img.setAttribute('loading', 'lazy');
+        img.onerror = function() {
+            this.src = '/assets/images/treasure-map-placeholder.png';
+        };
+        thumb.appendChild(img);
+
+        // 看得到的等級徽章；名稱已經帶著等級，所以對輔助科技隱藏
+        const levelBadge = document.createElement('span');
+        levelBadge.className = 'map-level-badge';
+        levelBadge.setAttribute('aria-hidden', 'true');
+        levelBadge.textContent = grade;
+        thumb.appendChild(levelBadge);
+
+        const zoomHint = document.createElement('span');
+        zoomHint.className = 'tm-thumb-zoom';
+        zoomHint.setAttribute('aria-hidden', 'true');
+        zoomHint.textContent = '🔍';
+        thumb.appendChild(zoomHint);
+
+        const body = document.createElement('div');
+        body.className = 'tm-card-body';
+
+        const title = document.createElement('div');
+        title.className = 'tm-card-title';
+        const zone = document.createElement('span');
+        zone.className = 'tm-zone';
+        zone.textContent = zoneName;
+        const index = document.createElement('span');
+        index.className = 'tm-index';
+        index.textContent = `#${map.index}`;
+        title.appendChild(zone);
+        title.appendChild(index);
+        body.appendChild(title);
+
+        const coords = document.createElement('p');
+        coords.className = 'tm-coords';
+        coords.textContent = CoordinateUtils.formatXY(map.coords);
+        body.appendChild(coords);
+
+        // 最近傳送點（卡片、詳細地圖、路線都由 zoneManager 的同一份資料算出）；地區沒有傳送點就不放這一行
+        const nearestName = this.getNearestAetheryteName(map);
+        if (nearestName) {
+            const nearest = document.createElement('p');
+            nearest.className = 'tm-nearest';
+            nearest.textContent = FF14Utils.getI18nText('treasure_map_nearest', '最近：{name}', { name: nearestName });
+            body.appendChild(nearest);
+        }
+
+        const actions = document.createElement('div');
+        actions.className = 'tm-card-actions';
+
+        // 加入清單（次要按鈕；一個畫面最多一顆 .btn-primary，留給「生成路線」）。
+        // 保留 .btn-add-to-list：隊伍連線中 RoomCollaboration.setConnecting() 用它停用畫面上的加入鈕；
+        // 連線中才畫出來的卡片（例如這時切換語言、改篩選）在這裡一樣停用
         const addBtn = document.createElement('button');
-        addBtn.className = `btn ${isInList ? 'btn-success' : 'btn-primary'} btn-sm btn-add-to-list`;
-        addBtn.dataset.state = isInList ? 'added' : 'default';
-        const btnKey = isInList ? 'treasure_map_added_to_list' : 'treasure_map_add_to_list';
-        const btnText = FF14Utils.getI18nText(btnKey, isInList ? '✓ 已加入' : '加入清單');
-        const span = document.createElement('span');
-        span.className = 'btn-text';
-        span.textContent = btnText;
-        // 依 isInList 決定的兩個 key 之一，交給 i18n manager 在語言切換時透過 [data-i18n] 全域重新翻譯；
-        // 清單狀態改變時（見 updateCardButtons()）另外同步這個屬性，維持跟目前狀態一致
-        span.dataset.i18n = btnKey;
-        SecurityUtils.clearElement(addBtn);
-        addBtn.appendChild(span);
-        addBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.toggleMapInList(map);
-        });
+        addBtn.type = 'button';
+        addBtn.className = 'btn btn-sm btn-add-to-list';
+        addBtn.disabled = Boolean(this.roomCollaboration?.isConnecting);
+        const addText = document.createElement('span');
+        addText.className = 'btn-text';
+        addBtn.appendChild(addText);
+        this.updateAddButton(addBtn, this.listManager.has(map.id));
+        addBtn.addEventListener('click', () => this.toggleMapInList(map));
         actions.appendChild(addBtn);
 
-        // 複製座標按鈕（讓鍵盤與輔助科技使用者也能用到整張卡片的複製功能）
+        // 複製：只有圖示，名稱放在 aria-label 與 title
         const copyBtn = document.createElement('button');
         copyBtn.type = 'button';
-        copyBtn.className = 'btn btn-secondary btn-sm btn-copy-coords';
-        copyBtn.textContent = FF14Utils.getI18nText('treasure_map_copy_coords', '複製座標');
-        // 固定字串（無插值），交給 i18n manager 在語言切換時透過 [data-i18n] 全域重新翻譯，
-        // 不必依賴這裡的語言監聽（目前只會重繪「我的清單」）
-        copyBtn.setAttribute('data-i18n', 'treasure_map_copy_coords');
-        copyBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.copyCoordinates(map);
-        });
+        copyBtn.className = 'btn btn-sm btn-icon-only tm-copy btn-copy-coords';
+        const copyLabel = FF14Utils.getI18nText('treasure_map_copy_coords', '複製座標');
+        copyBtn.setAttribute('aria-label', copyLabel);
+        copyBtn.setAttribute('title', copyLabel);
+        copyBtn.textContent = '📋';
+        copyBtn.addEventListener('click', () => this.copyCoordinates(map));
         actions.appendChild(copyBtn);
 
-        content.appendChild(actions);
-
-        // 組合卡片
-        card.appendChild(imageWrapper);
-        card.appendChild(content);
-
-        // 為整個卡片添加點擊事件（複製座標）
-        card.addEventListener('click', (e) => {
-            // 如果點擊的是按鈕，則不處理
-            if (e.target.closest('button')) {
-                return;
-            }
-            this.copyCoordinates(map);
-        });
-
+        body.appendChild(actions);
+        card.appendChild(thumb);
+        card.appendChild(body);
         return card;
+    }
+
+    // 最近傳送點的目前語言名稱（沒有這個語言時用中文）；地區沒有傳送點時是 null
+    getNearestAetheryteName(map) {
+        const nearest = zoneManager.findNearestAetheryte(map.zoneId, map.coords);
+        if (!nearest) return null;
+        const { name } = nearest.aetheryte;
+        return name[window.i18n.getCurrentLanguage()] || name.zh;
+    }
+
+    // 卡片的「加入清單」：已加入時 data-state="added"、加上 .is-added（成功色調）、文字換成「✓ 已加入」，
+    // 再按一次就移除。只動這三樣，不改寫整個 className（停用等其他狀態不受影響）
+    updateAddButton(button, isInList) {
+        button.dataset.state = isInList ? 'added' : 'default';
+        button.classList.toggle('is-added', isInList);
+        button.querySelector('.btn-text').textContent = isInList
+            ? FF14Utils.getI18nText('treasure_map_added_to_list', '✓ 已加入')
+            : FF14Utils.getI18nText('treasure_map_add_to_list', '＋ 加入清單');
     }
 
     copyCoordinates(map) {
@@ -472,19 +478,10 @@ class TreasureMapFinder {
         }
     }
     
+    // 清單變了（加入、移除、清空、匯入、隊伍同步）：每張卡的加入鈕跟著清單更新
     updateCardButtons() {
         document.querySelectorAll('.treasure-card').forEach(card => {
-            const mapId = card.dataset.mapId;
-            const button = card.querySelector('.btn-add-to-list');
-            const isInList = this.listManager.has(mapId);
-            const btnKey = isInList ? 'treasure_map_added_to_list' : 'treasure_map_add_to_list';
-
-            button.dataset.state = isInList ? 'added' : 'default';
-            button.className = `btn ${isInList ? 'btn-success' : 'btn-primary'} btn-sm btn-add-to-list`;
-            const textSpan = button.querySelector('.btn-text');
-            textSpan.textContent = FF14Utils.getI18nText(btnKey, isInList ? '✓ 已加入' : '加入清單');
-            // 清單狀態改變時同步 data-i18n，讓語言切換時全域重新翻譯用的是「目前」狀態對應的 key
-            textSpan.dataset.i18n = btnKey;
+            this.updateAddButton(card.querySelector('.btn-add-to-list'), this.listManager.has(card.dataset.mapId));
         });
     }
     
@@ -1072,7 +1069,7 @@ class TreasureMapFinder {
                 const parseResult = SecurityUtils.safeJSONParse(saved);
                 this.formatSettings = parseResult.success ? parseResult.data : this.getDefaultFormats();
                 // 只有真的載入到已儲存的自訂設定才算「非預設」；解析失敗仍視為使用預設值，
-                // 讓語言切換時的觀察者（見建構子）繼續幫忙跟著語言重新計算
+                // 讓語言切換時（見 handleLanguageChange）繼續幫忙跟著語言重新計算
                 this.formatSettingsAreDefault = !parseResult.success;
             } catch (e) {
                 this.formatSettings = this.getDefaultFormats();
@@ -1114,7 +1111,7 @@ class TreasureMapFinder {
             teleport: values.teleport,
             map: values.map
         };
-        // 使用者主動存檔，之後語言切換不再幫忙覆寫（見建構子的語言切換觀察者）
+        // 使用者主動存檔，之後語言切換不再幫忙覆寫（見 handleLanguageChange）
         this.formatSettingsAreDefault = false;
 
         localStorage.setItem('treasureMapFormatSettings', JSON.stringify(this.formatSettings));
@@ -1125,7 +1122,7 @@ class TreasureMapFinder {
     // 重置格式設定
     resetFormatSettings() {
         this.formatSettings = this.getDefaultFormats();
-        // 回到預設值，之後語言切換要再幫忙跟著語言重新計算（見建構子的語言切換觀察者）；
+        // 回到預設值，之後語言切換要再幫忙跟著語言重新計算（見 handleLanguageChange）；
         // 注意這裡本來就不寫入 localStorage（保留原行為：重置只影響當下畫面，不清除已儲存設定）
         this.formatSettingsAreDefault = true;
 

@@ -136,11 +136,12 @@ const TreasureMapTranslations = {
         treasure_map_loading_aetherytes: '正在載入傳送點資料，請稍後再試',
         treasure_map_route_copy_success: '已複製 {count} 個地點',
         treasure_map_added_to_list: '✓ 已加入',
-        treasure_map_add_to_list: '加入清單',
+        treasure_map_add_to_list: '＋ 加入清單',
         treasure_map_remove_item: '移除 {zone} {coords}',
         treasure_map_view_detail: '詳細地圖',
-        treasure_map_view_detail_tooltip: '查看詳細地圖',
         treasure_map_copy_coords: '複製座標',
+        treasure_map_open_detail: '放大 {grade} {zone} #{index}',
+        treasure_map_nearest: '最近：{name}',
         treasure_map_pos_placeholder: '座標：{coords}',
 
         // 對話框與清單訊息
@@ -375,11 +376,12 @@ const TreasureMapTranslations = {
         treasure_map_loading_aetherytes: 'Loading aetheryte data, please try again later',
         treasure_map_route_copy_success: 'Copied {count} locations',
         treasure_map_added_to_list: '✓ Added',
-        treasure_map_add_to_list: 'Add to List',
+        treasure_map_add_to_list: '＋ Add to List',
         treasure_map_remove_item: 'Remove {zone} {coords}',
         treasure_map_view_detail: 'Detail Map',
-        treasure_map_view_detail_tooltip: 'View detailed map',
         treasure_map_copy_coords: 'Copy coordinates',
+        treasure_map_open_detail: 'Enlarge {grade} {zone} #{index}',
+        treasure_map_nearest: 'Nearest: {name}',
         treasure_map_pos_placeholder: 'Coords: {coords}',
 
         // Dialogs and List Messages
@@ -614,11 +616,12 @@ const TreasureMapTranslations = {
         treasure_map_loading_aetherytes: 'エーテライトデータを読み込み中。後でもう一度お試しください',
         treasure_map_route_copy_success: '{count} 箇所の地点をコピーしました',
         treasure_map_added_to_list: '✓ 追加済み',
-        treasure_map_add_to_list: 'リストに追加',
+        treasure_map_add_to_list: '＋ リストに追加',
         treasure_map_remove_item: '{zone} {coords} を削除',
         treasure_map_view_detail: '詳細地図',
-        treasure_map_view_detail_tooltip: '詳細地図を表示',
         treasure_map_copy_coords: '座標をコピー',
+        treasure_map_open_detail: '{grade} {zone} #{index} を拡大',
+        treasure_map_nearest: '最寄り：{name}',
         treasure_map_pos_placeholder: '座標：{coords}',
 
         // ダイアログとリストメッセージ
