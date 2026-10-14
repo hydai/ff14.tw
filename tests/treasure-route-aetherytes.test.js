@@ -4,6 +4,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 
+const { createFakeDom } = require('./helpers/fake-dom.js');
+
 const ROOT = path.resolve(__dirname, '..');
 const read = file => fs.readFileSync(path.join(ROOT, file), 'utf8');
 const readJson = file => JSON.parse(read(file));
@@ -13,24 +15,7 @@ const zonesJson = readJson('data/zones.json');
 const aetherytes = readJson('data/aetherytes.json').aetherytes;
 const zoneIdsWithMaps = [...new Set(maps.map(map => map.zoneId))];
 const allSubZones = () => Object.values(zonesJson.zones).flatMap(region => region.subZones);
-const idsOf = list => list.map(aetheryte => aetheryte.id);
-
-// 詳細地圖（script.js 的 getAetherytesForZone）列出的傳送點；路線計算必須和它一致。
-const DETAIL_MAP_AETHERYTES = {
-    amharaeng: ['twine', 'mord_souq', 'inn_at_journeys_head'],
-    coerthaswesternhighlands: ['falcons_nest'],
-    heritagefound: ['the_outskirts', 'electrope_strike', 'yyasulani_station'],
-    ilmheg: ['lydha_lran', 'pla_enni', 'wolekdorf'],
-    kozamauka: ['ok_hanu', 'earthenshire', 'many_fires', 'dock_poga'],
-    labyrinthos: ['the_archeion', 'sharlayan_hamlet', 'aporia'],
-    livingmemory: ['leynode_mnemes', 'leynode_aero', 'leynode_pyro'],
-    shaaloani: ['hhusatahwi', 'meyhane', 'sheshenewezi_springs'],
-    thavnair: ['yedlihmad', 'great_work', 'palaka_stand'],
-    theazimsteppe: ['dhoro_iloh', 'dawn_throne', 'reunion'],
-    thetempest: ['the_ondo_cups', 'the_macarenses_angle'],
-    ultimathule: ['reahs_tahra', 'base_omicron', 'ostrakon_deka_hexi'],
-    yaktel: ['iq_br_aak', 'mamook']
-};
+const zoneNameEn = zoneId => allSubZones().find(zone => zone.id === zoneId).names.en;
 
 // 依頁面的載入順序執行真正的寶圖腳本；只把 fetch 換成從 /data 讀檔。
 async function createRouteCalculator() {
@@ -49,9 +34,8 @@ async function createRouteCalculator() {
     }
     await context.zoneManager.init();
     const calculator = new context.RouteCalculator();
-    await calculator.loadAetherytes();
     assert.equal(context.zoneManager.loaded, true, 'zones.json 沒有載入');
-    assert.ok(calculator.aetherytes, 'aetherytes.json 沒有載入');
+    assert.ok(context.zoneManager.aetherytes.tural, 'aetherytes.json 沒有載入');
     return { calculator, zoneManager: context.zoneManager };
 }
 
@@ -67,34 +51,69 @@ test('aetherytes.json 的傳送點都有地區列出（圖拉優拉是主城，�
     assert.deepEqual(Object.values(aetherytes).flat().map(a => a.id).filter(id => !listed.has(id)), ['tuliyollal']);
 });
 
-test('每個有寶圖的地區都能算出傳送點，zones.json 列的 id 也都被路線用到', async () => {
-    const { calculator, zoneManager } = await createRouteCalculator();
-    const problems = [];
-    for (const zoneId of zoneIdsWithMaps) {
-        const zone = zoneManager.getZoneById(zoneId);
-        if (!zone) {
-            problems.push(`${zoneId}: zones.json 沒有這個地區`);
-            continue;
-        }
-        const routeIds = idsOf(calculator.getRegionAetherytes(zoneId));
-        const unused = zone.aetherytes.filter(id => !routeIds.includes(id));
-        if (routeIds.length === 0) problems.push(`${zoneId}: 路線算不出任何傳送點`);
-        if (unused.length > 0) problems.push(`${zoneId}: zones.json 列的 ${unused.join(', ')} 沒被路線用到`);
+test('每個地區的傳送點，ZoneManager 依 zones.json 的 id 全部查得到', async () => {
+    const { zoneManager } = await createRouteCalculator();
+    for (const zone of allSubZones()) {
+        assert.deepEqual(zoneManager.getAetherytes(zone.id).map(a => a.id), zone.aetherytes, zone.id);
     }
-    assert.deepEqual(problems, []);
+    // 空陣列是在 vm 裡建立的，Array.prototype 和測試不同，先轉成一般陣列再比
+    assert.deepEqual(Array.from(zoneManager.getAetherytes('atlantis')), []);
 });
 
-test('修正過的 13 個地區，路線可用的傳送點和詳細地圖一致', async () => {
-    const { calculator } = await createRouteCalculator();
-    const mismatches = [];
-    for (const [zoneId, expectedIds] of Object.entries(DETAIL_MAP_AETHERYTES)) {
-        const actual = new Set(idsOf(calculator.getRegionAetherytes(zoneId)));
-        const expected = new Set(expectedIds);
-        const missing = [...expected].filter(id => !actual.has(id));
-        const extra = [...actual].filter(id => !expected.has(id));
-        if (missing.length > 0 || extra.length > 0) mismatches.push({ zoneId, missing, extra });
+test('有寶圖的地區至少一個傳送點，路線和 ZoneManager 用同一份', async () => {
+    const { calculator, zoneManager } = await createRouteCalculator();
+    for (const zoneId of zoneIdsWithMaps) {
+        const ids = zoneManager.getAetherytes(zoneId).map(a => a.id);
+        assert.ok(ids.length >= 1, zoneId);
+        assert.deepEqual(calculator.getRegionAetherytes(zoneId).map(a => a.id), ids, zoneId);
     }
-    assert.deepEqual(mismatches, []);
+});
+
+test('厄爾庇斯 3 個傳送點；tm_048 最近的是 8.6 遠的波伊艾騰·奧伊科斯', async () => {
+    const { zoneManager } = await createRouteCalculator();
+    assert.deepEqual(zoneManager.getAetherytes('elpis').map(a => a.id), ['the_twelve_wonders', 'anagnorisis', 'poieten_oikos']);
+    const nearest = zoneManager.findNearestAetheryte('elpis', maps.find(m => m.id === 'tm_048').coords);
+    assert.equal(nearest.aetheryte.id, 'poieten_oikos');
+    assert.equal(nearest.distance.toFixed(1), '8.6');
+});
+
+test('227 張寶圖的最近傳送點，都和路線分配的傳送點相同', async () => {
+    const { calculator, zoneManager } = await createRouteCalculator();
+    for (const map of maps) {
+        const byRoute = calculator.getRegionAetherytes(map.zoneId).reduce((best, t) => {
+            const d = calculator.calculateDistance(t, { coords: map.coords, zoneId: map.zoneId });
+            return !best || d < best.d ? { id: t.id, d } : best;
+        }, null);
+        assert.equal(zoneManager.findNearestAetheryte(map.zoneId, map.coords).aetheryte.id, byRoute.id, map.id);
+    }
+});
+
+test('只剩一份傳送點資料：沒有寫死的對照表，路線與詳細地圖都用 ZoneManager', () => {
+    const script = read('tools/treasure-map-finder/script.js');
+    for (const gone of ['getAetherytesForZone', 'theraktikagreatwod', 'aetheryteData']) assert.ok(!script.includes(gone), gone);
+    assert.doesNotMatch(read('tools/treasure-map-finder/route-calculator.js'), /fetch\(|this\.aetherytes/);
+    assert.doesNotMatch(read('tools/treasure-map-finder/zone-manager.js'), /getAetheryteInfo/);
+    assert.match(read('tools/treasure-map-finder/ui-dialog-manager.js'), /zoneManager\.getAetherytes\(/);
+});
+
+test('匯入的清單沒有 zoneId，只剩英文地名也要查到同一個地區：227 張寶圖的路線都和有 zoneId 的相同', async () => {
+    const { calculator } = await createRouteCalculator();
+    // zoneId 欄位本來就不同，只比步驟：傳送點用英文名稱，寶圖用 id
+    const steps = route => Array.from(route, step => step.type === 'teleport' ? `T:${step.to.en}` : `M:${step.mapId}`);
+    for (const map of maps) {
+        const imported = { ...map, zoneId: null, zone: zoneNameEn(map.zoneId) };
+        assert.deepEqual(steps(calculator.calculateRoute([imported]).route), steps(calculator.calculateRoute([map]).route), map.id);
+    }
+});
+
+test('烏爾科帕恰在前、厄爾庇斯在後的清單，路線從烏爾科帕恰的傳送開始，厄爾庇斯不會跳到最前面', async () => {
+    const { calculator } = await createRouteCalculator();
+    // 和頁面一樣，寶圖帶著英文地名 zone（script.js 的 loadData() 加上的）
+    const list = ['urqopacha', 'elpis'].map(zoneId => ({ ...maps.find(map => map.zoneId === zoneId), zone: zoneNameEn(zoneId) }));
+    const { route, summary } = calculator.calculateRoute(list);
+    assert.equal(route[0].type, 'teleport');
+    assert.equal(route[0].zoneId, 'urqopacha');
+    assert.deepEqual(Array.from(summary.regionsVisited), ['urqopacha', 'elpis']);
 });
 
 test('G18 永生記憶 8 張圖的路線從傳送開始，總傳送次數至少 1', async () => {
@@ -110,4 +129,109 @@ test('G18 永生記憶 8 張圖的路線從傳送開始，總傳送次數至少 
         if (single.route[0]?.type !== 'teleport') problems.push(`${zoneId}: 單張圖的路線第一步是 ${single.route[0]?.type}`);
     }
     assert.deepEqual(problems, []);
+});
+
+// ---------- 頁面載入的順序（TreasureMapFinder#init） ----------
+// fake-dom 裡載入真正的 script.js 與 zone-manager.js。zones.json／aetherytes.json 的 fetch 可以先擱著不回；
+// 傳送點圖示是 Image 替身，iconLoads 為 false 時一直不會載入完成。載入資料之後的步驟（掛事件、清單張數、畫出結果）
+// 在別的測試裡，這裡換成只記下有沒有走到的替身
+function startFinder({ holdZones = false, iconLoads = true, failFiles = [] } = {}) {
+    const dom = createFakeDom({ url: 'https://ff14.tw/tools/treasure-map-finder/' });
+    const icons = [];
+    let releaseZones = () => {};
+    const zonesArrive = holdZones ? new Promise(resolve => { releaseZones = resolve; }) : Promise.resolve();
+    Object.assign(dom.window, {
+        console: { log() {}, warn() {}, error() {} },
+        FF14Utils: { getI18nText: (key, fallback) => fallback },
+        Image: class {
+            constructor() { icons.push(this); }
+            set src(value) {
+                this.url = value;
+                if (iconLoads) queueMicrotask(() => this.onload?.());
+            }
+        },
+        fetch: async url => {
+            const file = ['zones.json', 'aetherytes.json', 'treasure-maps.json'].find(name => String(url).endsWith(`/${name}`));
+            if (!file) throw new Error(`unexpected fetch: ${url}`);
+            if (file !== 'treasure-maps.json') await zonesArrive;
+            if (failFiles.includes(file)) return { ok: false, status: 404, json: async () => { throw new Error('404'); } };
+            return { ok: true, json: async () => readJson(`data/${file}`) };
+        }
+    });
+    for (const file of ['assets/js/security-utils.js', 'tools/treasure-map-finder/coordinate-utils.js', 'tools/treasure-map-finder/zone-manager.js', 'tools/treasure-map-finder/script.js']) {
+        dom.load(file);
+    }
+    const grid = dom.el('div', { id: 'treasureGrid', class: 'treasure-grid' });
+    dom.document.body.appendChild(grid);
+    const steps = [];
+    const finder = vm.runInContext('Object.create(TreasureMapFinder.prototype)', dom.window);
+    Object.assign(finder, {
+        maps: [],
+        aetheryteIcon: null,
+        elements: { treasureGrid: grid },
+        setupEventListeners: () => steps.push('events'),
+        updateListCount: () => steps.push('count'),
+        // 畫出結果：initFilters() 還原篩選之後由 updateFilteredMaps() 畫
+        initFilters: () => steps.push('results'),
+        updateFilteredMaps: () => steps.push('results')
+    });
+    finder.init();
+    return { dom, finder, grid, icons, steps, releaseZones };
+}
+
+// 假的 fetch 只靠 microtask 往下走：跑幾輪 setImmediate，init() 裡能跑完的 await 就都跑完了（卡住的不會讓測試停在這裡）
+const settle = async () => {
+    for (let round = 0; round < 5; round += 1) await new Promise(resolve => setImmediate(resolve));
+};
+
+test('init：一開始就顯示「載入中」，地區與傳送點資料還沒回來時也是', async () => {
+    const page = startFinder({ holdZones: true });
+    await settle();
+    assert.equal(page.grid.querySelectorAll('.loading').length, 1, '地區與傳送點資料載入時，結果格要顯示「載入中」');
+    assert.deepEqual(page.steps, []);
+    page.releaseZones();
+    await settle();
+    assert.equal(page.finder.maps.length, maps.length);
+    assert.deepEqual(page.steps, ['events', 'count', 'results']);
+});
+
+test('init：地區或傳送點資料載入失敗時顯示載入失敗與重新載入，不留下只有一半資料的頁面', async () => {
+    for (const file of ['zones.json', 'aetherytes.json']) {
+        const page = startFinder({ failFiles: [file] });
+        await settle();
+        const error = page.grid.querySelector('.error-message');
+        assert.ok(error, `${file}：結果格要顯示載入失敗`);
+        assert.match(error.textContent, /載入寶圖資料失敗/, file);
+        assert.deepEqual(page.steps, [], `${file}：不能接著掛事件、畫結果`);
+        assert.equal(page.finder.maps.length, 0, `${file}：不能用缺了地區資料的寶圖（地名會變成 id、縮圖路徑會錯）`);
+        assert.equal(vm.runInContext('zoneManager.loaded', page.dom.window), false, file);
+    }
+});
+
+test('init：傳送點圖示載入慢或載入不了都不延後結果；圖示晚到時照樣補上（之後打開的詳細地圖畫得出傳送點）', async () => {
+    const page = startFinder({ iconLoads: false });
+    await settle();
+    assert.deepEqual(page.steps, ['events', 'count', 'results'], '不等傳送點圖示就畫出結果');
+    assert.equal(page.finder.maps.length, maps.length);
+    assert.equal(page.finder.aetheryteIcon, null);
+    assert.equal(page.icons.length, 1);
+    page.icons[0].onload();
+    await settle();
+    assert.ok(page.finder.aetheryteIcon === page.icons[0], '圖示載入完成後記下來');
+});
+
+test('init：傳送點圖示晚到時，開著的詳細地圖重畫一次補上傳送點；開著的是路線面板（用不到圖示）或什麼都沒開就不重畫', async () => {
+    for (const [kind, expected] of [['mapDetail', ['mapDetail']], ['routeResult', []], [null, []]]) {
+        const page = startFinder({ iconLoads: false });
+        const refreshed = [];
+        page.finder.uiDialogManager = {
+            activeDialog: kind ? { kind } : null,
+            refreshActiveDialog() { refreshed.push(this.activeDialog.kind); }
+        };
+        await settle();
+        assert.deepEqual(refreshed, [], `${kind}：圖示還沒到`);
+        page.icons[0].onload();
+        await settle();
+        assert.deepEqual(refreshed, expected, `${kind}：圖示到了之後`);
+    }
 });

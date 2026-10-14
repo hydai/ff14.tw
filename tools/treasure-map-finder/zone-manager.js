@@ -2,26 +2,39 @@ class ZoneManager {
     constructor() {
         this.zones = null;
         this.mappings = null;
+        this.aetherytes = null;
         this.loaded = false;
     }
 
+    // 地區（zones.json）與傳送點（aetherytes.json）同時載入，兩份都成功才算載入完成；
+    // 任一份失敗就丟出錯誤，由呼叫的一方（TreasureMapFinder#init）顯示載入失敗
     async init() {
         if (this.loaded) return;
-        
-        try {
-            const response = await fetch('../../data/zones.json');
+
+        const fetchJson = async url => {
+            const response = await fetch(url);
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                throw new Error(`HTTP error! status: ${response.status} (${url})`);
             }
-            
-            const data = await response.json();
-            this.zones = data.zones;
-            this.mappings = data.mappings;
+            return response.json();
+        };
+
+        try {
+            const [zonesData, aetherytesData] = await Promise.all([
+                fetchJson('../../data/zones.json'),
+                fetchJson('../../data/aetherytes.json')
+            ]);
+            this.zones = zonesData.zones;
+            this.mappings = zonesData.mappings;
+            this.aetherytes = aetherytesData.aetherytes;
             this.loaded = true;
         } catch (error) {
             console.error('載入地區資料失敗:', error);
             this.zones = {};
             this.mappings = { zoneNameToId: {}, zoneIdToRegion: {}, filePrefixToZoneId: {} };
+            this.aetherytes = {};
+            // 不能只靠一半的資料繼續：沒有地區資料時地名會變成 id、縮圖路徑會錯，沒有傳送點時路線排不出來
+            throw error;
         }
     }
 
@@ -83,10 +96,30 @@ class ZoneManager {
         return zone ? zone.filePrefix : zoneId;
     }
 
-    // 根據地區ID獲取傳送點列表
+    // 根據地區ID獲取傳送點（aetherytes.json 的完整資料），順序依 zones.json 該地區列出的 id；
+    // 卡片、詳細地圖與路線都從這裡取得傳送點，找不到的 id 和未知地區不會出現在結果裡
     getAetherytes(zoneId) {
         const zone = this.getZoneById(zoneId);
-        return zone ? zone.aetherytes : [];
+        if (!zone) return [];
+
+        const regionAetherytes = this.aetherytes[this.getRegionId(zoneId)] || [];
+        return zone.aetherytes
+            .map(id => regionAetherytes.find(aetheryte => aetheryte.id === id))
+            .filter(Boolean);
+    }
+
+    // 找出離座標最近的傳送點，回傳 { aetheryte, distance }，地區沒有傳送點時回傳 null；
+    // 算法和路線分配傳送點（RouteCalculator.solveWithTeleportGrouping）相同：
+    // 3D 直線距離，嚴格小於才換，同距離取先出現的
+    findNearestAetheryte(zoneId, coords) {
+        let nearest = null;
+        for (const aetheryte of this.getAetherytes(zoneId)) {
+            const distance = CoordinateUtils.calculate3DDistance(aetheryte.coords, coords);
+            if (!nearest || distance < nearest.distance) {
+                nearest = { aetheryte, distance };
+            }
+        }
+        return nearest;
     }
 
     // 根據地區ID獲取地區分類
@@ -175,23 +208,6 @@ class ZoneManager {
     // 根據檔案前綴獲取地區ID
     getZoneIdByFilePrefix(filePrefix) {
         return this.mappings.filePrefixToZoneId[filePrefix] || filePrefix;
-    }
-
-    // 獲取地區的傳送點資訊（需要與 aetherytes.json 整合）
-    async getAetheryteInfo(zoneId, aetheryteData) {
-        const zone = this.getZoneById(zoneId);
-        if (!zone || !aetheryteData) return [];
-
-        const regionId = this.getRegionId(zoneId);
-        const regionAetherytes = aetheryteData[regionId] || {};
-
-        return zone.aetherytes.map(aetheryteId => {
-            const aetheryte = regionAetherytes[aetheryteId];
-            return aetheryte ? {
-                id: aetheryteId,
-                ...aetheryte
-            } : null;
-        }).filter(Boolean);
     }
 
     // 獲取統計資訊

@@ -81,10 +81,10 @@ class UIDialogManager {
     /**
      * 顯示地圖詳細視窗
      * @param {Object} map - 地圖資料
-     * @param {Object} options - 選項
+     * @param {Object} options - 選項 { zoneManager, aetheryteIcon }；傳送點由 zoneManager 提供
      */
     showMapDetail(map, options = {}) {
-        const { zoneManager, aetheryteData, aetheryteIcon, getAetherytesForZone } = options;
+        const { zoneManager, aetheryteIcon } = options;
         const elements = this.mapDetailElements;
 
         if (!elements.modal) return;
@@ -111,7 +111,7 @@ class UIDialogManager {
 
             // 畫布的清除與標記繪製交給 _loadAndDrawMarkers()
 
-            this._loadAndDrawMarkers(map, { zoneManager, aetheryteData, aetheryteIcon, getAetherytesForZone });
+            this._loadAndDrawMarkers(map, { zoneManager, aetheryteIcon });
         };
         
         // 設置圖片載入事件
@@ -162,7 +162,7 @@ class UIDialogManager {
      * 繪製地圖標記
      */
     drawMapMarkers(ctx, canvas, map, markIcon, options) {
-        const { zoneManager, aetheryteData, aetheryteIcon, getAetherytesForZone } = options;
+        const { zoneManager, aetheryteIcon } = options;
         
         // 轉換寶圖座標並繪製標記
         const treasureCoords = CoordinateUtils.gameToImageCoords(
@@ -183,10 +183,10 @@ class UIDialogManager {
             markHeight
         );
         
-        // 如果有傳送點資料和圖標，繪製傳送點
-        if (aetheryteData && aetheryteIcon && getAetherytesForZone) {
-            const aetherytes = getAetherytesForZone(map.zone);
-            
+        // 如果有地區資料和傳送點圖標，繪製這張寶圖所在地區的傳送點
+        if (zoneManager && aetheryteIcon) {
+            const aetherytes = zoneManager.getAetherytes(map.zoneId);
+
             aetherytes.forEach(aetheryte => {
                 // 轉換座標
                 const imageCoords = CoordinateUtils.gameToImageCoords(

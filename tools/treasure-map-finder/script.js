@@ -10,7 +10,6 @@ class TreasureMapFinder {
         this.modalManager = new ModalManager(); // 我的清單面板的焦點管理（開啟時移入焦點、Tab 循環、ESC／關閉時還原焦點）
         this.displayCount = 24;
         this.currentDisplayCount = 0;
-        this.aetheryteData = null; // 傳送點資料
         this.aetheryteIcon = null; // 傳送點圖標
         this.roomCollaboration = null; // 協作功能實例
         
@@ -55,12 +54,13 @@ class TreasureMapFinder {
     
     async init() {
         try {
-            await Promise.all([
-                zoneManager.init(),
-                this.loadData(),
-                this.loadAetherytes(),
-                this.loadAetheryteIcon()
-            ]);
+            // 一開始就顯示「載入中」：地區與傳送點資料（zoneManager）載入時也算在內
+            this.showLoading(true);
+            // 傳送點圖示只有詳細地圖用得到，不等它：載入慢或載入不了都不延後結果（圖示到了之後，開著的詳細地圖會重畫補上傳送點，見 loadAetheryteIcon）
+            void this.loadAetheryteIcon();
+            // loadData() 要用 ZoneManager 的地區名稱與圖片檔名，必須等它載入完才能開始
+            await zoneManager.init();
+            await this.loadData();
             this.setupEventListeners();
             this.updateListCount();
             this.updateFilteredMaps();
@@ -70,20 +70,6 @@ class TreasureMapFinder {
         }
     }
 
-    async loadAetherytes() {
-        try {
-            const response = await fetch('../../data/aetherytes.json');
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            const data = await response.json();
-            this.aetheryteData = data.aetherytes;
-        } catch (error) {
-            console.error('載入傳送點資料失敗:', error);
-            this.aetheryteData = {}; // 失敗時使用空物件
-        }
-    }
-    
     async loadAetheryteIcon() {
         try {
             const img = new Image();
@@ -96,11 +82,16 @@ class TreasureMapFinder {
         } catch (error) {
             console.error('載入傳送點圖標失敗:', error);
             this.aetheryteIcon = null;
+            return;
+        }
+        // 圖示不擋載入（見 init()），可能比詳細地圖晚到：開著的詳細地圖重畫一次，補上傳送點。
+        // 路線面板用不到圖示，不重畫（重畫會把整個步驟清單換掉）
+        if (this.uiDialogManager?.activeDialog?.kind === 'mapDetail') {
+            this.uiDialogManager.refreshActiveDialog();
         }
     }
     
     async loadData() {
-        this.showLoading(true);
         try {
             const response = await fetch('../../data/treasure-maps.json');
             if (!response.ok) {
@@ -355,9 +346,7 @@ class TreasureMapFinder {
             e.stopPropagation();
             this.uiDialogManager.showMapDetail(map, {
                 zoneManager: zoneManager,
-                aetheryteData: this.aetheryteData,
-                aetheryteIcon: this.aetheryteIcon,
-                getAetherytesForZone: (zone) => this.getAetherytesForZone(zone)
+                aetheryteIcon: this.aetheryteIcon
             });
         });
         actions.appendChild(detailBtn);
@@ -477,221 +466,6 @@ class TreasureMapFinder {
         });
     }
     
-    // 取得地區對應的傳送點資料
-    getAetherytesForZone(zoneName) {
-        // G8 特殊地區的傳送點對應表
-        // Dravania 需要細分為不同子地區
-        const dravaniaZoneAetherytes = {
-            'the_dravanian_forelands': ['tailfeather', 'anyx_trine'],
-            'thedravanianforelands': ['tailfeather', 'anyx_trine'],
-            'the_churning_mists': ['moghome', 'zenith'],
-            'thechurningmists': ['moghome', 'zenith'],
-            'the_dravanian_hinterlands': ['idyllshire', 'prologue_gate'],  // G8 沒有此地區，保留給其他地圖用
-            'thedravanianhinterlands': ['idyllshire', 'prologue_gate']
-        };
-        
-        // Gyr Abania 地區的特殊傳送點對應表 (G10)
-        const gyrAbaniaZoneAetherytes = {
-            'the_fringes': ['castrum_oriens', 'peering_stones'],
-            'thefringes': ['castrum_oriens', 'peering_stones'],
-            'the_peaks': ['ala_gannha', 'ala_ghiri'],
-            'thepeaks': ['ala_gannha', 'ala_ghiri'],
-            'the_lochs': ['porta_praetoria', 'ala_mhigan_quarter'],
-            'thelochs': ['porta_praetoria', 'ala_mhigan_quarter']
-        };
-        
-        // Othard 地區的特殊傳送點對應表 (G10)
-        const othardZoneAetherytes = {
-            'the_ruby_sea': ['tamamizu', 'onokoro'],
-            'therubysea': ['tamamizu', 'onokoro'],
-            'yanxia': ['house_of_the_fierce', 'namai'],
-            'the_azim_steppe': ['dhoro_iloh', 'dawn_throne', 'reunion'],
-            'theazimsteppe': ['dhoro_iloh', 'dawn_throne', 'reunion']
-        };
-        
-        // Norvrandt 地區的特殊傳送點對應表 (G12)
-        const norvrandtZoneAetherytes = {
-            'lakeland': ['the_ostall_imperative', 'fort_jobb'],
-            'kholusia': ['stilltide', 'tomra'],
-            'amh_araeng': ['twine', 'mord_souq', 'inn_at_journeys_head'],
-            'amharaeng': ['twine', 'mord_souq', 'inn_at_journeys_head'],
-            'il_mheg': ['lydha_lran', 'pla_enni', 'wolekdorf'],
-            'ilmheg': ['lydha_lran', 'pla_enni', 'wolekdorf'],
-            'the_rak\'tika_greatwood': ['slitherbough', 'fanow'],
-            'theraktikagreatwod': ['slitherbough', 'fanow'],
-            'theraktikagreatwod': ['slitherbough', 'fanow'],
-            'the_tempest': ['the_ondo_cups', 'the_macarenses_angle'],
-            'thetempest': ['the_ondo_cups', 'the_macarenses_angle']
-        };
-        
-        // Ilsabard 地區的特殊傳送點對應表 (G14)
-        const ilsabardZoneAetherytes = {
-            'labyrinthos': ['the_archeion', 'sharlayan_hamlet', 'aporia'],
-            'thavnair': ['yedlihmad', 'great_work', 'palaka_stand'],
-            'garlemald': ['camp_broken_glass', 'tertium'],
-            'mare_lamentorum': ['sinus_lacrimarum', 'bestways_burrow'],
-            'marelamentorum': ['sinus_lacrimarum', 'bestways_burrow'],
-            'ultima_thule': ['reahs_tahra', 'base_omicron', 'ostrakon_deka_hexi'],
-            'ultimathule': ['reahs_tahra', 'base_omicron', 'ostrakon_deka_hexi']
-        };
-        
-        // Tural 地區的特殊傳送點對應表 (G17 & G18)
-        const turalZoneAetherytes = {
-            'urqopacha': ['wachunpelo', 'worqor_zormor'],
-            'kozama\'uka': ['ok_hanu', 'earthenshire', 'many_fires', 'dock_poga'],
-            'kozamauka': ['ok_hanu', 'earthenshire', 'many_fires', 'dock_poga'],
-            'yak_t\'el': ['iq_br_aak', 'mamook'],
-            'yaktel': ['iq_br_aak', 'mamook'],
-            'shaaloani': ['hhusatahwi', 'meyhane', 'sheshenewezi_springs'],
-            'heritage_found': ['the_outskirts', 'electrope_strike', 'yyasulani_station'],
-            'heritagefound': ['the_outskirts', 'electrope_strike', 'yyasulani_station'],
-            'living_memory': ['leynode_mnemes', 'leynode_aero', 'leynode_pyro'],
-            'livingmemory': ['leynode_mnemes', 'leynode_aero', 'leynode_pyro']
-        };
-        
-        // 建立地區名稱對應表
-        const zoneMapping = {
-            // Coerthas 高地
-            'coerthas_western_highlands': 'coerthas',
-            'coerthaswesternhighlands': 'coerthas',
-            
-            // Abalathia's Spine
-            'the_sea_of_clouds': 'abalathia',
-            'theseaofclouds': 'abalathia',
-            
-            // Dravania
-            'the_dravanian_forelands': 'dravania',
-            'thedravanianforelands': 'dravania',
-            'the_churning_mists': 'dravania',
-            'thechurningmists': 'dravania',
-            'the_dravanian_hinterlands': 'dravania',
-            'thedravanianhinterlands': 'dravania',
-            
-            // Gyr Abania
-            'the_fringes': 'gyr_abania',
-            'thefringes': 'gyr_abania',
-            'the_peaks': 'gyr_abania',
-            'thepeaks': 'gyr_abania',
-            'the_lochs': 'gyr_abania',
-            'thelochs': 'gyr_abania',
-            
-            // Othard
-            'the_ruby_sea': 'othard',
-            'therubysea': 'othard',
-            'yanxia': 'othard',
-            'the_azim_steppe': 'othard',
-            'theazimsteppe': 'othard',
-            
-            // Norvrandt
-            'lakeland': 'norvrandt',
-            'kholusia': 'norvrandt',
-            'amh_araeng': 'norvrandt',
-            'amharaeng': 'norvrandt',
-            'il_mheg': 'norvrandt',
-            'ilmheg': 'norvrandt',
-            'the_rak\'tika_greatwood': 'norvrandt',
-            'theraktikagreatwod': 'norvrandt',
-            'the_tempest': 'norvrandt',
-            'thetempest': 'norvrandt',
-            
-            // Ilsabard (Endwalker)
-            'labyrinthos': 'ilsabard',
-            'thavnair': 'ilsabard',
-            'garlemald': 'ilsabard',
-            'mare_lamentorum': 'ilsabard',
-            'marelamentorum': 'ilsabard',
-            'ultima_thule': 'ilsabard',
-            'ultimathule': 'ilsabard',
-            
-            // Elpis
-            'elpis': 'elpis'
-        };
-        
-        // 正規化地區名稱
-        const normalizedZone = zoneName.toLowerCase().replace(/[\s'-]/g, '');
-        
-        // 檢查是否為 Dravania 的子地區 (G8)
-        if (dravaniaZoneAetherytes[normalizedZone]) {
-            const allowedAetherytes = dravaniaZoneAetherytes[normalizedZone];
-            const dravaniaAetherytes = this.aetheryteData?.dravania || [];
-            
-            // 只返回屬於該地區的傳送點
-            return dravaniaAetherytes.filter(aetheryte => 
-                allowedAetherytes.includes(aetheryte.id)
-            );
-        }
-        
-        // 檢查是否為 Gyr Abania 的子地區
-        if (gyrAbaniaZoneAetherytes[normalizedZone]) {
-            const allowedAetherytes = gyrAbaniaZoneAetherytes[normalizedZone];
-            const gyrAbaniaAetherytes = this.aetheryteData?.gyr_abania || [];
-            
-            // 只返回屬於該地區的傳送點
-            return gyrAbaniaAetherytes.filter(aetheryte => 
-                allowedAetherytes.includes(aetheryte.id)
-            );
-        }
-        
-        // 檢查是否為 Othard 的子地區
-        if (othardZoneAetherytes[normalizedZone]) {
-            const allowedAetherytes = othardZoneAetherytes[normalizedZone];
-            const othardAetherytes = this.aetheryteData?.othard || [];
-            
-            // 只返回屬於該地區的傳送點
-            return othardAetherytes.filter(aetheryte => 
-                allowedAetherytes.includes(aetheryte.id)
-            );
-        }
-        
-        // 檢查是否為 Norvrandt 的子地區
-        if (norvrandtZoneAetherytes[normalizedZone]) {
-            const allowedAetherytes = norvrandtZoneAetherytes[normalizedZone];
-            const norvrandtAetherytes = this.aetheryteData?.norvrandt || [];
-            
-            // 只返回屬於該地區的傳送點
-            return norvrandtAetherytes.filter(aetheryte => 
-                allowedAetherytes.includes(aetheryte.id)
-            );
-        }
-        
-        // 檢查是否為 Ilsabard 的子地區
-        if (ilsabardZoneAetherytes[normalizedZone]) {
-            const allowedAetherytes = ilsabardZoneAetherytes[normalizedZone];
-            const ilsabardAetherytes = this.aetheryteData?.ilsabard || [];
-            
-            // 只返回屬於該地區的傳送點
-            return ilsabardAetherytes.filter(aetheryte => 
-                allowedAetherytes.includes(aetheryte.id)
-            );
-        }
-        
-        // 檢查是否為 Tural 的子地區
-        if (turalZoneAetherytes[normalizedZone]) {
-            const allowedAetherytes = turalZoneAetherytes[normalizedZone];
-            const turalAetherytes = this.aetheryteData?.tural || [];
-            
-            // 只返回屬於該地區的傳送點
-            return turalAetherytes.filter(aetheryte => 
-                allowedAetherytes.includes(aetheryte.id)
-            );
-        }
-        
-        // 其他地區使用原本的對應邏輯
-        const aetheryteRegion = zoneMapping[normalizedZone] || zoneMapping[zoneName.toLowerCase().replace(/[\s-]/g, '_')];
-        
-        if (aetheryteRegion && this.aetheryteData) {
-            return this.aetheryteData[aetheryteRegion] || [];
-        }
-        
-        // 嘗試直接從地區名稱查找
-        const directMatch = this.aetheryteData?.[zoneName.toLowerCase()] || [];
-        if (directMatch.length > 0) {
-            return directMatch;
-        }
-        
-        return [];
-    }
-
     toggleListPanel() {
         const overlay = document.getElementById('panelOverlay');
         const panel = this.elements.myListPanel;
@@ -1042,12 +816,12 @@ class TreasureMapFinder {
             return;
         }
 
-        // 等待 routeCalculator 載入完成
-        if (!routeCalculator || !routeCalculator.aetherytes) {
+        // 等待 routeCalculator 與地區、傳送點資料載入完成
+        if (!routeCalculator || !zoneManager.loaded) {
             FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_loading_aetherytes', '正在載入傳送點資料，請稍後再試'), 'info');
             // 等待一下再試
             setTimeout(() => {
-                if (routeCalculator && routeCalculator.aetherytes) {
+                if (routeCalculator && zoneManager.loaded) {
                     this.generateRoute();
                 }
             }, 1000);
@@ -1307,13 +1081,13 @@ class TreasureMapFinder {
     }
     
     // 取得傳送點名稱
-    getAetheryteName(aetheryteData) {
+    getAetheryteName(name) {
         // 如果是物件格式（包含多語言）
-        if (typeof aetheryteData === 'object' && aetheryteData !== null) {
-            return aetheryteData;
+        if (typeof name === 'object' && name !== null) {
+            return name;
         }
         // 如果是字串，返回包裝成物件
-        return { zh: aetheryteData };
+        return { zh: name };
     }
     
     // 設定協作實例
