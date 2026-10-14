@@ -142,7 +142,7 @@ test('tools-common.css 含有畫布定義的共用元件', () => {
 });
 
 test('全站不得使用共用元件的舊 class 名稱', () => {
-    const files = [...listFiles('tools', ['.html', '.js']), ...listFiles('assets/js', ['.js']), 'index.html', 'about.html', 'copyright.html', 'changelog.html'];
+    const files = [...listFiles('tools', ['.html', '.js']), ...listFiles('assets/js', ['.js']), 'index.html', 'about.html', 'copyright.html', 'changelog.html', '404.html'];
     assert.ok(files.length >= 20, '清單不應該是空的');
     for (const file of files) {
         const text = read(file);
@@ -155,13 +155,13 @@ test('全站不得使用共用元件的舊 class 名稱', () => {
 
 test('dark-mode-tools.css 已刪除，且沒有頁面連結它', () => {
     assert.equal(fs.existsSync(path.join(ROOT, 'assets/css/dark-mode-tools.css')), false, 'assets/css/dark-mode-tools.css 應已刪除');
-    for (const file of [...listFiles('tools', ['.html']), 'index.html', 'about.html', 'copyright.html', 'changelog.html']) {
+    for (const file of [...listFiles('tools', ['.html']), 'index.html', 'about.html', 'copyright.html', 'changelog.html', '404.html']) {
         assert.doesNotMatch(read(file), /dark-mode-tools\.css/, `${file} 仍連結 dark-mode-tools.css`);
     }
 });
 
 test('全站不得再出現相容別名 var(--legacy)', () => {
-    const files = [...listFiles('assets/css', ['.css']), ...listFiles('assets/js', ['.js']), ...listFiles('tools', ['.css', '.html', '.js']), 'index.html', 'about.html', 'copyright.html', 'changelog.html'];
+    const files = [...listFiles('assets/css', ['.css']), ...listFiles('assets/js', ['.js']), ...listFiles('tools', ['.css', '.html', '.js']), 'index.html', 'about.html', 'copyright.html', 'changelog.html', '404.html'];
     assert.ok(files.length >= 20, '清單不應該是空的');
     for (const file of files) {
         const text = read(file);
@@ -187,7 +187,7 @@ function classTokens(tag) {
     const m = tag.match(/\sclass="([^"]*)"/);
     return m ? m[1].split(/\s+/) : [];
 }
-const ROOT_PAGES = ['index.html', 'about.html', 'copyright.html', 'changelog.html'];
+const ROOT_PAGES = ['index.html', 'about.html', 'copyright.html', 'changelog.html', '404.html'];
 
 // 實際交給 ModalManager 的那一層元素的 class；
 // route-panel／format-panel／map-detail-modal 沒有獨立的遮罩層（直接把面板本身交給 ModalManager），
@@ -349,7 +349,7 @@ test('猜謎方格工具的格子都設定 tabindex，可以用 Tab 鍵移動焦
 });
 
 test('每個 role="tablist" 都至少有一個帶 aria-selected 的 role="tab"', () => {
-    const files = [...listFiles('tools', ['.html']), 'index.html', 'about.html', 'copyright.html', 'changelog.html'];
+    const files = [...listFiles('tools', ['.html']), 'index.html', 'about.html', 'copyright.html', 'changelog.html', '404.html'];
     let tablistCount = 0;
     for (const file of files) {
         const html = read(file);

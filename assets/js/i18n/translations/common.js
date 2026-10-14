@@ -7,6 +7,7 @@ const CommonTranslations = {
         // 導航列
         nav_menu: '選單',
         nav_home: '首頁',
+        nav_tools: '工具',
         nav_copyright: '版權聲明',
         nav_github: 'GitHub',
         nav_about: '關於',
@@ -15,6 +16,22 @@ const CommonTranslations = {
         // 頁尾
         footer_copyright: '本站非官方網站，與 Square Enix 無關',
         footer_made_with: 'Made with ❤️ by hydai',
+        footer_report_issue: '回報問題',
+
+        // 工具名稱（全站共用：工具選單、首頁、404）
+        tool_mini_cactpot_title: '仙人微彩計算機',
+        tool_wondrous_tails_title: '天書奇談預測器',
+        tool_dungeon_database_title: '副本資料庫',
+        tool_character_card_title: '角色卡產生器',
+        tool_faux_hollows_title: '宗長計算機',
+        tool_treasure_map_title: '寶圖搜尋器',
+        tool_lodestone_title: 'Lodestone 角色查詢',
+        tool_timed_gathering_title: '特殊採集時間管理器',
+        tool_guide_title: '攻略資料',
+        tool_report_generator_title: '檢舉模板產生器',
+        tool_macro_converter_title: '巨集轉換器',
+        tool_weather_forecast_title: '天氣預報',
+        tool_tc_shop_title: '水晶商城清單',
 
         // 通用按鈕
         btn_reset: '重置',
@@ -72,16 +89,13 @@ const CommonTranslations = {
         time_today: '今天',
         time_hour: '小時',
         time_minute: '分鐘',
-        time_second: '秒',
-
-        // 狀態標籤
-        status_under_construction: '🚧 施工中',
-        status_coming_soon: '即將推出'
+        time_second: '秒'
     },
     en: {
         // Navigation
         nav_menu: 'Menu',
         nav_home: 'Home',
+        nav_tools: 'Tools',
         nav_copyright: 'Copyright',
         nav_github: 'GitHub',
         nav_about: 'About',
@@ -90,6 +104,22 @@ const CommonTranslations = {
         // Footer
         footer_copyright: 'Unofficial site, not affiliated with Square Enix',
         footer_made_with: 'Made with ❤️ by hydai',
+        footer_report_issue: 'Report an issue',
+
+        // Tool names (shared site-wide: tools menu, home page, 404)
+        tool_mini_cactpot_title: 'Mini Cactpot Calculator',
+        tool_wondrous_tails_title: 'Wondrous Tails Predictor',
+        tool_dungeon_database_title: 'Dungeon Database',
+        tool_character_card_title: 'Character Card Generator',
+        tool_faux_hollows_title: 'Faux Hollows Calculator',
+        tool_treasure_map_title: 'Treasure Map Finder',
+        tool_lodestone_title: 'Lodestone Lookup',
+        tool_timed_gathering_title: 'Timed Gathering Manager',
+        tool_guide_title: 'Game Guide',
+        tool_report_generator_title: 'Report Generator',
+        tool_macro_converter_title: 'Macro Converter',
+        tool_weather_forecast_title: 'Weather Forecast',
+        tool_tc_shop_title: 'Crystal Shop List',
 
         // Common buttons
         btn_reset: 'Reset',
@@ -146,16 +176,13 @@ const CommonTranslations = {
         time_today: 'Today',
         time_hour: 'hour',
         time_minute: 'minute',
-        time_second: 'second',
-
-        // Status labels
-        status_under_construction: '🚧 Under Construction',
-        status_coming_soon: 'Coming Soon'
+        time_second: 'second'
     },
     ja: {
         // ナビゲーション
         nav_menu: 'メニュー',
         nav_home: 'ホーム',
+        nav_tools: 'ツール',
         nav_copyright: '著作権表示',
         nav_github: 'GitHub',
         nav_about: '概要',
@@ -164,6 +191,22 @@ const CommonTranslations = {
         // フッター
         footer_copyright: '非公式サイト、スクウェア・エニックスとは無関係',
         footer_made_with: 'Made with ❤️ by hydai',
+        footer_report_issue: '不具合を報告',
+
+        // ツール名（サイト共通：ツールメニュー、ホーム、404）
+        tool_mini_cactpot_title: 'ミニくじテンダー計算機',
+        tool_wondrous_tails_title: 'クロの空想帳予測器',
+        tool_dungeon_database_title: 'ダンジョンデータベース',
+        tool_character_card_title: 'キャラクターカード生成',
+        tool_faux_hollows_title: '幻フォールスホロー計算機',
+        tool_treasure_map_title: '宝の地図検索',
+        tool_lodestone_title: 'Lodestone 検索',
+        tool_timed_gathering_title: 'タイムド採集管理',
+        tool_guide_title: '攻略情報',
+        tool_report_generator_title: '通報テンプレート生成',
+        tool_macro_converter_title: 'マクロ変換ツール',
+        tool_weather_forecast_title: '天気予報',
+        tool_tc_shop_title: 'クリスタルショップリスト',
 
         // 共通ボタン
         btn_reset: 'リセット',
@@ -220,11 +263,7 @@ const CommonTranslations = {
         time_today: '今日',
         time_hour: '時間',
         time_minute: '分',
-        time_second: '秒',
-
-        // ステータスラベル
-        status_under_construction: '🚧 工事中',
-        status_coming_soon: '近日公開'
+        time_second: '秒'
     }
 };
 

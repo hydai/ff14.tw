@@ -347,15 +347,28 @@ function initHamburgerMenu() {
         return;
     }
 
-    // 創建漢堡選單按鈕
+    // ☰ 用 aria-controls 指向導覽列；導覽列沒有 id 時補上（NavTemplate 產生的導覽列一定有）
+    if (!nav.id) {
+        nav.id = 'site-nav';
+    }
+
+    // 創建漢堡選單按鈕：type="button" 避免放進表單時變成送出鈕，aria-expanded 隨選單開關同步
     const hamburger = document.createElement('button');
     hamburger.className = 'hamburger';
-    const menuLabel = window.i18n?.getText('nav_menu') || '選單';
-    hamburger.setAttribute('aria-label', menuLabel);
+    hamburger.setAttribute('type', 'button');
+    hamburger.setAttribute('aria-controls', nav.id);
+    hamburger.setAttribute('aria-expanded', 'false');
     // 建立漢堡選單的三條線（避免使用 innerHTML）
     hamburger.appendChild(document.createElement('span'));
     hamburger.appendChild(document.createElement('span'));
     hamburger.appendChild(document.createElement('span'));
+
+    // aria-label 跟著語言走：建立時設一次，語言切換時再設一次（沒有 i18n 的頁面用預設文字）
+    const updateMenuLabel = () => {
+        hamburger.setAttribute('aria-label', window.i18n?.getText('nav_menu') || '選單');
+    };
+    updateMenuLabel();
+    window.i18n?.onLanguageChange(updateMenuLabel);
 
     // 創建遮罩層
     const overlay = document.createElement('div');
@@ -374,59 +387,72 @@ function initHamburgerMenu() {
     };
     syncNavInert();
 
+    const isMenuOpen = () => nav.classList.contains('active');
+
+    // 開啟選單：鎖住頁面捲動，焦點移進選單（優先工具清單的第一個連結，沒有清單就用抽屜裡第一個看得到的連結：
+    // 桌機用的首頁 .nav-desktop-only 在抽屜裡是 display: none，focus() 不會有作用）
+    const openMenu = () => {
+        nav.classList.add('active');
+        hamburger.classList.add('active');
+        overlay.classList.add('active');
+        hamburger.setAttribute('aria-expanded', 'true');
+        document.body.style.overflow = 'hidden';
+        // 一定要先解除 inert 再移動焦點：inert 子樹裡的元素拿不到焦點（focus() 什麼都不會做）
+        syncNavInert();
+        const firstLink = nav.querySelector('.tools-menu a')
+            || Array.from(nav.querySelectorAll('a')).find((link) => !link.classList.contains('nav-desktop-only'));
+        firstLink?.focus();
+    };
+
+    // 關閉選單。使用者主動關閉（☰、Escape、遮罩）時把焦點還給 ☰：選單關起來後 nav 是 inert，
+    // 焦點留在裡面會掉回頁面最上面；視窗放寬造成的重置、焦點走出選單造成的關閉不動焦點（焦點已經在別處）
+    const closeMenu = ({ restoreFocus = false } = {}) => {
+        nav.classList.remove('active');
+        hamburger.classList.remove('active');
+        overlay.classList.remove('active');
+        hamburger.setAttribute('aria-expanded', 'false');
+        document.body.style.overflow = '';
+        syncNavInert();
+        if (restoreFocus) {
+            hamburger.focus();
+        }
+    };
+
     // 漢堡選單點擊事件
     hamburger.addEventListener('click', function () {
-        const isActive = nav.classList.contains('active');
-
-        if (isActive) {
-            // 關閉選單
-            nav.classList.remove('active');
-            hamburger.classList.remove('active');
-            overlay.classList.remove('active');
-            document.body.style.overflow = '';
-            syncNavInert();
+        if (isMenuOpen()) {
+            closeMenu({ restoreFocus: true });
         } else {
-            // 開啟選單
-            nav.classList.add('active');
-            hamburger.classList.add('active');
-            overlay.classList.add('active');
-            document.body.style.overflow = 'hidden';
-            syncNavInert();
+            openMenu();
         }
     });
 
     // 點擊遮罩層關閉選單
     overlay.addEventListener('click', function () {
-        nav.classList.remove('active');
-        hamburger.classList.remove('active');
-        overlay.classList.remove('active');
-        document.body.style.overflow = '';
-        syncNavInert();
+        closeMenu({ restoreFocus: true });
     });
 
-    // 處理下拉選單在手機版的行為
-    const dropdowns = nav.querySelectorAll('.nav-dropdown');
-    dropdowns.forEach(dropdown => {
-        const dropdownLink = dropdown.querySelector(':scope > a');
-
-        if (dropdownLink) {
-            dropdownLink.addEventListener('click', function (e) {
-                // 只在手機版阻止預設行為
-                if (window.innerWidth <= 768) {
-                    e.preventDefault();
-
-                    // 關閉其他下拉選單
-                    dropdowns.forEach(other => {
-                        if (other !== dropdown) {
-                            other.classList.remove('active');
-                        }
-                    });
-
-                    // 切換當前下拉選單
-                    dropdown.classList.toggle('active');
-                }
-            });
+    // 焦點移到選單與 ☰ 以外的元素（例如 Tab 走出抽屜）就關閉選單，不把焦點拉回 ☰：
+    // 抽屜蓋住頁首的主題切換鈕、遮罩蓋住整個頁面，焦點停在這些看不到的地方，使用者就不知道焦點在哪裡。
+    // 在選單與 ☰ 之間移動不算移出：按下 ☰ 時焦點會先落在 ☰ 上，這時若關閉，接著的 click 又會把選單打開。
+    // relatedTarget 是 null（視窗失焦、F6、點到遮罩這類不能聚焦的地方）也不算移出，遮罩由自己的 click 關閉；
+    // 這和桌機工具選單（NavTemplate.initToolsMenu）的 focusout 是同一個規則
+    const handleFocusOut = function (event) {
+        const next = event.relatedTarget;
+        if (isMenuOpen() && next && !nav.contains(next) && !hamburger.contains(next)) {
+            closeMenu();
         }
+    };
+    nav.addEventListener('focusout', handleFocusOut);
+    hamburger.addEventListener('focusout', handleFocusOut);
+
+    // 開啟中按 Escape 關閉選單；沒開的時候不攔截，讓別的元件（例如對話框）自己處理
+    document.addEventListener('keydown', function (event) {
+        if (event.key !== 'Escape' || !isMenuOpen()) {
+            return;
+        }
+        event.preventDefault();
+        closeMenu({ restoreFocus: true });
     });
 
     // 視窗大小改變時重置選單狀態
@@ -435,63 +461,79 @@ function initHamburgerMenu() {
         clearTimeout(resizeTimeout);
         resizeTimeout = setTimeout(function () {
             if (window.innerWidth > 768) {
-                nav.classList.remove('active');
-                hamburger.classList.remove('active');
-                overlay.classList.remove('active');
-                document.body.style.overflow = '';
-
-                // 重置所有下拉選單狀態
-                dropdowns.forEach(dropdown => {
-                    dropdown.classList.remove('active');
-                });
+                closeMenu();
             }
             syncNavInert();
         }, 250);
     });
-}
 
-// 放置主題切換鈕：手機版（且有漢堡選單）插入到漢堡選單前，否則放在導覽列最後。
-// 手機版的導覽列是收起來的抽屜，切換鈕留在裡面就看不到，所以桌機與手機之間要搬同一顆按鈕
-function placeThemeToggle(themeToggle, nav, hamburger, isMobile) {
-    if (isMobile && hamburger) {
-        // 手機版：插入到漢堡選單前
-        hamburger.parentNode.insertBefore(themeToggle, hamburger);
-    } else {
-        // 桌面版：插入到導航列最後
-        nav.appendChild(themeToggle);
-    }
+    // 跨過 768px（平板轉向、拉窗戶）時，焦點所在的元素可能突然看不到，焦點就會掉回頁面最上面：
+    // 進入手機寬度時導覽列變成收起來的抽屜（看不到、inert），焦點在導覽列裡就移到 ☰；
+    // 回到桌機寬度時 ☰ 不顯示、抽屜裡的工具清單收回「工具 ▾」、抽屜用的首頁也不顯示，
+    // 焦點在 ☰ 或工具清單就移到「工具 ▾」，在抽屜用的首頁就移到桌機用的首頁；其他導覽項目桌機照樣看得到，不動。
+    // 要在 matchMedia 的 change 裡處理：瀏覽器在這之後的繪製才把看不到的焦點移回 body，上面 resize 的 250ms 延遲已經來不及；
+    // inert 也要先同步，焦點才移得進桌機的導覽列。斷點與 common.css 的 @media (max-width: 768px) 一致
+    const mobileQuery = window.matchMedia?.('(max-width: 768px)');
+    mobileQuery?.addEventListener('change', function (event) {
+        const focused = document.activeElement;
+        syncNavInert();
+        if (event.matches) {
+            if (nav.contains(focused)) {
+                hamburger.focus();
+            }
+            return;
+        }
+        if (focused === hamburger || nav.querySelector('.tools-menu')?.contains(focused)) {
+            nav.querySelector('.nav-tools-toggle')?.focus();
+        } else if (focused?.classList.contains('nav-drawer-only')) {
+            nav.querySelector('.nav-desktop-only')?.focus();
+        }
+    });
+
+    // 在抽屜裡選了工具再按 Back：瀏覽器可能從往返快取（bfcache）原封不動地還原頁面，
+    // 抽屜還開著、頁面捲動還被鎖住，焦點也可能還在剛才選的連結上。每次載入頁面都會有 pageshow，只有 persisted 為 true 才是還原。
+    // 焦點在抽屜裡就和 Escape 一樣還給 ☰：關閉後抽屜是 inert，焦點留在裡面會掉回頁面最上面；
+    // 焦點不在抽屜裡（例如 Safari 點連結不會讓連結取得焦點）就不動。選單沒開就不處理，不去解除別的元件（例如對話框）鎖住的捲動
+    window.addEventListener('pageshow', function (event) {
+        if (event.persisted && isMenuOpen()) {
+            closeMenu({ restoreFocus: nav.contains(document.activeElement) });
+        }
+    });
+
+    // 選了會開新分頁的連結（水晶商城清單，target="_blank"）：這一頁不會卸載，抽屜要自己關，否則切回這個分頁時它還開著、頁面捲不動。
+    // 焦點在抽屜裡就和 Escape 一樣還給 ☰（關閉後抽屜是 inert），不在就不動。站內連結不處理：這一頁會被換掉，
+    // 從往返快取回來時由上面的 pageshow 關閉
+    nav.querySelectorAll('a[target="_blank"]').forEach(function (link) {
+        link.addEventListener('click', function () {
+            if (isMenuOpen()) {
+                closeMenu({ restoreFocus: nav.contains(document.activeElement) });
+            }
+        });
+    });
 }
 
 // 初始化主題切換功能
 function initThemeToggle() {
-    const nav = document.querySelector('.nav');
-    const hamburger = document.querySelector('.hamburger');
+    const headerContainer = document.querySelector('.header .container');
 
-    if (!nav) return;
+    if (!headerContainer) return;
 
     // 創建主題切換按鈕
     const themeToggle = document.createElement('button');
     themeToggle.className = 'theme-toggle';
     themeToggle.setAttribute('type', 'button');
 
-    // 設置初始圖標
-    window.themeManager.updateThemeToggleButtons();
-
     // 綁定點擊事件
     themeToggle.addEventListener('click', () => {
         window.themeManager.toggle();
     });
 
-    // 根據螢幕大小決定插入位置；視窗跨過手機斷點時（例如手機橫拿轉直拿）要跟著搬，
-    // 否則切換鈕會留在手機版收起來的導覽列抽屜裡。沒有 matchMedia 時退回 innerWidth 判斷（只決定初始位置）
-    const mobileQuery = window.matchMedia?.('(max-width: 768px)');
-    const isMobileViewport = () => (mobileQuery ? mobileQuery.matches : window.innerWidth <= 768);
-    placeThemeToggle(themeToggle, nav, hamburger, isMobileViewport());
-    mobileQuery?.addEventListener('change', () => {
-        placeThemeToggle(themeToggle, nav, hamburger, isMobileViewport());
-    });
+    // 切換鈕只放這一次：頁首容器裡、漢堡選單前面（沒有漢堡選單時接在最後），不放進導覽列。
+    // 桌機與手機的位置都由 CSS 決定（見 common.css），不隨視窗大小搬動：
+    // 搬動一顆有焦點的按鈕會讓焦點掉回頁面最上面
+    headerContainer.insertBefore(themeToggle, headerContainer.querySelector('.hamburger'));
 
-    // 初次更新按鈕圖標
+    // 更新按鈕圖標：要等按鈕放進文件之後，updateThemeToggleButtons() 只處理文件裡的 .theme-toggle
     window.themeManager.updateThemeToggleButtons();
 }
 
@@ -512,23 +554,6 @@ document.addEventListener('DOMContentLoaded', function () {
             window.themeManager.updateThemeToggleButtons();
         });
     }
-
-    // 為所有工具卡片添加點擊效果
-    const toolCards = document.querySelectorAll('.tool-card');
-    toolCards.forEach(card => {
-        card.addEventListener('click', function (e) {
-            // 如果點擊的是連結，不需要額外處理
-            if (this.tagName === 'A') {
-                return;
-            }
-
-            // 否則查找卡片內的連結
-            const link = this.querySelector('a');
-            if (link) {
-                window.location.href = link.href;
-            }
-        });
-    });
 
     // 添加返回頂部按鈕
     const backToTopBtn = document.createElement('button');

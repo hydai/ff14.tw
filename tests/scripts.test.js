@@ -3,6 +3,8 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
+const { translationKeySet } = require('./helpers/translation-parsers.js');
+
 const ROOT = path.join(__dirname, '..');
 const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
 
@@ -19,32 +21,6 @@ function listFiles(dir, exts, out = []) {
 // 掃描 assets/、tools/ 底下所有 .js（此範圍本來就不含 tests/、node_modules/）
 const SCRIPT_FILES = [...listFiles('assets', ['.js']), ...listFiles('tools', ['.js'])];
 
-// 取出翻譯檔裡 `lang: {`…對應 `}` 的區塊（只有一層巢狀字串屬性，作法比照 design-system.test.js 的 block()）
-// 提升到模組層級（原本寫在下面 TARGETS 測試的函式本體內），讓新增的頁面級 data-i18n 測試也能共用，
-// 行為與提升前完全相同，TARGETS 測試本身不需要跟著修改呼叫方式。
-function jsBlock(code, lang) {
-    const start = code.indexOf(`${lang}: {`);
-    if (start === -1) return null;
-    const openBrace = code.indexOf('{', start);
-    let i = openBrace;
-    let depth = 0;
-    for (; i < code.length; i++) {
-        if (code[i] === '{') depth++;
-        else if (code[i] === '}') { depth--; if (depth === 0) break; }
-    }
-    return code.slice(openBrace, i + 1);
-}
-// 只認「行首縮排 + 識別字 + 冒號 + 引號」的鍵值宣告，避免英文譯文裡「Label:」這類字面值被誤判成 key
-function jsKeys(blockText) {
-    const set = new Set();
-    if (!blockText) return set;
-    for (const m of blockText.matchAll(/^\s*(\w+):\s*['"]/gm)) set.add(m[1]);
-    return set;
-}
-function translationKeySet(file, lang) {
-    return jsKeys(jsBlock(read(file), lang));
-}
-
 // 遞迴列出 dir（相對於 ROOT）底下所有 .html，回傳相對路徑（listFiles 已有副檔名清單版本，
 // 這裡另外寫一個不篩副檔名、只找 .html 的版本，供下面的全站 data-i18n 測試使用）
 function listHtmlFiles(dir, out = []) {
@@ -56,10 +32,10 @@ function listHtmlFiles(dir, out = []) {
     return out;
 }
 // 全站會套用 i18n 的頁面：tools/ 底下所有 .html（含 12 個工具的 index.html 與 guide/ 的 8 個子頁面）
-// 加上 4 個根頁面；api/test.html 不是玩家頁面，不列入
+// 加上 4 個根頁面與 404 頁；api/test.html 不是玩家頁面，不列入
 const ALL_I18N_PAGES = [
     ...listHtmlFiles('tools'),
-    'index.html', 'about.html', 'changelog.html', 'copyright.html'
+    'index.html', 'about.html', 'changelog.html', 'copyright.html', '404.html'
 ];
 
 test('assets 與 tools 底下的 .js 不得使用 innerHTML／outerHTML／insertAdjacentHTML', () => {
@@ -87,7 +63,7 @@ test('TARGETS 列出的工具 data-i18n／getI18nText 鍵值存在於 common.js 
         { html: 'tools/macro-converter/index.html', js: 'tools/macro-converter/script.js', translations: 'assets/js/i18n/translations/tools/macro-converter.js', keyPrefix: 'macro_converter_' }
     ];
 
-    // jsBlock／jsKeys／translationKeySet 已提升到模組層級（見檔案上方），這裡不再重複定義
+    // translationKeySet 來自 tests/helpers/translation-parsers.js（見檔案上方的 require），這裡不再重複定義
 
     const KEY_ATTR_RE = /\sdata-i18n(?:-html)?="([^"]+)"/g;
     const JS_KEY_RES = [
@@ -205,10 +181,11 @@ test('tools/**/*.html 與根頁面用到的 data-i18n 鍵值都能在該頁引�
             }
         }
     }
-    // 目前 23 頁裡有 22 頁貢獻了 data-i18n 鍵值（僅 report-generator 尚未使用 i18n，貢獻 0 是預期行為）。
+    // 目前 24 頁裡有 23 頁貢獻了 data-i18n 鍵值（僅 report-generator 尚未使用 i18n，貢獻 0 是預期行為）。
     // 用「精確頁數」取代寬鬆的下限，掃描邏輯若不小心漏頁會立刻在這裡發現，而不必等 checked 累積夠大的落差才觸發。
-    assert.strictEqual(pagesWithKeys, 22, `貢獻 data-i18n 鍵值的頁面數應該是 22（目前 ${pagesWithKeys}），頁面數若有變動需要一併檢視這個守門測試`);
-    // checked 目前是 1149；門檻從 1000 收緊到 1100，讓漏掃能在少數頁面／鍵值就觸發，不用累積到近 150 筆落差
+    assert.strictEqual(pagesWithKeys, 23, `貢獻 data-i18n 鍵值的頁面數應該是 23（目前 ${pagesWithKeys}），頁面數若有變動需要一併檢視這個守門測試`);
+    // 門檻是 (頁面,語言,鍵值) 組合數的下限，用來擋住掃描整批漏頁；實際數量會隨頁面與翻譯鍵增加（失敗訊息會印出目前的值），
+    // 離門檻太遠時漏掃一兩頁就抓不到，可以跟著調高
     assert.ok(checked > 1100, `檢查的 (頁面,語言,鍵值) 組合數不應該太少（目前 ${checked}）`);
 });
 

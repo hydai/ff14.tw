@@ -1,14 +1,14 @@
 /**
- * FF14.tw Faux Hollows Foxes 計算機翻譯檔
+ * FF14.tw 宗長計算機翻譯檔
  */
 const FauxHollowsTranslations = {
     zh: {
         // 頁面資訊
-        faux_hollows_title: 'Faux Hollows Foxes 計算機 - FF14.tw',
+        faux_hollows_title: '宗長計算機 - FF14.tw',
         faux_hollows_description: '計算 FF14 Faux Hollows Foxes 活動的最佳點擊策略',
 
         // 頁面標題
-        faux_hollows_header: 'Faux Hollows Foxes 計算機',
+        faux_hollows_header: '宗長計算機',
 
         // 遊戲提示
         faux_hollows_hint: '💡 提示：請先點擊兩個格子設定為障礙物，系統將自動判斷並填充剩餘的障礙物位置',

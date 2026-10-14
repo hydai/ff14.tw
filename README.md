@@ -7,7 +7,8 @@
 - 純靜態 HTML/CSS/JavaScript
 - 工具獨立封裝 (`tools/`)
 - 多語言介面支援（繁體中文/English/日本語）
-- 響應式設計（含手機版漢堡選單）
+- 響應式設計（含手機版漢堡選單，選單最上面就是工具清單）
+- 導航列：首頁、工具 ▾、修改紀錄、版權聲明（關於、回報問題、GitHub 在頁尾）；「工具 ▾」選單在每一頁都能直接換工具，並標示目前所在的工具
 - 工具名稱動態顯示於導航列
 - 開源專案
 
@@ -36,8 +37,8 @@
 - 橫/直版型
 - 完整伺服器/職業選擇
 
-### Faux Hollows Foxes 計算機 (`faux-hollows-foxes/`)
-- 6x6 棋盤策略工具
+### 宗長計算機 (`faux-hollows-foxes/`)
+- Faux Hollows Foxes 活動的 6x6 棋盤策略工具
 - 自動填充障礙物
 - 252 種盤面機率計算
 - 三段式寶物機率顯示
@@ -113,7 +114,7 @@ http://localhost:8000
 - 仙人微彩計算機
 - Wondrous Tails 預測器
 - 角色卡產生器
-- Faux Hollows Foxes 計算機
+- 宗長計算機
 - 檢舉模板產生器
 - 天氣預報
 
@@ -141,6 +142,7 @@ ff14.tw/
 ├── about.html              # 關於頁面
 ├── changelog.html          # 修改紀錄頁面
 ├── copyright.html          # 版權聲明頁
+├── 404.html                # 404 頁（GitHub Pages 對不存在的網址顯示它）
 ├── api/                    # Cloudflare Workers API（寶圖房間協作，含自己的 package.json / wrangler.toml）
 │   └── treasure-room-worker.js
 ├── data/                   # 資料檔案
@@ -157,7 +159,7 @@ ff14.tw/
 │   ├── css/
 │   │   ├── tokens.css      # 設計 token（顏色／字級／間距／陰影唯一來源）
 │   │   ├── common.css      # 全域樣式（含漢堡選單）
-│   │   ├── pages.css       # 關於／版權聲明頁面專用樣式
+│   │   ├── pages.css       # 關於／版權聲明／404 頁面專用樣式
 │   │   ├── tools-common.css    # 工具共用樣式（@import 匯入 buttons/cards/forms/tags）
 │   │   ├── changelog.css   # 修改紀錄頁面專用樣式
 │   │   └── components/     # UI 元件
@@ -171,7 +173,10 @@ ff14.tw/
 │   │   ├── security-utils.js # 安全工具（XSS 防護）
 │   │   ├── modal-manager.js  # 對話框管理
 │   │   ├── state-history-manager.js # 狀態歷史管理
+│   │   ├── home.js         # 首頁腳本（最近使用）
+│   │   ├── not-found.js    # 404 頁腳本（工具清單）
 │   │   ├── components/     # 動態載入元件
+│   │   │   ├── tools-registry.js   # 工具登錄表（全站工具清單的唯一來源）
 │   │   │   ├── nav-template.js     # 導航列模板
 │   │   │   ├── footer-template.js  # 頁尾模板
 │   │   │   └── layout-loader.js    # 佈局載入器
@@ -191,7 +196,7 @@ ff14.tw/
 │   ├── add-design-links.mjs
 │   ├── remove-dark-mode-links.mjs
 │   └── replace-noscript-nav.mjs
-├── tests/                  # 19 份 node --test 測試（下列為部分範例）
+├── tests/                  # 27 份 node --test 測試（下列為部分範例）
 │   ├── design-system.test.js
 │   ├── docs.test.js
 │   ├── modal-manager-stack.test.js
@@ -201,7 +206,7 @@ ff14.tw/
 └── tools/                  # 工具目錄
     ├── character-card/     # 角色卡產生器
     ├── dungeon-database/   # 副本資料庫
-    ├── faux-hollows-foxes/ # Faux Hollows Foxes 計算機
+    ├── faux-hollows-foxes/ # 宗長計算機
     ├── guide/              # 攻略資料
     ├── lodestone-lookup/   # Lodestone 角色查詢
     ├── macro-converter/    # 巨集轉換器

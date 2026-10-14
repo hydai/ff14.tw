@@ -37,6 +37,7 @@ class LayoutLoader {
 
         this._loadHeader(options);
         this._loadFooter(options);
+        this._recordRecentTool(options);
 
         document.body.classList.add(LayoutLoader.CONSTANTS.LOADED_CLASS);
 
@@ -47,14 +48,18 @@ class LayoutLoader {
 
     /**
      * 從 placeholder 元素讀取配置選項
-     * @returns {Object} 配置選項
+     * @returns {Object} 配置選項：basePath、toolName、toolNameKey、
+     *   page（#header-placeholder 的 data-page，沒有時為 null；404 頁是 '404'）、
+     *   currentToolId（目前所在的工具 id，不在工具頁、404 頁或沒有登錄表時為 null）
      */
     _getOptions() {
         const headerPlaceholder = document.getElementById(LayoutLoader.CONSTANTS.HEADER_PLACEHOLDER_ID);
         const options = {
             basePath: '/',
             toolName: null,
-            toolNameKey: null
+            toolNameKey: null,
+            page: null,
+            currentToolId: null
         };
 
         if (headerPlaceholder) {
@@ -62,6 +67,13 @@ class LayoutLoader {
             options.basePath = headerPlaceholder.dataset.basePath || '/';
             options.toolName = headerPlaceholder.dataset.toolName || null;
             options.toolNameKey = headerPlaceholder.dataset.toolNameKey || null;
+            options.page = headerPlaceholder.dataset.page || null;
+        }
+
+        // 404 頁不依網址判斷：GitHub Pages 會在任何不存在的網址顯示 404.html，
+        // 例如 /tools/weather-forecast/打錯的路徑，照目錄比對會誤判成天氣預報頁
+        if (options.page !== '404') {
+            options.currentToolId = window.ToolsRegistry?.findByPath(window.location.pathname)?.id ?? null;
         }
 
         return options;
@@ -91,6 +103,11 @@ class LayoutLoader {
 
         // 設定當前頁面的 active 狀態
         this._setActiveNavItem();
+
+        // 讓「工具 ▾」按鈕與面板動起來（要在頁首已經換進文件之後）。
+        // 用 ?.() 呼叫：瀏覽器可能還留著沒有 initToolsMenu 的舊版 nav-template.js（快取偏差），
+        // 這時直接呼叫會丟 TypeError，_load() 在這裡中斷，頁尾與 layoutLoaded 事件都不會出現
+        NavTemplate.initToolsMenu?.(header);
     }
 
     /**
@@ -117,7 +134,19 @@ class LayoutLoader {
     }
 
     /**
+     * 把目前所在的工具記成「最近使用」（首頁的最近使用列會讀它）。
+     * 站務頁與 404 頁的 currentToolId 是 null，所以不會記錄
+     * @param {Object} options - _getOptions() 的結果
+     */
+    _recordRecentTool(options) {
+        if (!options.currentToolId) return;
+        window.ToolsRegistry?.recordVisit(options.currentToolId);
+    }
+
+    /**
      * 設定當前頁面的導航項目為 active 狀態
+     * 只處理 .nav 的直屬連結（首頁、修改紀錄、版權聲明）；
+     * 工具面板裡的連結不是直屬子節點，目前工具由 NavTemplate.createDOM 依 currentToolId 標示
      */
     _setActiveNavItem() {
         const currentPath = window.location.pathname;

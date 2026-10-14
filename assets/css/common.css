@@ -118,6 +118,7 @@ textarea:focus {
 }
 
 .header .container {
+    position: relative; /* 桌機的工具面板以它定位 */
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -129,6 +130,10 @@ textarea:focus {
     display: inline-flex;
     align-items: baseline;
     gap: var(--space-2);
+    /* 頁首空間不夠時由 logo 先縮短（導覽列與切換鈕不縮）；
+       flex 項目預設不能比內容窄，放寬後裡面的工具名稱才縮得起來 */
+    flex: 0 1 auto;
+    min-width: 0;
     color: var(--header-text);
     text-decoration: none;
     font-size: var(--text-3xl);
@@ -141,12 +146,7 @@ textarea:focus {
     color: var(--header-text);
 }
 
-.logo-main {
-    font-size: inherit;
-}
-
 .logo-separator,
-.logo-tool,
 .logo-tool-name {
     font-size: var(--text-xl);
     font-weight: var(--weight-normal);
@@ -154,6 +154,17 @@ textarea:focus {
 
 .logo-separator {
     opacity: 0.7;
+}
+
+/* 工具名稱放不下時截成「…」。logo 的 line-height 是 1，行盒只有 1em 高，overflow: hidden 會把 g、p、y 的下緣削掉；
+   上下各補 0.25em 的內距把裁切範圍加大，再用負的外距抵銷，版面（包含與 FF14.tw 的基線對齊）維持原樣 */
+.logo-tool-name {
+    min-width: 0;
+    padding-block: 0.25em;
+    margin-block: -0.25em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 /* 工具頁面標題隱藏（工具名稱顯示在 logo 旁） */
@@ -173,9 +184,23 @@ textarea:focus {
     display: flex;
     align-items: center;
     gap: var(--space-2);
+    margin-left: auto; /* 導覽列與後面的主題切換鈕一起靠右 */
 }
 
-.nav a {
+/* 「工具 ▾」按鈕：button 的預設外觀先清掉（要排在下面共用規則之前，font: inherit 才不會蓋掉 line-height） */
+.nav-tools-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    border: none;
+    background: none;
+    font: inherit;
+    cursor: pointer;
+}
+
+/* 導覽連結與「工具 ▾」按鈕共用外觀。只套用在 .nav 的直屬連結：面板裡的工具連結（.tools-menu-link）樣式另外定義 */
+.nav > a,
+.nav-tools-toggle {
     color: var(--header-text);
     text-decoration: none;
     padding: var(--space-2) var(--space-4);
@@ -185,14 +210,99 @@ textarea:focus {
     transition: background-color var(--duration-base) var(--ease);
 }
 
-.nav a:hover {
+.nav > a:hover,
+.nav-tools-toggle:hover {
     background-color: var(--nav-hover);
     color: var(--header-text);
 }
 
-.nav a.active {
+.nav > a.active,
+.nav-tools-toggle.active {
     background-color: var(--nav-active);
     font-weight: var(--weight-semibold);
+}
+
+.nav-tools-caret {
+    font-size: var(--text-xs);
+    transition: transform var(--duration-base) var(--ease);
+}
+
+.nav-tools-toggle[aria-expanded="true"] .nav-tools-caret {
+    transform: rotate(180deg);
+}
+
+/* 手機抽屜裡的「工具」小標；桌機用上面的按鈕，所以不顯示 */
+.nav-section-label {
+    display: none;
+}
+
+/* 抽屜用的首頁（nav-template.js 把它排在工具清單之後）；桌機用排在最前面的那一個 */
+.nav > a.nav-drawer-only {
+    display: none;
+}
+
+/* 工具面板（桌機）：頁首下方、靠右對齊，寬度不超過兩側留白內的範圍，3 欄 */
+.tools-menu {
+    position: absolute;
+    top: calc(100% + var(--space-2));
+    right: var(--container-gutter);
+    z-index: var(--z-header);
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-1);
+    width: min(640px, calc(100% - 2 * var(--container-gutter)));
+    padding: var(--space-3);
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xl);
+}
+
+/* 上面設了 display，作者樣式會蓋過瀏覽器內建的 [hidden] { display: none }，所以收合要自己寫 */
+.tools-menu[hidden] {
+    display: none;
+}
+
+.tools-menu-link {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: var(--control-lg);
+    padding: var(--space-2);
+    border-radius: var(--radius-md);
+    color: var(--color-text);
+    text-decoration: none;
+    line-height: var(--leading-snug);
+    transition: background-color var(--duration-base) var(--ease);
+}
+
+.tools-menu-link:hover {
+    background-color: var(--color-hover);
+    color: var(--color-text);
+}
+
+.tools-menu-link.active {
+    background-color: var(--color-primary-tint);
+    color: var(--color-primary);
+    font-weight: var(--weight-semibold);
+}
+
+.tools-menu-icon {
+    flex: none;
+    width: 1.5em;
+    font-size: var(--text-lg);
+    line-height: 1;
+    text-align: center;
+}
+
+.tools-menu-name {
+    min-width: 0;
+}
+
+.tools-menu-ext {
+    flex: none;
+    font-size: var(--text-sm);
+    color: var(--color-muted);
 }
 
 /* 主要內容區域 */
@@ -228,6 +338,73 @@ textarea:focus {
     opacity: 0.95;
 }
 
+/* 首頁區塊小標：「最近使用」「所有工具」 */
+.section-label {
+    margin-bottom: var(--space-3);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    color: var(--color-muted);
+}
+
+/* 首頁最近使用：最多 4 個工具的連結。
+   .recent-tools 本身不設 display：作者樣式的 display 會蓋過瀏覽器內建的 [hidden] { display: none }，
+   第一次來的玩家就會看到空的區塊；排版（grid）放在 .recent-list */
+.recent-tools {
+    margin-bottom: var(--space-7);
+}
+
+.recent-list {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--space-3);
+}
+
+/* 工具連結的外觀：404 頁的工具清單（.not-found-tool*）共用同一組規則，用選擇器分組，不複製宣告 */
+.recent-tool,
+.not-found-tool {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: var(--control-lg);
+    padding: var(--space-2) var(--space-4);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    color: var(--color-text);
+    text-decoration: none;
+}
+
+.recent-tool:hover,
+.not-found-tool:hover {
+    border-color: var(--color-primary);
+    color: var(--color-text);
+}
+
+.recent-tool-icon,
+.not-found-tool-icon {
+    flex: none;
+    width: 1.5em;
+    font-size: var(--text-xl);
+    line-height: 1;
+    text-align: center;
+}
+
+/* 名稱太長時截成「…」：flex 項目預設不能比內容窄，要放寬 min-width 才縮得起來 */
+.recent-tool-name,
+.not-found-tool-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+    .recent-list {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
 /* 首頁工具區 */
 .tools-section {
     margin-bottom: var(--space-10);
@@ -235,18 +412,24 @@ textarea:focus {
 
 .tools-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: var(--space-7);
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: var(--space-4);
     max-width: 1200px;
     margin: 0 auto;
 }
 
-/* 工具卡：hover 上浮 4px、主色邊框、品牌漸層頂線展開 */
+/* 工具卡（精簡版）：左邊圖示，右邊由上而下是標題列、說明、選用的「缺什麼」說明。
+   hover 上浮 4px、主色邊框、品牌漸層頂線展開 */
 .tool-card {
     position: relative;
-    display: block;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: var(--space-4);
+    /* 同一排的卡片會被拉到一樣高：內容留在中間，列不跟著被撐開 */
+    align-content: center;
+    align-items: center;
     overflow: hidden;
-    padding: var(--space-7) var(--space-6);
+    padding: var(--space-4) var(--space-5);
     background: var(--color-surface);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
@@ -283,60 +466,66 @@ textarea:focus {
     cursor: pointer;
 }
 
-.tool-card.coming-soon {
-    background: var(--color-surface-2);
-    opacity: 0.7;
-    cursor: not-allowed;
-}
-
+/* 圖示佔左欄、跨標題列／說明／缺什麼說明三列。沒有顯式的列，grid-row: 1 / -1 只會佔 1 列，所以寫 span 3；
+   沒有「缺什麼」說明的卡片，第 3 列是空的、高度 0 */
 .tool-icon {
-    display: block;
-    margin-bottom: var(--space-5);
-    font-size: var(--text-5xl);
+    grid-column: 1;
+    grid-row: 1 / span 3;
+    width: var(--control-md);
+    font-size: var(--text-3xl);
     line-height: 1;
     text-align: center;
 }
 
+.tool-heading,
+.tool-description,
+.tool-status {
+    grid-column: 2;
+}
+
+/* 標題列：標題後面接選用的標籤（.tag），放不下時標籤換到下一行 */
+.tool-heading {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-1) var(--space-2);
+}
+
 .tool-title {
-    margin-bottom: var(--space-3);
-    font-size: var(--text-xl);
+    margin: 0;
+    font-size: var(--text-lg);
     font-weight: var(--weight-semibold);
-    line-height: var(--leading-snug);
-    text-align: center;
+    line-height: var(--leading-tight);
     color: var(--color-heading);
 }
 
+/* 說明桌機最多 2 行，手機 1 行，太長就截成「…」 */
 .tool-description {
-    margin: 0;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    margin: var(--space-1) 0 0;
     font-size: var(--text-sm);
-    line-height: var(--leading-normal);
-    text-align: center;
+    line-height: var(--leading-snug);
     color: var(--color-muted);
 }
 
-/* 工具狀態徽章（實心底配深字，對比 ≥ 4.5:1） */
-.status-badge {
-    position: absolute;
-    top: var(--space-4);
-    right: var(--space-4);
-    padding: var(--space-1) var(--space-3);
-    border-radius: var(--radius-full);
+/* 說明下方寫出缺什麼（副本資料庫、攻略資料） */
+.tool-status {
+    margin: var(--space-1) 0 0;
     font-size: var(--text-xs);
-    font-weight: var(--weight-semibold);
-}
-
-.status-badge.coming-soon,
-.status-badge.under-construction {
-    background: var(--color-warning);
-    color: var(--color-on-warning);
-}
-
-.status-badge.unavailable {
-    background: var(--color-muted);
-    color: var(--color-on-muted);
+    line-height: var(--leading-snug);
+    color: var(--color-warning-text);
 }
 
 @media (max-width: 768px) {
+    /* 首頁的 <main class="main home-main">：手機版上下內距縮成 --space-4，第一個畫面才放得下更多工具。
+       .main 每一頁都用，所以只在首頁多加 home-main，不改 .main 本身；要放在 .main 之後，同優先序時後寫的才會贏 */
+    .home-main {
+        padding-block: var(--space-4);
+    }
+
     .hero {
         margin-bottom: var(--space-9);
         padding: var(--space-9) var(--space-6);
@@ -350,21 +539,28 @@ textarea:focus {
         font-size: var(--text-lg);
     }
 
+    /* 手機：單欄的橫向精簡列（32px 圖示在左），說明只留 1 行 */
     .tools-grid {
         grid-template-columns: 1fr;
-        gap: var(--space-6);
+        gap: var(--space-2);
     }
 
     .tool-card {
-        padding: var(--space-7) var(--space-6);
+        column-gap: var(--space-3);
+        padding: var(--space-2) var(--space-4);
     }
 
     .tool-icon {
-        font-size: var(--text-4xl);
+        width: var(--control-sm);
+        font-size: var(--text-2xl);
     }
 
     .tool-title {
-        font-size: var(--text-lg);
+        font-size: var(--text-md);
+    }
+
+    .tool-description {
+        -webkit-line-clamp: 1;
     }
 }
 
@@ -380,13 +576,42 @@ textarea:focus {
     .hero p {
         font-size: var(--text-md);
     }
+}
 
-    .tools-grid {
-        gap: var(--space-4);
+/* 首頁 hero 的精簡版（section.hero.hero-compact）：桌機約 120px 高、手機約 100px。
+   about／copyright 的 .hero 不加這個 class，維持原樣。
+   要放在上面 .hero 的響應式規則之後：選擇器的優先序相同時，後寫的才會贏 */
+.hero-compact {
+    margin-bottom: var(--space-6);
+    padding: var(--space-6) var(--space-7);
+    /* 中文標題不從詞中間斷成「工」與「具箱」兩行。keep-all 會讓沒有標點的日文副標變成一個不能斷的詞，
+       320px 寬時比 hero 還寬，所以真的放不下的時候才允許在任意處斷行，不要溢出 */
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+}
+
+.hero-compact h1 {
+    margin-bottom: var(--space-2);
+    font-size: var(--text-3xl);
+}
+
+.hero-compact p {
+    font-size: var(--text-md);
+}
+
+@media (max-width: 768px) {
+    .hero-compact {
+        margin-bottom: var(--space-4);
+        padding: var(--space-3) var(--space-4);
     }
 
-    .tool-card {
-        padding: var(--space-6);
+    .hero-compact h1 {
+        margin-bottom: var(--space-1);
+        font-size: var(--text-xl);
+    }
+
+    .hero-compact p {
+        font-size: var(--text-sm);
     }
 }
 
@@ -408,6 +633,22 @@ textarea:focus {
 
 .footer a:hover {
     color: var(--header-text);
+}
+
+/* 頁尾三列：連結、免責聲明、版權與製作者（置中直排） */
+.footer .container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.footer-links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-1) var(--space-5);
+    list-style: none;
 }
 
 /* 漢堡選單按鈕 */
@@ -444,6 +685,7 @@ textarea:focus {
 /* Dark mode 切換按鈕 */
 .theme-toggle {
     display: flex;
+    flex: none; /* 桌機是頁首的 flex 項目，頁首擠的時候不能被壓扁 */
     align-items: center;
     justify-content: center;
     width: var(--control-md);
@@ -512,7 +754,9 @@ textarea:focus {
 @media (max-width: 768px) {
     .header .container {
         position: relative;
-        padding-right: 60px; /* 為漢堡選單預留空間 */
+        /* 右側留給兩顆絕對定位的按鈕：右邊留白、☰（寬 41px = 25px 的線條 + 兩側各 --space-2 內距）、
+           --space-2 的間距、主題切換鈕（--control-md）。內距加到這個總寬，空間不夠時是 logo 先被擠短，不會壓到按鈕 */
+        padding-right: calc(var(--container-gutter) + 41px + var(--space-2) + var(--control-md));
     }
 
     .hamburger {
@@ -523,9 +767,10 @@ textarea:focus {
         transform: translateY(-50%);
     }
 
+    /* 緊貼在 ☰（寬 41px）左邊，中間留 --space-2 */
     .theme-toggle {
         position: absolute;
-        right: 60px;
+        right: calc(var(--container-gutter) + 41px + var(--space-2));
         top: 50%;
         transform: translateY(-50%);
     }
@@ -535,8 +780,11 @@ textarea:focus {
         position: fixed;
         top: 0;
         right: -100%;
-        width: 250px;
+        width: min(320px, 85vw);
         height: 100vh;
+        /* iOS Safari 的 100vh 是工具列收起來時的大視窗高度，抽屜開著時頁面被鎖住捲動、工具列縮不回去，
+           抽屜底部（含語言切換）會被擋在工具列下面；dvh 隨工具列變動。不認得 dvh 的瀏覽器忽略這行，沿用上面的 100vh */
+        height: 100dvh;
         background: var(--header-bg);
         flex-direction: column;
         align-items: stretch;
@@ -561,10 +809,72 @@ textarea:focus {
         transition: right var(--duration-slow) var(--ease), visibility 0s;
     }
 
-    .nav a {
+    /* 抽屜內的順序就是 DOM 順序：「工具」小標 → 工具清單 → 首頁、修改紀錄、版權聲明 → 語言切換。
+       桌機用的首頁與「工具 ▾」按鈕在抽屜裡不顯示，改顯示排在工具清單之後的那個首頁（見 nav-template.js）。
+       不用 order 重新排序：order 只改畫面順序，Tab 與螢幕閱讀器仍照 DOM 順序走 */
+    .nav > a {
         width: 100%;
         text-align: left;
         padding: var(--space-3) var(--space-4);
+    }
+
+    .nav > a.nav-desktop-only {
+        display: none;
+    }
+
+    .nav > a.nav-drawer-only {
+        display: block;
+    }
+
+    .nav-section-label {
+        display: block;
+        padding: 0 var(--space-4);
+        font-size: var(--text-sm);
+        font-weight: var(--weight-semibold);
+    }
+
+    /* 工具清單在抽屜裡永遠展開，不需要按鈕 */
+    .nav-tools-toggle {
+        display: none;
+    }
+
+    /* 工具清單：從桌機的浮動面板改成抽屜裡的靜態直向清單 */
+    .nav .tools-menu {
+        position: static;
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-1);
+        width: auto;
+        padding: 0;
+        background: none;
+        border: none;
+        border-radius: 0;
+        box-shadow: none;
+    }
+
+    /* 手機版的清單不能被 hidden 收起來（hidden 只是桌機面板的收合狀態）：明確覆寫桌機的 .tools-menu[hidden] { display: none } */
+    .nav .tools-menu[hidden] {
+        display: flex;
+    }
+
+    .tools-menu-link {
+        min-height: 44px;
+        padding: var(--space-2) var(--space-4);
+        color: var(--header-text);
+    }
+
+    .tools-menu-link:hover {
+        background-color: var(--nav-hover);
+        color: var(--header-text);
+    }
+
+    .tools-menu-link.active {
+        background-color: var(--nav-active);
+        color: var(--header-text);
+    }
+
+    .tools-menu-ext {
+        color: var(--header-text);
     }
 
     /* 遮罩層 */
@@ -602,30 +912,44 @@ textarea:focus {
     }
 
     .logo-separator,
-    .logo-tool,
     .logo-tool-name {
         font-size: var(--text-md);
     }
 
-    .tools-grid {
-        grid-template-columns: 1fr;
-        gap: var(--space-4);
+    /* 返回頂端鈕固定在右下角（距底 --space-5、高 --control-lg）；
+       頁尾的下內距加高，捲到底時才不會蓋住頁尾連結 */
+    .footer {
+        padding-bottom: calc(var(--space-6) + var(--control-lg) + var(--space-5));
     }
 }
 
 @media (max-width: 480px) {
-    .header .container {
-        padding-right: 50px;
-    }
-
     .logo {
         font-size: var(--text-lg);
     }
 
     .logo-separator,
-    .logo-tool,
     .logo-tool-name {
         font-size: var(--text-sm);
+    }
+}
+
+/* 桌機最窄的一段（769～899px）：導覽列和切換鈕幾乎佔滿頁首，留給工具名稱的寬度約是「視窗寬 − 773px」
+   （英文、日文的導覽列較寬，約是「視窗寬 − 820px」）：769px 時是 0，899px 也只有 80～125px，
+   截成「…」也認不出是哪個工具，所以連同前面的分隔線整段隱藏，頁首只留 FF14.tw
+   （工具名稱仍在 <title> 與工具選單裡）。900px 起至少有 80px，放不下的部分由 .logo-tool-name 截成「…」 */
+@media (min-width: 769px) and (max-width: 899px) {
+    .logo-separator,
+    .logo-tool-name {
+        display: none;
+    }
+}
+
+/* 769～799px：英文、日文的導覽列比頁首寬，FF14.tw 與第一個連結只差 2～4px（實測，含 15px 捲軸）；連結左右內距縮成 12px，四個項目共省 32px */
+@media (min-width: 769px) and (max-width: 799px) {
+    .nav > a,
+    .nav-tools-toggle {
+        padding-inline: var(--space-3);
     }
 }
 
@@ -644,7 +968,8 @@ textarea:focus {
 @media (prefers-reduced-motion: reduce) {
     *,
     .tool-card,
-    .back-to-top {
+    .back-to-top,
+    .nav-tools-caret {
         transition: none;
     }
 

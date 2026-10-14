@@ -55,29 +55,21 @@
     color: var(--lang-active-text);
 }
 
-/* 手機版：緊湊一點 */
+/* 手機（≤768px）：導覽列是右側的抽屜，語言切換器在抽屜最下面，撐滿抽屜寬度。
+   按鈕高度至少 --control-md，方便用手指點。選擇器不加 .active：抽屜滑出的 300ms 內
+   按鈕不能縮回 28px，否則關閉動畫一開始選單內容就會跳一下 */
 @media (max-width: 768px) {
-    .language-switcher {
-        padding: 2px;
-        gap: 2px;
-    }
-
-    .language-btn {
-        padding: 0 var(--space-2);
-    }
-}
-
-/* 導覽列摺疊成垂直選單時 */
-@media (max-width: 480px) {
-    .nav.active .language-switcher {
+    .nav .language-switcher {
         width: 100%;
         justify-content: center;
+        gap: 2px;
         margin: var(--space-4) 0;
         padding: var(--space-2);
     }
 
-    .nav.active .language-btn {
-        height: var(--control-sm);
+    .nav .language-btn {
+        height: var(--control-md);
+        min-height: var(--control-md);
         padding: 0 var(--space-4);
     }
 }
