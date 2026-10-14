@@ -16,3 +16,8 @@ test('寶圖工具的 JS 沒有 console.log，也沒有指向不存在檔案的�
     assert.doesNotMatch(read(`${dir}/zone-manager.js`), /generateFullImageFileName|getZoneIdByFilePrefix|filePrefixToZoneId/);
     assert.doesNotMatch(read(`${dir}/room-collaboration.js`), /roomActions/);
 });
+
+test('資料來源清單有 G18', () => {
+    assert.ok(read('tools/treasure-map-finder/index.html').includes(
+        '<li>G18 巨獸革地圖：<a href="https://game8.jp/ff14/709398" target="_blank" rel="noopener noreferrer">https://game8.jp/ff14/709398</a></li>'));
+});
