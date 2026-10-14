@@ -5,11 +5,15 @@ const path = require('node:path');
 const vm = require('node:vm');
 
 const ROOT = path.resolve(__dirname, '..');
-const readJson = file => JSON.parse(fs.readFileSync(path.join(ROOT, file), 'utf8'));
+const read = file => fs.readFileSync(path.join(ROOT, file), 'utf8');
+const readJson = file => JSON.parse(read(file));
 
 const maps = readJson('data/treasure-maps.json').maps;
+const zonesJson = readJson('data/zones.json');
+const aetherytes = readJson('data/aetherytes.json').aetherytes;
 const zoneIdsWithMaps = [...new Set(maps.map(map => map.zoneId))];
-const idsOf = aetherytes => aetherytes.map(aetheryte => aetheryte.id);
+const allSubZones = () => Object.values(zonesJson.zones).flatMap(region => region.subZones);
+const idsOf = list => list.map(aetheryte => aetheryte.id);
 
 // 詳細地圖（script.js 的 getAetherytesForZone）列出的傳送點；路線計算必須和它一致。
 const DETAIL_MAP_AETHERYTES = {
@@ -50,6 +54,18 @@ async function createRouteCalculator() {
     assert.ok(calculator.aetherytes, 'aetherytes.json 沒有載入');
     return { calculator, zoneManager: context.zoneManager };
 }
+
+test('zones.json 每個地區列的傳送點，都在 aetherytes.json 對應的區域裡', () => {
+    for (const zone of allSubZones()) {
+        const pool = aetherytes[zonesJson.mappings.zoneIdToRegion[zone.id]] || [];
+        for (const id of zone.aetherytes) assert.ok(pool.some(a => a.id === id), `${zone.id}: ${id}`);
+    }
+});
+
+test('aetherytes.json 的傳送點都有地區列出（圖拉優拉是主城，不屬於任何地區）', () => {
+    const listed = new Set(allSubZones().flatMap(zone => zone.aetherytes));
+    assert.deepEqual(Object.values(aetherytes).flat().map(a => a.id).filter(id => !listed.has(id)), ['tuliyollal']);
+});
 
 test('每個有寶圖的地區都能算出傳送點，zones.json 列的 id 也都被路線用到', async () => {
     const { calculator, zoneManager } = await createRouteCalculator();
