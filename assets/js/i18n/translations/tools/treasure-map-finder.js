@@ -144,7 +144,17 @@ const TreasureMapTranslations = {
         treasure_map_nearest: '最近：{name}',
         treasure_map_party_message: '/p {grade} {zone} ({x}, {y}) 最近：{aetheryte}',
         treasure_map_party_message_no_aetheryte: '/p {grade} {zone} ({x}, {y})',
-        treasure_map_pos_placeholder: '座標：{coords}',
+
+        // 詳細檢視
+        treasure_map_detail_prev: '‹ 上一張',
+        treasure_map_detail_next: '下一張 ›',
+        treasure_map_detail_position: '{index} / {total}',
+        treasure_map_detail_coords: '座標',
+        treasure_map_detail_nearest: '最近傳送點',
+        treasure_map_detail_others: '其他傳送點',
+        treasure_map_detail_names: '地名',
+        treasure_map_detail_preview: '複製內容',
+        treasure_map_detail_copy: '📋 複製',
 
         // 對話框與清單訊息
         treasure_map_item_already_in_list: '此寶圖已在清單中',
@@ -386,7 +396,17 @@ const TreasureMapTranslations = {
         treasure_map_nearest: 'Nearest: {name}',
         treasure_map_party_message: '/p {grade} {zone} ({x}, {y}) Nearest: {aetheryte}',
         treasure_map_party_message_no_aetheryte: '/p {grade} {zone} ({x}, {y})',
-        treasure_map_pos_placeholder: 'Coords: {coords}',
+
+        // Detail view
+        treasure_map_detail_prev: '‹ Previous',
+        treasure_map_detail_next: 'Next ›',
+        treasure_map_detail_position: '{index} / {total}',
+        treasure_map_detail_coords: 'Coordinates',
+        treasure_map_detail_nearest: 'Nearest aetheryte',
+        treasure_map_detail_others: 'Other aetherytes',
+        treasure_map_detail_names: 'Names',
+        treasure_map_detail_preview: 'Copies as',
+        treasure_map_detail_copy: '📋 Copy',
 
         // Dialogs and List Messages
         treasure_map_item_already_in_list: 'Item already in list',
@@ -628,7 +648,17 @@ const TreasureMapTranslations = {
         treasure_map_nearest: '最寄り：{name}',
         treasure_map_party_message: '/p {grade} {zone} ({x}, {y}) 最寄り：{aetheryte}',
         treasure_map_party_message_no_aetheryte: '/p {grade} {zone} ({x}, {y})',
-        treasure_map_pos_placeholder: '座標：{coords}',
+
+        // 詳細表示
+        treasure_map_detail_prev: '‹ 前へ',
+        treasure_map_detail_next: '次へ ›',
+        treasure_map_detail_position: '{index} / {total}',
+        treasure_map_detail_coords: '座標',
+        treasure_map_detail_nearest: '最寄りのエーテライト',
+        treasure_map_detail_others: 'その他のエーテライト',
+        treasure_map_detail_names: '地名',
+        treasure_map_detail_preview: 'コピー内容',
+        treasure_map_detail_copy: '📋 コピー',
 
         // ダイアログとリストメッセージ
         treasure_map_item_already_in_list: 'この地図は既にリストにあります',

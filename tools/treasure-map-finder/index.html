@@ -340,17 +340,55 @@
     </div>
 
 
-    <!-- 地圖詳細檢視彈出視窗 -->
+    <!-- 地圖詳細檢視：標頭（標題、關閉）、中間（地圖＋資訊；手機全螢幕時只有這一塊捲動）、動作列（切換、複製、加入清單）。
+         標題、資訊的值、位置與加入鈕的文字跟著目前這張寶圖，由 JavaScript 填入 -->
     <div class="map-detail-modal" id="mapDetailModal" role="dialog" aria-modal="true" aria-labelledby="mapDetailTitle">
-        <div class="map-detail-content">
-            <button class="map-detail-close" id="mapDetailClose" aria-label="關閉" data-i18n="treasure_map_close" data-i18n-attr="aria-label">×</button>
-            <div class="map-detail-image-container">
-                <img id="mapDetailImage" src="" alt="詳細地圖" data-i18n="treasure_map_view_detail" data-i18n-attr="alt" />
-                <canvas id="mapDetailCanvas" class="map-detail-canvas"></canvas>
+        <div class="map-detail-content dialog">
+            <div class="dialog-header">
+                <h3 class="dialog-title" id="mapDetailTitle" aria-live="polite"></h3>
+                <button type="button" class="btn btn-close" id="mapDetailClose" aria-label="關閉" data-i18n="treasure_map_close" data-i18n-attr="aria-label">×</button>
             </div>
-            <div class="map-detail-info">
-                <h3 id="mapDetailTitle"></h3>
-                <p id="mapDetailCoords"></p>
+            <div class="map-detail-body">
+                <!-- 正方形的地圖：地區地圖與 canvas（寶圖位置、傳送點）疊在一起；角落疊寶圖縮圖方便對照
+                     （預設左上角，會蓋住寶圖位置或最近傳送點時由 JavaScript 換到別的角） -->
+                <div class="map-detail-map">
+                    <img class="map-detail-image" id="mapDetailImage" src="" alt="詳細地圖" data-i18n="treasure_map_view_detail" data-i18n-attr="alt">
+                    <canvas class="map-detail-canvas" id="mapDetailCanvas"></canvas>
+                    <img class="map-detail-thumb" id="mapDetailThumb" src="" alt="">
+                </div>
+                <dl class="map-detail-facts">
+                    <div class="map-detail-fact">
+                        <dt data-i18n="treasure_map_detail_coords">座標</dt>
+                        <dd id="mapDetailCoords"></dd>
+                    </div>
+                    <div class="map-detail-fact">
+                        <dt data-i18n="treasure_map_detail_nearest">最近傳送點</dt>
+                        <dd id="mapDetailNearest"></dd>
+                    </div>
+                    <div class="map-detail-fact">
+                        <dt data-i18n="treasure_map_detail_others">其他傳送點</dt>
+                        <dd id="mapDetailOthers"></dd>
+                    </div>
+                    <div class="map-detail-fact">
+                        <dt data-i18n="treasure_map_detail_names">地名</dt>
+                        <dd id="mapDetailNames"></dd>
+                    </div>
+                    <div class="map-detail-fact">
+                        <dt data-i18n="treasure_map_detail_preview">複製內容</dt>
+                        <dd class="tm-copy-preview" id="mapDetailPreview"></dd>
+                    </div>
+                </dl>
+            </div>
+            <div class="dialog-actions map-detail-actions">
+                <div class="map-detail-pager">
+                    <button type="button" class="btn btn-sm" id="mapDetailPrev" data-i18n="treasure_map_detail_prev">‹ 上一張</button>
+                    <span class="map-detail-position" id="mapDetailPosition"></span>
+                    <button type="button" class="btn btn-sm" id="mapDetailNext" data-i18n="treasure_map_detail_next">下一張 ›</button>
+                </div>
+                <div class="map-detail-buttons">
+                    <button type="button" class="btn btn-outline" id="mapDetailCopy" data-i18n="treasure_map_detail_copy">📋 複製</button>
+                    <button type="button" class="btn btn-primary btn-add-to-list" id="mapDetailAdd">＋ 加入清單</button>
+                </div>
             </div>
         </div>
     </div>

@@ -7,8 +7,11 @@ const vm = require('node:vm');
 const { createFakeDom } = require('./helpers/fake-dom.js');
 const { translationKeySet, translationValues } = require('./helpers/translation-parsers.js');
 const CoordinateUtils = require('../tools/treasure-map-finder/coordinate-utils.js');
+// 測試端載入（同 CoordinateUtils）：getNeighbors() 回傳的物件建在這一邊，assert.deepEqual 可以直接比
+const UIDialogManager = require('../tools/treasure-map-finder/ui-dialog-manager.js');
 const { maps } = require('../data/treasure-maps.json');
 const zonesData = require('../data/zones.json');
+const aetherytesData = require('../data/aetherytes.json');
 
 const ROOT = path.resolve(__dirname, '..');
 const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
@@ -222,6 +225,16 @@ function createFilterPage({ url = 'https://ff14.tw/tools/treasure-map-finder/', 
 // （建構函式沒跑，finder 自己的監聽沒有登記）。真正的 I18nManager 會先依 [data-i18n] 重新翻譯頁面，這個替身不做
 const DATA_FILES = Object.fromEntries(['zones.json', 'aetherytes.json', 'treasure-maps.json'].map((name) => [`../../data/${name}`, read(`data/${name}`)]));
 
+// ModalManager 替身開啟時移入焦點用：同 ModalManager._getFocusableElements，依 DOM 順序列出可聚焦的元素。
+// fake-dom 不支援逗號與 :not() 選擇器，所以逐一走訪子孫；「看得到」改成自己與祖先都沒有 .hidden（真的那個看 offsetWidth），
+// 停用的按鈕與 tabindex="-1" 跳過
+const isFocusable = (element) => (['BUTTON', 'INPUT', 'SELECT', 'TEXTAREA'].includes(element.tagName) && !element.disabled)
+    || (element.tagName === 'A' && element.hasAttribute('href'))
+    || (element.hasAttribute('tabindex') && element.getAttribute('tabindex') !== '-1');
+const focusableElements = (root) => root.children.flatMap((child) => (child.classList.contains('hidden')
+    ? []
+    : [...(isFocusable(child) ? [child] : []), ...focusableElements(child)]));
+
 async function createFinder(lang = 'zh') {
     const dom = createFakeDom({ url: 'https://ff14.tw/tools/treasure-map-finder/' });
     const storage = new Map();
@@ -234,7 +247,9 @@ async function createFinder(lang = 'zh') {
     const fill = (text, params = {}) => text.replace(/\{(\w+)\}/g, (match, name) => (name in params ? String(params[name]) : match));
 
     // ModalManager 替身：fake-dom 不支援真正 ModalManager 用到的 :not() 選擇器（ModalManager 本身由 modal-manager-stack 測試負責）。
-    // 照真正的順序：show() 記下開啟前的焦點（同一個元素已經開著就什麼都不做），hide() 先還原焦點、再呼叫 onClose；topmost() 是最後開的那一層
+    // 照真正的順序：show() 記下開啟前的焦點（同一個元素已經開著就什麼都不做），再把焦點移進視窗（同 _setInitialFocus：[autofocus]，
+    // 否則第一個可聚焦的元素，都沒有就是視窗本身）；hide() 先還原焦點、再呼叫 onClose；topmost() 是最後開的那一層。
+    // 開啟時一定要移走焦點：否則從縮圖打開、關閉後焦點「回到」縮圖的測試，焦點程式壞掉也會通過
     const stack = [];
     class FakeModalManager {
         static topmost() { return stack.at(-1) ?? null; }
@@ -251,6 +266,7 @@ async function createFinder(lang = 'zh') {
             Object.assign(this, { activeModal: element, options, previousFocus: dom.document.activeElement });
             element.classList.add('active');
             stack.push(this);
+            (element.querySelector('[autofocus]') ?? focusableElements(element)[0] ?? element).focus();
         }
 
         hide() {
@@ -312,13 +328,45 @@ async function createFinder(lang = 'zh') {
         myListPanel: dom.el('div', { id: 'myListPanel', class: 'my-list-panel', role: 'dialog', inert: true },
             dom.el('div', { class: 'panel-footer' }, totalCount, dom.el('button', { id: 'generateRouteBtn', class: 'btn btn-primary' }, '生成路線')))
     };
+    // 詳細檢視照 index.html 的結構：標頭（標題、關閉）、中間（地圖＋縮圖、資訊）、動作列（切換、複製、加入清單）
+    const fact = (label, id, className) => dom.el('div', { class: 'map-detail-fact' }, dom.el('dt', {}, label), dom.el('dd', { id, class: className }));
     const mapDetailModal = dom.el('div', { id: 'mapDetailModal', class: 'map-detail-modal', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'mapDetailTitle' },
-        dom.el('div', { class: 'map-detail-content' },
-            dom.el('button', { id: 'mapDetailClose', class: 'map-detail-close', 'aria-label': '關閉' }, '×'),
-            dom.el('div', { class: 'map-detail-image-container' },
-                dom.el('img', { id: 'mapDetailImage', alt: '詳細地圖' }),
-                dom.el('canvas', { id: 'mapDetailCanvas', class: 'map-detail-canvas' })),
-            dom.el('div', { class: 'map-detail-info' }, dom.el('h3', { id: 'mapDetailTitle' }), dom.el('p', { id: 'mapDetailCoords' }))));
+        dom.el('div', { class: 'map-detail-content dialog' },
+            dom.el('div', { class: 'dialog-header' },
+                dom.el('h3', { id: 'mapDetailTitle', class: 'dialog-title', 'aria-live': 'polite' }),
+                dom.el('button', { type: 'button', id: 'mapDetailClose', class: 'btn btn-close', 'aria-label': '關閉' }, '×')),
+            dom.el('div', { class: 'map-detail-body' },
+                dom.el('div', { class: 'map-detail-map' },
+                    dom.el('img', { id: 'mapDetailImage', class: 'map-detail-image', alt: '詳細地圖' }),
+                    dom.el('canvas', { id: 'mapDetailCanvas', class: 'map-detail-canvas' }),
+                    dom.el('img', { id: 'mapDetailThumb', class: 'map-detail-thumb', alt: '' })),
+                dom.el('dl', { class: 'map-detail-facts' },
+                    fact('座標', 'mapDetailCoords'),
+                    fact('最近傳送點', 'mapDetailNearest'),
+                    fact('其他傳送點', 'mapDetailOthers'),
+                    fact('地名', 'mapDetailNames'),
+                    fact('複製內容', 'mapDetailPreview', 'tm-copy-preview'))),
+            dom.el('div', { class: 'dialog-actions map-detail-actions' },
+                dom.el('div', { class: 'map-detail-pager' },
+                    dom.el('button', { type: 'button', id: 'mapDetailPrev', class: 'btn btn-sm' }, '‹ 上一張'),
+                    dom.el('span', { id: 'mapDetailPosition', class: 'map-detail-position' }),
+                    dom.el('button', { type: 'button', id: 'mapDetailNext', class: 'btn btn-sm' }, '下一張 ›')),
+                dom.el('div', { class: 'map-detail-buttons' },
+                    dom.el('button', { type: 'button', id: 'mapDetailCopy', class: 'btn btn-outline' }, '📋 複製'),
+                    dom.el('button', { type: 'button', id: 'mapDetailAdd', class: 'btn btn-primary btn-add-to-list' }, '＋ 加入清單')))));
+    // fake-dom 的 disabled 只是普通屬性。兩顆切換鈕照 Chrome 的行為：拿著焦點的按鈕一停用，當場就失去焦點（activeElement 退回 body）。
+    // 少了這一段，「重畫之後才看焦點」的寫法在測試裡也會過，瀏覽器裡焦點卻掉出了對話框
+    for (const id of ['mapDetailPrev', 'mapDetailNext']) {
+        const button = mapDetailModal.querySelector(`#${id}`);
+        let disabled = false;
+        Object.defineProperty(button, 'disabled', {
+            get: () => disabled,
+            set(value) {
+                disabled = Boolean(value);
+                if (disabled) button.blur();
+            }
+        });
+    }
     // 照 index.html 的順序掛到 body 上：updateCardButtons() 從 document 找卡片，UIDialogManager 從 document 找詳細地圖
     for (const element of [elements.stepHint, elements.listEntryDesktop, elements.resultCount, elements.treasureEmpty, elements.treasureGrid,
         elements.listEntryMobile, elements.listAnnouncer, elements.myListPanel, mapDetailModal]) {
@@ -969,15 +1017,18 @@ test('地區找不到傳送點時，卡片不放「最近」那一行', async ()
     const { finder, dom } = await createFinder('zh');
     dom.window.zoneManager.findNearestAetheryte = () => null;
     const card = finder.createMapCard(finder.maps.find((m) => m.id === 'tm_007'));
-    assert.equal(card.querySelector('.tm-nearest'), null);
+    assert.ok(card.querySelector('.tm-nearest') === null, '卡片不應該有「最近」那一行');
     assert.equal(card.querySelector('.tm-coords').textContent, 'X 13.7・Y 14.2');
 });
 
-test('按縮圖打開這張寶圖的詳細地圖（現有的 showMapDetail；Task 8 換成新的詳細檢視）', async () => {
+test('按縮圖打開這張寶圖的詳細檢視，切換的範圍是目前結果格的順序', async () => {
     const { finder, $ } = await createFinder('zh');
-    finder.createMapCard(finder.maps.find((m) => m.id === 'tm_007')).querySelector('.tm-thumb').click();
-    assert.equal(finder.uiDialogManager.modalManager.activeModal, $('mapDetailModal'));
-    assert.equal($('mapDetailTitle').textContent, 'G17 - 烏爾科帕恰');
+    finder.filterManager.restoreState({ levels: ['g17'], zones: ['urqopacha'] });
+    finder.updateFilteredMaps();
+    finder.elements.treasureGrid.querySelector('[data-map-id="tm_009"] .tm-thumb').click();
+    assert.ok(finder.uiDialogManager.modalManager.activeModal === $('mapDetailModal'), '詳細檢視應該開著');
+    assert.equal($('mapDetailTitle').textContent, 'G17・烏爾科帕恰 #3');
+    assert.equal($('mapDetailPosition').textContent, '3 / 8');
 });
 
 test('隊伍連線中重畫的卡片，加入鈕一樣停用（setConnecting() 只停用當下畫面上的 .btn-add-to-list）', async () => {
@@ -1178,5 +1229,469 @@ test('隊伍頻道句子的三語鍵值：句子範本、找不到傳送點的�
     ['zh', 'en', 'ja'].forEach((lang, index) => {
         const values = translationValues(TRANSLATIONS, lang);
         for (const [key, texts] of Object.entries(expected)) assert.equal(values.get(key), texts[index], `${lang} ${key}`);
+    });
+});
+
+// ---------- 詳細檢視（Task 8） ----------
+// openDetail()：結果格是 G17＋烏爾科帕恰的 8 張卡，打開 tm_007 的詳細檢視，切換範圍是 tm_007、tm_008
+async function openDetail(lang = 'zh') {
+    const page = await createFinder(lang);
+    page.finder.filterManager.restoreState({ levels: ['g17'], zones: ['urqopacha'] });
+    page.finder.updateFilteredMaps();
+    assert.equal(page.finder.elements.treasureGrid.querySelectorAll('.treasure-card').length, 8);
+    page.finder.openMapDetail('tm_007', ['tm_007', 'tm_008']);
+    return page;
+}
+
+// 焦點應該在 expected 上。不用 assert.equal 直接比兩個節點：失敗時 node:assert 會把兩個 fake-dom 節點整棵展開來產生訊息
+//（10 張卡就要 1 秒多、訊息 650 KB，整頁的替身會久到像卡住），所以比身分、訊息只寫簡短的描述
+const describeElement = (element) => {
+    const card = element.closest('[data-map-id]');
+    return `<${element.tagName.toLowerCase()}${element.id ? `#${element.id}` : ''}${element.className ? `.${element.className.split(/\s+/).join('.')}` : ''}>`
+        + (card && card !== element ? `（卡片 ${card.dataset.mapId}）` : '');
+};
+function assertFocus(dom, expected) {
+    const actual = dom.document.activeElement;
+    assert.ok(expected, '找不到應該拿到焦點的元素');
+    assert.ok(actual === expected, `焦點在 ${describeElement(actual)}，應該在 ${describeElement(expected)}`);
+}
+
+// 記錄 canvas 2D 呼叫的假 context：每一筆連同當下的 fillStyle／strokeStyle 一起記下（每個標籤都會重新指定顏色）
+function recordingContext() {
+    const calls = [];
+    const ctx = { fillStyle: '#000000', strokeStyle: '#000000', lineWidth: 1, font: '10px sans-serif', measureText: (text) => ({ width: text.length * 30 }) };
+    for (const name of ['clearRect', 'drawImage', 'fillText', 'strokeText', 'beginPath', 'moveTo', 'lineTo', 'arc', 'closePath', 'fill', 'stroke', 'save', 'restore']) {
+        ctx[name] = (...args) => calls.push({ name, args, fillStyle: ctx.fillStyle, strokeStyle: ctx.strokeStyle });
+    }
+    return { ctx, calls };
+}
+
+test('getNeighbors：頭尾停用、中間前後都有', () => {
+    const ids = ['a', 'b', 'c'];
+    assert.deepEqual(UIDialogManager.getNeighbors(ids, 'a'), { prev: null, next: 'b', index: 1, total: 3 });
+    assert.deepEqual(UIDialogManager.getNeighbors(ids, 'b'), { prev: 'a', next: 'c', index: 2, total: 3 });
+    assert.deepEqual(UIDialogManager.getNeighbors(ids, 'c'), { prev: 'b', next: null, index: 3, total: 3 });
+});
+
+test('詳細檢視的新結構；關閉鈕的無障礙名稱保留；在 toast 之下', () => {
+    const modal = sliceElementById(read('tools/treasure-map-finder/index.html'), 'mapDetailModal');
+    for (const id of ['mapDetailThumb', 'mapDetailPreview', 'mapDetailPrev', 'mapDetailPosition', 'mapDetailNext', 'mapDetailCopy', 'mapDetailAdd']) assert.ok(modal.includes(`id="${id}"`), id);
+    assert.match(modal, /id="mapDetailClose"[^>]*aria-label=/);
+    assert.match(declarations('.map-detail-modal'), /z-index:\s*calc\(var\(--z-modal\) \+ 2\)/);
+});
+
+test('加入、切換、語言切換、關閉後焦點回到最後顯示的卡片（Review Focus 4）', async () => {
+    const { finder, dom, setLang, $ } = await openDetail();
+    assert.equal($('mapDetailPreview').textContent, '/p G17 烏爾科帕恰 (13.7, 14.2) 最近：瓦群佩洛');
+    assert.equal($('mapDetailPrev').disabled, true);
+    $('mapDetailAdd').click();
+    assert.equal(finder.listManager.has('tm_007'), true);
+    assert.match($('mapDetailAdd').textContent, /已加入/);
+    dom.key('ArrowRight', $('mapDetailModal'));
+    assert.match($('mapDetailTitle').textContent, /#2/);
+    assert.equal($('mapDetailPosition').textContent, '2 / 2');
+    assert.equal($('mapDetailNext').disabled, true);
+    setLang('en');
+    assert.equal($('mapDetailPreview').textContent, '/p G17 Urqopacha (17.0, 23.3) Nearest: Wachunpelo');
+    finder.uiDialogManager.modalManager.hide();
+    assertFocus(dom, finder.elements.treasureGrid.querySelector('[data-map-id="tm_008"] .tm-thumb'));
+});
+
+test('最後顯示的那張不在結果格時，焦點回到結果張數', async () => {
+    const { finder, dom } = await openDetail();
+    finder.elements.treasureGrid.querySelector('[data-map-id="tm_007"]').remove();
+    finder.uiDialogManager.modalManager.hide();
+    assertFocus(dom, finder.elements.resultCount);
+});
+
+test('formatXY 帶 Z：Z 是 0 或沒有 Z 時寫 Z 0.0（227 張裡 144 張 Z 是 0）', () => {
+    assert.equal(CoordinateUtils.formatXY({ x: 20, y: 30, z: 0 }, { withZ: true }), 'X 20.0・Y 30.0・Z 0.0');
+    assert.equal(CoordinateUtils.formatXY({ x: 13.7, y: 14.2 }, { withZ: true }), 'X 13.7・Y 14.2・Z 0.0');
+});
+
+test('詳細檢視的內容：標題、地圖與縮圖、帶 Z 的座標、最近與其他傳送點、三種語言的地名、複製內容、位置與按鈕', async () => {
+    const { finder, dom, $ } = await openDetail();
+    const map = finder.maps.find((m) => m.id === 'tm_007');
+    assert.ok(finder.uiDialogManager.modalManager.activeModal === $('mapDetailModal'), '詳細檢視應該開著');
+    // 開啟時焦點移進對話框：第一個可聚焦的是標頭的關閉鈕
+    assertFocus(dom, $('mapDetailClose'));
+    assert.equal($('mapDetailTitle').textContent, 'G17・烏爾科帕恰 #1');
+    assert.equal($('mapDetailImage').src, 'images/maps/map-urqopacha.webp');
+    assert.equal($('mapDetailThumb').src, map.thumbnail);
+    assert.equal($('mapDetailCoords').textContent, 'X 13.7・Y 14.2・Z 1.7');
+    assert.equal($('mapDetailNearest').textContent, '瓦群佩洛');
+    assert.equal($('mapDetailOthers').textContent, '沃克爾·佐莫爾');
+    // 三種語言的地名各自標上語言：螢幕閱讀器與字型才會照那個語言處理
+    const names = $('mapDetailNames');
+    assert.equal(names.textContent, '烏爾科帕恰／Urqopacha／オルコ・パチャ');
+    assert.deepEqual(names.querySelectorAll('span').map((span) => [span.getAttribute('lang'), span.textContent]),
+        [['zh-Hant', '烏爾科帕恰'], ['en', 'Urqopacha'], ['ja', 'オルコ・パチャ']]);
+    assert.equal($('mapDetailPreview').textContent, finder.buildPartyMessage(map));
+    assert.equal($('mapDetailPosition').textContent, '1 / 2');
+    assert.deepEqual([$('mapDetailPrev').disabled, $('mapDetailNext').disabled], [true, false]);
+    assert.equal($('mapDetailAdd').textContent, '＋ 加入清單');
+    assert.equal($('mapDetailModal').querySelectorAll('.map-detail-fact.hidden').length, 0);
+});
+
+test('其他傳送點用語言的分隔符號連接；只有一個傳送點的地區不顯示「其他傳送點」，找不到傳送點時兩列都不顯示', async () => {
+    const { finder, dom, setLang, $ } = await createFinder('zh');
+    const rowHidden = (id) => $(id).closest('.map-detail-fact').classList.contains('hidden');
+    // 科扎馬烏卡有 4 個傳送點：tm_015 最近的是土陶郡，其他 3 個照 zones.json 的順序
+    finder.openMapDetail('tm_015', ['tm_015']);
+    assert.equal($('mapDetailNearest').textContent, '土陶郡');
+    assert.equal($('mapDetailOthers').textContent, '奧克哈努、朋友之燈火、波加停船所');
+    setLang('en');
+    assert.equal($('mapDetailOthers').textContent, "Ok' Hanu, Many Fires, Dock Poga");
+    finder.uiDialogManager.modalManager.hide();
+    setLang('zh');
+
+    // 庫爾札斯西部高地只有隼巢：「其他傳送點」整列藏起來；Z 是 0 也照寫；只有一張時兩顆切換鈕都停用
+    finder.openMapDetail('tm_143', ['tm_143']);
+    assert.equal($('mapDetailNearest').textContent, '隼巢');
+    assert.deepEqual([rowHidden('mapDetailNearest'), rowHidden('mapDetailOthers')], [false, true]);
+    assert.equal($('mapDetailCoords').textContent, 'X 20.0・Y 30.0・Z 0.0');
+    assert.equal($('mapDetailPosition').textContent, '1 / 1');
+    assert.deepEqual([$('mapDetailPrev').disabled, $('mapDetailNext').disabled], [true, true]);
+
+    // 切到有其他傳送點的地區，那一列再出現
+    finder.uiDialogManager.modalManager.hide();
+    finder.openMapDetail('tm_007', ['tm_007']);
+    assert.deepEqual([rowHidden('mapDetailNearest'), rowHidden('mapDetailOthers')], [false, false]);
+    finder.uiDialogManager.modalManager.hide();
+
+    // 找不到傳送點（照理不會發生）：最近與其他都不顯示，句子也沒有「最近」
+    Object.assign(dom.window.zoneManager, { getAetherytes: () => [], findNearestAetheryte: () => null });
+    finder.openMapDetail('tm_007', ['tm_007']);
+    assert.deepEqual([rowHidden('mapDetailNearest'), rowHidden('mapDetailOthers')], [true, true]);
+    assert.equal($('mapDetailPreview').textContent, '/p G17 烏爾科帕恰 (13.7, 14.2)');
+});
+
+test('開著詳細檢視切換語言：標題、傳送點、複製內容、加入鈕都換成新語言，三種語言的地名不變（Review Focus 4）', async () => {
+    const { setLang, $ } = await openDetail();
+    $('mapDetailAdd').click();
+    const look = () => ['mapDetailTitle', 'mapDetailCoords', 'mapDetailNearest', 'mapDetailOthers', 'mapDetailNames', 'mapDetailPreview', 'mapDetailPosition', 'mapDetailAdd']
+        .map((id) => $(id).textContent);
+    setLang('en');
+    assert.deepEqual(look(), ['G17・Urqopacha #1', 'X 13.7・Y 14.2・Z 1.7', 'Wachunpelo', 'Worqor Zormor', '烏爾科帕恰／Urqopacha／オルコ・パチャ',
+        '/p G17 Urqopacha (13.7, 14.2) Nearest: Wachunpelo', '1 / 2', '✓ Added']);
+    setLang('ja');
+    assert.deepEqual(look(), ['G17・オルコ・パチャ #1', 'X 13.7・Y 14.2・Z 1.7', 'ワチュンペロ', 'ウォルコルゾルモル', '烏爾科帕恰／Urqopacha／オルコ・パチャ',
+        '/p G17 オルコ・パチャ (13.7, 14.2) 最寄り：ワチュンペロ', '1 / 2', '✓ 追加済み']);
+});
+
+test('上一張／下一張：照結果順序、到頭停用、← → 也能切換；按到頭時焦點移到另一顆；關閉後回到最後那張的縮圖', async () => {
+    const { finder, dom, $ } = await createFinder('zh');
+    finder.filterManager.restoreState({ levels: ['g17'], zones: ['urqopacha'] });
+    finder.updateFilteredMaps();
+    const grid = finder.elements.treasureGrid;
+    // 從第 7 張（tm_013）的縮圖打開：焦點原本在縮圖上（用鍵盤按的情況），打開後移進對話框
+    const opener = grid.querySelector('[data-map-id="tm_013"] .tm-thumb');
+    opener.focus();
+    opener.click();
+    assert.equal($('mapDetailPosition').textContent, '7 / 8');
+    assertFocus(dom, $('mapDetailClose'));
+
+    // 按「下一張」到最後一張：「下一張」停用，焦點移到「上一張」（Chrome 在停用的當下就把焦點退回 body，會掉出對話框）
+    $('mapDetailNext').focus();
+    $('mapDetailNext').click();
+    assert.equal($('mapDetailTitle').textContent, 'G17・烏爾科帕恰 #8');
+    assert.equal($('mapDetailPosition').textContent, '8 / 8');
+    assert.deepEqual([$('mapDetailPrev').disabled, $('mapDetailNext').disabled], [false, true]);
+    assertFocus(dom, $('mapDetailPrev'));
+
+    // 方向鍵掛在對話框上，焦點在裡面哪裡都可以：最後一張按 → 什麼都不做，← 往前
+    dom.key('ArrowRight');
+    assert.equal($('mapDetailPosition').textContent, '8 / 8');
+    dom.key('ArrowLeft');
+    dom.key('ArrowLeft');
+    assert.equal($('mapDetailTitle').textContent, 'G17・烏爾科帕恰 #6');
+    // 加了修飾鍵的方向鍵不切換（Alt+← 是瀏覽器的上一頁）
+    $('mapDetailPrev').dispatchEvent(new dom.window.Event('keydown', { bubbles: true, cancelable: true, key: 'ArrowLeft', altKey: true }));
+    assert.equal($('mapDetailPosition').textContent, '6 / 8');
+
+    // 一路按「上一張」到第一張（最多 5 次）：「上一張」停用，焦點移到「下一張」
+    for (let presses = 0; presses < 5 && !$('mapDetailPrev').disabled; presses += 1) {
+        $('mapDetailPrev').focus();
+        $('mapDetailPrev').click();
+    }
+    assert.equal($('mapDetailPosition').textContent, '1 / 8');
+    assertFocus(dom, $('mapDetailNext'));
+
+    // 關閉：焦點回到最後顯示的那張（tm_007）的縮圖，不是打開時的 tm_013
+    finder.uiDialogManager.modalManager.hide();
+    assertFocus(dom, grid.querySelector('[data-map-id="tm_007"] .tm-thumb'));
+});
+
+test('在詳細檢視裡加入、移除：背後的卡片與清單入口同步；清單在別處改變時（例如隊伍同步）加入鈕也跟著換', async () => {
+    const { finder, $ } = await openDetail();
+    finder.updateListCount();
+    const cardButton = () => finder.elements.treasureGrid.querySelector('[data-map-id="tm_007"] .btn-add-to-list');
+    const entryLabel = () => finder.elements.listEntryMobile.querySelector('.tm-entry-label').textContent;
+
+    $('mapDetailAdd').click();
+    assert.deepEqual([$('mapDetailAdd').textContent, cardButton().textContent, entryLabel()], ['✓ 已加入', '✓ 已加入', '📋 清單 1 張']);
+    assert.equal($('listAnnouncer').textContent, '已加入清單，共 1 張');
+    $('mapDetailAdd').click();
+    assert.equal(finder.listManager.has('tm_007'), false);
+    assert.deepEqual([$('mapDetailAdd').textContent, cardButton().textContent, entryLabel()], ['＋ 加入清單', '＋ 加入清單', '📋 清單']);
+
+    // 別處改了清單（隊伍同步也走 updateCardButtons）：加入鈕不能停在舊狀態，不然按「加入」反而會移除
+    finder.listManager.add(finder.maps.find((m) => m.id === 'tm_007'));
+    finder.updateCardButtons();
+    assert.equal($('mapDetailAdd').textContent, '✓ 已加入');
+    finder.uiDialogManager.modalManager.hide();
+    assert.doesNotThrow(() => finder.updateCardButtons(), '詳細檢視關著時也不出錯');
+});
+
+test('複製：寫進剪貼簿的就是預覽的那句，成功提示照舊', async () => {
+    const { clipboardWrites, toasts, $ } = await openDetail();
+    $('mapDetailCopy').click();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    assert.deepEqual(clipboardWrites, [$('mapDetailPreview').textContent]);
+    assert.deepEqual(toasts, [{ message: '已複製，可以貼到隊伍頻道', type: 'success' }]);
+});
+
+test('詳細地圖畫出這個地區自己的傳送點（每個有寶圖的地區）；最近的那個是主色膠囊，顏色從 --color-primary／--color-on-primary 讀', async () => {
+    const { finder, dom } = await createFinder('zh');
+    const styleReads = [];
+    dom.window.getComputedStyle = (element) => {
+        styleReads.push(element);
+        return { getPropertyValue: (name) => ({ '--color-primary': ' #5061d3', '--color-on-primary': ' #ffffff' }[name] ?? '') };
+    };
+    // 期望值直接從資料檔算：zones.json 這個地區列出的傳送點 id，對到 aetherytes.json 的中文名稱
+    const subZones = new Map(Object.values(zonesData.zones).flatMap((region) => region.subZones.map((zone) => [zone.id, zone])));
+    const nameOf = (zoneId, id) => aetherytesData.aetherytes[zonesData.mappings.zoneIdToRegion[zoneId]].find((a) => a.id === id).name.zh;
+    const firstMaps = finder.maps.filter((map, index, all) => all.findIndex((other) => other.zoneId === map.zoneId) === index);
+    assert.equal(firstMaps.length, new Set(maps.map((m) => m.zoneId)).size);
+    const markIcon = { icon: 'mark' };
+    const aetheryteIcon = { icon: 'aetheryte' };
+
+    for (const map of firstMaps) {
+        const { ctx, calls } = recordingContext();
+        finder.uiDialogManager.drawMapMarkers(ctx, { width: 2048, height: 2048 }, map, markIcon, { zoneManager: dom.window.zoneManager, aetheryteIcon });
+        const expected = subZones.get(map.zoneId).aetherytes.map((id) => nameOf(map.zoneId, id));
+        const texts = calls.filter((c) => c.name === 'fillText');
+        assert.deepEqual(texts.map((c) => c.args[0]), expected, map.id);
+        // 寶圖標記一個，傳送點圖示每個傳送點一個
+        assert.deepEqual(calls.filter((c) => c.name === 'drawImage').map((c) => c.args[0].icon), ['mark', ...expected.map(() => 'aetheryte')], map.id);
+
+        // 最近的傳送點：先畫主色的膠囊，再用主色上的文字色寫名稱、不加黑邊；其他照舊白字黑邊
+        const nearest = dom.window.zoneManager.findNearestAetheryte(map.zoneId, map.coords).aetheryte.name.zh;
+        for (const call of texts) assert.equal(call.fillStyle, call.args[0] === nearest ? '#ffffff' : 'white', `${map.id} ${call.args[0]}`);
+        assert.deepEqual(calls.filter((c) => c.name === 'strokeText').map((c) => [c.args[0], c.strokeStyle]),
+            expected.filter((name) => name !== nearest).map((name) => [name, 'black']), map.id);
+        const fills = calls.filter((c) => c.name === 'fill');
+        assert.deepEqual(fills.map((c) => c.fillStyle), ['#5061d3'], map.id);
+        const pillAt = calls.indexOf(fills[0]);
+        assert.deepEqual([calls[pillAt + 1].name, calls[pillAt + 1].args[0]], ['fillText', nearest], map.id);
+    }
+    assert.ok(styleReads.length > 0 && styleReads.every((element) => element === dom.document.documentElement), '顏色從 <html> 的計算樣式讀');
+
+    // tm_007 標亮的就是卡片與句子裡的最近傳送點
+    const { ctx, calls } = recordingContext();
+    finder.uiDialogManager.drawMapMarkers(ctx, { width: 2048, height: 2048 }, finder.maps.find((m) => m.id === 'tm_007'), markIcon, { zoneManager: dom.window.zoneManager, aetheryteIcon });
+    assert.equal(calls.find((c) => c.name === 'fillText' && c.fillStyle === '#ffffff').args[0], '瓦群佩洛');
+});
+
+test('開著詳細檢視切換語言：地圖上的傳送點名稱也用新語言重畫', async () => {
+    const { finder, dom, setLang, $ } = await createFinder('zh');
+    dom.window.getComputedStyle = () => ({ getPropertyValue: () => '#123456' });
+    // 讓 canvas 畫得出來：假的 2D context、地圖圖片已載入、寶圖標記的圖示一建立就載入完成
+    let recorder = recordingContext();
+    $('mapDetailCanvas').getContext = () => recorder.ctx;
+    Object.assign($('mapDetailImage'), { complete: true, naturalWidth: 2048, naturalHeight: 2048 });
+    dom.window.Image = class { constructor() { Object.assign(this, { complete: true, naturalWidth: 27, naturalHeight: 29 }); } };
+    finder.aetheryteIcon = { icon: 'aetheryte' };
+    finder.openMapDetail('tm_007', ['tm_007', 'tm_008']);
+    const labels = () => recorder.calls.filter((c) => c.name === 'fillText').map((c) => c.args[0]);
+    assert.deepEqual(labels(), ['瓦群佩洛', '沃克爾·佐莫爾']);
+    assert.deepEqual([$('mapDetailCanvas').width, $('mapDetailCanvas').height], [2048, 2048]);
+
+    recorder = recordingContext();
+    setLang('en');
+    assert.deepEqual(labels(), ['Wachunpelo', 'Worqor Zormor']);
+});
+
+test('傳送點圖示比詳細檢視晚到：開著的詳細地圖不用重開就補畫上這個地區的傳送點，之後切換也畫得出來', async () => {
+    const { finder, dom, $ } = await createFinder('zh');
+    dom.window.getComputedStyle = () => ({ getPropertyValue: () => '#123456' });
+    let recorder = recordingContext();
+    $('mapDetailCanvas').getContext = () => recorder.ctx;
+    Object.assign($('mapDetailImage'), { complete: true, naturalWidth: 2048, naturalHeight: 2048 });
+    // 寶圖標記的圖示一建立就載入完成；傳送點圖示（images/ui/crysis.png）要等測試呼叫它的 onload 才算載入完成
+    const images = [];
+    dom.window.Image = class { constructor() { Object.assign(this, { complete: true, naturalWidth: 27, naturalHeight: 29 }); images.push(this); } };
+    const iconLoaded = finder.loadAetheryteIcon();
+    finder.openMapDetail('tm_007', ['tm_007', 'tm_008']);
+    const labels = () => recorder.calls.filter((c) => c.name === 'fillText').map((c) => c.args[0]);
+    assert.deepEqual(labels(), [], '傳送點圖示還沒到：不畫傳送點');
+    assert.equal(recorder.calls.filter((c) => c.name === 'drawImage').length, 1, '只畫寶圖標記');
+
+    // 圖示到了：開著的這張不用重開，就補畫上傳送點的圖示與名稱
+    recorder = recordingContext();
+    images.find((image) => image.src === 'images/ui/crysis.png').onload();
+    await iconLoaded;
+    assert.deepEqual(labels(), ['瓦群佩洛', '沃克爾·佐莫爾'], '圖示到了之後補畫傳送點');
+    assert.equal(recorder.calls.filter((c) => c.name === 'drawImage' && c.args[0] === finder.aetheryteIcon).length, 2);
+
+    // 切到下一張：讀的是現在的圖示，不是打開時記下的「還沒有」
+    recorder = recordingContext();
+    dom.key('ArrowRight', $('mapDetailModal'));
+    assert.equal($('mapDetailPosition').textContent, '2 / 2');
+    assert.deepEqual(labels(), ['瓦群佩洛', '沃克爾·佐莫爾'], '切換之後也畫傳送點');
+});
+
+test('快速切換時，慢一步才載入完成的舊那張不會畫到新的那張上', async () => {
+    const { finder, dom, $ } = await createFinder('zh');
+    dom.window.getComputedStyle = () => ({ getPropertyValue: () => '#123456' });
+    const recorder = recordingContext();
+    $('mapDetailCanvas').getContext = () => recorder.ctx;
+    Object.assign($('mapDetailImage'), { complete: true, naturalWidth: 2048, naturalHeight: 2048 });
+    // 寶圖標記的圖示還沒載入：記下等它載入的監聽（addEventListener 或 onload 都算）
+    const icons = [];
+    dom.window.Image = class {
+        constructor() { Object.assign(this, { complete: false, naturalWidth: 0, listeners: [] }); icons.push(this); }
+        addEventListener(type, listener) { if (type === 'load') this.listeners.push(listener); }
+    };
+    finder.aetheryteIcon = { icon: 'aetheryte' };
+    finder.openMapDetail('tm_007', ['tm_007', 'tm_008']);
+    dom.key('ArrowRight', $('mapDetailModal'));
+    assert.equal(recorder.calls.filter((c) => c.name === 'drawImage').length, 0, '圖示還沒載入，什麼都不畫');
+    assert.equal(icons.length, 1, '寶圖標記的圖示只建立一次');
+
+    // 圖示載入完成：只有目前這張（tm_008）畫出來
+    Object.assign(icons[0], { complete: true, naturalWidth: 27, naturalHeight: 29 });
+    for (const listener of icons[0].listeners) listener();
+    icons[0].onload?.();
+    const at = CoordinateUtils.gameToImageCoords(17, 23.3, 2048, 2048);
+    assert.deepEqual(recorder.calls.filter((c) => c.name === 'drawImage' && c.args[0] === icons[0]).map((c) => c.args.slice(1)),
+        [[at.x - 81 / 2, at.y - 87 / 2, 81, 87]]);
+});
+
+test('寶圖縮圖預設在左上角；會蓋住寶圖標記或最近傳送點時換一個角：227 張的寶圖標記與最近傳送點都看得到', async () => {
+    const { finder, dom, $ } = await createFinder('zh');
+    const thumbCorner = (coords, nearest) => vm.runInContext('UIDialogManager', dom.window).thumbCorner(coords, nearest);
+    // 縮圖框照 style.css：離邊 2%、寬 34%、高照縮圖的 207:174（地圖是正方形，top 的 % 和 left 的 % 一樣長）
+    const thumb = declarations('.map-detail-thumb');
+    for (const re of [/top:\s*2%/, /left:\s*2%/, /width:\s*34%/, /aspect-ratio:\s*207 \/ 174/]) assert.match(thumb, re);
+    for (const [corner, rules] of [
+        ['top-right', [/right:\s*2%/, /left:\s*auto/]],
+        ['bottom-left', [/top:\s*auto/, /bottom:\s*2%/]],
+        ['bottom-right', [/top:\s*auto/, /right:\s*2%/, /bottom:\s*2%/, /left:\s*auto/]]
+    ]) {
+        for (const re of rules) assert.match(declarations(`.map-detail-thumb[data-corner="${corner}"]`), re, corner);
+    }
+
+    // 在測試裡自己算：以座標為中心的框（2048px 地圖上的大小：寶圖標記 81×87 置中；最近傳送點的圖示與下方名稱）
+    // 有沒有落在那個角的縮圖框裡
+    const H = 0.34 * 174 / 207;
+    const covers = (corner, point, halfWidth, up, down) => {
+        const left = corner.endsWith('left') ? 0.02 : 1 - 0.02 - 0.34;
+        const top = corner.startsWith('top') ? 0.02 : 1 - 0.02 - H;
+        const x = (point.x - 1) / 41;
+        const y = (point.y - 1) / 41;
+        return x - halfWidth / 2048 < left + 0.34 && x + halfWidth / 2048 > left && y - up / 2048 < top + H && y + down / 2048 > top;
+    };
+    const markerHidden = (map, corner) => covers(corner, map.coords, 40.5, 43.5, 43.5);
+    // 最近傳送點也從資料檔算（3D 直線距離，同距離取先列出的）
+    const subZones = new Map(Object.values(zonesData.zones).flatMap((region) => region.subZones.map((zone) => [zone.id, zone])));
+    const nearestOf = (map) => subZones.get(map.zoneId).aetherytes
+        .map((id) => aetherytesData.aetherytes[zonesData.mappings.zoneIdToRegion[map.zoneId]].find((a) => a.id === id))
+        .reduce((best, a) => {
+            const d = Math.hypot(a.coords.x - map.coords.x, a.coords.y - map.coords.y, (a.coords.z || 0) - (map.coords.z || 0));
+            return !best || d < best.d ? { a, d } : best;
+        }, null).a;
+    const nearestHidden = (map, corner) => covers(corner, nearestOf(map).coords, 170, 36, 86);
+    const corners = maps.map((map) => thumbCorner(map.coords, nearestOf(map).coords));
+    assert.deepEqual(maps.filter((map, index) => markerHidden(map, corners[index])).map((map) => map.id), [], '寶圖標記被縮圖蓋住');
+    assert.deepEqual(maps.filter((map, index) => nearestHidden(map, corners[index])).map((map) => map.id), [], '最近傳送點被縮圖蓋住');
+    // 一律放左上角的話，有 20 多張的寶圖標記會被蓋住；換角的是少數，大多數仍然在左上角
+    assert.ok(maps.filter((map) => markerHidden(map, 'top-left')).length >= 20);
+    const count = (corner) => corners.filter((c) => c === corner).length;
+    assert.ok(count('top-left') > 170, `左上角只有 ${count('top-left')} 張`);
+    assert.ok(count('top-right') > 0 && count('bottom-left') > 0);
+
+    // 畫面上：每一張都重新判斷。tm_009（15.8, 30.6）在左上角；切到 tm_007（13.7, 14.2）時左上角會蓋住寶圖標記、
+    // 右上角會蓋住最近的瓦群佩洛，換到左下角；右上角的例子用資料裡第一張換到右上角的寶圖
+    finder.openMapDetail('tm_009', ['tm_009', 'tm_007']);
+    assert.equal($('mapDetailThumb').dataset.corner, 'top-left');
+    dom.key('ArrowRight', $('mapDetailModal'));
+    assert.equal($('mapDetailThumb').dataset.corner, 'bottom-left');
+    finder.uiDialogManager.modalManager.hide();
+    const topRight = maps[corners.indexOf('top-right')];
+    finder.openMapDetail(topRight.id, [topRight.id]);
+    assert.equal($('mapDetailThumb').dataset.corner, 'top-right', topRight.id);
+});
+
+test('詳細檢視的按鈕與文字：只有「加入清單」是主要按鈕；固定文字掛 data-i18n，跟著這張寶圖變的文字由程式填', () => {
+    const html = read('tools/treasure-map-finder/index.html');
+    const modal = sliceElementById(html, 'mapDetailModal');
+    // 一個畫面最多一顆主要按鈕；加入鈕也帶 .btn-add-to-list，隊伍連線中 setConnecting() 會一併停用它
+    assert.equal((modal.match(/class="[^"]*\bbtn-primary\b/g) || []).length, 1);
+    assert.deepEqual(classesOf(tagAttrs(html, 'mapDetailAdd')), ['btn', 'btn-primary', 'btn-add-to-list']);
+    assert.deepEqual(classesOf(tagAttrs(html, 'mapDetailCopy')), ['btn', 'btn-outline']);
+    for (const [id, key] of [['mapDetailPrev', 'treasure_map_detail_prev'], ['mapDetailNext', 'treasure_map_detail_next'], ['mapDetailCopy', 'treasure_map_detail_copy']]) {
+        assert.deepEqual([tagAttrs(html, id)['data-i18n'], tagAttrs(html, id).type], [key, 'button'], id);
+    }
+    // 跟著這張寶圖變的文字不能掛 data-i18n：切換語言時 I18nManager 會把它蓋回固定的字
+    for (const id of ['mapDetailTitle', 'mapDetailPreview', 'mapDetailPosition', 'mapDetailAdd']) assert.equal(tagAttrs(html, id)['data-i18n'], undefined, id);
+    assert.deepEqual([...modal.matchAll(/<dt\b[^>]*\sdata-i18n="([^"]+)"/g)].map((m) => m[1]),
+        ['treasure_map_detail_coords', 'treasure_map_detail_nearest', 'treasure_map_detail_others', 'treasure_map_detail_names', 'treasure_map_detail_preview']);
+    assert.match(modal, /<dd\b[^>]*\sid="mapDetailPreview"/);
+    assert.ok(classesOf(tagAttrs(html, 'mapDetailPreview')).includes('tm-copy-preview'));
+    // DOM 順序就是 Tab 與閱讀順序：標頭、地圖、資訊、切換、複製、加入清單
+    const order = ['mapDetailTitle', 'mapDetailClose', 'mapDetailImage', 'mapDetailCanvas', 'mapDetailThumb', 'mapDetailCoords', 'mapDetailPreview',
+        'mapDetailPrev', 'mapDetailPosition', 'mapDetailNext', 'mapDetailCopy', 'mapDetailAdd'].map((id) => modal.indexOf(`id="${id}"`));
+    assert.ok(!order.includes(-1), `少了元素：${order}`);
+    assert.deepEqual([...order].sort((a, b) => a - b), order);
+    // 地圖的 alt 沿用原本的鍵值；縮圖只是對照用（alt 空白）；切換時唸出新的標題
+    assert.equal(tagAttrs(html, 'mapDetailImage')['data-i18n'], 'treasure_map_view_detail');
+    assert.equal(tagAttrs(html, 'mapDetailThumb').alt, '');
+    assert.equal(tagAttrs(html, 'mapDetailTitle')['aria-live'], 'polite');
+});
+
+test('詳細檢視的版面：桌機約 880px、地圖在左資訊在右；手機全螢幕，標頭與動作列固定、中間捲動；舊的樣式拿掉', () => {
+    // 桌機：最寬 880px；中間兩欄，正方形的地圖在左、資訊在右；視窗太矮時只有中間捲動
+    assert.match(declarations('.map-detail-content'), /max-width:\s*880px/);
+    const body = declarations('.map-detail-body');
+    for (const re of [/display:\s*grid/, /grid-template-columns:\s*minmax\(0,\s*3fr\)\s+minmax\(0,\s*2fr\)/, /flex:\s*1/, /min-height:\s*0/, /overflow-y:\s*auto/]) assert.match(body, re);
+    // 手機上中間撐滿畫面高度：多出來的高度不能攤到地圖與資訊兩列之間（瀏覽器實測時兩列中間空了一大段）；
+    // 高度不夠時也不能把地圖那一列壓扁（地圖是 overflow: hidden，實測 390×600 時地圖蓋住了資訊），每一列照內容的高度、改成捲動
+    assert.match(body, /align-content:\s*start/);
+    assert.match(body, /grid-auto-rows:\s*max-content/);
+    assert.match(declarations('.map-detail-map'), /aspect-ratio:\s*1/);
+    // 手機：對話框填滿畫面（沒有外距與圓角），中間一欄
+    assert.match(declarations('.map-detail-modal', MOBILE), /padding:\s*0/);
+    const content = declarations('.map-detail-content', MOBILE);
+    for (const re of [/height:\s*100%/, /max-height:\s*none/, /border-radius:\s*0/]) assert.match(content, re);
+    assert.match(declarations('.map-detail-body', MOBILE), /grid-template-columns:\s*minmax\(0,\s*1fr\)/);
+    // 動作列在手機上分兩列（切換、複製與加入），底下留 iPhone 的安全區
+    const actions = declarations('.map-detail-actions', MOBILE);
+    for (const re of [/flex-direction:\s*column/, /env\(safe-area-inset-bottom\)/]) assert.match(actions, re);
+    // 會用 .hidden 藏起來的資訊列：display 由單一 class 的規則給，而且寫在 .hidden 前面
+    const at = (selector) => styleRules.findIndex((r) => r.media === null && r.selectors.includes(selector));
+    assert.ok(at('.map-detail-fact') !== -1 && at('.map-detail-fact') < at('.hidden'));
+    for (const gone of ['map-detail-info', 'map-detail-image-container', 'map-detail-close']) {
+        const re = new RegExp(`\\.${gone}(?![\\w-])`);
+        assert.ok(!styleRules.some((r) => r.selectors.some((s) => re.test(s))), `.${gone} 應已刪除`);
+    }
+});
+
+test('詳細檢視的三語鍵值；只給舊座標文字用的鍵值刪掉', () => {
+    const expected = {
+        treasure_map_detail_prev: ['‹ 上一張', '‹ Previous', '‹ 前へ'],
+        treasure_map_detail_next: ['下一張 ›', 'Next ›', '次へ ›'],
+        treasure_map_detail_position: Array(3).fill('{index} / {total}'),
+        treasure_map_detail_coords: ['座標', 'Coordinates', '座標'],
+        treasure_map_detail_nearest: ['最近傳送點', 'Nearest aetheryte', '最寄りのエーテライト'],
+        treasure_map_detail_others: ['其他傳送點', 'Other aetherytes', 'その他のエーテライト'],
+        treasure_map_detail_names: ['地名', 'Names', '地名'],
+        treasure_map_detail_preview: ['複製內容', 'Copies as', 'コピー内容'],
+        treasure_map_detail_copy: ['📋 複製', '📋 Copy', '📋 コピー']
+    };
+    ['zh', 'en', 'ja'].forEach((lang, index) => {
+        const values = translationValues(TRANSLATIONS, lang);
+        for (const [key, texts] of Object.entries(expected)) assert.equal(values.get(key), texts[index], `${lang} ${key}`);
+        assert.ok(!translationKeySet(TRANSLATIONS, lang).has('treasure_map_pos_placeholder'), `${lang} 的 treasure_map_pos_placeholder 應已刪除`);
     });
 });

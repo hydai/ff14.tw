@@ -321,12 +321,8 @@ class TreasureMapFinder {
             zone: zoneName,
             index: map.index
         }));
-        thumb.addEventListener('click', () => {
-            this.uiDialogManager.showMapDetail(map, {
-                zoneManager: zoneManager,
-                aetheryteIcon: this.aetheryteIcon
-            });
-        });
+        // 上一張／下一張在按下當時結果格的順序裡切換
+        thumb.addEventListener('click', () => this.openMapDetail(map.id, this.filteredMaps.map(m => m.id)));
 
         const img = document.createElement('img');
         img.src = map.thumbnail;
@@ -411,6 +407,34 @@ class TreasureMapFinder {
         card.appendChild(thumb);
         card.appendChild(body);
         return card;
+    }
+
+    // 打開詳細檢視：上一張／下一張在 resultIds（結果格的順序）裡切換；加入、複製與卡片走同一條路，
+    // 背後的卡片與清單入口由 toggleMapInList 同步；關閉後焦點交給 focusAfterDetail()
+    openMapDetail(mapId, resultIds) {
+        const map = this.maps.find(m => m.id === mapId);
+        if (!map) return;
+        const finder = this;
+        this.uiDialogManager.showMapDetail(map, {
+            zoneManager,
+            // 傳送點圖示不擋載入（見 init()），可能比詳細檢視晚到：每次畫的時候才讀，
+            // 圖示到了之後的重畫（loadAetheryteIcon）、切換與換語言才畫得出傳送點
+            get aetheryteIcon() { return finder.aetheryteIcon; },
+            resultIds,
+            getMapById: id => this.maps.find(m => m.id === id),
+            isInList: target => this.listManager.has(target.id),
+            onToggle: target => this.toggleMapInList(target),
+            onCopy: target => this.copyCoordinates(target),
+            getPartyMessage: target => this.buildPartyMessage(target),
+            onClosed: id => this.focusAfterDetail(id)
+        });
+    }
+
+    // 詳細檢視關閉後：焦點放到最後顯示的那張的卡片縮圖（切換過就不是當初按的那張）。到這時才找：語言切換會重畫卡片，
+    // 開啟時的縮圖已經不在頁面上；那張不在結果格裡了就放到結果張數
+    focusAfterDetail(mapId) {
+        const thumb = this.elements.treasureGrid.querySelector(`[data-map-id="${mapId}"] .tm-thumb`);
+        (thumb || this.elements.resultCount).focus();
     }
 
     // 最近傳送點的目前語言名稱（沒有這個語言時用中文）；地區沒有傳送點時是 null
@@ -499,11 +523,12 @@ class TreasureMapFinder {
         }
     }
     
-    // 清單變了（加入、移除、清空、匯入、隊伍同步）：每張卡的加入鈕跟著清單更新
+    // 清單變了（加入、移除、清空、匯入、隊伍同步）：每張卡的加入鈕跟著清單更新，開著的詳細檢視的加入鈕也是
     updateCardButtons() {
         document.querySelectorAll('.treasure-card').forEach(card => {
             this.updateAddButton(card.querySelector('.btn-add-to-list'), this.listManager.has(card.dataset.mapId));
         });
+        this.uiDialogManager?.refreshMapDetailAddButton();
     }
     
     // 關閉按鈕與遮罩用（面板開著時就是關閉）

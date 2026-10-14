@@ -863,14 +863,16 @@
     flex-wrap: wrap;
 }
 
-/* 地圖詳細檢視 */
+/* 地圖詳細檢視：遮罩層本身交給 ModalManager（.active 顯示）。疊在路線面板（--z-modal）與格式面板（+1）之上，
+   在 toast 之下：在詳細檢視裡按「複製」的提示才看得到 */
 .map-detail-modal {
     position: fixed;
     inset: 0;
-    z-index: calc(var(--z-toast) + 1);
+    z-index: calc(var(--z-modal) + 2);
     display: none;
     align-items: center;
     justify-content: center;
+    padding: var(--space-4);
     background: var(--color-overlay);
     cursor: pointer;
 }
@@ -879,84 +881,137 @@
     display: flex;
 }
 
+/* 盒子沿用共用的 .dialog（底色、框線、圓角、陰影），改成約 880px 寬的直排：標頭、中間、動作列 */
 .map-detail-content {
-    position: relative;
     display: flex;
     flex-direction: column;
-    max-width: 90vw;
-    max-height: 90vh;
+    max-width: 880px;
+    max-height: calc(100vh - 2 * var(--space-4));
     overflow: hidden;
-    background: var(--color-surface);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-xl);
     cursor: default;
 }
 
-.map-detail-close {
-    position: absolute;
-    top: var(--space-4);
-    right: var(--space-4);
-    z-index: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
-    border: 0;
-    border-radius: var(--radius-full);
-    background: var(--color-heading);
-    color: var(--color-bg);
-    font-size: var(--text-2xl);
-    line-height: 1;
-    cursor: pointer;
-    transition: background-color var(--duration-base) var(--ease), transform var(--duration-base) var(--ease);
+/* 中間：地圖在左、資訊在右；視窗太矮時只有這一塊捲動，標頭與動作列留在原地。
+   每一列的高度照內容（max-content）：地圖是 overflow: hidden，格線預設會在高度不夠時把它那一列壓扁、讓地圖蓋住資訊；
+   手機上這一塊撐滿畫面高度，align-content: start 讓多出來的高度留在最下面，不攤到地圖與資訊兩列之間 */
+.map-detail-body {
+    display: grid;
+    flex: 1;
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+    grid-auto-rows: max-content;
+    align-content: start;
+    align-items: start;
+    gap: var(--space-5);
+    min-height: 0;
+    padding: var(--space-5);
+    overflow-y: auto;
+    overscroll-behavior: contain;
 }
 
-.map-detail-close:hover {
-    background: var(--color-primary);
-    color: var(--color-on-primary);
-    transform: translateY(-1px);
-}
-
-.map-detail-image-container {
+/* 正方形的地圖：地區地圖（正方形）與同樣大小的 canvas 疊在一起填滿；角落疊寶圖縮圖（預設左上角） */
+.map-detail-map {
     position: relative;
-    display: inline-block;
-    width: 100%;
+    aspect-ratio: 1;
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-2);
 }
 
-#mapDetailImage {
-    display: block;
+.map-detail-image,
+.map-detail-canvas {
+    position: absolute;
+    inset: 0;
     width: 100%;
-    height: auto;
-    max-height: calc(90vh - 100px);
+    height: 100%;
+}
+
+.map-detail-image {
     object-fit: contain;
 }
 
 .map-detail-canvas {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
     pointer-events: none;
 }
 
-.map-detail-info {
-    padding: var(--space-6);
-    background: var(--color-surface);
-    border-top: 1px solid var(--color-border);
+/* 寶圖縮圖：位置與大小用地圖邊長的比例（地圖是正方形，top 的 % 和 left 的 % 一樣長），
+   和 UIDialogManager.THUMB_BOX 同一組數字；預設左上角，會蓋住寶圖標記或最近傳送點時 JS 用 data-corner 換到別的角 */
+.map-detail-thumb {
+    position: absolute;
+    top: 2%;
+    left: 2%;
+    width: 34%;
+    height: auto;
+    aspect-ratio: 207 / 174;
+    border: 2px solid var(--color-surface);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-md);
+    object-fit: cover;
 }
 
-.map-detail-info h3 {
-    margin: 0 0 var(--space-2);
-    font-size: var(--text-xl);
-    color: var(--color-heading);
+.map-detail-thumb[data-corner="top-right"] {
+    right: 2%;
+    left: auto;
 }
 
-.map-detail-info p {
+.map-detail-thumb[data-corner="bottom-left"] {
+    top: auto;
+    bottom: 2%;
+}
+
+.map-detail-thumb[data-corner="bottom-right"] {
+    top: auto;
+    right: 2%;
+    bottom: 2%;
+    left: auto;
+}
+
+/* 資訊：標籤一欄、內容一欄，每一列沿用同樣的欄寬（subgrid）；沒有內容的列加 .hidden 整列藏起來 */
+.map-detail-facts {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    gap: var(--space-2) var(--space-4);
     margin: 0;
-    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    line-height: var(--leading-normal);
+}
+
+.map-detail-fact {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
+}
+
+.map-detail-fact dt {
     color: var(--color-muted);
+}
+
+.map-detail-fact dd {
+    margin: 0;
+    color: var(--color-heading);
+    overflow-wrap: anywhere;
+}
+
+/* 動作列：左邊上一張／位置／下一張，右邊複製與加入清單（外觀沿用共用的 .dialog-actions） */
+.map-detail-actions {
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.map-detail-pager,
+.map-detail-buttons {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.map-detail-position {
+    min-width: 4.5em;
+    color: var(--color-muted);
+    font-size: var(--text-sm);
+    font-variant-numeric: tabular-nums;
+    text-align: center;
 }
 
 /* 匯出／匯入對話框（JS 建立）：外觀由 .dialog-overlay / .dialog 提供，這裡管顯示切換與內距 */
@@ -1187,6 +1242,47 @@
     .panel-header-actions {
         flex-wrap: wrap;
         gap: var(--space-2);
+    }
+
+    /* 詳細檢視全螢幕：標頭與動作列固定，中間（地圖在上、資訊在下）捲動 */
+    .map-detail-modal {
+        padding: 0;
+    }
+
+    .map-detail-content {
+        width: 100%;
+        max-width: none;
+        height: 100%;
+        max-height: none;
+        border: 0;
+        border-radius: 0;
+    }
+
+    .map-detail-body {
+        grid-template-columns: minmax(0, 1fr);
+        gap: var(--space-4);
+        padding: var(--space-4);
+    }
+
+    /* 動作列分兩列：上一張／位置／下一張，下面是複製與加入清單（平分寬度，放不下時各占一行）；
+       底下留 iPhone 的安全區 */
+    .map-detail-actions {
+        flex-direction: column;
+        align-items: stretch;
+        padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom));
+    }
+
+    .map-detail-pager {
+        justify-content: space-between;
+    }
+
+    .map-detail-buttons {
+        flex-wrap: wrap;
+    }
+
+    .map-detail-buttons .btn {
+        flex: 1 1 0;
+        min-width: max-content;
     }
 }
 
