@@ -14,10 +14,23 @@ const TreasureMapTranslations = {
         // 頁面標題
         treasure_map_header: '寶圖搜尋器',
 
-        // 頂部操作
+        // 清單面板標題與組隊按鈕
         treasure_map_my_list: '我的清單',
         treasure_map_create_room: '建立組隊',
         treasure_map_join_room: '加入隊伍',
+
+        // 步驟提示與清單入口
+        treasure_map_steps_label: '使用步驟',
+        treasure_map_step_grade: '選等級',
+        treasure_map_step_add: '加入清單',
+        treasure_map_step_route: '生成路線',
+        treasure_map_entry_empty: '📋 清單',
+        treasure_map_entry_count: '📋 清單 {count} 張',
+        treasure_map_entry_room: '👥 隊伍清單 {count}/{max}',
+        treasure_map_entry_team: '組隊',
+        treasure_map_entry_hint_one: '再加 1 張就能排路線',
+        treasure_map_announce_added: '已加入清單，共 {count} 張',
+        treasure_map_announce_removed: '已從清單移除，剩 {count} 張',
 
         // 組隊區域
         treasure_map_room_code: '隊伍代號：',
@@ -240,10 +253,23 @@ const TreasureMapTranslations = {
         // Page header
         treasure_map_header: 'Treasure Map Finder',
 
-        // Top actions
+        // List panel title and team buttons
         treasure_map_my_list: 'My List',
         treasure_map_create_room: 'Create Room',
         treasure_map_join_room: 'Join Room',
+
+        // Steps and list entry
+        treasure_map_steps_label: 'Steps',
+        treasure_map_step_grade: 'Pick a grade',
+        treasure_map_step_add: 'Add maps',
+        treasure_map_step_route: 'Plan a route',
+        treasure_map_entry_empty: '📋 List',
+        treasure_map_entry_count: '📋 List: {count}',
+        treasure_map_entry_room: '👥 Team list {count}/{max}',
+        treasure_map_entry_team: 'Team up',
+        treasure_map_entry_hint_one: 'Add 1 more map to plan a route',
+        treasure_map_announce_added: 'Added to the list. Total: {count}',
+        treasure_map_announce_removed: 'Removed from the list. Remaining: {count}',
 
         // Room section
         treasure_map_room_code: 'Room Code:',
@@ -466,10 +492,23 @@ const TreasureMapTranslations = {
         // ページヘッダー
         treasure_map_header: '宝の地図検索',
 
-        // トップアクション
+        // リストパネルのタイトルとチームボタン
         treasure_map_my_list: 'マイリスト',
         treasure_map_create_room: 'ルーム作成',
         treasure_map_join_room: 'ルーム参加',
+
+        // 手順とリストの入口
+        treasure_map_steps_label: '手順',
+        treasure_map_step_grade: 'グレードを選ぶ',
+        treasure_map_step_add: 'リストに追加',
+        treasure_map_step_route: 'ルートを作成',
+        treasure_map_entry_empty: '📋 リスト',
+        treasure_map_entry_count: '📋 リスト {count} 枚',
+        treasure_map_entry_room: '👥 チームリスト {count}/{max}',
+        treasure_map_entry_team: 'チームを組む',
+        treasure_map_entry_hint_one: 'あと 1 枚でルートを作れます',
+        treasure_map_announce_added: 'リストに追加しました（{count} 枚）',
+        treasure_map_announce_removed: 'リストから削除しました（残り {count} 枚）',
 
         // ルームセクション
         treasure_map_room_code: 'ルームコード：',

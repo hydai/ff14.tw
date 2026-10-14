@@ -2,53 +2,124 @@
    寶圖搜尋器 — 只寫版面；顏色、圓角、字級一律來自 tokens.css 與共用元件
    ========================================================================== */
 
-/* 頂部操作列：外觀由 .card 提供 */
-.top-action-bar {
+/* 最上面一列：左邊步驟提示，右邊清單入口（桌機）。頁首不是固定的，捲走之後這一列貼在畫面頂端；
+   z-index 比頁首低一層：頁首「工具 ▾」的面板（z-index: var(--z-header)）打開時要蓋在這一列上面 */
+.tm-top-row {
+    position: sticky;
+    top: 0;
+    z-index: calc(var(--z-header) - 1);
     display: flex;
-    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
     justify-content: space-between;
-    align-items: center;
-    gap: var(--space-4);
-    padding: var(--space-4);
-    margin-bottom: var(--space-4);
+    gap: var(--space-2) var(--space-4);
+    padding-block: var(--space-2);
+    background: var(--color-bg);
 }
 
-.action-bar-left,
-.action-bar-right {
+/* 鍵盤移動焦點時，瀏覽器把焦點捲進畫面的位置要避開貼在頂端的那一列，焦點才不會整個被它蓋住。
+   高度照這一列換成兩行時算（769px 左右的英文、日文：步驟一行、入口一行）：
+   上下內距＋步驟號碼＋換行間距＋按鈕，再多留 --space-2 給焦點外框。
+   只放在內容裡的元素上，不用根元素的 scroll-padding-top：那樣這一列自己的按鈕拿到焦點時
+   （例如關掉清單面板、焦點回到入口），瀏覽器會為了把它捲到留白下面而整頁往上跳 */
+.tool-content *,
+.source-section * {
+    scroll-margin-top: calc(4 * var(--space-2) + var(--space-6) + var(--control-md));
+}
+
+/* 步驟提示：之前的步驟打勾（.done），目前這一步（.current）實心標出 */
+.tm-steps {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+}
+
+.tm-steps li {
     display: flex;
     align-items: center;
-    gap: var(--space-3);
+    gap: var(--space-2);
+    white-space: nowrap;
 }
 
-.my-list-toggle {
-    position: relative;
+/* 步驟之間的連接線（沒有文字內容，螢幕閱讀器不會唸） */
+.tm-steps li + li::before {
+    content: "";
+    width: var(--space-4);
+    height: 1px;
+    background: var(--color-border-strong);
 }
 
-.list-count {
-    margin-left: var(--space-1);
-    padding: 0 var(--space-2);
+.tm-step-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--space-6);
+    height: var(--space-6);
+    border: 1px solid var(--color-border-strong);
     border-radius: var(--radius-full);
-    background: var(--color-surface);
-    color: var(--color-primary);
     font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
+    font-variant-numeric: tabular-nums;
+}
+
+.tm-steps .current {
+    color: var(--color-heading);
     font-weight: var(--weight-semibold);
 }
 
+.tm-steps .current .tm-step-num {
+    border-color: var(--color-primary);
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+}
+
+.tm-steps .done .tm-step-num {
+    border-color: var(--color-success-border);
+    background: var(--color-success-tint);
+    color: var(--color-success-text);
+}
+
+/* 清單入口：左邊的清單按鈕，右邊「組隊」、提示、「生成路線」三選一（由 JS 切換 .hidden） */
+.tm-list-entry {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.tm-entry-hint {
+    font-size: var(--text-sm);
+    line-height: var(--leading-snug);
+    color: var(--color-muted);
+}
+
+/* 手機的底部列；桌機用最上面那一列右邊的入口（底部列的版面見最下面的響應式） */
+.tm-bottom-bar {
+    display: none;
+}
+
+/* 清單面板裡、標頭下面的組隊按鈕（不在隊伍裡時），兩顆平分一列 */
 .team-actions {
     display: flex;
     gap: var(--space-2);
-    padding-left: var(--space-3);
-    border-left: 1px solid var(--color-border);
+    padding: var(--space-4) var(--space-6);
+    border-bottom: 1px solid var(--color-border);
 }
 
-/* 隊伍協作 */
+.team-actions .btn {
+    flex: 1;
+}
+
+/* 隊伍協作：清單面板裡、標頭下面的隊伍狀態（已加入隊伍時） */
 .room-section {
-    padding: var(--space-4);
-    margin-bottom: var(--space-6);
+    padding: var(--space-4) var(--space-6);
     background: var(--color-surface);
-    border: 2px solid var(--color-primary);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-md);
+    border-bottom: 1px solid var(--color-border);
 }
 
 .room-status {
@@ -416,10 +487,16 @@
     width: 100%;
 }
 
+/* 面板中間：組隊、隊伍狀態、頁籤與清單一起捲動，標頭與底部的「生成路線」固定在面板上下緣
+   （手機的面板只有半個畫面高，隊伍狀態加上清單放不下，「生成路線」會被擠出畫面） */
+.panel-body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+}
+
 .list-content,
 .history-content {
-    flex: 1;
-    overflow-y: auto;
     padding: var(--space-4);
 }
 
@@ -933,26 +1010,88 @@
 
 /* 響應式 */
 @media (max-width: 768px) {
-    .top-action-bar {
-        flex-direction: column;
+    /* 最上面那一列在手機上不固定，只剩步驟提示；清單入口改成底部列 */
+    .tm-top-row {
+        position: static;
     }
 
-    .action-bar-right {
-        flex-direction: column;
-        width: 100%;
-        gap: var(--space-2);
+    #listEntryDesktop {
+        display: none;
     }
 
-    .team-actions {
-        width: 100%;
-        padding-left: 0;
-        padding-top: var(--space-3);
-        border-left: 0;
+    /* 步驟之間不畫連接線，英文的三步也排得進一行 */
+    .tm-steps {
+        column-gap: var(--space-3);
+    }
+
+    .tm-steps li + li::before {
+        display: none;
+    }
+
+    /* 底部列：高度是按鈕高度加上下內距，再加 iPhone 底部的安全區（下面 body 與回到頂端按鈕用同一個算式）；
+       z-index 比頁首低一層，和桌機那一列一樣 */
+    .tm-bottom-bar {
+        position: fixed;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        z-index: calc(var(--z-header) - 1);
+        display: flex;
+        justify-content: space-between;
+        height: calc(var(--control-md) + 2 * var(--space-2) + env(safe-area-inset-bottom));
+        padding: var(--space-2) var(--container-gutter) calc(var(--space-2) + env(safe-area-inset-bottom));
+        background: var(--color-surface);
         border-top: 1px solid var(--color-border);
     }
 
-    .room-section {
-        padding: var(--space-4);
+    /* 底部列的按鈕縮小左右內距、不放圖示：英文的「Team list 3/8」加「Generate Route」在 360px 寬也排得下；
+       再窄就截短清單按鈕的標籤，不讓右邊的按鈕跑出畫面 */
+    .tm-bottom-bar .btn {
+        padding-inline: var(--space-3);
+    }
+
+    .tm-bottom-bar .btn-icon {
+        display: none;
+    }
+
+    .tm-bottom-bar [data-entry="list"],
+    .tm-bottom-bar .tm-entry-label {
+        min-width: 0;
+    }
+
+    .tm-bottom-bar .tm-entry-label {
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* 提示放不下時換行（最多兩行，仍在按鈕高度內），不把清單按鈕擠掉 */
+    .tm-bottom-bar .tm-entry-hint {
+        min-width: 0;
+        font-size: var(--text-xs);
+        text-align: right;
+    }
+
+    /* 底部列不能蓋住內容：頁面最下面留出同樣的高度。留在 body 而不是 main：
+       main 後面還有頁尾，捲到底時頁尾的最後一行也要露出來 */
+    body {
+        padding-bottom: calc(var(--control-md) + 2 * var(--space-2) + env(safe-area-inset-bottom));
+    }
+
+    /* 手機上頂端那一列不固定，不用避開 */
+    .tool-content *,
+    .source-section * {
+        scroll-margin-top: 0;
+    }
+
+    /* 鍵盤移動焦點時改成避開底部列（底部列的高度再多留 --space-2 給焦點外框）。放在根元素上，頁尾的連結也算進去；
+       底部列是 position: fixed，它自己的按鈕拿到焦點時瀏覽器不會捲動頁面 */
+    html {
+        scroll-padding-bottom: calc(var(--control-md) + 3 * var(--space-2) + env(safe-area-inset-bottom));
+    }
+
+    /* 共用的「回到頂端」按鈕移到底部列上方 */
+    .back-to-top {
+        bottom: calc(var(--control-md) + 2 * var(--space-2) + env(safe-area-inset-bottom) + var(--space-3));
     }
 
     .room-stats {

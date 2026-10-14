@@ -10,9 +10,14 @@ class TreasureMapFinder {
         this.modalManager = new ModalManager(); // 我的清單面板的焦點管理（開啟時移入焦點、Tab 循環、ESC／關閉時還原焦點）
         this.aetheryteIcon = null; // 傳送點圖標
         this.roomCollaboration = null; // 協作功能實例
+        this.lastListCount = null; // updateListCount() 上一次的張數（還沒呼叫過是 null，第一次只記下、不唸）
 
         // DOM 元素快取
         this.elements = {
+            stepHint: document.getElementById('stepHint'),
+            listEntryDesktop: document.getElementById('listEntryDesktop'),
+            listEntryMobile: document.getElementById('listEntryMobile'),
+            listAnnouncer: document.getElementById('listAnnouncer'),
             levelTags: document.getElementById('levelTags'),
             zoneFilterRow: document.getElementById('zoneFilterRow'),
             zoneTags: document.getElementById('zoneTags'),
@@ -20,9 +25,7 @@ class TreasureMapFinder {
             treasureEmpty: document.getElementById('treasureEmpty'),
             treasureGrid: document.getElementById('treasureGrid'),
             resultCount: document.getElementById('resultCount'),
-            listCount: document.getElementById('listCount'),
             totalCount: document.getElementById('totalCount'),
-            myListToggle: document.getElementById('myListToggle'),
             myListPanel: document.getElementById('myListPanel'),
             listContent: document.getElementById('listContent'),
             clearAllBtn: document.getElementById('clearAllBtn')
@@ -125,8 +128,8 @@ class TreasureMapFinder {
     }
     
     setupEventListeners() {
-        // 我的清單
-        this.elements.myListToggle.addEventListener('click', () => this.toggleListPanel());
+        // 清單入口（桌機在最上面那一列、手機在底部列）與我的清單
+        this.setupListEntries();
         this.elements.clearAllBtn.addEventListener('click', () => this.clearAllMaps());
         
         // 關閉面板按鈕
@@ -226,10 +229,14 @@ class TreasureMapFinder {
         });
         filterManager.onChange(state => {
             this.updateFilteredMaps();
+            // 步驟列看有沒有選等級
+            this.updateListEntry();
             FilterManager.writeStored(FilterManager.safeStorage(window), state);
             history.replaceState(history.state, '', FilterManager.buildUrl(location.href, state));
         });
         this.updateFilteredMaps();
+        // restoreState() 不會觸發 onChange：還原出來的等級也要反映在步驟列
+        this.updateListEntry();
 
         // 手機上等級列是橫向捲動的：還原出來的等級可能在畫面外，把它捲進視野
         this.elements.levelTags.querySelector('.chip.active')?.scrollIntoView?.({ block: 'nearest', inline: 'center' });
@@ -442,10 +449,10 @@ class TreasureMapFinder {
         };
         
         const result = this.listManager.toggle(map, options);
-        
+
         if (result.success) {
-            FF14Utils.showToast(result.message, result.action === 'add' ? 'success' : 'info');
-            
+            // 加入、移除成功不跳 toast：清單入口的張數會更新，#listAnnouncer 也會唸出來（見 updateListCount）
+
             // 記錄操作歷史
             if (this.roomCollaboration?.currentRoom && result.action === 'add') {
                 this.roomCollaboration.recordMapOperation('add', map, this.roomCollaboration.currentUser);
@@ -481,39 +488,86 @@ class TreasureMapFinder {
         });
     }
     
+    // 關閉按鈕與遮罩用（面板開著時就是關閉）
     toggleListPanel() {
+        if (this.modalManager.activeModal === this.elements.myListPanel) {
+            this.closeListPanel();
+        } else {
+            this.openListPanel();
+        }
+    }
+
+    // 打開我的清單面板；已經開著就什麼都不做
+    openListPanel() {
         const overlay = document.getElementById('panelOverlay');
         const panel = this.elements.myListPanel;
+        if (this.modalManager.activeModal === panel) return;
 
-        if (this.modalManager.activeModal !== panel) {
-            // 開啟面板：先解除 inert，ModalManager 才抓得到可聚焦元素、正確設定初始焦點
-            panel.inert = false;
-            overlay.classList.add('active');
-            this.renderMyList();
-            document.body.style.overflow = 'hidden';
-            this.modalManager.show(panel, {
-                // #panelOverlay 是獨立於面板本身的手足元素（不是 ModalManager 認得的遮罩層），
-                // 點擊它由既有的 click 監聽器呼叫 toggleListPanel() 處理，故關閉內建的點擊判斷
-                closeOnOverlayClick: false,
-                onClose: () => {
-                    // ESC／關閉按鈕／點擊遮罩都會走到這裡。此時 hide() 已經把焦點還原、
-                    // 也已經把面板移出堆疊，才把它設回 inert——滑出動畫尚未播完的 300ms
-                    // 內，面板不再能被點擊或用 focus() 拉進去（不只是視覺上關閉）
-                    overlay.classList.remove('active');
-                    document.body.style.overflow = '';
-                    panel.inert = true;
-                }
-            });
-        } else {
-            // 關閉面板。清單面板被路線／格式面板疊住時會被堆疊設為 inert，但它的遮罩
-            // #panelOverlay 是手足元素、仍收得到點擊：這時比照 Escape 只關最上層那一層，
-            // 不把整疊連鎖收掉，避免一次誤點遮罩就把路線面板與清單一併關掉
-            const topmost = ModalManager.topmost();
-            if (topmost && topmost !== this.modalManager) {
-                topmost.hide();
-                return;
+        // 先解除 inert，ModalManager 才抓得到可聚焦元素、正確設定初始焦點
+        panel.inert = false;
+        overlay.classList.add('active');
+        this.renderMyList();
+        document.body.style.overflow = 'hidden';
+        const opener = document.activeElement;
+        this.modalManager.show(panel, {
+            // #panelOverlay 是獨立於面板本身的手足元素（不是 ModalManager 認得的遮罩層），
+            // 點擊它由既有的 click 監聽器呼叫 toggleListPanel() 處理，故關閉內建的點擊判斷
+            closeOnOverlayClick: false,
+            onClose: () => {
+                // ESC／關閉按鈕／點擊遮罩都會走到這裡。此時 hide() 已經把焦點還原、
+                // 也已經把面板移出堆疊，才把它設回 inert——滑出動畫尚未播完的 300ms
+                // 內，面板不再能被點擊或用 focus() 拉進去（不只是視覺上關閉）
+                overlay.classList.remove('active');
+                document.body.style.overflow = '';
+                panel.inert = true;
+                this.restoreEntryFocus(opener);
             }
-            this.modalManager.hide();
+        });
+    }
+
+    // 關閉我的清單面板；沒開著就什麼都不做。清單面板被路線／格式面板疊住時會被堆疊設為 inert，
+    // 但它的遮罩 #panelOverlay 是手足元素、仍收得到點擊：這時比照 Escape 只關最上層那一層，
+    // 不把整疊連鎖收掉，避免一次誤點遮罩就把路線面板與清單一併關掉
+    closeListPanel() {
+        if (this.modalManager.activeModal !== this.elements.myListPanel) return;
+        const topmost = ModalManager.topmost();
+        if (topmost && topmost !== this.modalManager) {
+            topmost.hide();
+            return;
+        }
+        this.modalManager.hide();
+    }
+
+    // 打開面板的入口按鈕可能已經收起來（例如按「組隊」後建了隊伍，或清空清單後「生成路線」消失），
+    // ModalManager 把焦點還給看不見的按鈕等於沒還：改放到畫面上那個入口的清單按鈕
+    restoreEntryFocus(opener) {
+        if (!opener?.closest?.('.tm-list-entry') || opener.getClientRects().length > 0) return;
+        const listButton = [this.elements.listEntryDesktop, this.elements.listEntryMobile]
+            .map(entry => entry.querySelector('[data-entry="list"]'))
+            .find(button => button.getClientRects().length > 0);
+        listButton?.focus();
+    }
+
+    // 兩個清單入口（桌機在最上面那一列、手機在底部列）內容相同，各用一個委派的監聽器
+    setupListEntries() {
+        for (const entry of [this.elements.listEntryDesktop, this.elements.listEntryMobile]) {
+            entry.addEventListener('click', (e) => {
+                const button = e.target.closest('button[data-entry]');
+                if (button) this.handleListEntry(button.dataset.entry);
+            });
+        }
+    }
+
+    // 左邊的清單按鈕只打開面板；「組隊」打開後把焦點移到面板裡的「建立組隊」；
+    // 「生成路線」打開後照原本的流程排路線（路線面板疊在清單面板上，沿用它的遮罩與捲動鎖定）
+    handleListEntry(action) {
+        this.openListPanel();
+        if (action === 'team') {
+            document.getElementById('createRoomBtn')?.focus();
+        } else if (action === 'route') {
+            // 焦點先放到面板裡的「生成路線」：關掉路線面板時焦點回到那裡，和在面板裡按下去一樣
+            document.getElementById('generateRouteBtn')?.focus();
+            this.generateRoute();
         }
     }
     
@@ -698,16 +752,85 @@ class TreasureMapFinder {
         return getText('treasure_map_result_count', '{count} 張 {grades} 寶圖', { count, grades });
     }
 
+    // 清單入口的標籤（中文預設文字；帶參數，由 updateListEntry() 依語言組好再填入）
+    static ENTRY_LABELS = {
+        treasure_map_entry_empty: '📋 清單',
+        treasure_map_entry_count: '📋 清單 {count} 張',
+        treasure_map_entry_room: '👥 隊伍清單 {count}/{max}'
+    };
+
+    // 清單入口：左邊的標籤與右邊的動作。0 張「組隊」、1 張提示再加 1 張、2 張以上「生成路線」；
+    // 在隊伍裡時標籤是「隊伍清單 N/上限」，0 張時右邊不放動作（已經在隊伍裡，不再顯示「組隊」）
+    static getListEntryState({ count, inRoom, maxMaps }) {
+        let action = 'team';
+        if (count >= 2) action = 'route';
+        else if (count === 1) action = 'hint';
+        else if (inRoom) action = null;
+
+        if (inRoom) return { labelKey: 'treasure_map_entry_room', labelParams: { count, max: maxMaps }, action };
+        if (count === 0) return { labelKey: 'treasure_map_entry_empty', labelParams: {}, action };
+        return { labelKey: 'treasure_map_entry_count', labelParams: { count }, action };
+    }
+
+    // 步驟提示目前在第幾步：清單 2 張以上（可以生成路線）是第 3 步；選了等級是第 2 步；否則第 1 步
+    static getStep({ hasLevels, listCount }) {
+        if (listCount >= 2) return 3;
+        return hasLevels ? 2 : 1;
+    }
+
     updateListCount() {
         const count = this.listManager.getLength();
-        this.elements.listCount.textContent = `(${count})`;
         this.elements.totalCount.textContent = count;
-        
+
         // 更新生成路線按鈕狀態
         const generateRouteBtn = document.getElementById('generateRouteBtn');
         if (generateRouteBtn) {
             generateRouteBtn.disabled = count < 2;
         }
+
+        this.updateListEntry();
+
+        // 加入、移除不再跳 toast：張數變了就由 #listAnnouncer 唸出來。第一次呼叫（載入時）只記下張數
+        if (typeof this.lastListCount === 'number' && count !== this.lastListCount) {
+            this.elements.listAnnouncer.textContent = count > this.lastListCount
+                ? FF14Utils.getI18nText('treasure_map_announce_added', '已加入清單，共 {count} 張', { count })
+                : FF14Utils.getI18nText('treasure_map_announce_removed', '已從清單移除，剩 {count} 張', { count });
+        }
+        this.lastListCount = count;
+    }
+
+    // 兩個清單入口與步驟列：依清單張數、是否在隊伍裡、是否選了等級
+    updateListEntry() {
+        const count = this.listManager.getLength();
+        const { labelKey, labelParams, action } = TreasureMapFinder.getListEntryState({
+            count,
+            inRoom: Boolean(this.roomCollaboration?.currentRoom),
+            maxMaps: RoomCollaboration.CONSTANTS.MAX_MAPS
+        });
+        const label = FF14Utils.getI18nText(labelKey, TreasureMapFinder.ENTRY_LABELS[labelKey], labelParams);
+        for (const entry of [this.elements.listEntryDesktop, this.elements.listEntryMobile]) {
+            entry.querySelector('.tm-entry-label').textContent = label;
+            for (const name of ['team', 'hint', 'route']) {
+                entry.querySelector(`[data-entry="${name}"]`).classList.toggle('hidden', name !== action);
+            }
+        }
+
+        // 之前的步驟打勾，目前這一步標出來；每次都重設三步，往回走（例如移除寶圖）時號碼會還原
+        const step = TreasureMapFinder.getStep({
+            hasLevels: this.filterManager.getState().levels.length > 0,
+            listCount: count
+        });
+        this.elements.stepHint.querySelectorAll('li').forEach((item, index) => {
+            const number = index + 1;
+            item.classList.toggle('done', number < step);
+            item.classList.toggle('current', number === step);
+            if (number === step) {
+                item.setAttribute('aria-current', 'step');
+            } else {
+                item.removeAttribute('aria-current');
+            }
+            item.querySelector('.tm-step-num').textContent = number < step ? '✓' : String(number);
+        });
     }
     
     showLoading(show) {
