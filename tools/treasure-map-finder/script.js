@@ -421,6 +421,23 @@ class TreasureMapFinder {
         return name[window.i18n.getCurrentLanguage()] || name.zh;
     }
 
+    // 貼到遊戲隊伍頻道、隊友看得懂的一句話，例如「/p G17 烏爾科帕恰 (13.7, 14.2) 最近：瓦群佩洛」。
+    // 地名與傳送點用目前介面語言；座標一律一位小數（17 → 17.0）、不含 Z；地區沒有傳送點時不寫「最近」那一段
+    buildPartyMessage(map) {
+        const params = {
+            grade: map.level.toUpperCase(),
+            zone: this.getZoneName(map.zoneId),
+            // 先轉成字串：數字 17 套進範本會變成 "17"，不是 "17.0"
+            x: Number(map.coords.x).toFixed(1),
+            y: Number(map.coords.y).toFixed(1)
+        };
+        const aetheryte = this.getNearestAetheryteName(map);
+        if (!aetheryte) {
+            return FF14Utils.getI18nText('treasure_map_party_message_no_aetheryte', '/p {grade} {zone} ({x}, {y})', params);
+        }
+        return FF14Utils.getI18nText('treasure_map_party_message', '/p {grade} {zone} ({x}, {y}) 最近：{aetheryte}', { ...params, aetheryte });
+    }
+
     // 卡片的「加入清單」：已加入時 data-state="added"、加上 .is-added（成功色調）、文字換成「✓ 已加入」，
     // 再按一次就移除。只動這三樣，不改寫整個 className（停用等其他狀態不受影響）
     updateAddButton(button, isInList) {
@@ -431,13 +448,17 @@ class TreasureMapFinder {
             : FF14Utils.getI18nText('treasure_map_add_to_list', '＋ 加入清單');
     }
 
-    copyCoordinates(map) {
-        CoordinateUtils.copyCoordinatesToClipboard(map.coords).then(() => {
-            FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_copy_success', '座標指令已複製'), 'success');
-        }).catch(err => {
+    // 複製這張寶圖的隊伍頻道句子（buildPartyMessage），不再是 /pos 指令。
+    // 寫入被拒絕、或瀏覽器沒有剪貼簿 API（navigator.clipboard 是 undefined）都走同一條失敗路徑：跳「複製失敗」
+    async copyCoordinates(map) {
+        try {
+            await navigator.clipboard.writeText(this.buildPartyMessage(map));
+        } catch (err) {
             console.error('複製失敗:', err);
             FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_copy_failed', '複製失敗'), 'error');
-        });
+            return;
+        }
+        FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_copy_success', '已複製，可以貼到隊伍頻道'), 'success');
     }
 
     canEditList() {

@@ -1081,3 +1081,102 @@ test('卡片樣式：769–1023px 改成 3 欄；已加入是成功色調（滑�
         assert.ok(!styleRules.some((r) => r.selectors.some((s) => re.test(s))), `.${gone} 應已刪除`);
     }
 });
+
+// ---------- 隊伍頻道句子（Task 7） ----------
+test('tm_007 的隊伍頻道句子（zh／en／ja）', async () => {
+    for (const [lang, expected] of [
+        ['zh', '/p G17 烏爾科帕恰 (13.7, 14.2) 最近：瓦群佩洛'],
+        ['en', '/p G17 Urqopacha (13.7, 14.2) Nearest: Wachunpelo'],
+        ['ja', '/p G17 オルコ・パチャ (13.7, 14.2) 最寄り：ワチュンペロ']
+    ]) {
+        const { finder } = await createFinder(lang);
+        assert.equal(finder.buildPartyMessage(finder.maps.find(m => m.id === 'tm_007')), expected);
+    }
+});
+
+test('整數座標補一位小數、不含 Z；按卡片的複製鈕複製的就是這句', async () => {
+    const { finder, clipboardWrites } = await createFinder('zh');
+    finder.createMapCard(finder.maps.find(m => m.id === 'tm_008')).querySelector('.tm-copy').click();
+    await Promise.resolve();
+    assert.deepEqual(clipboardWrites, ['/p G17 烏爾科帕恰 (17.0, 23.3) 最近：瓦群佩洛']);
+});
+
+test('每張寶圖、三種語言：句子的等級、地名、座標、最近傳送點就是卡片上看到的', async () => {
+    for (const [lang, nearestLabel] of [['zh', '最近：'], ['en', 'Nearest: '], ['ja', '最寄り：']]) {
+        const { finder } = await createFinder(lang);
+        assert.ok(maps.length > 0);
+        assert.equal(finder.maps.length, maps.length);
+        for (const map of finder.maps) {
+            const card = finder.createMapCard(map);
+            const [, x, y] = card.querySelector('.tm-coords').textContent.match(/^X (\d+\.\d)・Y (\d+\.\d)$/);
+            const nearest = card.querySelector('.tm-nearest').textContent;
+            assert.ok(nearest.startsWith(nearestLabel), `${lang} ${map.id}: ${nearest}`);
+            const grade = card.querySelector('.map-level-badge').textContent;
+            const zone = card.querySelector('.tm-zone').textContent;
+            assert.equal(finder.buildPartyMessage(map), `/p ${grade} ${zone} (${x}, ${y}) ${nearest}`, `${lang} ${map.id}`);
+        }
+    }
+});
+
+test('地區找不到傳送點時，句子只有等級、地名與座標（zh／en／ja），後面不留空白', async () => {
+    for (const [lang, expected] of [
+        ['zh', '/p G17 烏爾科帕恰 (13.7, 14.2)'],
+        ['en', '/p G17 Urqopacha (13.7, 14.2)'],
+        ['ja', '/p G17 オルコ・パチャ (13.7, 14.2)']
+    ]) {
+        const { finder, dom } = await createFinder(lang);
+        dom.window.zoneManager.findNearestAetheryte = () => null;
+        assert.equal(finder.buildPartyMessage(finder.maps.find(m => m.id === 'tm_007')), expected);
+    }
+});
+
+test('複製成功的提示（zh／en／ja）：已複製，可以貼到隊伍頻道', async () => {
+    for (const [lang, expected] of [
+        ['zh', '已複製，可以貼到隊伍頻道'],
+        ['en', 'Copied. Paste it into party chat.'],
+        ['ja', 'コピーしました。パーティチャットに貼り付けられます。']
+    ]) {
+        const { finder, toasts, clipboardWrites } = await createFinder(lang);
+        await finder.copyCoordinates(finder.maps.find(m => m.id === 'tm_007'));
+        assert.equal(clipboardWrites.length, 1);
+        assert.deepEqual(toasts, [{ message: expected, type: 'success' }]);
+    }
+});
+
+test('複製失敗（剪貼簿拒絕寫入、或瀏覽器沒有剪貼簿 API）：跳「複製失敗」，不會丟出錯誤', async () => {
+    const breakers = {
+        '剪貼簿拒絕寫入': (navigator) => { navigator.clipboard.writeText = async () => { throw new Error('NotAllowedError'); }; },
+        '沒有剪貼簿 API': (navigator) => { navigator.clipboard = undefined; }
+    };
+    for (const [lang, expected] of [['zh', '複製失敗'], ['en', 'Copy failed'], ['ja', 'コピーに失敗しました']]) {
+        for (const [reason, breakClipboard] of Object.entries(breakers)) {
+            const { finder, dom, toasts } = await createFinder(lang);
+            dom.window.console = { error() {} }; // 失敗時會 console.error；測試輸出不要被洗版
+            breakClipboard(dom.window.navigator);
+            await finder.copyCoordinates(finder.maps.find(m => m.id === 'tm_007'));
+            assert.deepEqual(toasts, [{ message: expected, type: 'error' }], `${lang}：${reason}`);
+        }
+    }
+});
+
+test('卡片的複製不再產生 /pos：copyCoordinatesToClipboard 刪掉，路線複製用的 formatCoordinatesAsCommand 沒動', () => {
+    assert.equal(CoordinateUtils.copyCoordinatesToClipboard, undefined);
+    assert.equal(CoordinateUtils.formatCoordinatesAsCommand({ x: 13.7, y: 14.2, z: 1.7 }), '/pos 13.7 14.2 1.7');
+    assert.doesNotMatch(read('tools/treasure-map-finder/script.js'), /copyCoordinatesToClipboard/);
+});
+
+test('隊伍頻道句子的三語鍵值：句子範本、找不到傳送點的範本、複製成功的提示', () => {
+    const expected = {
+        treasure_map_party_message: [
+            '/p {grade} {zone} ({x}, {y}) 最近：{aetheryte}',
+            '/p {grade} {zone} ({x}, {y}) Nearest: {aetheryte}',
+            '/p {grade} {zone} ({x}, {y}) 最寄り：{aetheryte}'
+        ],
+        treasure_map_party_message_no_aetheryte: Array(3).fill('/p {grade} {zone} ({x}, {y})'),
+        treasure_map_copy_success: ['已複製，可以貼到隊伍頻道', 'Copied. Paste it into party chat.', 'コピーしました。パーティチャットに貼り付けられます。']
+    };
+    ['zh', 'en', 'ja'].forEach((lang, index) => {
+        const values = translationValues(TRANSLATIONS, lang);
+        for (const [key, texts] of Object.entries(expected)) assert.equal(values.get(key), texts[index], `${lang} ${key}`);
+    });
+});

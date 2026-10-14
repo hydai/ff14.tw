@@ -137,16 +137,6 @@ class CoordinateUtils {
     }
 
     /**
-     * 複製座標到剪貼簿
-     * @param {Object} coords - 座標物件
-     * @returns {Promise<void>}
-     */
-    static async copyCoordinatesToClipboard(coords) {
-        const command = this.formatCoordinatesAsCommand(coords);
-        await navigator.clipboard.writeText(command);
-    }
-
-    /**
      * 解析座標字串
      * @param {string} coordString - 座標字串，例如 "12.5, 23.7" 或 "X: 12.5 Y: 23.7"
      * @returns {Object|null} 座標物件或 null

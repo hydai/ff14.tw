@@ -120,7 +120,7 @@ const TreasureMapTranslations = {
         treasure_map_close: '關閉',
 
         // 訊息
-        treasure_map_copy_success: '座標指令已複製',
+        treasure_map_copy_success: '已複製，可以貼到隊伍頻道',
         treasure_map_copy_failed: '複製失敗',
         treasure_map_copy_manual: '瀏覽器不支援自動複製，請手動選取文字後按 Ctrl+C 複製',
         treasure_map_copy_fallback_manual: '複製失敗，請手動選取文字後按 Ctrl+C 複製',
@@ -142,6 +142,8 @@ const TreasureMapTranslations = {
         treasure_map_copy_coords: '複製座標',
         treasure_map_open_detail: '放大 {grade} {zone} #{index}',
         treasure_map_nearest: '最近：{name}',
+        treasure_map_party_message: '/p {grade} {zone} ({x}, {y}) 最近：{aetheryte}',
+        treasure_map_party_message_no_aetheryte: '/p {grade} {zone} ({x}, {y})',
         treasure_map_pos_placeholder: '座標：{coords}',
 
         // 對話框與清單訊息
@@ -360,7 +362,7 @@ const TreasureMapTranslations = {
         treasure_map_close: 'Close',
 
         // Messages
-        treasure_map_copy_success: 'Coordinates copied',
+        treasure_map_copy_success: 'Copied. Paste it into party chat.',
         treasure_map_copy_failed: 'Copy failed',
         treasure_map_copy_manual: 'Browser does not support auto-copy, please select text and press Ctrl+C to copy',
         treasure_map_copy_fallback_manual: 'Copy failed, please select text and press Ctrl+C to copy',
@@ -382,6 +384,8 @@ const TreasureMapTranslations = {
         treasure_map_copy_coords: 'Copy coordinates',
         treasure_map_open_detail: 'Enlarge {grade} {zone} #{index}',
         treasure_map_nearest: 'Nearest: {name}',
+        treasure_map_party_message: '/p {grade} {zone} ({x}, {y}) Nearest: {aetheryte}',
+        treasure_map_party_message_no_aetheryte: '/p {grade} {zone} ({x}, {y})',
         treasure_map_pos_placeholder: 'Coords: {coords}',
 
         // Dialogs and List Messages
@@ -600,7 +604,7 @@ const TreasureMapTranslations = {
         treasure_map_close: '閉じる',
 
         // メッセージ
-        treasure_map_copy_success: '座標をコピーしました',
+        treasure_map_copy_success: 'コピーしました。パーティチャットに貼り付けられます。',
         treasure_map_copy_failed: 'コピーに失敗しました',
         treasure_map_copy_manual: 'ブラウザが自動コピーに対応していません。テキストを選択して Ctrl+C でコピーしてください',
         treasure_map_copy_fallback_manual: 'コピーに失敗しました。テキストを選択して Ctrl+C でコピーしてください',
@@ -622,6 +626,8 @@ const TreasureMapTranslations = {
         treasure_map_copy_coords: '座標をコピー',
         treasure_map_open_detail: '{grade} {zone} #{index} を拡大',
         treasure_map_nearest: '最寄り：{name}',
+        treasure_map_party_message: '/p {grade} {zone} ({x}, {y}) 最寄り：{aetheryte}',
+        treasure_map_party_message_no_aetheryte: '/p {grade} {zone} ({x}, {y})',
         treasure_map_pos_placeholder: '座標：{coords}',
 
         // ダイアログとリストメッセージ
