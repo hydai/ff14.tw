@@ -1,4 +1,4 @@
-// 過濾器管理模組
+// 過濾器管理模組：篩選狀態（不碰 DOM）＋網址與 localStorage 的純函式；mount() 之後才接上等級、地區 chip 的畫面
 class FilterManager {
     // 寶圖等級由新到舊：結果、地區選項與網址裡的順序都以它為準
     static GRADE_ORDER = ['g18', 'g17', 'g15', 'g14', 'g12', 'g10', 'g8'];
@@ -6,14 +6,13 @@ class FilterManager {
     // localStorage 記住篩選用的 key，內容是 { levels, zones }
     static STORAGE_KEY = 'ff14tw_treasure_map_filters';
 
+    // 介面語言；地區 chip 的 title 依這個順序列出目前語言以外的地名
+    static LANGUAGES = ['zh', 'en', 'ja'];
+
     static CONSTANTS = {
-        FILTER_TYPES: {
-            LEVEL: 'level',
-            ZONE: 'zone'
-        },
         CSS_CLASSES: {
-            TAG: 'filter-tag',
-            ACTIVE: 'active'
+            ACTIVE: 'active',
+            HIDDEN: 'hidden'
         }
     };
 
@@ -113,6 +112,11 @@ class FilterManager {
 
         // 儲存過濾器變更的回調函數
         this.onChangeCallback = null;
+
+        // mount() 之後才有：兩個 chip 容器、地區列、「清除地區」，以及取地名、取目前語言的函式
+        this.view = null;
+        // 目前畫出來的地區選項（地區與張數的摘要），選項沒變時就地更新 chip，不重畫
+        this.renderedZoneOptions = null;
     }
 
     /**
@@ -126,9 +130,10 @@ class FilterManager {
     }
 
     /**
-     * 觸發變更事件
+     * 狀態真的改變了：先更新 chip 畫面（mount() 之後），再觸發變更事件
      */
     triggerChange() {
+        this.syncView();
         if (this.onChangeCallback) {
             this.onChangeCallback(this.getState());
         }
@@ -273,223 +278,115 @@ class FilterManager {
     }
 
     /**
-     * 檢查是否有任何過濾器啟用
-     * @returns {boolean}
+     * 接上畫面並依目前的狀態畫一次（要在 setMaps()、restoreState() 之後呼叫；本身不觸發變更事件）。
+     * 點擊用事件委派掛在兩個容器上，之後 toggleLevel()、toggleZone()、clearZones() 改變狀態時會自動更新畫面
+     * @param {Object} view
+     * @param {HTMLElement} view.levelContainer - 等級 chip（寫在 HTML 裡的 button[data-level]）的容器
+     * @param {HTMLElement} view.zoneRow - 地區列，沒選等級時加上 .hidden
+     * @param {HTMLElement} view.zoneContainer - 地區 chip 的容器，chip 由 renderZoneChips() 產生
+     * @param {HTMLElement} view.clearZonesButton - 「清除地區」，沒選地區時加上 .hidden
+     * @param {function(string): {zh: string, en: string, ja: string}} view.getZoneNames - 地區 id → 三種語言的地名
+     * @param {function(): string} view.getLanguage - 目前的介面語言（zh、en、ja）
      */
-    hasActiveFilters() {
-        return this.filters.levels.size > 0 || this.filters.zones.size > 0;
+    mount({ levelContainer, zoneRow, zoneContainer, clearZonesButton, getZoneNames, getLanguage }) {
+        this.view = { levelContainer, zoneRow, zoneContainer, clearZonesButton, getZoneNames, getLanguage };
+
+        // 點到 chip 裡的張數（span）也算點這顆 chip，所以用 closest() 往上找
+        levelContainer.addEventListener('click', event => {
+            const chip = event.target.closest('[data-level]');
+            if (chip && levelContainer.contains(chip)) this.toggleLevel(chip.dataset.level);
+        });
+        zoneContainer.addEventListener('click', event => {
+            const chip = event.target.closest('[data-zone-id]');
+            if (chip && zoneContainer.contains(chip)) this.toggleZone(chip.dataset.zoneId);
+        });
+        clearZonesButton.addEventListener('click', () => {
+            // 按完之後按鈕會藏起來：焦點原本在它身上（鍵盤操作）的話交給地區列的第一顆 chip，不讓焦點掉到 body
+            const hadFocus = document.activeElement === clearZonesButton;
+            this.clearZones();
+            if (hadFocus) zoneContainer.querySelector('[data-zone-id]')?.focus();
+        });
+
+        this.renderZoneChips();
+        this.syncView();
     }
 
     /**
-     * 處理過濾器標籤點擊事件
-     * @param {Event} event - 點擊事件
+     * 依目前的狀態更新畫面：等級 chip 的選取狀態；地區選項變了（選了或取消等級）才重畫地區 chip，
+     * 只是選取、取消地區時就地更新，按下的 chip 不會被換掉，焦點留在原地；
+     * 沒選等級時藏起地區列，沒選地區時藏起「清除地區」。mount() 之前什麼都不做
      */
-    handleFilterClick(event) {
-        const tag = event.target.closest(`.${FilterManager.CONSTANTS.CSS_CLASSES.TAG}`);
-        if (!tag) return;
+    syncView() {
+        if (!this.view) return;
+        const { levelContainer, zoneRow, zoneContainer, clearZonesButton } = this.view;
+        const { HIDDEN } = FilterManager.CONSTANTS.CSS_CLASSES;
 
-        const { filterType, filterValue } = this.extractFilterInfo(tag);
-        
-        if (filterType && filterValue) {
-            this.toggleFilter(filterType, filterValue);
-            this.updateTagUI(tag, filterType, filterValue);
-            this.triggerChange();
+        for (const chip of levelContainer.querySelectorAll('[data-level]')) {
+            FilterManager.setPressed(chip, this.filters.levels.has(chip.dataset.level));
         }
-    }
-
-    /**
-     * 從標籤元素提取過濾器資訊
-     * @param {HTMLElement} tag - 標籤元素
-     * @returns {{filterType: string|null, filterValue: string|null}}
-     */
-    extractFilterInfo(tag) {
-        let filterType = null;
-        let filterValue = null;
-
-        if (tag.hasAttribute('data-level')) {
-            filterType = FilterManager.CONSTANTS.FILTER_TYPES.LEVEL;
-            filterValue = tag.dataset.level;
-        } else if (tag.hasAttribute('data-zone')) {
-            filterType = FilterManager.CONSTANTS.FILTER_TYPES.ZONE;
-            filterValue = tag.dataset.zone;
-        }
-
-        return { filterType, filterValue };
-    }
-
-    /**
-     * 切換過濾器狀態
-     * @param {string} filterType - 過濾器類型
-     * @param {string} filterValue - 過濾器值
-     */
-    toggleFilter(filterType, filterValue) {
-        const filterSet = this.getFilterSet(filterType);
-        if (!filterSet) return;
-
-        if (filterSet.has(filterValue)) {
-            filterSet.delete(filterValue);
+        if (FilterManager.zoneOptionsKey(this.getZoneOptions()) === this.renderedZoneOptions) {
+            for (const chip of zoneContainer.querySelectorAll('[data-zone-id]')) {
+                FilterManager.setPressed(chip, this.filters.zones.has(chip.dataset.zoneId));
+            }
         } else {
-            filterSet.add(filterValue);
+            this.renderZoneChips();
         }
+        zoneRow.classList.toggle(HIDDEN, this.filters.levels.size === 0);
+        clearZonesButton.classList.toggle(HIDDEN, this.filters.zones.size === 0);
     }
 
     /**
-     * 更新標籤的 UI 狀態
-     * @param {HTMLElement} tag - 標籤元素
-     * @param {string} filterType - 過濾器類型
-     * @param {string} filterValue - 過濾器值
+     * 重畫地區 chip（切換語言時也用它）：每顆是目前語言的地名＋張數，title 是另外兩種語言的地名；
+     * 只列已選等級有寶圖的地區。mount() 之前什麼都不做
      */
-    updateTagUI(tag, filterType, filterValue) {
-        const filterSet = this.getFilterSet(filterType);
-        if (!filterSet) return;
+    renderZoneChips() {
+        if (!this.view) return;
+        const { zoneContainer, getZoneNames, getLanguage } = this.view;
+        const language = getLanguage();
+        const options = this.getZoneOptions();
 
-        if (filterSet.has(filterValue)) {
-            tag.classList.add(FilterManager.CONSTANTS.CSS_CLASSES.ACTIVE);
-        } else {
-            tag.classList.remove(FilterManager.CONSTANTS.CSS_CLASSES.ACTIVE);
+        zoneContainer.textContent = '';
+        for (const { zoneId, count } of options) {
+            const names = getZoneNames(zoneId) || {};
+            const chip = document.createElement('button');
+            chip.type = 'button';
+            chip.className = 'chip';
+            chip.dataset.zoneId = zoneId;
+            chip.setAttribute('title', FilterManager.LANGUAGES
+                .filter(lang => lang !== language)
+                .map(lang => names[lang])
+                .filter(Boolean)
+                .join(' / '));
+            chip.appendChild(document.createTextNode(`${names[language] || names.zh || zoneId} `));
+
+            const countLabel = document.createElement('span');
+            countLabel.className = 'chip-count';
+            countLabel.textContent = String(count);
+            chip.appendChild(countLabel);
+
+            FilterManager.setPressed(chip, this.filters.zones.has(zoneId));
+            zoneContainer.appendChild(chip);
         }
+        this.renderedZoneOptions = FilterManager.zoneOptionsKey(options);
     }
 
     /**
-     * 取得指定類型的過濾器集合
-     * @param {string} filterType - 過濾器類型
-     * @returns {Set|null}
+     * 地區選項的摘要（地區與張數），用來判斷畫出來的地區 chip 是否還是目前的選項
+     * @param {Array<{zoneId: string, count: number}>} options - getZoneOptions() 的結果
+     * @returns {string}
      */
-    getFilterSet(filterType) {
-        switch (filterType) {
-            case FilterManager.CONSTANTS.FILTER_TYPES.LEVEL:
-                return this.filters.levels;
-            case FilterManager.CONSTANTS.FILTER_TYPES.ZONE:
-                return this.filters.zones;
-            default:
-                return null;
-        }
+    static zoneOptionsKey(options) {
+        return options.map(({ zoneId, count }) => `${zoneId}:${count}`).join(',');
     }
 
     /**
-     * 重置所有過濾器
+     * chip 的選取狀態同時表現在外觀（.active）與無障礙資訊（aria-pressed）上
+     * @param {HTMLElement} chip
+     * @param {boolean} pressed
      */
-    resetAll() {
-        // 清除所有過濾器
-        this.filters.levels.clear();
-        this.filters.zones.clear();
-
-        // 更新所有標籤的 UI
-        this.updateAllTagsUI();
-        
-        // 觸發變更事件
-        this.triggerChange();
-    }
-
-    /**
-     * 更新所有標籤的 UI 狀態
-     */
-    updateAllTagsUI() {
-        document.querySelectorAll(`.${FilterManager.CONSTANTS.CSS_CLASSES.TAG}`).forEach(tag => {
-            tag.classList.remove(FilterManager.CONSTANTS.CSS_CLASSES.ACTIVE);
-        });
-    }
-
-    /**
-     * 設定過濾器事件監聽器
-     */
-    setupEventListeners() {
-        // 過濾器標籤點擊事件
-        document.querySelectorAll(`.${FilterManager.CONSTANTS.CSS_CLASSES.TAG}`).forEach(tag => {
-            tag.addEventListener('click', (e) => this.handleFilterClick(e));
-        });
-
-        // 重置按鈕點擊事件
-        const resetButton = document.getElementById('resetFilters');
-        if (resetButton) {
-            resetButton.addEventListener('click', () => this.resetAll());
-        }
-    }
-
-    /**
-     * 取得當前啟用的過濾器
-     * @returns {Object} 包含所有啟用過濾器的物件
-     */
-    getActiveFilters() {
-        return {
-            levels: Array.from(this.filters.levels),
-            zones: Array.from(this.filters.zones),
-            hasActiveFilters: this.hasActiveFilters()
-        };
-    }
-
-    /**
-     * 設定特定類型的過濾器
-     * @param {string} filterType - 過濾器類型
-     * @param {Array<string>} values - 要設定的值
-     */
-    setFilters(filterType, values) {
-        const filterSet = this.getFilterSet(filterType);
-        if (!filterSet) return;
-
-        filterSet.clear();
-        values.forEach(value => filterSet.add(value));
-        
-        this.updateFilterTypeUI(filterType);
-        this.triggerChange();
-    }
-
-    /**
-     * 更新特定類型過濾器的 UI
-     * @param {string} filterType - 過濾器類型
-     */
-    updateFilterTypeUI(filterType) {
-        const filterSet = this.getFilterSet(filterType);
-        if (!filterSet) return;
-
-        let selector = '';
-        switch (filterType) {
-            case FilterManager.CONSTANTS.FILTER_TYPES.LEVEL:
-                selector = '[data-level]';
-                break;
-            case FilterManager.CONSTANTS.FILTER_TYPES.ZONE:
-                selector = '[data-zone]';
-                break;
-        }
-
-        if (selector) {
-            document.querySelectorAll(`.${FilterManager.CONSTANTS.CSS_CLASSES.TAG}${selector}`).forEach(tag => {
-                const { filterValue } = this.extractFilterInfo(tag);
-                if (filterSet.has(filterValue)) {
-                    tag.classList.add(FilterManager.CONSTANTS.CSS_CLASSES.ACTIVE);
-                } else {
-                    tag.classList.remove(FilterManager.CONSTANTS.CSS_CLASSES.ACTIVE);
-                }
-            });
-        }
-    }
-
-    /**
-     * 取得過濾器統計資訊
-     * @param {Array} maps - 原始地圖列表
-     * @returns {Object} 統計資訊
-     */
-    getFilterStats(maps) {
-        const filteredMaps = this.applyFilters(maps);
-        
-        return {
-            total: maps.length,
-            filtered: filteredMaps.length,
-            activeFilters: {
-                levels: this.filters.levels.size,
-                zones: this.filters.zones.size
-            },
-            filterRate: maps.length > 0 ? (filteredMaps.length / maps.length * 100).toFixed(1) : 0
-        };
-    }
-
-    /**
-     * 更新所有過濾器的 UI
-     */
-    updateAllFiltersUI() {
-        Object.values(FilterManager.CONSTANTS.FILTER_TYPES).forEach(filterType => {
-            this.updateFilterTypeUI(filterType);
-        });
+    static setPressed(chip, pressed) {
+        chip.classList.toggle(FilterManager.CONSTANTS.CSS_CLASSES.ACTIVE, pressed);
+        chip.setAttribute('aria-pressed', String(pressed));
     }
 }
 

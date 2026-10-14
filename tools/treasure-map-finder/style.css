@@ -173,177 +173,66 @@
     display: none;
 }
 
-/* 篩選：外觀由 .card 提供 */
-.filter-section {
-    padding: var(--space-7);
-    margin-bottom: var(--space-7);
-}
-
-.filter-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: var(--space-4);
-    margin-bottom: var(--space-6);
-}
-
-.section-title {
-    margin: 0;
-    font-size: var(--text-2xl);
-    font-weight: var(--weight-semibold);
-    color: var(--color-heading);
-}
-
-.filter-group {
-    padding: var(--space-5);
-    margin-bottom: var(--space-6);
-    background: var(--color-surface-2);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-}
-
-.filter-group:last-child {
-    margin-bottom: 0;
-}
-
-.filter-group-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: var(--space-4);
-}
-
-/* 可摺疊的地區篩選標題 */
-.collapsible-header {
-    margin: calc(-1 * var(--space-1)) calc(-1 * var(--space-2)) var(--space-4);
-    padding: var(--space-1) var(--space-2);
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    transition: background-color var(--duration-base) var(--ease);
-}
-
-.collapsible-header:hover {
-    background: var(--color-hover);
-}
-
-.collapse-indicator {
-    font-size: var(--text-xs);
-    color: var(--color-muted);
-    transition: transform var(--duration-slow) var(--ease);
-}
-
-.collapsible-header[data-expanded="true"] .collapse-indicator {
-    transform: rotate(180deg);
-}
-
-.filter-group label {
-    display: flex;
-    align-items: center;
-    margin: 0;
-    font-weight: var(--weight-semibold);
-    color: var(--color-heading);
-}
-
-.filter-icon {
-    margin-right: var(--space-2);
-    font-size: 1.2em;
-}
-
-.filter-hint {
-    font-size: var(--text-xs);
-    font-weight: var(--weight-normal);
-    color: var(--color-muted);
-}
-
-.filter-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-2);
-}
-
-/* 地區篩選：三行式大標籤（工具自有；等級篩選改用共用 .chip） */
-.map-tags-grid {
+/* 篩選：等級一列、地區一列（選了等級才出現）。兩欄 grid：標籤欄取兩列標籤裡較寬的那個，兩列的 chip 就會對齊 */
+.tm-filters {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: var(--space-3);
+    grid-template-columns: max-content minmax(0, 1fr);
+    gap: var(--space-2) var(--space-3);
+    margin-bottom: var(--space-5);
 }
 
-.map-tag {
-    display: flex;
-    flex-direction: column;
+/* 每一列跨兩欄並沿用上面的欄寬（subgrid）；#zoneFilterRow 加上 .hidden 時整列消失 */
+.tm-filter-row {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
     align-items: center;
-    min-width: 150px;
-    padding: var(--space-3) var(--space-5);
-    border: 2px solid var(--color-border);
-    border-radius: var(--radius-md);
-    background: var(--color-surface);
-    color: var(--color-text);
-    font-family: inherit;
-    text-align: center;
-    white-space: normal;
-    cursor: pointer;
-    transition: background-color var(--duration-base) var(--ease), border-color var(--duration-base) var(--ease), box-shadow var(--duration-base) var(--ease), transform var(--duration-base) var(--ease);
 }
 
-.map-tag span {
-    display: block;
-    line-height: var(--leading-snug);
-}
-
-.map-name-zh {
-    margin-bottom: var(--space-1);
+.tm-filter-label {
     font-size: var(--text-sm);
     font-weight: var(--weight-semibold);
     color: var(--color-heading);
 }
 
-.map-name-ja,
-.map-name-en {
+/* 桌機放得下就換行；手機改成橫向捲動（見最下面的響應式） */
+.tm-chip-scroll {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+/* 地區 chip 上的張數 */
+.chip-count {
     font-size: var(--text-xs);
     color: var(--color-muted);
+    font-variant-numeric: tabular-nums;
 }
 
-.map-name-en {
-    opacity: 0.8;
+.chip.active .chip-count {
+    color: inherit;
 }
 
-.map-tag:hover {
-    border-color: var(--color-primary);
-    background: var(--color-primary-tint);
-    transform: translateY(-1px);
+/* 結果標題列：實際符合的張數＋「清除地區」（有選地區才出現） */
+.tm-results-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-3);
+    margin-bottom: var(--space-3);
 }
 
-.map-tag:focus-visible {
-    outline: none;
-    box-shadow: var(--ring-primary);
+.tm-count {
+    margin: 0;
+    font-weight: var(--weight-semibold);
+    color: var(--color-heading);
 }
 
-.map-tag.active {
-    border-color: var(--color-primary);
-    background: var(--color-primary);
-    box-shadow: var(--glow-primary);
-}
-
-.map-tag.active .map-name-zh,
-.map-tag.active .map-name-ja,
-.map-tag.active .map-name-en {
-    color: var(--color-on-primary);
-}
-
-/* 搜尋結果 */
-.results-section {
-    margin-top: var(--space-7);
-}
-
-.results-header {
-    margin-bottom: var(--space-6);
-    color: var(--color-muted);
-}
-
+/* 結果：選了等級就全部列出（不分頁），桌機 4 欄、手機 2 欄 */
 .treasure-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: var(--space-6);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--space-4);
     margin-bottom: var(--space-7);
 }
 
@@ -456,11 +345,6 @@
 .treasure-card-actions .btn {
     flex: 1;
     white-space: nowrap;
-}
-
-.load-more {
-    margin: var(--space-7) 0;
-    text-align: center;
 }
 
 /* 我的清單：右側抽屜 */
@@ -1081,45 +965,26 @@
         flex-wrap: wrap;
     }
 
-    .filter-section {
-        padding: var(--space-5);
+    /* 等級與地區兩列不換行、橫向捲動，捲軸隱藏。捲動容器會裁掉超出邊界的部分，
+       四周留一點空間給 chip 的焦點外框（3px）與 hover 時上移的 1px */
+    .tm-chip-scroll {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        padding: var(--space-1);
+        scrollbar-width: none;
     }
 
-    .filter-header {
-        flex-direction: column;
-        text-align: center;
+    .tm-chip-scroll::-webkit-scrollbar {
+        display: none;
     }
 
-    .filter-group {
-        padding: var(--space-4);
-        margin-bottom: var(--space-6);
-    }
-
-    .filter-tags {
-        gap: var(--space-2);
-    }
-
-    .map-tags-grid {
-        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-        gap: var(--space-2);
-    }
-
-    .map-tag {
-        min-width: 0;
-        padding: var(--space-2) var(--space-3);
-    }
-
-    .map-name-zh {
-        font-size: var(--text-xs);
-    }
-
-    .section-title {
-        font-size: var(--text-xl);
+    .tm-chip-scroll .chip {
+        flex: none;
     }
 
     .treasure-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: var(--space-4);
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--space-3);
     }
 
     .treasure-card {
@@ -1158,8 +1023,7 @@
 @media (prefers-reduced-motion: reduce) {
     .my-list-panel,
     .my-list-panel.active,
-    .panel-overlay,
-    .collapse-indicator {
+    .panel-overlay {
         transition: none;
     }
 }
@@ -1171,9 +1035,5 @@
 
 .modal.hidden,
 .room-section.hidden {
-    display: none;
-}
-
-.collapsed {
     display: none;
 }

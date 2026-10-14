@@ -1,14 +1,46 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const vm = require('node:vm');
 
+const { createFakeDom } = require('./helpers/fake-dom.js');
 const FilterManager = require('../tools/treasure-map-finder/filter-manager.js');
 const { maps } = require('../data/treasure-maps.json');
+const zonesData = require('../data/zones.json');
 
 const withMaps = () => {
     const f = new FilterManager();
     f.setMaps(maps);
     return f;
 };
+
+// 地區 id -> { zh, en, ja }（zones.json 的 names），當作 mount() 的 getZoneNames
+const zoneNames = new Map(Object.values(zonesData.zones).flatMap(region => region.subZones.map(zone => [zone.id, zone.names])));
+
+// 在 fake-dom 裡載入 filter-manager.js，照 index.html 做出 7 顆等級 chip、地區列（裡面是地區容器）與「清除地區」，
+// 地區列與清除鈕都帶 class="hidden"；setMaps()、（有給 state 時）restoreState()、記下 onChange，再 mount。
+// vm 是另一個 realm：從 FilterManager 拿出來的物件要先轉成測試端的物件再 deepEqual
+function mountFilters({ language = 'zh', state = null } = {}) {
+    const dom = createFakeDom({ url: 'https://ff14.tw/tools/treasure-map-finder/' });
+    dom.load('tools/treasure-map-finder/filter-manager.js');
+    const levelTags = dom.el('div', { id: 'levelTags', role: 'group' },
+        ...FilterManager.GRADE_ORDER.map(level => dom.el('button', { type: 'button', class: 'chip', 'data-level': level, 'aria-pressed': 'false' }, level.toUpperCase())));
+    const zoneTags = dom.el('div', { id: 'zoneTags', role: 'group' });
+    const zoneRow = dom.el('div', { id: 'zoneFilterRow', class: 'hidden' }, zoneTags);
+    const clearZonesButton = dom.el('button', { id: 'clearZonesBtn', class: 'btn btn-ghost btn-sm hidden' }, '清除地區');
+    for (const element of [levelTags, zoneRow, clearZonesButton]) dom.document.body.appendChild(element);
+
+    const f = new (vm.runInContext('FilterManager', dom.window))();
+    f.setMaps(maps);
+    if (state) f.restoreState(state);
+    const changes = [];
+    f.onChange(next => changes.push(JSON.parse(JSON.stringify(next))));
+    const lang = { current: language };
+    f.mount({ levelContainer: levelTags, zoneRow, zoneContainer: zoneTags, clearZonesButton, getZoneNames: zoneId => zoneNames.get(zoneId), getLanguage: () => lang.current });
+    return { dom, f, levelTags, zoneRow, zoneTags, clearZonesButton, changes, lang };
+}
+const stateOf = f => JSON.parse(JSON.stringify(f.getState()));
+const pressed = chip => [chip.classList.contains('active'), chip.getAttribute('aria-pressed')];
+const zoneIds = zoneTags => zoneTags.querySelectorAll('button').map(chip => chip.dataset.zoneId);
 
 test('G17 的地區依資料順序列出，各 8 張', () => {
     const f = withMaps(); f.toggleLevel('g17');
@@ -126,9 +158,8 @@ test('toggleLevel、toggleZone 忽略不認得的值，不屬於已選等級的�
     f.toggleLevel('g17');
     f.toggleZone('elpis'); f.toggleZone('atlantis');
     assert.deepEqual(f.getState(), { levels: ['g17'], zones: [] });
-    assert.equal(f.hasActiveFilters(), true);
     f.toggleLevel('g17');
-    assert.equal(f.hasActiveFilters(), false);
+    assert.deepEqual(f.getState(), { levels: [], zones: [] });
 });
 
 test('onChange：toggleLevel、toggleZone、clearZones 每次改變呼叫一次並帶上新狀態；restoreState 和沒有改變的操作不呼叫', () => {
@@ -195,4 +226,117 @@ test('safeStorage 取得 win.localStorage；writeStored 與 readStored 用同一
     for (const bad of ['null', '[]', '"g17"', '{"levels":["g17"]}', '{"levels":"g17","zones":[]}', '{"levels":[1],"zones":[]}']) {
         assert.equal(FilterManager.readStored({ getItem: () => bad }), null, bad);
     }
+});
+
+test('mount 之後點 G17：出現 5 顆地區 chip，地名＋張數，其他語言放 title', () => {
+    const { levelTags, zoneRow, zoneTags, changes } = mountFilters();
+    levelTags.querySelector('[data-level="g17"]').click();
+    assert.equal(levelTags.querySelector('[data-level="g17"]').getAttribute('aria-pressed'), 'true');
+    assert.equal(zoneRow.classList.contains('hidden'), false);
+    const chips = zoneTags.querySelectorAll('button');
+    assert.equal(chips.length, 5);
+    assert.equal(chips[0].dataset.zoneId, 'urqopacha');
+    assert.equal(chips[0].textContent.replace(/\s+/g, ''), '烏爾科帕恰8');
+    assert.equal(chips[0].getAttribute('title'), 'Urqopacha / オルコ・パチャ');
+    assert.equal(chips[0].getAttribute('aria-pressed'), 'false');
+    assert.equal(changes.length, 1);
+});
+
+test('點地區才出現「清除地區」；按下後地區清空、等級保留', () => {
+    const { f, levelTags, zoneTags, clearZonesButton } = mountFilters();
+    levelTags.querySelector('[data-level="g17"]').click();
+    assert.equal(clearZonesButton.classList.contains('hidden'), true);
+    zoneTags.querySelector('[data-zone-id="yaktel"]').click();
+    assert.equal(clearZonesButton.classList.contains('hidden'), false);
+    clearZonesButton.click();
+    assert.deepEqual(stateOf(f), { levels: ['g17'], zones: [] });
+    assert.equal(clearZonesButton.classList.contains('hidden'), true);
+});
+
+test('mount 依還原的狀態畫出 chip，本身不呼叫 onChange；點到張數也算點 chip；等級都取消時地區列藏起來', () => {
+    const { levelTags, zoneRow, zoneTags, clearZonesButton, changes } = mountFilters({ state: { levels: ['g15', 'g17'], zones: ['elpis'] } });
+    assert.deepEqual(changes, []);
+    assert.deepEqual(pressed(levelTags.querySelector('[data-level="g17"]')), [true, 'true']);
+    assert.deepEqual(pressed(levelTags.querySelector('[data-level="g15"]')), [true, 'true']);
+    assert.deepEqual(pressed(levelTags.querySelector('[data-level="g18"]')), [false, 'false']);
+    assert.deepEqual(zoneIds(zoneTags), ['urqopacha', 'kozamauka', 'yaktel', 'shaaloani', 'heritagefound', 'elpis']);
+    assert.deepEqual(pressed(zoneTags.querySelector('[data-zone-id="elpis"]')), [true, 'true']);
+    assert.deepEqual(pressed(zoneTags.querySelector('[data-zone-id="yaktel"]')), [false, 'false']);
+    assert.equal(zoneRow.classList.contains('hidden'), false);
+    assert.equal(clearZonesButton.classList.contains('hidden'), false);
+
+    // 點到 chip 裡的張數（span.chip-count）也是點這顆 chip
+    zoneTags.querySelector('[data-zone-id="yaktel"] .chip-count').click();
+    assert.deepEqual(changes, [{ levels: ['g17', 'g15'], zones: ['yaktel', 'elpis'] }]);
+    assert.deepEqual(pressed(zoneTags.querySelector('[data-zone-id="yaktel"]')), [true, 'true']);
+
+    // 取消 G15：厄爾庇斯的 chip 與它的選取一起消失
+    levelTags.querySelector('[data-level="g15"]').click();
+    assert.deepEqual(pressed(levelTags.querySelector('[data-level="g15"]')), [false, 'false']);
+    assert.deepEqual(zoneIds(zoneTags), ['urqopacha', 'kozamauka', 'yaktel', 'shaaloani', 'heritagefound']);
+    assert.deepEqual(changes.at(-1), { levels: ['g17'], zones: ['yaktel'] });
+
+    // 等級都取消：地區列與「清除地區」藏起來（切換 .hidden，不用 hidden 屬性）
+    levelTags.querySelector('[data-level="g17"]').click();
+    assert.equal(zoneRow.classList.contains('hidden'), true);
+    assert.equal(clearZonesButton.classList.contains('hidden'), true);
+    assert.equal(zoneTags.querySelectorAll('button').length, 0);
+    assert.ok(!zoneRow.hasAttribute('hidden') && !clearZonesButton.hasAttribute('hidden'));
+    assert.equal(changes.length, 3);
+
+    // 點到容器本身（chip 之間的空白）什麼都不做
+    levelTags.click();
+    zoneTags.click();
+    assert.equal(changes.length, 3);
+});
+
+test('鍵盤：按地區 chip 後焦點留在那顆 chip；按「清除地區」後焦點移到第一顆地區 chip，不會掉到 body', () => {
+    const { dom, levelTags, zoneTags, clearZonesButton } = mountFilters({ state: { levels: ['g17'], zones: [] } });
+    const active = () => dom.document.activeElement;
+    zoneTags.querySelector('[data-zone-id="yaktel"]').focus();
+    active().click();
+    assert.ok(zoneTags.contains(active()));
+    assert.equal(active().dataset.zoneId, 'yaktel');
+    assert.equal(active().getAttribute('aria-pressed'), 'true');
+    active().click();
+    assert.equal(active().dataset.zoneId, 'yaktel');
+    assert.equal(active().getAttribute('aria-pressed'), 'false');
+
+    zoneTags.querySelector('[data-zone-id="shaaloani"]').click();
+    clearZonesButton.focus();
+    clearZonesButton.click();
+    assert.equal(clearZonesButton.classList.contains('hidden'), true);
+    assert.ok(active() === zoneTags.querySelector('[data-zone-id="urqopacha"]'), '「清除地區」藏起來後，焦點移到地區列的第一顆 chip');
+
+    // 焦點不在「清除地區」上（例如 Safari 點按鈕不給焦點）時，焦點不動
+    zoneTags.querySelector('[data-zone-id="yaktel"]').click();
+    const g17 = levelTags.querySelector('[data-level="g17"]');
+    g17.focus();
+    clearZonesButton.click();
+    assert.ok(active() === g17);
+    // 等級 chip 寫在 HTML 裡，切換時焦點本來就留在原地
+    g17.click();
+    assert.ok(active() === g17);
+});
+
+test('renderZoneChips：mount 之前什麼都不做；依目前語言重畫地名，title 依 zh、en、ja 的順序放另外兩種語言', () => {
+    const unmounted = withMaps();
+    unmounted.toggleLevel('g17');
+    assert.doesNotThrow(() => unmounted.renderZoneChips());
+
+    const { f, zoneTags, lang, changes } = mountFilters({ state: { levels: ['g17'], zones: ['kozamauka'] } });
+    const first = () => zoneTags.querySelector('button');
+    const text = chip => chip.textContent.replace(/\s+/g, ' ').trim();
+    lang.current = 'en';
+    f.renderZoneChips();
+    assert.equal(text(first()), 'Urqopacha 8');
+    assert.equal(first().getAttribute('title'), '烏爾科帕恰 / オルコ・パチャ');
+    assert.deepEqual(pressed(zoneTags.querySelector('[data-zone-id="kozamauka"]')), [true, 'true'], '重畫時保留選取狀態');
+    lang.current = 'ja';
+    f.renderZoneChips();
+    assert.equal(text(first()), 'オルコ・パチャ 8');
+    assert.equal(first().getAttribute('title'), '烏爾科帕恰 / Urqopacha');
+    assert.equal(zoneTags.querySelectorAll('button').length, 5, '重畫是換掉，不是再加一份');
+    assert.equal(first().getAttribute('type'), 'button');
+    assert.deepEqual(changes, [], '重畫不算改變篩選');
 });

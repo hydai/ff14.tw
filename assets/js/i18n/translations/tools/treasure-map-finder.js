@@ -28,15 +28,24 @@ const TreasureMapTranslations = {
         treasure_map_team_members: '隊伍成員：',
 
         // 篩選區
-        treasure_map_filter_title: '篩選條件',
-        treasure_map_reset_filters: '重置篩選',
-        treasure_map_level_filter: '寶圖等級',
-        treasure_map_map_filter: '地圖',
-        treasure_map_multi_select: '可多選',
+        treasure_map_grade_label: '等級',
+        treasure_map_zone_label: '地區',
+        treasure_map_grade_g18: 'G18 巨獸革',
+        treasure_map_grade_g17: 'G17 獰豹革',
+        treasure_map_grade_g15: 'G15 蛇牛革',
+        treasure_map_grade_g14: 'G14 金毗羅鱷革',
+        treasure_map_grade_g12: 'G12 纏尾蛟革',
+        treasure_map_grade_g10: 'G10 瞪羚革',
+        treasure_map_grade_g8: 'G8 巨龍革',
+        treasure_map_clear_zones: '清除地區',
 
         // 結果區
-        treasure_map_results: '顯示 {count} 個結果',
-        treasure_map_load_more: '載入更多',
+        treasure_map_result_count: '{count} 張 {grades} 寶圖',
+        treasure_map_list_separator: '、',
+        treasure_map_choose_grade_title: '先選寶圖等級',
+        treasure_map_choose_grade_text: '看寶圖名稱裡的皮革就知道等級，例如獰豹革是 G17。選好之後會列出所有符合的寶圖，下次打開也會記得。',
+        treasure_map_no_results_title: '這個條件沒有寶圖',
+        treasure_map_no_results_text: '試試清除地區篩選。',
 
         // 資料來源
         treasure_map_data_source: '資料來源',
@@ -245,15 +254,24 @@ const TreasureMapTranslations = {
         treasure_map_team_members: 'Team Members:',
 
         // Filter section
-        treasure_map_filter_title: 'Filters',
-        treasure_map_reset_filters: 'Reset Filters',
-        treasure_map_level_filter: 'Map Level',
-        treasure_map_map_filter: 'Zone',
-        treasure_map_multi_select: 'Multi-select',
+        treasure_map_grade_label: 'Grade',
+        treasure_map_zone_label: 'Zone',
+        treasure_map_grade_g18: 'G18 Gargantuaskin',
+        treasure_map_grade_g17: 'G17 Br\'aaxskin',
+        treasure_map_grade_g15: 'G15 Ophiotauroskin',
+        treasure_map_grade_g14: 'G14 Kumbhiraskin',
+        treasure_map_grade_g12: 'G12 Zonureskin',
+        treasure_map_grade_g10: 'G10 Gazelleskin',
+        treasure_map_grade_g8: 'G8 Dragonskin',
+        treasure_map_clear_zones: 'Clear zones',
 
         // Results section
-        treasure_map_results: 'Showing {count} results',
-        treasure_map_load_more: 'Load More',
+        treasure_map_result_count: '{count} {grades} maps',
+        treasure_map_list_separator: ', ',
+        treasure_map_choose_grade_title: 'Pick your map grade first',
+        treasure_map_choose_grade_text: 'The grade is in the map\'s name, e.g. Timeworn Br\'aaxskin Map is G17. Pick it to see every matching map; we\'ll remember it next time.',
+        treasure_map_no_results_title: 'No maps match',
+        treasure_map_no_results_text: 'Try clearing the zone filter.',
 
         // Data source
         treasure_map_data_source: 'Data Source',
@@ -462,15 +480,24 @@ const TreasureMapTranslations = {
         treasure_map_team_members: 'メンバー：',
 
         // フィルターセクション
-        treasure_map_filter_title: 'フィルター',
-        treasure_map_reset_filters: 'フィルターリセット',
-        treasure_map_level_filter: '地図レベル',
-        treasure_map_map_filter: 'エリア',
-        treasure_map_multi_select: '複数選択可',
+        treasure_map_grade_label: 'グレード',
+        treasure_map_zone_label: 'エリア',
+        treasure_map_grade_g18: 'G18',
+        treasure_map_grade_g17: 'G17',
+        treasure_map_grade_g15: 'G15',
+        treasure_map_grade_g14: 'G14',
+        treasure_map_grade_g12: 'G12',
+        treasure_map_grade_g10: 'G10',
+        treasure_map_grade_g8: 'G8',
+        treasure_map_clear_zones: 'エリアをクリア',
 
         // 結果セクション
-        treasure_map_results: '{count} 件の結果を表示',
-        treasure_map_load_more: 'さらに読み込む',
+        treasure_map_result_count: '{grades} の地図 {count} 枚',
+        treasure_map_list_separator: '、',
+        treasure_map_choose_grade_title: 'まず地図のグレードを選んでください',
+        treasure_map_choose_grade_text: '地図の名前にグレードが書かれています（例：古ぼけた地図G17）。選ぶと該当する地図がすべて表示され、次回も覚えています。',
+        treasure_map_no_results_title: '該当する地図がありません',
+        treasure_map_no_results_text: 'エリアの絞り込みを解除してみてください。',
 
         // データソース
         treasure_map_data_source: 'データソース',

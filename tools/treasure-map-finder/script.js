@@ -8,13 +8,16 @@ class TreasureMapFinder {
         this.filterManager = new FilterManager(); // 使用 FilterManager 模組
         this.uiDialogManager = new UIDialogManager(); // 使用 UIDialogManager 模組
         this.modalManager = new ModalManager(); // 我的清單面板的焦點管理（開啟時移入焦點、Tab 循環、ESC／關閉時還原焦點）
-        this.displayCount = 24;
-        this.currentDisplayCount = 0;
         this.aetheryteIcon = null; // 傳送點圖標
         this.roomCollaboration = null; // 協作功能實例
-        
+
         // DOM 元素快取
         this.elements = {
+            levelTags: document.getElementById('levelTags'),
+            zoneFilterRow: document.getElementById('zoneFilterRow'),
+            zoneTags: document.getElementById('zoneTags'),
+            clearZonesBtn: document.getElementById('clearZonesBtn'),
+            treasureEmpty: document.getElementById('treasureEmpty'),
             treasureGrid: document.getElementById('treasureGrid'),
             resultCount: document.getElementById('resultCount'),
             listCount: document.getElementById('listCount'),
@@ -22,16 +25,16 @@ class TreasureMapFinder {
             myListToggle: document.getElementById('myListToggle'),
             myListPanel: document.getElementById('myListPanel'),
             listContent: document.getElementById('listContent'),
-            clearAllBtn: document.getElementById('clearAllBtn'),
-            loadMore: document.getElementById('loadMore')
+            clearAllBtn: document.getElementById('clearAllBtn')
         };
 
         // 語言切換時重新以目前語言重繪清單（移除按鈕的 aria-label 帶有地區與座標，需要重組）
         window.i18n.onLanguageChange(() => {
             this.renderMyList();
 
-            // 「顯示 N 個結果」是帶參數的文字，切換語言時用目前的數量重新組一次
+            // 「40 張 G17 寶圖」是帶參數的文字，地區 chip 的地名也跟著語言走，切換語言時重新組一次
             this.updateResultCount();
+            this.filterManager.renderZoneChips();
 
             // 預設範本跟語言走，使用者自訂的不動：只有目前仍是「預設值」
             // （this.formatSettingsAreDefault，見 loadFormatSettings／saveFormatSettings／
@@ -63,7 +66,7 @@ class TreasureMapFinder {
             await this.loadData();
             this.setupEventListeners();
             this.updateListCount();
-            this.updateFilteredMaps();
+            this.initFilters();
         } catch (error) {
             console.error('初始化失敗:', error);
             this.showError(FF14Utils.getI18nText('treasure_map_load_failed', '載入寶圖資料失敗，請重新整理頁面再試。'));
@@ -122,12 +125,6 @@ class TreasureMapFinder {
     }
     
     setupEventListeners() {
-        // 設定過濾器管理器
-        this.filterManager.setupEventListeners();
-        this.filterManager.onChange(() => {
-            this.updateFilteredMaps();
-        });
-        
         // 我的清單
         this.elements.myListToggle.addEventListener('click', () => this.toggleListPanel());
         this.elements.clearAllBtn.addEventListener('click', () => this.clearAllMaps());
@@ -146,10 +143,7 @@ class TreasureMapFinder {
             this.uiDialogManager.showImportDialog((text) => this.importFromText(text));
         });
         document.getElementById('importFileInput').addEventListener('change', (e) => this.importList(e));
-        
-        // 載入更多
-        this.elements.loadMore.querySelector('button').addEventListener('click', () => this.loadMoreMaps());
-        
+
         // 點擊遮罩關閉
         const overlay = document.getElementById('panelOverlay');
         if (overlay) {
@@ -208,59 +202,81 @@ class TreasureMapFinder {
         if (langZhBtn) langZhBtn.addEventListener('click', () => this.switchLanguageTemplate('zh'));
         if (langEnBtn) langEnBtn.addEventListener('click', () => this.switchLanguageTemplate('en'));
         if (langJaBtn) langJaBtn.addEventListener('click', () => this.switchLanguageTemplate('ja'));
-        
-        // 摺疊功能
-        const collapsibleHeaders = document.querySelectorAll('.collapsible-header');
-        collapsibleHeaders.forEach(header => {
-            header.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                this.toggleCollapse(header);
-            });
-        });
-        
+
         // 載入自訂格式設定
         this.loadFormatSettings();
     }
     
+    // 地圖資料載入後呼叫一次：還原篩選（網址 > localStorage > 什麼都沒選）、畫出等級與地區 chip；
+    // 之後每次改變都重畫結果、記進 localStorage，並用 replaceState 寫進網址（保留 room 等其他參數）
+    initFilters() {
+        const filterManager = this.filterManager;
+        filterManager.setMaps(this.maps);
+        filterManager.restoreState(FilterManager.pickInitialState({
+            url: FilterManager.parseUrl(location.search),
+            stored: FilterManager.readStored(FilterManager.safeStorage(window))
+        }));
+        filterManager.mount({
+            levelContainer: this.elements.levelTags,
+            zoneRow: this.elements.zoneFilterRow,
+            zoneContainer: this.elements.zoneTags,
+            clearZonesButton: this.elements.clearZonesBtn,
+            getZoneNames: zoneId => zoneManager.getZoneNames(zoneId),
+            getLanguage: () => window.i18n.getCurrentLanguage()
+        });
+        filterManager.onChange(state => {
+            this.updateFilteredMaps();
+            FilterManager.writeStored(FilterManager.safeStorage(window), state);
+            history.replaceState(history.state, '', FilterManager.buildUrl(location.href, state));
+        });
+        this.updateFilteredMaps();
+
+        // 手機上等級列是橫向捲動的：還原出來的等級可能在畫面外，把它捲進視野
+        this.elements.levelTags.querySelector('.chip.active')?.scrollIntoView?.({ block: 'nearest', inline: 'center' });
+    }
+
     // 更新過濾後的地圖列表
     updateFilteredMaps() {
         this.filteredMaps = this.filterManager.applyFilters(this.maps);
-        this.currentDisplayCount = 0;
         this.displayMaps();
-
-        // 如果有重置訊息需求
-        if (!this.filterManager.hasActiveFilters() && this.lastFilterState?.hadFilters) {
-            FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_reset_filters', '已重置所有篩選條件'), 'info');
-        }
-        
-        // 記錄過濾器狀態
-        this.lastFilterState = {
-            hadFilters: this.filterManager.hasActiveFilters()
-        };
-    }
-    
-    displayMaps() {
-        const start = this.currentDisplayCount;
-        const end = Math.min(start + this.displayCount, this.filteredMaps.length);
-        
-        if (start === 0) {
-            SecurityUtils.clearElement(this.elements.treasureGrid);
-        }
-        
-        for (let i = start; i < end; i++) {
-            const map = this.filteredMaps[i];
-            this.elements.treasureGrid.appendChild(this.createMapCard(map));
-        }
-        
-        this.currentDisplayCount = end;
         this.updateResultCount();
-        
-        // 顯示或隱藏載入更多按鈕
-        if (this.currentDisplayCount < this.filteredMaps.length) {
-            this.elements.loadMore.classList.remove('hidden');
-        } else {
-            this.elements.loadMore.classList.add('hidden');
+    }
+
+    // 畫出全部符合的寶圖（不分頁）；一張都沒有時改顯示空狀態
+    displayMaps() {
+        const { treasureGrid, treasureEmpty } = this.elements;
+        SecurityUtils.clearElement(treasureGrid);
+        this.filteredMaps.forEach(map => treasureGrid.appendChild(this.createMapCard(map)));
+
+        SecurityUtils.clearElement(treasureEmpty);
+        treasureEmpty.classList.toggle('hidden', this.filteredMaps.length > 0);
+        if (this.filteredMaps.length > 0) return;
+
+        // 還沒選等級：告訴玩家怎麼從寶圖名稱看出等級。選了等級卻是 0 張只會發生在選了地區時，
+        // 所以提示清除地區（「清除地區」就在上面的結果標題列）
+        const chooseGrade = this.filterManager.getState().levels.length === 0;
+        const icon = document.createElement('div');
+        icon.className = 'empty-state-icon';
+        icon.setAttribute('aria-hidden', 'true');
+        icon.textContent = chooseGrade ? '🗺️' : '🔍';
+        treasureEmpty.appendChild(icon);
+
+        const texts = chooseGrade
+            ? [
+                ['empty-state-title', 'treasure_map_choose_grade_title', '先選寶圖等級'],
+                ['empty-state-text', 'treasure_map_choose_grade_text', '看寶圖名稱裡的皮革就知道等級，例如獰豹革是 G17。選好之後會列出所有符合的寶圖，下次打開也會記得。']
+            ]
+            : [
+                ['empty-state-title', 'treasure_map_no_results_title', '這個條件沒有寶圖'],
+                ['empty-state-text', 'treasure_map_no_results_text', '試試清除地區篩選。']
+            ];
+        for (const [className, key, fallback] of texts) {
+            const element = document.createElement('div');
+            element.className = className;
+            element.textContent = FF14Utils.getI18nText(key, fallback);
+            // 固定字串（無插值）：切換語言時由 i18n manager 依 [data-i18n] 重新翻譯
+            element.dataset.i18n = key;
+            treasureEmpty.appendChild(element);
         }
     }
     
@@ -664,15 +680,22 @@ class TreasureMapFinder {
         }
     }
     
-    loadMoreMaps() {
-        this.displayMaps();
-    }
-    
+    // 「40 張 G17 寶圖」：實際符合的張數與等級。等級列結果裡真的有的（選了 G18、G17 再選只有 G17 的地區，就只寫 G17），
+    // 照 FilterManager.GRADE_ORDER 的順序；0 張時沒有結果可看，改列已選的等級。還沒選等級時是空的（由空狀態說明）
     updateResultCount() {
-        this.elements.resultCount.textContent =
-            FF14Utils.getI18nText('treasure_map_results', '顯示 {count} 個結果', {
-                count: this.currentDisplayCount
-            });
+        const { levels } = this.filterManager.getState();
+        const present = new Set(this.filteredMaps.map(map => map.level));
+        const grades = present.size > 0 ? FilterManager.GRADE_ORDER.filter(level => present.has(level)) : levels;
+        this.elements.resultCount.textContent = levels.length > 0
+            ? TreasureMapFinder.formatResultCount(this.filteredMaps.length, grades, FF14Utils.getI18nText.bind(FF14Utils))
+            : '';
+    }
+
+    // 結果張數的文字；getText 的簽名同 FF14Utils.getI18nText(key, 中文預設文字, 參數)，
+    // 多個等級時等級代號用目前語言的分隔符號連接（中文、日文「、」，英文「, 」）
+    static formatResultCount(count, levels, getText) {
+        const grades = levels.map(level => level.toUpperCase()).join(getText('treasure_map_list_separator', '、'));
+        return getText('treasure_map_result_count', '{count} 張 {grades} 寶圖', { count, grades });
     }
 
     updateListCount() {
@@ -852,25 +875,6 @@ class TreasureMapFinder {
             },
             getZoneName: (zoneId) => this.getZoneName(zoneId)
         });
-    }
-    
-    // 摺疊功能
-    toggleCollapse(header) {
-        const targetId = header.dataset.collapse;
-        const targetElement = document.getElementById(targetId);
-        
-        if (!targetElement) {
-            console.error('Target element not found:', targetId);
-            return;
-        }
-        
-        if (targetElement.classList.contains('collapsed')) {
-            targetElement.classList.remove('collapsed');
-            header.setAttribute('data-expanded', 'true');
-        } else {
-            targetElement.classList.add('collapsed');
-            header.setAttribute('data-expanded', 'false');
-        }
     }
     
     // 複製整個路線

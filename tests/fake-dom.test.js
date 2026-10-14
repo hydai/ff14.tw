@@ -704,6 +704,37 @@ test('選擇器：空白（後代）與 > （子代）組合子；祖先可以�
     assert.equal(document.getElementById(''), null);
 });
 
+test('matches() 用同一套選擇器判斷元素本身；closest() 從自己開始往上找，找不到是 null', () => {
+    const dom = createFakeDom();
+    const { document } = dom;
+    const { header, container, nav, home, menu, menuLink1, menuLink2 } = buildHeader(dom);
+
+    assert.equal(home.matches('a[href="/"]'), true);
+    assert.equal(home.matches('.nav > a'), true, '組合子也可以，祖先在元素之外');
+    assert.equal(menuLink2.matches('nav a.tools-menu-link[data-i18n="k2"]'), true);
+    assert.equal(home.matches('button'), false);
+    assert.equal(menuLink1.matches('.nav > a'), false, '> 只看父節點');
+    assert.equal(menuLink1.matches('[data-i18n]'), false);
+
+    assert.ok(menuLink1.closest('a') === menuLink1, '自己符合就回傳自己');
+    assert.ok(menuLink1.closest('.tools-menu') === menu, '往上找到最近的祖先');
+    assert.ok(menuLink2.closest('#site-nav') === nav);
+    assert.ok(menuLink1.closest('.header .container') === container);
+    assert.ok(menuLink1.closest('header') === header);
+    assert.equal(menuLink1.closest('.nope'), null);
+    assert.equal(document.body.closest('html') === document.documentElement, true);
+    assert.equal(dom.el('i').closest('i').tagName, 'I', '沒掛在 document 底下的元素也能找自己');
+    assert.equal(dom.el('div', {}, dom.el('i')).firstElementChild.closest('section'), null, '找到最上層的祖先為止');
+    assert.equal(home.closest('[hidden]'), null, '不會找兄弟或其他分支裡的元素');
+    assert.ok(menuLink1.closest('[hidden]') === menu);
+
+    // 和 querySelector 一樣：不支援的語法丟錯，不悄悄回傳 false 或 null
+    for (const selector of ['a, b', ':scope > a', '*', 'a:hover', '[data-x=1]', '']) {
+        assert.throws(() => home.matches(selector), /不支援的選擇器/, `matches(${JSON.stringify(selector)})`);
+        assert.throws(() => home.closest(selector), /不支援的選擇器/, `closest(${JSON.stringify(selector)})`);
+    }
+});
+
 test('不支援的選擇器語法會丟錯，不會悄悄回傳空結果：包含瀏覽器也會丟 SyntaxError 的屬性值寫法，以及沒實作的 i 旗標', () => {
     const dom = createFakeDom();
     buildHeader(dom);

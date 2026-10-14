@@ -7,7 +7,7 @@
 //   dom.key('Escape');                                   // 在目前焦點元素上派送會冒泡的 keydown
 //
 // 刻意不做的事（做了反而會讓測試通過、瀏覽器卻不同）：
-// - 選擇器只支援 tag、#id、.class、[attr]、[attr="v"] 的複合寫法，以及空白、> 組合子；其他語法
+// - 選擇器（querySelector(All)、matches、closest）只支援 tag、#id、.class、[attr]、[attr="v"] 的複合寫法，以及空白、> 組合子；其他語法
 //   （逗號、:scope、偽類別、*、屬性值的 i 旗標）會丟錯，不會悄悄回傳空結果。不加引號的屬性值只接受 ASCII 識別字
 //   （[type=button]、[data-x=foo-bar]）；[data-x=1]、[href=/]、[data-x=a.b]、[data-x=] 瀏覽器也會丟 SyntaxError，
 //   非 ASCII 識別字（[data-x=首頁]）瀏覽器接受，但這裡要加引號。dataset 不支援列舉。
@@ -279,6 +279,21 @@ class Element extends ParentNode {
     _sibling(step) {
         const siblings = this.parentNode?.children ?? [];
         return siblings[siblings.indexOf(this) + step] ?? null;
+    }
+
+    // 選擇器語法和 querySelector 相同（不支援的照樣丟錯）；組合子的祖先可以在任何地方
+    matches(selector) {
+        const chain = parseSelector(selector);
+        return matchesChain(this, chain, chain.length - 1);
+    }
+
+    // 從自己開始往上找第一個符合的元素（只看元素，不含 document）；找不到是 null
+    closest(selector) {
+        const chain = parseSelector(selector);
+        for (let node = this; isElement(node); node = node.parentNode) {
+            if (matchesChain(node, chain, chain.length - 1)) return node;
+        }
+        return null;
     }
 
     get textContent() { return this.childNodes.map((node) => node.textContent).join(''); }
