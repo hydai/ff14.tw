@@ -1695,3 +1695,136 @@ test('詳細檢視的三語鍵值；只給舊座標文字用的鍵值刪掉', ()
         assert.ok(!translationKeySet(TRANSLATIONS, lang).has('treasure_map_pos_placeholder'), `${lang} 的 treasure_map_pos_placeholder 應已刪除`);
     });
 });
+
+// ---------- 瀏覽器封鎖儲存空間 ----------
+// 跑真正的建構函式與 init()：createFilterPage 直接呼叫 initFilters()，init() 在那之前的步驟（例如讀格式設定）都沒跑到。
+// fake-dom 裡載入頁面上寶圖搜尋器的腳本，照 index.html 的 id 做出建構函式與 init() 用到的元素（步驟列、兩個清單入口、等級與地區、
+// 結果區、唸出區、清單面板、格式設定的兩個欄位）；fetch 讀 /data 的真資料，傳送點圖示的 Image 替身一設定 src 就載入完成。
+// storageThrows 同 createFilterPage：光是讀 window.localStorage 就丟例外（Chrome 封鎖網站資料時是 SecurityError；
+// vm 裡直接寫 localStorage 的程式拿到的是 ReferenceError，一樣在同一個地方丟出）
+async function startPage({ storageThrows = false } = {}) {
+    const dom = createFakeDom({ url: 'https://ff14.tw/tools/treasure-map-finder/' });
+    const storage = new Map();
+    const toasts = [];
+    Object.assign(dom.window, {
+        URLSearchParams,
+        history: { state: null, replaceState(state, title, href) { dom.window.location = new URL(href); } },
+        // 封鎖儲存空間時 ListManager 讀不到清單會 console.error：測試輸出不要被洗版
+        console: { log() {}, warn() {}, error() {} },
+        fetch: async (url) => {
+            if (!Object.hasOwn(DATA_FILES, url)) throw new Error(`startPage 沒有準備 ${url}`);
+            return { ok: true, status: 200, json: async () => JSON.parse(DATA_FILES[url]) };
+        },
+        Image: class {
+            set src(value) {
+                this.url = value;
+                queueMicrotask(() => this.onload?.());
+            }
+        },
+        i18n: { getCurrentLanguage: () => 'zh', onLanguageChange() {} },
+        FF14Utils: {
+            getI18nText: (key, fallback, params = {}) => fallback.replace(/\{(\w+)\}/g, (_, name) => params[name]),
+            showToast: (message, type) => toasts.push({ message, type })
+        },
+        // 這裡不開對話框，建構函式建得起來就好
+        ModalManager: class { show() {} hide() {} },
+        RoomCollaboration: { CONSTANTS: { MAX_MAPS: 8 } }
+    });
+    if (storageThrows) {
+        Object.defineProperty(dom.window, 'localStorage', { get() { throw new Error('SecurityError'); } });
+    } else {
+        dom.window.localStorage = {
+            getItem: (key) => (storage.has(key) ? storage.get(key) : null),
+            setItem: (key, value) => storage.set(key, String(value))
+        };
+    }
+
+    const button = (id, text, className = 'btn') => dom.el('button', { type: 'button', id, class: className }, text);
+    const zoneTags = dom.el('div', { id: 'zoneTags', class: 'tm-chip-scroll', role: 'group' });
+    for (const element of [
+        createStepHint(dom),
+        createListEntry(dom, 'listEntryDesktop'),
+        dom.el('div', { id: 'levelTags', class: 'tm-chip-scroll', role: 'group' },
+            ...GRADES.map((level) => dom.el('button', { type: 'button', class: 'chip', 'data-level': level, 'aria-pressed': 'false' }, level.toUpperCase()))),
+        dom.el('div', { id: 'zoneFilterRow', class: 'tm-filter-row hidden' }, zoneTags),
+        dom.el('p', { id: 'resultCount', class: 'tm-count', tabindex: '-1', 'aria-live': 'polite' }),
+        button('clearZonesBtn', '清除地區', 'btn btn-ghost btn-sm hidden'),
+        dom.el('div', { id: 'treasureEmpty', class: 'empty-state hidden' }),
+        dom.el('div', { id: 'treasureGrid', class: 'treasure-grid' }),
+        createListEntry(dom, 'listEntryMobile'),
+        dom.el('p', { id: 'listAnnouncer', class: 'visually-hidden', 'aria-live': 'polite' }),
+        dom.el('div', { id: 'panelOverlay', class: 'panel-overlay' }),
+        dom.el('div', { id: 'myListPanel', class: 'my-list-panel', role: 'dialog', inert: true },
+            dom.el('div', { class: 'panel-header' },
+                button('exportListBtn', '匯出'), button('importListBtn', '匯入'), dom.el('input', { type: 'file', id: 'importFileInput', class: 'hidden' }),
+                button('clearAllBtn', '清空'), button('closePanelBtn', '×', 'btn btn-close')),
+            dom.el('div', { id: 'listContent' }),
+            dom.el('div', { class: 'panel-footer' }, dom.el('span', { id: 'totalCount' }, '0'), button('generateRouteBtn', '生成路線', 'btn btn-primary'))),
+        dom.el('textarea', { id: 'teleportFormat' }),
+        dom.el('textarea', { id: 'mapFormat' })
+    ]) {
+        dom.document.body.appendChild(element);
+    }
+
+    for (const file of ['assets/js/security-utils.js', 'tools/treasure-map-finder/coordinate-utils.js', 'tools/treasure-map-finder/zone-manager.js',
+        'tools/treasure-map-finder/list-manager.js', 'tools/treasure-map-finder/filter-manager.js', 'tools/treasure-map-finder/ui-dialog-manager.js',
+        'tools/treasure-map-finder/script.js']) {
+        dom.load(file);
+    }
+    const finder = vm.runInContext('new TreasureMapFinder()', dom.window);
+    await finder.ready;
+    const $ = (id) => dom.document.getElementById(id);
+    // 格式設定是在 vm 裡建出來的物件：轉成這邊的物件再比
+    const formats = () => JSON.parse(JSON.stringify(finder.formatSettings));
+    return { finder, toasts, storage, $, formats, level: (id) => $('levelTags').querySelector(`[data-level="${id}"]`) };
+}
+
+const DEFAULT_FORMATS = { teleport: '/p 傳送至 <傳送點> <座標>', map: '/p 下一個 <寶圖等級> - <地區> <座標>' };
+
+test('瀏覽器封鎖儲存空間：頁面照常載入，顯示「先選寶圖等級」，等級 chip 按得動；格式設定和第一次來一樣用預設值', async () => {
+    const page = await startPage({ storageThrows: true });
+    const { $ } = page;
+    assert.ok($('treasureGrid').querySelector('.error-message') === null, '不應該顯示「載入寶圖資料失敗」');
+    const empty = $('treasureEmpty');
+    assert.equal(empty.classList.contains('hidden'), false);
+    assert.equal(empty.querySelector('.empty-state-title').textContent, '先選寶圖等級');
+
+    page.level('g17').click();
+    assert.equal($('resultCount').textContent, '40 張 G17 寶圖');
+    assert.equal($('treasureGrid').querySelectorAll('.treasure-card').length, 40);
+    assert.equal(empty.classList.contains('hidden'), true);
+
+    // 讀不到自訂格式：用預設格式（語言切換時照常跟著語言換），格式設定的欄位也填上預設格式
+    assert.deepEqual(page.formats(), DEFAULT_FORMATS);
+    assert.equal(page.finder.formatSettingsAreDefault, true);
+    assert.equal($('teleportFormat').value, DEFAULT_FORMATS.teleport);
+});
+
+test('儲存自訂格式：存得起來就記住；瀏覽器封鎖儲存空間時這次照新的格式，並提示存不起來', async () => {
+    const custom = { teleport: '/p TP <傳送點> <座標>', map: '/p <寶圖等級> <地區> <座標>' };
+    for (const storageThrows of [false, true]) {
+        const page = await startPage({ storageThrows });
+        page.$('teleportFormat').value = custom.teleport;
+        page.$('mapFormat').value = custom.map;
+        assert.doesNotThrow(() => page.finder.saveFormatSettings(), `storageThrows: ${storageThrows}`);
+        assert.deepEqual(page.formats(), custom);
+        assert.equal(page.finder.formatSettingsAreDefault, false);
+        if (storageThrows) {
+            assert.deepEqual(page.toasts, [{ message: '無法儲存設定：瀏覽器不允許儲存資料', type: 'error' }]);
+        } else {
+            assert.equal(page.storage.get('treasureMapFormatSettings'), JSON.stringify(custom));
+            assert.deepEqual(page.toasts, [{ message: '格式設定已儲存', type: 'success' }]);
+        }
+    }
+});
+
+test('存不起來的提示的三語鍵值', () => {
+    const expected = [
+        '無法儲存設定：瀏覽器不允許儲存資料',
+        'Could not save the settings: your browser does not allow storing data',
+        '設定を保存できませんでした：ブラウザがデータの保存を許可していません'
+    ];
+    ['zh', 'en', 'ja'].forEach((lang, index) => {
+        assert.equal(translationValues(TRANSLATIONS, lang).get('treasure_map_format_save_failed'), expected[index], lang);
+    });
+});

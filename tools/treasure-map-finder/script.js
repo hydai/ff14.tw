@@ -1109,7 +1109,11 @@ class TreasureMapFinder {
     
     // 載入格式設定
     loadFormatSettings() {
-        const saved = localStorage.getItem('treasureMapFormatSettings');
+        // 瀏覽器封鎖儲存空間（例如封鎖網站資料）時，光是讀 localStorage 就會丟例外：當作沒存過，和第一次來一樣用預設值
+        let saved = null;
+        try {
+            saved = localStorage.getItem('treasureMapFormatSettings');
+        } catch { /* 讀不到：用預設值 */ }
         if (saved) {
             try {
                 const parseResult = SecurityUtils.safeJSONParse(saved);
@@ -1160,8 +1164,19 @@ class TreasureMapFinder {
         // 使用者主動存檔，之後語言切換不再幫忙覆寫（見 handleLanguageChange）
         this.formatSettingsAreDefault = false;
 
-        localStorage.setItem('treasureMapFormatSettings', JSON.stringify(this.formatSettings));
-        FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_format_saved', '格式設定已儲存'), 'success');
+        // 瀏覽器封鎖儲存空間（連讀 localStorage 都會丟例外）或空間滿了：這次照新的格式，只是記不住，提示一下；
+        // 面板照樣關起來（新的格式已經生效）
+        let saved = true;
+        try {
+            localStorage.setItem('treasureMapFormatSettings', JSON.stringify(this.formatSettings));
+        } catch {
+            saved = false;
+        }
+        if (saved) {
+            FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_format_saved', '格式設定已儲存'), 'success');
+        } else {
+            FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_format_save_failed', '無法儲存設定：瀏覽器不允許儲存資料'), 'error');
+        }
         this.uiDialogManager.hideFormatPanel();
     }
     
