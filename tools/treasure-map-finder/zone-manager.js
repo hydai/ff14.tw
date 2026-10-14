@@ -31,7 +31,7 @@ class ZoneManager {
         } catch (error) {
             console.error('載入地區資料失敗:', error);
             this.zones = {};
-            this.mappings = { zoneNameToId: {}, zoneIdToRegion: {}, filePrefixToZoneId: {} };
+            this.mappings = { zoneNameToId: {}, zoneIdToRegion: {} };
             this.aetherytes = {};
             // 不能只靠一半的資料繼續：沒有地區資料時地名會變成 id、縮圖路徑會錯，沒有傳送點時路線排不出來
             throw error;
@@ -188,13 +188,6 @@ class ZoneManager {
         return `${level}_${filePrefix}_${paddedIndex}.webp`;
     }
 
-    // 生成寶圖完整圖片檔案名稱
-    generateFullImageFileName(level, zoneId, index) {
-        const filePrefix = this.getFilePrefix(zoneId);
-        const paddedIndex = String(index).padStart(2, '0');
-        return `${level}_${filePrefix}_${paddedIndex}_full_3x.webp`;
-    }
-
     // 檢查地區是否存在
     isValidZone(zoneId) {
         return this.getZoneById(zoneId) !== null;
@@ -203,11 +196,6 @@ class ZoneManager {
     // 正規化地區名稱（向後相容性）
     normalizeZoneName(zoneName) {
         return zoneName.toLowerCase().replace(/[\s'-]/g, '');
-    }
-
-    // 根據檔案前綴獲取地區ID
-    getZoneIdByFilePrefix(filePrefix) {
-        return this.mappings.filePrefixToZoneId[filePrefix] || filePrefix;
     }
 
     // 獲取統計資訊

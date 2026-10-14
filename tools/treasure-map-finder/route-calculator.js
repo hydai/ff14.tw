@@ -31,9 +31,6 @@ class RouteCalculator {
      * @returns {Object} 路線結果
      */
     calculateRoute(maps) {
-        console.log('=== 開始路線計算 ===');
-        console.log('輸入地圖數量:', maps.length);
-
         if (!maps || maps.length === 0) return { summary: {}, route: [] };
         if (!zoneManager.loaded) {
             console.error('傳送點資料尚未載入');
@@ -42,15 +39,12 @@ class RouteCalculator {
 
         // 1. 找出起始地區（全域最近的寶圖-傳送點配對）
         const { startRegion, startMap } = this.findStartingRegion(maps);
-        console.log('起始地區:', startRegion);
 
         // 2. 按地區分組
         const mapsByRegion = this.groupByZone(maps);
-        console.log('地區分組結果:', Object.keys(mapsByRegion).map(k => `${k}: ${mapsByRegion[k].length}張`));
 
         // 3. 決定地區訪問順序（第一個已決定，其餘按數量）
         const regionOrder = this.getRegionOrder(mapsByRegion, startRegion);
-        console.log('地區訪問順序:', regionOrder);
 
         // 4. 為每個地區規劃路線
         const route = [];
@@ -76,9 +70,6 @@ class RouteCalculator {
                 }
             }
         }
-
-        console.log('=== 路線計算完成 ===');
-        console.log('總傳送次數:', totalTeleports);
 
         return {
             summary: {

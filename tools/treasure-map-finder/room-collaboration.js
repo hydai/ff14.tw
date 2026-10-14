@@ -90,17 +90,8 @@ class RoomCollaboration {
             }
         });
 
-        // 顯示當前使用的 API URL（除錯用）
-        console.log('Room Collaboration API URL:', RoomCollaboration.CONSTANTS.API_BASE_URL);
-        console.log('Current location:', {
-            hostname: window.location.hostname,
-            port: window.location.port,
-            protocol: window.location.protocol
-        });
-
         this.elements = {
             roomSection: document.getElementById('roomSection'),
-            roomActions: document.getElementById('roomActions'),
             roomStatus: document.getElementById('roomStatus'),
             createRoomBtn: document.getElementById('createRoomBtn'),
             joinRoomBtn: document.getElementById('joinRoomBtn'),

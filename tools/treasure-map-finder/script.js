@@ -110,8 +110,7 @@ class TreasureMapFinder {
                         zone: zoneNames.en,
                         zoneName: zoneNames.zh,
                         levelName: levelInfo ? levelInfo.name : map.level,
-                        thumbnail: `images/treasures/${zoneManager.generateImageFileName(map.level, map.zoneId, map.index)}`,
-                        fullImage: `images/treasures/${zoneManager.generateFullImageFileName(map.level, map.zoneId, map.index)}`
+                        thumbnail: `images/treasures/${zoneManager.generateImageFileName(map.level, map.zoneId, map.index)}`
                     };
                 });
         } catch (error) {
@@ -868,11 +867,9 @@ class TreasureMapFinder {
         if (targetElement.classList.contains('collapsed')) {
             targetElement.classList.remove('collapsed');
             header.setAttribute('data-expanded', 'true');
-            console.log('Expanded:', targetId);
         } else {
             targetElement.classList.add('collapsed');
             header.setAttribute('data-expanded', 'false');
-            console.log('Collapsed:', targetId);
         }
     }
     
