@@ -39,6 +39,15 @@ async function createRouteCalculator() {
     return { calculator, zoneManager: context.zoneManager };
 }
 
+// 和頁面一樣，寶圖帶著英文地名 zone（script.js 的 loadData() 加上的）
+const byId = id => {
+    const map = maps.find(entry => entry.id === id);
+    return { ...map, zone: zoneNameEn(map.zoneId) };
+};
+const plan = (calculator, list) => calculator.describeOrder(calculator.firstOrder(list), list);
+// 烏爾科帕恰 3 張（tm_007、tm_013、tm_010）、科扎馬烏卡 2 張（tm_017、tm_022）、夏羅尼荒野 1 張（tm_033）
+const EXAMPLE = ['tm_017', 'tm_007', 'tm_013', 'tm_022', 'tm_010', 'tm_033'];
+
 test('zones.json 每個地區列的傳送點，都在 aetherytes.json 對應的區域裡', () => {
     for (const zone of allSubZones()) {
         const pool = aetherytes[zonesJson.mappings.zoneIdToRegion[zone.id]] || [];
@@ -96,37 +105,66 @@ test('只剩一份傳送點資料：沒有寫死的對照表，路線與詳細�
     assert.match(read('tools/treasure-map-finder/ui-dialog-manager.js'), /zoneManager\.getAetherytes\(/);
 });
 
-test('匯入的清單沒有 zoneId，只剩英文地名也要查到同一個地區：227 張寶圖的路線都和有 zoneId 的相同', async () => {
+test('匯入的清單沒有 zoneId，只剩英文地名也要查到同一個地區：227 張寶圖的站都和有 zoneId 的相同', async () => {
     const { calculator } = await createRouteCalculator();
-    // zoneId 欄位本來就不同，只比步驟：傳送點用英文名稱，寶圖用 id
-    const steps = route => Array.from(route, step => step.type === 'teleport' ? `T:${step.to.en}` : `M:${step.mapId}`);
+    const stopsOf = list => Array.from(plan(calculator, list).stops, s => `${s.mapId}:${s.aetheryteId}:${s.teleport}`);
     for (const map of maps) {
         const imported = { ...map, zoneId: null, zone: zoneNameEn(map.zoneId) };
-        assert.deepEqual(steps(calculator.calculateRoute([imported]).route), steps(calculator.calculateRoute([map]).route), map.id);
+        assert.deepEqual(stopsOf([imported]), stopsOf([map]), map.id);
     }
 });
 
-test('烏爾科帕恰在前、厄爾庇斯在後的清單，路線從烏爾科帕恰的傳送開始，厄爾庇斯不會跳到最前面', async () => {
+test('第一次排序：寶圖多的地區先跑，張數一樣照清單裡第一次出現的順序；傳送標在每一組的第一站', async () => {
     const { calculator } = await createRouteCalculator();
-    // 和頁面一樣，寶圖帶著英文地名 zone（script.js 的 loadData() 加上的）
-    const list = ['urqopacha', 'elpis'].map(zoneId => ({ ...maps.find(map => map.zoneId === zoneId), zone: zoneNameEn(zoneId) }));
-    const { route, summary } = calculator.calculateRoute(list);
-    assert.equal(route[0].type, 'teleport');
-    assert.equal(route[0].zoneId, 'urqopacha');
-    assert.deepEqual(Array.from(summary.regionsVisited), ['urqopacha', 'elpis']);
+    const { stops, summary } = plan(calculator, EXAMPLE.map(byId));
+    assert.deepEqual(Array.from(stops, s => [s.mapId, s.aetheryteId, s.teleport]), [
+        ['tm_010', 'wachunpelo', true], ['tm_007', 'wachunpelo', false], ['tm_013', 'worqor_zormor', true],
+        ['tm_017', 'ok_hanu', true], ['tm_022', 'dock_poga', true], ['tm_033', 'sheshenewezi_springs', true]
+    ]);
+    assert.deepEqual({ ...summary }, { maps: 6, zones: 3, teleports: 5 });
+    const order = ids => Array.from(calculator.firstOrder(ids.map(byId)));
+    assert.deepEqual(order(['tm_048', 'tm_007', 'tm_010']), ['tm_010', 'tm_007', 'tm_048'], '烏爾科帕恰 2 張，排在清單第一張的厄爾庇斯前面');
+    assert.deepEqual(order(['tm_048', 'tm_007']), ['tm_048', 'tm_007'], '張數一樣照清單順序');
+    assert.deepEqual(order(['tm_007', 'tm_048']), ['tm_007', 'tm_048']);
+    assert.doesNotMatch(read('tools/treasure-map-finder/route-calculator.js'), /findStartingRegion/);
 });
 
-test('G18 永生記憶 8 張圖的路線從傳送開始，總傳送次數至少 1', async () => {
+test('跑到一半清單變了：留下的照原本順序，新的插在同一組最後一站後面，沒有同一組就插在同地區最後，新地區排最後', async () => {
+    const { calculator } = await createRouteCalculator();
+    const prev = ['tm_017', 'tm_007', 'tm_013'];
+    const merge = ids => Array.from(calculator.mergeOrder(prev, ids.map(byId)));
+    assert.deepEqual(merge(['tm_017', 'tm_007', 'tm_013', 'tm_008']), ['tm_017', 'tm_007', 'tm_008', 'tm_013'], 'tm_008 和 tm_007 同組（瓦群佩洛）');
+    assert.deepEqual(merge(['tm_017', 'tm_007', 'tm_013', 'tm_015']), ['tm_017', 'tm_015', 'tm_007', 'tm_013'], 'tm_015 同地區（科扎馬烏卡）不同組');
+    assert.deepEqual(merge(['tm_033', 'tm_017', 'tm_007', 'tm_013']), ['tm_017', 'tm_007', 'tm_013', 'tm_033'], '新地區排最後');
+    assert.deepEqual(merge(['tm_017', 'tm_013']), ['tm_017', 'tm_013'], '移除不重排');
+    assert.deepEqual(merge(['tm_013', 'tm_007', 'tm_017']), prev, '清單順序變了也不重排');
+});
+
+test('describeOrder：同一組連著的站只有第一站傳送；不在清單裡的 id 略過；地區沒有傳送點時不傳送', async () => {
+    const { calculator } = await createRouteCalculator();
+    const list = ['tm_007', 'tm_008', 'tm_013', 'tm_010'].map(byId);
+    const { stops, summary } = calculator.describeOrder(['tm_007', 'tm_013', 'tm_999', 'tm_008', 'tm_010'], list);
+    assert.deepEqual(Array.from(stops, s => [s.mapId, s.teleport]), [['tm_007', true], ['tm_013', true], ['tm_008', true], ['tm_010', false]]);
+    assert.deepEqual({ ...summary }, { maps: 4, zones: 1, teleports: 3 });
+    const unknown = { id: 'g8_test_1', level: 'g8', zone: 'Test', coords: { x: 10, y: 20 } };
+    const lone = calculator.describeOrder(['g8_test_1'], [unknown]);
+    assert.deepEqual(Array.from(lone.stops, s => [s.mapId, s.aetheryteId, s.teleport]), [['g8_test_1', null, false]]);
+    assert.deepEqual({ ...lone.summary }, { maps: 1, zones: 1, teleports: 0 });
+});
+
+test('每個有寶圖的地區，單張圖的路線是 1 站且要傳送；G18 永生記憶 8 張圖的第一站要傳送，總傳送次數至少 1', async () => {
     const { calculator } = await createRouteCalculator();
     const problems = [];
 
-    const g18 = calculator.calculateRoute(maps.filter(map => map.zoneId === 'livingmemory'));
-    if (!(g18.summary.totalTeleports >= 1)) problems.push(`livingmemory 8 張圖：總傳送次數 ${g18.summary.totalTeleports}`);
-    if (g18.route[0]?.type !== 'teleport') problems.push(`livingmemory 8 張圖：第一步是 ${g18.route[0]?.type}`);
+    const g18 = plan(calculator, maps.filter(map => map.zoneId === 'livingmemory'));
+    if (!(g18.summary.teleports >= 1)) problems.push(`livingmemory 8 張圖：總傳送次數 ${g18.summary.teleports}`);
+    if (g18.stops[0]?.teleport !== true) problems.push(`livingmemory 8 張圖：第一站的 teleport 是 ${g18.stops[0]?.teleport}`);
 
     for (const zoneId of zoneIdsWithMaps) {
-        const single = calculator.calculateRoute([maps.find(map => map.zoneId === zoneId)]);
-        if (single.route[0]?.type !== 'teleport') problems.push(`${zoneId}: 單張圖的路線第一步是 ${single.route[0]?.type}`);
+        const single = plan(calculator, [maps.find(map => map.zoneId === zoneId)]);
+        const { maps: stopCount, zones, teleports } = single.summary;
+        if (single.stops.length !== 1 || single.stops[0].teleport !== true) problems.push(`${zoneId}: 單張圖的路線是 ${single.stops.length} 站、第一站 teleport ${single.stops[0]?.teleport}`);
+        if (stopCount !== 1 || zones !== 1 || teleports !== 1) problems.push(`${zoneId}: 單張圖的 summary 是 maps ${stopCount}、zones ${zones}、teleports ${teleports}`);
     }
     assert.deepEqual(problems, []);
 });

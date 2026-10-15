@@ -37,16 +37,13 @@ class RouteCalculator {
             return { summary: {}, route: [] };
         }
 
-        // 1. 找出起始地區（全域最近的寶圖-傳送點配對）
-        const { startRegion, startMap } = this.findStartingRegion(maps);
-
-        // 2. 按地區分組
+        // 1. 按地區分組
         const mapsByRegion = this.groupByZone(maps);
 
-        // 3. 決定地區訪問順序（第一個已決定，其餘按數量）
-        const regionOrder = this.getRegionOrder(mapsByRegion, startRegion);
+        // 2. 決定地區訪問順序（寶圖多的地區先跑）
+        const regionOrder = this.getRegionOrder(mapsByRegion);
 
-        // 4. 為每個地區規劃路線
+        // 3. 為每個地區規劃路線
         const route = [];
         let totalTeleports = 0;
 
@@ -82,50 +79,146 @@ class RouteCalculator {
     }
 
     /**
-     * 找出全域最近的寶圖-傳送點配對
+     * 第一次排序：寶圖多的地區先跑，張數一樣照該地區的寶圖在清單裡第一次出現的順序；
+     * 同一個地區裡照 planRegionRoute() 的算法（分給最近的傳送點、傳送點組依張數多到少、組內最近鄰居），
+     * 只取寶圖、不取傳送步驟
      * @param {Array} maps - 寶圖列表
-     * @returns {Object} 起始地區和起始地圖
+     * @returns {Array<string>} 站序（寶圖 id）
      */
-    findStartingRegion(maps) {
-        let minDistance = Infinity;
-        let startRegion = null;
-        let startMap = null;
+    firstOrder(maps) {
+        const mapsByRegion = this.groupByZone(maps);
+        const order = [];
 
-        for (const map of maps) {
-            // 匯入的清單沒有 zoneId，改用地區名稱從 ZoneManager 查（和 groupByZone() 查法相同）
-            const zoneId = map.zoneId || zoneManager.getZoneIdByName(map.zone);
-            if (!zoneId) {
-                continue;
-            }
-
-            const aetherytes = this.getRegionAetherytes(zoneId);
-
-            for (const aetheryte of aetherytes) {
-                const dist = this.calculateDistance(
-                    { coords: map.coords, zoneId: zoneId },
-                    { coords: aetheryte.coords, zoneId: zoneId, isTeleport: true }
-                );
-                if (dist < minDistance) {
-                    minDistance = dist;
-                    startRegion = zoneId;
-                    startMap = { ...map, zoneId: zoneId };
+        for (const region of this.getRegionOrder(mapsByRegion)) {
+            for (const step of this.planRegionRoute(mapsByRegion[region])) {
+                if (step.type === 'move') {
+                    order.push(step.mapId);
                 }
             }
         }
 
-        return { startRegion, startMap };
+        return order;
+    }
+
+    /**
+     * 跑到一半清單變了：不重排。還在清單裡的寶圖照原本的順序留下，新的寶圖依清單的順序一張一張插入：
+     * 插在同一組（同地區、同最近傳送點）的最後一站後面；沒有同一組就插在同地區的最後一站後面；
+     * 地區也是新的就排在最後。這樣傳送點組保持連在一起，傳送次數不會變多
+     * @param {Array<string>} prevOrder - 原本的站序（寶圖 id）
+     * @param {Array} maps - 目前的寶圖列表
+     * @returns {Array<string>} 新的站序（寶圖 id）
+     */
+    mergeOrder(prevOrder, maps) {
+        // 每張寶圖屬於哪一組，只算一次
+        const groupById = new Map();
+        for (const map of maps) {
+            groupById.set(map.id, {
+                zoneId: this.resolveZoneId(map),
+                aetheryteId: this.nearestAetheryteId(map)
+            });
+        }
+
+        const order = [];
+        const placed = new Set();
+        for (const id of prevOrder) {
+            if (groupById.has(id) && !placed.has(id)) {
+                order.push(id);
+                placed.add(id);
+            }
+        }
+
+        for (const map of maps) {
+            if (placed.has(map.id)) {
+                continue;
+            }
+
+            const { zoneId, aetheryteId } = groupById.get(map.id);
+            let lastInZone = -1;
+            let lastInGroup = -1;
+            for (let i = 0; i < order.length; i++) {
+                const other = groupById.get(order[i]);
+                if (other.zoneId !== zoneId) {
+                    continue;
+                }
+                lastInZone = i;
+                if (other.aetheryteId === aetheryteId) {
+                    lastInGroup = i;
+                }
+            }
+
+            const after = lastInGroup !== -1 ? lastInGroup : lastInZone;
+            if (after === -1) {
+                order.push(map.id);
+            } else {
+                order.splice(after + 1, 0, map.id);
+            }
+            placed.add(map.id);
+        }
+
+        return order;
+    }
+
+    /**
+     * 把站序展開成每一站的資訊與摘要。「傳送」標在一組（地區 + 最近傳送點）的第一站：
+     * 這一站有傳送點，而且是第一站或和前一站不同組
+     * @param {Array<string>} order - 站序（寶圖 id），不在 maps 裡的 id 略過
+     * @param {Array} maps - 寶圖列表
+     * @returns {Object} { stops: [{ mapId, zoneId, aetheryteId, teleport }], summary: { maps, zones, teleports } }
+     */
+    describeOrder(order, maps) {
+        const mapsById = new Map(maps.map(map => [map.id, map]));
+        const stops = [];
+
+        for (const id of order) {
+            const map = mapsById.get(id);
+            if (!map) {
+                continue;
+            }
+
+            const zoneId = this.resolveZoneId(map);
+            const aetheryteId = this.nearestAetheryteId(map);
+            const previous = stops[stops.length - 1];
+            const sameGroup = Boolean(previous) && previous.zoneId === zoneId && previous.aetheryteId === aetheryteId;
+            stops.push({ mapId: id, zoneId, aetheryteId, teleport: aetheryteId !== null && !sameGroup });
+        }
+
+        return {
+            stops,
+            summary: {
+                maps: stops.length,
+                zones: new Set(stops.map(stop => stop.zoneId)).size,
+                teleports: stops.filter(stop => stop.teleport).length
+            }
+        };
+    }
+
+    /**
+     * 寶圖所在的地區 ID。匯入的清單沒有 zoneId，改用地區名稱從 ZoneManager 查
+     * @param {Object} map - 寶圖
+     * @returns {string} 地區 ID
+     */
+    resolveZoneId(map) {
+        return map.zoneId || zoneManager.getZoneIdByName(map.zone) || 'unknown';
+    }
+
+    /**
+     * 這張寶圖最近的傳送點（和卡片的「最近」是同一個函式）
+     * @param {Object} map - 寶圖
+     * @returns {string|null} 傳送點 ID，地區沒有傳送點時是 null
+     */
+    nearestAetheryteId(map) {
+        return zoneManager.findNearestAetheryte(this.resolveZoneId(map), map.coords)?.aetheryte.id ?? null;
     }
 
     /**
      * 按地區分組
      * @param {Array} maps - 寶圖列表
-     * @returns {Object} 分組結果
+     * @returns {Object} 分組結果（key 的順序就是各地區的寶圖第一次出現的順序）
      */
     groupByZone(maps) {
         const groups = {};
         for (const map of maps) {
-            // 匯入的清單沒有 zoneId，改用地區名稱從 ZoneManager 查
-            const zoneId = map.zoneId || zoneManager.getZoneIdByName(map.zone) || 'unknown';
+            const zoneId = this.resolveZoneId(map);
             if (!groups[zoneId]) {
                 groups[zoneId] = [];
             }
@@ -138,21 +231,14 @@ class RouteCalculator {
     }
 
     /**
-     * 決定地區訪問順序
+     * 決定地區訪問順序：寶圖多的地區先跑，張數一樣照第一次出現的順序（穩定排序）
      * @param {Object} mapsByRegion - 按地區分組的寶圖
-     * @param {string} startRegion - 起始地區
      * @returns {Array} 地區訪問順序
      */
-    getRegionOrder(mapsByRegion, startRegion) {
-        const regions = Object.keys(mapsByRegion);
-        const otherRegions = regions.filter(r => r !== startRegion);
-
-        // 其餘地區按寶圖數量排序（多的優先）
-        otherRegions.sort((a, b) =>
+    getRegionOrder(mapsByRegion) {
+        return Object.keys(mapsByRegion).sort((a, b) =>
             mapsByRegion[b].length - mapsByRegion[a].length
         );
-
-        return [startRegion, ...otherRegions];
     }
 
     /**
