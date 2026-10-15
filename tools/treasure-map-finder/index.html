@@ -36,11 +36,10 @@
                     <li><span class="tm-step-num">2</span><span data-i18n="treasure_map_step_add">加入清單</span></li>
                     <li><span class="tm-step-num">3</span><span data-i18n="treasure_map_step_route">生成路線</span></li>
                 </ol>
-                <!-- 清單入口：左邊打開清單面板，右邊依張數顯示「組隊」、提示或「生成路線」（由 JavaScript 切換 .hidden） -->
+                <!-- 清單入口：左邊打開清單面板，右邊依張數顯示「組隊」或「生成路線」（由 JavaScript 切換 .hidden） -->
                 <div class="tm-list-entry" id="listEntryDesktop">
                     <button type="button" class="btn btn-ghost" data-entry="list"><span class="tm-entry-label">📋 清單</span></button>
                     <button type="button" class="btn hidden" data-entry="team" data-i18n="treasure_map_entry_team">組隊</button>
-                    <span class="tm-entry-hint hidden" data-entry="hint" data-i18n="treasure_map_entry_hint_one">再加 1 張就能排路線</span>
                     <button type="button" class="btn btn-primary hidden" data-entry="route"><span class="btn-icon">🗺️</span> <span data-i18n="treasure_map_generate_route">生成路線</span></button>
                 </div>
             </div>
@@ -101,7 +100,6 @@
     <div class="tm-list-entry tm-bottom-bar" id="listEntryMobile">
         <button type="button" class="btn btn-ghost" data-entry="list"><span class="tm-entry-label">📋 清單</span></button>
         <button type="button" class="btn hidden" data-entry="team" data-i18n="treasure_map_entry_team">組隊</button>
-        <span class="tm-entry-hint hidden" data-entry="hint" data-i18n="treasure_map_entry_hint_one">再加 1 張就能排路線</span>
         <button type="button" class="btn btn-primary hidden" data-entry="route"><span class="btn-icon">🗺️</span> <span data-i18n="treasure_map_generate_route">生成路線</span></button>
     </div>
 

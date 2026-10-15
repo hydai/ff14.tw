@@ -28,7 +28,6 @@ const TreasureMapTranslations = {
         treasure_map_entry_count: '📋 清單 {count} 張',
         treasure_map_entry_room: '👥 隊伍清單 {count}/{max}',
         treasure_map_entry_team: '組隊',
-        treasure_map_entry_hint_one: '再加 1 張就能排路線',
         treasure_map_announce_added: '已加入清單，共 {count} 張',
         treasure_map_announce_removed: '已從清單移除，剩 {count} 張',
 
@@ -132,7 +131,6 @@ const TreasureMapTranslations = {
         treasure_map_loading: '載入中...',
         treasure_map_load_failed: '載入寶圖資料失敗，請重新整理頁面再試。',
         treasure_map_reload: '重新載入',
-        treasure_map_no_maps_for_route: '至少需要 2 張寶圖才能生成路線',
         treasure_map_no_route_to_copy: '目前沒有可複製的路線',
         treasure_map_loading_aetherytes: '正在載入傳送點資料，請稍後再試',
         treasure_map_route_copy_success: '已複製 {count} 個地點',
@@ -282,7 +280,6 @@ const TreasureMapTranslations = {
         treasure_map_entry_count: '📋 List: {count}',
         treasure_map_entry_room: '👥 Team list {count}/{max}',
         treasure_map_entry_team: 'Team up',
-        treasure_map_entry_hint_one: 'Add 1 more map to plan a route',
         treasure_map_announce_added: 'Added to the list. Total: {count}',
         treasure_map_announce_removed: 'Removed from the list. Remaining: {count}',
 
@@ -386,7 +383,6 @@ const TreasureMapTranslations = {
         treasure_map_loading: 'Loading...',
         treasure_map_load_failed: 'Failed to load map data, please refresh the page.',
         treasure_map_reload: 'Reload',
-        treasure_map_no_maps_for_route: 'At least 2 maps are required to generate a route',
         treasure_map_no_route_to_copy: 'No route available to copy',
         treasure_map_loading_aetherytes: 'Loading aetheryte data, please try again later',
         treasure_map_route_copy_success: 'Copied {count} locations',
@@ -536,7 +532,6 @@ const TreasureMapTranslations = {
         treasure_map_entry_count: '📋 リスト {count} 枚',
         treasure_map_entry_room: '👥 チームリスト {count}/{max}',
         treasure_map_entry_team: 'チームを組む',
-        treasure_map_entry_hint_one: 'あと 1 枚でルートを作れます',
         treasure_map_announce_added: 'リストに追加しました（{count} 枚）',
         treasure_map_announce_removed: 'リストから削除しました（残り {count} 枚）',
 
@@ -640,7 +635,6 @@ const TreasureMapTranslations = {
         treasure_map_loading: '読み込み中...',
         treasure_map_load_failed: 'データの読み込みに失敗しました。ページを更新してください。',
         treasure_map_reload: '再読み込み',
-        treasure_map_no_maps_for_route: 'ルート生成には少なくとも 2 枚の地図が必要です',
         treasure_map_no_route_to_copy: 'コピーできるルートがありません',
         treasure_map_loading_aetherytes: 'エーテライトデータを読み込み中。後でもう一度お試しください',
         treasure_map_route_copy_success: '{count} 箇所の地点をコピーしました',

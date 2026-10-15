@@ -85,17 +85,11 @@
     color: var(--color-success-text);
 }
 
-/* 清單入口：左邊的清單按鈕，右邊「組隊」、提示、「生成路線」三選一（由 JS 切換 .hidden） */
+/* 清單入口：左邊的清單按鈕，右邊「組隊」、「生成路線」二選一（由 JS 切換 .hidden） */
 .tm-list-entry {
     display: flex;
     align-items: center;
     gap: var(--space-2);
-}
-
-.tm-entry-hint {
-    font-size: var(--text-sm);
-    line-height: var(--leading-snug);
-    color: var(--color-muted);
 }
 
 /* 手機的底部列；桌機用最上面那一列右邊的入口（底部列的版面見最下面的響應式） */
@@ -1139,13 +1133,6 @@
     .tm-bottom-bar .tm-entry-label {
         overflow: hidden;
         text-overflow: ellipsis;
-    }
-
-    /* 提示放不下時換行（最多兩行，仍在按鈕高度內），不把清單按鈕擠掉 */
-    .tm-bottom-bar .tm-entry-hint {
-        min-width: 0;
-        font-size: var(--text-xs);
-        text-align: right;
     }
 
     /* 底部列不能蓋住內容：頁面最下面留出同樣的高度。留在 body 而不是 main：

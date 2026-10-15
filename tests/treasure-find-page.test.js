@@ -88,7 +88,7 @@ const TreasureMapFinder = (() => {
 // 步驟列與清單入口（照 index.html 的結構；兩個入口內容相同，手機那個多了 .tm-bottom-bar）
 const STEP_KEYS = ['treasure_map_step_grade', 'treasure_map_step_add', 'treasure_map_step_route'];
 const ENTRY_IDS = ['listEntryDesktop', 'listEntryMobile'];
-const ENTRY_ACTIONS = ['team', 'hint', 'route'];
+const ENTRY_ACTIONS = ['team', 'route'];
 function createStepHint(dom) {
     return dom.el('ol', { id: 'stepHint', class: 'tm-steps', role: 'list' }, ...STEP_KEYS.map((key, index) => dom.el('li', index === 0 ? { class: 'current', 'aria-current': 'step' } : {},
         dom.el('span', { class: 'tm-step-num' }, String(index + 1)), dom.el('span', { 'data-i18n': key }, key))));
@@ -97,7 +97,6 @@ function createListEntry(dom, id) {
     return dom.el('div', { id, class: id === 'listEntryMobile' ? 'tm-list-entry tm-bottom-bar' : 'tm-list-entry' },
         dom.el('button', { type: 'button', class: 'btn btn-ghost', 'data-entry': 'list' }, dom.el('span', { class: 'tm-entry-label' }, '📋 清單')),
         dom.el('button', { type: 'button', class: 'btn hidden', 'data-entry': 'team', 'data-i18n': 'treasure_map_entry_team' }, '組隊'),
-        dom.el('span', { class: 'tm-entry-hint hidden', 'data-entry': 'hint', 'data-i18n': 'treasure_map_entry_hint_one' }, '再加 1 張就能排路線'),
         dom.el('button', { type: 'button', class: 'btn btn-primary hidden', 'data-entry': 'route' }, '生成路線'));
 }
 
@@ -623,21 +622,24 @@ test('新增的三語鍵值照設計；舊篩選卡、載入更多的鍵值刪�
 });
 
 // ---------- 步驟提示與清單入口（Task 5） ----------
-test('getStep：清單 2 張以上第 3 步，選了等級第 2 步，否則第 1 步', () => {
+test('getStep：清單 1 張以上第 3 步，選了等級第 2 步，否則第 1 步', () => {
     assert.equal(TreasureMapFinder.getStep({ hasLevels: false, listCount: 0 }), 1);
-    assert.equal(TreasureMapFinder.getStep({ hasLevels: true, listCount: 1 }), 2);
-    assert.equal(TreasureMapFinder.getStep({ hasLevels: false, listCount: 2 }), 3);
+    assert.equal(TreasureMapFinder.getStep({ hasLevels: true, listCount: 0 }), 2);
+    assert.equal(TreasureMapFinder.getStep({ hasLevels: false, listCount: 1 }), 3);
 });
 
-test('getListEntryState：0／1／≥2 張與隊伍模式（Review Focus 1）', () => {
+test('getListEntryState：0 張「組隊」、1 張以上「生成路線」；隊伍裡 0 張不放動作（Review Focus 1）', () => {
     // vm 裡建出來的物件原型和這裡不同，先轉成這邊的物件再比（同 stateOf）
     const s = (count, inRoom) => JSON.parse(JSON.stringify(TreasureMapFinder.getListEntryState({ count, inRoom, maxMaps: 8 })));
     assert.deepEqual(s(0, false), { labelKey: 'treasure_map_entry_empty', labelParams: {}, action: 'team' });
-    assert.deepEqual(s(1, false), { labelKey: 'treasure_map_entry_count', labelParams: { count: 1 }, action: 'hint' });
-    assert.deepEqual(s(3, false), { labelKey: 'treasure_map_entry_count', labelParams: { count: 3 }, action: 'route' });
+    assert.deepEqual(s(1, false), { labelKey: 'treasure_map_entry_count', labelParams: { count: 1 }, action: 'route' });
     assert.deepEqual(s(0, true), { labelKey: 'treasure_map_entry_room', labelParams: { count: 0, max: 8 }, action: null });
-    assert.deepEqual(s(1, true), { labelKey: 'treasure_map_entry_room', labelParams: { count: 1, max: 8 }, action: 'hint' });
-    assert.deepEqual(s(5, true), { labelKey: 'treasure_map_entry_room', labelParams: { count: 5, max: 8 }, action: 'route' });
+    assert.deepEqual(s(1, true), { labelKey: 'treasure_map_entry_room', labelParams: { count: 1, max: 8 }, action: 'route' });
+    assert.ok(!read('tools/treasure-map-finder/index.html').includes('data-entry="hint"'));
+    ['zh', 'en', 'ja'].forEach((lang) => {
+        const keys = translationKeySet(TRANSLATIONS, lang);
+        for (const gone of ['treasure_map_entry_hint_one', 'treasure_map_no_maps_for_route']) assert.ok(!keys.has(gone), `${lang} ${gone}`);
+    });
 });
 
 test('操作列拿掉；組隊與隊伍狀態在清單面板裡；入口、步驟列、唸出區都在', () => {
@@ -680,16 +682,15 @@ test('頁面結構：步驟列與桌機入口在 main 最上面、手機底部�
         assert.match(item, new RegExp(`data-i18n="${STEP_KEYS[index]}"`));
     });
 
-    // 兩個入口內容相同：清單（文字按鈕＋標籤）、組隊、提示、生成路線；後三個先藏起來
+    // 兩個入口內容相同：清單（文字按鈕＋標籤）、組隊、生成路線；後兩個先藏起來
     for (const id of ENTRY_IDS) {
         const entry = sliceElementById(html, id);
         const parts = Object.fromEntries([...entry.matchAll(/<(button|span)\b[^>]*\sdata-entry="(\w+)"[^>]*>/g)].map((m) => [m[2], { tag: m[1], attrs: parseAttrs(m[0]) }]));
-        assert.deepEqual(Object.keys(parts), ['list', 'team', 'hint', 'route'], id);
+        assert.deepEqual(Object.keys(parts), ['list', 'team', 'route'], id);
         assert.deepEqual([parts.list.tag, classesOf(parts.list.attrs)], ['button', ['btn', 'btn-ghost']], id);
         assert.match(entry, /data-entry="list"[^>]*>\s*<span class="tm-entry-label">/, `${id} 的清單按鈕裡有標籤`);
         assert.doesNotMatch(entry, /class="tm-entry-label"[^>]*data-i18n/, '標籤帶 {count} 參數，由 JS 填入，不能用 data-i18n');
         assert.deepEqual([parts.team.tag, classesOf(parts.team.attrs), parts.team.attrs['data-i18n']], ['button', ['btn', 'hidden'], 'treasure_map_entry_team'], id);
-        assert.deepEqual([parts.hint.tag, classesOf(parts.hint.attrs), parts.hint.attrs['data-i18n']], ['span', ['tm-entry-hint', 'hidden'], 'treasure_map_entry_hint_one'], id);
         assert.deepEqual([parts.route.tag, classesOf(parts.route.attrs)], ['button', ['btn', 'btn-primary', 'hidden']], id);
         assert.match(entry, /data-entry="route"[\s\S]*data-i18n="treasure_map_generate_route"/, `${id} 的生成路線沿用原本的鍵值`);
     }
@@ -729,7 +730,7 @@ test('步驟列：還原出來的等級是第 2 步；選、取消等級時跟�
     assert.deepEqual(page.steps(), [['✓', 'done', null], ['2', 'current', 'step'], ['3', '', null]]);
 });
 
-test('清單入口：0 張「組隊」、1 張提示、2 張以上「生成路線」；隊伍裡顯示「隊伍清單 N/8」，0 張不放動作（Review Focus 1）', () => {
+test('清單入口：0 張「組隊」、1 張以上「生成路線」；隊伍裡顯示「隊伍清單 N/8」，0 張不放動作（Review Focus 1）', () => {
     const page = createFilterPage({ url: 'https://ff14.tw/tools/treasure-map-finder/?grade=g17' });
     const { finder, list, $ } = page;
     const both = () => ENTRY_IDS.map((id) => page.entryOf(id));
@@ -744,10 +745,11 @@ test('清單入口：0 張「組隊」、1 張提示、2 張以上「生成路�
     assert.equal($('totalCount').textContent, '0');
     assert.equal($('generateRouteBtn').disabled, true);
 
+    // 1 張就能排路線：入口出現「生成路線」、面板裡的按鈕可以按、步驟列到第 3 步
     show(1);
-    assert.deepEqual(both(), Array(2).fill({ label: '📋 清單 1 張', action: 'hint' }));
-    assert.equal($('generateRouteBtn').disabled, true);
-    assert.deepEqual(page.steps(), [['✓', 'done', null], ['2', 'current', 'step'], ['3', '', null]]);
+    assert.deepEqual(both(), Array(2).fill({ label: '📋 清單 1 張', action: 'route' }));
+    assert.equal($('generateRouteBtn').disabled, false);
+    assert.deepEqual(page.steps(), [['✓', 'done', null], ['✓', 'done', null], ['3', 'current', 'step']]);
 
     show(3);
     assert.deepEqual(both(), Array(2).fill({ label: '📋 清單 3 張', action: 'route' }));
@@ -759,13 +761,16 @@ test('清單入口：0 張「組隊」、1 張提示、2 張以上「生成路�
     show(0, { currentRoom: { roomCode: 'ABC123' } });
     assert.deepEqual(both(), Array(2).fill({ label: '👥 隊伍清單 0/8', action: null }));
     show(1, { currentRoom: { roomCode: 'ABC123' } });
-    assert.deepEqual(both(), Array(2).fill({ label: '👥 隊伍清單 1/8', action: 'hint' }));
+    assert.deepEqual(both(), Array(2).fill({ label: '👥 隊伍清單 1/8', action: 'route' }));
     show(5, { currentRoom: { roomCode: 'ABC123' } });
     assert.deepEqual(both(), Array(2).fill({ label: '👥 隊伍清單 5/8', action: 'route' }));
 
-    // 往回走：從第 3 步回到第 2 步時，第 3 步的號碼與狀態都還原
+    // 往回走：從 1 張回到 0 張（第 3 步回到第 2 步）時，第 3 步的號碼與狀態都還原，「生成路線」重新停用
     show(1);
+    assert.deepEqual(page.steps(), [['✓', 'done', null], ['✓', 'done', null], ['3', 'current', 'step']]);
+    show(0);
     assert.deepEqual(page.steps(), [['✓', 'done', null], ['2', 'current', 'step'], ['3', '', null]]);
+    assert.equal($('generateRouteBtn').disabled, true);
 });
 
 test('張數改變時唸出加入或移除，第一次只記下張數', () => {
@@ -907,7 +912,6 @@ test('步驟列與清單入口的三語鍵值照設計', () => {
         treasure_map_entry_count: ['📋 清單 {count} 張', '📋 List: {count}', '📋 リスト {count} 枚'],
         treasure_map_entry_room: ['👥 隊伍清單 {count}/{max}', '👥 Team list {count}/{max}', '👥 チームリスト {count}/{max}'],
         treasure_map_entry_team: ['組隊', 'Team up', 'チームを組む'],
-        treasure_map_entry_hint_one: ['再加 1 張就能排路線', 'Add 1 more map to plan a route', 'あと 1 枚でルートを作れます'],
         // 英文不帶單位：「(1 maps)」單複數不對，又不想為了它加複數規則
         treasure_map_announce_added: ['已加入清單，共 {count} 張', 'Added to the list. Total: {count}', 'リストに追加しました（{count} 枚）'],
         treasure_map_announce_removed: ['已從清單移除，剩 {count} 張', 'Removed from the list. Remaining: {count}', 'リストから削除しました（残り {count} 枚）']

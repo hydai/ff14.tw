@@ -814,12 +814,11 @@ class TreasureMapFinder {
         treasure_map_entry_room: '👥 隊伍清單 {count}/{max}'
     };
 
-    // 清單入口：左邊的標籤與右邊的動作。0 張「組隊」、1 張提示再加 1 張、2 張以上「生成路線」；
+    // 清單入口：左邊的標籤與右邊的動作。0 張「組隊」、1 張以上「生成路線」（1 張也排得出路線）；
     // 在隊伍裡時標籤是「隊伍清單 N/上限」，0 張時右邊不放動作（已經在隊伍裡，不再顯示「組隊」）
     static getListEntryState({ count, inRoom, maxMaps }) {
         let action = 'team';
-        if (count >= 2) action = 'route';
-        else if (count === 1) action = 'hint';
+        if (count >= 1) action = 'route';
         else if (inRoom) action = null;
 
         if (inRoom) return { labelKey: 'treasure_map_entry_room', labelParams: { count, max: maxMaps }, action };
@@ -827,9 +826,9 @@ class TreasureMapFinder {
         return { labelKey: 'treasure_map_entry_count', labelParams: { count }, action };
     }
 
-    // 步驟提示目前在第幾步：清單 2 張以上（可以生成路線）是第 3 步；選了等級是第 2 步；否則第 1 步
+    // 步驟提示目前在第幾步：清單 1 張以上（可以生成路線）是第 3 步；選了等級是第 2 步；否則第 1 步
     static getStep({ hasLevels, listCount }) {
-        if (listCount >= 2) return 3;
+        if (listCount >= 1) return 3;
         return hasLevels ? 2 : 1;
     }
 
@@ -837,10 +836,10 @@ class TreasureMapFinder {
         const count = this.listManager.getLength();
         this.elements.totalCount.textContent = count;
 
-        // 更新生成路線按鈕狀態
+        // 更新生成路線按鈕狀態：1 張就能排路線，只有清單是空的才停用
         const generateRouteBtn = document.getElementById('generateRouteBtn');
         if (generateRouteBtn) {
-            generateRouteBtn.disabled = count < 2;
+            generateRouteBtn.disabled = count < 1;
         }
 
         this.updateListEntry();
@@ -865,7 +864,7 @@ class TreasureMapFinder {
         const label = FF14Utils.getI18nText(labelKey, TreasureMapFinder.ENTRY_LABELS[labelKey], labelParams);
         for (const entry of [this.elements.listEntryDesktop, this.elements.listEntryMobile]) {
             entry.querySelector('.tm-entry-label').textContent = label;
-            for (const name of ['team', 'hint', 'route']) {
+            for (const name of ['team', 'route']) {
                 entry.querySelector(`[data-entry="${name}"]`).classList.toggle('hidden', name !== action);
             }
         }
@@ -1012,10 +1011,8 @@ class TreasureMapFinder {
     async generateRoute() {
         const myList = this.listManager.getList();
 
-        if (myList.length < 2) {
-            FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_no_maps_for_route', '至少需要 2 張寶圖才能生成路線'), 'error');
-            return;
-        }
+        // 1 張也排得出路線；清單是空的就什麼都不做。0 張時「生成路線」按鈕停用、入口也不放它，所以不用跳提示
+        if (myList.length === 0) return;
 
         // 等待 routeCalculator 與地區、傳送點資料載入完成
         if (!routeCalculator || !zoneManager.loaded) {
