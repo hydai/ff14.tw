@@ -81,6 +81,16 @@ class CoordinateUtils {
     }
 
     /**
+     * 複製進遊戲聊天欄的座標：一律一位小數（20 → 20.0），不含 Z，和卡片顯示的數字一致
+     * @param {Object} coords - 座標物件 {x, y, z}
+     * @returns {string} 例如 '(21.6, 23.9)'
+     */
+    static formatPair(coords) {
+        const format = value => Number(value).toFixed(1);
+        return `(${format(coords.x)}, ${format(coords.y)})`;
+    }
+
+    /**
      * 驗證座標是否有效
      * @param {Object} coords - 座標物件
      * @returns {boolean} 是否有效
