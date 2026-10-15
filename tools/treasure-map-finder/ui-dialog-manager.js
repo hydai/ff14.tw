@@ -1,19 +1,5 @@
 // UI 對話框管理模組
 class UIDialogManager {
-    static CONSTANTS = {
-        Z_INDEX: {
-            MODAL: 1000,
-            DIALOG: 10000
-        },
-        CSS_CLASSES: {
-            ACTIVE: 'active'
-        },
-        ANIMATIONS: {
-            FADE_IN: 300,
-            FADE_OUT: 200
-        }
-    };
-
     // 詳細地圖上疊的寶圖縮圖：離邊緣、寬、高佔地圖邊長的比例（縮圖 207×174）。style.css 的 .map-detail-thumb 用同樣的數字；
     // 依序試這四個角（見 thumbCorner）
     static THUMB_BOX = { inset: 0.02, width: 0.34, height: 0.34 * 174 / 207 };
@@ -22,19 +8,11 @@ class UIDialogManager {
     constructor() {
         this.modalManager = new ModalManager();
 
-        // 格式面板疊在路線面板上，兩者必須同時開著，因此需要各自的 ModalManager 實例
-        //（單一實例一次只管理一個視窗）。堆疊會保證 Escape／焦點陷阱只作用在最上層。
-        this.formatModalManager = new ModalManager();
-
-        // Map to store cleanup functions for panels
-        this.cleanupHandlers = new Map();
-
-        // 目前開啟中的對話框種類與其原始呼叫資料（地圖詳細視窗／路線結果面板），
+        // 目前開啟中的對話框種類與其原始呼叫資料（地圖詳細檢視），
         // 語言切換時用來重新以目前語言渲染其動態文字（見 refreshActiveDialog）
         this.activeDialog = null;
 
-        // 關閉鈕的固定監聽器參考（見 showRouteResult）；詳細檢視的一組監聽器見 _getMapDetailHandlers()
-        this._boundHideRouteResult = null;
+        // 詳細檢視的一組固定監聽器參考（見 _getMapDetailHandlers()）
         this._mapDetailHandlers = null;
 
         // 詳細地圖的繪製：寶圖標記圖示第一次畫的時候才建立、之後共用；每次重畫換一個序號，
@@ -73,25 +51,6 @@ class UIDialogManager {
             nextBtn: document.getElementById('mapDetailNext'),
             copyBtn: document.getElementById('mapDetailCopy'),
             addBtn: document.getElementById('mapDetailAdd')
-        };
-
-        // 路線面板元素
-        this.routePanelElements = {
-            panel: document.getElementById('routePanel'),
-            summary: document.getElementById('routeSummary'),
-            steps: document.getElementById('routeSteps'),
-            closeBtn: document.getElementById('closeRoutePanelBtn')
-        };
-
-        // 格式設定面板元素
-        this.formatPanelElements = {
-            panel: document.getElementById('formatPanel'),
-            teleportFormat: document.getElementById('teleportFormat'),
-            mapFormat: document.getElementById('mapFormat'),
-            preview: document.getElementById('formatPreview'),
-            closeBtn: document.getElementById('closeFormatPanelBtn'),
-            saveBtn: document.getElementById('saveFormatBtn'),
-            resetBtn: document.getElementById('resetFormatBtn')
         };
     }
 
@@ -168,7 +127,7 @@ class UIDialogManager {
         this.activeDialog = { kind: 'mapDetail', map, options: cachedOptions };
         this._renderMapDetail();
 
-        // 與 showRouteResult 相同：固定用同一組函式參考掛載，重複開啟時監聽器不會累積；關閉時拆掉。
+        // 固定用同一組函式參考掛載，重複開啟時監聽器不會累積；關閉時拆掉。
         // ← → 掛在對話框上：焦點在對話框裡哪裡都收得到
         const handlers = this._getMapDetailHandlers();
         const listeners = [
@@ -474,295 +433,12 @@ class UIDialogManager {
     }
 
     /**
-     * 顯示路線結果面板
-     * @param {Object} result - 路線計算結果
-     * @param {Object} options - 選項
-     */
-    showRouteResult(result, options = {}) {
-        const elements = this.routePanelElements;
-        if (!elements.panel) return;
-
-        // 快取這次開啟的資料，語言切換時（見 refreshActiveDialog）重新以目前語言渲染
-        this.activeDialog = { kind: 'routeResult', result, options };
-        this._renderRouteContent(result, options);
-
-        // 每次開啟都會再掛一次關閉鈕的監聽器；ModalManager.show() 對「已經開著的同一個元素」
-        // 會直接 return、不更新 onClose，重複生成路線時舊的監聽器就會累積。
-        // 固定用同一個函式參考掛載——addEventListener 對同一個參考不會重複註冊。
-        if (!this._boundHideRouteResult) {
-            this._boundHideRouteResult = () => this.hideRouteResult();
-        }
-        elements.closeBtn.addEventListener('click', this._boundHideRouteResult);
-
-        // 顯示面板
-        this.modalManager.show(elements.panel, {
-            useClass: UIDialogManager.CONSTANTS.CSS_CLASSES.ACTIVE,
-            closeOnOverlayClick: false,
-            onClose: () => {
-                // 格式面板若還開著，ModalManager.hide() 的連鎖關閉已經在進入這裡之前
-                // 由上而下把它收掉並把焦點還給「自訂格式」按鈕，這裡不需要（也不可以）再插手。
-                elements.closeBtn.removeEventListener('click', this._boundHideRouteResult);
-                if (this.activeDialog?.kind === 'routeResult') {
-                    this.activeDialog = null;
-                }
-            }
-        });
-    }
-
-    /**
-     * 渲染路線結果面板的摘要與步驟列表；showRouteResult() 與語言切換後的
-     * refreshActiveDialog() 共用同一份邏輯，確保兩者輸出一致
-     */
-    _renderRouteContent(result, options) {
-        const elements = this.routePanelElements;
-        const { onStepCopy, getZoneName } = options;
-
-        // 生成摘要
-        const summaryElement = this.generateRouteSummary(result, getZoneName);
-        SecurityUtils.clearElement(elements.summary);
-        elements.summary.appendChild(summaryElement);
-
-        // 生成步驟列表
-        SecurityUtils.clearElement(elements.steps);
-        result.route.forEach((step, index) => {
-            const stepElement = this.createRouteStep(step, index, result.route.length, {
-                onStepCopy,
-                getZoneName
-            });
-            elements.steps.appendChild(stepElement);
-        });
-    }
-
-    /**
-     * 語言切換時，依目前開啟的對話框種類重新以目前語言渲染其動態文字
-     * （地圖詳細檢視目前這張的全部內容，包括地圖上的傳送點名稱；路線結果面板的摘要與每個步驟）。
-     * 固定的標籤（data-i18n）由 I18nManager 在通知之前就翻譯好了
+     * 語言切換時（以及傳送點圖示晚到時），用目前語言重畫開著的地圖詳細檢視：目前這張的全部內容，包括地圖上的傳送點名稱。
+     * 沒開著就什麼都不做。固定的標籤（data-i18n）由 I18nManager 在通知之前就翻譯好了
      */
     refreshActiveDialog() {
-        if (!this.activeDialog) return;
-
-        if (this.activeDialog.kind === 'mapDetail') {
+        if (this.activeDialog?.kind === 'mapDetail') {
             this._renderMapDetail();
-        } else if (this.activeDialog.kind === 'routeResult') {
-            this._renderRouteContent(this.activeDialog.result, this.activeDialog.options);
-        }
-    }
-
-    /**
-     * 生成路線摘要
-     */
-    generateRouteSummary(result, getZoneName) {
-        const regionsText = result.summary.regionsVisited
-            .map(zone => getZoneName ? getZoneName(zone) : zone)
-            .join(' → ');
-
-        const summaryDiv = document.createElement('div');
-        summaryDiv.className = 'route-summary-content';
-
-        const titleP = document.createElement('p');
-        const strong = document.createElement('strong');
-        strong.textContent = FF14Utils.getI18nText('treasure_map_route_summary', '路線摘要：');
-        strong.dataset.i18n = 'treasure_map_route_summary';
-        titleP.appendChild(strong);
-        summaryDiv.appendChild(titleP);
-
-        const regionsP = document.createElement('p');
-        regionsP.textContent = FF14Utils.getI18nText('treasure_map_route_regions', `地區順序：${regionsText}`, { regions: regionsText });
-        summaryDiv.appendChild(regionsP);
-
-        const teleportsP = document.createElement('p');
-        teleportsP.textContent = FF14Utils.getI18nText('treasure_map_route_teleports', `總傳送次數：${result.summary.totalTeleports || 0}`, { count: result.summary.totalTeleports || 0 });
-        summaryDiv.appendChild(teleportsP);
-
-        const mapsP = document.createElement('p');
-        mapsP.textContent = FF14Utils.getI18nText('treasure_map_route_total_maps', `總寶圖數量：${result.summary.totalMaps || 0}`, { count: result.summary.totalMaps || 0 });
-        summaryDiv.appendChild(mapsP);
-
-        return summaryDiv;
-    }
-
-    /**
-     * 建立路線步驟元素
-     */
-    createRouteStep(step, index, total, options) {
-        const { onStepCopy, getZoneName } = options;
-        
-        const stepDiv = document.createElement('div');
-        stepDiv.className = `route-step ${step.type}`;
-        
-        const stepNumber = document.createElement('span');
-        stepNumber.className = 'step-number';
-        stepNumber.textContent = `${index + 1}.`;
-        
-        const stepContent = document.createElement('span');
-        stepContent.className = 'step-content';
-        
-        if (step.type === 'teleport') {
-            const aetheryteNames = step.to;
-
-            const iconSpan = document.createElement('span');
-            iconSpan.className = 'step-icon';
-            iconSpan.textContent = '🔮';
-
-            const textSpan = document.createElement('span');
-            textSpan.className = 'step-text';
-            // step.to／aetheryteNames 實際型別是 { zh, en, ja }，依目前介面語言挑選名稱，
-            // 找不到對應語言時退回中文（與 script.js 的 getZoneName()／renderMyList() 一致）
-            const currentLang = window.i18n.getCurrentLanguage();
-            const aetheryteName = (aetheryteNames && typeof aetheryteNames === 'object')
-                ? (aetheryteNames[currentLang] || aetheryteNames.zh)
-                : aetheryteNames;
-            textSpan.textContent = FF14Utils.getI18nText('treasure_map_route_teleport_to', `傳送至 ${aetheryteName}`, { name: aetheryteName });
-
-            const coordsSpan = document.createElement('span');
-            coordsSpan.className = 'step-coords';
-            coordsSpan.textContent = CoordinateUtils.formatCoordinatesShort(step.coords);
-
-            stepContent.appendChild(iconSpan);
-            stepContent.appendChild(textSpan);
-            stepContent.appendChild(coordsSpan);
-        } else {
-            const zoneName = getZoneName ? getZoneName(step.zoneId || step.zone) : step.zone;
-            
-            const iconSpan = document.createElement('span');
-            iconSpan.className = 'step-icon';
-            iconSpan.textContent = '📍';
-            
-            const textSpan = document.createElement('span');
-            textSpan.className = 'step-text';
-            textSpan.textContent = `${step.mapLevel || ''} - ${zoneName}`;
-            
-            const coordsSpan = document.createElement('span');
-            coordsSpan.className = 'step-coords';
-            coordsSpan.textContent = CoordinateUtils.formatCoordinatesShort(step.coords);
-            
-            stepContent.appendChild(iconSpan);
-            stepContent.appendChild(textSpan);
-            stepContent.appendChild(coordsSpan);
-        }
-        
-        const copyBtn = document.createElement('button');
-        copyBtn.className = 'btn btn-sm btn-copy';
-        copyBtn.textContent = '📋';
-        copyBtn.title = FF14Utils.getI18nText('treasure_map_route_step_copy_title', '複製');
-        copyBtn.onclick = () => {
-            if (onStepCopy) {
-                onStepCopy(step, index, total);
-            }
-        };
-        
-        stepDiv.appendChild(stepNumber);
-        stepDiv.appendChild(stepContent);
-        stepDiv.appendChild(copyBtn);
-        
-        return stepDiv;
-    }
-
-    /**
-     * 隱藏路線結果面板
-     */
-    hideRouteResult() {
-        this.modalManager.hide();
-    }
-
-    /**
-     * 顯示格式設定面板
-     * @param {Object} currentSettings - 當前設定
-     * @param {Function} onPreviewUpdate - 預覽更新回調
-     */
-    showFormatPanel(currentSettings, onPreviewUpdate) {
-        const elements = this.formatPanelElements;
-        if (!elements.panel) return;
-
-        const panelId = 'formatPanel';
-
-        // 先清理舊的事件監聽器（如果存在）
-        if (this.cleanupHandlers.has(panelId)) {
-            const cleanup = this.cleanupHandlers.get(panelId);
-            if (typeof cleanup === 'function') {
-                cleanup();
-            }
-            this.cleanupHandlers.delete(panelId);
-        }
-
-        // 設置當前值
-        if (currentSettings) {
-            elements.teleportFormat.value = currentSettings.teleport || '';
-            elements.mapFormat.value = currentSettings.map || '';
-        }
-
-        // 設置預覽更新事件
-        const formatPreviewHandler = () => {
-            if (onPreviewUpdate) {
-                onPreviewUpdate(
-                    elements.teleportFormat.value,
-                    elements.mapFormat.value
-                );
-            }
-        };
-
-        elements.teleportFormat.addEventListener('input', formatPreviewHandler);
-        elements.mapFormat.addEventListener('input', formatPreviewHandler);
-
-        // 儲存清理函數
-        const cleanup = () => {
-            elements.teleportFormat.removeEventListener('input', formatPreviewHandler);
-            elements.mapFormat.removeEventListener('input', formatPreviewHandler);
-        };
-        this.cleanupHandlers.set(panelId, cleanup);
-
-        // 顯示面板：格式面板疊在路線面板正上方（兩者同為 position:fixed 置中、
-        // 格式面板的 z-index 更高；高度依內容而定，路線面板較長時上下仍可能露出一截），
-        // 因此把它當成一個正常的堆疊模態視窗——
-        // 有自己的焦點陷阱，Escape 只關自己（由 ModalManager 的共用堆疊保證），
-        // 關閉時焦點自動還給開啟它的「自訂格式」按鈕。
-        // 需要獨立的 formatModalManager，因為 this.modalManager 正拿著路線面板。
-        this.formatModalManager.show(elements.panel, {
-            useClass: UIDialogManager.CONSTANTS.CSS_CLASSES.ACTIVE,
-            closeOnOverlayClick: false,   // 格式面板本身沒有遮罩層
-            onClose: () => {
-                const handler = this.cleanupHandlers.get(panelId);
-                if (typeof handler === 'function') {
-                    handler();
-                }
-                this.cleanupHandlers.delete(panelId);
-            }
-        });
-
-        // 初始預覽
-        formatPreviewHandler();
-    }
-
-    /**
-     * 隱藏格式設定面板
-     * 事件監聽器的清理都在 showFormatPanel 註冊的 onClose 裡完成、焦點還原由 ModalManager 負責
-     * （見 ModalManager 的事件監聽器生命週期說明）。重複呼叫無副作用。
-     */
-    hideFormatPanel() {
-        this.formatModalManager.hide();
-    }
-
-    /**
-     * 取得格式設定值
-     */
-    getFormatValues() {
-        const elements = this.formatPanelElements;
-        return {
-            teleport: elements.teleportFormat.value,
-            map: elements.mapFormat.value
-        };
-    }
-
-    /**
-     * 設置格式設定值
-     */
-    setFormatValues(values) {
-        const elements = this.formatPanelElements;
-        if (values.teleport !== undefined) {
-            elements.teleportFormat.value = values.teleport;
-        }
-        if (values.map !== undefined) {
-            elements.mapFormat.value = values.map;
         }
     }
 }

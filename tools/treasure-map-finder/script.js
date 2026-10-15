@@ -9,6 +9,8 @@ class TreasureMapFinder {
         this.uiDialogManager = new UIDialogManager(); // 使用 UIDialogManager 模組
         this.modalManager = new ModalManager(); // 我的清單面板的焦點管理（開啟時移入焦點、Tab 循環、ESC／關閉時還原焦點）
         this.listDialogs = new ListDialogs(this); // 清空、匯入、分享連結的頁內對話框（自己的 ModalManager，疊在清單面板上）
+        this.routeProgress = new RouteProgress(FilterManager.safeStorage(window)); // 路線的站序與完成記號（只記在這台裝置）
+        this.routeView = new RouteView(this); // 清單面板的第二頁：路線
         this.aetheryteIcon = null; // 傳送點圖標
         this.roomCollaboration = null; // 協作功能實例
         this.lastListCount = null; // updateListCount() 上一次的張數（還沒呼叫過是 null，第一次只記下、不唸）
@@ -42,10 +44,9 @@ class TreasureMapFinder {
     }
 
     // 切換語言：帶參數或由程式組出來的文字（卡片、清單、結果張數、地區 chip、清單入口）用新語言重畫一次。
-    // 固定字串由 i18n manager 依 [data-i18n] 重新翻譯；詳細地圖與路線面板由 UIDialogManager 自己的
-    // 語言監聽（refreshActiveDialog）處理
+    // 固定字串由 i18n manager 依 [data-i18n] 重新翻譯；詳細地圖由 UIDialogManager 自己的語言監聽（refreshActiveDialog）處理
     handleLanguageChange() {
-        // 清單每一列的地名、最近傳送點與 ✕ 的名稱都跟著語言走：整份重畫
+        // 清單每一列的地名、最近傳送點與 ✕ 的名稱都跟著語言走：整份重畫（開著的路線頁也由 renderMyList() 跟著重畫）
         this.renderMyList();
 
         // 卡片的地名、最近傳送點與按鈕文字都跟著語言走：整格重畫。資料還沒載入（載入中）
@@ -61,21 +62,6 @@ class TreasureMapFinder {
         // 清單入口的標籤帶張數參數，不能用 data-i18n；清單頁的標題與張數也是（在隊伍裡還會換字）
         this.updateListEntry();
         this.updateListLabels();
-
-        // 預設範本跟語言走，使用者自訂的不動：只有目前仍是「預設值」
-        // （this.formatSettingsAreDefault，見 loadFormatSettings／saveFormatSettings／
-        // resetFormatSettings）才重新計算 getDefaultFormats()；已存過自訂內容一律略過，
-        // 且這裡只更新記憶體中的 this.formatSettings 與（若面板開著）UI 顯示，
-        // 絕不寫入 localStorage
-        if (this.formatSettingsAreDefault) {
-            this.formatSettings = this.getDefaultFormats();
-
-            const formatPanel = this.uiDialogManager.formatPanelElements?.panel;
-            if (formatPanel?.classList.contains(UIDialogManager.CONSTANTS.CSS_CLASSES.ACTIVE)) {
-                this.uiDialogManager.setFormatValues(this.formatSettings);
-                this.updateFormatPreview();
-            }
-        }
     }
 
     async init() {
@@ -110,8 +96,8 @@ class TreasureMapFinder {
             this.aetheryteIcon = null;
             return;
         }
-        // 圖示不擋載入（見 init()），可能比詳細地圖晚到：開著的詳細地圖重畫一次，補上傳送點。
-        // 路線面板用不到圖示，不重畫（重畫會把整個步驟清單換掉）
+        // 圖示不擋載入（見 init()），可能比詳細地圖晚到：開著的詳細地圖重畫一次，補上傳送點；沒開著就不用重畫
+        //（之後打開的詳細地圖畫的時候才讀圖示）
         if (this.uiDialogManager?.activeDialog?.kind === 'mapDetail') {
             this.uiDialogManager.refreshActiveDialog();
         }
@@ -169,61 +155,12 @@ class TreasureMapFinder {
             overlay.addEventListener('click', () => this.toggleListPanel());
         }
         
-        // 路線生成按鈕
+        // 生成路線：在清單面板裡切到路線頁；路線頁自己的按鈕由 RouteView 接上
         const generateRouteBtn = document.getElementById('generateRouteBtn');
         if (generateRouteBtn) {
-            generateRouteBtn.addEventListener('click', () => this.generateRoute());
+            generateRouteBtn.addEventListener('click', () => this.openRoute());
         }
-        
-        // 關閉路線面板
-        const closeRoutePanelBtn = document.getElementById('closeRoutePanelBtn');
-        if (closeRoutePanelBtn) {
-            closeRoutePanelBtn.addEventListener('click', () => this.closeRoutePanel());
-        }
-        
-        // 複製路線按鈕
-        const copyRouteBtn = document.getElementById('copyRouteBtn');
-        if (copyRouteBtn) {
-            copyRouteBtn.addEventListener('click', () => this.copyEntireRoute());
-        }
-        
-        // 自訂格式按鈕
-        const customFormatBtn = document.getElementById('customFormatBtn');
-        if (customFormatBtn) {
-            customFormatBtn.addEventListener('click', () => {
-                this.uiDialogManager.showFormatPanel(
-                    this.formatSettings,
-                    (teleportFormat, mapFormat) => this.updateFormatPreview(teleportFormat, mapFormat)
-                );
-            });
-        }
-        
-        // 格式設定面板事件
-        const closeFormatPanelBtn = document.getElementById('closeFormatPanelBtn');
-        if (closeFormatPanelBtn) {
-            closeFormatPanelBtn.addEventListener('click', () => this.uiDialogManager.hideFormatPanel());
-        }
-        
-        const saveFormatBtn = document.getElementById('saveFormatBtn');
-        if (saveFormatBtn) {
-            saveFormatBtn.addEventListener('click', () => this.saveFormatSettings());
-        }
-        
-        const resetFormatBtn = document.getElementById('resetFormatBtn');
-        if (resetFormatBtn) {
-            resetFormatBtn.addEventListener('click', () => this.resetFormatSettings());
-        }
-
-        // 語言快速切換按鈕
-        const langZhBtn = document.getElementById('langZhBtn');
-        const langEnBtn = document.getElementById('langEnBtn');
-        const langJaBtn = document.getElementById('langJaBtn');
-        if (langZhBtn) langZhBtn.addEventListener('click', () => this.switchLanguageTemplate('zh'));
-        if (langEnBtn) langEnBtn.addEventListener('click', () => this.switchLanguageTemplate('en'));
-        if (langJaBtn) langJaBtn.addEventListener('click', () => this.switchLanguageTemplate('ja'));
-
-        // 載入自訂格式設定
-        this.loadFormatSettings();
+        this.routeView.init();
     }
     
     // 地圖資料載入後呼叫一次：還原篩選（網址 > localStorage > 什麼都沒選）、畫出等級與地區 chip；
@@ -567,6 +504,8 @@ class TreasureMapFinder {
         const panel = this.elements.myListPanel;
         if (this.modalManager.activeModal === panel) return;
 
+        // 每次打開都是清單頁（上次可能停在路線頁就關掉了）；要看路線的由 openRoute() 接著切過去。測試替身不一定有 routeView
+        this.routeView?.showList(null);
         // 先解除 inert，ModalManager 才抓得到可聚焦元素、正確設定初始焦點
         panel.inert = false;
         overlay.classList.add('active');
@@ -589,9 +528,9 @@ class TreasureMapFinder {
         });
     }
 
-    // 關閉我的清單面板；沒開著就什麼都不做。清單面板被路線／格式面板疊住時會被堆疊設為 inert，
+    // 關閉我的清單面板；沒開著就什麼都不做。清單面板被對話框（清空、匯入、分享、加入隊伍…）疊住時會被堆疊設為 inert，
     // 但它的遮罩 #panelOverlay 是手足元素、仍收得到點擊：這時比照 Escape 只關最上層那一層，
-    // 不把整疊連鎖收掉，避免一次誤點遮罩就把路線面板與清單一併關掉
+    // 不把整疊連鎖收掉，避免一次誤點遮罩就把對話框與清單一併關掉
     closeListPanel() {
         if (this.modalManager.activeModal !== this.elements.myListPanel) return;
         const topmost = ModalManager.topmost();
@@ -622,17 +561,25 @@ class TreasureMapFinder {
         }
     }
 
-    // 左邊的清單按鈕只打開面板；「組隊」打開後把焦點移到面板裡的「建立組隊」；
-    // 「生成路線」打開後照原本的流程排路線（路線面板疊在清單面板上，沿用它的遮罩與捲動鎖定）
+    // 左邊的清單按鈕只打開面板；「組隊」打開後把焦點移到面板裡的「建立組隊」；「生成路線」打開後切到路線頁（openRoute）
     handleListEntry(action) {
         this.openListPanel();
         if (action === 'team') {
             document.getElementById('createRoomBtn')?.focus();
         } else if (action === 'route') {
-            // 焦點先放到面板裡的「生成路線」：關掉路線面板時焦點回到那裡，和在面板裡按下去一樣
-            document.getElementById('generateRouteBtn')?.focus();
-            this.generateRoute();
+            this.openRoute();
         }
+    }
+
+    // 「生成路線」（清單頁底部與清單入口）：打開清單面板（還沒開的話）並切到路線頁。
+    // 站序與傳送要用地區與傳送點資料（RouteCalculator 自己不檢查），還沒載入完就提示稍後再試
+    openRoute() {
+        if (!zoneManager.loaded) {
+            FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_loading_aetherytes', '正在載入傳送點資料，請稍後再試'), 'info');
+            return;
+        }
+        this.openListPanel();
+        this.routeView.show();
     }
     
     // 清單裡一張寶圖要顯示的資料（清單頁的每一列用；分享對話框、路線的每一站也用）。清單項目本身沒有編號，舊資料或隊伍同步來的
@@ -719,6 +666,9 @@ class TreasureMapFinder {
             if (sameMap) sameMap.focus();
             else this.focusListRow(focusedPosition);
         }
+
+        // 開著的路線頁跟著清單變（站序照規則更新；清單空了回到清單頁）。測試替身不一定有 routeView
+        this.routeView?.refresh();
     }
 
     // 清單重畫之後把焦點放回清單頁：原本那個位置的 ✕（移除一列後，下一列滑上來的那一顆），沒有就前一顆，
@@ -814,7 +764,8 @@ class TreasureMapFinder {
     }
     
     // 清空整份清單。要不要清已經由 ListDialogs 的清空對話框問過了，這裡不再確認。
-    // 成功有 toast；隊伍裡記進操作歷史、同步給隊友。回傳 ListManager 的結果 { success, message, count }
+    // 成功有 toast（路線進度由 updateListCount() 在清單變成 0 張時整份清掉）；隊伍裡記進操作歷史、同步給隊友。
+    // 回傳 ListManager 的結果 { success, message, count }
     clearList() {
         if (!this.canEditList()) return { success: false, message: this.getConnectingMessage(), count: 0 };
         const result = this.listManager.clear();
@@ -891,6 +842,10 @@ class TreasureMapFinder {
         // 再按 Tab 會跑出開著的面板（renderMyList() 只顧每一列的 ✕）。焦點先記下來，改完再看
         const active = document.activeElement;
         this.updateListLabels();
+
+        // 清單變成 0 張就結束這一趟，進度整份清掉——不管是怎麼空的（移除最後一張、隊友清空、清空清單並離開隊伍）。
+        // 寶圖 id 就是地點，留著舊的完成記號，之後同一個地點的新寶圖會被當成已完成而跳過。測試替身不一定有 routeProgress
+        if (count === 0) this.routeProgress?.clear();
 
         // 更新生成路線按鈕狀態：1 張就能排路線，只有清單是空的才停用
         const generateRouteBtn = document.getElementById('generateRouteBtn');
@@ -1079,7 +1034,8 @@ class TreasureMapFinder {
 
     // 把一批寶圖套進清單（匯入與分享連結共用）。隊伍裡上限 8 張，並先照 RoomCollaboration.validateMapOperations() 驗過整批操作，
     // 都通過了才動清單。失敗不跳 toast、原樣回傳 ListManager 的結果（success: false 與 message）；
-    // 成功才 toast、更新畫面並同步給隊友，回傳 { success, message, imported, skipped, saved }
+    // 成功才 toast、更新畫面並同步給隊友，回傳 { success, message, imported, skipped, saved }。
+    // 用取代的路線進度整份清掉；合併的保留（renderMyList() 時由 RouteView#refresh() 對齊新的清單）
     async applyListImport(maps, { merge = true } = {}) {
         const collaboration = this.roomCollaboration?.currentRoom ? this.roomCollaboration : null;
         const result = this.listManager.import({ maps }, merge, {
@@ -1092,6 +1048,8 @@ class TreasureMapFinder {
         });
         if (!result.success) return result;
 
+        // 用取代的：路線進度整份清掉，在重畫之前（測試替身不一定有 routeProgress）
+        if (!merge) this.routeProgress?.clear();
         FF14Utils.showToast(result.message, 'success');
         this.notifyIfUnsaved(result);
         this.updateListCount();
@@ -1101,279 +1059,12 @@ class TreasureMapFinder {
         return result;
     }
     
-    // 生成路線
-    async generateRoute() {
-        const myList = this.listManager.getList();
-
-        // 1 張也排得出路線；清單是空的就什麼都不做。0 張時「生成路線」按鈕停用、入口也不放它，所以不用跳提示
-        if (myList.length === 0) return;
-
-        // 等待 routeCalculator 與地區、傳送點資料載入完成
-        if (!routeCalculator || !zoneManager.loaded) {
-            FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_loading_aetherytes', '正在載入傳送點資料，請稍後再試'), 'info');
-            // 等待一下再試
-            setTimeout(() => {
-                if (routeCalculator && zoneManager.loaded) {
-                    this.generateRoute();
-                }
-            }, 1000);
-            return;
-        }
-        
-        // 計算路線
-        const result = routeCalculator.calculateRoute(myList);
-        
-        if (!result || !result.route || result.route.length === 0) {
-            FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_route_generation_failed', '無法生成路線'), 'error');
-            return;
-        }
-        
-        // 儲存路線資料供複製使用
-        this.currentRoute = result.route;
-
-        // 路線面板由 uiDialogManager 另一個獨立的 ModalManager 實例管理，
-        // 疊在仍然開著的「我的清單」面板上（z-index 1001 > 1000，遮罩與捲動鎖沿用清單面板的）。
-        // ModalManager 的共用堆疊保證 Escape 只關最上層：第一次 Escape 收路線面板、
-        // 焦點回到清單面板裡的「生成路線」按鈕，第二次才收清單面板。
-        // 顯示路線結果
-        this.uiDialogManager.showRouteResult(result, {
-            onStepCopy: (step, index, total) => {
-                const formattedText = this.formatStepForCopy(step, index + 1, total);
-                navigator.clipboard.writeText(formattedText).then(() => {
-                    FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_route_step_copy_success', '已複製'), 'success');
-                });
-            },
-            getZoneName: (zoneId) => this.getZoneName(zoneId)
-        });
-    }
-    
-    // 複製整個路線
-    copyEntireRoute() {
-        if (!this.currentRoute || this.currentRoute.length === 0) {
-            FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_no_route_to_copy', '目前沒有可複製的路線'), 'error');
-            return;
-        }
-
-        // 使用自訂格式建構路線文字
-        const routeText = this.currentRoute.map((step, index) => {
-            return this.formatStepForCopy(step, index + 1, this.currentRoute.length);
-        }).join('\n');
-
-        // 複製到剪貼簿
-        navigator.clipboard.writeText(routeText).then(() => {
-            FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_route_copy_success', '已複製 {count} 個地點', { count: this.currentRoute.length }), 'success');
-        }).catch(() => {
-            FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_copy_failed', '複製失敗'), 'error');
-        });
-    }
-    
-    // 格式化單一步驟供複製
-    formatStepForCopy(step, index, total) {
-        const format = step.type === 'teleport' ? this.formatSettings.teleport : this.formatSettings.map;
-        const coords = CoordinateUtils.formatCoordinatesAsCommand(step.coords);
-        
-        let result = format;
-        
-        if (step.type === 'teleport') {
-            const aetheryteNames = this.getAetheryteName(step.to);
-            result = result.replace('<傳送點>', aetheryteNames.zh || step.to.zh || step.to);
-            result = result.replace('<傳送點_en>', aetheryteNames.en || step.to.en || '');
-            result = result.replace('<傳送點_ja>', aetheryteNames.ja || step.to.ja || '');
-        } else {
-            result = result.replace('<寶圖等級>', step.mapLevel || '');
-            // 優先使用 zoneId 來獲取正確的翻譯
-            const zoneNames = step.zoneId ? zoneManager.getZoneNames(step.zoneId) : this.getZoneAllNames(step.zone);
-            result = result.replace('<地區>', zoneNames.zh);
-            result = result.replace('<地區_en>', zoneNames.en);
-            result = result.replace('<地區_ja>', zoneNames.ja);
-        }
-        
-        result = result.replace('<座標>', coords);
-        result = result.replace('<序號>', index.toString());
-        result = result.replace('<總數>', total.toString());
-        
-        return result;
-    }
-    
-    // 取得地區的所有語言名稱
-    getZoneAllNames(zone) {
-        // 從 zoneManager 取得
-        const zoneData = this.maps.find(map => map.zone === zone);
-        if (zoneData && zoneData.zoneId) {
-            return zoneManager.getZoneNames(zoneData.zoneId);
-        }
-        
-        // 備用：返回原始名稱
-        return {
-            zh: zone,
-            en: zone,
-            ja: zone
-        };
-    }
-    
-    // 載入格式設定
-    loadFormatSettings() {
-        // 瀏覽器封鎖儲存空間（例如封鎖網站資料）時，光是讀 localStorage 就會丟例外：當作沒存過，和第一次來一樣用預設值
-        let saved = null;
-        try {
-            saved = localStorage.getItem('treasureMapFormatSettings');
-        } catch { /* 讀不到：用預設值 */ }
-        if (saved) {
-            try {
-                const parseResult = SecurityUtils.safeJSONParse(saved);
-                this.formatSettings = parseResult.success ? parseResult.data : this.getDefaultFormats();
-                // 只有真的載入到已儲存的自訂設定才算「非預設」；解析失敗仍視為使用預設值，
-                // 讓語言切換時（見 handleLanguageChange）繼續幫忙跟著語言重新計算
-                this.formatSettingsAreDefault = !parseResult.success;
-            } catch (e) {
-                this.formatSettings = this.getDefaultFormats();
-                this.formatSettingsAreDefault = true;
-            }
-        } else {
-            this.formatSettings = this.getDefaultFormats();
-            this.formatSettingsAreDefault = true;
-        }
-
-        // 更新 UI
-        const teleportFormat = document.getElementById('teleportFormat');
-        const mapFormat = document.getElementById('mapFormat');
-        if (teleportFormat) teleportFormat.value = this.formatSettings.teleport;
-        if (mapFormat) mapFormat.value = this.formatSettings.map;
-    }
-    
-    // 三語言的巨集格式範本；getDefaultFormats／switchLanguageTemplate 共用同一份，避免各存一份中文範本、彼此可能各自漂移
-    getFormatTemplates(lang) {
-        const templates = {
-            zh: { teleport: '/p 傳送至 <傳送點> <座標>', map: '/p 下一個 <寶圖等級> - <地區> <座標>' },
-            en: { teleport: '/p Teleport to <傳送點_en> <座標>', map: '/p Next <寶圖等級> - <地區_en> <座標>' },
-            ja: { teleport: '/p <傳送點_ja>にテレポート <座標>', map: '/p 次 <寶圖等級> - <地區_ja> <座標>' }
-        };
-        return templates[lang];
-    }
-
-    // 取得預設格式（依目前介面語言；找不到對應語言時退回中文）
-    getDefaultFormats() {
-        const currentLang = window.i18n ? window.i18n.getCurrentLanguage() : 'zh';
-        return this.getFormatTemplates(currentLang) || this.getFormatTemplates('zh');
-    }
-    
-    // 儲存格式設定
-    saveFormatSettings() {
-        const values = this.uiDialogManager.getFormatValues();
-        
-        this.formatSettings = {
-            teleport: values.teleport,
-            map: values.map
-        };
-        // 使用者主動存檔，之後語言切換不再幫忙覆寫（見 handleLanguageChange）
-        this.formatSettingsAreDefault = false;
-
-        // 瀏覽器封鎖儲存空間（連讀 localStorage 都會丟例外）或空間滿了：這次照新的格式，只是記不住，提示一下；
-        // 面板照樣關起來（新的格式已經生效）
-        let saved = true;
-        try {
-            localStorage.setItem('treasureMapFormatSettings', JSON.stringify(this.formatSettings));
-        } catch {
-            saved = false;
-        }
-        if (saved) {
-            FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_format_saved', '格式設定已儲存'), 'success');
-        } else {
-            FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_format_save_failed', '無法儲存設定：瀏覽器不允許儲存資料'), 'error');
-        }
-        this.uiDialogManager.hideFormatPanel();
-    }
-    
-    // 重置格式設定
-    resetFormatSettings() {
-        this.formatSettings = this.getDefaultFormats();
-        // 回到預設值，之後語言切換要再幫忙跟著語言重新計算（見 handleLanguageChange）；
-        // 注意這裡本來就不寫入 localStorage（保留原行為：重置只影響當下畫面，不清除已儲存設定）
-        this.formatSettingsAreDefault = true;
-
-        this.uiDialogManager.setFormatValues(this.formatSettings);
-        this.updateFormatPreview();
-        FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_format_reset', '已重置為預設格式'), 'info');
-    }
-    
-    // 更新格式預覽
-    updateFormatPreview(teleportFormatValue, mapFormatValue) {
-        const preview = document.getElementById('formatPreview');
-        if (!preview) return;
-        
-        // 如果沒有提供值，從 UI 取得
-        const teleportFormat = teleportFormatValue || document.getElementById('teleportFormat')?.value || this.formatSettings.teleport;
-        const mapFormat = mapFormatValue || document.getElementById('mapFormat')?.value || this.formatSettings.map;
-        
-        // 建立範例預覽
-        const teleportExample = teleportFormat
-            .replace('<傳送點>', '十二節之園')
-            .replace('<傳送點_en>', 'The Twelve Wonders')
-            .replace('<傳送點_ja>', '十二節の園')
-            .replace('<座標>', '/pos 9 32 0')
-            .replace('<序號>', '1')
-            .replace('<總數>', '5');
-            
-        const mapExample = mapFormat
-            .replace('<寶圖等級>', 'g15')
-            .replace('<地區>', '厄爾庇斯')
-            .replace('<地區_en>', 'Elpis')
-            .replace('<地區_ja>', 'エルピス')
-            .replace('<座標>', '/pos 11.8 33.1 0')
-            .replace('<序號>', '2')
-            .replace('<總數>', '5');
-            
-        preview.textContent = `傳送點範例：\n${teleportExample}\n\n寶圖範例：\n${mapExample}`;
-    }
-    
-    // 切換語言模板
-    switchLanguageTemplate(lang) {
-        const template = this.getFormatTemplates(lang);
-        if (!template) return;
-        
-        const teleportFormat = document.getElementById('teleportFormat');
-        const mapFormat = document.getElementById('mapFormat');
-        
-        if (teleportFormat) teleportFormat.value = template.teleport;
-        if (mapFormat) mapFormat.value = template.map;
-        
-        this.updateFormatPreview();
-        
-        // 顯示語言切換成功訊息（依選擇的模板語言分別對應翻譯鍵值，與目前介面語言無關）
-        const switchedMessageKeys = {
-            zh: 'treasure_map_format_switched_zh',
-            en: 'treasure_map_format_switched_en',
-            ja: 'treasure_map_format_switched_ja'
-        };
-        const langNames = {
-            zh: '中文',
-            en: '英文',
-            ja: '日文'
-        };
-        FF14Utils.showToast(FF14Utils.getI18nText(switchedMessageKeys[lang], `已切換至${langNames[lang]}模板`), 'info');
-    }
-    
-    // 關閉路線面板
-    closeRoutePanel() {
-        this.uiDialogManager.hideRouteResult();
-    }
-    
     // 取得地區名稱
     // 依目前介面語言挑選地區名稱，找不到對應語言時退回中文（與 renderMyList() 一致）
     getZoneName(zoneId) {
         const translations = zoneManager.getZoneNames(zoneId);
         const currentLang = window.i18n.getCurrentLanguage();
         return translations[currentLang] || translations.zh || zoneId;
-    }
-    
-    // 取得傳送點名稱
-    getAetheryteName(name) {
-        // 如果是物件格式（包含多語言）
-        if (typeof name === 'object' && name !== null) {
-            return name;
-        }
-        // 如果是字串，返回包裝成物件
-        return { zh: name };
     }
     
     // 設定協作實例
@@ -1412,11 +1103,9 @@ class TreasureMapFinder {
 
 // 初始化
 let treasureMapFinder;
-let routeCalculator;
 let roomCollaboration;
 document.addEventListener('DOMContentLoaded', () => {
     treasureMapFinder = new TreasureMapFinder();
-    routeCalculator = new RouteCalculator();
     roomCollaboration = new RoomCollaboration(treasureMapFinder);
 
     // 連接協作功能

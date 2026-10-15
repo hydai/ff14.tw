@@ -296,7 +296,7 @@ class ListDialogs {
     // 不管怎麼關（加入成功、「不用了」、✕、Escape、點遮罩）：網址裡的 maps 拿掉，焦點放到結果張數
     // （這個對話框是載入時自動打開的，不是按哪顆按鈕打開的，沒有按鈕可以還焦點）。
     // 下面還開著別的視窗時（隊伍自動加入還沒結束，玩家先打開了清單面板），焦點留給 ModalManager 還原到那個視窗裡：結果張數在它外面，
-    // 放過去再按 Tab 會跑出開著的視窗。加入的寶圖讓面板重畫、原本有焦點的那顆換掉了（還原不了）時，放到面板標題
+    // 放過去再按 Tab 會跑出開著的視窗。加入的寶圖讓面板重畫、原本有焦點的那顆換掉了（還原不了）時，放到面板正在顯示的那一頁的標題
     openShare(maps, missing) {
         const { finder, elements } = this;
         this.shared = { maps, missing, listKey: null };
@@ -311,7 +311,7 @@ class ListDialogs {
             if (!below) {
                 finder.elements.resultCount?.focus();
             } else if (below === finder.elements.myListPanel && !below.contains(document.activeElement)) {
-                finder.elements.listTitle?.focus();
+                (finder.routeView?.isOpen() ? finder.routeView.elements.title : finder.elements.listTitle)?.focus();
             }
         });
     }

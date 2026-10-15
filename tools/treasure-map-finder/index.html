@@ -203,85 +203,30 @@
                 </button>
             </div>
         </div>
-    </div>
-    
-    <!-- 路線結果面板 -->
-    <div class="route-panel" id="routePanel" role="dialog" aria-modal="true" aria-labelledby="routePanel-title">
-        <div class="panel-header">
-            <h3 id="routePanel-title" data-i18n="treasure_map_best_route">最佳路線</h3>
-            <button class="btn btn-close" id="closeRoutePanelBtn" aria-label="關閉" data-i18n="treasure_map_close" data-i18n-attr="aria-label">×</button>
-        </div>
-        <div class="route-summary" id="routeSummary">
-            <!-- 路線摘要將由 JavaScript 動態生成 -->
-        </div>
-        <div class="route-actions">
-            <button class="btn btn-primary" id="copyRouteBtn">
-                <span class="btn-icon">📋</span> <span data-i18n="treasure_map_copy_route">複製路線</span>
-            </button>
-            <button class="btn btn-secondary" id="customFormatBtn">
-                <span class="btn-icon">⚙️</span> <span data-i18n="treasure_map_custom_format">自訂格式</span>
-            </button>
-        </div>
-        <div class="route-steps" id="routeSteps">
-            <!-- 路線步驟將由 JavaScript 動態生成 -->
-        </div>
-    </div>
-    
-    <!-- 自訂格式設定面板 -->
-    <div class="format-panel" id="formatPanel" role="dialog" aria-modal="true" aria-labelledby="formatPanel-title" tabindex="-1">
-        <div class="panel-header">
-            <h3 id="formatPanel-title" data-i18n="treasure_map_custom_output">自訂輸出格式</h3>
-            <button class="btn btn-close" id="closeFormatPanelBtn" aria-label="關閉" data-i18n="treasure_map_close" data-i18n-attr="aria-label">×</button>
-        </div>
-        <div class="format-content">
-            <div class="format-lang-switcher">
-                <label data-i18n="treasure_map_quick_lang">快速切換語言模板：</label>
-                <div class="lang-buttons">
-                    <button class="btn btn-sm" id="langZhBtn">中文</button>
-                    <button class="btn btn-sm" id="langEnBtn">英文</button>
-                    <button class="btn btn-sm" id="langJaBtn">日文</button>
+        <!-- 路線頁（RouteView）：「生成路線」切過來時焦點放到標題，「‹ 清單」切回清單頁。
+             摘要、站別與「複製下一站」的字跟著清單、完成進度與語言，由 JavaScript 填入（不掛 data-i18n） -->
+        <div class="tm-panel-view hidden" id="routeView">
+            <div class="panel-header">
+                <div class="tm-panel-heading">
+                    <button type="button" class="btn btn-ghost btn-sm" id="routeBackBtn" aria-label="回到清單" data-i18n="treasure_map_route_back_label" data-i18n-attr="aria-label"><span data-i18n="treasure_map_route_back">‹ 清單</span></button>
+                    <h3 id="routeViewTitle" tabindex="-1" data-i18n="treasure_map_route_title">路線</h3>
                 </div>
+                <button type="button" class="btn btn-close" id="closeRouteViewBtn" aria-label="關閉" data-i18n="treasure_map_close" data-i18n-attr="aria-label">×</button>
             </div>
-            
-            <div class="format-section">
-                <h4 data-i18n="treasure_map_teleport_format">傳送點格式</h4>
-                <textarea id="teleportFormat" class="format-input form-control" rows="3">/p 傳送至 &lt;傳送點&gt; &lt;座標&gt;</textarea>
-                <div class="format-help">
-                    <span data-i18n="treasure_map_available_vars">可用變數：</span>
-                    <span class="format-var">&lt;傳送點&gt;</span>
-                    <span class="format-var">&lt;傳送點_en&gt;</span>
-                    <span class="format-var">&lt;傳送點_ja&gt;</span>
-                    <span class="format-var">&lt;座標&gt;</span>
-                    <span class="format-var">&lt;序號&gt;</span>
-                    <span class="format-var">&lt;總數&gt;</span>
+            <!-- 標頭與底部固定，中間的摘要與站別捲動（重畫時保留捲動位置） -->
+            <div class="panel-body" id="routeBody">
+                <div class="tm-route-summary">
+                    <p class="tm-route-overview" id="routeOverview"></p>
+                    <p class="tm-route-note" id="routeNote" data-i18n="treasure_map_route_note">順序依直線距離估算</p>
+                    <button type="button" class="btn btn-ghost btn-sm hidden" id="resetRouteBtn" data-i18n="treasure_map_route_reset">重設進度</button>
                 </div>
+                <!-- role="list"：Safari 在 list-style: none 時會丟掉清單語意（VoiceOver 不再唸「清單，共 6 項」） -->
+                <ol class="tm-stops" id="routeStops" role="list"></ol>
             </div>
-            
-            <div class="format-section">
-                <h4 data-i18n="treasure_map_map_format">寶圖格式</h4>
-                <textarea id="mapFormat" class="format-input form-control" rows="3">/p 下一個 &lt;寶圖等級&gt; - &lt;地區&gt; &lt;座標&gt;</textarea>
-                <div class="format-help">
-                    <span data-i18n="treasure_map_available_vars">可用變數：</span>
-                    <span class="format-var">&lt;寶圖等級&gt;</span>
-                    <span class="format-var">&lt;地區&gt;</span>
-                    <span class="format-var">&lt;地區_en&gt;</span>
-                    <span class="format-var">&lt;地區_ja&gt;</span>
-                    <span class="format-var">&lt;座標&gt;</span>
-                    <span class="format-var">&lt;序號&gt;</span>
-                    <span class="format-var">&lt;總數&gt;</span>
-                </div>
-            </div>
-            
-            <div class="format-preview">
-                <h4 data-i18n="treasure_map_preview">預覽</h4>
-                <div id="formatPreview" class="preview-box">
-                    <!-- 預覽內容將由 JavaScript 動態生成 -->
-                </div>
-            </div>
-            
-            <div class="format-actions">
-                <button class="btn btn-secondary" id="resetFormatBtn" data-i18n="treasure_map_reset_default">重置為預設值</button>
-                <button class="btn btn-primary" id="saveFormatBtn" data-i18n="treasure_map_save_settings">儲存設定</button>
+            <!-- 左邊「全部複製」，右邊唯一的主要按鈕「複製下一站（N/總數）」 -->
+            <div class="panel-footer">
+                <button type="button" class="btn" id="copyAllStopsBtn" data-i18n="treasure_map_route_copy_all">全部複製</button>
+                <button type="button" class="btn btn-primary" id="copyNextStopBtn"><span class="btn-icon">📋</span> <span id="copyNextStopLabel"></span></button>
             </div>
         </div>
     </div>
@@ -512,7 +457,10 @@
     <script src="room-map-sync.js"></script>
     <script src="room-collaboration.js"></script>
     <script src="route-calculator.js"></script>
+    <script src="route-progress.js"></script>
+    <script src="copy-format.js"></script>
     <script src="list-share.js"></script>
+    <script src="route-view.js"></script>
     <script src="list-dialogs.js"></script>
     <script src="script.js"></script>
 </body>

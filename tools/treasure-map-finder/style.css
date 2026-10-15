@@ -478,8 +478,8 @@
     transition: transform var(--duration-slow) var(--ease), visibility 0s;
 }
 
-/* 面板裡的一頁（清單頁）：撐滿面板，標頭與底部固定、中間的 .panel-body 捲動。
-   之後用 .hidden 切換：這裡的 display 和 .hidden 同優先權，靠 .hidden 寫在最後勝出 */
+/* 面板裡的一頁（清單頁、路線頁）：撐滿面板，標頭與底部固定、中間的 .panel-body 捲動。
+   兩頁用 .hidden 切換：這裡的 display 和 .hidden 同優先權，靠 .hidden 寫在最後勝出 */
 .tm-panel-view {
     display: flex;
     flex-direction: column;
@@ -487,7 +487,7 @@
     min-height: 0;
 }
 
-/* 抽屜、路線面板、格式面板共用的標題列 */
+/* 清單面板兩頁共用的標題列 */
 .panel-header {
     display: flex;
     justify-content: space-between;
@@ -646,7 +646,7 @@
     flex: 1;
 }
 
-/* 清單頁的底部：一列，左邊張數、右邊唯一的主要按鈕「生成路線」 */
+/* 兩頁的底部：一列，右邊是那一頁唯一的主要按鈕（清單頁：左邊張數、右邊「生成路線」；路線頁：左邊「全部複製」、右邊「複製下一站」） */
 .panel-footer {
     display: flex;
     align-items: center;
@@ -664,214 +664,165 @@
     font-variant-numeric: tabular-nums;
 }
 
-/* 路線面板與格式面板：置中的固定面板（沒有遮罩，沿用原行為），以 .active 顯示 */
-.route-panel,
-.format-panel {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    display: none;
-    flex-direction: column;
-    width: 600px;
-    max-width: 90vw;
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-xl);
-    transform: translate(-50%, -50%);
+/* 路線頁（#routeView）：標頭左邊是「‹ 清單」與標題「路線」 */
+#routeBackBtn {
+    padding-inline: var(--space-2);
 }
 
-.route-panel {
-    z-index: var(--z-modal);
-    max-height: 80vh;
-}
-
-.format-panel {
-    z-index: calc(var(--z-modal) + 1);
-    max-height: 85vh;
-}
-
-.route-panel.active,
-.format-panel.active {
+/* 摘要：「6 張 · 3 個地區 · 5 次傳送」，旁邊淡色的「順序依直線距離估算」；有完成的站時最右邊多一顆「重設進度」。放不下時換行。
+   說明與「重設進度」會被 .hidden 切換，這裡不設它們的 display */
+.tm-route-summary {
     display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-1) var(--space-3);
+    padding: var(--space-4) var(--space-4) 0;
 }
 
-.route-summary {
-    padding: var(--space-4) var(--space-6);
-    background: var(--color-info-tint);
-    border-bottom: 1px solid var(--color-info-border);
-}
-
-.route-summary p {
+.tm-route-overview,
+.tm-route-note {
     margin: 0;
-    font-weight: var(--weight-medium);
-    color: var(--color-text);
 }
 
-.route-summary-content {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1);
-}
-
-.route-actions {
-    display: flex;
-    justify-content: center;
-    gap: var(--space-3);
-    padding: var(--space-4) var(--space-6);
-    background: var(--color-surface-2);
-    border-bottom: 1px solid var(--color-border);
-}
-
-.route-actions .btn {
-    min-width: 150px;
-}
-
-.route-steps {
-    flex: 1;
-    overflow-y: auto;
-    padding: var(--space-4);
-}
-
-.route-step {
-    display: flex;
-    align-items: center;
-    gap: var(--space-4);
-    padding: var(--space-3);
-    margin-bottom: var(--space-2);
-    background: var(--color-surface-2);
-    border-radius: var(--radius-md);
-    transition: background-color var(--duration-base) var(--ease);
-}
-
-.route-step:hover {
-    background: var(--color-hover);
-}
-
-.route-step:last-child {
-    margin-bottom: 0;
-}
-
-.step-number {
-    flex-shrink: 0;
+.tm-route-overview {
     font-weight: var(--weight-semibold);
+    color: var(--color-heading);
+    font-variant-numeric: tabular-nums;
+}
+
+.tm-route-note {
+    font-size: var(--text-sm);
     color: var(--color-muted);
 }
 
-.step-content {
-    display: flex;
-    flex: 1;
-    align-items: center;
+#resetRouteBtn {
+    margin-left: auto;
+}
+
+/* 站別：一站一張寶圖。左邊站號圓圈，中間傳送、名稱與座標（目前這一站多一行預覽），右邊 📋 與「完成」 */
+.tm-stops {
+    display: grid;
     gap: var(--space-2);
+    margin: 0;
+    padding: var(--space-3) var(--space-4) var(--space-4);
+    list-style: none;
+}
+
+.tm-stop {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: start;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+}
+
+.tm-stop-num {
+    display: inline-grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border-radius: var(--radius-full);
+    background: var(--color-surface-2);
+    color: var(--color-heading);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-bold);
+    font-variant-numeric: tabular-nums;
+}
+
+.tm-stop-body {
     min-width: 0;
 }
 
-.step-icon {
-    width: var(--space-7);
-    font-size: var(--text-xl);
-    text-align: center;
+.tm-stop-tp,
+.tm-stop-title,
+.tm-stop-coords,
+.tm-stop-preview {
+    margin: 0;
 }
 
-.step-text {
-    flex: 1;
+.tm-stop-tp {
     font-size: var(--text-sm);
-}
-
-.step-coords {
-    font-family: var(--font-mono);
-    font-size: var(--text-xs);
-    color: var(--color-muted);
-}
-
-/* 自訂格式 */
-.format-content {
-    flex: 1;
-    overflow-y: auto;
-    padding: var(--space-6);
-}
-
-.format-lang-switcher,
-.format-preview {
-    padding: var(--space-4);
-    margin-bottom: var(--space-6);
-    background: var(--color-surface-2);
-    border-radius: var(--radius-md);
-}
-
-.format-lang-switcher label {
-    display: block;
-    margin-bottom: var(--space-3);
     font-weight: var(--weight-semibold);
+    color: var(--color-primary);
+}
+
+.tm-stop-title {
+    font-weight: var(--weight-semibold);
+    line-height: var(--leading-snug);
     color: var(--color-heading);
 }
 
-.lang-buttons {
+.tm-stop-coords {
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+/* 會被複製的那句話：等寬字；句子比欄位寬時在任何地方換行，不撐寬面板 */
+.tm-stop-preview {
+    padding: var(--space-2) var(--space-3);
+    background: var(--color-surface-2);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--color-text);
+    overflow-wrap: anywhere;
+}
+
+.tm-stop .tm-stop-preview {
+    margin-top: var(--space-2);
+}
+
+.tm-stop-actions {
     display: flex;
+    align-items: center;
     gap: var(--space-2);
 }
 
-.lang-buttons .btn {
-    flex: 1;
-    min-width: auto;
+/* 目前這一站：主色外框與淡主色底，站號圓圈換成主色 */
+.tm-stop.is-current {
+    background: var(--color-primary-tint);
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 1px var(--color-primary);
 }
 
-.format-section {
-    margin-bottom: var(--space-7);
+.tm-stop.is-current .tm-stop-num {
+    background: var(--color-primary);
+    color: var(--color-on-primary);
 }
 
-.format-section h4,
-.format-preview h4 {
-    margin: 0 0 var(--space-3);
-    font-size: var(--text-lg);
-    color: var(--color-heading);
+/* 完成的站淡化：底色退成第二層、傳送與名稱改成次要色，站號圓圈是成功色的 ✓ */
+.tm-stop.is-done {
+    background: var(--color-surface-2);
 }
 
-/* 格式輸入框：外觀由 .form-control 提供 */
-.format-input {
-    font-family: var(--font-mono);
-    font-size: var(--text-sm);
-    resize: vertical;
+.tm-stop.is-done .tm-stop-num {
+    background: var(--color-success-tint);
+    color: var(--color-success-text);
 }
 
-.format-help {
-    margin-top: var(--space-2);
-    font-size: var(--text-xs);
-    line-height: var(--leading-relaxed);
+.tm-stop.is-done .tm-stop-tp,
+.tm-stop.is-done .tm-stop-title {
     color: var(--color-muted);
 }
 
-.format-var {
-    display: inline-block;
-    margin: 2px;
-    padding: 2px 6px;
-    border: 1px solid var(--color-primary-tint);
-    border-radius: var(--radius-sm);
-    background: var(--color-primary-tint);
-    color: var(--color-primary);
-    font-family: var(--font-mono);
-    font-size: var(--text-xs);
+/* 「完成」按下去的狀態（aria-pressed="true"）：成功色調。滑過去時共用 .btn:hover:not(:disabled) 會換掉底色與字色，所以 hover 也要寫一次 */
+.tm-done[aria-pressed="true"],
+.tm-done[aria-pressed="true"]:hover:not(:disabled) {
+    border-color: var(--color-success-border);
+    background: var(--color-success-tint);
+    color: var(--color-success-text);
 }
 
-.preview-box {
-    max-height: 150px;
-    overflow-y: auto;
-    padding: var(--space-4);
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    font-family: var(--font-mono);
-    font-size: var(--text-sm);
-    white-space: pre-wrap;
-}
-
-.format-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: var(--space-4);
-}
-
-.format-actions .btn {
-    min-width: 120px;
+/* 路線頁的主要按鈕撐滿底部剩下的寬度；英日文或窄螢幕放不下時字換成兩行（按鈕高度不變），不把按鈕擠出面板 */
+#copyNextStopBtn {
+    flex: 1;
+    min-width: 0;
+    white-space: normal;
+    text-align: center;
 }
 
 /* 加入／暱稱／離開對話框：外觀由 .dialog-overlay / .dialog 提供，這裡只補內文版面 */
@@ -898,8 +849,8 @@
     flex-wrap: wrap;
 }
 
-/* 地圖詳細檢視：遮罩層本身交給 ModalManager（.active 顯示）。疊在路線面板（--z-modal）與格式面板（+1）之上，
-   在 toast 之下：在詳細檢視裡按「複製」的提示才看得到 */
+/* 地圖詳細檢視：遮罩層本身交給 ModalManager（.active 顯示）。疊在清單面板、它的遮罩與所有頁內對話框之上
+   （它們都在 --z-overlay 以下），在 toast 之下：在詳細檢視裡按「複製」的提示才看得到 */
 .map-detail-modal {
     position: fixed;
     inset: 0;
@@ -1374,6 +1325,23 @@
     .map-detail-buttons .btn {
         flex: 1 1 0;
         min-width: max-content;
+    }
+}
+
+/* 很窄的手機（≤480px；寫在 768px 的規則後面，兩個都成立時這裡的才會贏）：路線頁底部的兩顆按鈕縮小左右內距、主要按鈕不放圖示，
+   日文的「すべてコピー」加「次をコピー（1/6）」在 320px 寬也排得下；每一站右邊的 📋 與「完成」改成上下疊，中間的名稱與預覽寬一點 */
+@media (max-width: 480px) {
+    #routeView .panel-footer .btn {
+        padding-inline: var(--space-3);
+    }
+
+    #copyNextStopBtn .btn-icon {
+        display: none;
+    }
+
+    .tm-stop-actions {
+        flex-direction: column;
+        align-items: flex-end;
     }
 }
 

@@ -813,12 +813,11 @@ test('加入、移除成功不跳 toast，改由清單入口與唸出區更新�
     assert.deepEqual(toasts, [{ message: '清單已滿', type: 'error' }]);
 });
 
-test('入口按鈕：清單打開面板；組隊打開面板並把焦點移到「建立組隊」；生成路線打開面板再排路線', () => {
+// 入口的「生成路線」（切到清單面板的路線頁）在 tests/treasure-list-panel.test.js：這裡沒有真的 zoneManager，openRoute() 會停在載入檢查
+test('入口按鈕：清單打開面板；組隊打開面板並把焦點移到「建立組隊」', () => {
     const page = createFilterPage();
-    const { finder, list, modalManager, $, dom } = page;
+    const { finder, modalManager, $, dom } = page;
     const panel = $('myListPanel');
-    const routeCalls = [];
-    finder.generateRoute = () => routeCalls.push(dom.document.activeElement.id);
     finder.setupListEntries();
     finder.updateListCount();
     const button = (id, action) => finder.elements[id].querySelector(`[data-entry="${action}"]`);
@@ -840,16 +839,6 @@ test('入口按鈕：清單打開面板；組隊打開面板並把焦點移到�
         assert.equal(dom.document.activeElement.id, 'createRoomBtn', `${id}：組隊後焦點在建立組隊`);
         finder.closeListPanel();
     }
-
-    list.count = 2;
-    finder.updateListCount();
-    for (const id of ENTRY_IDS) {
-        button(id, 'route').click();
-        assert.ok(modalManager.activeModal === panel, `${id}：按生成路線後面板應該開著`);
-        finder.closeListPanel();
-    }
-    // 排路線時焦點在面板裡的「生成路線」：關掉疊在上面的路線面板時焦點回到那裡
-    assert.deepEqual(routeCalls, ['generateRouteBtn', 'generateRouteBtn']);
 });
 
 test('打開面板的入口按鈕收起來時（例如按「組隊」後建了隊伍），關面板把焦點放回看得到的清單按鈕', () => {

@@ -430,8 +430,8 @@ test('瀏覽器封鎖儲存空間：頁面照常載入，顯示「先選寶圖�
     assert.equal($('treasureGrid').querySelectorAll('.treasure-card').length, 40);
     assert.equal(empty.classList.contains('hidden'), true);
 
-    // 讀不到自訂格式：用預設格式（語言切換時照常跟著語言換）
-    assert.equal(page.finder.formatSettingsAreDefault, true);
+    // 讀不到存過的複製格式：當作沒存過（複製時跟著介面語言用預設範本）
+    assert.equal(page.finder.routeView.savedTemplate, null);
 });
 
 test('瀏覽器封鎖網站資料：卡片的加入、移除照常運作，入口與按鈕都更新，只提示一次記不住', async () => {
@@ -1733,4 +1733,415 @@ test('分享連結的三語鍵值照設計', () => {
         const values = translationValues(TRANSLATIONS, lang);
         for (const [key, texts] of Object.entries(expected)) assert.equal(values.get(key), texts[index], `${lang} ${key}`);
     });
+});
+
+// ---------- 路線頁 ----------
+// 烏爾科帕恰 3 張（tm_007、tm_013、tm_010）、科扎馬烏卡 2 張（tm_017、tm_022）、夏羅尼荒野 1 張（tm_033），同 tests/treasure-route-aetherytes.test.js 的 EXAMPLE
+const EXAMPLE = SIX_MAPS;
+// 把寶圖加進清單，再按桌機入口的「生成路線」
+const openRouteWith = (page, ids) => {
+    page.addMaps(ids);
+    page.$('listEntryDesktop').querySelector('[data-entry="route"]').click();
+};
+const stops = (page) => Array.from(page.$('routeStops').querySelectorAll('li'));
+// 不用 id 組選擇器（匯入的自訂寶圖 id 可能有引號）
+const stopOf = (page, id) => stops(page).find((li) => li.dataset.mapId === id);
+// 用鍵盤按的時候焦點本來就在那顆上；fake-dom 的 click() 不會移動焦點，所以先 focus()
+const press = (button) => {
+    button.focus();
+    button.click();
+};
+// 隊友把這張移除了（同隊伍同步改了清單）：不經過 removeFromList() 的焦點處理，直接改清單再更新張數、重畫
+const drop = (page, id) => {
+    page.finder.listManager.remove(id);
+    page.finder.updateListCount();
+    page.finder.renderMyList();
+};
+
+test('路線頁的結構：在清單面板裡、清單頁的旁邊；舊的路線與格式面板拿掉', () => {
+    const html = read('tools/treasure-map-finder/index.html');
+    const panel = sliceElementById(html, 'myListPanel');
+    assert.deepEqual(classesOf(tagAttrs(html, 'routeView')), ['tm-panel-view', 'hidden']);
+    assert.ok(panel.indexOf('id="listView"') < panel.indexOf('id="routeView"'));
+    const view = sliceElementById(html, 'routeView');
+    for (const id of ['routeBackBtn', 'routeViewTitle', 'closeRouteViewBtn', 'routeOverview', 'routeNote', 'resetRouteBtn', 'routeStops', 'copyAllStopsBtn', 'copyNextStopBtn']) assert.ok(view.includes(`id="${id}"`), id);
+    assert.equal((view.match(/class="[^"]*\bbtn-primary\b/g) || []).length, 1);
+    assert.equal(tagAttrs(html, 'routeViewTitle').tabindex, '-1');
+    for (const gone of ['id="routePanel"', 'id="formatPanel"', 'id="teleportFormat"', 'id="mapFormat"']) assert.ok(!html.includes(gone), gone);
+    const ui = read('tools/treasure-map-finder/ui-dialog-manager.js');
+    for (const gone of ['showRouteResult', 'showFormatPanel', 'formatModalManager', 'showExportDialog', 'showImportDialog']) assert.ok(!ui.includes(gone), gone);
+    const script = read('tools/treasure-map-finder/script.js');
+    for (const gone of ['generateRoute(', 'copyEntireRoute', 'formatStepForCopy', 'formatSettings']) assert.ok(!script.includes(gone), gone);
+});
+
+test('生成路線：在面板裡切到路線頁，焦點在「路線」；6 張的站序、傳送、摘要與目前這一站', async () => {
+    const page = await createPanelPage();
+    openRouteWith(page, EXAMPLE);
+    assert.equal(page.$('routeView').classList.contains('hidden'), false);
+    assert.equal(page.$('listView').classList.contains('hidden'), true);
+    assert.equal(page.$('myListPanel').getAttribute('aria-labelledby'), 'routeViewTitle');
+    assert.ok(page.focused() === page.$('routeViewTitle'));
+    assert.equal(page.$('routeOverview').textContent, '6 張 · 3 個地區 · 5 次傳送');
+    assert.deepEqual(stops(page).map((li) => li.dataset.mapId), ['tm_010', 'tm_007', 'tm_013', 'tm_017', 'tm_022', 'tm_033']);
+    assert.deepEqual(stops(page).map((li) => li.querySelector('.tm-stop-tp')?.textContent.trim() ?? null),
+        ['🔮 傳送 瓦群佩洛', null, '🔮 傳送 沃克爾·佐莫爾', '🔮 傳送 奧克哈努', '🔮 傳送 波加停船所', '🔮 傳送 謝謝內青燐泉']);
+    assert.equal(stops(page)[0].querySelector('.tm-stop-title').textContent, 'G17 烏爾科帕恰 #4');
+    assert.ok(stops(page)[0].classList.contains('is-current'));
+    assert.equal(stops(page)[0].querySelector('.tm-stop-preview').textContent, '/p 1/6 G17 烏爾科帕恰 (21.6, 23.9) 最近：瓦群佩洛');
+    assert.equal(page.$('copyNextStopLabel').textContent, '複製下一站（1/6）');
+});
+
+test('複製下一站與每站的 📋：一站一行；全部複製包括完成的站，超過 15 行改成警告', async () => {
+    const page = await createPanelPage();
+    openRouteWith(page, EXAMPLE);
+    page.$('copyNextStopBtn').click();
+    await settle();
+    assert.equal(page.clipboardWrites.at(-1), '/p 1/6 G17 烏爾科帕恰 (21.6, 23.9) 最近：瓦群佩洛');
+    assert.deepEqual(page.toasts.at(-1), { message: '已複製第 1 站', type: 'success' });
+    stopOf(page, 'tm_017').querySelector('[data-action="copy"]').click();
+    await settle();
+    assert.equal(page.clipboardWrites.at(-1), '/p 4/6 G17 科扎馬烏卡 (20.0, 6.9) 最近：奧克哈努');
+    stopOf(page, 'tm_010').querySelector('[data-action="done"]').click();
+    page.$('copyAllStopsBtn').click();
+    await settle();
+    assert.equal(page.clipboardWrites.at(-1).split('\n').length, 6);
+    assert.deepEqual(page.toasts.at(-1), { message: '已複製 6 站', type: 'success' });
+    const big = await createPanelPage();
+    openRouteWith(big, big.finder.maps.filter((map) => map.level === 'g17').slice(0, 16).map((map) => map.id));
+    big.$('copyAllStopsBtn').click();
+    await settle();
+    assert.deepEqual(big.toasts.at(-1), { message: '已複製 16 行。遊戲的使用者巨集最多 15 行，超過的部分要分兩次貼。', type: 'warning' });
+});
+
+test('完成：目前這一站往下移、唸出下一站、焦點留在按下的那顆；重新整理後進度還在；全部完成時主要按鈕停用', async () => {
+    const page = await createPanelPage();
+    openRouteWith(page, EXAMPLE);
+    const done = (id) => stopOf(page, id).querySelector('[data-action="done"]');
+    press(done('tm_010'));
+    assert.equal(done('tm_010').getAttribute('aria-pressed'), 'true');
+    assert.ok(page.focused() === done('tm_010'));
+    assert.ok(stopOf(page, 'tm_007').classList.contains('is-current'));
+    assert.equal(page.$('listAnnouncer').textContent, '第 1 站完成。下一站：G17 烏爾科帕恰 (13.7, 14.2)');
+    assert.equal(page.$('routeOverview').textContent, '完成 1/6');
+    assert.equal(page.$('resetRouteBtn').classList.contains('hidden'), false);
+    const reloaded = await createPanelPage({ stored: Object.fromEntries(page.storage) });
+    reloaded.$('listEntryDesktop').querySelector('[data-entry="route"]').click();
+    assert.ok(stopOf(reloaded, 'tm_010').classList.contains('is-done'));
+    for (const id of ['tm_007', 'tm_013', 'tm_017', 'tm_022', 'tm_033']) done(id).click();
+    assert.equal(page.$('routeOverview').textContent, '6 站都完成了');
+    assert.equal(page.$('copyNextStopBtn').disabled, true);
+    assert.equal(page.$('copyNextStopLabel').textContent, '全部完成');
+    assert.equal(page.$('listAnnouncer').textContent, '第 6 站完成。全部完成了');
+    page.$('resetRouteBtn').click();
+    assert.equal(stops(page).filter((li) => li.classList.contains('is-done')).length, 0);
+    assert.ok(page.focused() === page.$('routeViewTitle'));
+});
+
+test('「完成」切換鈕的名稱是動作（標記第 N 站完成）而不是狀態：有沒有完成由 aria-pressed 說；看得到的字還是「完成」', async () => {
+    const page = await createPanelPage();
+    openRouteWith(page, EXAMPLE);
+    const done = (id) => stopOf(page, id).querySelector('[data-action="done"]');
+    const describe = (id) => [done(id).getAttribute('aria-label'), done(id).getAttribute('aria-pressed'), done(id).textContent];
+    assert.deepEqual(describe('tm_010'), ['標記第 1 站完成', 'false', '完成']);
+    assert.equal(done('tm_007').getAttribute('aria-label'), '標記第 2 站完成');
+    page.setLang('en');
+    assert.deepEqual(describe('tm_010'), ['Mark stop 1 done', 'false', 'Done']);
+    page.setLang('ja');
+    assert.deepEqual(describe('tm_010'), ['1 か所目を完了にする', 'false', '完了']);
+    press(done('tm_010'));
+    assert.deepEqual(describe('tm_010'), ['1 か所目を完了にする', 'true', '✓ 完了'], '標記完成之後名稱不變，只有 aria-pressed 與 ✓ 變');
+});
+
+test('路線頁的英文計數沒有複數規則：「Stops copied: 1」「All stops done (1)」，一站也通順', async () => {
+    for (const [ids, count] of [[['tm_007'], 1], [EXAMPLE, 6]]) {
+        const page = await createPanelPage({ lang: 'en' });
+        openRouteWith(page, ids);
+        page.$('copyAllStopsBtn').click();
+        await settle();
+        assert.deepEqual(page.toasts.at(-1), { message: `Stops copied: ${count}`, type: 'success' });
+        for (const id of ids) stopOf(page, id).querySelector('[data-action="done"]').click();
+        assert.equal(page.$('routeOverview').textContent, `All stops done (${count})`);
+    }
+});
+
+test('路線頁的計數與完成鈕的三語鍵值照設計', () => {
+    const expected = {
+        treasure_map_route_all_done: ['{total} 站都完成了', 'All stops done ({total})', '{total} か所すべて完了'],
+        treasure_map_route_done: ['完成', 'Done', '完了'],
+        treasure_map_route_done_label: ['標記第 {n} 站完成', 'Mark stop {n} done', '{n} か所目を完了にする'],
+        treasure_map_route_copied_all: ['已複製 {count} 站', 'Stops copied: {count}', '{count} か所をコピーしました']
+    };
+    ['zh', 'en', 'ja'].forEach((lang, index) => {
+        const values = translationValues(TRANSLATIONS, lang);
+        for (const [key, texts] of Object.entries(expected)) assert.equal(values.get(key), texts[index], `${lang} ${key}`);
+    });
+});
+
+const doneIdsOf = (page) => stops(page).filter((li) => li.classList.contains('is-done')).map((li) => li.dataset.mapId);
+
+test('進度在路線頁開著時被清掉：按「完成」只記這一站，不把畫面上舊的完成記號又存回去', async () => {
+    const key = 'ff14tw_treasure_route_progress';
+    const page = await createPanelPage();
+    openRouteWith(page, EXAMPLE);
+    stopOf(page, 'tm_010').querySelector('[data-action="done"]').click();
+    page.finder.routeProgress.clear();   // 清單沒變，路線頁沒有重畫：畫面上還留著 tm_010 的完成記號
+    assert.deepEqual(doneIdsOf(page), ['tm_010']);
+    press(stopOf(page, 'tm_007').querySelector('[data-action="done"]'));
+    assert.deepEqual(doneIdsOf(page), ['tm_007']);
+    assert.deepEqual(JSON.parse(page.storage.get(key)).done, ['tm_007']);
+    assert.equal(stopOf(page, 'tm_007').querySelector('[data-action="done"]').getAttribute('aria-pressed'), 'true');
+    assert.ok(page.focused() === stopOf(page, 'tm_007').querySelector('[data-action="done"]'));
+});
+
+test('進度在路線頁開著時超過 12 小時：按「完成」從乾淨的進度開始', async () => {
+    const key = 'ff14tw_treasure_route_progress';
+    const page = await createPanelPage();
+    openRouteWith(page, EXAMPLE);
+    stopOf(page, 'tm_010').querySelector('[data-action="done"]').click();
+    page.finder.routeProgress.now = () => Date.now() + 13 * 3600e3;   // 頁面開了一整夜
+    assert.deepEqual(doneIdsOf(page), ['tm_010']);
+    stopOf(page, 'tm_007').querySelector('[data-action="done"]').click();
+    assert.deepEqual(doneIdsOf(page), ['tm_007']);
+    assert.deepEqual(JSON.parse(page.storage.get(key)).done, ['tm_007']);
+});
+
+test('按「完成」時進度重新排序了：唸出的站號是重排之後的站號', async () => {
+    const page = await createPanelPage();
+    openRouteWith(page, ['tm_033', 'tm_017']);
+    page.addMaps(['tm_022']);   // 跑到一半加進來的插在同地區後面：夏羅尼荒野、科扎馬烏卡、科扎馬烏卡
+    assert.deepEqual(stops(page).map((li) => li.dataset.mapId), ['tm_033', 'tm_017', 'tm_022']);
+    page.finder.routeProgress.clear();   // 重新排序：寶圖多的科扎馬烏卡先跑
+    stopOf(page, 'tm_033').querySelector('[data-action="done"]').click();
+    assert.deepEqual(stops(page).map((li) => li.dataset.mapId), ['tm_017', 'tm_022', 'tm_033']);
+    assert.equal(page.$('listAnnouncer').textContent.split('。')[0], '第 3 站完成');
+});
+
+test('站別的無障礙語意：ol 明確標 role="list"（Safari 在 list-style: none 時會丟掉清單語意），只有目前這一站標 aria-current="step"，換站就跟著移動', async () => {
+    assert.equal(tagAttrs(PAGE_HTML, 'routeStops').role, 'list');
+    const page = await createPanelPage();
+    openRouteWith(page, EXAMPLE);
+    assert.equal(page.$('routeStops').getAttribute('role'), 'list');
+    const currentIds = () => stops(page).filter((li) => li.hasAttribute('aria-current')).map((li) => li.dataset.mapId);
+    const toggle = (id) => stopOf(page, id).querySelector('[data-action="done"]').click();
+    assert.deepEqual(currentIds(), ['tm_010']);
+    assert.equal(stopOf(page, 'tm_010').getAttribute('aria-current'), 'step');
+    toggle('tm_010');
+    assert.deepEqual(currentIds(), ['tm_007']);
+    toggle('tm_010');   // 取消完成：目前這一站回到第一站
+    assert.deepEqual(currentIds(), ['tm_010']);
+    for (const id of ['tm_010', 'tm_007', 'tm_013', 'tm_017', 'tm_022', 'tm_033']) toggle(id);
+    assert.deepEqual(currentIds(), [], '全部完成：沒有目前這一站');
+});
+
+test('1 張也能排：一站、要傳送', async () => {
+    const page = await createPanelPage();
+    openRouteWith(page, ['tm_007']);
+    assert.equal(page.$('routeOverview').textContent, '1 張 · 1 個地區 · 1 次傳送');
+    assert.equal(stops(page).length, 1);
+});
+
+test('跟著變：清單變了照規則更新站序（目前這一站被移除就換下一站）；清單空了回到清單頁（Review Focus 4）', async () => {
+    const page = await createPanelPage();
+    openRouteWith(page, EXAMPLE);
+    drop(page, 'tm_010');
+    assert.deepEqual(stops(page).map((li) => li.dataset.mapId), ['tm_007', 'tm_013', 'tm_017', 'tm_022', 'tm_033']);
+    assert.ok(stopOf(page, 'tm_007').classList.contains('is-current'));
+    page.addMaps(['tm_008']);
+    assert.deepEqual(stops(page).map((li) => li.dataset.mapId), ['tm_007', 'tm_008', 'tm_013', 'tm_017', 'tm_022', 'tm_033']);
+    for (const id of ['tm_007', 'tm_008', 'tm_013', 'tm_017', 'tm_022', 'tm_033']) drop(page, id);
+    assert.equal(page.$('routeView').classList.contains('hidden'), true);
+    assert.ok(page.focused() === page.$('myListPanel-title'));
+});
+
+test('隊伍同步讓「重設進度」藏起來、或讓「複製下一站」停用：原本在那顆上的焦點放到標題「路線」，不掉到 body', async () => {
+    const page = await createPanelPage();
+    openRouteWith(page, ['tm_007', 'tm_013']);
+    stopOf(page, 'tm_007').querySelector('[data-action="done"]').click();
+    page.$('resetRouteBtn').focus();
+    drop(page, 'tm_007');   // 唯一完成的那張被隊友移除：沒有完成的站了
+    assert.equal(page.$('resetRouteBtn').classList.contains('hidden'), true);
+    assert.ok(page.focused() === page.$('routeViewTitle'));
+
+    page.addMaps(['tm_007']);
+    stopOf(page, 'tm_013').querySelector('[data-action="done"]').click();
+    page.$('copyNextStopBtn').focus();
+    drop(page, 'tm_007');   // 還沒完成的那張被隊友移除：剩下的都完成了
+    assert.equal(page.$('copyNextStopBtn').disabled, true);
+    assert.ok(page.focused() === page.$('routeViewTitle'));
+});
+
+test('清單、語言、複製格式都沒變時，隊伍每 2 秒的同步不重畫路線頁：站別還是同一批節點（不閃）；語言變了才重畫', async () => {
+    const page = await createPanelPage();
+    openRouteWith(page, EXAMPLE);
+    const before = stops(page);
+    assert.equal(before.length, 6);
+    page.finder.renderMyList();   // 輪詢一次、再一次：清單沒變
+    page.finder.renderMyList();
+    assert.equal(stops(page).length, 6);
+    assert.ok(stops(page).every((li, index) => li === before[index]));
+    page.setLang('en');
+    assert.ok(stops(page).every((li, index) => li !== before[index]));
+});
+
+test('同步重畫時的焦點：還在的那一站，焦點留在同一站的同一顆；焦點所在的那一站被隊友移除了，放到標題「路線」，不掉到 body', async () => {
+    const page = await createPanelPage();
+    openRouteWith(page, EXAMPLE);
+    const buttonOf = (id, action) => stopOf(page, id).querySelector(`[data-action="${action}"]`);
+    buttonOf('tm_013', 'copy').focus();
+    drop(page, 'tm_007');   // 別的站被移除：整排重畫，焦點回到 tm_013 重畫後的 📋
+    assert.ok(page.focused() === buttonOf('tm_013', 'copy'));
+    buttonOf('tm_013', 'done').focus();
+    drop(page, 'tm_013');   // 焦點所在的這一站被移除
+    assert.equal(stopOf(page, 'tm_013'), undefined);
+    assert.ok(page.focused() === page.$('routeViewTitle'));
+});
+
+test('分享對話框疊在開著的路線頁上：加入之後路線重畫、焦點原本所在的那顆換掉了，焦點放到標題「路線」', async () => {
+    const page = await createPanelPage();
+    openRouteWith(page, EXAMPLE);
+    stopOf(page, 'tm_013').querySelector('[data-action="done"]').focus();
+    page.finder.listDialogs.openShare([catalogued(page, 'tm_008')], 0);
+    page.$('confirmShareBtn').click();
+    await settle();
+    assert.equal(stops(page).length, 7);
+    assert.ok(page.finder.routeView.isOpen());
+    assert.ok(page.focused() === page.$('routeViewTitle'));
+});
+
+test('進度清掉的時機：加進時保留；取代、清空時清掉；全部完成後清單變了、超過 12 小時重新來過', async () => {
+    const key = 'ff14tw_treasure_route_progress';
+    const page = await createPanelPage();
+    openRouteWith(page, EXAMPLE);
+    stopOf(page, 'tm_010').querySelector('[data-action="done"]').click();
+    page.$('routeBackBtn').click();   // 匯入、清空都在清單頁做
+    await page.finder.importFromText('?maps=tm_008', { merge: true });
+    assert.deepEqual(JSON.parse(page.storage.get(key)).done, ['tm_010']);
+    await page.finder.importFromText('?maps=tm_008,tm_009', { merge: false });
+    assert.equal(page.storage.has(key), false);
+    page.$('generateRouteBtn').click();
+    for (const id of ['tm_008', 'tm_009']) stopOf(page, id).querySelector('[data-action="done"]').click();
+    page.addMaps(['tm_011']);
+    assert.equal(stops(page).filter((li) => li.classList.contains('is-done')).length, 0, '全部完成後清單變了：重新來過');
+    page.$('routeBackBtn').click();
+    page.$('clearAllBtn').click();
+    page.$('confirmClearBtn').click();
+    assert.equal(page.storage.has(key), false);
+    // 載入時清單裡要有這一張：清單是空的就會先被「0 張結束這一趟」清掉，測不到 12 小時
+    const listed = await createPanelPage();
+    listed.addMaps(['tm_007']);
+    const stale = await createPanelPage({
+        stored: {
+            ff14tw_treasure_map_list: listed.storage.get('ff14tw_treasure_map_list'),
+            [key]: JSON.stringify({ order: ['tm_007'], done: ['tm_007'], updatedAt: new Date(Date.now() - 13 * 3600e3).toISOString() })
+        }
+    });
+    assert.equal(stale.storage.has(key), true, '載入時進度還在，要等到讀的時候才因為過期被清掉');
+    stale.$('listEntryDesktop').querySelector('[data-entry="route"]').click();
+    assert.equal(stopOf(stale, 'tm_007').classList.contains('is-done'), false);
+});
+
+test('清單變成 0 張就結束這一趟：移除最後一張、隊友清空（同步）都把進度清掉，同一張寶圖加回來不是完成的', async () => {
+    const key = 'ff14tw_treasure_route_progress';
+    const page = await createPanelPage();
+    openRouteWith(page, EXAMPLE);
+    stopOf(page, 'tm_010').querySelector('[data-action="done"]').click();
+    for (const id of ['tm_007', 'tm_013', 'tm_017', 'tm_022', 'tm_033']) drop(page, id);
+    assert.deepEqual(JSON.parse(page.storage.get(key)).done, ['tm_010'], '還剩完成的那一張：進度還在');
+    drop(page, 'tm_010');   // 完成的那一張最後才移除：變成 0 張的當下，存著的進度還是 { order: [tm_010], done: [tm_010] }
+    assert.equal(page.storage.has(key), false);
+    openRouteWith(page, ['tm_010']);
+    assert.deepEqual(doneIdsOf(page), []);
+
+    stopOf(page, 'tm_010').querySelector('[data-action="done"]').click();
+    page.finder.listManager.clear();   // 隊友清空了清單（或清空清單並離開隊伍）：不經過 clearList()
+    page.finder.updateListCount();
+    page.finder.renderMyList();
+    assert.equal(page.storage.has(key), false);
+    openRouteWith(page, ['tm_010']);
+    assert.deepEqual(doneIdsOf(page), []);
+});
+
+test('路線頁沒開著時清單變了：已經有的進度照樣對齊（移除再加回同一張不是完成的；全部完成之後再變就清掉）；沒變不存；還沒有進度時不建立', async () => {
+    const key = 'ff14tw_treasure_route_progress';
+    const page = await createPanelPage();
+    openRouteWith(page, ['tm_007', 'tm_013']);
+    stopOf(page, 'tm_007').querySelector('[data-action="done"]').click();
+    page.$('routeBackBtn').click();   // 回到清單頁：路線頁沒開著
+    drop(page, 'tm_007');   // 完成的那一張被移除（隊友挖完了）
+    assert.deepEqual(JSON.parse(page.storage.get(key)).done, [], '不在清單裡的從完成記號拿掉');
+    page.addMaps(['tm_007']);   // 同一個地點又有一張新的
+    page.$('generateRouteBtn').click();
+    assert.deepEqual(doneIdsOf(page), []);
+    assert.equal(page.$('copyNextStopLabel').textContent, '複製下一站（1/2）');
+
+    // 全部完成之後，在清單頁時清單又有變化：進度清掉，等打開路線頁再依第一次排序的規則排
+    for (const id of ['tm_007', 'tm_013']) stopOf(page, id).querySelector('[data-action="done"]').click();
+    page.$('routeBackBtn').click();
+    const saved = page.storage.get(key);
+    page.finder.routeProgress.now = () => Date.now() + 3600e3;   // 一小時後隊伍輪詢一次：清單沒變，不存（不延長 12 小時）
+    page.finder.renderMyList();
+    assert.equal(page.storage.get(key), saved);
+    page.addMaps(['tm_022']);
+    assert.equal(page.storage.has(key), false);
+
+    const fresh = await createPanelPage();
+    fresh.addMaps(['tm_007', 'tm_013']);
+    drop(fresh, 'tm_007');
+    assert.equal(fresh.storage.has(key), false, '沒打開過路線頁：不建立進度');
+});
+
+test('切換語言：摘要、站名、傳送點與預覽換成新語言（沒存過格式時預覽跟著介面語言）', async () => {
+    const page = await createPanelPage();
+    openRouteWith(page, EXAMPLE);
+    page.setLang('en');
+    assert.equal(page.$('routeOverview').textContent, 'Maps: 6 · Zones: 3 · Teleports: 5');
+    assert.equal(stops(page)[0].querySelector('.tm-stop-title').textContent, 'G17 Urqopacha #4');
+    assert.equal(stops(page)[0].querySelector('.tm-stop-preview').textContent, '/p 1/6 G17 Urqopacha (21.6, 23.9) Nearest: Wachunpelo');
+});
+
+test('沒有傳送點的站：沒有傳送行，複製預設範本不留「最近」（Review Focus 5）', async () => {
+    const page = await createPanelPage();
+    page.finder.listManager.add({ id: 'g8_test_1', level: 'g8', zone: 'Test', coords: { x: 10, y: 20 } });
+    page.finder.updateListCount();
+    page.finder.renderMyList();
+    page.finder.openRoute();
+    assert.equal(stops(page)[0].querySelector('.tm-stop-tp'), null);
+    assert.equal(stops(page)[0].querySelector('.tm-stop-preview').textContent, '/p 1/1 G8 Test (10.0, 20.0)');
+});
+
+test('目錄裡找不到、也沒有 zoneId 的舊項目：摘要算進一次傳送，那一站就有傳送行，複製的句子有「最近」', async () => {
+    const page = await createPanelPage();
+    page.finder.listManager.add({ id: 'legacy_1', level: 'g17', zone: "Kozama'uka", coords: { x: 20, y: 6.9 } });
+    page.finder.updateListCount();
+    page.finder.renderMyList();
+    page.finder.openRoute();
+    assert.equal(page.$('routeOverview').textContent, '1 張 · 1 個地區 · 1 次傳送');
+    const [stop] = stops(page);
+    assert.equal(stop.querySelector('.tm-stop-tp')?.textContent.trim(), '🔮 傳送 奧克哈努');
+    assert.equal(stop.querySelector('.tm-stop-title').textContent, 'G17 科扎馬烏卡');
+    assert.equal(stop.querySelector('.tm-stop-preview').textContent, '/p 1/1 G17 科扎馬烏卡 (20.0, 6.9) 最近：奧克哈努');
+    page.$('copyNextStopBtn').click();
+    await settle();
+    assert.equal(page.clipboardWrites.at(-1), '/p 1/1 G17 科扎馬烏卡 (20.0, 6.9) 最近：奧克哈努');
+});
+
+test('「‹ 清單」回到清單頁、焦點在「生成路線」；Escape 關掉整個面板，下次從清單入口打開是清單頁', async () => {
+    const page = await createPanelPage();
+    openRouteWith(page, EXAMPLE);
+    page.$('routeBackBtn').click();
+    assert.equal(page.$('listView').classList.contains('hidden'), false);
+    assert.ok(page.focused() === page.$('generateRouteBtn'));
+    page.$('generateRouteBtn').click();
+    page.key('Escape');
+    assert.equal(page.finder.modalManager.activeModal, null);
+    page.$('listEntryDesktop').querySelector('[data-entry="list"]').click();
+    assert.equal(page.$('listView').classList.contains('hidden'), false);
+});
+
+test('舊的格式設定在載入時轉換：存過舊的日文預設 → 複製用新的日文預設並寫回（Review Focus 3）', async () => {
+    const legacy = JSON.stringify({ teleport: '/p <傳送點_ja>にテレポート <座標>', map: '/p 次 <寶圖等級> - <地區_ja> <座標>' });
+    const page = await createPanelPage({ stored: { treasureMapFormatSettings: legacy } });
+    openRouteWith(page, EXAMPLE);
+    assert.equal(stops(page)[0].querySelector('.tm-stop-preview').textContent, '/p 1/6 G17 オルコ・パチャ (21.6, 23.9) 最寄り：ワチュンペロ');
+    assert.deepEqual(JSON.parse(page.storage.get('treasureMapFormatSettings')).version, 2);
 });

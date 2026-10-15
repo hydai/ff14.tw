@@ -26,59 +26,6 @@ class RouteCalculator {
     }
 
     /**
-     * 主要路線計算
-     * @param {Array} maps - 寶圖列表
-     * @returns {Object} 路線結果
-     */
-    calculateRoute(maps) {
-        if (!maps || maps.length === 0) return { summary: {}, route: [] };
-        if (!zoneManager.loaded) {
-            console.error('傳送點資料尚未載入');
-            return { summary: {}, route: [] };
-        }
-
-        // 1. 按地區分組
-        const mapsByRegion = this.groupByZone(maps);
-
-        // 2. 決定地區訪問順序（寶圖多的地區先跑）
-        const regionOrder = this.getRegionOrder(mapsByRegion);
-
-        // 3. 為每個地區規劃路線
-        const route = [];
-        let totalTeleports = 0;
-
-        for (const region of regionOrder) {
-            if (mapsByRegion[region]) {
-                const regionRoute = this.planRegionRoute(mapsByRegion[region]);
-                route.push(...regionRoute);
-
-                // 計算傳送次數
-                const regionTeleports = regionRoute.filter(step => step.type === 'teleport').length;
-                totalTeleports += regionTeleports;
-            }
-        }
-
-        // 獲取實際的地區名稱列表
-        const regionsVisited = [];
-        for (const regionId of regionOrder) {
-            if (mapsByRegion[regionId] && mapsByRegion[regionId].length > 0) {
-                if (!regionsVisited.includes(regionId)) {
-                    regionsVisited.push(regionId);
-                }
-            }
-        }
-
-        return {
-            summary: {
-                totalMaps: maps.length,
-                totalTeleports: totalTeleports,
-                regionsVisited: regionsVisited
-            },
-            route: route
-        };
-    }
-
-    /**
      * 第一次排序：寶圖多的地區先跑，張數一樣照該地區的寶圖在清單裡第一次出現的順序；
      * 同一個地區裡照 planRegionRoute() 的算法（分給最近的傳送點、傳送點組依張數多到少、組內最近鄰居），
      * 只取寶圖、不取傳送步驟

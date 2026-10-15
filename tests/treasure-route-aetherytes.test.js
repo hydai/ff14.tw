@@ -258,8 +258,8 @@ test('init：傳送點圖示載入慢或載入不了都不延後結果；圖示�
     assert.ok(page.finder.aetheryteIcon === page.icons[0], '圖示載入完成後記下來');
 });
 
-test('init：傳送點圖示晚到時，開著的詳細地圖重畫一次補上傳送點；開著的是路線面板（用不到圖示）或什麼都沒開就不重畫', async () => {
-    for (const [kind, expected] of [['mapDetail', ['mapDetail']], ['routeResult', []], [null, []]]) {
+test('init：傳送點圖示晚到時，開著的詳細地圖重畫一次補上傳送點；什麼都沒開就不重畫', async () => {
+    for (const [kind, expected] of [['mapDetail', ['mapDetail']], [null, []]]) {
         const page = startFinder({ iconLoads: false });
         const refreshed = [];
         page.finder.uiDialogManager = {

@@ -75,26 +75,34 @@ const TreasureMapTranslations = {
         treasure_map_history_tab: '歷史',
         treasure_map_generate_route: '生成路線',
 
-        // 路線面板
-        treasure_map_best_route: '最佳路線',
-        treasure_map_copy_route: '複製路線',
-        treasure_map_custom_format: '自訂格式',
+        // 路線頁（清單面板的第二頁）
+        treasure_map_route_title: '路線',
+        treasure_map_route_back: '‹ 清單',
+        treasure_map_route_back_label: '回到清單',
+        treasure_map_route_overview: '{maps} 張 · {zones} 個地區 · {teleports} 次傳送',
+        treasure_map_route_note: '順序依直線距離估算',
+        treasure_map_route_progress: '完成 {done}/{total}',
+        treasure_map_route_all_done: '{total} 站都完成了',
+        treasure_map_route_reset: '重設進度',
+        treasure_map_route_teleport: '傳送 {name}',
+        treasure_map_route_copy_stop: '複製第 {n} 站',
+        treasure_map_route_done: '完成',
+        treasure_map_route_done_label: '標記第 {n} 站完成',
+        treasure_map_route_announce_done: '第 {n} 站完成。下一站：{next}',
+        treasure_map_route_announce_all_done: '第 {n} 站完成。全部完成了',
+        treasure_map_route_copy_all: '全部複製',
+        treasure_map_route_copy_next: '複製下一站（{n}/{total}）',
+        treasure_map_route_finished: '全部完成',
+        treasure_map_route_copied_stop: '已複製第 {n} 站',
+        treasure_map_route_copied_all: '已複製 {count} 站',
+        treasure_map_route_copied_too_many: '已複製 {count} 行。遊戲的使用者巨集最多 15 行，超過的部分要分兩次貼。',
 
-        // 格式設定面板
-        treasure_map_custom_output: '自訂輸出格式',
-        treasure_map_quick_lang: '快速切換語言模板：',
-        treasure_map_teleport_format: '傳送點格式',
-        treasure_map_map_format: '寶圖格式',
-        treasure_map_available_vars: '可用變數：',
-        treasure_map_preview: '預覽',
+        // 複製格式的儲存與恢復預設
         treasure_map_reset_default: '重置為預設值',
         treasure_map_save_settings: '儲存設定',
         treasure_map_format_saved: '格式設定已儲存',
         treasure_map_format_save_failed: '無法儲存設定：瀏覽器不允許儲存資料',
         treasure_map_format_reset: '已重置為預設格式',
-        treasure_map_format_switched_zh: '已切換至中文模板',
-        treasure_map_format_switched_en: '已切換至英文模板',
-        treasure_map_format_switched_ja: '已切換至日文模板',
 
         // 加入隊伍對話框
         treasure_map_join_title: '加入隊伍',
@@ -164,9 +172,7 @@ const TreasureMapTranslations = {
         treasure_map_loading: '載入中...',
         treasure_map_load_failed: '載入寶圖資料失敗，請重新整理頁面再試。',
         treasure_map_reload: '重新載入',
-        treasure_map_no_route_to_copy: '目前沒有可複製的路線',
         treasure_map_loading_aetherytes: '正在載入傳送點資料，請稍後再試',
-        treasure_map_route_copy_success: '已複製 {count} 個地點',
         treasure_map_added_to_list: '✓ 已加入',
         treasure_map_add_to_list: '＋ 加入清單',
         treasure_map_remove_item: '移除 {name}',
@@ -199,20 +205,11 @@ const TreasureMapTranslations = {
         treasure_map_import_title: '匯入清單',
         treasure_map_import_success: '已匯入 {count} 張寶圖',
         treasure_map_import_merged: '已合併匯入 {count} 張新寶圖',
-        treasure_map_route_summary: '路線摘要：',
-        treasure_map_route_regions: '地區順序：{regions}',
-        treasure_map_route_teleports: '總傳送次數：{count}',
-        treasure_map_route_total_maps: '總寶圖數量：{count}',
-        treasure_map_route_teleport_to: '傳送至 {name}',
-
-        // 路線步驟複製訊息
-        treasure_map_route_step_copy_title: '複製',
-        treasure_map_route_step_copy_success: '已複製',
 
         // 組隊區域（補充）
         treasure_map_copy_room_code: '複製隊伍代號',
 
-        // 匯入／路線／同步錯誤訊息
+        // 匯入／同步錯誤訊息
         treasure_map_import_generic_failed: '匯入失敗',
         treasure_map_import_wait_for_sync: '請等待隊伍同步完成後再匯入。',
         treasure_map_import_invalid_room_maps: '匯入清單含有隊伍不支援的寶圖資料，請檢查後再試。',
@@ -220,7 +217,6 @@ const TreasureMapTranslations = {
         treasure_map_import_invalid_json: '無效的 JSON 格式',
         treasure_map_import_invalid_format: '無效的匯入格式',
         treasure_map_import_no_valid_maps: '沒有有效的地圖資料',
-        treasure_map_route_generation_failed: '無法生成路線',
         treasure_map_sync_to_room_failed: '同步失敗，請稍後再試',
 
         // 組隊協作（room-collaboration.js）
@@ -348,26 +344,34 @@ const TreasureMapTranslations = {
         treasure_map_history_tab: 'History',
         treasure_map_generate_route: 'Generate Route',
 
-        // Route panel
-        treasure_map_best_route: 'Best Route',
-        treasure_map_copy_route: 'Copy Route',
-        treasure_map_custom_format: 'Custom Format',
+        // Route page (the second page of the list panel)
+        treasure_map_route_title: 'Route',
+        treasure_map_route_back: '‹ List',
+        treasure_map_route_back_label: 'Back to the list',
+        treasure_map_route_overview: 'Maps: {maps} · Zones: {zones} · Teleports: {teleports}',
+        treasure_map_route_note: 'Order estimated by straight-line distance',
+        treasure_map_route_progress: 'Done {done}/{total}',
+        treasure_map_route_all_done: 'All stops done ({total})',
+        treasure_map_route_reset: 'Reset progress',
+        treasure_map_route_teleport: 'Teleport to {name}',
+        treasure_map_route_copy_stop: 'Copy stop {n}',
+        treasure_map_route_done: 'Done',
+        treasure_map_route_done_label: 'Mark stop {n} done',
+        treasure_map_route_announce_done: 'Stop {n} done. Next: {next}',
+        treasure_map_route_announce_all_done: 'Stop {n} done. All stops are done',
+        treasure_map_route_copy_all: 'Copy all',
+        treasure_map_route_copy_next: 'Copy next stop ({n}/{total})',
+        treasure_map_route_finished: 'All done',
+        treasure_map_route_copied_stop: 'Copied stop {n}',
+        treasure_map_route_copied_all: 'Stops copied: {count}',
+        treasure_map_route_copied_too_many: 'Copied {count} lines. A user macro holds up to 15 lines, so paste the rest separately.',
 
-        // Format settings panel
-        treasure_map_custom_output: 'Custom Output Format',
-        treasure_map_quick_lang: 'Quick Language Templates:',
-        treasure_map_teleport_format: 'Teleport Format',
-        treasure_map_map_format: 'Map Format',
-        treasure_map_available_vars: 'Available Variables:',
-        treasure_map_preview: 'Preview',
+        // Copy format: saving and restoring the default
         treasure_map_reset_default: 'Reset to Default',
         treasure_map_save_settings: 'Save Settings',
         treasure_map_format_saved: 'Format settings saved',
         treasure_map_format_save_failed: 'Could not save the settings: your browser does not allow storing data',
         treasure_map_format_reset: 'Reset to default format',
-        treasure_map_format_switched_zh: 'Switched to Chinese template',
-        treasure_map_format_switched_en: 'Switched to English template',
-        treasure_map_format_switched_ja: 'Switched to Japanese template',
 
         // Join room dialog
         treasure_map_join_title: 'Join Room',
@@ -437,9 +441,7 @@ const TreasureMapTranslations = {
         treasure_map_loading: 'Loading...',
         treasure_map_load_failed: 'Failed to load map data, please refresh the page.',
         treasure_map_reload: 'Reload',
-        treasure_map_no_route_to_copy: 'No route available to copy',
         treasure_map_loading_aetherytes: 'Loading aetheryte data, please try again later',
-        treasure_map_route_copy_success: 'Copied {count} locations',
         treasure_map_added_to_list: '✓ Added',
         treasure_map_add_to_list: '＋ Add to List',
         treasure_map_remove_item: 'Remove {name}',
@@ -472,20 +474,11 @@ const TreasureMapTranslations = {
         treasure_map_import_title: 'Import List',
         treasure_map_import_success: 'Maps imported: {count}',
         treasure_map_import_merged: 'New maps merged: {count}',
-        treasure_map_route_summary: 'Route Summary:',
-        treasure_map_route_regions: 'Region Order: {regions}',
-        treasure_map_route_teleports: 'Total Teleports: {count}',
-        treasure_map_route_total_maps: 'Total Maps: {count}',
-        treasure_map_route_teleport_to: 'Teleport to {name}',
-
-        // Route step copy / export messages
-        treasure_map_route_step_copy_title: 'Copy',
-        treasure_map_route_step_copy_success: 'Copied',
 
         // Room section (additional)
         treasure_map_copy_room_code: 'Copy Room Code',
 
-        // Import / route / sync error messages
+        // Import / sync error messages
         treasure_map_import_generic_failed: 'Import failed',
         treasure_map_import_wait_for_sync: 'Please wait for the party to finish syncing before importing.',
         treasure_map_import_invalid_room_maps: 'The imported list contains map data unsupported by parties. Please check it and try again.',
@@ -493,7 +486,6 @@ const TreasureMapTranslations = {
         treasure_map_import_invalid_json: 'Invalid JSON format',
         treasure_map_import_invalid_format: 'Invalid import format',
         treasure_map_import_no_valid_maps: 'No valid map data',
-        treasure_map_route_generation_failed: 'Unable to generate a route',
         treasure_map_sync_to_room_failed: 'Sync failed. Please try again later.',
 
         // Room collaboration (room-collaboration.js)
@@ -621,26 +613,34 @@ const TreasureMapTranslations = {
         treasure_map_history_tab: '履歴',
         treasure_map_generate_route: 'ルート生成',
 
-        // ルートパネル
-        treasure_map_best_route: '最適ルート',
-        treasure_map_copy_route: 'ルートをコピー',
-        treasure_map_custom_format: 'カスタム形式',
+        // ルートページ（リストパネルの 2 ページ目）
+        treasure_map_route_title: 'ルート',
+        treasure_map_route_back: '‹ リスト',
+        treasure_map_route_back_label: 'リストに戻る',
+        treasure_map_route_overview: '地図 {maps} 枚 · エリア {zones} · テレポ {teleports} 回',
+        treasure_map_route_note: '順番は直線距離による目安です',
+        treasure_map_route_progress: '完了 {done}/{total}',
+        treasure_map_route_all_done: '{total} か所すべて完了',
+        treasure_map_route_reset: '進捗をリセット',
+        treasure_map_route_teleport: '{name} へテレポ',
+        treasure_map_route_copy_stop: '{n} か所目をコピー',
+        treasure_map_route_done: '完了',
+        treasure_map_route_done_label: '{n} か所目を完了にする',
+        treasure_map_route_announce_done: '{n} か所目 完了。次：{next}',
+        treasure_map_route_announce_all_done: '{n} か所目 完了。すべて完了しました',
+        treasure_map_route_copy_all: 'すべてコピー',
+        treasure_map_route_copy_next: '次をコピー（{n}/{total}）',
+        treasure_map_route_finished: 'すべて完了',
+        treasure_map_route_copied_stop: '{n} か所目をコピーしました',
+        treasure_map_route_copied_all: '{count} か所をコピーしました',
+        treasure_map_route_copied_too_many: '{count} 行コピーしました。ユーザーマクロは 15 行までなので、残りは分けて貼り付けてください。',
 
-        // フォーマット設定パネル
-        treasure_map_custom_output: 'カスタム出力形式',
-        treasure_map_quick_lang: '言語テンプレート切替：',
-        treasure_map_teleport_format: 'テレポ形式',
-        treasure_map_map_format: '地図形式',
-        treasure_map_available_vars: '使用可能な変数：',
-        treasure_map_preview: 'プレビュー',
+        // コピー形式の保存とデフォルトへの復元
         treasure_map_reset_default: 'デフォルトに戻す',
         treasure_map_save_settings: '設定を保存',
         treasure_map_format_saved: '書式設定を保存しました',
         treasure_map_format_save_failed: '設定を保存できませんでした：ブラウザがデータの保存を許可していません',
         treasure_map_format_reset: 'デフォルトの書式にリセットしました',
-        treasure_map_format_switched_zh: '中国語テンプレートに切り替えました',
-        treasure_map_format_switched_en: '英語テンプレートに切り替えました',
-        treasure_map_format_switched_ja: '日本語テンプレートに切り替えました',
 
         // ルーム参加ダイアログ
         treasure_map_join_title: 'ルーム参加',
@@ -710,9 +710,7 @@ const TreasureMapTranslations = {
         treasure_map_loading: '読み込み中...',
         treasure_map_load_failed: 'データの読み込みに失敗しました。ページを更新してください。',
         treasure_map_reload: '再読み込み',
-        treasure_map_no_route_to_copy: 'コピーできるルートがありません',
         treasure_map_loading_aetherytes: 'エーテライトデータを読み込み中。後でもう一度お試しください',
-        treasure_map_route_copy_success: '{count} 箇所の地点をコピーしました',
         treasure_map_added_to_list: '✓ 追加済み',
         treasure_map_add_to_list: '＋ リストに追加',
         treasure_map_remove_item: '{name} を削除',
@@ -745,20 +743,11 @@ const TreasureMapTranslations = {
         treasure_map_import_title: 'リストのインポート',
         treasure_map_import_success: '{count} 枚の地図をインポートしました',
         treasure_map_import_merged: '{count} 枚の新しい地図をマージしました',
-        treasure_map_route_summary: 'ルート概要：',
-        treasure_map_route_regions: 'エリア順序：{regions}',
-        treasure_map_route_teleports: '総テレポ回数：{count}',
-        treasure_map_route_total_maps: '総地図数：{count}',
-        treasure_map_route_teleport_to: '{name} へテレポ',
-
-        // ルートステップのコピー／エクスポートメッセージ
-        treasure_map_route_step_copy_title: 'コピー',
-        treasure_map_route_step_copy_success: 'コピーしました',
 
         // ルームセクション（追加）
         treasure_map_copy_room_code: 'ルームコードをコピー',
 
-        // インポート／ルート／同期エラーメッセージ
+        // インポート／同期エラーメッセージ
         treasure_map_import_generic_failed: 'インポートに失敗しました',
         treasure_map_import_wait_for_sync: 'パーティの同期が完了してからインポートしてください。',
         treasure_map_import_invalid_room_maps: 'インポートするリストにパーティで使用できない宝の地図データが含まれています。内容を確認して再試行してください。',
@@ -766,7 +755,6 @@ const TreasureMapTranslations = {
         treasure_map_import_invalid_json: 'JSON 形式が正しくありません',
         treasure_map_import_invalid_format: 'インポート形式が正しくありません',
         treasure_map_import_no_valid_maps: '有効な地図データがありません',
-        treasure_map_route_generation_failed: 'ルートを生成できません',
         treasure_map_sync_to_room_failed: '同期に失敗しました。しばらくしてからもう一度お試しください',
 
         // ルーム協働機能（room-collaboration.js）
