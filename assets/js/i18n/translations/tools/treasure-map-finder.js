@@ -97,12 +97,20 @@ const TreasureMapTranslations = {
         treasure_map_route_copied_all: '已複製 {count} 站',
         treasure_map_route_copied_too_many: '已複製 {count} 行。遊戲的使用者巨集最多 15 行，超過的部分要分兩次貼。',
 
-        // 複製格式的儲存與恢復預設
-        treasure_map_reset_default: '重置為預設值',
-        treasure_map_save_settings: '儲存設定',
+        // 複製格式（路線頁站別下面可以展開的區塊）
+        treasure_map_format_title: '複製格式',
+        treasure_map_format_follow: '跟著介面語言',
+        treasure_map_format_custom: '自訂',
+        treasure_map_format_presets: '語言範本',
+        treasure_map_format_template_label: '每一站複製成',
+        treasure_map_format_insert: '插入變數',
+        treasure_map_format_more_vars: '也可以用 {vars}',
+        treasure_map_format_preview: '預覽（第 {n} 站）',
+        treasure_map_reset_default: '恢復預設',
+        treasure_map_save_settings: '儲存格式',
         treasure_map_format_saved: '格式設定已儲存',
         treasure_map_format_save_failed: '無法儲存設定：瀏覽器不允許儲存資料',
-        treasure_map_format_reset: '已重置為預設格式',
+        treasure_map_format_reset: '已恢復預設：跟著介面語言',
 
         // 加入隊伍對話框
         treasure_map_join_title: '加入隊伍',
@@ -366,12 +374,20 @@ const TreasureMapTranslations = {
         treasure_map_route_copied_all: 'Stops copied: {count}',
         treasure_map_route_copied_too_many: 'Copied {count} lines. A user macro holds up to 15 lines, so paste the rest separately.',
 
-        // Copy format: saving and restoring the default
-        treasure_map_reset_default: 'Reset to Default',
-        treasure_map_save_settings: 'Save Settings',
+        // Copy format (the section that expands below the stops on the route page)
+        treasure_map_format_title: 'Copy format',
+        treasure_map_format_follow: 'Follows the site language',
+        treasure_map_format_custom: 'Custom',
+        treasure_map_format_presets: 'Language presets',
+        treasure_map_format_template_label: 'Copy each stop as',
+        treasure_map_format_insert: 'Insert',
+        treasure_map_format_more_vars: 'Also available: {vars}',
+        treasure_map_format_preview: 'Preview (stop {n})',
+        treasure_map_reset_default: 'Restore default',
+        treasure_map_save_settings: 'Save format',
         treasure_map_format_saved: 'Format settings saved',
         treasure_map_format_save_failed: 'Could not save the settings: your browser does not allow storing data',
-        treasure_map_format_reset: 'Reset to default format',
+        treasure_map_format_reset: 'Default restored: follows the site language',
 
         // Join room dialog
         treasure_map_join_title: 'Join Room',
@@ -635,12 +651,20 @@ const TreasureMapTranslations = {
         treasure_map_route_copied_all: '{count} か所をコピーしました',
         treasure_map_route_copied_too_many: '{count} 行コピーしました。ユーザーマクロは 15 行までなので、残りは分けて貼り付けてください。',
 
-        // コピー形式の保存とデフォルトへの復元
+        // コピー形式（ルートページの地点リストの下で開く欄）
+        treasure_map_format_title: 'コピー形式',
+        treasure_map_format_follow: '表示言語に合わせる',
+        treasure_map_format_custom: 'カスタム',
+        treasure_map_format_presets: '言語テンプレート',
+        treasure_map_format_template_label: '各地点のコピー内容',
+        treasure_map_format_insert: '変数を挿入',
+        treasure_map_format_more_vars: '{vars} も使えます',
+        treasure_map_format_preview: 'プレビュー（{n} か所目）',
         treasure_map_reset_default: 'デフォルトに戻す',
-        treasure_map_save_settings: '設定を保存',
+        treasure_map_save_settings: '形式を保存',
         treasure_map_format_saved: '書式設定を保存しました',
         treasure_map_format_save_failed: '設定を保存できませんでした：ブラウザがデータの保存を許可していません',
-        treasure_map_format_reset: 'デフォルトの書式にリセットしました',
+        treasure_map_format_reset: 'デフォルトに戻しました：表示言語に合わせます',
 
         // ルーム参加ダイアログ
         treasure_map_join_title: 'ルーム参加',

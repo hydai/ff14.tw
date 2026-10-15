@@ -222,6 +222,33 @@
                 </div>
                 <!-- role="list"：Safari 在 list-style: none 時會丟掉清單語意（VoiceOver 不再唸「清單，共 6 項」） -->
                 <ol class="tm-stops" id="routeStops" role="list"></ol>
+                <!-- 複製格式：站別下面一顆可以展開的按鈕，收起時旁邊寫目前用的範本。展開後是語言範本、範本欄位、變數按鈕、預覽與兩顆按鈕，這一區沒有主要按鈕。
+                     範本名稱、「也可以用」說明、預覽的標題與句子跟著狀態與語言，由 JavaScript 填（不掛 data-i18n）；#formatVars 裡的變數按鈕也由 JavaScript 依 CopyFormat.BUTTON_VARIABLES 建 -->
+                <div class="tm-format">
+                    <button type="button" class="tm-format-toggle" id="formatToggle" aria-expanded="false" aria-controls="formatSection"><span aria-hidden="true">⚙️</span> <span data-i18n="treasure_map_format_title">複製格式</span> <span class="tm-format-current" id="formatCurrent"></span></button>
+                    <div class="tm-format-section hidden" id="formatSection">
+                        <div class="tm-format-row">
+                            <span class="tm-format-label" id="formatPresetsLabel" data-i18n="treasure_map_format_presets">語言範本</span>
+                            <div class="tm-format-chips" role="group" aria-labelledby="formatPresetsLabel">
+                                <button type="button" class="chip" data-preset="zh" aria-pressed="false">中文</button>
+                                <button type="button" class="chip" data-preset="en" aria-pressed="false">English</button>
+                                <button type="button" class="chip" data-preset="ja" aria-pressed="false">日本語</button>
+                            </div>
+                        </div>
+                        <label class="form-label" for="formatTemplate" data-i18n="treasure_map_format_template_label">每一站複製成</label>
+                        <textarea class="form-control tm-format-template" id="formatTemplate" rows="2" spellcheck="false" autocapitalize="off" autocorrect="off" autocomplete="off" aria-describedby="formatMoreVars"></textarea>
+                        <div class="tm-format-vars" id="formatVars" role="group" aria-labelledby="formatVarsLabel">
+                            <span id="formatVarsLabel" data-i18n="treasure_map_format_insert">插入變數</span>
+                        </div>
+                        <p class="form-text" id="formatMoreVars"></p>
+                        <p class="tm-format-preview-label" id="formatPreviewLabel"></p>
+                        <p class="tm-stop-preview" id="formatPreview"></p>
+                        <div class="tm-format-actions">
+                            <button type="button" class="btn btn-ghost btn-sm" id="resetFormatBtn" data-i18n="treasure_map_reset_default">恢復預設</button>
+                            <button type="button" class="btn btn-sm" id="saveFormatBtn" data-i18n="treasure_map_save_settings">儲存格式</button>
+                        </div>
+                    </div>
+                </div>
             </div>
             <!-- 左邊「全部複製」，右邊唯一的主要按鈕「複製下一站（N/總數）」 -->
             <div class="panel-footer">

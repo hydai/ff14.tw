@@ -1,7 +1,8 @@
 // 路線頁：清單面板的第二頁（標記在 index.html 的 #routeView），一站一張寶圖，站序由 RouteCalculator 排。
 // 目前這一站（依順序第一個還沒完成的）標亮並預覽會被複製的句子；每一站都能標記「完成」（RouteProgress，只記在這台裝置）；
 // 「複製下一站」複製目前這一站，「全部複製」一站一行。摘要、站別與按鈕上帶參數的字由這裡依清單、進度與語言組出來、不掛 data-i18n：
-// I18nManager 切換語言時會把 [data-i18n] 的文字整個換掉
+// I18nManager 切換語言時會把 [data-i18n] 的文字整個換掉。站別下面可以展開的「複製格式」區塊也在這裡：
+// 改複製的範本（語言範本、插入變數、預覽、儲存與恢復預設）
 class RouteView {
     // 遊戲的使用者巨集一個最多 15 行：全部複製超過這個行數就提醒要分兩次貼
     static MACRO_MAX_LINES = 15;
@@ -16,6 +17,9 @@ class RouteView {
         this.stops = [];
         // 上一次畫的時候的清單 id（依清單順序）、介面語言與複製格式：refresh() 只在這幾樣變了才重畫
         this.renderedKey = null;
+        // 複製格式區塊的 textarea 上一次由程式填進去的內容（還沒填過是 null）：textarea.value 還等於它，就是使用者沒動過，
+        // 這時重畫、展開、切換語言才把它換成目前生效的格式。打字、按語言範本、插入變數都是使用者動的，不會更新它
+        this.filledTemplate = null;
 
         const byId = id => document.getElementById(id);
         this.elements = {
@@ -34,7 +38,18 @@ class RouteView {
             stops: byId('routeStops'),
             copyAllBtn: byId('copyAllStopsBtn'),
             copyNextBtn: byId('copyNextStopBtn'),
-            copyNextLabel: byId('copyNextStopLabel')
+            copyNextLabel: byId('copyNextStopLabel'),
+            formatToggle: byId('formatToggle'),
+            formatCurrent: byId('formatCurrent'),
+            formatSection: byId('formatSection'),
+            formatChips: Array.from(byId('formatSection').querySelectorAll('button[data-preset]')),
+            formatTemplate: byId('formatTemplate'),
+            formatVars: byId('formatVars'),
+            formatMoreVars: byId('formatMoreVars'),
+            formatPreviewLabel: byId('formatPreviewLabel'),
+            formatPreview: byId('formatPreview'),
+            resetFormatBtn: byId('resetFormatBtn'),
+            saveFormatBtn: byId('saveFormatBtn')
         };
     }
 
@@ -57,6 +72,32 @@ class RouteView {
                 this.toggleDone(mapId);
             }
         });
+        this.initFormat();
+    }
+
+    // 複製格式區塊：展開／收起、三顆語言範本、變數按鈕、textarea 的輸入、恢復預設與儲存。
+    // 變數按鈕只建這一次，接在 #formatVars 的標籤後面：之後重畫不動這個區塊的節點（焦點與輸入中的內容都在上面）
+    initFormat() {
+        const { elements } = this;
+        elements.formatToggle.addEventListener('click', () => this.toggleFormat());
+        for (const chip of elements.formatChips) {
+            chip.addEventListener('click', () => this.applyPreset(chip.dataset.preset));
+        }
+        for (const variable of CopyFormat.BUTTON_VARIABLES) {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'btn btn-sm tm-format-var';
+            button.dataset.var = variable;
+            button.textContent = variable;
+            elements.formatVars.appendChild(button);
+        }
+        elements.formatVars.addEventListener('click', event => {
+            const button = event.target.closest('button[data-var]');
+            if (button) this.insertVariable(button.dataset.var);
+        });
+        elements.formatTemplate.addEventListener('input', () => this.renderFormatEditor());
+        elements.resetFormatBtn.addEventListener('click', () => this.resetFormat());
+        elements.saveFormatBtn.addEventListener('click', () => this.saveFormat());
     }
 
     // 清單面板開著，而且顯示的是路線頁
@@ -149,6 +190,7 @@ class RouteView {
         SecurityUtils.clearElement(elements.stops);
         this.stops.forEach((stop, index) => elements.stops.appendChild(this.createStop(stop, index, index === current)));
         this.renderFooter(current);
+        this.renderFormat();
 
         elements.body.scrollTop = scrollTop;
         if (focused) {
@@ -269,10 +311,11 @@ class RouteView {
         return this.stops.findIndex(stop => !stop.done);
     }
 
-    // 第 index 站（從 0 開始）用目前生效的格式複製成的句子；變數的值都來自 describeListItem()
-    stopText(index) {
+    // 第 index 站（從 0 開始）複製成的句子，格式預設是目前生效的（複製一律用它；格式區塊的預覽才傳還沒存的 textarea 內容）；
+    // 變數的值都來自 describeListItem()
+    stopText(index, template = this.activeTemplate()) {
         const { info } = this.stops[index];
-        return CopyFormat.render(this.activeTemplate(), {
+        return CopyFormat.render(template, {
             index: index + 1,
             total: this.stops.length,
             grade: info.grade,
@@ -285,6 +328,101 @@ class RouteView {
     // 目前生效的格式：存過的照存的，沒存過跟著介面語言
     activeTemplate() {
         return CopyFormat.activeTemplate(this.savedTemplate, window.i18n.getCurrentLanguage());
+    }
+
+    // 複製格式區塊的畫面（每次 render() 都會走到）：收起時旁邊的範本名稱、「也可以用」說明，以及 textarea 與預覽。
+    // textarea 只在使用者沒動過（內容還是上一次程式填的）或還沒填過的時候，才換成目前生效的格式（切換語言、展開時跟著換）；
+    // 動過的——打字、按了語言範本還沒存——重畫時不蓋掉。區塊的節點不重建，展開狀態也不動
+    renderFormat() {
+        const { elements } = this;
+        elements.formatCurrent.textContent = this.formatName();
+        elements.formatMoreVars.textContent = FF14Utils.getI18nText('treasure_map_format_more_vars', '也可以用 {vars}', { vars: CopyFormat.MORE_VARIABLES.join(' ') });
+        if (this.filledTemplate === null || elements.formatTemplate.value === this.filledTemplate) {
+            this.fillTemplate(this.activeTemplate());
+        }
+        this.renderFormatEditor();
+    }
+
+    // 收起時旁邊寫的範本名稱：沒存過是「跟著介面語言」，存的是某個語言的預設範本就寫那個語言（說的是貼到哪個語言的伺服器，不隨介面語言變），
+    // 其他是「自訂」
+    formatName() {
+        const described = CopyFormat.describe(this.savedTemplate);
+        if (described.kind === 'preset') return CopyFormat.LANGUAGE_NAMES[described.language];
+        return described.kind === 'follow'
+            ? FF14Utils.getI18nText('treasure_map_format_follow', '跟著介面語言')
+            : FF14Utils.getI18nText('treasure_map_format_custom', '自訂');
+    }
+
+    // 由程式把 textarea 填成 template，並記下來：之後 textarea.value 還等於它，就表示使用者沒動過
+    fillTemplate(template) {
+        const { formatTemplate } = this.elements;
+        if (formatTemplate.value !== template) formatTemplate.value = template;
+        this.filledTemplate = template;
+    }
+
+    // textarea 的內容或目前這一站變了（打字、語言範本、插入變數、程式填入、重畫）：語言範本 chip 的按下狀態、
+    // 預覽（目前這一站，全部完成時第 1 站；用 textarea 裡還沒存的內容算）與「儲存格式」（只有空白時停用）。複製不看這裡，一律用 activeTemplate()
+    renderFormatEditor() {
+        const { elements } = this;
+        const template = elements.formatTemplate.value;
+        const preset = CopyFormat.presetLanguage(template);
+        for (const chip of elements.formatChips) FilterManager.setPressed(chip, chip.dataset.preset === preset);
+        const index = Math.max(this.currentIndex(), 0);
+        elements.formatPreviewLabel.textContent = FF14Utils.getI18nText('treasure_map_format_preview', '預覽（第 {n} 站）', { n: index + 1 });
+        elements.formatPreview.textContent = this.stopText(index, template);
+        elements.saveFormatBtn.disabled = template.trim() === '';
+    }
+
+    // 「⚙️ 複製格式」：展開／收起區塊。展開時沒動過的 textarea 換成目前生效的格式（收起的時候語言可能換了）；
+    // 動過的原樣留著，收起再展開也一樣
+    toggleFormat() {
+        const { elements } = this;
+        const expanded = elements.formatToggle.getAttribute('aria-expanded') !== 'true';
+        elements.formatToggle.setAttribute('aria-expanded', String(expanded));
+        elements.formatSection.classList.toggle('hidden', !expanded);
+        if (expanded) this.renderFormat();
+    }
+
+    // 語言範本 chip：textarea 換成那個語言的預設範本，不存檔（要按「儲存格式」）。這是使用者動的，所以不更新 filledTemplate
+    applyPreset(language) {
+        this.elements.formatTemplate.value = CopyFormat.PRESETS[language];
+        this.renderFormatEditor();
+    }
+
+    // 變數按鈕：插在 textarea 的游標位置，取代選取的文字；游標停在插進去的字後面，焦點回到 textarea
+    insertVariable(variable) {
+        const { formatTemplate } = this.elements;
+        const { value, caret } = CopyFormat.insertAtCursor(formatTemplate.value, formatTemplate.selectionStart, formatTemplate.selectionEnd, variable);
+        formatTemplate.value = value;
+        formatTemplate.selectionStart = caret;
+        formatTemplate.selectionEnd = caret;
+        formatTemplate.focus();
+        this.renderFormatEditor();
+    }
+
+    // 「儲存格式」：存 textarea 裡的內容，照原樣、不整理空白與換行。瀏覽器不讓寫入時（封鎖網站資料、空間滿了）這次照新的格式用，
+    // 只是記不住，toast 說一聲。按鈕在只有空白時是停用的；真的點進來也不存空白
+    saveFormat() {
+        const template = this.elements.formatTemplate.value;
+        if (template.trim() === '') return;
+        const saved = CopyFormat.write(FilterManager.safeStorage(window), template);
+        this.savedTemplate = template;
+        if (saved) {
+            FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_format_saved', '格式設定已儲存'), 'success');
+        } else {
+            FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_format_save_failed', '無法儲存設定：瀏覽器不允許儲存資料'), 'error');
+        }
+        this.fillTemplate(this.activeTemplate());
+        this.render();
+    }
+
+    // 「恢復預設」：刪掉存著的格式，之後跟著介面語言；textarea 換成介面語言的預設範本（沒存的修改也一起換掉）
+    resetFormat() {
+        CopyFormat.remove(FilterManager.safeStorage(window));
+        this.savedTemplate = null;
+        this.fillTemplate(this.activeTemplate());
+        FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_format_reset', '已恢復預設：跟著介面語言'), 'info');
+        this.render();
     }
 
     // 每站的 📋：複製那一站

@@ -761,7 +761,7 @@
     font-variant-numeric: tabular-nums;
 }
 
-/* 會被複製的那句話：等寬字；句子比欄位寬時在任何地方換行，不撐寬面板 */
+/* 會被複製的那句話：等寬字；句子比欄位寬時在任何地方換行，不撐寬面板；自訂格式裡的換行照實顯示（複製出去就是多行） */
 .tm-stop-preview {
     padding: var(--space-2) var(--space-3);
     background: var(--color-surface-2);
@@ -770,6 +770,7 @@
     font-size: var(--text-xs);
     color: var(--color-text);
     overflow-wrap: anywhere;
+    white-space: pre-wrap;
 }
 
 .tm-stop .tm-stop-preview {
@@ -823,6 +824,120 @@
     min-width: 0;
     white-space: normal;
     text-align: center;
+}
+
+/* 複製格式：站別下面一顆可以展開的按鈕，收起時右邊寫目前用的範本。展開的區塊用 .hidden 切換，
+   所以 .tm-format-section 的 display 只設在這個單一 class 的選擇器上，才輸給最後的 .hidden */
+.tm-format {
+    margin: 0 var(--space-4) var(--space-4);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+}
+
+.tm-format-toggle {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    width: 100%;
+    min-height: var(--control-md);
+    padding: var(--space-2) var(--space-3);
+    border: 0;
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--color-heading);
+    font-family: var(--font-sans);
+    font-size: var(--text-md);
+    font-weight: var(--weight-semibold);
+    text-align: left;
+    cursor: pointer;
+}
+
+.tm-format-toggle:hover {
+    background: var(--color-hover);
+}
+
+.tm-format-toggle:focus-visible {
+    outline: none;
+    box-shadow: var(--ring-primary);
+}
+
+/* 標題不換行；窄螢幕放不下時換行的是旁邊的範本名稱（英文的「Follows the site language」最長） */
+.tm-format-toggle > [data-i18n] {
+    white-space: nowrap;
+}
+
+/* 目前用的範本：靠右、淡色；最後面的小箭頭是純 CSS 畫的，展開時朝上 */
+.tm-format-current {
+    margin-left: auto;
+    font-size: var(--text-sm);
+    font-weight: var(--weight-normal);
+    color: var(--color-muted);
+    text-align: right;
+}
+
+.tm-format-toggle::after {
+    content: "";
+    flex: none;
+    width: 8px;
+    height: 8px;
+    border-right: 2px solid var(--color-muted);
+    border-bottom: 2px solid var(--color-muted);
+    transform: translateY(-2px) rotate(45deg);
+}
+
+.tm-format-toggle[aria-expanded="true"]::after {
+    transform: translateY(2px) rotate(-135deg);
+}
+
+.tm-format-section {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-3);
+    padding: var(--space-3);
+    border-top: 1px solid var(--color-border);
+}
+
+/* 間距全由 gap 決定：共用元件各自的上下邊界（.form-label、.form-text）清掉 */
+.tm-format-section > * {
+    margin: 0;
+}
+
+/* 「語言範本」與「插入變數」：標籤在前，按鈕接在後面，放不下時換行 */
+.tm-format-row,
+.tm-format-chips,
+.tm-format-vars {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.tm-format-label,
+#formatVarsLabel {
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    color: var(--color-heading);
+}
+
+/* 範本欄位：等寬字。字級不另外設定（沿用 .form-control 的 16px）：小於 16px 時 iOS Safari 一聚焦就會放大頁面 */
+.tm-format-template {
+    font-family: var(--font-mono);
+}
+
+.tm-format-var {
+    padding-inline: var(--space-2);
+}
+
+.tm-format-preview-label {
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+}
+
+.tm-format-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-2);
 }
 
 /* 加入／暱稱／離開對話框：外觀由 .dialog-overlay / .dialog 提供，這裡只補內文版面 */

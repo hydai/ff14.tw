@@ -2145,3 +2145,322 @@ test('舊的格式設定在載入時轉換：存過舊的日文預設 → 複製
     assert.equal(stops(page)[0].querySelector('.tm-stop-preview').textContent, '/p 1/6 G17 オルコ・パチャ (21.6, 23.9) 最寄り：ワチュンペロ');
     assert.deepEqual(JSON.parse(page.storage.get('treasureMapFormatSettings')).version, 2);
 });
+
+// ---------- 複製格式 ----------
+// 打開路線頁再展開「複製格式」；typeInto 像使用者打字：改 textarea 的內容並派送 input
+const openFormat = (page) => {
+    openRouteWith(page, EXAMPLE);
+    page.$('formatToggle').click();
+};
+const typeInto = (page, value) => {
+    page.$('formatTemplate').value = value;
+    page.$('formatTemplate').dispatchEvent(new page.dom.window.Event('input', { bubbles: true }));
+};
+const presetChip = (page, lang) => page.$('formatSection').querySelector(`[data-preset="${lang}"]`);
+const FORMAT_KEY = 'treasureMapFormatSettings';
+const PRESET_ZH = '/p <序號>/<總數> <寶圖等級> <地區> <座標> 最近：<傳送點>';
+const PRESET_EN = '/p <序號>/<總數> <寶圖等級> <地區_en> <座標> Nearest: <傳送點_en>';
+const PRESET_JA = '/p <序號>/<總數> <寶圖等級> <地區_ja> <座標> 最寄り：<傳送點_ja>';
+
+test('複製格式：收起時寫目前用的範本；展開後 textarea 有 label，chip 只換內容不存檔', async () => {
+    const page = await createPanelPage();
+    openRouteWith(page, EXAMPLE);
+    assert.equal(page.$('formatCurrent').textContent, '跟著介面語言');
+    page.$('formatToggle').click();
+    assert.equal(page.$('formatToggle').getAttribute('aria-expanded'), 'true');
+    assert.equal(page.$('formatSection').classList.contains('hidden'), false);
+    assert.equal(page.$('formatTemplate').value, '/p <序號>/<總數> <寶圖等級> <地區> <座標> 最近：<傳送點>');
+    const chip = (lang) => page.$('formatSection').querySelector(`[data-preset="${lang}"]`);
+    assert.equal(chip('zh').getAttribute('aria-pressed'), 'true');
+    chip('ja').click();
+    assert.equal(page.$('formatTemplate').value, '/p <序號>/<總數> <寶圖等級> <地區_ja> <座標> 最寄り：<傳送點_ja>');
+    assert.deepEqual([chip('ja').getAttribute('aria-pressed'), chip('zh').getAttribute('aria-pressed')], ['true', 'false']);
+    assert.equal(page.$('formatPreviewLabel').textContent, '預覽（第 1 站）');
+    assert.equal(page.$('formatPreview').textContent, '/p 1/6 G17 オルコ・パチャ (21.6, 23.9) 最寄り：ワチュンペロ');
+    assert.equal(page.storage.has('treasureMapFormatSettings'), false);
+    page.$('copyNextStopBtn').click();
+    await settle();
+    assert.equal(page.clipboardWrites.at(-1), '/p 1/6 G17 烏爾科帕恰 (21.6, 23.9) 最近：瓦群佩洛', '沒存之前複製照舊');
+});
+
+test('變數按鈕：插在游標位置、取代選取的文字，焦點回到 textarea、游標在後面', async () => {
+    const page = await createPanelPage();
+    openFormat(page);
+    typeInto(page, '/p  end');
+    Object.assign(page.$('formatTemplate'), { selectionStart: 3, selectionEnd: 3 });
+    page.$('formatVars').querySelector('[data-var="<地區>"]').click();
+    assert.equal(page.$('formatTemplate').value, '/p <地區> end');
+    assert.ok(page.focused() === page.$('formatTemplate'));
+    assert.equal(page.$('formatTemplate').selectionStart, 7);
+    assert.equal(page.$('formatPreview').textContent, '/p 烏爾科帕恰 end');
+});
+
+test('儲存：存成 v2、收起時寫「日本語」；存過的格式不跟介面語言變，恢復預設後才跟（Review Focus 3）', async () => {
+    const page = await createPanelPage();
+    openFormat(page);
+    page.$('formatSection').querySelector('[data-preset="ja"]').click();
+    page.$('saveFormatBtn').click();
+    assert.deepEqual(JSON.parse(page.storage.get('treasureMapFormatSettings')), { version: 2, template: '/p <序號>/<總數> <寶圖等級> <地區_ja> <座標> 最寄り：<傳送點_ja>' });
+    assert.equal(page.$('formatCurrent').textContent, '日本語');
+    assert.deepEqual(page.toasts.at(-1), { message: '格式設定已儲存', type: 'success' });
+    page.setLang('en');
+    page.$('copyNextStopBtn').click();
+    await settle();
+    assert.equal(page.clipboardWrites.at(-1), '/p 1/6 G17 オルコ・パチャ (21.6, 23.9) 最寄り：ワチュンペロ');
+    page.$('resetFormatBtn').click();
+    assert.equal(page.storage.has('treasureMapFormatSettings'), false);
+    assert.equal(page.$('formatCurrent').textContent, 'Follows the site language');
+    page.$('copyNextStopBtn').click();
+    await settle();
+    assert.equal(page.clipboardWrites.at(-1), '/p 1/6 G17 Urqopacha (21.6, 23.9) Nearest: Wachunpelo');
+});
+
+test('自訂：收起時寫「自訂」；瀏覽器不讓存時這次照新的格式，並提示存不起來', async () => {
+    const page = await createPanelPage({ storageThrows: true });
+    openFormat(page);
+    typeInto(page, '/p <寶圖等級> <座標>');
+    page.$('saveFormatBtn').click();
+    assert.equal(page.$('formatCurrent').textContent, '自訂');
+    assert.deepEqual(page.toasts.at(-1), { message: '無法儲存設定：瀏覽器不允許儲存資料', type: 'error' });
+    page.$('copyNextStopBtn').click();
+    await settle();
+    assert.equal(page.clipboardWrites.at(-1), '/p G17 (21.6, 23.9)');
+});
+
+test('textarea 只有空白時不能儲存；這一區沒有主要按鈕', async () => {
+    const page = await createPanelPage();
+    openFormat(page);
+    typeInto(page, '   ');
+    assert.equal(page.$('saveFormatBtn').disabled, true);
+    assert.equal(page.$('formatSection').querySelectorAll('.btn-primary').length, 0);
+});
+
+test('textarea 的內容：沒動過的跟著介面語言換；動過的（打字、按語言範本）切換語言、隊友同步都不蓋掉，展開狀態保留，預覽跟著目前這一站', async () => {
+    const page = await createPanelPage();
+    openFormat(page);
+    page.setLang('en');
+    assert.equal(page.$('formatTemplate').value, PRESET_EN, '沒動過：跟著新語言的預設');
+    assert.deepEqual(['zh', 'en', 'ja'].map((lang) => presetChip(page, lang).getAttribute('aria-pressed')), ['false', 'true', 'false']);
+    assert.deepEqual(['zh', 'en', 'ja'].map((lang) => presetChip(page, lang).classList.contains('active')), [false, true, false]);
+    typeInto(page, '/p mine <座標>');
+    assert.deepEqual(['zh', 'en', 'ja'].map((lang) => presetChip(page, lang).getAttribute('aria-pressed')), ['false', 'false', 'false']);
+    page.setLang('ja');
+    assert.equal(page.$('formatTemplate').value, '/p mine <座標>', '動過：不蓋掉');
+    assert.equal(page.$('formatPreviewLabel').textContent, 'プレビュー（1 か所目）');
+    assert.equal(page.$('formatPreview').textContent, '/p mine (21.6, 23.9)');
+    page.addMaps(['tm_008']);   // 隊友加了一張
+    stopOf(page, 'tm_010').querySelector('[data-action="done"]').click();
+    assert.equal(page.$('formatTemplate').value, '/p mine <座標>');
+    assert.equal(page.$('formatToggle').getAttribute('aria-expanded'), 'true');
+    assert.equal(page.$('formatSection').classList.contains('hidden'), false);
+    assert.equal(page.$('formatPreviewLabel').textContent, 'プレビュー（2 か所目）');
+    assert.equal(page.$('formatPreview').textContent, '/p mine (13.7, 14.2)');
+});
+
+test('按語言範本不算「程式填的」：之後切換語言不會把選好的範本換掉；收起再展開，改到一半的內容還在', async () => {
+    const page = await createPanelPage();
+    openFormat(page);
+    presetChip(page, 'ja').click();
+    page.setLang('en');
+    assert.equal(page.$('formatTemplate').value, PRESET_JA);
+    assert.equal(presetChip(page, 'ja').getAttribute('aria-pressed'), 'true');
+    typeInto(page, '/p draft');
+    page.$('formatToggle').click();
+    assert.equal(page.$('formatToggle').getAttribute('aria-expanded'), 'false');
+    assert.equal(page.$('formatSection').classList.contains('hidden'), true);
+    page.$('formatToggle').click();
+    assert.equal(page.$('formatTemplate').value, '/p draft');
+});
+
+test('收起時換了語言：沒動過的 textarea 展開後就是新語言的預設', async () => {
+    const page = await createPanelPage();
+    openFormat(page);
+    page.$('formatToggle').click();
+    page.setLang('ja');
+    page.$('formatToggle').click();
+    assert.equal(page.$('formatTemplate').value, PRESET_JA);
+});
+
+test('跟著介面語言的字：收起時的名稱、「也可以用」說明、預覽的標題（切換語言時重算）；預覽跟著目前這一站，全部完成時用第 1 站', async () => {
+    const page = await createPanelPage();
+    openFormat(page);
+    assert.equal(page.$('formatMoreVars').textContent, '也可以用 <地區_en> <地區_ja> <傳送點_en> <傳送點_ja>');
+    page.setLang('en');
+    assert.equal(page.$('formatCurrent').textContent, 'Follows the site language');
+    assert.equal(page.$('formatMoreVars').textContent, 'Also available: <地區_en> <地區_ja> <傳送點_en> <傳送點_ja>');
+    assert.equal(page.$('formatPreviewLabel').textContent, 'Preview (stop 1)');
+    page.setLang('ja');
+    assert.equal(page.$('formatCurrent').textContent, '表示言語に合わせる');
+    assert.equal(page.$('formatMoreVars').textContent, '<地區_en> <地區_ja> <傳送點_en> <傳送點_ja> も使えます');
+    page.setLang('zh');
+    stopOf(page, 'tm_010').querySelector('[data-action="done"]').click();
+    assert.equal(page.$('formatPreviewLabel').textContent, '預覽（第 2 站）');
+    assert.equal(page.$('formatPreview').textContent, '/p 2/6 G17 烏爾科帕恰 (13.7, 14.2) 最近：瓦群佩洛');
+    for (const id of ['tm_007', 'tm_013', 'tm_017', 'tm_022', 'tm_033']) stopOf(page, id).querySelector('[data-action="done"]').click();
+    assert.equal(page.$('formatPreviewLabel').textContent, '預覽（第 1 站）');
+    assert.equal(page.$('formatPreview').textContent, '/p 1/6 G17 烏爾科帕恰 (21.6, 23.9) 最近：瓦群佩洛');
+});
+
+test('儲存格式：照原樣存（不整理空白與換行）；只有空白時按鈕停用，即使點擊進來也不存；打了字就能存', async () => {
+    const page = await createPanelPage();
+    openFormat(page);
+    assert.equal(page.$('saveFormatBtn').disabled, false);
+    typeInto(page, ' \n ');
+    assert.equal(page.$('saveFormatBtn').disabled, true);
+    page.$('saveFormatBtn').click();   // 瀏覽器不會送出停用按鈕的點擊；真的送進來了也不能存空白
+    assert.equal(page.storage.has(FORMAT_KEY), false);
+    assert.equal(page.toasts.length, 0);
+    typeInto(page, '/p <序號>\n<座標> ');
+    assert.equal(page.$('saveFormatBtn').disabled, false);
+    page.$('saveFormatBtn').click();
+    assert.equal(JSON.parse(page.storage.get(FORMAT_KEY)).template, '/p <序號>\n<座標> ');
+    assert.equal(page.$('formatTemplate').value, '/p <序號>\n<座標> ');
+    assert.equal(page.$('formatCurrent').textContent, '自訂');
+    assert.equal(page.$('formatPreview').textContent, '/p 1\n(21.6, 23.9) ');
+    page.$('copyNextStopBtn').click();
+    await settle();
+    assert.equal(page.clipboardWrites.at(-1), '/p 1\n(21.6, 23.9) ');
+});
+
+test('恢復預設：連沒存的修改也換成介面語言的預設，跟著介面語言，提示一聲', async () => {
+    const stored = { [FORMAT_KEY]: JSON.stringify({ version: 2, template: '/p mine' }) };
+    const page = await createPanelPage({ stored });
+    openFormat(page);
+    assert.equal(page.$('formatCurrent').textContent, '自訂');
+    assert.equal(page.$('formatTemplate').value, '/p mine');
+    typeInto(page, '/p unsaved draft');
+    page.$('resetFormatBtn').click();
+    assert.equal(page.storage.has(FORMAT_KEY), false);
+    assert.equal(page.$('formatTemplate').value, PRESET_ZH);
+    assert.equal(page.$('formatCurrent').textContent, '跟著介面語言');
+    assert.equal(presetChip(page, 'zh').getAttribute('aria-pressed'), 'true');
+    assert.deepEqual(page.toasts.at(-1), { message: '已恢復預設：跟著介面語言', type: 'info' });
+    page.setLang('en');
+    assert.equal(page.$('formatTemplate').value, PRESET_EN, '恢復預設後跟著介面語言');
+});
+
+test('載入時存過的格式：收起時寫名稱，展開後 textarea 是存的格式、不跟介面語言；複製與預覽都用它', async () => {
+    const withJa = await createPanelPage({ stored: { [FORMAT_KEY]: JSON.stringify({ version: 2, template: PRESET_JA }) } });
+    openFormat(withJa);
+    assert.equal(withJa.$('formatCurrent').textContent, '日本語');
+    assert.equal(withJa.$('formatTemplate').value, PRESET_JA);
+    assert.equal(presetChip(withJa, 'ja').getAttribute('aria-pressed'), 'true');
+    withJa.setLang('en');
+    assert.equal(withJa.$('formatTemplate').value, PRESET_JA);
+    assert.equal(withJa.$('formatCurrent').textContent, '日本語', '語言名稱不隨介面語言變');
+    assert.equal(withJa.$('formatPreview').textContent, '/p 1/6 G17 オルコ・パチャ (21.6, 23.9) 最寄り：ワチュンペロ');
+    const custom = await createPanelPage({ lang: 'en', stored: { [FORMAT_KEY]: JSON.stringify({ version: 2, template: '/p mine' }) } });
+    openFormat(custom);
+    assert.equal(custom.$('formatCurrent').textContent, 'Custom');
+    assert.equal(custom.$('formatTemplate').value, '/p mine');
+    assert.deepEqual(['zh', 'en', 'ja'].map((lang) => presetChip(custom, lang).getAttribute('aria-pressed')), ['false', 'false', 'false']);
+});
+
+test('格式區塊不跟著路線頁重畫：textarea、按鈕、變數按鈕還是同一批節點，焦點留在按下的「儲存格式」', async () => {
+    const page = await createPanelPage();
+    openFormat(page);
+    const ids = ['formatToggle', 'formatCurrent', 'formatTemplate', 'formatVars', 'formatMoreVars', 'formatPreview', 'saveFormatBtn', 'resetFormatBtn'];
+    const nodes = ids.map((id) => page.$(id));
+    const variableButtons = Array.from(page.$('formatVars').querySelectorAll('button'));
+    typeInto(page, '/p <座標>');
+    press(page.$('saveFormatBtn'));
+    assert.ok(page.focused() === page.$('saveFormatBtn'));
+    page.addMaps(['tm_008']);
+    page.setLang('en');
+    stopOf(page, 'tm_010').querySelector('[data-action="done"]').click();
+    assert.ok(ids.every((id, index) => page.$(id) === nodes[index]));
+    assert.ok(page.focused() === page.$('saveFormatBtn'), '重畫路線頁不搶走格式區塊裡的焦點');
+    const after = Array.from(page.$('formatVars').querySelectorAll('button'));
+    assert.equal(after.length, 6);
+    assert.ok(after.every((button, index) => button === variableButtons[index]));
+});
+
+test('變數按鈕：依 CopyFormat.BUTTON_VARIABLES 的順序，文字就是變數；沒有選取範圍時接在最後', async () => {
+    const page = await createPanelPage();
+    openFormat(page);
+    const buttons = Array.from(page.$('formatVars').querySelectorAll('button'));
+    assert.deepEqual(buttons.map((button) => button.textContent), ['<序號>', '<總數>', '<寶圖等級>', '<地區>', '<座標>', '<傳送點>']);
+    assert.deepEqual(buttons.map((button) => button.dataset.var), buttons.map((button) => button.textContent));
+    assert.ok(buttons.every((button) => button.getAttribute('type') === 'button' && classesOf({ class: button.className }).join(' ') === 'btn btn-sm tm-format-var'));
+    typeInto(page, '/p ');
+    buttons[2].click();
+    buttons[4].click();
+    assert.equal(page.$('formatTemplate').value, '/p <寶圖等級><座標>');
+    assert.equal(page.$('formatPreview').textContent, '/p G17(21.6, 23.9)');
+});
+
+test('複製格式區塊的標記：在 #routeStops 後面；按鈕有 aria-expanded 與 aria-controls，textarea 有 label，群組有名稱；由程式填的字不掛 data-i18n；沒有主要按鈕', () => {
+    const html = read(`${TOOL_DIR}/index.html`);
+    const body = sliceElementById(html, 'routeBody');
+    assert.ok(body.indexOf('id="routeStops"') < body.indexOf('class="tm-format"') && body.includes('id="formatSection"'));
+    const toggle = tagAttrs(html, 'formatToggle');
+    assert.deepEqual([classesOf(toggle), toggle.type, toggle['aria-expanded'], toggle['aria-controls']], [['tm-format-toggle'], 'button', 'false', 'formatSection']);
+    assert.match(sliceElementById(html, 'formatToggle'), /<span aria-hidden="true">⚙️<\/span> <span data-i18n="treasure_map_format_title">複製格式<\/span> <span class="tm-format-current" id="formatCurrent"><\/span>/);
+    assert.deepEqual(classesOf(tagAttrs(html, 'formatSection')), ['tm-format-section', 'hidden']);
+    const section = sliceElementById(html, 'formatSection');
+    const chips = [...section.matchAll(/<button\b[^>]*\sdata-preset="[^"]*"[^>]*>([^<]*)<\/button>/g)].map((m) => ({ attrs: parseAttrs(m[0]), text: m[1] }));
+    assert.deepEqual(chips.map(({ attrs, text }) => [attrs['data-preset'], text, attrs.type, attrs['aria-pressed'], attrs['data-i18n'], classesOf(attrs)]),
+        [['zh', '中文', 'button', 'false', undefined, ['chip']], ['en', 'English', 'button', 'false', undefined, ['chip']], ['ja', '日本語', 'button', 'false', undefined, ['chip']]]);
+    const presets = tagAttrs(html, 'formatPresetsLabel');
+    assert.equal(presets['data-i18n'], 'treasure_map_format_presets');
+    assert.match(section, /<div class="tm-format-chips" role="group" aria-labelledby="formatPresetsLabel">/);
+    const label = parseAttrs(section.match(/<label\b[^>]*>/)[0]);
+    assert.deepEqual([classesOf(label), label.for, label['data-i18n']], [['form-label'], 'formatTemplate', 'treasure_map_format_template_label']);
+    const textarea = tagAttrs(html, 'formatTemplate');
+    assert.deepEqual([classesOf(textarea), textarea.rows, textarea.spellcheck], [['form-control', 'tm-format-template'], '2', 'false']);
+    // 裡面是 /p 指令與 <變數>：手機不要自動大寫、自動修正或跳出自動填入的建議；「也可以用」那一行是它的補充說明
+    assert.deepEqual([textarea.autocapitalize, textarea.autocorrect, textarea.autocomplete, textarea['aria-describedby']], ['off', 'off', 'off', 'formatMoreVars']);
+    assert.match(section, /<textarea\b/);
+    const vars = tagAttrs(html, 'formatVars');
+    assert.deepEqual([classesOf(vars), vars.role, vars['aria-labelledby']], [['tm-format-vars'], 'group', 'formatVarsLabel']);
+    assert.equal(tagAttrs(html, 'formatVarsLabel')['data-i18n'], 'treasure_map_format_insert');
+    // 帶參數、跟著狀態的字由程式填：I18nManager 切換語言時會把 [data-i18n] 的文字整個換掉
+    for (const [id, classes] of [['formatCurrent', ['tm-format-current']], ['formatMoreVars', ['form-text']], ['formatPreviewLabel', ['tm-format-preview-label']], ['formatPreview', ['tm-stop-preview']]]) {
+        const attrs = tagAttrs(html, id);
+        assert.deepEqual([classesOf(attrs), attrs['data-i18n']], [classes, undefined], id);
+    }
+    const reset = tagAttrs(html, 'resetFormatBtn');
+    const save = tagAttrs(html, 'saveFormatBtn');
+    assert.deepEqual([classesOf(reset), reset.type, reset['data-i18n']], [['btn', 'btn-ghost', 'btn-sm'], 'button', 'treasure_map_reset_default']);
+    assert.deepEqual([classesOf(save), save.type, save['data-i18n']], [['btn', 'btn-sm'], 'button', 'treasure_map_save_settings']);
+    assert.equal((sliceElementById(html, 'routeBody').match(/\bbtn-primary\b/g) || []).length, 0);
+    assert.match(section, /<div class="tm-format-actions">\s*<button[^>]*id="resetFormatBtn"[\s\S]*<button[^>]*id="saveFormatBtn"/);
+});
+
+test('複製格式區塊的樣式：新規則寫在最後的 .hidden 前面；展開的區塊 display 設在單一 class 上；textarea 不縮小字級（iOS Safari 小於 16px 聚焦會放大頁面）', () => {
+    const css = read(`${TOOL_DIR}/style.css`);
+    const hiddenAt = css.lastIndexOf('\n.hidden {');
+    for (const rule of ['.tm-format {', '.tm-format-toggle {', '.tm-format-current {', '.tm-format-section {', '.tm-format-template {', '.tm-format-actions {']) {
+        assert.ok(css.indexOf(`\n${rule}`) !== -1 && css.indexOf(`\n${rule}`) < hiddenAt, rule);
+    }
+    assert.match(declarations('.tm-format-section'), /display:\s*grid/);
+    assert.ok(!styleRules.some((r) => r.selectors.some((s) => /#formatSection|\.tm-format\s+\.tm-format-section|\.tm-format\s*>\s*\.tm-format-section/.test(s))), '更高優先權的選擇器會讓 .hidden 藏不起來');
+    const templateRules = styleRules.filter((r) => r.selectors.some((s) => s.includes('tm-format-template') || s.includes('formatTemplate')));
+    assert.ok(templateRules.length >= 1);
+    assert.deepEqual(templateRules.filter((r) => /font-size/.test(r.body)).map((r) => r.selectors), [], '字級沿用 .form-control 的 var(--text-md)');
+    assert.match(declarations('.tm-format-template'), /font-family:\s*var\(--font-mono\)/);
+    // 預覽要照實顯示會被複製的句子：自訂格式裡的換行不收成空白
+    assert.match(declarations('.tm-stop-preview'), /white-space:\s*pre-wrap/);
+});
+
+test('複製格式的三語鍵值照設計', () => {
+    const expected = {
+        treasure_map_format_title: ['複製格式', 'Copy format', 'コピー形式'],
+        treasure_map_format_follow: ['跟著介面語言', 'Follows the site language', '表示言語に合わせる'],
+        treasure_map_format_custom: ['自訂', 'Custom', 'カスタム'],
+        treasure_map_format_presets: ['語言範本', 'Language presets', '言語テンプレート'],
+        treasure_map_format_template_label: ['每一站複製成', 'Copy each stop as', '各地点のコピー内容'],
+        treasure_map_format_insert: ['插入變數', 'Insert', '変数を挿入'],
+        treasure_map_format_more_vars: ['也可以用 {vars}', 'Also available: {vars}', '{vars} も使えます'],
+        treasure_map_format_preview: ['預覽（第 {n} 站）', 'Preview (stop {n})', 'プレビュー（{n} か所目）'],
+        treasure_map_reset_default: ['恢復預設', 'Restore default', 'デフォルトに戻す'],
+        treasure_map_save_settings: ['儲存格式', 'Save format', '形式を保存'],
+        treasure_map_format_reset: ['已恢復預設：跟著介面語言', 'Default restored: follows the site language', 'デフォルトに戻しました：表示言語に合わせます'],
+        treasure_map_format_saved: ['格式設定已儲存', 'Format settings saved', '書式設定を保存しました'],
+        treasure_map_format_save_failed: ['無法儲存設定：瀏覽器不允許儲存資料', 'Could not save the settings: your browser does not allow storing data', '設定を保存できませんでした：ブラウザがデータの保存を許可していません']
+    };
+    ['zh', 'en', 'ja'].forEach((lang, index) => {
+        const values = translationValues(TRANSLATIONS, lang);
+        for (const [key, texts] of Object.entries(expected)) assert.equal(values.get(key), texts[index], `${lang} ${key}`);
+    });
+});
