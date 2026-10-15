@@ -19,7 +19,7 @@ FF14.tw is a multi-tool website for Final Fantasy XIV players in Taiwan, providi
 ## Project Statistics
 
 - **HTML Files**: 25 total — 19 across 12 tool directories (11 single-page tools + `guide/` with 8 pages) + 5 root pages (`index.html`, `about.html`, `changelog.html`, `copyright.html`, `404.html`) + 1 API test harness (`api/test.html`)
-- **JavaScript Files**: 96 total — 36 tool scripts + 6 shared utilities (`assets/js/`) + 18 i18n (manager + translations) + 4 layout components (`assets/js/components/`) + 29 test files (`tests/*.test.js`) + 2 test helpers (`tests/helpers/`, not test files) + 1 Cloudflare Worker (`api/treasure-room-worker.js`); plus 3 Node build scripts (`scripts/*.mjs`, not shipped to the site)
+- **JavaScript Files**: 107 total — 41 tool scripts + 6 shared utilities (`assets/js/`) + 18 i18n (manager + translations) + 4 layout components (`assets/js/components/`) + 34 test files (`tests/*.test.js`) + 3 test helpers (`tests/helpers/`, not test files) + 1 Cloudflare Worker (`api/treasure-room-worker.js`); plus 3 Node build scripts (`scripts/*.mjs`, not shipped to the site)
 - **CSS Files**: 23 (shared + components + tool-specific)
 - **JSON Data Files**: 8 (total ~25,600 lines); `/data/` also has one non-JSON `ff14-gp.csv`
 - **Total Dungeons**: 803 entries (data file's own `metadata.totalDungeons` field still says 804 — pre-existing inconsistency inside `dungeons.json` itself, not a doc bug)
@@ -61,9 +61,9 @@ Tools that work without server (can open HTML directly):
 - 天氣預報
 - 攻略資料（陸行鳥毛色頁面除外）
 
-**Testing:** Node 24；先執行 `npm --prefix api ci` 安裝 Miniflare/workerd，再執行 `node --test`（Node 內建 test runner，自動執行 `tests/*.test.js`）。`tests/design-system.test.js` 守住設計系統規則（token 完整性、對比度、token-clean 檔案清單）；`tests/pages.test.js` 守住每一頁的 CSS 載入順序（`tokens.css` 在 `common.css` 之前）與字型，以及有頁首的頁面（至少 23 頁）的 JS 載入順序：`tools-registry.js` 必須排在 `nav-template.js` 之前、`layout-loader.js` 必須排在 `common.js` 之前；`tests/timed-gathering-eorzea-time.test.js` 守住艾歐澤亞時間換算在不同時區下的一致性；`tests/scripts.test.js` 守住 `assets/`、`tools/` 底下的 JS 不得使用 `innerHTML`；`tests/docs.test.js` 守住 CLAUDE.md／README 的副本數、寶圖座標數與 JSON 資料檔案數這幾個關鍵統計數字不會與 `/data` 底下的實際資料脫節；`tests/modal-manager-stack.test.js` 用最小 DOM 替身（不需 jsdom）守住 `ModalManager` 的共用堆疊行為：只有最上層回應 Escape／焦點陷阱、關閉下層時由上而下連鎖收合、焦點依序回捲。新增行為測試涵蓋寶圖前後端契約、SQLite Durable Object 並行與權限、備份還原、通知降級、時間解析、陸行鳥全部色對、宗長候選、Lodestone 請求競爭、i18n 儲存與天氣網址狀態。`tests/design-system.test.js` 另守住按鈕與輸入框的 `min-height`（flex 直排時不被壓扁）；`tests/treasure-route-aetherytes.test.js` 守住每個有寶圖的地區都能算出傳送點；`tests/treasure-filters.test.js` 守住寶圖的等級／地區篩選：選取規則（地區依所選等級列出並附張數、取消等級時連帶取消只屬於它的地區）、記住與還原（網址 `grade`／`zone` 優先於 `localStorage`，保留 `room`，`localStorage` 不能用時照常運作），以及用 `fake-dom.js` 檢查 chip 的畫面與鍵盤焦點；`tests/treasure-find-page.test.js` 用 `fake-dom.js` 在 vm 裡執行寶圖頁，守住「選等級 → 選地區」流程、結果格與空狀態、步驟列與清單入口、卡片內容、複製的隊伍頻道句子（zh／en／ja）與詳細檢視（上一張／下一張、加入／移除、焦點），並檢查 `index.html`、`style.css` 與三語鍵值的結構。Worker 測試需要允許 localhost 連接埠；`.github/workflows/test.yml` 在 push／PR 自動執行全套測試與兩個 Worker 環境的 dry-run。每次 commit 前執行。網站主體沒有 package.json、bundler 或 linter（`api/` 的 Cloudflare Worker 子專案另有自己的 `package.json`／`wrangler`，與網站建置無關）。
+**Testing:** Node 24；先執行 `npm --prefix api ci` 安裝 Miniflare/workerd，再執行 `node --test`（Node 內建 test runner，自動執行 `tests/*.test.js`）。`tests/design-system.test.js` 守住設計系統規則（token 完整性、對比度、token-clean 檔案清單）；`tests/pages.test.js` 守住每一頁的 CSS 載入順序（`tokens.css` 在 `common.css` 之前）與字型，以及有頁首的頁面（至少 23 頁）的 JS 載入順序：`tools-registry.js` 必須排在 `nav-template.js` 之前、`layout-loader.js` 必須排在 `common.js` 之前；`tests/timed-gathering-eorzea-time.test.js` 守住艾歐澤亞時間換算在不同時區下的一致性；`tests/scripts.test.js` 守住 `assets/`、`tools/` 底下的 JS 不得使用 `innerHTML`；`tests/docs.test.js` 守住 CLAUDE.md／README 的副本數、寶圖座標數與 JSON 資料檔案數這幾個關鍵統計數字不會與 `/data` 底下的實際資料脫節；`tests/modal-manager-stack.test.js` 用最小 DOM 替身（不需 jsdom）守住 `ModalManager` 的共用堆疊行為：只有最上層回應 Escape／焦點陷阱、關閉下層時由上而下連鎖收合、焦點依序回捲。新增行為測試涵蓋寶圖前後端契約、SQLite Durable Object 並行與權限、備份還原、通知降級、時間解析、陸行鳥全部色對、宗長候選、Lodestone 請求競爭、i18n 儲存與天氣網址狀態。`tests/design-system.test.js` 另守住按鈕與輸入框的 `min-height`（flex 直排時不被壓扁）；`tests/treasure-route-aetherytes.test.js` 守住每個有寶圖的地區都能算出傳送點；`tests/treasure-filters.test.js` 守住寶圖的等級／地區篩選：選取規則（地區依所選等級列出並附張數、取消等級時連帶取消只屬於它的地區）、記住與還原（網址 `grade`／`zone` 優先於 `localStorage`，保留 `room`，`localStorage` 不能用時照常運作），以及用 `fake-dom.js` 檢查 chip 的畫面與鍵盤焦點；`tests/treasure-find-page.test.js` 用 `fake-dom.js` 在 vm 裡執行寶圖頁，守住「選等級 → 選地區」流程、結果格與空狀態、步驟列與清單入口、卡片內容、複製的隊伍頻道句子（zh／en／ja）與詳細檢視（上一張／下一張、加入／移除、焦點），並檢查 `index.html`、`style.css` 與三語鍵值的結構。寶圖清單與路線另有五份測試：`tests/treasure-list-manager.test.js` 守住瀏覽器封鎖網站資料時 `ListManager` 的加入、移除、清空、匯入照樣更新記憶體裡的清單並回報 `saved: false`；`tests/treasure-route-progress.test.js` 守住路線進度（站序與完成記號）的保存、12 小時過期與各種清掉規則；`tests/treasure-copy-format.test.js` 守住複製格式的三語預設範本、變數替換、存檔（v2）與舊 `{ teleport, map }` 格式的轉換；`tests/treasure-list-share.test.js` 守住分享連結 `?maps=` 的產生、解析與從網址拿掉，以及匯入內容（連結或以前匯出的 JSON）的辨識；`tests/treasure-list-panel.test.js` 用 `tests/helpers/html-fragment.js`（取出 `index.html` 真正的標記）和真正的建構函式，守住清單頁、清空／匯入／分享三個頁內對話框、路線頁（站別與傳送、完成與進度、複製下一站與全部複製）與複製格式區塊。Worker 測試需要允許 localhost 連接埠；`.github/workflows/test.yml` 在 push／PR 自動執行全套測試與兩個 Worker 環境的 dry-run。每次 commit 前執行。網站主體沒有 package.json、bundler 或 linter（`api/` 的 Cloudflare Worker 子專案另有自己的 `package.json`／`wrangler`，與網站建置無關）。
 
-**導覽列、頁尾、首頁與 404 頁的測試：** 共用兩個輔助模組：`tests/helpers/fake-dom.js`（不需 jsdom 的最小 DOM 替身，在 vm 裡執行真正的瀏覽器腳本）與 `tests/helpers/translation-parsers.js`（翻譯檔的鍵值解析）。它們不是測試檔，`node --test` 不會直接執行。
+**導覽列、頁尾、首頁與 404 頁的測試：** 共用三個輔助模組：`tests/helpers/fake-dom.js`（不需 jsdom 的最小 DOM 替身，在 vm 裡執行真正的瀏覽器腳本）、`tests/helpers/html-fragment.js`（解析頁面 HTML 的小工具，也能把 `index.html` 裡指定 id 的元素建成 fake-dom 節點，讓測試用真正的標記；寶圖搜尋器的測試使用）與 `tests/helpers/translation-parsers.js`（翻譯檔的鍵值解析）。它們不是測試檔，`node --test` 不會直接執行。
 - `tests/tools-registry.test.js`：登錄表依首頁順序列出 13 個工具、站內網址存在、名稱鍵在 `common.js` 的 zh／en／ja 都有；首頁工具卡與每個工具頁頁首的名稱都要和登錄表一致
 - `tests/footer-template.test.js`：頁尾連結的順序與屬性、版權年份、沒有 i18n 時顯示 zh 文字
 - `tests/nav-tools-menu.test.js`：導覽列順序、工具面板的內容、目前工具的標示（404 頁不標示）、面板的開關與焦點行為
@@ -71,7 +71,7 @@ Tools that work without server (can open HTML directly):
 - `tests/recent-tools.test.js`：最近使用的記錄與讀取（含毀損資料、儲存空間不能用）、記錄時機、首頁「最近使用」的顯示與語言切換
 - `tests/home-page.test.js`：首頁工具卡的結構與狀態標示、翻譯鍵與預設文字、hero 縮小與版面數值
 - `tests/not-found-page.test.js`：404 頁的絕對路徑、載入順序、頁面結構、翻譯、工具清單與樣式
-- `tests/fake-dom.test.js`：守住 `fake-dom.js` 本身的行為（事件的捕獲／冒泡、焦點與 `inert`、選擇器、屬性等）
+- `tests/fake-dom.test.js`：守住 `fake-dom.js` 本身的行為（事件的捕獲／冒泡、焦點與 `inert`、選擇器、屬性等），以及 `html-fragment.js` 的 `mountFromHtml()` 照 `index.html` 的寫法建出節點
 - `tests/theme-toggle.test.js` 也改用 `fake-dom.js`：主題切換鈕只建立一次，跨過 768px 不搬動
 
 ## Core Patterns
@@ -550,18 +550,23 @@ window.i18n.onLanguageChange(() => this.updateUI());
 ### Complex Tools Structure
 Tools with advanced features use modular architecture:
 
-**treasure-map-finder/** (12 個程式檔 + 3 份文件；另有 `images/` 圖片資源目錄，不逐一列出):
+**treasure-map-finder/** (17 個程式檔 + 3 份文件；另有 `images/` 圖片資源目錄，不逐一列出):
 ```
 ├── index.html
 ├── script.js              # 主控制器
 ├── room-collaboration.js  # 房間協作與私人 session 憑證
 ├── room-map-sync.js       # 操作佇列、重試去重與 revision 合併
 ├── filter-manager.js      # 過濾器管理
-├── list-manager.js        # 清單管理
-├── ui-dialog-manager.js   # 對話框管理
+├── list-manager.js        # 清單管理（瀏覽器封鎖網站資料時照樣改記憶體裡的清單）
+├── list-dialogs.js        # 清空、匯入與分享三個頁內對話框
+├── list-share.js          # 分享連結 ?maps= 的產生與解析、匯入內容（連結或以前匯出的 JSON）的辨識
+├── ui-dialog-manager.js   # 對話框管理（只剩詳細檢視）
 ├── zone-manager.js        # 地區管理
 ├── coordinate-utils.js    # 座標工具
-├── route-calculator.js    # 路線規劃
+├── route-calculator.js    # 路線排序（寶圖多的地區先跑、跑到一半不重排、傳送標記）
+├── route-progress.js      # 路線進度（站序與完成記號）的保存、12 小時過期與清掉規則
+├── route-view.js          # 路線頁（一站一張寶圖、完成、複製）與複製格式區塊
+├── copy-format.js         # 複製格式：範本、變數替換、存檔（v2）與舊格式轉換
 ├── migrate-data.js        # 資料遷移工具
 └── style.css
 ```
@@ -815,7 +820,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 3. **Mini Cactpot Calculator** (`mini-cactpot/`): 3x3 lottery probability calculator
 4. **Wondrous Tails Predictor** (`wondrous-tails/`): 4x4 bingo probability calculator
 5. **Faux Hollows Calculator（宗長計算機）** (`faux-hollows-foxes/`): 6x6 treasure hunting puzzle solver
-6. **Treasure Map Finder** (`treasure-map-finder/`): 227 treasure map coordinates with route planning (G8/G10/G12/G14/G15/G17/G18)
+6. **Treasure Map Finder** (`treasure-map-finder/`): 227 treasure map coordinates (G8/G10/G12/G14/G15/G17/G18) with a personal or team list, a stop-by-stop route with saved progress, and share links
 7. **Lodestone Lookup** (`lodestone-lookup/`): Character information lookup using Lodestone ID with complete stats, jobs, and equipment display
 8. **Timed Gathering Manager** (`timed-gathering/`): Eorzea time-based gathering node tracker with multi-list management and macro export
 9. **Guide** (`guide/`): FF14 新手攻略指南，涵蓋公會、大國防聯軍、副本、風脈、隊伍系統、探索筆記與陸行鳥毛色計算（8 個子頁面）

@@ -9,8 +9,9 @@
 - **核心價值**：減少玩家在遊戲內外切換對照的時間
 
 ### 1.2 功能範圍
-- ✅ 包含：寶圖位置查詢、篩選、個人清單管理、路線規劃、自訂輸出格式
-- ❌ 不包含：團隊分享、圖片上傳識別
+- ✅ 包含：寶圖位置查詢、篩選、個人清單管理（複製分享連結、匯入）、路線規劃（一站一張寶圖，可標記完成）、自訂複製格式
+- ✅ 隊伍協作（多人同步清單）：規格另見 `room-collaboration-spec.md`
+- ❌ 不包含：圖片上傳識別
 
 ## 2. 詳細功能規格
 
@@ -22,7 +23,7 @@
 ├── 描述：快速查詢寶圖位置並建立個人清單
 └── 操作區
     ├── 搜尋/篩選區（左側 70%）
-    └── 我的清單按鈕（右側 30%）
+    └── 清單入口（右側 30%；手機固定在畫面底部）
 ```
 
 ### 2.2 篩選系統規格
@@ -126,42 +127,74 @@ const zones = [
 
 ### 2.5 我的清單功能規格
 
-#### 2.5.1 清單按鈕
+#### 2.5.1 清單入口
 ```html
-<button class="my-list-toggle">
-  我的清單 <span class="list-count">(3)</span>
-</button>
-```
-
-#### 2.5.2 清單面板
-```html
-<div class="my-list-panel">
-  <div class="panel-header">
-    <h3>我的寶圖清單</h3>
-    <button class="btn-clear-all">清空全部</button>
-  </div>
-  <div class="list-content">
-    <div class="list-item">
-      <img src="縮圖" alt="G12">
-      <div class="item-info">
-        <span class="item-level">G12</span>
-        <span class="item-zone">Eastern Thanalan</span>
-        <span class="item-coords">(24.5, 26.3)</span>
-      </div>
-      <button class="btn-remove" data-map-id="tm_001">×</button>
-    </div>
-  </div>
-  <div class="panel-footer">
-    <p>總計：3 張寶圖</p>
-  </div>
+<div class="tm-list-entry" id="listEntryDesktop">
+  <button class="btn btn-ghost" data-entry="list">📋 清單 3 張</button>
+  <button class="btn btn-primary" data-entry="route">🗺️ 生成路線</button>
 </div>
 ```
+- 左邊的按鈕打開清單面板（清單頁）；右邊的動作依張數切換：不在隊伍裡時 0 張「組隊」、1 張以上「生成路線」；在隊伍裡標籤是「隊伍清單 N/8」，0 張時右邊不放動作
+- 「生成路線」打開清單面板並直接切到路線頁；清單只有 1 張也能生成
+- 桌機的入口在最上面那一列（捲動時固定在畫面頂端），手機的入口是固定在畫面底部的一條列，內容相同
+
+#### 2.5.2 清單面板
+清單面板 `#myListPanel` 是一個對話框，分成兩頁：清單頁 `#listView` 與路線頁 `#routeView`（見 10.1.1），用顯示／隱藏切換；Escape 一次關掉整個面板。
+
+```html
+<div class="my-list-panel" id="myListPanel" role="dialog" aria-modal="true" aria-labelledby="myListPanel-title">
+  <div class="tm-panel-view" id="listView">
+    <div class="panel-header">
+      <h3 id="myListPanel-title">我的清單</h3><span class="tm-panel-count">6 張</span>  <!-- 在隊伍裡寫「隊伍清單」與「3/8」 -->
+      <button class="btn btn-close" id="closePanelBtn" aria-label="關閉">×</button>
+    </div>
+    <div class="panel-body">
+      <!-- 組隊區塊（建立／加入隊伍、隊伍狀態、清單／歷史分頁），規格見 room-collaboration-spec.md -->
+      <div class="list-content" id="listContent">
+        <ul class="tm-list-items">
+          <li class="list-item" data-map-id="tm_010">
+            <img src="縮圖" alt="">
+            <div class="item-info">
+              <p class="item-title"><span class="item-level tag tag-solid tag-primary">G17</span> <span class="item-zone">烏爾科帕恰</span> <span class="item-index">#4</span></p>
+              <p class="item-sub">(21.6, 23.9) · 最近：瓦群佩洛</p>
+            </div>
+            <button class="btn-remove btn btn-close" data-map-id="tm_010" aria-label="移除 G17 烏爾科帕恰 #4">×</button>
+          </li>
+        </ul>
+      </div>
+      <div class="tm-list-actions" id="listActions">
+        <button class="btn btn-sm" id="shareListBtn">🔗 複製分享連結</button>
+        <button class="btn btn-sm" id="importListBtn">📥 匯入</button>
+        <button class="btn btn-ghost btn-sm" id="clearAllBtn">清空清單</button>
+      </div>
+    </div>
+    <div class="panel-footer">
+      <p class="tm-footer-count">6 張寶圖</p>
+      <button class="btn btn-primary" id="generateRouteBtn">🗺️ 生成路線</button>
+    </div>
+  </div>
+  <div class="tm-panel-view hidden" id="routeView"><!-- 路線頁，見 10.1.1 --></div>
+</div>
+```
+- 每一列的地名跟著介面語言；座標一位小數、不含 Z，「最近」的傳送點和卡片是同一個函式
+- 清單是空的時只有「匯入」（「複製分享連結」與「清空清單」藏起來），「生成路線」停用
+- 手機（≤768px）面板從底部滑上來，高度是畫面的 85%
 
 #### 2.5.3 清單操作
-- **新增**：自動滾動到底部，淡入動畫
-- **移除**：確認對話框「確定要移除這張寶圖嗎？」
-- **清空**：二次確認「確定要清空所有寶圖嗎？」
-- **上限**：無上限（但顯示警告 >20 張）
+- **新增**：卡片與詳細檢視的「加入清單」；加入後不跳提示，清單入口的張數與卡片上的「✓ 已加入」直接更新，張數由螢幕閱讀器唸出
+- **移除**：每一列的 ✕ 直接移除，不確認、不跳提示；焦點移到下一列的 ✕（最後一列移到上一列，清單空了移到面板標題）。卡片上的「✓ 已加入」同樣直接移除
+- **清空**：「清空清單」開啟頁內對話框「清空清單？」（「取消」、「清空 N 張」），初始焦點在「取消」；清空後路線進度一併清掉。清單是空的、或隊伍連線中時不開
+- **上限**：個人清單無上限；隊伍清單最多 8 張
+
+#### 2.5.4 分享連結與匯入
+- **複製分享連結**：清單頁動作列的「🔗 複製分享連結」複製目前頁面網址（去掉查詢字串與 hash）加上 `?maps=` 與清單裡的寶圖 id（依清單順序、逗號分隔、逗號不編碼），例如 `https://ff14.tw/tools/treasure-map-finder/?maps=tm_019,tm_031,tm_010`；只帶寶圖，不帶篩選與隊伍代號
+- **打開分享連結**：網址有 `maps` 時，等寶圖資料載入、隊伍還原或自動加入結束後，跳出頁內對話框「加入分享的寶圖」，列出找得到的每一張（縮圖、等級、地名、座標；已經在清單裡的標「已在清單」，目錄裡找不到的 id 略過並說明張數）；一張都找不到就提示並直接拿掉 `maps`
+  - 清單不是空的時有兩個選項：「加進我的清單」（預設，重複的只留一張）與「取代我的清單」；清單是空的時不顯示選項
+  - 按鈕是「不用了」與「加入清單」。在隊伍裡選項寫「加進隊伍清單」「取代隊伍清單」，結果會超過隊伍上限 8 張時直接說明並停用「加入清單」
+  - 不管選了什麼、按「不用了」、✕ 或 Escape，都用 `history.replaceState` 拿掉網址裡的 `maps`（`grade`、`zone`、`room` 與 hash 保留），重新整理不會再問一次
+- **匯入**：「📥 匯入」開啟頁內對話框「匯入清單」，貼上分享連結（完整網址，或只有 `?maps=…`），或以前「匯出」複製的 JSON（`{ maps: [{ id, … }] }`）。一邊貼一邊解析：看得懂寫「連結／內容裡有 N 張寶圖」，看不懂標成錯誤並停用「匯入」。清單不是空的時預設「合併」（重複的只留一張），也可以選「取代我的清單」；失敗（例如超過隊伍上限）時錯誤寫在對話框裡，對話框不關
+- **取代**時路線進度整份清掉；合併、加進時保留
+- **匯出已拿掉**：以前的「匯出」按鈕（顯示 JSON 的對話框）與檔案匯入都拿掉了，改用分享連結；以前匯出的內容仍然可以貼進「匯入」
 
 ## 3. 資料儲存規格
 
@@ -181,12 +214,27 @@ const zones = [
     }
   ]
 }
+
+// Key: 'ff14tw_treasure_route_progress'（路線的站序與完成記號；只記在這台裝置，不同步給隊友，超過 12 小時就丟掉）
+{
+  "order": ["tm_010", "tm_007", "tm_013"],
+  "done": ["tm_010"],
+  "updatedAt": "2026-10-16T08:00:00.000Z"
+}
+
+// Key: 'treasureMapFormatSettings'（複製格式；沒存過就跟著介面語言用預設範本）
+{
+  "version": 2,
+  "template": "/p <序號>/<總數> <寶圖等級> <地區> <座標> 最近：<傳送點>"
+}
 ```
+- 複製格式以前存成 `{ teleport, map }`（傳送點與寶圖各一個格式）：讀到時轉成新的形狀並寫回；`map` 和舊的某個語言的預設範本完全相同就轉成那個語言的新預設範本，否則把 `map` 原文當作新的格式；`teleport` 不再使用
 
 ### 3.2 資料同步
 - 每次操作後立即保存
 - 頁面載入時恢復狀態
 - 版本不匹配時清空舊資料
+- 瀏覽器封鎖網站資料（`localStorage` 不能用或寫入失敗）時，加入、移除、清空、匯入照樣更新記憶體裡的清單，只是記不住，並提示一次；路線進度與複製格式存不起來時也照常運作
 
 ## 4. 效能規格
 
@@ -220,7 +268,8 @@ const zones = [
 .my-list-panel {
   position: fixed;
   bottom: 0;
-  height: 50vh;
+  height: 85vh;
+  height: 85dvh;  /* 支援的瀏覽器用 dvh（網址列收起、展開時跟著變） */
 }
 ```
 
@@ -285,12 +334,12 @@ showError('載入寶圖資料失敗，請重新整理頁面再試。');
 - ✅ 響應式設計
 - ✅ LocalStorage 資料持久化
 - ✅ 載入更多功能（初始24個）
-- ✅ 匯出/匯入清單功能（JSON格式）
+- ✅ 匯出/匯入清單功能（JSON格式；匯出已由分享連結取代，以前匯出的 JSON 仍可匯入，見 Phase 2.2）
 
 ### Phase 2：路線規劃功能（已完成）
 **實作成果：**
 1. **路線生成器**
-   - ✅ 從「我的清單」生成最佳尋寶路線（需至少2張寶圖）
+   - ✅ 從「我的清單」生成最佳尋寶路線（清單有 1 張以上就能生成）
    - ✅ 傳送點分組策略優化（相同傳送點附近的寶圖一起收集）
    - ✅ 顯示傳送次數、訪問地區統計
 
@@ -300,7 +349,7 @@ showError('載入寶圖資料失敗，請重新整理頁面再試。');
    - ✅ 支援多語言傳送點名稱（中文、英文、日文）
 
 3. **路線展示**
-   - ✅ 分步驟導航介面（傳送點、寶圖位置）
+   - ✅ 分步驟導航介面（Phase 2.2 起一站一張寶圖，傳送標在每組的第一站）
    - ✅ 單步驟點擊複製功能
    - ✅ 一鍵複製完整路線
    - ✅ 自訂輸出格式功能
@@ -312,23 +361,42 @@ showError('載入寶圖資料失敗，請重新整理頁面再試。');
 - ✅ 非對稱距離矩陣（任意點→傳送點 = 0）
 - ✅ LocalStorage 儲存自訂格式
 
-### Phase 2.1：自訂輸出格式（已完成）
+### Phase 2.1：自訂輸出格式（已完成；Phase 2.2 改版）
 **實作成果：**
 1. **格式自訂功能**
-   - ✅ 傳送點與寶圖分別設定格式
-   - ✅ 支援多語言變數（<傳送點>、<傳送點_en>、<傳送點_ja>等）
+   - ✅ 每一站一個格式欄位（原本傳送點與寶圖分別設定；傳送不再單獨一行，舊的傳送點格式不再使用）
+   - ✅ 支援多語言變數（<傳送點>、<傳送點_en>、<傳送點_ja>等）；<傳送點> 是這一站最近的傳送點
    - ✅ 支援序號與總數變數
-   - ✅ 即時預覽功能
+   - ✅ 點變數按鈕就插在游標位置；預覽用目前這一站的真實資料，隨輸入即時更新
+   - ✅ <座標> 輸出 (x, y)，不再是 /pos x y z
 
 2. **語言模板**
-   - ✅ 中文：/p 傳送至 <傳送點> <座標>
-   - ✅ 英文：/p Teleport to <傳送點_en> <座標>
-   - ✅ 日文：/p <傳送點_ja>にテレポート <座標>
-   - ✅ 一鍵切換語言模板
+   - ✅ 中文：/p <序號>/<總數> <寶圖等級> <地區> <座標> 最近：<傳送點>
+   - ✅ 英文：/p <序號>/<總數> <寶圖等級> <地區_en> <座標> Nearest: <傳送點_en>
+   - ✅ 日文：/p <序號>/<總數> <寶圖等級> <地區_ja> <座標> 最寄り：<傳送點_ja>
+   - ✅ 一鍵切換語言模板（只換欄位內容，按「儲存格式」才存）
+
+### Phase 2.2：清單、路線與分享連結改版（已完成）
+**實作成果：**
+1. **清單頁**
+   - ✅ 每一列直接顯示座標與最近的傳送點；✕ 直接移除，不再確認
+   - ✅ 動作列：複製分享連結、匯入、清空清單；清空與匯入改成頁內對話框，預設選項不會丟掉原本的清單
+   - ✅ 手機（≤768px）面板高度是畫面的 85%，標題看得到
+   - ✅ 瀏覽器封鎖網站資料時，加入、移除、清空、匯入照常運作（只是記不住，提示一次）
+
+2. **路線頁**（清單面板的第二頁，不再另開路線面板與格式面板）
+   - ✅ 清單有 1 張以上就能生成；寶圖多的地區先跑，跑到一半清單變了不重排（新寶圖插在同一組後面）
+   - ✅ 一站一張寶圖，標出目前這一站，每一站可標記完成；進度存在這台裝置，重新整理後還在，12 小時後清掉
+   - ✅ 「複製下一站」複製目前這一站，「全部複製」一站一行（超過遊戲使用者巨集的 15 行會提醒分兩次貼）
+   - ✅ 複製格式（Phase 2.1）搬到路線頁站別下面，可以展開
+
+3. **分享連結**
+   - ✅ 複製帶 `?maps=` 的連結；打開時選擇加進或取代自己的清單，處理完網址拿掉 `maps`
+   - ✅ 匯入分享連結或以前匯出的 JSON；拿掉「匯出」按鈕與檔案匯入
 
 ### Phase 3：進階功能（未來規劃）
 1. **團隊協作**
-   - 分享清單連結
+   - 分享清單連結（已完成，見 Phase 2.2）
    - 多人同步編輯
    - 分配寶圖給隊員
 
@@ -349,7 +417,7 @@ showError('載入寶圖資料失敗，請重新整理頁面再試。');
    - 自動更新資料庫
 
 2. **整合功能**
-   - 匯入/匯出功能
+   - 匯入/匯出功能（清單的匯入與分享連結見 Phase 2.2）
    - 與其他工具串接
    - API 開放
 
@@ -359,35 +427,50 @@ showError('載入寶圖資料失敗，請重新整理頁面再試。');
 
 #### 10.1.1 使用者介面設計
 ```
-[我的清單] → [生成路線] → [路線檢視] → [開始導航]
+[清單入口 / 清單頁] → [生成路線] → [路線頁：一站一站走] → [‹ 清單]
 ```
 
-**新增UI元素：**
+**UI元素：**
 1. **生成路線按鈕**
-   - 位置：我的清單面板底部
-   - 條件：清單內有2個以上寶圖時啟用
-   - 樣式：主要按鈕，藍色背景
+   - 位置：清單入口與清單面板底部（清單頁唯一的主要按鈕）
+   - 條件：清單內有 1 個以上寶圖時啟用（只有清單是空的時停用）
+   - 行為：打開清單面板並切到路線頁（面板的第二頁），不再另開路線面板；Escape 一次關掉整個面板
 
-2. **路線結果顯示**
+2. **路線頁**（`#routeView`，標記在 `index.html`，站別由 `RouteView` 畫出來）
    ```html
-   <div class="route-result">
-     <div class="route-summary">
-       <h3>最佳路線</h3>
-       <p>總計：5個寶圖 | 傳送次數：3次</p>
+   <div class="tm-panel-view" id="routeView">
+     <div class="panel-header"><!-- ‹ 清單 ｜ 路線 ｜ × --></div>
+     <div class="panel-body">
+       <p class="tm-route-overview">6 張 · 3 個地區 · 5 次傳送</p>  <!-- 有完成的站時改寫「完成 2/6」 -->
+       <ol class="tm-stops" role="list">
+         <li class="tm-stop is-current" aria-current="step" data-map-id="tm_010">
+           <span class="tm-stop-num" aria-hidden="true">1</span>
+           <div class="tm-stop-body">
+             <p class="tm-stop-tp">🔮 傳送 瓦群佩洛</p>
+             <p class="tm-stop-title">G17 烏爾科帕恰 #4</p>
+             <p class="tm-stop-coords">(21.6, 23.9)</p>
+             <p class="tm-stop-preview">/p 1/6 G17 烏爾科帕恰 (21.6, 23.9) 最近：瓦群佩洛</p>
+           </div>
+           <div class="tm-stop-actions">
+             <button aria-label="複製第 1 站">📋</button>
+             <button aria-pressed="false" aria-label="第 1 站完成">完成</button>
+           </div>
+         </li>
+         <!-- 更多站 -->
+       </ol>
+       <!-- 站別下面：可以展開的「⚙️ 複製格式」（10.1.6） -->
      </div>
-     <div class="route-steps">
-       <div class="route-step">
-         <span class="step-icon">🔄</span>
-         <span class="step-text">傳送至 Labyrinthos - 傳送點1</span>
-       </div>
-       <div class="route-step">
-         <span class="step-icon">📍</span>
-         <span class="step-text">前往寶圖 (6.8, 20.9, 2.2)</span>
-       </div>
-       <!-- 更多步驟 -->
+     <div class="panel-footer">
+       <button>全部複製</button>
+       <button class="btn-primary">📋 複製下一站（1/6）</button>
      </div>
    </div>
    ```
+   - 一站一張寶圖；這一站之前需要傳送時，先一行「🔮 傳送 …」（標在一組的第一站）
+   - **目前這一站**＝依順序第一個還沒完成的站：外框與底色標亮，下方預覽會被複製的句子；完成的站淡化，站號變 ✓。任何一站都可以標記或取消完成
+   - 「複製下一站」複製目前這一站，每站的 📋 複製那一站，「全部複製」一站一行（包括已完成的站）；全部完成時「複製下一站」停用並寫「全部完成」
+   - 摘要旁有「順序依直線距離估算」；有完成的站時出現「重設進度」，按下去整份進度清掉、站序重新排
+   - 路線頁開著時，清單變了（加入、移除、匯入、隊伍同步）或切換語言，都會更新站序並重畫路線頁；清單變成 0 張時回到清單頁
 
 #### 10.1.2 資料結構設計
 
@@ -1005,43 +1088,19 @@ showError('載入寶圖資料失敗，請重新整理頁面再試。');
 ```
 
 **路線資料結構：**
+路線頁拿到的是 `RouteCalculator#describeOrder(order, maps)` 的結果：站序（寶圖 id）展開成每一站的資訊與摘要。「傳送」標在一組（同地區、同最近傳送點）的第一站，摘要的傳送次數就是有傳送的站數。
 ```javascript
 {
-  "summary": {
-    "totalMaps": 5,
-    "totalTeleports": 3,
-    "regionsVisited": ["ilsabard", "othard"]
-  },
-  "route": [
-    {
-      "type": "teleport",
-      "to": "Labyrinthos - 傳送點1",
-      "zone": "ilsabard",
-      "coords": { "x": 0, "y": 0, "z": 0 }
-    },
-    {
-      "type": "move",
-      "mapId": "tm_055",
-      "mapLevel": "G14",
-      "zone": "ilsabard",
-      "coords": { "x": 6.8, "y": 20.9, "z": 2.2 }
-    },
-    {
-      "type": "teleport",
-      "to": "Labyrinthos - 傳送點3",
-      "zone": "ilsabard",
-      "coords": { "x": 20, "y": 20, "z": 20 }
-    },
-    {
-      "type": "move",
-      "mapId": "tm_056",
-      "mapLevel": "G14",
-      "zone": "ilsabard",
-      "coords": { "x": 25.1, "y": 18.3, "z": 15.2 }
-    }
-  ]
+  "stops": [
+    { "mapId": "tm_010", "zoneId": "urqopacha", "aetheryteId": "wachunpelo", "teleport": true },
+    { "mapId": "tm_007", "zoneId": "urqopacha", "aetheryteId": "wachunpelo", "teleport": false },
+    { "mapId": "tm_013", "zoneId": "urqopacha", "aetheryteId": "worqor_zormor", "teleport": true }
+    // …（6 張寶圖的範例清單，其餘三站略）
+  ],
+  "summary": { "maps": 6, "zones": 3, "teleports": 5 }
 }
 ```
+站序（`order`）與完成記號（`done`）存在 `localStorage['ff14tw_treasure_route_progress']`，格式見 3.1。
 
 #### 10.1.3 演算法設計（已實作）
 
@@ -1054,7 +1113,8 @@ showError('載入寶圖資料失敗，請重新整理頁面再試。');
    - 找出每個寶圖最近的傳送點
    - 將使用相同傳送點的寶圖分為一組
    - 在每個傳送點群組內使用貪婪最近鄰居法規劃路線
-3. 連接各傳送點群組，生成完整路線
+3. 地區之間：寶圖多的地區先跑（見 10.1.4）
+4. 連接各傳送點群組，生成完整路線（站序）
 
 **實際實作的核心方法：**
 ```javascript
@@ -1131,26 +1191,6 @@ groupByNearestTeleport(maps, zoneId) {
     
     return Array.from(groups.values());
 }
-  
-  // 找出全域最近的寶圖-傳送點配對
-  findStartingRegion(maps) {
-    let minDistance = Infinity;
-    let startRegion = null;
-    let startMap = null;
-    
-    for (const map of maps) {
-      const aetherytes = this.getRegionAetherytes(map.zoneId);
-      for (const aetheryte of aetherytes) {
-        const dist = this.calculateDistance3D(map.coords, aetheryte.coords);
-        if (dist < minDistance) {
-          minDistance = dist;
-          startRegion = map.zoneId;
-          startMap = map;
-        }
-      }
-    }
-    return { startRegion, startMap };
-  }
   
   // 地區內路線規劃（基於非對稱距離矩陣）
   planRegionRoute(regionMaps) {
@@ -1292,19 +1332,15 @@ groupByNearestTeleport(maps, zoneId) {
 
 #### 10.1.4 地區訪問順序決定
 
+寶圖多的地區先跑；張數一樣時，照該地區的寶圖在清單裡第一次出現的順序（穩定排序）。
+沒有「起點地區」：原本的 `findStartingRegion()` 想找「離傳送點最近的寶圖」當起點，但任一點到傳送點的距離一律是 0，結果永遠是清單第一張寶圖所在的地區，所以拿掉了，路線不再受清單第一張影響。
+
 ```javascript
-// 決定地區訪問順序
-getRegionOrder(mapsByRegion, startRegion) {
-  // 第一個地區已經由 findStartingRegion 決定
-  const regions = Object.keys(mapsByRegion);
-  const otherRegions = regions.filter(r => r !== startRegion);
-  
-  // 其餘地區按寶圖數量排序（多的優先）
-  otherRegions.sort((a, b) => 
+// 決定地區訪問順序（groupByZone 的 key 順序就是各地區的寶圖第一次出現的順序）
+getRegionOrder(mapsByRegion) {
+  return Object.keys(mapsByRegion).sort((a, b) =>
     mapsByRegion[b].length - mapsByRegion[a].length
   );
-  
-  return [startRegion, ...otherRegions];
 }
 
 // 找最近的傳送點
@@ -1332,15 +1368,34 @@ findNearestAetheryte(maps) {
 }
 ```
 
+#### 10.1.5 站序與進度
+
+路線是「站序」（寶圖 id 的順序）加上完成記號，由 `RouteCalculator`（排序）與 `RouteProgress`（保存）負責：
+
+- **第一次排序**（沒有存著的站序時，也就是第一次打開路線頁、或進度被清掉之後）：`firstOrder(maps)` 先依 10.1.4 排地區，每個地區裡照 10.1.3 的算法（每張圖分給最近的傳送點、傳送點組依張數多到少、組內用最近鄰居法），只取寶圖、不取傳送步驟。排好的站序存進進度的 `order`
+- **跑到一半清單變了，不重排**：`mergeOrder(prevOrder, maps)` 讓還在清單裡的寶圖維持原本的順序，被移除的直接拿掉；新加入的寶圖插在同一組（同地區、同最近傳送點）的最後一站後面，沒有同一組就插在同地區的最後一站後面，地區也是新的就排在最後。這樣隊友挖完把圖從隊伍清單移除時，路線不會跳到別的地區，傳送點組也保持連在一起、傳送次數不會變多。要重新排序就按「重設進度」
+- **展開成每一站**：`describeOrder(order, maps)` 回傳每一站的資訊與摘要（資料結構見 10.1.2）；地區沒有傳送點時，那個地區的站沒有傳送行
+- **進度**（`RouteProgress`）：`{ order, done, updatedAt }` 存在 `localStorage['ff14tw_treasure_route_progress']`，只記在這台裝置。清單增減時，還在清單裡的已完成寶圖保持完成，不在清單裡的 id 從 `order`、`done` 移除。寶圖 id 就是地點，舊的完成記號留著會讓同一個地點的新寶圖被當成已完成而跳過，所以整份進度會在這些時候清掉：清單變成 0 張（清空清單、移除最後一張）、按「重設進度」、用「取代」匯入或打開分享連結、所有站都完成之後清單又有變化（上一趟跑完了，算新的一趟）、`updatedAt` 超過 12 小時
+- 儲存空間不能用時進度只留在記憶體裡，路線頁照常運作
+
+#### 10.1.6 複製格式
+
+每一站複製成一行，格式由 `CopyFormat` 決定：
+
+- **範本與變數**：預設範本跟著介面語言（三個語言的範本見 Phase 2.1），和卡片的隊伍頻道句子同一個句型、前面加站號。變數：`<序號>`、`<總數>`、`<寶圖等級>`（大寫，如 `G17`）、`<地區>`、`<座標>`（`(21.6, 23.9)`，一位小數、不含 Z）、`<傳送點>`；另有 `<地區_en>`、`<地區_ja>`、`<傳送點_en>`、`<傳送點_ja>`。同一個變數出現幾次就換幾次；`<傳送點>` 是這張圖最近的傳送點，查不到時換成空字串並收掉多出來的空白，預設範本則拿掉整段「最近：<傳送點>」
+- **格式區塊**：路線頁站別下面可以展開的「⚙️ 複製格式」：語言範本 chip（中文、English、日本語，按了只換欄位內容）、一個有 label 的 textarea、六顆插入變數的按鈕、預覽（目前這一站，全部完成時用第 1 站；用還沒存的內容）、「恢復預設」與「儲存格式」。複製一律用目前生效的格式（存過的，或沒存過時的預設）
+- **存檔**：`localStorage['treasureMapFormatSettings']` 存 `{ "version": 2, "template": "…" }`。有存就照存的格式，不跟介面語言變；沒存（從來沒存過，或按了「恢復預設」）才跟著介面語言。讀到舊的 `{ teleport, map }` 時轉成新的形狀並寫回（見 3.1）
+
 ### 10.2 實作成果總結
 1. ✅ 建立完整傳送點資料（64個真實傳送點，涵蓋所有支援地區）
 2. ✅ 實作 3D 歐幾里得距離計算函式
 3. ✅ 開發傳送點分組演算法（優於原規劃的啟發式TSP）
-4. ✅ 建立路線顯示 UI（含單步驟複製、完整路線複製）
-5. ✅ 加入「生成路線」按鈕功能（至少需要2張寶圖）
+4. ✅ 建立路線頁（一站一張寶圖、標記完成、單站複製、全部複製）
+5. ✅ 加入「生成路線」按鈕功能（清單有 1 張以上就能生成）
 6. ✅ 測試各種邊界情況（跨地區、單地區、相同傳送點等）
-7. ✅ 實作自訂輸出格式功能
+7. ✅ 實作自訂複製格式（一個欄位，點變數就能插入，預覽用目前這一站的真實資料）
 8. ✅ 加入語言模板快速切換
+9. ✅ 路線進度：完成記號重新整理後還在，跑到一半清單變了不重排
 
 ### 10.3 演算法優勢
 
@@ -1370,4 +1425,6 @@ findNearestAetheryte(maps) {
 - [x] 自訂格式設定與儲存
 - [x] 語言模板切換功能
 - [x] 跨地區路線規劃
-- [x] 匯出/匯入清單功能
+- [x] 複製分享連結與匯入清單功能（含以前匯出的 JSON）
+- [x] 路線進度與完成記號（重新整理後還在、超過 12 小時清掉）
+- [x] 瀏覽器封鎖網站資料時，清單與路線照常運作
