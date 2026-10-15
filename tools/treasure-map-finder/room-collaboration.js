@@ -90,17 +90,8 @@ class RoomCollaboration {
             }
         });
 
-        // 顯示當前使用的 API URL（除錯用）
-        console.log('Room Collaboration API URL:', RoomCollaboration.CONSTANTS.API_BASE_URL);
-        console.log('Current location:', {
-            hostname: window.location.hostname,
-            port: window.location.port,
-            protocol: window.location.protocol
-        });
-
         this.elements = {
             roomSection: document.getElementById('roomSection'),
-            roomActions: document.getElementById('roomActions'),
             roomStatus: document.getElementById('roomStatus'),
             createRoomBtn: document.getElementById('createRoomBtn'),
             joinRoomBtn: document.getElementById('joinRoomBtn'),
@@ -208,6 +199,20 @@ class RoomCollaboration {
         this.isConnecting = connecting;
         document.querySelectorAll('#createRoomBtn, #joinRoomBtn, #clearAllBtn, #importListBtn, .btn-add-to-list, .btn-remove')
             .forEach(button => { button.disabled = connecting; });
+    }
+
+    // 清單面板（finder 的 ModalManager 管的那一層）是不是開著：組隊按鈕與隊伍狀態都在面板裡
+    isListPanelOpen() {
+        const panel = this.finder?.elements?.myListPanel;
+        return Boolean(panel) && this.finder.modalManager?.activeModal === panel;
+    }
+
+    // 建立或加入隊伍結束後（setConnecting(false) 之後）、清單面板開著時的焦點。按下去的那顆連線中被停用，
+    // Chrome 當下就把焦點退回 body：成功了它也跟著組隊按鈕藏起來，焦點放到隊伍狀態的第一個按鈕「複製隊伍代號」；
+    // 沒成功就放回那顆
+    focusAfterConnecting(trigger) {
+        if (!this.isListPanelOpen()) return;
+        (this.currentRoom ? this.elements.copyRoomCodeBtn : trigger)?.focus?.();
     }
 
     adoptSession(room, member, memberToken, pending = []) {
@@ -349,6 +354,7 @@ class RoomCollaboration {
             this.showToast(FF14Utils.getI18nText('treasure_map_create_room_failed_retry', '建立隊伍失敗，請稍後再試'), 'error');
         } finally {
             this.setConnecting(false);
+            this.focusAfterConnecting(this.elements.createRoomBtn);
         }
     }
 
@@ -374,11 +380,12 @@ class RoomCollaboration {
         }
 
         this.hideModal('joinRoom');
-        await this.joinRoom(roomCode);
+        await this.joinRoom(roomCode, this.elements.joinRoomBtn);
     }
 
-    // 加入隊伍
-    async joinRoom(roomCode) {
+    // 加入隊伍；trigger 是使用者按下的「加入隊伍」，結束後由它決定焦點（見 focusAfterConnecting）。
+    // 用網址的 ?room= 在載入時自動加入時沒有 trigger：不移動焦點
+    async joinRoom(roomCode, trigger = null) {
         if (this.currentRoom || this.isConnecting) return;
         if (!/^[A-Z0-9]{6}$/.test(roomCode)) {
             this.showToast(FF14Utils.getI18nText('treasure_map_invalid_room_code', '請輸入有效的 6 位隊伍代號'), 'warning');
@@ -421,6 +428,7 @@ class RoomCollaboration {
             else this.showToast(FF14Utils.getI18nText(error.status === 404 ? 'treasure_map_room_not_found' : 'treasure_map_join_room_failed_retry', '加入隊伍失敗，請確認隊伍代號是否正確'), 'error');
         } finally {
             this.setConnecting(false);
+            if (trigger) this.focusAfterConnecting(trigger);
         }
     }
 
@@ -468,6 +476,7 @@ class RoomCollaboration {
         this.isLeaving = true;
         this.stopPolling();
         const generation = this.sessionGeneration;
+        let left = false;
         const finish = () => {
             this.forceLeaveRoom();
             if (!keepList) {
@@ -478,6 +487,7 @@ class RoomCollaboration {
             }
             this.hideModal('leaveRoom');
             this.showToast(FF14Utils.getI18nText('treasure_map_left_room', '已離開隊伍'));
+            left = true;
         };
         try {
             const synced = await this.mapSync.flush();
@@ -499,6 +509,9 @@ class RoomCollaboration {
             this.isLeaving = false;
             this.setConnecting(false);
             if (this.currentRoom && generation === this.sessionGeneration) this.startPolling();
+            // 離開了：隊伍狀態連同離開鈕藏起來，關掉對話框時焦點還給離開鈕等於沒還；改放到又出現的「建立組隊」
+            //（連線中它是停用的，所以等 setConnecting(false) 之後）
+            if (left && this.isListPanelOpen()) this.elements.createRoomBtn?.focus?.();
         }
     }
 
@@ -872,7 +885,7 @@ class RoomCollaboration {
                 this.elements.roomStatus.classList.remove('hidden');
             }
             
-            // 隱藏頂部的組隊按鈕
+            // 隱藏清單面板裡的組隊按鈕
             if (teamActions) {
                 teamActions.classList.add('hidden');
             }
@@ -899,7 +912,7 @@ class RoomCollaboration {
                 this.elements.roomStatus.classList.add('hidden');
             }
             
-            // 顯示頂部的組隊按鈕
+            // 顯示清單面板裡的組隊按鈕
             if (teamActions) {
                 teamActions.classList.remove('hidden');
             }
@@ -912,6 +925,9 @@ class RoomCollaboration {
             // 標籤頁隱藏後無法再切換，離開隊伍時要讓面板回到「清單」，否則會卡在歷史內容
             this.showPanelTab('list');
         }
+
+        // 進出隊伍時清單入口跟著換（「隊伍清單 N/8」或「清單 N 張」）
+        this.finder?.updateListCount?.();
     }
 
     // 更新成員列表

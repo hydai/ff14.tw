@@ -4,21 +4,6 @@
  */
 
 class RouteCalculator {
-    constructor() {
-        this.aetherytes = null;
-        this.loadAetherytes();
-    }
-
-    async loadAetherytes() {
-        try {
-            const response = await fetch('../../data/aetherytes.json');
-            const data = await response.json();
-            this.aetherytes = data.aetherytes;
-        } catch (error) {
-            console.error('載入傳送點資料失敗:', error);
-        }
-    }
-
     /**
      * 計算兩點之間的距離
      * @param {Object} from - 起點
@@ -46,26 +31,20 @@ class RouteCalculator {
      * @returns {Object} 路線結果
      */
     calculateRoute(maps) {
-        console.log('=== 開始路線計算 ===');
-        console.log('輸入地圖數量:', maps.length);
-
         if (!maps || maps.length === 0) return { summary: {}, route: [] };
-        if (!this.aetherytes) {
+        if (!zoneManager.loaded) {
             console.error('傳送點資料尚未載入');
             return { summary: {}, route: [] };
         }
 
         // 1. 找出起始地區（全域最近的寶圖-傳送點配對）
         const { startRegion, startMap } = this.findStartingRegion(maps);
-        console.log('起始地區:', startRegion);
 
         // 2. 按地區分組
         const mapsByRegion = this.groupByZone(maps);
-        console.log('地區分組結果:', Object.keys(mapsByRegion).map(k => `${k}: ${mapsByRegion[k].length}張`));
 
         // 3. 決定地區訪問順序（第一個已決定，其餘按數量）
         const regionOrder = this.getRegionOrder(mapsByRegion, startRegion);
-        console.log('地區訪問順序:', regionOrder);
 
         // 4. 為每個地區規劃路線
         const route = [];
@@ -92,9 +71,6 @@ class RouteCalculator {
             }
         }
 
-        console.log('=== 路線計算完成 ===');
-        console.log('總傳送次數:', totalTeleports);
-
         return {
             summary: {
                 totalMaps: maps.length,
@@ -116,7 +92,8 @@ class RouteCalculator {
         let startMap = null;
 
         for (const map of maps) {
-            const zoneId = this.getZoneId(map.zone) || map.zoneId;
+            // 匯入的清單沒有 zoneId，改用地區名稱從 ZoneManager 查（和 groupByZone() 查法相同）
+            const zoneId = map.zoneId || zoneManager.getZoneIdByName(map.zone);
             if (!zoneId) {
                 continue;
             }
@@ -147,7 +124,8 @@ class RouteCalculator {
     groupByZone(maps) {
         const groups = {};
         for (const map of maps) {
-            const zoneId = map.zoneId || this.getZoneId(map.zone) || 'unknown';
+            // 匯入的清單沒有 zoneId，改用地區名稱從 ZoneManager 查
+            const zoneId = map.zoneId || zoneManager.getZoneIdByName(map.zone) || 'unknown';
             if (!groups[zoneId]) {
                 groups[zoneId] = [];
             }
@@ -157,69 +135,6 @@ class RouteCalculator {
             });
         }
         return groups;
-    }
-
-    /**
-     * 將 zone 名稱轉換為 zoneId
-     * @param {string} zoneName - 地區名稱
-     * @returns {string|null} zoneId
-     */
-    getZoneId(zoneName) {
-        const zoneMapping = {
-            // 2.0 地區
-            'La Noscea': 'la_noscea',
-            'The Black Shroud': 'the_black_shroud',
-            'Thanalan': 'thanalan',
-            'Coerthas': 'coerthas',
-            'Mor Dhona': 'mor_dhona',
-
-            // 3.0 蒼天地區
-            'Coerthas Western Highlands': 'coerthas',
-            'The Dravanian Forelands': 'dravania',
-            'The Churning Mists': 'dravania',
-            'The Sea of Clouds': 'abalathia',
-            'Abalathia': 'abalathia',
-            'Dravania': 'dravania',
-
-            // 4.0 紅蓮地區
-            'The Fringes': 'gyr_abania',
-            'The Peaks': 'gyr_abania',
-            'The Lochs': 'gyr_abania',
-            'The Ruby Sea': 'othard',
-            'Yanxia': 'othard',
-            'The Azim Steppe': 'othard',
-            'Gyr Abania': 'gyr_abania',
-            'Othard': 'othard',
-
-            // 5.0 漆黑地區
-            'Lakeland': 'norvrandt',
-            'Kholusia': 'norvrandt',
-            'Amh Araeng': 'norvrandt',
-            'Il Mheg': 'norvrandt',
-            'The Rak\'tika Greatwood': 'norvrandt',
-            'The Tempest': 'norvrandt',
-            'Norvrandt': 'norvrandt',
-
-            // 6.0 曉月地區
-            'Labyrinthos': 'ilsabard',
-            'Thavnair': 'ilsabard',
-            'Garlemald': 'ilsabard',
-            'Mare Lamentorum': 'ilsabard',
-            'Elpis': 'elpis',
-            'Ultima Thule': 'ilsabard',
-            'Ilsabard': 'ilsabard',
-
-            // 7.0 黃金地區
-            'Urqopacha': 'tural',
-            'Kozama\'uka': 'tural',
-            'Yak T\'el': 'tural',
-            'Shaaloani': 'tural',
-            'Heritage Found': 'tural',
-            'Living Memory': 'tural',
-            'Tural': 'tural'
-        };
-
-        return zoneMapping[zoneName] || null;
     }
 
     /**
@@ -241,40 +156,16 @@ class RouteCalculator {
     }
 
     /**
-     * 取得地區的傳送點
+     * 取得地區的傳送點（資料來自 ZoneManager，和卡片、詳細地圖是同一份）
      * @param {string} zoneId - 地區 ID
      * @returns {Array} 傳送點列表
      */
     getRegionAetherytes(zoneId) {
-        if (!this.aetherytes) {
-            return [];
-        }
-
-        // 先嘗試直接查找
-        if (this.aetherytes[zoneId]) {
-            return this.aetherytes[zoneId].map(a => ({
-                ...a,
-                zoneId: zoneId,
-                isTeleport: true
-            }));
-        }
-
-        // 如果沒找到，可能是具體的地區 ID，需要找到它所屬的區域
-        const regionId = zoneManager.getRegionId(zoneId);
-
-        if (regionId && this.aetherytes[regionId]) {
-            const zoneAetheryteIds = zoneManager.getZoneById(zoneId)?.aetherytes || [];
-
-            return this.aetherytes[regionId]
-                .filter(a => zoneAetheryteIds.includes(a.id))
-                .map(a => ({
-                    ...a,
-                    zoneId: zoneId,
-                    isTeleport: true
-                }));
-        }
-
-        return [];
+        return zoneManager.getAetherytes(zoneId).map(a => ({
+            ...a,
+            zoneId: zoneId,
+            isTeleport: true
+        }));
     }
 
     /**

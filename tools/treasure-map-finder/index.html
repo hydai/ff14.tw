@@ -29,286 +29,54 @@
     <main class="main">
         <div class="container">
             <h1 class="visually-hidden" data-i18n="treasure_map_header">寶圖搜尋器</h1>
+            <!-- 最上面一列：左邊步驟提示，右邊清單入口（桌機；手機的入口是頁面底部那一列）。桌機捲動時固定在畫面頂端 -->
+            <div class="tm-top-row">
+                <ol class="tm-steps" id="stepHint" role="list" aria-label="使用步驟" data-i18n="treasure_map_steps_label" data-i18n-attr="aria-label">
+                    <li class="current" aria-current="step"><span class="tm-step-num">1</span><span data-i18n="treasure_map_step_grade">選等級</span></li>
+                    <li><span class="tm-step-num">2</span><span data-i18n="treasure_map_step_add">加入清單</span></li>
+                    <li><span class="tm-step-num">3</span><span data-i18n="treasure_map_step_route">生成路線</span></li>
+                </ol>
+                <!-- 清單入口：左邊打開清單面板，右邊依張數顯示「組隊」、提示或「生成路線」（由 JavaScript 切換 .hidden） -->
+                <div class="tm-list-entry" id="listEntryDesktop">
+                    <button type="button" class="btn btn-ghost" data-entry="list"><span class="tm-entry-label">📋 清單</span></button>
+                    <button type="button" class="btn hidden" data-entry="team" data-i18n="treasure_map_entry_team">組隊</button>
+                    <span class="tm-entry-hint hidden" data-entry="hint" data-i18n="treasure_map_entry_hint_one">再加 1 張就能排路線</span>
+                    <button type="button" class="btn btn-primary hidden" data-entry="route"><span class="btn-icon">🗺️</span> <span data-i18n="treasure_map_generate_route">生成路線</span></button>
+                </div>
+            </div>
             <div class="tool-content">
-                <!-- 頂部操作欄 -->
-                <div class="top-action-bar card">
-                    <div class="action-bar-left">
-                        <!-- 預留空間 -->
-                    </div>
-                    <div class="action-bar-right">
-                        <button class="btn btn-primary my-list-toggle" id="myListToggle">
-                            <span class="btn-icon">📋</span> <span data-i18n="treasure_map_my_list">我的清單</span> <span class="list-count" id="listCount">(0)</span>
-                        </button>
-                        <!-- 組隊操作按鈕 -->
-                        <div class="team-actions" id="teamActions">
-                            <button class="btn btn-primary" id="createRoomBtn">
-                                <span class="btn-icon">🏠</span> <span data-i18n="treasure_map_create_room">建立組隊</span>
-                            </button>
-                            <button class="btn btn-secondary" id="joinRoomBtn">
-                                <span class="btn-icon">🚪</span> <span data-i18n="treasure_map_join_room">加入隊伍</span>
-                            </button>
+                <!-- 篩選：等級一列（可多選），選了等級才出現地區列 -->
+                <section class="tm-filters">
+                    <div class="tm-filter-row">
+                        <span class="tm-filter-label" id="levelTagsLabel" data-i18n="treasure_map_grade_label">等級</span>
+                        <div class="tm-chip-scroll" id="levelTags" role="group" aria-labelledby="levelTagsLabel">
+                            <button type="button" class="chip" data-level="g18" data-i18n="treasure_map_grade_g18" aria-pressed="false">G18 巨獸革</button>
+                            <button type="button" class="chip" data-level="g17" data-i18n="treasure_map_grade_g17" aria-pressed="false">G17 獰豹革</button>
+                            <button type="button" class="chip" data-level="g15" data-i18n="treasure_map_grade_g15" aria-pressed="false">G15 蛇牛革</button>
+                            <button type="button" class="chip" data-level="g14" data-i18n="treasure_map_grade_g14" aria-pressed="false">G14 金毗羅鱷革</button>
+                            <button type="button" class="chip" data-level="g12" data-i18n="treasure_map_grade_g12" aria-pressed="false">G12 纏尾蛟革</button>
+                            <button type="button" class="chip" data-level="g10" data-i18n="treasure_map_grade_g10" aria-pressed="false">G10 瞪羚革</button>
+                            <button type="button" class="chip" data-level="g8" data-i18n="treasure_map_grade_g8" aria-pressed="false">G8 巨龍革</button>
                         </div>
                     </div>
+                    <div class="tm-filter-row hidden" id="zoneFilterRow">
+                        <span class="tm-filter-label" id="zoneTagsLabel" data-i18n="treasure_map_zone_label">地區</span>
+                        <div class="tm-chip-scroll" id="zoneTags" role="group" aria-labelledby="zoneTagsLabel">
+                            <!-- 地區 chip 由 FilterManager 依已選的等級產生 -->
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 搜尋結果：張數＋清除地區、空狀態、寶圖卡片 -->
+                <div class="tm-results-head">
+                    <p class="tm-count" id="resultCount" tabindex="-1" aria-live="polite"></p>
+                    <button type="button" class="btn btn-ghost btn-sm hidden" id="clearZonesBtn" data-i18n="treasure_map_clear_zones">清除地區</button>
                 </div>
-
-                <!-- 組隊狀態區域 -->
-                <div class="room-section hidden" id="roomSection">
-                    <!-- 已加入隊伍時顯示 -->
-                    <div class="room-status hidden" id="roomStatus">
-                        <div class="room-info">
-                            <span class="room-label" data-i18n="treasure_map_room_code">隊伍代號：</span>
-                            <span class="room-code" id="roomCode">A3B7K9</span>
-                            <button class="btn btn-sm" id="copyRoomCodeBtn" title="複製隊伍代號" data-i18n="treasure_map_copy_room_code" data-i18n-attr="title">
-                                <span class="btn-icon">📋</span>
-                            </button>
-                        </div>
-                        <div class="room-stats">
-                            <span class="room-stat">
-                                <span class="stat-icon">👥</span>
-                                <span id="roomMembers">1/8人</span>
-                            </span>
-                            <span class="room-stat">
-                                <span class="stat-icon">🕐</span>
-                                <span data-i18n="treasure_map_last_update">最後更新：</span><span id="lastActivity">剛剛</span>
-                            </span>
-                            <span class="room-stat">
-                                <span class="stat-icon">⏱️</span>
-                                <span data-i18n="treasure_map_room_ttl">剩餘：</span><span id="roomTTL">23小時59分</span>
-                            </span>
-                        </div>
-                        <div class="room-user">
-                            <span class="user-label" data-i18n="treasure_map_your_nickname">您的暱稱：</span>
-                            <span class="user-nickname" id="userNickname">光之戰士1</span>
-                            <button class="btn btn-sm" id="editNicknameBtn" title="編輯暱稱" data-i18n="treasure_map_edit_nickname" data-i18n-attr="title">
-                                <span class="btn-icon">✏️</span>
-                            </button>
-                            <button class="btn btn-danger btn-sm" id="leaveRoomBtn">
-                                <span class="btn-icon">🚪</span> <span data-i18n="treasure_map_leave_room">離開隊伍</span>
-                            </button>
-                        </div>
-                        <div class="room-members" id="roomMembersList">
-                            <div class="members-label" data-i18n="treasure_map_team_members">隊伍成員：</div>
-                            <div class="members-list" id="membersList">
-                                <!-- 成員列表將由 JavaScript 動態生成 -->
-                            </div>
-                        </div>
-                    </div>
+                <div class="empty-state hidden" id="treasureEmpty">
+                    <!-- 標題與說明由 JavaScript 依情況填入 -->
                 </div>
-
-                <!-- 篩選區 -->
-                <div class="filter-section card">
-                    <!-- 篩選標題欄 -->
-                    <div class="filter-header">
-                        <h2 class="section-title" data-i18n="treasure_map_filter_title">篩選條件</h2>
-                        <button class="btn btn-secondary" id="resetFilters">
-                            <span class="btn-icon">↻</span> <span data-i18n="treasure_map_reset_filters">重置篩選</span>
-                        </button>
-                    </div>
-
-                    <!-- 等級篩選 -->
-                    <div class="filter-group level-filter-group">
-                        <div class="filter-group-header">
-                            <label><span class="filter-icon">🏷️</span> <span data-i18n="treasure_map_level_filter">寶圖等級</span></label>
-                            <span class="filter-hint" data-i18n="treasure_map_multi_select">可多選</span>
-                        </div>
-                        <div class="filter-tags" id="levelTags">
-                            <button class="filter-tag chip hidden" data-level="g1">G1 鞣革</button>
-                            <button class="filter-tag chip hidden" data-level="g2">G2 山羊革</button>
-                            <button class="filter-tag chip hidden" data-level="g3">G3 巨蟾蜍革</button>
-                            <button class="filter-tag chip hidden" data-level="g4">G4 野豬革</button>
-                            <button class="filter-tag chip hidden" data-level="g5">G5 毒蜥蜴革</button>
-                            <button class="filter-tag chip hidden" data-level="g6">G6 古鳥革</button>
-                            <button class="filter-tag chip hidden" data-level="g7">G7 飛龍革</button>
-                            <button class="filter-tag chip" data-level="g8">G8 巨龍革</button>
-                            <button class="filter-tag chip hidden" data-level="g9">G9 迦迦納怪鳥革</button>
-                            <button class="filter-tag chip" data-level="g10">G10 瞪羚革</button>
-                            <button class="filter-tag chip hidden" data-level="g11">G11 綠飄龍革</button>
-                            <button class="filter-tag chip" data-level="g12">G12 纏尾蛟革</button>
-                            <button class="filter-tag chip hidden" data-level="g13">G13 賽加羚羊革</button>
-                            <button class="filter-tag chip" data-level="g14">G14 金毗羅鱷革</button>
-                            <button class="filter-tag chip" data-level="g15">G15 蛇牛革</button>
-                            <button class="filter-tag chip hidden" data-level="g16">G16 銀狼革</button>
-                            <button class="filter-tag chip" data-level="g17">G17 獰豹革</button>
-                            <button class="filter-tag chip" data-level="g18">G18 巨獸革</button>
-                        </div>
-                    </div>
-
-                    <!-- 地圖篩選 -->
-                    <div class="filter-group map-filter-group">
-                        <div class="filter-group-header collapsible-header" data-collapse="mapTags" data-expanded="false">
-                            <label><span class="filter-icon">🗺️</span> <span data-i18n="treasure_map_map_filter">地圖</span></label>
-                            <span class="filter-hint" data-i18n="treasure_map_multi_select">可多選</span>
-                            <span class="collapse-indicator">▼</span>
-                        </div>
-                        <div class="filter-tags map-tags-grid collapsed" id="mapTags">
-                            <!-- G8 蒼天地圖 -->
-                            <button class="filter-tag map-tag hidden" data-map="Coerthas Western Highlands">
-                                <span class="map-name-zh">庫爾札斯西部高地</span>
-                                <span class="map-name-ja">クルザス西部高地</span>
-                                <span class="map-name-en">Coerthas Western Highlands</span>
-                            </button>
-                            <button class="filter-tag map-tag hidden" data-map="The Dravanian Forelands">
-                                <span class="map-name-zh">德拉瓦尼亞山麓地</span>
-                                <span class="map-name-ja">高地ドラヴァニア</span>
-                                <span class="map-name-en">The Dravanian Forelands</span>
-                            </button>
-                            <button class="filter-tag map-tag hidden" data-map="The Churning Mists">
-                                <span class="map-name-zh">德拉瓦尼亞雲海</span>
-                                <span class="map-name-ja">ドラヴァニア雲海</span>
-                                <span class="map-name-en">The Churning Mists</span>
-                            </button>
-                            <button class="filter-tag map-tag hidden" data-map="The Sea of Clouds">
-                                <span class="map-name-zh">阿巴拉提亞雲海</span>
-                                <span class="map-name-ja">アバラシア雲海</span>
-                                <span class="map-name-en">The Sea of Clouds</span>
-                            </button>
-                            
-                            <!-- G10 紅蓮地圖 -->
-                            <button class="filter-tag map-tag hidden" data-map="The Fringes">
-                                <span class="map-name-zh">邊區</span>
-                                <span class="map-name-ja">ギラバニア辺境地帯</span>
-                                <span class="map-name-en">The Fringes</span>
-                            </button>
-                            <button class="filter-tag map-tag hidden" data-map="The Peaks">
-                                <span class="map-name-zh">山區</span>
-                                <span class="map-name-ja">ギラバニア山岳地帯</span>
-                                <span class="map-name-en">The Peaks</span>
-                            </button>
-                            <button class="filter-tag map-tag hidden" data-map="The Lochs">
-                                <span class="map-name-zh">湖區</span>
-                                <span class="map-name-ja">ギラバニア湖畔地帯</span>
-                                <span class="map-name-en">The Lochs</span>
-                            </button>
-                            <button class="filter-tag map-tag hidden" data-map="The Ruby Sea">
-                                <span class="map-name-zh">紅玉海</span>
-                                <span class="map-name-ja">紅玉海</span>
-                                <span class="map-name-en">The Ruby Sea</span>
-                            </button>
-                            <button class="filter-tag map-tag hidden" data-map="Yanxia">
-                                <span class="map-name-zh">延夏</span>
-                                <span class="map-name-ja">ヤンサ</span>
-                                <span class="map-name-en">Yanxia</span>
-                            </button>
-                            <button class="filter-tag map-tag hidden" data-map="The Azim Steppe">
-                                <span class="map-name-zh">太陽草原</span>
-                                <span class="map-name-ja">アジムステップ</span>
-                                <span class="map-name-en">The Azim Steppe</span>
-                            </button>
-                            
-                            <!-- G12 漆黑地圖 -->
-                            <button class="filter-tag map-tag hidden" data-map="Lakeland">
-                                <span class="map-name-zh">雷克蘭德</span>
-                                <span class="map-name-ja">レイクランド</span>
-                                <span class="map-name-en">Lakeland</span>
-                            </button>
-                            <button class="filter-tag map-tag hidden" data-map="Kholusia">
-                                <span class="map-name-zh">珂露西亞島</span>
-                                <span class="map-name-ja">コルシア島</span>
-                                <span class="map-name-en">Kholusia</span>
-                            </button>
-                            <button class="filter-tag map-tag hidden" data-map="Amh Araeng">
-                                <span class="map-name-zh">安穆·艾蘭</span>
-                                <span class="map-name-ja">アム・アレーン</span>
-                                <span class="map-name-en">Amh Araeng</span>
-                            </button>
-                            <button class="filter-tag map-tag hidden" data-map="Il Mheg">
-                                <span class="map-name-zh">伊爾美格</span>
-                                <span class="map-name-ja">イル・メグ</span>
-                                <span class="map-name-en">Il Mheg</span>
-                            </button>
-                            <button class="filter-tag map-tag hidden" data-map="The Rak'tika Greatwood">
-                                <span class="map-name-zh">拉凱提卡大森林</span>
-                                <span class="map-name-ja">ラケティカ大森林</span>
-                                <span class="map-name-en">The Rak'tika Greatwood</span>
-                            </button>
-                            <button class="filter-tag map-tag hidden" data-map="The Tempest">
-                                <span class="map-name-zh">黑風海</span>
-                                <span class="map-name-ja">テンペスト</span>
-                                <span class="map-name-en">The Tempest</span>
-                            </button>
-                            
-                            <!-- G14 曉月地圖 -->
-                            <button class="filter-tag map-tag" data-map="Labyrinthos">
-                                <span class="map-name-zh">拉比陵托斯</span>
-                                <span class="map-name-ja">ラヴィリンソス</span>
-                                <span class="map-name-en">Labyrinthos</span>
-                            </button>
-                            <button class="filter-tag map-tag" data-map="Thavnair">
-                                <span class="map-name-zh">薩維奈島</span>
-                                <span class="map-name-ja">サベネア島</span>
-                                <span class="map-name-en">Thavnair</span>
-                            </button>
-                            <button class="filter-tag map-tag" data-map="Garlemald">
-                                <span class="map-name-zh">加雷馬</span>
-                                <span class="map-name-ja">ガレマルド</span>
-                                <span class="map-name-en">Garlemald</span>
-                            </button>
-                            <button class="filter-tag map-tag" data-map="Mare Lamentorum">
-                                <span class="map-name-zh">嘆息海</span>
-                                <span class="map-name-ja">嘆きの海</span>
-                                <span class="map-name-en">Mare Lamentorum</span>
-                            </button>
-                            <button class="filter-tag map-tag" data-map="Ultima Thule">
-                                <span class="map-name-zh">天外天垓</span>
-                                <span class="map-name-ja">ウルティマ・トゥーレ</span>
-                                <span class="map-name-en">Ultima Thule</span>
-                            </button>
-                            
-                            <!-- G15 特殊地圖 -->
-                            <button class="filter-tag map-tag" data-map="Elpis">
-                                <span class="map-name-zh">厄爾庇斯</span>
-                                <span class="map-name-ja">エルピス</span>
-                                <span class="map-name-en">Elpis</span>
-                            </button>
-                            
-                            <!-- G17 黃金地圖 -->
-                            <button class="filter-tag map-tag" data-map="Urqopacha">
-                                <span class="map-name-zh">烏爾科帕恰</span>
-                                <span class="map-name-ja">オルコ・パチャ</span>
-                                <span class="map-name-en">Urqopacha</span>
-                            </button>
-                            <button class="filter-tag map-tag" data-map="Kozama'uka">
-                                <span class="map-name-zh">科扎馬烏卡</span>
-                                <span class="map-name-ja">コザマル・カ</span>
-                                <span class="map-name-en">Kozama'uka</span>
-                            </button>
-                            <button class="filter-tag map-tag" data-map="Yak T'el">
-                                <span class="map-name-zh">亞克特爾樹海</span>
-                                <span class="map-name-ja">ヤクテル樹海</span>
-                                <span class="map-name-en">Yak T'el</span>
-                            </button>
-                            <button class="filter-tag map-tag" data-map="Shaaloani">
-                                <span class="map-name-zh">夏羅尼荒野</span>
-                                <span class="map-name-ja">シャーローニ荒野</span>
-                                <span class="map-name-en">Shaaloani</span>
-                            </button>
-                            <button class="filter-tag map-tag" data-map="Heritage Found">
-                                <span class="map-name-zh">遺產之地</span>
-                                <span class="map-name-ja">ヘリテージファウンド</span>
-                                <span class="map-name-en">Heritage Found</span>
-                            </button>
-                            
-                            <!-- G18 巨獸革地圖 -->
-                            <button class="filter-tag map-tag" data-map="Living Memory">
-                                <span class="map-name-zh">永生記憶</span>
-                                <span class="map-name-ja">リビングメモリー</span>
-                                <span class="map-name-en">Living Memory</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 搜尋結果 -->
-                <div class="results-section">
-                    <div class="results-header">
-                        <span id="resultCount">顯示 0 個結果</span>
-                    </div>
-                    <div class="treasure-grid" id="treasureGrid">
-                        <!-- 寶圖卡片將由 JavaScript 動態生成 -->
-                    </div>
-                    <div class="load-more hidden" id="loadMore">
-                        <button class="btn btn-secondary" data-i18n="treasure_map_load_more">載入更多</button>
-                    </div>
+                <div class="treasure-grid" id="treasureGrid">
+                    <!-- 寶圖卡片將由 JavaScript 動態生成 -->
                 </div>
             </div>
 
@@ -323,10 +91,22 @@
                     <li>G14 金毗羅鱷革地圖：<a href="https://game8.jp/ff14/410606" target="_blank" rel="noopener noreferrer">https://game8.jp/ff14/410606</a></li>
                     <li>G15 蛇牛革地圖：<a href="https://game8.jp/ff14/507311" target="_blank" rel="noopener noreferrer">https://game8.jp/ff14/507311</a></li>
                     <li>G17 獰豹革地圖：<a href="https://game8.jp/ff14/624980" target="_blank" rel="noopener noreferrer">https://game8.jp/ff14/624980</a></li>
+                    <li>G18 巨獸革地圖：<a href="https://game8.jp/ff14/709398" target="_blank" rel="noopener noreferrer">https://game8.jp/ff14/709398</a></li>
                 </ul>
             </div>
         </div>
     </main>
+
+    <!-- 手機的清單入口：固定在畫面底部，內容和上面的桌機入口相同 -->
+    <div class="tm-list-entry tm-bottom-bar" id="listEntryMobile">
+        <button type="button" class="btn btn-ghost" data-entry="list"><span class="tm-entry-label">📋 清單</span></button>
+        <button type="button" class="btn hidden" data-entry="team" data-i18n="treasure_map_entry_team">組隊</button>
+        <span class="tm-entry-hint hidden" data-entry="hint" data-i18n="treasure_map_entry_hint_one">再加 1 張就能排路線</span>
+        <button type="button" class="btn btn-primary hidden" data-entry="route"><span class="btn-icon">🗺️</span> <span data-i18n="treasure_map_generate_route">生成路線</span></button>
+    </div>
+
+    <!-- 加入、移除寶圖後唸出清單張數（不再跳 toast） -->
+    <p id="listAnnouncer" class="visually-hidden" aria-live="polite"></p>
 
     <!-- 面板遮罩 -->
     <div class="panel-overlay" id="panelOverlay"></div>
@@ -349,15 +129,69 @@
                 <button class="btn btn-close" id="closePanelBtn" aria-label="關閉" data-i18n="treasure_map_close" data-i18n-attr="aria-label">×</button>
             </div>
         </div>
-        <div class="panel-tabs tabs hidden" id="panelTabs" role="tablist">
-            <button class="tab-btn tab active" data-tab="list" id="tab-panel-list" role="tab" aria-selected="true" aria-controls="listContent" tabindex="0" data-i18n="treasure_map_list_tab">清單</button>
-            <button class="tab-btn tab" data-tab="history" id="tab-panel-history" role="tab" aria-selected="false" aria-controls="historyContent" tabindex="-1" data-i18n="treasure_map_history_tab">歷史</button>
-        </div>
-        <div class="list-content" id="listContent" role="tabpanel" aria-labelledby="tab-panel-list">
-            <!-- 清單項目將由 JavaScript 動態生成 -->
-        </div>
-        <div class="history-content hidden" id="historyContent" role="tabpanel" aria-labelledby="tab-panel-history">
-            <!-- 操作歷史將由 JavaScript 動態生成 -->
+        <!-- 標頭與底部（總計、生成路線）固定，中間的組隊、隊伍狀態、頁籤與清單一起捲動 -->
+        <div class="panel-body">
+            <!-- 組隊：不在隊伍裡時顯示（面板的主要按鈕留給下面的「生成路線」） -->
+            <div class="team-actions" id="teamActions">
+                <button class="btn btn-secondary" id="createRoomBtn">
+                    <span class="btn-icon">🏠</span> <span data-i18n="treasure_map_create_room">建立組隊</span>
+                </button>
+                <button class="btn btn-secondary" id="joinRoomBtn">
+                    <span class="btn-icon">🚪</span> <span data-i18n="treasure_map_join_room">加入隊伍</span>
+                </button>
+            </div>
+            <!-- 隊伍狀態：已加入隊伍時顯示 -->
+            <div class="room-section hidden" id="roomSection">
+                <div class="room-status hidden" id="roomStatus">
+                    <div class="room-info">
+                        <span class="room-label" data-i18n="treasure_map_room_code">隊伍代號：</span>
+                        <span class="room-code" id="roomCode">A3B7K9</span>
+                        <button class="btn btn-sm" id="copyRoomCodeBtn" title="複製隊伍代號" data-i18n="treasure_map_copy_room_code" data-i18n-attr="title">
+                            <span class="btn-icon">📋</span>
+                        </button>
+                    </div>
+                    <div class="room-stats">
+                        <span class="room-stat">
+                            <span class="stat-icon">👥</span>
+                            <span id="roomMembers">1/8人</span>
+                        </span>
+                        <span class="room-stat">
+                            <span class="stat-icon">🕐</span>
+                            <span data-i18n="treasure_map_last_update">最後更新：</span><span id="lastActivity">剛剛</span>
+                        </span>
+                        <span class="room-stat">
+                            <span class="stat-icon">⏱️</span>
+                            <span data-i18n="treasure_map_room_ttl">剩餘：</span><span id="roomTTL">23小時59分</span>
+                        </span>
+                    </div>
+                    <div class="room-user">
+                        <span class="user-label" data-i18n="treasure_map_your_nickname">您的暱稱：</span>
+                        <span class="user-nickname" id="userNickname">光之戰士1</span>
+                        <button class="btn btn-sm" id="editNicknameBtn" title="編輯暱稱" data-i18n="treasure_map_edit_nickname" data-i18n-attr="title">
+                            <span class="btn-icon">✏️</span>
+                        </button>
+                        <button class="btn btn-danger btn-sm" id="leaveRoomBtn">
+                            <span class="btn-icon">🚪</span> <span data-i18n="treasure_map_leave_room">離開隊伍</span>
+                        </button>
+                    </div>
+                    <div class="room-members" id="roomMembersList">
+                        <div class="members-label" data-i18n="treasure_map_team_members">隊伍成員：</div>
+                        <div class="members-list" id="membersList">
+                            <!-- 成員列表將由 JavaScript 動態生成 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="panel-tabs tabs hidden" id="panelTabs" role="tablist">
+                <button class="tab-btn tab active" data-tab="list" id="tab-panel-list" role="tab" aria-selected="true" aria-controls="listContent" tabindex="0" data-i18n="treasure_map_list_tab">清單</button>
+                <button class="tab-btn tab" data-tab="history" id="tab-panel-history" role="tab" aria-selected="false" aria-controls="historyContent" tabindex="-1" data-i18n="treasure_map_history_tab">歷史</button>
+            </div>
+            <div class="list-content" id="listContent" role="tabpanel" aria-labelledby="tab-panel-list">
+                <!-- 清單項目將由 JavaScript 動態生成 -->
+            </div>
+            <div class="history-content hidden" id="historyContent" role="tabpanel" aria-labelledby="tab-panel-history">
+                <!-- 操作歷史將由 JavaScript 動態生成 -->
+            </div>
         </div>
         <div class="panel-footer">
             <p><span data-i18n="treasure_map_total">總計：</span><span id="totalCount">0</span><span data-i18n="treasure_map_maps_unit">張寶圖</span></p>
@@ -506,17 +340,55 @@
     </div>
 
 
-    <!-- 地圖詳細檢視彈出視窗 -->
+    <!-- 地圖詳細檢視：標頭（標題、關閉）、中間（地圖＋資訊；手機全螢幕時只有這一塊捲動）、動作列（切換、複製、加入清單）。
+         標題、資訊的值、位置與加入鈕的文字跟著目前這張寶圖，由 JavaScript 填入 -->
     <div class="map-detail-modal" id="mapDetailModal" role="dialog" aria-modal="true" aria-labelledby="mapDetailTitle">
-        <div class="map-detail-content">
-            <button class="map-detail-close" id="mapDetailClose" aria-label="關閉" data-i18n="treasure_map_close" data-i18n-attr="aria-label">×</button>
-            <div class="map-detail-image-container">
-                <img id="mapDetailImage" src="" alt="詳細地圖" data-i18n="treasure_map_view_detail" data-i18n-attr="alt" />
-                <canvas id="mapDetailCanvas" class="map-detail-canvas"></canvas>
+        <div class="map-detail-content dialog">
+            <div class="dialog-header">
+                <h3 class="dialog-title" id="mapDetailTitle" aria-live="polite"></h3>
+                <button type="button" class="btn btn-close" id="mapDetailClose" aria-label="關閉" data-i18n="treasure_map_close" data-i18n-attr="aria-label">×</button>
             </div>
-            <div class="map-detail-info">
-                <h3 id="mapDetailTitle"></h3>
-                <p id="mapDetailCoords"></p>
+            <div class="map-detail-body">
+                <!-- 正方形的地圖：地區地圖與 canvas（寶圖位置、傳送點）疊在一起；角落疊寶圖縮圖方便對照
+                     （預設左上角，會蓋住寶圖位置或最近傳送點時由 JavaScript 換到別的角） -->
+                <div class="map-detail-map">
+                    <img class="map-detail-image" id="mapDetailImage" src="" alt="詳細地圖" data-i18n="treasure_map_view_detail" data-i18n-attr="alt">
+                    <canvas class="map-detail-canvas" id="mapDetailCanvas"></canvas>
+                    <img class="map-detail-thumb" id="mapDetailThumb" src="" alt="">
+                </div>
+                <dl class="map-detail-facts">
+                    <div class="map-detail-fact">
+                        <dt data-i18n="treasure_map_detail_coords">座標</dt>
+                        <dd id="mapDetailCoords"></dd>
+                    </div>
+                    <div class="map-detail-fact">
+                        <dt data-i18n="treasure_map_detail_nearest">最近傳送點</dt>
+                        <dd id="mapDetailNearest"></dd>
+                    </div>
+                    <div class="map-detail-fact">
+                        <dt data-i18n="treasure_map_detail_others">其他傳送點</dt>
+                        <dd id="mapDetailOthers"></dd>
+                    </div>
+                    <div class="map-detail-fact">
+                        <dt data-i18n="treasure_map_detail_names">地名</dt>
+                        <dd id="mapDetailNames"></dd>
+                    </div>
+                    <div class="map-detail-fact">
+                        <dt data-i18n="treasure_map_detail_preview">複製內容</dt>
+                        <dd class="tm-copy-preview" id="mapDetailPreview"></dd>
+                    </div>
+                </dl>
+            </div>
+            <div class="dialog-actions map-detail-actions">
+                <div class="map-detail-pager">
+                    <button type="button" class="btn btn-sm" id="mapDetailPrev" data-i18n="treasure_map_detail_prev">‹ 上一張</button>
+                    <span class="map-detail-position" id="mapDetailPosition"></span>
+                    <button type="button" class="btn btn-sm" id="mapDetailNext" data-i18n="treasure_map_detail_next">下一張 ›</button>
+                </div>
+                <div class="map-detail-buttons">
+                    <button type="button" class="btn btn-outline" id="mapDetailCopy" data-i18n="treasure_map_detail_copy">📋 複製</button>
+                    <button type="button" class="btn btn-primary btn-add-to-list" id="mapDetailAdd">＋ 加入清單</button>
+                </div>
             </div>
         </div>
     </div>

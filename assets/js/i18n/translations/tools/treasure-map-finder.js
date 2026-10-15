@@ -14,10 +14,23 @@ const TreasureMapTranslations = {
         // 頁面標題
         treasure_map_header: '寶圖搜尋器',
 
-        // 頂部操作
+        // 清單面板標題與組隊按鈕
         treasure_map_my_list: '我的清單',
         treasure_map_create_room: '建立組隊',
         treasure_map_join_room: '加入隊伍',
+
+        // 步驟提示與清單入口
+        treasure_map_steps_label: '使用步驟',
+        treasure_map_step_grade: '選等級',
+        treasure_map_step_add: '加入清單',
+        treasure_map_step_route: '生成路線',
+        treasure_map_entry_empty: '📋 清單',
+        treasure_map_entry_count: '📋 清單 {count} 張',
+        treasure_map_entry_room: '👥 隊伍清單 {count}/{max}',
+        treasure_map_entry_team: '組隊',
+        treasure_map_entry_hint_one: '再加 1 張就能排路線',
+        treasure_map_announce_added: '已加入清單，共 {count} 張',
+        treasure_map_announce_removed: '已從清單移除，剩 {count} 張',
 
         // 組隊區域
         treasure_map_room_code: '隊伍代號：',
@@ -28,15 +41,24 @@ const TreasureMapTranslations = {
         treasure_map_team_members: '隊伍成員：',
 
         // 篩選區
-        treasure_map_filter_title: '篩選條件',
-        treasure_map_reset_filters: '重置篩選',
-        treasure_map_level_filter: '寶圖等級',
-        treasure_map_map_filter: '地圖',
-        treasure_map_multi_select: '可多選',
+        treasure_map_grade_label: '等級',
+        treasure_map_zone_label: '地區',
+        treasure_map_grade_g18: 'G18 巨獸革',
+        treasure_map_grade_g17: 'G17 獰豹革',
+        treasure_map_grade_g15: 'G15 蛇牛革',
+        treasure_map_grade_g14: 'G14 金毗羅鱷革',
+        treasure_map_grade_g12: 'G12 纏尾蛟革',
+        treasure_map_grade_g10: 'G10 瞪羚革',
+        treasure_map_grade_g8: 'G8 巨龍革',
+        treasure_map_clear_zones: '清除地區',
 
         // 結果區
-        treasure_map_results: '顯示 {count} 個結果',
-        treasure_map_load_more: '載入更多',
+        treasure_map_result_count: '{count} 張 {grades} 寶圖',
+        treasure_map_list_separator: '、',
+        treasure_map_choose_grade_title: '先選寶圖等級',
+        treasure_map_choose_grade_text: '看寶圖名稱裡的皮革就知道等級，例如獰豹革是 G17。選好之後會列出所有符合的寶圖，下次打開也會記得。',
+        treasure_map_no_results_title: '這個條件沒有寶圖',
+        treasure_map_no_results_text: '試試清除地區篩選。',
 
         // 資料來源
         treasure_map_data_source: '資料來源',
@@ -67,6 +89,7 @@ const TreasureMapTranslations = {
         treasure_map_reset_default: '重置為預設值',
         treasure_map_save_settings: '儲存設定',
         treasure_map_format_saved: '格式設定已儲存',
+        treasure_map_format_save_failed: '無法儲存設定：瀏覽器不允許儲存資料',
         treasure_map_format_reset: '已重置為預設格式',
         treasure_map_format_switched_zh: '已切換至中文模板',
         treasure_map_format_switched_en: '已切換至英文模板',
@@ -98,7 +121,7 @@ const TreasureMapTranslations = {
         treasure_map_close: '關閉',
 
         // 訊息
-        treasure_map_copy_success: '座標指令已複製',
+        treasure_map_copy_success: '已複製，可以貼到隊伍頻道',
         treasure_map_copy_failed: '複製失敗',
         treasure_map_copy_manual: '瀏覽器不支援自動複製，請手動選取文字後按 Ctrl+C 複製',
         treasure_map_copy_fallback_manual: '複製失敗，請手動選取文字後按 Ctrl+C 複製',
@@ -114,12 +137,25 @@ const TreasureMapTranslations = {
         treasure_map_loading_aetherytes: '正在載入傳送點資料，請稍後再試',
         treasure_map_route_copy_success: '已複製 {count} 個地點',
         treasure_map_added_to_list: '✓ 已加入',
-        treasure_map_add_to_list: '加入清單',
+        treasure_map_add_to_list: '＋ 加入清單',
         treasure_map_remove_item: '移除 {zone} {coords}',
         treasure_map_view_detail: '詳細地圖',
-        treasure_map_view_detail_tooltip: '查看詳細地圖',
         treasure_map_copy_coords: '複製座標',
-        treasure_map_pos_placeholder: '座標：{coords}',
+        treasure_map_open_detail: '放大 {grade} {zone} #{index}',
+        treasure_map_nearest: '最近：{name}',
+        treasure_map_party_message: '/p {grade} {zone} ({x}, {y}) 最近：{aetheryte}',
+        treasure_map_party_message_no_aetheryte: '/p {grade} {zone} ({x}, {y})',
+
+        // 詳細檢視
+        treasure_map_detail_prev: '‹ 上一張',
+        treasure_map_detail_next: '下一張 ›',
+        treasure_map_detail_position: '{index} / {total}',
+        treasure_map_detail_coords: '座標',
+        treasure_map_detail_nearest: '最近傳送點',
+        treasure_map_detail_others: '其他傳送點',
+        treasure_map_detail_names: '地名',
+        treasure_map_detail_preview: '複製內容',
+        treasure_map_detail_copy: '📋 複製',
 
         // 對話框與清單訊息
         treasure_map_item_already_in_list: '此寶圖已在清單中',
@@ -231,10 +267,23 @@ const TreasureMapTranslations = {
         // Page header
         treasure_map_header: 'Treasure Map Finder',
 
-        // Top actions
+        // List panel title and team buttons
         treasure_map_my_list: 'My List',
         treasure_map_create_room: 'Create Room',
         treasure_map_join_room: 'Join Room',
+
+        // Steps and list entry
+        treasure_map_steps_label: 'Steps',
+        treasure_map_step_grade: 'Pick a grade',
+        treasure_map_step_add: 'Add maps',
+        treasure_map_step_route: 'Plan a route',
+        treasure_map_entry_empty: '📋 List',
+        treasure_map_entry_count: '📋 List: {count}',
+        treasure_map_entry_room: '👥 Team list {count}/{max}',
+        treasure_map_entry_team: 'Team up',
+        treasure_map_entry_hint_one: 'Add 1 more map to plan a route',
+        treasure_map_announce_added: 'Added to the list. Total: {count}',
+        treasure_map_announce_removed: 'Removed from the list. Remaining: {count}',
 
         // Room section
         treasure_map_room_code: 'Room Code:',
@@ -245,15 +294,24 @@ const TreasureMapTranslations = {
         treasure_map_team_members: 'Team Members:',
 
         // Filter section
-        treasure_map_filter_title: 'Filters',
-        treasure_map_reset_filters: 'Reset Filters',
-        treasure_map_level_filter: 'Map Level',
-        treasure_map_map_filter: 'Zone',
-        treasure_map_multi_select: 'Multi-select',
+        treasure_map_grade_label: 'Grade',
+        treasure_map_zone_label: 'Zone',
+        treasure_map_grade_g18: 'G18 Gargantuaskin',
+        treasure_map_grade_g17: 'G17 Br\'aaxskin',
+        treasure_map_grade_g15: 'G15 Ophiotauroskin',
+        treasure_map_grade_g14: 'G14 Kumbhiraskin',
+        treasure_map_grade_g12: 'G12 Zonureskin',
+        treasure_map_grade_g10: 'G10 Gazelleskin',
+        treasure_map_grade_g8: 'G8 Dragonskin',
+        treasure_map_clear_zones: 'Clear zones',
 
         // Results section
-        treasure_map_results: 'Showing {count} results',
-        treasure_map_load_more: 'Load More',
+        treasure_map_result_count: '{count} {grades} maps',
+        treasure_map_list_separator: ', ',
+        treasure_map_choose_grade_title: 'Pick your map grade first',
+        treasure_map_choose_grade_text: 'The grade is in the map\'s name, e.g. Timeworn Br\'aaxskin Map is G17. Pick it to see every matching map; we\'ll remember it next time.',
+        treasure_map_no_results_title: 'No maps match',
+        treasure_map_no_results_text: 'Try clearing the zone filter.',
 
         // Data source
         treasure_map_data_source: 'Data Source',
@@ -284,6 +342,7 @@ const TreasureMapTranslations = {
         treasure_map_reset_default: 'Reset to Default',
         treasure_map_save_settings: 'Save Settings',
         treasure_map_format_saved: 'Format settings saved',
+        treasure_map_format_save_failed: 'Could not save the settings: your browser does not allow storing data',
         treasure_map_format_reset: 'Reset to default format',
         treasure_map_format_switched_zh: 'Switched to Chinese template',
         treasure_map_format_switched_en: 'Switched to English template',
@@ -315,7 +374,7 @@ const TreasureMapTranslations = {
         treasure_map_close: 'Close',
 
         // Messages
-        treasure_map_copy_success: 'Coordinates copied',
+        treasure_map_copy_success: 'Copied. Paste it into party chat.',
         treasure_map_copy_failed: 'Copy failed',
         treasure_map_copy_manual: 'Browser does not support auto-copy, please select text and press Ctrl+C to copy',
         treasure_map_copy_fallback_manual: 'Copy failed, please select text and press Ctrl+C to copy',
@@ -331,12 +390,25 @@ const TreasureMapTranslations = {
         treasure_map_loading_aetherytes: 'Loading aetheryte data, please try again later',
         treasure_map_route_copy_success: 'Copied {count} locations',
         treasure_map_added_to_list: '✓ Added',
-        treasure_map_add_to_list: 'Add to List',
+        treasure_map_add_to_list: '＋ Add to List',
         treasure_map_remove_item: 'Remove {zone} {coords}',
         treasure_map_view_detail: 'Detail Map',
-        treasure_map_view_detail_tooltip: 'View detailed map',
         treasure_map_copy_coords: 'Copy coordinates',
-        treasure_map_pos_placeholder: 'Coords: {coords}',
+        treasure_map_open_detail: 'Enlarge {grade} {zone} #{index}',
+        treasure_map_nearest: 'Nearest: {name}',
+        treasure_map_party_message: '/p {grade} {zone} ({x}, {y}) Nearest: {aetheryte}',
+        treasure_map_party_message_no_aetheryte: '/p {grade} {zone} ({x}, {y})',
+
+        // Detail view
+        treasure_map_detail_prev: '‹ Previous',
+        treasure_map_detail_next: 'Next ›',
+        treasure_map_detail_position: '{index} / {total}',
+        treasure_map_detail_coords: 'Coordinates',
+        treasure_map_detail_nearest: 'Nearest aetheryte',
+        treasure_map_detail_others: 'Other aetherytes',
+        treasure_map_detail_names: 'Names',
+        treasure_map_detail_preview: 'Copies as',
+        treasure_map_detail_copy: '📋 Copy',
 
         // Dialogs and List Messages
         treasure_map_item_already_in_list: 'Item already in list',
@@ -448,10 +520,23 @@ const TreasureMapTranslations = {
         // ページヘッダー
         treasure_map_header: '宝の地図検索',
 
-        // トップアクション
+        // リストパネルのタイトルとチームボタン
         treasure_map_my_list: 'マイリスト',
         treasure_map_create_room: 'ルーム作成',
         treasure_map_join_room: 'ルーム参加',
+
+        // 手順とリストの入口
+        treasure_map_steps_label: '手順',
+        treasure_map_step_grade: 'グレードを選ぶ',
+        treasure_map_step_add: 'リストに追加',
+        treasure_map_step_route: 'ルートを作成',
+        treasure_map_entry_empty: '📋 リスト',
+        treasure_map_entry_count: '📋 リスト {count} 枚',
+        treasure_map_entry_room: '👥 チームリスト {count}/{max}',
+        treasure_map_entry_team: 'チームを組む',
+        treasure_map_entry_hint_one: 'あと 1 枚でルートを作れます',
+        treasure_map_announce_added: 'リストに追加しました（{count} 枚）',
+        treasure_map_announce_removed: 'リストから削除しました（残り {count} 枚）',
 
         // ルームセクション
         treasure_map_room_code: 'ルームコード：',
@@ -462,15 +547,24 @@ const TreasureMapTranslations = {
         treasure_map_team_members: 'メンバー：',
 
         // フィルターセクション
-        treasure_map_filter_title: 'フィルター',
-        treasure_map_reset_filters: 'フィルターリセット',
-        treasure_map_level_filter: '地図レベル',
-        treasure_map_map_filter: 'エリア',
-        treasure_map_multi_select: '複数選択可',
+        treasure_map_grade_label: 'グレード',
+        treasure_map_zone_label: 'エリア',
+        treasure_map_grade_g18: 'G18',
+        treasure_map_grade_g17: 'G17',
+        treasure_map_grade_g15: 'G15',
+        treasure_map_grade_g14: 'G14',
+        treasure_map_grade_g12: 'G12',
+        treasure_map_grade_g10: 'G10',
+        treasure_map_grade_g8: 'G8',
+        treasure_map_clear_zones: 'エリアをクリア',
 
         // 結果セクション
-        treasure_map_results: '{count} 件の結果を表示',
-        treasure_map_load_more: 'さらに読み込む',
+        treasure_map_result_count: '{grades} の地図 {count} 枚',
+        treasure_map_list_separator: '、',
+        treasure_map_choose_grade_title: 'まず地図のグレードを選んでください',
+        treasure_map_choose_grade_text: '地図の名前にグレードが書かれています（例：古ぼけた地図G17）。選ぶと該当する地図がすべて表示され、次回も覚えています。',
+        treasure_map_no_results_title: '該当する地図がありません',
+        treasure_map_no_results_text: 'エリアの絞り込みを解除してみてください。',
 
         // データソース
         treasure_map_data_source: 'データソース',
@@ -501,6 +595,7 @@ const TreasureMapTranslations = {
         treasure_map_reset_default: 'デフォルトに戻す',
         treasure_map_save_settings: '設定を保存',
         treasure_map_format_saved: '書式設定を保存しました',
+        treasure_map_format_save_failed: '設定を保存できませんでした：ブラウザがデータの保存を許可していません',
         treasure_map_format_reset: 'デフォルトの書式にリセットしました',
         treasure_map_format_switched_zh: '中国語テンプレートに切り替えました',
         treasure_map_format_switched_en: '英語テンプレートに切り替えました',
@@ -532,7 +627,7 @@ const TreasureMapTranslations = {
         treasure_map_close: '閉じる',
 
         // メッセージ
-        treasure_map_copy_success: '座標をコピーしました',
+        treasure_map_copy_success: 'コピーしました。パーティチャットに貼り付けられます。',
         treasure_map_copy_failed: 'コピーに失敗しました',
         treasure_map_copy_manual: 'ブラウザが自動コピーに対応していません。テキストを選択して Ctrl+C でコピーしてください',
         treasure_map_copy_fallback_manual: 'コピーに失敗しました。テキストを選択して Ctrl+C でコピーしてください',
@@ -548,12 +643,25 @@ const TreasureMapTranslations = {
         treasure_map_loading_aetherytes: 'エーテライトデータを読み込み中。後でもう一度お試しください',
         treasure_map_route_copy_success: '{count} 箇所の地点をコピーしました',
         treasure_map_added_to_list: '✓ 追加済み',
-        treasure_map_add_to_list: 'リストに追加',
+        treasure_map_add_to_list: '＋ リストに追加',
         treasure_map_remove_item: '{zone} {coords} を削除',
         treasure_map_view_detail: '詳細地図',
-        treasure_map_view_detail_tooltip: '詳細地図を表示',
         treasure_map_copy_coords: '座標をコピー',
-        treasure_map_pos_placeholder: '座標：{coords}',
+        treasure_map_open_detail: '{grade} {zone} #{index} を拡大',
+        treasure_map_nearest: '最寄り：{name}',
+        treasure_map_party_message: '/p {grade} {zone} ({x}, {y}) 最寄り：{aetheryte}',
+        treasure_map_party_message_no_aetheryte: '/p {grade} {zone} ({x}, {y})',
+
+        // 詳細表示
+        treasure_map_detail_prev: '‹ 前へ',
+        treasure_map_detail_next: '次へ ›',
+        treasure_map_detail_position: '{index} / {total}',
+        treasure_map_detail_coords: '座標',
+        treasure_map_detail_nearest: '最寄りのエーテライト',
+        treasure_map_detail_others: 'その他のエーテライト',
+        treasure_map_detail_names: '地名',
+        treasure_map_detail_preview: 'コピー内容',
+        treasure_map_detail_copy: '📋 コピー',
 
         // ダイアログとリストメッセージ
         treasure_map_item_already_in_list: 'この地図は既にリストにあります',

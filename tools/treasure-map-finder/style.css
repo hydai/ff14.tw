@@ -2,53 +2,124 @@
    寶圖搜尋器 — 只寫版面；顏色、圓角、字級一律來自 tokens.css 與共用元件
    ========================================================================== */
 
-/* 頂部操作列：外觀由 .card 提供 */
-.top-action-bar {
+/* 最上面一列：左邊步驟提示，右邊清單入口（桌機）。頁首不是固定的，捲走之後這一列貼在畫面頂端；
+   z-index 比頁首低一層：頁首「工具 ▾」的面板（z-index: var(--z-header)）打開時要蓋在這一列上面 */
+.tm-top-row {
+    position: sticky;
+    top: 0;
+    z-index: calc(var(--z-header) - 1);
     display: flex;
-    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
     justify-content: space-between;
-    align-items: center;
-    gap: var(--space-4);
-    padding: var(--space-4);
-    margin-bottom: var(--space-4);
+    gap: var(--space-2) var(--space-4);
+    padding-block: var(--space-2);
+    background: var(--color-bg);
 }
 
-.action-bar-left,
-.action-bar-right {
+/* 鍵盤移動焦點時，瀏覽器把焦點捲進畫面的位置要避開貼在頂端的那一列，焦點才不會整個被它蓋住。
+   高度照這一列換成兩行時算（769px 左右的英文、日文：步驟一行、入口一行）：
+   上下內距＋步驟號碼＋換行間距＋按鈕，再多留 --space-2 給焦點外框。
+   只放在內容裡的元素上，不用根元素的 scroll-padding-top：那樣這一列自己的按鈕拿到焦點時
+   （例如關掉清單面板、焦點回到入口），瀏覽器會為了把它捲到留白下面而整頁往上跳 */
+.tool-content *,
+.source-section * {
+    scroll-margin-top: calc(4 * var(--space-2) + var(--space-6) + var(--control-md));
+}
+
+/* 步驟提示：之前的步驟打勾（.done），目前這一步（.current）實心標出 */
+.tm-steps {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+}
+
+.tm-steps li {
     display: flex;
     align-items: center;
-    gap: var(--space-3);
+    gap: var(--space-2);
+    white-space: nowrap;
 }
 
-.my-list-toggle {
-    position: relative;
+/* 步驟之間的連接線（沒有文字內容，螢幕閱讀器不會唸） */
+.tm-steps li + li::before {
+    content: "";
+    width: var(--space-4);
+    height: 1px;
+    background: var(--color-border-strong);
 }
 
-.list-count {
-    margin-left: var(--space-1);
-    padding: 0 var(--space-2);
+.tm-step-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--space-6);
+    height: var(--space-6);
+    border: 1px solid var(--color-border-strong);
     border-radius: var(--radius-full);
-    background: var(--color-surface);
-    color: var(--color-primary);
     font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
+    font-variant-numeric: tabular-nums;
+}
+
+.tm-steps .current {
+    color: var(--color-heading);
     font-weight: var(--weight-semibold);
 }
 
+.tm-steps .current .tm-step-num {
+    border-color: var(--color-primary);
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+}
+
+.tm-steps .done .tm-step-num {
+    border-color: var(--color-success-border);
+    background: var(--color-success-tint);
+    color: var(--color-success-text);
+}
+
+/* 清單入口：左邊的清單按鈕，右邊「組隊」、提示、「生成路線」三選一（由 JS 切換 .hidden） */
+.tm-list-entry {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.tm-entry-hint {
+    font-size: var(--text-sm);
+    line-height: var(--leading-snug);
+    color: var(--color-muted);
+}
+
+/* 手機的底部列；桌機用最上面那一列右邊的入口（底部列的版面見最下面的響應式） */
+.tm-bottom-bar {
+    display: none;
+}
+
+/* 清單面板裡、標頭下面的組隊按鈕（不在隊伍裡時），兩顆平分一列 */
 .team-actions {
     display: flex;
     gap: var(--space-2);
-    padding-left: var(--space-3);
-    border-left: 1px solid var(--color-border);
+    padding: var(--space-4) var(--space-6);
+    border-bottom: 1px solid var(--color-border);
 }
 
-/* 隊伍協作 */
+.team-actions .btn {
+    flex: 1;
+}
+
+/* 隊伍協作：清單面板裡、標頭下面的隊伍狀態（已加入隊伍時） */
 .room-section {
-    padding: var(--space-4);
-    margin-bottom: var(--space-6);
+    padding: var(--space-4) var(--space-6);
     background: var(--color-surface);
-    border: 2px solid var(--color-primary);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-md);
+    border-bottom: 1px solid var(--color-border);
 }
 
 .room-status {
@@ -173,224 +244,110 @@
     display: none;
 }
 
-/* 篩選：外觀由 .card 提供 */
-.filter-section {
-    padding: var(--space-7);
-    margin-bottom: var(--space-7);
+/* 篩選：等級一列、地區一列（選了等級才出現）。兩欄 grid：標籤欄取兩列標籤裡較寬的那個，兩列的 chip 就會對齊 */
+.tm-filters {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    gap: var(--space-2) var(--space-3);
+    margin-bottom: var(--space-5);
 }
 
-.filter-header {
-    display: flex;
-    justify-content: space-between;
+/* 每一列跨兩欄並沿用上面的欄寬（subgrid）；#zoneFilterRow 加上 .hidden 時整列消失 */
+.tm-filter-row {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
     align-items: center;
-    gap: var(--space-4);
-    margin-bottom: var(--space-6);
 }
 
-.section-title {
-    margin: 0;
-    font-size: var(--text-2xl);
+.tm-filter-label {
+    font-size: var(--text-sm);
     font-weight: var(--weight-semibold);
     color: var(--color-heading);
 }
 
-.filter-group {
-    padding: var(--space-5);
-    margin-bottom: var(--space-6);
-    background: var(--color-surface-2);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-}
-
-.filter-group:last-child {
-    margin-bottom: 0;
-}
-
-.filter-group-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: var(--space-4);
-}
-
-/* 可摺疊的地區篩選標題 */
-.collapsible-header {
-    margin: calc(-1 * var(--space-1)) calc(-1 * var(--space-2)) var(--space-4);
-    padding: var(--space-1) var(--space-2);
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    transition: background-color var(--duration-base) var(--ease);
-}
-
-.collapsible-header:hover {
-    background: var(--color-hover);
-}
-
-.collapse-indicator {
-    font-size: var(--text-xs);
-    color: var(--color-muted);
-    transition: transform var(--duration-slow) var(--ease);
-}
-
-.collapsible-header[data-expanded="true"] .collapse-indicator {
-    transform: rotate(180deg);
-}
-
-.filter-group label {
-    display: flex;
-    align-items: center;
-    margin: 0;
-    font-weight: var(--weight-semibold);
-    color: var(--color-heading);
-}
-
-.filter-icon {
-    margin-right: var(--space-2);
-    font-size: 1.2em;
-}
-
-.filter-hint {
-    font-size: var(--text-xs);
-    font-weight: var(--weight-normal);
-    color: var(--color-muted);
-}
-
-.filter-tags {
+/* 桌機放得下就換行；手機改成橫向捲動（見最下面的響應式） */
+.tm-chip-scroll {
     display: flex;
     flex-wrap: wrap;
     gap: var(--space-2);
 }
 
-/* 地區篩選：三行式大標籤（工具自有；等級篩選改用共用 .chip） */
-.map-tags-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: var(--space-3);
+/* 地區 chip 上的張數 */
+.chip-count {
+    font-size: var(--text-xs);
+    color: var(--color-muted);
+    font-variant-numeric: tabular-nums;
 }
 
-.map-tag {
+.chip.active .chip-count {
+    color: inherit;
+}
+
+/* 結果標題列：實際符合的張數＋「清除地區」（有選地區才出現） */
+.tm-results-head {
     display: flex;
-    flex-direction: column;
+    flex-wrap: wrap;
     align-items: center;
-    min-width: 150px;
-    padding: var(--space-3) var(--space-5);
-    border: 2px solid var(--color-border);
-    border-radius: var(--radius-md);
-    background: var(--color-surface);
-    color: var(--color-text);
-    font-family: inherit;
-    text-align: center;
-    white-space: normal;
-    cursor: pointer;
-    transition: background-color var(--duration-base) var(--ease), border-color var(--duration-base) var(--ease), box-shadow var(--duration-base) var(--ease), transform var(--duration-base) var(--ease);
+    gap: var(--space-2) var(--space-3);
+    margin-bottom: var(--space-3);
 }
 
-.map-tag span {
-    display: block;
-    line-height: var(--leading-snug);
-}
-
-.map-name-zh {
-    margin-bottom: var(--space-1);
-    font-size: var(--text-sm);
+.tm-count {
+    margin: 0;
     font-weight: var(--weight-semibold);
     color: var(--color-heading);
 }
 
-.map-name-ja,
-.map-name-en {
-    font-size: var(--text-xs);
-    color: var(--color-muted);
-}
-
-.map-name-en {
-    opacity: 0.8;
-}
-
-.map-tag:hover {
-    border-color: var(--color-primary);
-    background: var(--color-primary-tint);
-    transform: translateY(-1px);
-}
-
-.map-tag:focus-visible {
-    outline: none;
-    box-shadow: var(--ring-primary);
-}
-
-.map-tag.active {
-    border-color: var(--color-primary);
-    background: var(--color-primary);
-    box-shadow: var(--glow-primary);
-}
-
-.map-tag.active .map-name-zh,
-.map-tag.active .map-name-ja,
-.map-tag.active .map-name-en {
-    color: var(--color-on-primary);
-}
-
-/* 搜尋結果 */
-.results-section {
-    margin-top: var(--space-7);
-}
-
-.results-header {
-    margin-bottom: var(--space-6);
-    color: var(--color-muted);
-}
-
+/* 結果：選了等級就全部列出（不分頁）。桌機 4 欄；769–1023px 3 欄（4 欄時卡片太窄，座標與按鈕會擠成兩行）；
+   手機 2 欄（見最下面的響應式，要寫在 3 欄這條之後，同優先序靠順序勝出） */
 .treasure-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: var(--space-6);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--space-4);
     margin-bottom: var(--space-7);
 }
 
-/* 寶圖卡片：外觀與 hover 由 .card.hoverable.clickable 提供 */
-.treasure-card {
+@media (max-width: 1023px) {
+    .treasure-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+/* 寶圖卡片：外觀來自共用的 .card；整張卡不是點擊熱區，只有縮圖與兩顆按鈕可以按 */
+.tm-card-body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: var(--space-1);
+    padding: var(--space-3);
+}
+
+/* 縮圖是按鈕（點了開詳細地圖）：右上角等級，右下角放大鏡提示。比例照縮圖檔（207×174）。
+   瀏覽器給按鈕自己的字型（Arial），font: inherit 讓裡面的等級徽章沿用網站的字型 */
+.tm-thumb {
     position: relative;
-    min-height: 320px;
-}
-
-.treasure-card::before {
-    content: "點擊複製座標";
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    z-index: 1;
-    padding: var(--space-2) var(--space-4);
-    border-radius: var(--radius-sm);
-    background: var(--color-heading);
-    color: var(--color-bg);
-    font-size: var(--text-sm);
-    white-space: nowrap;
-    transform: translate(-50%, -50%);
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity var(--duration-base) var(--ease);
-}
-
-.treasure-card:hover::before {
-    opacity: 1;
-}
-
-.card-image-wrapper {
-    position: relative;
+    display: block;
     width: 100%;
-    padding-top: 75%; /* 4:3，藏寶圖截圖的比例 */
-    overflow: hidden;
+    aspect-ratio: 207 / 174;
+    padding: 0;
+    border: 0;
     background: var(--color-surface-2);
+    font: inherit;
+    cursor: zoom-in;
 }
 
-.card-image-wrapper img {
-    position: absolute;
-    top: 0;
-    left: 0;
+.tm-thumb img {
+    display: block;
     width: 100%;
     height: 100%;
-    object-fit: contain;
-    object-position: center;
+    object-fit: cover;
+}
+
+/* .card 有 overflow: hidden，畫在縮圖外面的焦點框會被切掉：往內畫，蓋在圖片上 */
+.tm-thumb:focus-visible {
+    outline: 3px solid var(--color-primary);
+    outline-offset: -3px;
 }
 
 .map-level-badge {
@@ -403,64 +360,84 @@
     color: var(--color-bg);
     font-size: var(--text-xs);
     font-weight: var(--weight-semibold);
+    line-height: 1;
 }
 
-.card-content {
+.tm-thumb-zoom {
+    position: absolute;
+    right: var(--space-2);
+    bottom: var(--space-2);
+    display: grid;
+    place-items: center;
+    width: var(--control-sm);
+    height: var(--control-sm);
+    border-radius: var(--radius-full);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-sm);
+    font-size: var(--text-sm);
+    line-height: 1;
+}
+
+/* 標題列：地名（太長就換行）＋編號 */
+.tm-card-title {
     display: flex;
-    flex: 1;
-    flex-direction: column;
-    padding: var(--space-4);
-}
-
-.map-zone {
-    margin: 0 0 var(--space-3);
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-2);
     line-height: var(--leading-snug);
 }
 
-.zone-zh {
-    margin-bottom: 2px;
-    font-size: var(--text-sm);
+.tm-zone {
+    min-width: 0;
     font-weight: var(--weight-semibold);
     color: var(--color-heading);
 }
 
-.zone-en,
-.zone-ja {
-    font-size: var(--text-xs);
+.tm-index {
+    flex: none;
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+.tm-coords {
+    margin: 0;
+    font-size: var(--text-sm);
+    color: var(--color-text);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.tm-nearest {
+    margin: 0;
+    font-size: var(--text-sm);
+    line-height: var(--leading-snug);
     color: var(--color-muted);
 }
 
-.zone-en {
-    margin-bottom: 2px;
-}
-
-.zone-ja {
-    font-style: italic;
-}
-
-.map-coords {
-    margin-bottom: var(--space-2);
-    font-family: var(--font-mono);
-    font-size: var(--text-xs);
-    color: var(--color-muted);
-}
-
-.treasure-card-actions {
+/* 按鈕列貼在卡片底部，同一排卡片的按鈕對齊 */
+.tm-card-actions {
     display: flex;
-    flex-wrap: wrap;
     gap: var(--space-2);
     margin-top: auto;
     padding-top: var(--space-2);
 }
 
-.treasure-card-actions .btn {
+/* 卡片的規則都掛在 .tm-card 底下：.btn-add-to-list 也是隊伍連線中停用加入鈕的掛鉤，別處用到時不受影響 */
+.tm-card .btn-add-to-list {
     flex: 1;
-    white-space: nowrap;
 }
 
-.load-more {
-    margin: var(--space-7) 0;
-    text-align: center;
+.tm-copy {
+    flex: none;
+}
+
+/* 已加入：成功色調。滑過去時共用 .btn:hover:not(:disabled) 會換掉底色與字色，所以 hover 也要寫一次 */
+.tm-card .btn-add-to-list.is-added,
+.tm-card .btn-add-to-list.is-added:hover:not(:disabled) {
+    border-color: var(--color-success-border);
+    background: var(--color-success-tint);
+    color: var(--color-success-text);
 }
 
 /* 我的清單：右側抽屜 */
@@ -532,10 +509,16 @@
     width: 100%;
 }
 
+/* 面板中間：組隊、隊伍狀態、頁籤與清單一起捲動，標頭與底部的「生成路線」固定在面板上下緣
+   （手機的面板只有半個畫面高，隊伍狀態加上清單放不下，「生成路線」會被擠出畫面） */
+.panel-body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+}
+
 .list-content,
 .history-content {
-    flex: 1;
-    overflow-y: auto;
     padding: var(--space-4);
 }
 
@@ -880,14 +863,16 @@
     flex-wrap: wrap;
 }
 
-/* 地圖詳細檢視 */
+/* 地圖詳細檢視：遮罩層本身交給 ModalManager（.active 顯示）。疊在路線面板（--z-modal）與格式面板（+1）之上，
+   在 toast 之下：在詳細檢視裡按「複製」的提示才看得到 */
 .map-detail-modal {
     position: fixed;
     inset: 0;
-    z-index: calc(var(--z-toast) + 1);
+    z-index: calc(var(--z-modal) + 2);
     display: none;
     align-items: center;
     justify-content: center;
+    padding: var(--space-4);
     background: var(--color-overlay);
     cursor: pointer;
 }
@@ -896,84 +881,137 @@
     display: flex;
 }
 
+/* 盒子沿用共用的 .dialog（底色、框線、圓角、陰影），改成約 880px 寬的直排：標頭、中間、動作列 */
 .map-detail-content {
-    position: relative;
     display: flex;
     flex-direction: column;
-    max-width: 90vw;
-    max-height: 90vh;
+    max-width: 880px;
+    max-height: calc(100vh - 2 * var(--space-4));
     overflow: hidden;
-    background: var(--color-surface);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-xl);
     cursor: default;
 }
 
-.map-detail-close {
-    position: absolute;
-    top: var(--space-4);
-    right: var(--space-4);
-    z-index: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
-    border: 0;
-    border-radius: var(--radius-full);
-    background: var(--color-heading);
-    color: var(--color-bg);
-    font-size: var(--text-2xl);
-    line-height: 1;
-    cursor: pointer;
-    transition: background-color var(--duration-base) var(--ease), transform var(--duration-base) var(--ease);
+/* 中間：地圖在左、資訊在右；視窗太矮時只有這一塊捲動，標頭與動作列留在原地。
+   每一列的高度照內容（max-content）：地圖是 overflow: hidden，格線預設會在高度不夠時把它那一列壓扁、讓地圖蓋住資訊；
+   手機上這一塊撐滿畫面高度，align-content: start 讓多出來的高度留在最下面，不攤到地圖與資訊兩列之間 */
+.map-detail-body {
+    display: grid;
+    flex: 1;
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+    grid-auto-rows: max-content;
+    align-content: start;
+    align-items: start;
+    gap: var(--space-5);
+    min-height: 0;
+    padding: var(--space-5);
+    overflow-y: auto;
+    overscroll-behavior: contain;
 }
 
-.map-detail-close:hover {
-    background: var(--color-primary);
-    color: var(--color-on-primary);
-    transform: translateY(-1px);
-}
-
-.map-detail-image-container {
+/* 正方形的地圖：地區地圖（正方形）與同樣大小的 canvas 疊在一起填滿；角落疊寶圖縮圖（預設左上角） */
+.map-detail-map {
     position: relative;
-    display: inline-block;
-    width: 100%;
+    aspect-ratio: 1;
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-2);
 }
 
-#mapDetailImage {
-    display: block;
+.map-detail-image,
+.map-detail-canvas {
+    position: absolute;
+    inset: 0;
     width: 100%;
-    height: auto;
-    max-height: calc(90vh - 100px);
+    height: 100%;
+}
+
+.map-detail-image {
     object-fit: contain;
 }
 
 .map-detail-canvas {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
     pointer-events: none;
 }
 
-.map-detail-info {
-    padding: var(--space-6);
-    background: var(--color-surface);
-    border-top: 1px solid var(--color-border);
+/* 寶圖縮圖：位置與大小用地圖邊長的比例（地圖是正方形，top 的 % 和 left 的 % 一樣長），
+   和 UIDialogManager.THUMB_BOX 同一組數字；預設左上角，會蓋住寶圖標記或最近傳送點時 JS 用 data-corner 換到別的角 */
+.map-detail-thumb {
+    position: absolute;
+    top: 2%;
+    left: 2%;
+    width: 34%;
+    height: auto;
+    aspect-ratio: 207 / 174;
+    border: 2px solid var(--color-surface);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-md);
+    object-fit: cover;
 }
 
-.map-detail-info h3 {
-    margin: 0 0 var(--space-2);
-    font-size: var(--text-xl);
-    color: var(--color-heading);
+.map-detail-thumb[data-corner="top-right"] {
+    right: 2%;
+    left: auto;
 }
 
-.map-detail-info p {
+.map-detail-thumb[data-corner="bottom-left"] {
+    top: auto;
+    bottom: 2%;
+}
+
+.map-detail-thumb[data-corner="bottom-right"] {
+    top: auto;
+    right: 2%;
+    bottom: 2%;
+    left: auto;
+}
+
+/* 資訊：標籤一欄、內容一欄，每一列沿用同樣的欄寬（subgrid）；沒有內容的列加 .hidden 整列藏起來 */
+.map-detail-facts {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    gap: var(--space-2) var(--space-4);
     margin: 0;
-    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    line-height: var(--leading-normal);
+}
+
+.map-detail-fact {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
+}
+
+.map-detail-fact dt {
     color: var(--color-muted);
+}
+
+.map-detail-fact dd {
+    margin: 0;
+    color: var(--color-heading);
+    overflow-wrap: anywhere;
+}
+
+/* 動作列：左邊上一張／位置／下一張，右邊複製與加入清單（外觀沿用共用的 .dialog-actions） */
+.map-detail-actions {
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.map-detail-pager,
+.map-detail-buttons {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.map-detail-position {
+    min-width: 4.5em;
+    color: var(--color-muted);
+    font-size: var(--text-sm);
+    font-variant-numeric: tabular-nums;
+    text-align: center;
 }
 
 /* 匯出／匯入對話框（JS 建立）：外觀由 .dialog-overlay / .dialog 提供，這裡管顯示切換與內距 */
@@ -1049,26 +1087,88 @@
 
 /* 響應式 */
 @media (max-width: 768px) {
-    .top-action-bar {
-        flex-direction: column;
+    /* 最上面那一列在手機上不固定，只剩步驟提示；清單入口改成底部列 */
+    .tm-top-row {
+        position: static;
     }
 
-    .action-bar-right {
-        flex-direction: column;
-        width: 100%;
-        gap: var(--space-2);
+    #listEntryDesktop {
+        display: none;
     }
 
-    .team-actions {
-        width: 100%;
-        padding-left: 0;
-        padding-top: var(--space-3);
-        border-left: 0;
+    /* 步驟之間不畫連接線，英文的三步也排得進一行 */
+    .tm-steps {
+        column-gap: var(--space-3);
+    }
+
+    .tm-steps li + li::before {
+        display: none;
+    }
+
+    /* 底部列：高度是按鈕高度加上下內距，再加 iPhone 底部的安全區（下面 body 與回到頂端按鈕用同一個算式）；
+       z-index 比頁首低一層，和桌機那一列一樣 */
+    .tm-bottom-bar {
+        position: fixed;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        z-index: calc(var(--z-header) - 1);
+        display: flex;
+        justify-content: space-between;
+        height: calc(var(--control-md) + 2 * var(--space-2) + env(safe-area-inset-bottom));
+        padding: var(--space-2) var(--container-gutter) calc(var(--space-2) + env(safe-area-inset-bottom));
+        background: var(--color-surface);
         border-top: 1px solid var(--color-border);
     }
 
-    .room-section {
-        padding: var(--space-4);
+    /* 底部列的按鈕縮小左右內距、不放圖示：英文的「Team list 3/8」加「Generate Route」在 360px 寬也排得下；
+       再窄就截短清單按鈕的標籤，不讓右邊的按鈕跑出畫面 */
+    .tm-bottom-bar .btn {
+        padding-inline: var(--space-3);
+    }
+
+    .tm-bottom-bar .btn-icon {
+        display: none;
+    }
+
+    .tm-bottom-bar [data-entry="list"],
+    .tm-bottom-bar .tm-entry-label {
+        min-width: 0;
+    }
+
+    .tm-bottom-bar .tm-entry-label {
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* 提示放不下時換行（最多兩行，仍在按鈕高度內），不把清單按鈕擠掉 */
+    .tm-bottom-bar .tm-entry-hint {
+        min-width: 0;
+        font-size: var(--text-xs);
+        text-align: right;
+    }
+
+    /* 底部列不能蓋住內容：頁面最下面留出同樣的高度。留在 body 而不是 main：
+       main 後面還有頁尾，捲到底時頁尾的最後一行也要露出來 */
+    body {
+        padding-bottom: calc(var(--control-md) + 2 * var(--space-2) + env(safe-area-inset-bottom));
+    }
+
+    /* 手機上頂端那一列不固定，不用避開 */
+    .tool-content *,
+    .source-section * {
+        scroll-margin-top: 0;
+    }
+
+    /* 鍵盤移動焦點時改成避開底部列（底部列的高度再多留 --space-2 給焦點外框）。放在根元素上，頁尾的連結也算進去；
+       底部列是 position: fixed，它自己的按鈕拿到焦點時瀏覽器不會捲動頁面 */
+    html {
+        scroll-padding-bottom: calc(var(--control-md) + 3 * var(--space-2) + env(safe-area-inset-bottom));
+    }
+
+    /* 共用的「回到頂端」按鈕移到底部列上方 */
+    .back-to-top {
+        bottom: calc(var(--control-md) + 2 * var(--space-2) + env(safe-area-inset-bottom) + var(--space-3));
     }
 
     .room-stats {
@@ -1081,58 +1181,48 @@
         flex-wrap: wrap;
     }
 
-    .filter-section {
-        padding: var(--space-5);
+    /* 等級與地區兩列不換行、橫向捲動，捲軸隱藏。捲動容器會裁掉超出邊界的部分，
+       四周留一點空間給 chip 的焦點外框（3px）與 hover 時上移的 1px */
+    .tm-chip-scroll {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        padding: var(--space-1);
+        scrollbar-width: none;
     }
 
-    .filter-header {
-        flex-direction: column;
-        text-align: center;
+    .tm-chip-scroll::-webkit-scrollbar {
+        display: none;
     }
 
-    .filter-group {
-        padding: var(--space-4);
-        margin-bottom: var(--space-6);
-    }
-
-    .filter-tags {
-        gap: var(--space-2);
-    }
-
-    .map-tags-grid {
-        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-        gap: var(--space-2);
-    }
-
-    .map-tag {
-        min-width: 0;
-        padding: var(--space-2) var(--space-3);
-    }
-
-    .map-name-zh {
-        font-size: var(--text-xs);
-    }
-
-    .section-title {
-        font-size: var(--text-xl);
+    .tm-chip-scroll .chip {
+        flex: none;
     }
 
     .treasure-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: var(--space-4);
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--space-3);
     }
 
-    .treasure-card {
-        min-height: auto;
+    /* 兩欄的卡片在 390px 寬的手機上只有 169px：內距、按鈕間距與加入鈕的左右內距縮小，
+       三種語言的「加入清單」（最長是日文）都和複製鈕排得進一行；再窄就截短加入鈕的文字（最後手段），
+       不讓複製鈕被擠出卡片（卡片的 overflow: hidden 會把它切掉） */
+    .tm-card-body {
+        padding: var(--space-2);
     }
 
-    .treasure-card-actions {
-        flex-direction: column;
-        gap: var(--space-2);
+    .tm-card-actions {
+        gap: var(--space-1);
     }
 
-    .treasure-card-actions .btn-icon {
-        display: none;
+    .tm-card .btn-add-to-list {
+        min-width: 0;
+        padding-inline: var(--space-1);
+    }
+
+    .tm-card .btn-add-to-list .btn-text {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .my-list-panel {
@@ -1153,13 +1243,53 @@
         flex-wrap: wrap;
         gap: var(--space-2);
     }
+
+    /* 詳細檢視全螢幕：標頭與動作列固定，中間（地圖在上、資訊在下）捲動 */
+    .map-detail-modal {
+        padding: 0;
+    }
+
+    .map-detail-content {
+        width: 100%;
+        max-width: none;
+        height: 100%;
+        max-height: none;
+        border: 0;
+        border-radius: 0;
+    }
+
+    .map-detail-body {
+        grid-template-columns: minmax(0, 1fr);
+        gap: var(--space-4);
+        padding: var(--space-4);
+    }
+
+    /* 動作列分兩列：上一張／位置／下一張，下面是複製與加入清單（平分寬度，放不下時各占一行）；
+       底下留 iPhone 的安全區 */
+    .map-detail-actions {
+        flex-direction: column;
+        align-items: stretch;
+        padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom));
+    }
+
+    .map-detail-pager {
+        justify-content: space-between;
+    }
+
+    .map-detail-buttons {
+        flex-wrap: wrap;
+    }
+
+    .map-detail-buttons .btn {
+        flex: 1 1 0;
+        min-width: max-content;
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {
     .my-list-panel,
     .my-list-panel.active,
-    .panel-overlay,
-    .collapse-indicator {
+    .panel-overlay {
         transition: none;
     }
 }
@@ -1171,9 +1301,5 @@
 
 .modal.hidden,
 .room-section.hidden {
-    display: none;
-}
-
-.collapsed {
     display: none;
 }

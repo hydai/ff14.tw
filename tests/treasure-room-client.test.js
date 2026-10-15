@@ -5,6 +5,8 @@ const path = require('node:path');
 const vm = require('node:vm');
 const { webcrypto } = require('node:crypto');
 
+const { createFakeDom } = require('./helpers/fake-dom.js');
+
 const TOKEN = 'a'.repeat(64);
 const sample = { id: 'g8_test_1', level: 'g8', zone: 'Test', coords: { x: 10, y: 20 } };
 const member = { id: 'creator', nickname: 'Creator', isCreator: true };
@@ -572,4 +574,244 @@ test('離開隊伍後清單面板回到清單分頁，歷史內容隱藏', () =>
     assert.equal(listButton.classList.contains('active'), true);
     assert.equal(historyButton.classList.contains('active'), false);
     assert.deepEqual([listButton.tabIndex, historyButton.tabIndex], [0, -1]);
+});
+
+test('進出隊伍時清單入口跟著換：updateRoomUI() 最後更新清單張數與入口', () => {
+    const { context, client, finder } = setup(async () => ({ body: {} }));
+    let calls = 0;
+    finder.updateListCount = () => { calls++; };
+    client.currentRoom = null;
+    vm.runInContext('RoomCollaboration.prototype.updateRoomUI.call(client)', context);
+    assert.equal(calls, 1);
+});
+
+// ---------- 清單面板裡的組隊：焦點（fake-dom） ----------
+// 照 index.html 做出清單面板（標頭的匯出…關閉、組隊按鈕、隊伍狀態、頁籤、清單）、三個隊伍對話框與面板外的一顆按鈕，
+// fake-dom 裡載入真正的 list-manager.js、room-map-sync.js、room-collaboration.js 與 script.js（清單面板的開關、隊伍同步）。
+// finder 不跑建構函式，清單張數、卡片按鈕、清單內容換成空函式（同上面的 setup()）；client.init() 由測試自己呼叫（掛事件、處理網址的 ?room=）。
+// request() 換成 respond(path, options)：回傳值就是伺服器的回應，丟出的錯誤就是失敗。
+// 按鈕與輸入框照 Chrome 的行為：拿著焦點時一停用，當場就失去焦點（activeElement 退回 body）；停用的、自己或祖先帶 .hidden 的，focus() 什麼都不做。
+// 少了這些，「連線中焦點掉到 body」與「焦點還給已經藏起來的按鈕」在測試裡都不會發生
+function createTeamPanel({ url = 'https://ff14.tw/tools/treasure-map-finder/', respond }) {
+    const dom = createFakeDom({ url });
+    const { el } = dom;
+    const storage = new Map();
+    const button = (id, text) => el('button', { type: 'button', id, class: 'btn' }, text);
+    const panel = el('div', { id: 'myListPanel', class: 'my-list-panel', role: 'dialog', inert: true },
+        el('div', { class: 'panel-header' }, button('exportListBtn', '匯出'), button('importListBtn', '匯入'), button('clearAllBtn', '清空'), button('closePanelBtn', '×')),
+        el('div', { class: 'panel-body' },
+            el('div', { id: 'teamActions', class: 'team-actions' }, button('createRoomBtn', '建立組隊'), button('joinRoomBtn', '加入隊伍')),
+            el('div', { id: 'roomSection', class: 'room-section hidden' },
+                el('div', { id: 'roomStatus', class: 'room-status hidden' },
+                    el('span', { id: 'roomCode' }), button('copyRoomCodeBtn', '📋'),
+                    el('span', { id: 'roomMembers' }), el('span', { id: 'lastActivity' }), el('span', { id: 'roomTTL' }),
+                    el('span', { id: 'userNickname' }), button('editNicknameBtn', '✏️'), button('leaveRoomBtn', '離開隊伍'),
+                    el('div', { id: 'membersList' }))),
+            el('div', { id: 'panelTabs', class: 'panel-tabs hidden' },
+                el('button', { type: 'button', class: 'tab-btn active', 'data-tab': 'list' }, '清單'),
+                el('button', { type: 'button', class: 'tab-btn', 'data-tab': 'history' }, '歷史')),
+            el('div', { id: 'listContent' }),
+            el('div', { id: 'historyContent', class: 'hidden' })),
+        el('div', { class: 'panel-footer' }, button('generateRouteBtn', '生成路線')));
+    const dialog = (id, ...children) => el('div', { id, class: 'modal dialog-overlay hidden', role: 'dialog' }, ...children);
+    for (const element of [
+        button('pageButton', '面板外的按鈕'),
+        el('div', { id: 'panelOverlay', class: 'panel-overlay' }),
+        panel,
+        dialog('joinRoomModal', button('closeJoinModalBtn', '×'), el('input', { id: 'roomCodeInput' }), button('cancelJoinBtn', '取消'), button('confirmJoinBtn', '加入')),
+        dialog('editNicknameModal', button('closeNicknameModalBtn', '×'), el('input', { id: 'nicknameInput' }), button('cancelNicknameBtn', '取消'), button('confirmNicknameBtn', '確認')),
+        dialog('leaveRoomModal', button('closeLeaveModalBtn', '×'), button('leaveKeepListBtn', '保留清單並離開'), button('leaveClearListBtn', '清空清單並離開'), button('cancelLeaveBtn', '取消'))
+    ]) {
+        dom.document.body.appendChild(element);
+    }
+
+    const rendered = element => {
+        for (let node = element; node?.nodeType === 1; node = node.parentNode) if (node.classList.contains('hidden')) return false;
+        return true;
+    };
+    for (const control of [...dom.document.querySelectorAll('button'), ...dom.document.querySelectorAll('input')]) {
+        let disabled = false;
+        const focus = control.focus;
+        Object.defineProperty(control, 'disabled', {
+            get: () => disabled,
+            set(value) {
+                disabled = Boolean(value);
+                if (disabled) control.blur();
+            }
+        });
+        control.focus = () => {
+            if (!disabled && rendered(control)) focus.call(control);
+        };
+    }
+    // fake-dom 不支援逗號分隔的選擇器清單（setConnecting() 用一個清單選出要停用的按鈕）：拆開各查一次再合併
+    const querySelectorAll = dom.document.querySelectorAll.bind(dom.document);
+    dom.document.querySelectorAll = selector => [...new Set(selector.split(',').flatMap(part => querySelectorAll(part.trim())))];
+
+    // ModalManager 替身：照真正的順序，show() 記下開啟前的焦點、把下面那一層設成 inert、把焦點移到第一個可聚焦的元素；
+    // hide() 解除下面那一層的 inert、把焦點還給開啟前的元素（還不回去就什麼都不做，同 Chrome），再呼叫 onClose
+    const stack = [];
+    const focusable = root => root.children.flatMap(child => (child.classList.contains('hidden')
+        ? []
+        : [...(['BUTTON', 'INPUT'].includes(child.tagName) && !child.disabled ? [child] : []), ...focusable(child)]));
+    class FakeModalManager {
+        static topmost() { return stack.at(-1) ?? null; }
+
+        constructor() {
+            this.activeModal = null;
+            this.previousFocus = null;
+            this.options = {};
+        }
+
+        show(element, options = {}) {
+            if (this.activeModal === element) return;
+            if (this.activeModal) this.hide();
+            if (stack.length) stack.at(-1).activeModal.inert = true;
+            Object.assign(this, { activeModal: element, previousFocus: dom.document.activeElement, options });
+            stack.push(this);
+            (focusable(element)[0] ?? element).focus();
+        }
+
+        hide() {
+            if (!this.activeModal) return;
+            while (stack.at(-1) !== this) stack.at(-1).hide();
+            const { previousFocus, options } = this;
+            stack.pop();
+            if (stack.length) stack.at(-1).activeModal.inert = false;
+            Object.assign(this, { activeModal: null, previousFocus: null, options: {} });
+            if (previousFocus && dom.document.body.contains(previousFocus)) previousFocus.focus();
+            options.onClose?.();
+        }
+    }
+
+    Object.assign(dom.window, {
+        URLSearchParams,
+        crypto: webcrypto,
+        confirm: () => false,
+        console: { log() {}, warn() {}, error() {} },
+        history: { pushState(state, title, next) { dom.window.location = new URL(String(next)); } },
+        localStorage: { getItem: key => storage.get(key) ?? null, setItem: (key, value) => storage.set(key, String(value)), removeItem: key => storage.delete(key) },
+        i18n: { getCurrentLanguage: () => 'zh', onLanguageChange() {} },
+        FF14Utils: { getI18nText: (key, fallback, values = {}) => fallback.replace(/\{(\w+)\}/g, (_, name) => values[name]), showToast() {} },
+        ModalManager: FakeModalManager
+    });
+    for (const file of ['assets/js/security-utils.js', 'tools/treasure-map-finder/list-manager.js', 'tools/treasure-map-finder/room-map-sync.js', 'tools/treasure-map-finder/room-collaboration.js', 'tools/treasure-map-finder/script.js']) {
+        dom.load(file);
+    }
+
+    const finder = vm.runInContext('Object.create(TreasureMapFinder.prototype)', dom.window);
+    Object.assign(finder, {
+        maps: [],
+        listManager: vm.runInContext('new ListManager()', dom.window),
+        modalManager: new FakeModalManager(),
+        elements: { myListPanel: panel },
+        ready: Promise.resolve(),
+        updateListCount() {},
+        updateCardButtons() {},
+        renderMyList() {}
+    });
+    const RoomCollaboration = vm.runInContext('RoomCollaboration', dom.window);
+    const { init } = RoomCollaboration.prototype;
+    RoomCollaboration.prototype.init = function () {};
+    const client = new RoomCollaboration(finder);
+    RoomCollaboration.prototype.init = init;
+    finder.setRoomCollaboration(client);
+    client.request = async (path, options = {}) => respond(path, options);
+    client.startPolling = () => {};
+    return { dom, finder, client, $: id => dom.document.getElementById(id), focused: () => dom.document.activeElement };
+}
+
+// 焦點應該在 #id 上；比身分、訊息只寫 id（assert.equal 直接比節點，失敗時會把整頁的 DOM 展開成訊息）
+function assertFocusOn(page, id, message) {
+    const actual = page.focused();
+    assert.ok(actual === page.$(id), `${message}：焦點在 ${actual.id ? `#${actual.id}` : `<${actual.tagName.toLowerCase()}>`}，應該在 #${id}`);
+}
+
+const roomError = (status, message) => Object.assign(new Error(message), { status });
+const createAndLeave = (path, { method }) => {
+    if (path === '/rooms' && method === 'POST') return { ...room(), memberId: member.id, memberToken: TOKEN };
+    if (path === '/rooms/ABC123/leave' && method === 'POST') return { message: 'Left' };
+    throw new Error(`unexpected ${method} ${path}`);
+};
+const joinable = (path, { method = 'GET' }) => {
+    if (path === '/rooms/ABC123' && method === 'GET') return room();
+    if (path === '/rooms/ABC123/join' && method === 'POST') return { room: room([], [member, newMember]), newMember, memberToken: TOKEN };
+    throw new Error(`unexpected ${method} ${path}`);
+};
+
+test('建立組隊成功：焦點移到隊伍狀態的「複製隊伍代號」（連線中「建立組隊」停用、焦點退回 body）', async () => {
+    const page = createTeamPanel({ respond: createAndLeave });
+    await page.client.init();
+    page.finder.handleListEntry('team');
+    assertFocusOn(page, 'createRoomBtn', '按「組隊」打開面板');
+    const creating = page.client.createRoom();
+    assert.ok(page.focused() === page.dom.document.body, '連線中「建立組隊」停用，焦點當場退回 body');
+    await creating;
+    assert.equal(page.client.currentRoom.roomCode, 'ABC123');
+    assert.equal(page.$('teamActions').classList.contains('hidden'), true);
+    assertFocusOn(page, 'copyRoomCodeBtn', '建立成功');
+});
+
+test('建立組隊失敗：焦點回到「建立組隊」', async () => {
+    const page = createTeamPanel({ respond: () => { throw roomError(503, 'Service unavailable'); } });
+    await page.client.init();
+    page.finder.handleListEntry('team');
+    await page.client.createRoom();
+    assert.equal(page.client.currentRoom, null);
+    assertFocusOn(page, 'createRoomBtn', '建立失敗');
+});
+
+test('加入隊伍成功：焦點移到「複製隊伍代號」；失敗：焦點回到「加入隊伍」', async () => {
+    for (const [respond, expected] of [[joinable, 'copyRoomCodeBtn'], [() => { throw roomError(404, 'Room not found'); }, 'joinRoomBtn']]) {
+        const page = createTeamPanel({ respond });
+        await page.client.init();
+        page.finder.openListPanel();
+        page.$('joinRoomBtn').focus();
+        page.$('joinRoomBtn').click();
+        assertFocusOn(page, 'roomCodeInput', '打開加入隊伍對話框');
+        page.$('roomCodeInput').value = 'abc123';
+        await page.client.confirmJoinRoom();
+        assert.equal(page.client.currentRoom?.roomCode ?? null, expected === 'copyRoomCodeBtn' ? 'ABC123' : null);
+        assertFocusOn(page, expected, expected === 'copyRoomCodeBtn' ? '加入成功' : '加入失敗');
+    }
+});
+
+test('離開隊伍（保留或清空清單）：焦點回到又出現的「建立組隊」，不是已經藏起來的離開鈕', async () => {
+    for (const keepList of [true, false]) {
+        const page = createTeamPanel({ respond: createAndLeave });
+        await page.client.init();
+        page.finder.handleListEntry('team');
+        await page.client.createRoom();
+        page.$('leaveRoomBtn').focus();
+        page.$('leaveRoomBtn').click();
+        const choice = keepList ? 'leaveKeepListBtn' : 'leaveClearListBtn';
+        page.$(choice).focus();
+        await page.client.leaveRoom(keepList);
+        assert.equal(page.client.currentRoom, null);
+        assert.equal(page.$('leaveRoomModal').classList.contains('hidden'), true);
+        assertFocusOn(page, 'createRoomBtn', choice);
+    }
+});
+
+test('用網址 ?room= 在載入時自動加入：不移動焦點（面板關著；加入途中才打開面板也一樣）', async () => {
+    const url = 'https://ff14.tw/tools/treasure-map-finder/?room=ABC123';
+    const closed = createTeamPanel({ url, respond: joinable });
+    closed.$('pageButton').focus();
+    await closed.client.init();
+    assert.equal(closed.client.currentRoom.roomCode, 'ABC123');
+    assertFocusOn(closed, 'pageButton', '面板關著');
+
+    let release;
+    const preview = new Promise(resolve => { release = resolve; });
+    const opened = createTeamPanel({ url, respond: async (path, options) => {
+        if (path === '/rooms/ABC123') await preview;
+        return joinable(path, options);
+    } });
+    const joining = opened.client.init();
+    await new Promise(resolve => setImmediate(resolve));
+    opened.finder.openListPanel();
+    assertFocusOn(opened, 'exportListBtn', '加入途中打開面板');
+    release();
+    await joining;
+    assert.equal(opened.client.currentRoom.roomCode, 'ABC123');
+    assertFocusOn(opened, 'exportListBtn', '加入途中打開面板，加入完成後');
 });

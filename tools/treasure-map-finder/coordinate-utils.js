@@ -68,6 +68,19 @@ class CoordinateUtils {
     }
 
     /**
+     * 卡片與詳細檢視顯示的座標：一律一位小數（17 → 17.0），預設不含 Z
+     * @param {Object} coords - 座標物件 {x, y, z}
+     * @param {Object} [options]
+     * @param {boolean} [options.withZ=false] - 是否加上 Z 座標
+     * @returns {string} 例如 'X 13.7・Y 14.2'，withZ 時 'X 13.7・Y 14.2・Z 1.7'
+     */
+    static formatXY(coords, { withZ = false } = {}) {
+        const format = value => Number(value).toFixed(1);
+        const text = `X ${format(coords.x)}・Y ${format(coords.y)}`;
+        return withZ ? `${text}・Z ${format(coords.z || this.CONSTANTS.DEFAULT_Z)}` : text;
+    }
+
+    /**
      * 驗證座標是否有效
      * @param {Object} coords - 座標物件
      * @returns {boolean} 是否有效
@@ -121,16 +134,6 @@ class CoordinateUtils {
         const dy = coord2.y - coord1.y;
         const dz = (coord2.z || 0) - (coord1.z || 0);
         return Math.sqrt(dx * dx + dy * dy + dz * dz);
-    }
-
-    /**
-     * 複製座標到剪貼簿
-     * @param {Object} coords - 座標物件
-     * @returns {Promise<void>}
-     */
-    static async copyCoordinatesToClipboard(coords) {
-        const command = this.formatCoordinatesAsCommand(coords);
-        await navigator.clipboard.writeText(command);
     }
 
     /**

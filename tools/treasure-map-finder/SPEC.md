@@ -110,7 +110,7 @@ const zones = [
       <p class="coords-display">座標：X: 24.5 Y: 26.3</p>
       <div class="modal-actions">
         <button class="btn-copy-coords">
-          複製座標指令 /pos 24.5 26.3
+          複製隊伍頻道句子 /p G12 Eastern Thanalan (24.5, 26.3) 最近：{最近傳送點}
         </button>
         <button class="btn-add-modal">加入清單</button>
       </div>
@@ -281,7 +281,7 @@ showError('載入寶圖資料失敗，請重新整理頁面再試。');
 - ✅ 12個主要地區篩選
 - ✅ 卡片式寶圖展示（縮圖、等級、座標）
 - ✅ 個人清單管理（新增、移除、清空）
-- ✅ 座標複製功能（/pos X Y Z 指令）
+- ✅ 座標複製功能（複製成貼到隊伍頻道的句子：/p 等級 地名 (X, Y) 最近：傳送點）
 - ✅ 響應式設計
 - ✅ LocalStorage 資料持久化
 - ✅ 載入更多功能（初始24個）

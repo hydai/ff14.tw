@@ -180,7 +180,8 @@
           "filePrefix": "elpis",
           "aetherytes": [
             "the_twelve_wonders",
-            "anagnorisis"
+            "anagnorisis",
+            "poieten_oikos"
           ]
         },
         {
@@ -517,9 +518,7 @@
           },
           "normalizedName": "easternthanalan",
           "filePrefix": "easternthanalan",
-          "aetherytes": [
-            "camp_drybone"
-          ]
+          "aetherytes": []
         }
       ]
     },
@@ -542,9 +541,7 @@
           },
           "normalizedName": "westernlanoscea",
           "filePrefix": "westernlanoscea",
-          "aetherytes": [
-            "aleport"
-          ]
+          "aetherytes": []
         }
       ]
     }
@@ -649,7 +646,7 @@
       "thavnair": "ilsabard",
       "garlemald": "ilsabard",
       "marelamentorum": "ilsabard",
-      "elpis": "ilsabard",
+      "elpis": "elpis",
       "ultimathule": "ilsabard",
       "lakeland": "norvrandt",
       "kholusia": "norvrandt",
