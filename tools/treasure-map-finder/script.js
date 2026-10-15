@@ -11,6 +11,7 @@ class TreasureMapFinder {
         this.aetheryteIcon = null; // 傳送點圖標
         this.roomCollaboration = null; // 協作功能實例
         this.lastListCount = null; // updateListCount() 上一次的張數（還沒呼叫過是 null，第一次只記下、不唸）
+        this.storageWarningShown = false; // 「瀏覽器不允許儲存資料」的提示這個頁面跳過了沒有（見 notifyIfUnsaved）
 
         // DOM 元素快取
         this.elements = {
@@ -491,6 +492,14 @@ class TreasureMapFinder {
         return false;
     }
 
+    // 清單操作成功、但瀏覽器沒讓寫入（封鎖網站資料、空間滿了；ListManager 回報 saved: false）：畫面和記憶體裡的清單照常更新，
+    // 只是關掉頁面就沒了。每個頁面只提示一次，之後的操作不再跳。只認 saved === false：沒有 saved（失敗的操作、測試替身）不提示
+    notifyIfUnsaved(result) {
+        if (result.saved !== false || this.storageWarningShown) return;
+        this.storageWarningShown = true;
+        FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_storage_blocked', '瀏覽器不允許儲存資料：清單只會保留到關閉這個頁面。'), 'warning');
+    }
+
     toggleMapInList(map) {
         if (!this.canEditList()) return;
         // 使用 ListManager 處理清單操作
@@ -516,6 +525,7 @@ class TreasureMapFinder {
         this.updateListCount();
         this.updateCardButtons();
         this.renderMyList();
+        this.notifyIfUnsaved(result);
         
         // 同步到房間
         if (this.roomCollaboration?.currentRoom) {
@@ -725,6 +735,7 @@ class TreasureMapFinder {
 
             if (result.success) {
                 FF14Utils.showToast(result.message, 'info');
+                this.notifyIfUnsaved(result);
                 this.updateListCount();
                 this.updateCardButtons();
                 this.renderMyList();
@@ -756,6 +767,7 @@ class TreasureMapFinder {
 
             if (result.success) {
                 FF14Utils.showToast(result.message, 'success');
+                this.notifyIfUnsaved(result);
                 this.updateListCount();
                 this.updateCardButtons();
                 this.renderMyList();
@@ -964,6 +976,7 @@ class TreasureMapFinder {
             
             if (result.success) {
                 FF14Utils.showToast(result.message, 'success');
+                this.notifyIfUnsaved(result);
                 this.updateListCount();
                 this.updateCardButtons();
                 this.renderMyList();

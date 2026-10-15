@@ -1800,6 +1800,20 @@ test('瀏覽器封鎖儲存空間：頁面照常載入，顯示「先選寶圖�
     assert.equal($('teleportFormat').value, DEFAULT_FORMATS.teleport);
 });
 
+test('瀏覽器封鎖網站資料：卡片的加入、移除照常運作，入口與按鈕都更新，只提示一次記不住', async () => {
+    const page = await startPage({ storageThrows: true });
+    page.level('g17').click();
+    const [first, second] = page.$('treasureGrid').querySelectorAll('.btn-add-to-list');
+    first.click();
+    second.click();
+    assert.equal(page.finder.listManager.getLength(), 2);
+    assert.equal(first.dataset.state, 'added');
+    assert.equal(page.$('listEntryDesktop').querySelector('.tm-entry-label').textContent, '📋 清單 2 張');
+    first.click();
+    assert.equal(page.finder.listManager.getLength(), 1);
+    assert.deepEqual(page.toasts, [{ message: '瀏覽器不允許儲存資料：清單只會保留到關閉這個頁面。', type: 'warning' }]);
+});
+
 test('儲存自訂格式：存得起來就記住；瀏覽器封鎖儲存空間時這次照新的格式，並提示存不起來', async () => {
     const custom = { teleport: '/p TP <傳送點> <座標>', map: '/p <寶圖等級> <地區> <座標>' };
     for (const storageThrows of [false, true]) {

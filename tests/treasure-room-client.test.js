@@ -181,17 +181,17 @@ test('an import exceeding the operation limit leaves concurrent pending edits in
     assert.match(state.toasts.at(-1), /等待隊伍同步/);
 });
 
-test('personal imports can exceed the room limit and storage failure leaves the previous list intact', async () => {
+test('personal imports can exceed the room limit; when storage rejects the write the import still applies in memory', async () => {
     const state = setup(() => { throw new Error('Personal imports must not call the API'); });
     await state.finder.importFromText(JSON.stringify({ maps: importMaps(17) }));
     assert.equal(state.finder.listManager.getLength(), 17);
-    const before = state.finder.listManager.getList();
     const stored = [...state.storage];
     state.localStorage.setItem = () => { throw new Error('Quota exceeded'); };
     await state.finder.importFromText(JSON.stringify({ maps: [sample] }));
-    assert.deepEqual(state.finder.listManager.getList(), before);
+    assert.deepEqual(Array.from(state.finder.listManager.getList(), map => map.id), [sample.id]);
     assert.deepEqual([...state.storage], stored);
     assert.equal(state.requests.length, 0);
+    assert.match(state.toasts.at(-1), /瀏覽器不允許儲存資料/);
 });
 
 test('failed room creation preserves the personal list and retries the same request ID', async () => {
