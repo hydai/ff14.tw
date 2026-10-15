@@ -556,18 +556,21 @@ test('離開隊伍後清單面板回到清單分頁，歷史內容隱藏', () =>
         button.setAttribute('aria-selected', active);
         return button;
     };
-    // 離開前停在「歷史」分頁：歷史鈕為作用中，清單內容被隱藏、歷史內容顯示
+    // 離開前停在「歷史」分頁：歷史鈕為作用中，清單內容與下面的動作列被隱藏、歷史內容顯示
     const listButton = tabButton('list', false), historyButton = tabButton('history', true);
     context.document.querySelectorAll = selector => selector === '.tab-btn' ? [listButton, historyButton] : [];
     const listContent = context.document.getElementById('listContent');
+    const listActions = context.document.getElementById('listActions');
     const historyContent = context.document.getElementById('historyContent');
     listContent.classList.add('hidden');
+    listActions.classList.add('hidden');
 
     client.currentRoom = null;
     client.elements = { roomSection: fakeElement(), roomStatus: fakeElement() };
     vm.runInContext('RoomCollaboration.prototype.updateRoomUI.call(client)', context);
 
     assert.equal(listContent.classList.contains('hidden'), false);
+    assert.equal(listActions.classList.contains('hidden'), false, '動作列跟著清單顯示');
     assert.equal(historyContent.classList.contains('hidden'), true);
     assert.equal(listButton.getAttribute('aria-selected'), 'true');
     assert.equal(historyButton.getAttribute('aria-selected'), 'false');
@@ -586,7 +589,7 @@ test('進出隊伍時清單入口跟著換：updateRoomUI() 最後更新清單�
 });
 
 // ---------- 清單面板裡的組隊：焦點（fake-dom） ----------
-// 照 index.html 做出清單面板（標頭的匯出…關閉、組隊按鈕、隊伍狀態、頁籤、清單）、三個隊伍對話框與面板外的一顆按鈕，
+// 照 index.html 做出清單面板（標頭的關閉、組隊按鈕、隊伍狀態、頁籤、清單與它下面的動作列）、三個隊伍對話框與面板外的一顆按鈕，
 // fake-dom 裡載入真正的 list-manager.js、room-map-sync.js、room-collaboration.js 與 script.js（清單面板的開關、隊伍同步）。
 // finder 不跑建構函式，清單張數、卡片按鈕、清單內容換成空函式（同上面的 setup()）；client.init() 由測試自己呼叫（掛事件、處理網址的 ?room=）。
 // request() 換成 respond(path, options)：回傳值就是伺服器的回應，丟出的錯誤就是失敗。
@@ -598,7 +601,7 @@ function createTeamPanel({ url = 'https://ff14.tw/tools/treasure-map-finder/', r
     const storage = new Map();
     const button = (id, text) => el('button', { type: 'button', id, class: 'btn' }, text);
     const panel = el('div', { id: 'myListPanel', class: 'my-list-panel', role: 'dialog', inert: true },
-        el('div', { class: 'panel-header' }, button('exportListBtn', '匯出'), button('importListBtn', '匯入'), button('clearAllBtn', '清空'), button('closePanelBtn', '×')),
+        el('div', { class: 'panel-header' }, button('closePanelBtn', '×')),
         el('div', { class: 'panel-body' },
             el('div', { id: 'teamActions', class: 'team-actions' }, button('createRoomBtn', '建立組隊'), button('joinRoomBtn', '加入隊伍')),
             el('div', { id: 'roomSection', class: 'room-section hidden' },
@@ -611,6 +614,7 @@ function createTeamPanel({ url = 'https://ff14.tw/tools/treasure-map-finder/', r
                 el('button', { type: 'button', class: 'tab-btn active', 'data-tab': 'list' }, '清單'),
                 el('button', { type: 'button', class: 'tab-btn', 'data-tab': 'history' }, '歷史')),
             el('div', { id: 'listContent' }),
+            el('div', { id: 'listActions', class: 'tm-list-actions' }, button('importListBtn', '匯入'), button('clearAllBtn', '清空清單')),
             el('div', { id: 'historyContent', class: 'hidden' })),
         el('div', { class: 'panel-footer' }, button('generateRouteBtn', '生成路線')));
     const dialog = (id, ...children) => el('div', { id, class: 'modal dialog-overlay hidden', role: 'dialog' }, ...children);
@@ -809,9 +813,9 @@ test('用網址 ?room= 在載入時自動加入：不移動焦點（面板關著
     const joining = opened.client.init();
     await new Promise(resolve => setImmediate(resolve));
     opened.finder.openListPanel();
-    assertFocusOn(opened, 'exportListBtn', '加入途中打開面板');
+    assertFocusOn(opened, 'closePanelBtn', '加入途中打開面板');
     release();
     await joining;
     assert.equal(opened.client.currentRoom.roomCode, 'ABC123');
-    assertFocusOn(opened, 'exportListBtn', '加入途中打開面板，加入完成後');
+    assertFocusOn(opened, 'closePanelBtn', '加入途中打開面板，加入完成後');
 });

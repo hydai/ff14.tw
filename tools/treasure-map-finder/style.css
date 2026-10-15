@@ -478,6 +478,15 @@
     transition: transform var(--duration-slow) var(--ease), visibility 0s;
 }
 
+/* 面板裡的一頁（清單頁）：撐滿面板，標頭與底部固定、中間的 .panel-body 捲動。
+   之後用 .hidden 切換：這裡的 display 和 .hidden 同優先權，靠 .hidden 寫在最後勝出 */
+.tm-panel-view {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+
 /* 抽屜、路線面板、格式面板共用的標題列 */
 .panel-header {
     display: flex;
@@ -495,16 +504,26 @@
     color: var(--color-heading);
 }
 
-.panel-header-actions {
+/* 清單頁的標頭左邊：看得到的標題，旁邊是張數 */
+.tm-panel-heading {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    align-items: baseline;
     gap: var(--space-2);
-    width: 100%;
+    min-width: 0;
 }
 
-/* 面板中間：組隊、隊伍狀態、頁籤與清單一起捲動，標頭與底部的「生成路線」固定在面板上下緣
-   （手機的面板只有半個畫面高，隊伍狀態加上清單放不下，「生成路線」會被擠出畫面） */
+.tm-panel-heading h3 {
+    font-size: var(--text-lg);
+}
+
+.tm-panel-count {
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+/* 面板中間：組隊、隊伍狀態、頁籤、清單與動作列一起捲動，標頭與底部的「生成路線」固定在面板上下緣
+   （手機的面板沒有整個畫面高，隊伍狀態加上清單放不下，「生成路線」會被擠出畫面） */
 .panel-body {
     flex: 1;
     min-height: 0;
@@ -516,13 +535,20 @@
     padding: var(--space-4);
 }
 
+/* 清單的每一列：縮圖、兩行文字（等級、地名與編號；座標與最近傳送點）、右邊的 ✕ */
+.tm-list-items {
+    display: grid;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
 .list-item {
     display: flex;
-    flex-direction: row;
     align-items: center;
-    gap: var(--space-4);
-    padding: var(--space-3);
-    margin-bottom: var(--space-3);
+    gap: var(--space-3);
+    padding: var(--space-2) var(--space-3);
     background: var(--color-surface-2);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
@@ -534,13 +560,10 @@
     border-color: var(--color-border-strong);
 }
 
-.list-item:last-child {
-    margin-bottom: 0;
-}
-
 .list-item img {
-    width: 60px;
-    height: 60px;
+    flex: none;
+    width: 48px;
+    height: 48px;
     border-radius: var(--radius-sm);
     object-fit: cover;
 }
@@ -550,23 +573,48 @@
     min-width: 0;
 }
 
-.item-level {
-    margin-bottom: var(--space-1);
+.item-title,
+.item-sub {
+    margin: 0;
 }
 
-.item-zone {
-    display: block;
-    margin-bottom: 2px;
+.item-title {
+    font-weight: var(--weight-semibold);
+    line-height: var(--leading-snug);
+    color: var(--color-heading);
+}
+
+.item-index {
     font-size: var(--text-sm);
+    font-weight: var(--weight-normal);
+    color: var(--color-muted);
+    font-variant-numeric: tabular-nums;
 }
 
-.item-coords {
-    font-size: var(--text-xs);
+.item-sub {
+    font-size: var(--text-sm);
     color: var(--color-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+.list-item .btn-remove {
+    flex: none;
 }
 
 .list-item .btn-remove:hover:not(:disabled) {
     color: var(--color-danger-text);
+}
+
+/* 清單下面的動作列：放不下時換行，「清空清單」靠右 */
+.tm-list-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    padding: 0 var(--space-4) var(--space-4);
+}
+
+#clearAllBtn {
+    margin-left: auto;
 }
 
 /* 清單／歷史頁籤：外觀由 .tabs / .tab 提供 */
@@ -598,29 +646,22 @@
     flex: 1;
 }
 
+/* 清單頁的底部：一列，左邊張數、右邊唯一的主要按鈕「生成路線」 */
 .panel-footer {
     display: flex;
-    flex-direction: column;
-    gap: var(--space-4);
-    padding: var(--space-4) var(--space-6);
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-6);
     background: var(--color-surface-2);
     border-top: 1px solid var(--color-border);
 }
 
-.panel-footer p {
+.tm-footer-count {
     margin: 0;
-    text-align: center;
     font-weight: var(--weight-semibold);
     color: var(--color-heading);
-}
-
-/* 總計行的三段文字各自是 data-i18n 節點，靠 margin 取代原本的空白字元 */
-#totalCount {
-    margin: 0 var(--space-1);
-}
-
-.panel-footer .btn {
-    width: 100%;
+    font-variant-numeric: tabular-nums;
 }
 
 /* 路線面板與格式面板：置中的固定面板（沒有遮罩，沿用原行為），以 .active 顯示 */
@@ -1212,23 +1253,23 @@
         text-overflow: ellipsis;
     }
 
+    /* 清單面板從底部滑上來、佔畫面 85% 高；第二行的 dvh 給支援的瀏覽器（網址列收起、展開時跟著變），
+       不支援的照第一行的 vh。上方兩角圓角：標頭有自己的底色，overflow: hidden 才不會把圓角蓋掉 */
     .my-list-panel {
         top: auto;
         right: 0;
         bottom: 0;
         left: 0;
         width: 100%;
-        height: 50vh;
+        height: 85vh;
+        height: 85dvh;
+        border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+        overflow: hidden;
         transform: translateY(100%);
     }
 
     .my-list-panel.active {
         transform: translateY(0);
-    }
-
-    .panel-header-actions {
-        flex-wrap: wrap;
-        gap: var(--space-2);
     }
 
     /* 詳細檢視全螢幕：標頭與動作列固定，中間（地圖在上、資訊在下）捲動 */

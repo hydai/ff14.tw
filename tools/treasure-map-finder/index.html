@@ -111,91 +111,94 @@
     
     <!-- 我的清單面板 -->
     <div class="my-list-panel" id="myListPanel" role="dialog" aria-modal="true" aria-labelledby="myListPanel-title" inert>
-        <div class="panel-header">
-            <h3 id="myListPanel-title" class="visually-hidden" data-i18n="treasure_map_my_list">我的清單</h3>
-            <div class="panel-header-actions">
-                <button class="btn btn-secondary btn-sm" id="exportListBtn" title="匯出清單" data-i18n="treasure_map_export_title" data-i18n-attr="title">
-                    <span class="btn-icon">📤</span> <span data-i18n="treasure_map_export">匯出</span>
-                </button>
-                <button class="btn btn-secondary btn-sm" id="importListBtn" title="匯入清單" data-i18n="treasure_map_import_title" data-i18n-attr="title">
-                    <span class="btn-icon">📥</span> <span data-i18n="treasure_map_import">匯入</span>
-                </button>
-                <input type="file" id="importFileInput" accept=".json,.txt" class="hidden">
-                <button class="btn btn-danger btn-sm" id="clearAllBtn" title="清空全部" data-i18n="treasure_map_clear_all_title" data-i18n-attr="title">
-                    <span class="btn-icon">🗑️</span> <span data-i18n="treasure_map_clear_all">清空</span>
-                </button>
+        <!-- 清單頁：標頭、中間、底部 -->
+        <div class="tm-panel-view" id="listView">
+            <!-- 標題與張數跟著清單張數、是否在隊伍裡換字，由 JavaScript 填入（不掛 data-i18n）；用 ✕ 移除到清單空了時，焦點移到標題 -->
+            <div class="panel-header">
+                <div class="tm-panel-heading">
+                    <h3 id="myListPanel-title" tabindex="-1">我的清單</h3>
+                    <span class="tm-panel-count" id="listHeaderCount">0 張</span>
+                </div>
                 <button class="btn btn-close" id="closePanelBtn" aria-label="關閉" data-i18n="treasure_map_close" data-i18n-attr="aria-label">×</button>
             </div>
-        </div>
-        <!-- 標頭與底部（總計、生成路線）固定，中間的組隊、隊伍狀態、頁籤與清單一起捲動 -->
-        <div class="panel-body">
-            <!-- 組隊：不在隊伍裡時顯示（面板的主要按鈕留給下面的「生成路線」） -->
-            <div class="team-actions" id="teamActions">
-                <button class="btn btn-secondary" id="createRoomBtn">
-                    <span class="btn-icon">🏠</span> <span data-i18n="treasure_map_create_room">建立組隊</span>
-                </button>
-                <button class="btn btn-secondary" id="joinRoomBtn">
-                    <span class="btn-icon">🚪</span> <span data-i18n="treasure_map_join_room">加入隊伍</span>
-                </button>
-            </div>
-            <!-- 隊伍狀態：已加入隊伍時顯示 -->
-            <div class="room-section hidden" id="roomSection">
-                <div class="room-status hidden" id="roomStatus">
-                    <div class="room-info">
-                        <span class="room-label" data-i18n="treasure_map_room_code">隊伍代號：</span>
-                        <span class="room-code" id="roomCode">A3B7K9</span>
-                        <button class="btn btn-sm" id="copyRoomCodeBtn" title="複製隊伍代號" data-i18n="treasure_map_copy_room_code" data-i18n-attr="title">
-                            <span class="btn-icon">📋</span>
-                        </button>
-                    </div>
-                    <div class="room-stats">
-                        <span class="room-stat">
-                            <span class="stat-icon">👥</span>
-                            <span id="roomMembers">1/8人</span>
-                        </span>
-                        <span class="room-stat">
-                            <span class="stat-icon">🕐</span>
-                            <span data-i18n="treasure_map_last_update">最後更新：</span><span id="lastActivity">剛剛</span>
-                        </span>
-                        <span class="room-stat">
-                            <span class="stat-icon">⏱️</span>
-                            <span data-i18n="treasure_map_room_ttl">剩餘：</span><span id="roomTTL">23小時59分</span>
-                        </span>
-                    </div>
-                    <div class="room-user">
-                        <span class="user-label" data-i18n="treasure_map_your_nickname">您的暱稱：</span>
-                        <span class="user-nickname" id="userNickname">光之戰士1</span>
-                        <button class="btn btn-sm" id="editNicknameBtn" title="編輯暱稱" data-i18n="treasure_map_edit_nickname" data-i18n-attr="title">
-                            <span class="btn-icon">✏️</span>
-                        </button>
-                        <button class="btn btn-danger btn-sm" id="leaveRoomBtn">
-                            <span class="btn-icon">🚪</span> <span data-i18n="treasure_map_leave_room">離開隊伍</span>
-                        </button>
-                    </div>
-                    <div class="room-members" id="roomMembersList">
-                        <div class="members-label" data-i18n="treasure_map_team_members">隊伍成員：</div>
-                        <div class="members-list" id="membersList">
-                            <!-- 成員列表將由 JavaScript 動態生成 -->
+            <!-- 標頭與底部（張數、生成路線）固定，中間的組隊、隊伍狀態、頁籤、清單與動作列一起捲動 -->
+            <div class="panel-body">
+                <!-- 組隊：不在隊伍裡時顯示（面板的主要按鈕留給下面的「生成路線」） -->
+                <div class="team-actions" id="teamActions">
+                    <button class="btn btn-secondary" id="createRoomBtn">
+                        <span class="btn-icon">🏠</span> <span data-i18n="treasure_map_create_room">建立組隊</span>
+                    </button>
+                    <button class="btn btn-secondary" id="joinRoomBtn">
+                        <span class="btn-icon">🚪</span> <span data-i18n="treasure_map_join_room">加入隊伍</span>
+                    </button>
+                </div>
+                <!-- 隊伍狀態：已加入隊伍時顯示 -->
+                <div class="room-section hidden" id="roomSection">
+                    <div class="room-status hidden" id="roomStatus">
+                        <div class="room-info">
+                            <span class="room-label" data-i18n="treasure_map_room_code">隊伍代號：</span>
+                            <span class="room-code" id="roomCode">A3B7K9</span>
+                            <button class="btn btn-sm" id="copyRoomCodeBtn" title="複製隊伍代號" data-i18n="treasure_map_copy_room_code" data-i18n-attr="title">
+                                <span class="btn-icon">📋</span>
+                            </button>
+                        </div>
+                        <div class="room-stats">
+                            <span class="room-stat">
+                                <span class="stat-icon">👥</span>
+                                <span id="roomMembers">1/8人</span>
+                            </span>
+                            <span class="room-stat">
+                                <span class="stat-icon">🕐</span>
+                                <span data-i18n="treasure_map_last_update">最後更新：</span><span id="lastActivity">剛剛</span>
+                            </span>
+                            <span class="room-stat">
+                                <span class="stat-icon">⏱️</span>
+                                <span data-i18n="treasure_map_room_ttl">剩餘：</span><span id="roomTTL">23小時59分</span>
+                            </span>
+                        </div>
+                        <div class="room-user">
+                            <span class="user-label" data-i18n="treasure_map_your_nickname">您的暱稱：</span>
+                            <span class="user-nickname" id="userNickname">光之戰士1</span>
+                            <button class="btn btn-sm" id="editNicknameBtn" title="編輯暱稱" data-i18n="treasure_map_edit_nickname" data-i18n-attr="title">
+                                <span class="btn-icon">✏️</span>
+                            </button>
+                            <button class="btn btn-danger btn-sm" id="leaveRoomBtn">
+                                <span class="btn-icon">🚪</span> <span data-i18n="treasure_map_leave_room">離開隊伍</span>
+                            </button>
+                        </div>
+                        <div class="room-members" id="roomMembersList">
+                            <div class="members-label" data-i18n="treasure_map_team_members">隊伍成員：</div>
+                            <div class="members-list" id="membersList">
+                                <!-- 成員列表將由 JavaScript 動態生成 -->
+                            </div>
                         </div>
                     </div>
                 </div>
+                <div class="panel-tabs tabs hidden" id="panelTabs" role="tablist">
+                    <button class="tab-btn tab active" data-tab="list" id="tab-panel-list" role="tab" aria-selected="true" aria-controls="listContent" tabindex="0" data-i18n="treasure_map_list_tab">清單</button>
+                    <button class="tab-btn tab" data-tab="history" id="tab-panel-history" role="tab" aria-selected="false" aria-controls="historyContent" tabindex="-1" data-i18n="treasure_map_history_tab">歷史</button>
+                </div>
+                <div class="list-content" id="listContent" role="tabpanel" aria-labelledby="tab-panel-list">
+                    <!-- 清單項目將由 JavaScript 動態生成 -->
+                </div>
+                <!-- 清單下面的動作列：清單是空的時只有「匯入」（「清空清單」由 JavaScript 藏起來）；隊伍的「歷史」分頁時整列跟清單一起藏起來 -->
+                <div class="tm-list-actions" id="listActions">
+                    <button type="button" class="btn btn-sm" id="importListBtn">
+                        <span class="btn-icon">📥</span> <span data-i18n="treasure_map_import">匯入</span>
+                    </button>
+                    <button type="button" class="btn btn-ghost btn-sm" id="clearAllBtn" data-i18n="treasure_map_clear_list">清空清單</button>
+                </div>
+                <div class="history-content hidden" id="historyContent" role="tabpanel" aria-labelledby="tab-panel-history">
+                    <!-- 操作歷史將由 JavaScript 動態生成 -->
+                </div>
             </div>
-            <div class="panel-tabs tabs hidden" id="panelTabs" role="tablist">
-                <button class="tab-btn tab active" data-tab="list" id="tab-panel-list" role="tab" aria-selected="true" aria-controls="listContent" tabindex="0" data-i18n="treasure_map_list_tab">清單</button>
-                <button class="tab-btn tab" data-tab="history" id="tab-panel-history" role="tab" aria-selected="false" aria-controls="historyContent" tabindex="-1" data-i18n="treasure_map_history_tab">歷史</button>
+            <!-- 左邊張數（由 JavaScript 填入），右邊唯一的主要按鈕 -->
+            <div class="panel-footer">
+                <p class="tm-footer-count" id="totalCount">0 張寶圖</p>
+                <button class="btn btn-primary" id="generateRouteBtn" disabled>
+                    <span class="btn-icon">🗺️</span> <span data-i18n="treasure_map_generate_route">生成路線</span>
+                </button>
             </div>
-            <div class="list-content" id="listContent" role="tabpanel" aria-labelledby="tab-panel-list">
-                <!-- 清單項目將由 JavaScript 動態生成 -->
-            </div>
-            <div class="history-content hidden" id="historyContent" role="tabpanel" aria-labelledby="tab-panel-history">
-                <!-- 操作歷史將由 JavaScript 動態生成 -->
-            </div>
-        </div>
-        <div class="panel-footer">
-            <p><span data-i18n="treasure_map_total">總計：</span><span id="totalCount">0</span><span data-i18n="treasure_map_maps_unit">張寶圖</span></p>
-            <button class="btn btn-primary" id="generateRouteBtn" disabled>
-                <span class="btn-icon">🗺️</span> <span data-i18n="treasure_map_generate_route">生成路線</span>
-            </button>
         </div>
     </div>
     

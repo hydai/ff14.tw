@@ -477,140 +477,6 @@ class UIDialogManager {
     }
 
     /**
-     * 顯示匯出對話框
-     * @param {string} content - 要匯出的內容
-     * @param {Object} options - 選項
-     */
-    showExportDialog(content, options = {}) {
-        const defaultTitle = FF14Utils.getI18nText('treasure_map_export_title', '匯出清單');
-        const defaultInstruction = FF14Utils.getI18nText('treasure_map_export_instruction', '請複製以下內容：');
-        const { title = defaultTitle, instruction = defaultInstruction } = options;
-
-        // 建立對話框內容
-        // 只有在呼叫端沒有自訂標題／說明文字時才掛 data-i18n key
-        const contentElement = this._createExportDialogContent(
-            content,
-            instruction,
-            instruction === defaultInstruction ? 'treasure_map_export_instruction' : undefined
-        );
-
-        // 建立帶有 overlay 的對話框
-        const { overlay, dialog } = this.createDialogWithOverlay({
-            title,
-            titleKey: title === defaultTitle ? 'treasure_map_export_title' : undefined,
-            content: contentElement
-        });
-
-        // 設置事件
-        const textarea = dialog.querySelector('#exportTextarea');
-        const copyBtn = dialog.querySelector('#exportCopyBtn');
-        const closeBtn = dialog.querySelector('#exportCloseBtn');
-
-        const closeDialog = () => this.modalManager.hide();
-
-        copyBtn.onclick = () => {
-            // 若瀏覽器不支援剪貼簿 API，提供手動複製指引
-            if (!navigator.clipboard || !navigator.clipboard.writeText) {
-                this._handleManualCopy(
-                    textarea,
-                    'treasure_map_copy_manual',
-                    '瀏覽器不支援自動複製，請手動選取文字後按 Ctrl+C 複製',
-                    'info'
-                );
-                return;
-            }
-
-            navigator.clipboard.writeText(textarea.value).then(() => {
-                FF14Utils.showToast(
-                    FF14Utils.getI18nText('treasure_map_copy_clipboard_success', '已複製到剪貼簿'),
-                    'success'
-                );
-            }).catch(err => {
-                console.error('Copy to clipboard failed:', err);
-                // 失敗時選取文字並提示使用者手動複製
-                this._handleManualCopy(
-                    textarea,
-                    'treasure_map_copy_fallback_manual',
-                    '複製失敗，請手動選取文字後按 Ctrl+C 複製',
-                    'error'
-                );
-            });
-        };
-
-        closeBtn.onclick = closeDialog;
-
-        document.body.appendChild(overlay);
-
-        // 使用 ModalManager 顯示
-        this.modalManager.show(overlay, {
-            // useClass default is 'active'
-            closeOnOverlayClick: true,
-            closeOnEsc: true,
-            onClose: () => overlay.remove()
-        });
-
-        // 自動選取文字 (需在顯示後執行)
-        setTimeout(() => textarea.select(), 0);
-    }
-
-    /**
-     * 建立匯出對話框內容
-     * @private
-     */
-    _createExportDialogContent(content, instruction, instructionKey) {
-        const container = document.createElement('div');
-
-        const instructionP = document.createElement('p');
-        instructionP.className = 'ui-dialog-instruction';
-        instructionP.textContent = instruction;
-        if (instructionKey) {
-            instructionP.dataset.i18n = instructionKey;
-        }
-        container.appendChild(instructionP);
-
-        const textarea = document.createElement('textarea');
-        textarea.id = 'exportTextarea';
-        textarea.className = 'ui-dialog-textarea form-control';
-        textarea.readOnly = true;
-        textarea.value = content;
-        container.appendChild(textarea);
-
-        const buttonContainer = document.createElement('div');
-        buttonContainer.className = 'ui-dialog-actions';
-
-        const copyBtn = document.createElement('button');
-        copyBtn.className = 'btn btn-primary';
-        copyBtn.id = 'exportCopyBtn';
-        copyBtn.textContent = FF14Utils.getI18nText('treasure_map_copy_route', '複製');
-        copyBtn.dataset.i18n = 'treasure_map_copy_route';
-        buttonContainer.appendChild(copyBtn);
-
-        const closeBtn = document.createElement('button');
-        closeBtn.className = 'btn btn-secondary';
-        closeBtn.id = 'exportCloseBtn';
-        closeBtn.textContent = FF14Utils.getI18nText('treasure_map_close', '關閉');
-        closeBtn.dataset.i18n = 'treasure_map_close';
-        buttonContainer.appendChild(closeBtn);
-
-        container.appendChild(buttonContainer);
-
-        return container;
-    }
-
-    /**
-     * 處理手動複製
-     * @private
-     */
-    _handleManualCopy(textarea, messageKey, defaultMessage, type) {
-        textarea.focus();
-        textarea.select();
-        FF14Utils.showToast(
-            FF14Utils.getI18nText(messageKey, defaultMessage),
-            type
-        );
-    }
-
-    /**
      * 顯示匯入對話框
      * @param {Function} onImport - 匯入回調函數
      * @param {Object} options - 選項
@@ -622,7 +488,7 @@ class UIDialogManager {
         const { title = defaultTitle, instruction = defaultInstruction, placeholder = defaultPlaceholder } = options;
 
         // 建立對話框內容
-        // 同 showExportDialog()：只有在呼叫端沒有自訂文字時才掛 data-i18n key
+        // 只有在呼叫端沒有自訂文字時才掛 data-i18n key
         const contentElement = this._createImportDialogContent(
             instruction,
             placeholder,

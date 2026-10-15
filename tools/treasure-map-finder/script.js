@@ -28,6 +28,8 @@ class TreasureMapFinder {
             resultCount: document.getElementById('resultCount'),
             totalCount: document.getElementById('totalCount'),
             myListPanel: document.getElementById('myListPanel'),
+            listTitle: document.getElementById('myListPanel-title'),
+            listHeaderCount: document.getElementById('listHeaderCount'),
             listContent: document.getElementById('listContent'),
             clearAllBtn: document.getElementById('clearAllBtn')
         };
@@ -41,7 +43,7 @@ class TreasureMapFinder {
     // 固定字串由 i18n manager 依 [data-i18n] 重新翻譯；詳細地圖與路線面板由 UIDialogManager 自己的
     // 語言監聽（refreshActiveDialog）處理
     handleLanguageChange() {
-        // 移除按鈕的 aria-label 帶有地區與座標，需要重組
+        // 清單每一列的地名、最近傳送點與 ✕ 的名稱都跟著語言走：整份重畫
         this.renderMyList();
 
         // 卡片的地名、最近傳送點與按鈕文字都跟著語言走：整格重畫。資料還沒載入（載入中）
@@ -54,8 +56,9 @@ class TreasureMapFinder {
         this.updateResultCount();
         this.filterManager.renderZoneChips();
 
-        // 清單入口的標籤帶張數參數，不能用 data-i18n
+        // 清單入口的標籤帶張數參數，不能用 data-i18n；清單頁的標題與張數也是（在隊伍裡還會換字）
         this.updateListEntry();
+        this.updateListLabels();
 
         // 預設範本跟語言走，使用者自訂的不動：只有目前仍是「預設值」
         // （this.formatSettingsAreDefault，見 loadFormatSettings／saveFormatSettings／
@@ -153,14 +156,10 @@ class TreasureMapFinder {
             closePanelBtn.addEventListener('click', () => this.toggleListPanel());
         }
         
-        // 匯出/匯入功能
-        document.getElementById('exportListBtn').addEventListener('click', () => {
-            this.exportList();
-        });
+        // 匯入（清單下面的動作列）
         document.getElementById('importListBtn').addEventListener('click', () => {
             this.uiDialogManager.showImportDialog((text) => this.importFromText(text));
         });
-        document.getElementById('importFileInput').addEventListener('change', (e) => this.importList(e));
 
         // 點擊遮罩關閉
         const overlay = document.getElementById('panelOverlay');
@@ -624,12 +623,63 @@ class TreasureMapFinder {
         }
     }
     
+    // 清單裡一張寶圖要顯示的資料（清單頁的每一列用；分享對話框、路線的每一站也用）。清單項目本身沒有編號，舊資料或隊伍同步來的
+    // 項目也可能沒有 zoneId：目錄（this.maps）裡有同 id 的就用那張的地區、編號、座標與縮圖。目錄裡沒有的（例如以前匯入的自訂寶圖）
+    // 只在查得到地區時才用那個地區（見 resolveItemZoneId），否則地名用項目自己的 zone 文字、沒有編號；不顯示 id
+    describeListItem(item) {
+        const catalogued = this.maps.find(map => map.id === item.id);
+        const zoneId = catalogued ? catalogued.zoneId : this.resolveItemZoneId(item);
+        const coords = catalogued ? catalogued.coords : item.coords;
+        const index = catalogued?.index ?? null;
+        const grade = item.level.toUpperCase();
+        let zoneName = item.zone;
+        let zoneNames = { zh: item.zone, en: item.zone, ja: item.zone };
+        if (zoneId) {
+            const { zh, en, ja } = zoneManager.getZoneNames(zoneId);
+            zoneName = this.getZoneName(zoneId);
+            zoneNames = { zh, en, ja };
+        }
+        return {
+            id: item.id,
+            grade,
+            zoneId,
+            zoneName,
+            zoneNames,
+            index,
+            coords,
+            coordsText: CoordinateUtils.formatPair(coords),
+            // 和卡片的「最近」同一個函式；地區沒有傳送點（或查不到地區）時是 null
+            nearest: zoneManager.findNearestAetheryte(zoneId, coords)?.aetheryte ?? null,
+            thumbnail: catalogued ? catalogued.thumbnail : item.thumbnail,
+            name: index === null ? `${grade} ${zoneName}` : `${grade} ${zoneName} #${index}`
+        };
+    }
+
+    // 目錄裡沒有的清單項目的地區 id：zoneId 查得到地區就用它；沒有（以前匯入的項目沒有 zoneId）就像 RouteCalculator.resolveZoneId()
+    // 一樣用項目的 zone 文字查，路線算進傳送的站這裡才找得到最近傳送點。getZoneIdByName() 查不到名稱時回傳整理過的名稱本身，
+    // 所以查到的 id 還要真的是地區才用；都不是就是 null
+    resolveItemZoneId(item) {
+        if (zoneManager.getZoneById(item.zoneId)) return item.zoneId;
+        const byName = zoneManager.getZoneIdByName(item.zone);
+        return zoneManager.getZoneById(byName) ? byName : null;
+    }
+
+    // 清單頁的清單：一張寶圖一列（見 createListItem）。列裡的字跟著語言與清單變，由程式組出來、不掛 data-i18n：
+    // 切換語言、清單變了（加入、移除、清空、匯入、隊伍同步）都整份重畫
     renderMyList() {
-        // 清空內容
-        SecurityUtils.clearElement(this.elements.listContent);
-        
+        const { listContent } = this.elements;
+        // 隊伍同步每 2 秒重畫一次：焦點原本在某一列的 ✕ 上，重畫後放回同一張寶圖的 ✕，不能把焦點弄丟。
+        // 那一張剛好被隊友移除了，就和 removeFromList() 一樣退到同一個位置的 ✕（見 focusListRow）；位置要在清掉之前記下
+        const active = document.activeElement;
+        const focusedPosition = listContent.contains(active) && active.classList.contains('btn-remove')
+            ? Array.from(listContent.querySelectorAll('.btn-remove')).indexOf(active)
+            : -1;
+        const focusedMapId = focusedPosition === -1 ? null : active.dataset.mapId;
+        SecurityUtils.clearElement(listContent);
+
         const myList = this.listManager.getList();
-        
+
+        // 不提早 return：清單空了也會走到函式最後（之後要跟著清單變的東西加在最後面）
         if (myList.length === 0) {
             const emptyState = document.createElement('div');
             emptyState.className = 'empty-state';
@@ -643,113 +693,118 @@ class TreasureMapFinder {
             hintText.textContent = FF14Utils.getI18nText('treasure_map_list_hint', '點擊寶圖卡片上的「加入清單」開始建立');
             emptyState.appendChild(hintText);
 
-            this.elements.listContent.appendChild(emptyState);
-            return;
+            listContent.appendChild(emptyState);
+        } else {
+            const items = document.createElement('ul');
+            items.className = 'tm-list-items';
+            myList.forEach(item => items.appendChild(this.createListItem(item)));
+            listContent.appendChild(items);
         }
-        
-        // 建立清單項目
-        myList.forEach(item => {
-            const listItem = document.createElement('div');
-            listItem.className = 'list-item';
-            listItem.dataset.mapId = item.id;
-            
-            // 圖片
-            const img = document.createElement('img');
-            img.src = item.thumbnail;
-            img.alt = item.levelName;
-            img.onerror = function() {
-                this.src = '/assets/images/treasure-map-placeholder.png';
-            };
-            listItem.appendChild(img);
-            
-            // 資訊區域
-            const itemInfo = document.createElement('div');
-            itemInfo.className = 'item-info';
-            
-            const levelSpan = document.createElement('span');
-            levelSpan.className = 'item-level tag tag-solid tag-primary';
-            levelSpan.textContent = item.level.toUpperCase();
-            itemInfo.appendChild(levelSpan);
-            
-            const zoneSpan = document.createElement('span');
-            zoneSpan.className = 'item-zone';
-            
-            // 使用多語言顯示
-            // 如果沒有 zoneId，嘗試從 zone 名稱獲取
-            let zoneId = item.zoneId;
-            if (!zoneId && item.zone) {
-                // 嘗試從原始地圖資料中找到對應的 zoneId
-                const originalMap = this.maps.find(m => m.id === item.id);
-                if (originalMap) {
-                    zoneId = originalMap.zoneId;
-                }
-            }
-            
-            const translations = zoneId ? zoneManager.getZoneNames(zoneId) : null;
-            if (translations && translations.zh) {
-                // 依目前介面語言挑選地區名稱，找不到對應語言時退回中文；
-                // 下面的「移除」按鈕標籤直接沿用 zoneSpan.textContent，
-                // 這裡選對語言就能一併修正 en/ja 介面下標籤混雜中文的問題
-                const currentLang = window.i18n.getCurrentLanguage();
-                zoneSpan.textContent = translations[currentLang] || translations.zh;
-                zoneSpan.title = `${translations.en || item.zone} / ${translations.ja || ''}`;
-            } else {
-                zoneSpan.textContent = item.zone;
-            }
-            
-            itemInfo.appendChild(zoneSpan);
-            
-            const coordsSpan = document.createElement('span');
-            coordsSpan.className = 'item-coords';
-            coordsSpan.textContent = CoordinateUtils.formatCoordinatesShort(item.coords);
-            itemInfo.appendChild(coordsSpan);
-            
-            listItem.appendChild(itemInfo);
-            
-            // 移除按鈕
-            // 清單裡每一列都有一顆「移除」，名稱要帶上地區與座標才分得出來；
-            // 因為帶了動態文字，不能用 data-i18n（那只能綁固定字串），改在每次重繪時用當下語言組出名稱
-            const removeLabel = FF14Utils.getI18nText('treasure_map_remove_item', '移除 {zone} {coords}', {
-                zone: zoneSpan.textContent,
-                coords: coordsSpan.textContent
-            });
 
-            const removeBtn = document.createElement('button');
-            removeBtn.className = 'btn-remove btn btn-close';
-            removeBtn.dataset.mapId = item.id;
-            removeBtn.textContent = '×';
-            removeBtn.setAttribute('aria-label', removeLabel);
-            removeBtn.addEventListener('click', (e) => {
-                this.removeFromList(item.id);
-            });
-            listItem.appendChild(removeBtn);
-            
-            this.elements.listContent.appendChild(listItem);
-        });
+        if (focusedMapId !== null) {
+            // 不用 id 組選擇器：匯入的自訂寶圖 id 可能有引號，瀏覽器的 querySelector 會丟錯
+            const sameMap = Array.from(listContent.querySelectorAll('.btn-remove')).find(button => button.dataset.mapId === focusedMapId);
+            if (sameMap) sameMap.focus();
+            else this.focusListRow(focusedPosition);
+        }
     }
-    
+
+    // 清單重畫之後把焦點放回清單頁：原本那個位置的 ✕（移除一列後，下一列滑上來的那一顆），沒有就前一顆，
+    // 清單空了就面板標題。焦點一直留在面板裡，不掉到 body
+    focusListRow(position) {
+        const removeButtons = this.elements.listContent.querySelectorAll('.btn-remove');
+        (removeButtons[position] || removeButtons[position - 1] || this.elements.listTitle)?.focus();
+    }
+
+    // 清單的一列：縮圖（裝飾，alt 空白）；第一行是等級、目前語言的地名與編號，第二行是座標與最近傳送點；右邊的 ✕
+    createListItem(item) {
+        const info = this.describeListItem(item);
+        const listItem = document.createElement('li');
+        listItem.className = 'list-item';
+        listItem.dataset.mapId = item.id;
+
+        const img = document.createElement('img');
+        img.src = info.thumbnail;
+        img.setAttribute('alt', '');
+        img.setAttribute('loading', 'lazy');
+        img.onerror = function() {
+            this.src = '/assets/images/treasure-map-placeholder.png';
+        };
+        listItem.appendChild(img);
+
+        const itemInfo = document.createElement('div');
+        itemInfo.className = 'item-info';
+
+        // 第一行的三段之間留空白：讀出來、複製下來都是「G17 科扎馬烏卡 #3」。目錄裡找不到的寶圖沒有編號
+        const title = document.createElement('p');
+        title.className = 'item-title';
+        const level = document.createElement('span');
+        level.className = 'item-level tag tag-solid tag-primary';
+        level.textContent = info.grade;
+        title.appendChild(level);
+        title.appendChild(document.createTextNode(' '));
+        const zone = document.createElement('span');
+        zone.className = 'item-zone';
+        zone.textContent = info.zoneName;
+        title.appendChild(zone);
+        if (info.index !== null) {
+            const index = document.createElement('span');
+            index.className = 'item-index';
+            index.textContent = `#${info.index}`;
+            title.appendChild(document.createTextNode(' '));
+            title.appendChild(index);
+        }
+        itemInfo.appendChild(title);
+
+        // 第二行：座標（一位小數、不含 Z，和卡片相同），有最近傳送點時接著寫（目前語言的名稱，沒有就用中文）
+        const sub = document.createElement('p');
+        sub.className = 'item-sub';
+        sub.textContent = info.coordsText;
+        if (info.nearest) {
+            const { name } = info.nearest;
+            const nearestName = name[window.i18n.getCurrentLanguage()] || name.zh;
+            sub.textContent += ` · ${FF14Utils.getI18nText('treasure_map_nearest', '最近：{name}', { name: nearestName })}`;
+        }
+        itemInfo.appendChild(sub);
+        listItem.appendChild(itemInfo);
+
+        // ✕：每一列都有一顆，名稱要帶上等級、地名與編號才分得出來；帶了動態文字，不能用 data-i18n，每次重畫時用當下語言組出來。
+        // 保留 .btn-remove：隊伍連線中 RoomCollaboration.setConnecting() 用它停用畫面上的 ✕；連線中才畫出來的列在這裡一樣停用
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'btn-remove btn btn-close';
+        removeBtn.setAttribute('aria-label', FF14Utils.getI18nText('treasure_map_remove_item', '移除 {name}', { name: info.name }));
+        removeBtn.dataset.mapId = item.id;
+        removeBtn.textContent = '×';
+        removeBtn.disabled = Boolean(this.roomCollaboration?.isConnecting);
+        removeBtn.addEventListener('click', () => this.removeFromList(item.id));
+        listItem.appendChild(removeBtn);
+
+        return listItem;
+    }
+
+    // 清單頁每一列的 ✕：直接移除，不確認、不跳 toast（剩幾張由 updateListCount() 用 #listAnnouncer 唸出來）。
+    // 重畫後焦點移到原本位置的下一列 ✕，移除的是最後一列就移到上一列，清單空了就移到面板標題：焦點一直留在面板裡
     removeFromList(mapId) {
         if (!this.canEditList()) return;
-        if (confirm(FF14Utils.getI18nText('treasure_map_remove_confirm', '確定要移除這張寶圖嗎？'))) {
-            const result = this.listManager.remove(mapId);
+        const position = this.listManager.getList().findIndex(item => item.id === mapId);
+        const result = this.listManager.remove(mapId);
+        if (!result.success) return;
 
-            if (result.success) {
-                FF14Utils.showToast(result.message, 'info');
-                this.notifyIfUnsaved(result);
-                this.updateListCount();
-                this.updateCardButtons();
-                this.renderMyList();
-                
-                // 記錄操作歷史
-                if (this.roomCollaboration?.currentRoom && result.removedItem) {
-                    this.roomCollaboration.recordMapOperation('remove', result.removedItem, this.roomCollaboration.currentUser);
-                }
-                
-                // 同步到房間
-                if (this.roomCollaboration?.currentRoom) {
-                    this.syncToRoom();
-                }
-            }
+        this.notifyIfUnsaved(result);
+        this.updateListCount();
+        this.updateCardButtons();
+        this.renderMyList();
+        this.focusListRow(position);
+
+        // 記錄操作歷史
+        if (this.roomCollaboration?.currentRoom && result.removedItem) {
+            this.roomCollaboration.recordMapOperation('remove', result.removedItem, this.roomCollaboration.currentUser);
+        }
+
+        // 同步到房間
+        if (this.roomCollaboration?.currentRoom) {
+            this.syncToRoom();
         }
     }
     
@@ -834,12 +889,20 @@ class TreasureMapFinder {
 
     updateListCount() {
         const count = this.listManager.getLength();
-        this.elements.totalCount.textContent = count;
+        // 清單變成 0 張時「清空清單」藏起來、「生成路線」停用（例如隊友移除了最後一張）：焦點正在其中一顆上就會掉到 body，
+        // 再按 Tab 會跑出開著的面板（renderMyList() 只顧每一列的 ✕）。焦點先記下來，改完再看
+        const active = document.activeElement;
+        this.updateListLabels();
 
         // 更新生成路線按鈕狀態：1 張就能排路線，只有清單是空的才停用
         const generateRouteBtn = document.getElementById('generateRouteBtn');
         if (generateRouteBtn) {
             generateRouteBtn.disabled = count < 1;
+        }
+        // 焦點所在的那顆藏起來或停用了：放到面板標題（同清單空了時的 focusListRow），焦點一直留在面板裡
+        const { clearAllBtn, listTitle } = this.elements;
+        if (active && [clearAllBtn, generateRouteBtn].includes(active) && (active.disabled || active.classList.contains('hidden'))) {
+            listTitle?.focus();
         }
 
         this.updateListEntry();
@@ -851,6 +914,28 @@ class TreasureMapFinder {
                 : FF14Utils.getI18nText('treasure_map_announce_removed', '已從清單移除，剩 {count} 張', { count });
         }
         this.lastListCount = count;
+    }
+
+    // 清單頁的標題（「我的清單」，在隊伍裡「隊伍清單」）、標頭與底部的張數（隊伍裡寫 N/上限），以及動作列的「清空清單」
+    // （清單是空的時藏起來，只剩匯入）。張數是參數、在隊伍裡還會換字，不能用 data-i18n：張數變了、進出隊伍、切換語言時重組。
+    // 測試替身的 elements 不一定有這幾個元素，所以先檢查
+    updateListLabels() {
+        const { listTitle, listHeaderCount, totalCount, clearAllBtn } = this.elements;
+        const count = this.listManager.getLength();
+        const params = { count, max: RoomCollaboration.CONSTANTS.MAX_MAPS };
+        const setText = (element, key, fallback) => {
+            if (element) element.textContent = FF14Utils.getI18nText(key, fallback, params);
+        };
+        if (this.roomCollaboration?.currentRoom) {
+            setText(listTitle, 'treasure_map_team_list', '隊伍清單');
+            setText(listHeaderCount, 'treasure_map_panel_count_room', '{count}/{max}');
+            setText(totalCount, 'treasure_map_footer_count_room', '{count}/{max} 張');
+        } else {
+            setText(listTitle, 'treasure_map_my_list', '我的清單');
+            setText(listHeaderCount, 'treasure_map_panel_count', '{count} 張');
+            setText(totalCount, 'treasure_map_footer_count', '{count} 張寶圖');
+        }
+        clearAllBtn?.classList.toggle('hidden', count === 0);
     }
 
     // 兩個清單入口與步驟列：依清單張數、是否在隊伍裡、是否選了等級
@@ -914,26 +999,6 @@ class TreasureMapFinder {
         this.elements.treasureGrid.appendChild(errorDiv);
     }
     
-    // 匯出清單功能（複製到剪貼簿）
-    exportList() {
-        if (this.listManager.getLength() === 0) {
-            FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_export_empty', '清單是空的，無法匯出'), 'warning');
-            return;
-        }
-
-        // 使用 ListManager 的匯出功能
-        const jsonString = this.listManager.exportAsJson();
-
-        // 複製到剪貼簿
-        navigator.clipboard.writeText(jsonString).then(() => {
-            FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_export_success', '已複製 {count} 張寶圖清單到剪貼簿', { count: this.listManager.getLength() }), 'success');
-        }).catch(err => {
-            console.error('複製失敗:', err);
-            // 備用方案：顯示可複製的文字框
-            this.uiDialogManager.showExportDialog(jsonString);
-        });
-    }
-    
     // 從文字匯入清單
     async importFromText(text) {
         if (!this.canEditList()) return;
@@ -988,23 +1053,6 @@ class TreasureMapFinder {
             console.error('匯入失敗:', error);
             FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_import_failed', '匯入失敗：{message}', { message: error.message }), 'error');
         }
-    }
-    
-    // 匯入清單功能（從檔案）
-    async importList(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-        
-        try {
-            const text = await file.text();
-            this.importFromText(text);
-        } catch (error) {
-            console.error('讀取檔案失敗:', error);
-            FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_read_file_failed', '讀取檔案失敗'), 'error');
-        }
-        
-        // 清空檔案輸入
-        event.target.value = '';
     }
     
     // 生成路線

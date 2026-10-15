@@ -244,34 +244,6 @@ class ListManager {
     }
 
     /**
-     * 匯出清單資料
-     * @returns {Object} 匯出資料物件
-     */
-    export() {
-        return {
-            version: '1.0',
-            exportDate: new Date().toISOString(),
-            appName: 'FF14.tw 寶圖搜尋器',
-            totalMaps: this.list.length,
-            maps: this.list.map(map => ({
-                id: map.id,
-                level: map.level,
-                levelName: map.levelName,
-                zone: map.zone,
-                coords: map.coords
-            }))
-        };
-    }
-
-    /**
-     * 匯出為 JSON 字串
-     * @returns {string}
-     */
-    exportAsJson() {
-        return JSON.stringify(this.export(), null, 2);
-    }
-
-    /**
      * 匯入清單資料
      * @param {Object|string} data - 匯入的資料或 JSON 字串
      * @param {boolean} merge - 是否合併（true）或取代（false）

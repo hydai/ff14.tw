@@ -829,6 +829,7 @@ class RoomCollaboration {
         });
 
         document.getElementById('listContent')?.classList.toggle('hidden', showHistory);
+        document.getElementById('listActions')?.classList.toggle('hidden', showHistory);
         document.getElementById('historyContent')?.classList.toggle('hidden', !showHistory);
 
         if (showHistory) this.renderHistory();
