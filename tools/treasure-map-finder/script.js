@@ -8,7 +8,7 @@ class TreasureMapFinder {
         this.filterManager = new FilterManager(); // 使用 FilterManager 模組
         this.uiDialogManager = new UIDialogManager(); // 使用 UIDialogManager 模組
         this.modalManager = new ModalManager(); // 我的清單面板的焦點管理（開啟時移入焦點、Tab 循環、ESC／關閉時還原焦點）
-        this.listDialogs = new ListDialogs(this); // 清空、匯入的頁內對話框（自己的 ModalManager，疊在清單面板上）
+        this.listDialogs = new ListDialogs(this); // 清空、匯入、分享連結的頁內對話框（自己的 ModalManager，疊在清單面板上）
         this.aetheryteIcon = null; // 傳送點圖標
         this.roomCollaboration = null; // 協作功能實例
         this.lastListCount = null; // updateListCount() 上一次的張數（還沒呼叫過是 null，第一次只記下、不唸）
@@ -32,6 +32,7 @@ class TreasureMapFinder {
             listTitle: document.getElementById('myListPanel-title'),
             listHeaderCount: document.getElementById('listHeaderCount'),
             listContent: document.getElementById('listContent'),
+            shareListBtn: document.getElementById('shareListBtn'),
             clearAllBtn: document.getElementById('clearAllBtn')
         };
 
@@ -150,8 +151,9 @@ class TreasureMapFinder {
         // 清單入口（桌機在最上面那一列、手機在底部列）與我的清單
         this.setupListEntries();
 
-        // 清空、匯入（清單下面的動作列）：打開頁內對話框，確認之後才動清單
+        // 複製分享連結、清空、匯入（清單下面的動作列）：清空與匯入打開頁內對話框，確認之後才動清單
         this.listDialogs.init();
+        this.elements.shareListBtn.addEventListener('click', () => this.copyShareLink());
         this.elements.clearAllBtn.addEventListener('click', () => this.listDialogs.openClear());
         document.getElementById('importListBtn').addEventListener('click', () => this.listDialogs.openImport());
 
@@ -301,6 +303,18 @@ class TreasureMapFinder {
         }
     }
     
+    // 寶圖的縮圖（卡片、清單的每一列、分享對話框的每一張共用）：圖片只是裝飾，alt 空白；載入失敗改用預設圖
+    createThumbnailImage(src) {
+        const img = document.createElement('img');
+        img.src = src;
+        img.setAttribute('alt', '');
+        img.setAttribute('loading', 'lazy');
+        img.onerror = function() {
+            this.src = '/assets/images/treasure-map-placeholder.png';
+        };
+        return img;
+    }
+
     // 一張寶圖卡：縮圖（按鈕，開詳細地圖）、目前語言的地名與編號、座標、最近傳送點、「加入清單」與複製。
     // 整張卡不是點擊熱區（以前點卡片就複製，觸控裝置容易誤觸）。裡面的字由程式依目前語言組出來，
     // 不掛 data-i18n：切換語言時 handleLanguageChange() 整格重畫
@@ -324,14 +338,7 @@ class TreasureMapFinder {
         // 上一張／下一張在按下當時結果格的順序裡切換
         thumb.addEventListener('click', () => this.openMapDetail(map.id, this.filteredMaps.map(m => m.id)));
 
-        const img = document.createElement('img');
-        img.src = map.thumbnail;
-        img.setAttribute('alt', '');
-        img.setAttribute('loading', 'lazy');
-        img.onerror = function() {
-            this.src = '/assets/images/treasure-map-placeholder.png';
-        };
-        thumb.appendChild(img);
+        thumb.appendChild(this.createThumbnailImage(map.thumbnail));
 
         // 看得到的等級徽章；名稱已經帶著等級，所以對輔助科技隱藏
         const levelBadge = document.createElement('span');
@@ -728,14 +735,7 @@ class TreasureMapFinder {
         listItem.className = 'list-item';
         listItem.dataset.mapId = item.id;
 
-        const img = document.createElement('img');
-        img.src = info.thumbnail;
-        img.setAttribute('alt', '');
-        img.setAttribute('loading', 'lazy');
-        img.onerror = function() {
-            this.src = '/assets/images/treasure-map-placeholder.png';
-        };
-        listItem.appendChild(img);
+        listItem.appendChild(this.createThumbnailImage(info.thumbnail));
 
         const itemInfo = document.createElement('div');
         itemInfo.className = 'item-info';
@@ -887,7 +887,7 @@ class TreasureMapFinder {
 
     updateListCount() {
         const count = this.listManager.getLength();
-        // 清單變成 0 張時「清空清單」藏起來、「生成路線」停用（例如隊友移除了最後一張）：焦點正在其中一顆上就會掉到 body，
+        // 清單變成 0 張時「複製分享連結」與「清空清單」藏起來、「生成路線」停用（例如隊友移除了最後一張）：焦點正在其中一顆上就會掉到 body，
         // 再按 Tab 會跑出開著的面板（renderMyList() 只顧每一列的 ✕）。焦點先記下來，改完再看
         const active = document.activeElement;
         this.updateListLabels();
@@ -898,8 +898,8 @@ class TreasureMapFinder {
             generateRouteBtn.disabled = count < 1;
         }
         // 焦點所在的那顆藏起來或停用了：放到面板標題（同清單空了時的 focusListRow），焦點一直留在面板裡
-        const { clearAllBtn, listTitle } = this.elements;
-        if (active && [clearAllBtn, generateRouteBtn].includes(active) && (active.disabled || active.classList.contains('hidden'))) {
+        const { shareListBtn, clearAllBtn, listTitle } = this.elements;
+        if (active && [shareListBtn, clearAllBtn, generateRouteBtn].includes(active) && (active.disabled || active.classList.contains('hidden'))) {
             listTitle?.focus();
         }
 
@@ -918,11 +918,11 @@ class TreasureMapFinder {
         this.lastListCount = count;
     }
 
-    // 清單頁的標題（「我的清單」，在隊伍裡「隊伍清單」）、標頭與底部的張數（隊伍裡寫 N/上限），以及動作列的「清空清單」
-    // （清單是空的時藏起來，只剩匯入）。張數是參數、在隊伍裡還會換字，不能用 data-i18n：張數變了、進出隊伍、切換語言時重組。
+    // 清單頁的標題（「我的清單」，在隊伍裡「隊伍清單」）、標頭與底部的張數（隊伍裡寫 N/上限），以及動作列的「複製分享連結」與
+    // 「清空清單」（清單是空的時藏起來，只剩匯入）。張數是參數、在隊伍裡還會換字，不能用 data-i18n：張數變了、進出隊伍、切換語言時重組。
     // 測試替身的 elements 不一定有這幾個元素，所以先檢查
     updateListLabels() {
-        const { listTitle, listHeaderCount, totalCount, clearAllBtn } = this.elements;
+        const { listTitle, listHeaderCount, totalCount, clearAllBtn, shareListBtn } = this.elements;
         const count = this.listManager.getLength();
         const params = { count, max: RoomCollaboration.CONSTANTS.MAX_MAPS };
         const setText = (element, key, fallback) => {
@@ -938,6 +938,7 @@ class TreasureMapFinder {
             setText(totalCount, 'treasure_map_footer_count', '{count} 張寶圖');
         }
         clearAllBtn?.classList.toggle('hidden', count === 0);
+        shareListBtn?.classList.toggle('hidden', count === 0);
     }
 
     // 兩個清單入口與步驟列：依清單張數、是否在隊伍裡、是否選了等級
@@ -1036,6 +1037,44 @@ class TreasureMapFinder {
         const read = this.parseImportText(text);
         if (!read.ok) return { success: false, message: read.message };
         return this.applyListImport(read.maps, { merge });
+    }
+
+    // 複製分享連結：目前網址去掉查詢字串與 hash，加上 ?maps= 與清單裡的寶圖 id（依清單順序），只帶寶圖，不帶篩選與隊伍代號。
+    // 清單是空的就什麼都不做（這時「複製分享連結」也是藏起來的）。組網址放在剪貼簿的 try 裡：匯入進來的 id 若結尾是不成對的
+    // UTF-16 代理字元，encodeURIComponent 會丟 URIError，和剪貼簿被拒絕一樣當作複製失敗
+    async copyShareLink() {
+        const ids = this.listManager.getList().map(item => item.id);
+        if (ids.length === 0) return;
+        try {
+            await navigator.clipboard.writeText(ListShare.buildUrl(location.href, ids));
+        } catch (err) {
+            console.error('複製失敗:', err);
+            FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_copy_failed', '複製失敗'), 'error');
+            return;
+        }
+        FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_share_copied', '已複製分享連結（{count} 張）', { count: ids.length }), 'success');
+    }
+
+    // 打開帶 ?maps= 的分享連結：讀出連結裡的寶圖，問玩家要不要加進清單（ListDialogs#openShare）。載入時呼叫一次，
+    // 等寶圖資料載入、隊伍還原或自動加入都結束（見檔案最後的 DOMContentLoaded），這樣「已在清單」與隊伍的上限都是最後的結果。
+    // 網址沒有 maps 就什麼都不做；目錄是空的（資料沒載入成功）也不做、網址不動，重新整理還能再試。
+    // 一張都找不到：提示並把 maps 拿掉，不開對話框。這裡不檢查隊伍連線中（canEditList() 會跳 toast）：連線中照樣開，
+    // 對話框裡寫原因並停用「加入清單」
+    handleSharedMaps() {
+        const value = new URLSearchParams(location.search).get(ListShare.PARAM);
+        if (value === null || this.maps.length === 0) return;
+        const { maps, missing } = ListShare.resolveIds(ListShare.parseIds(value), this.getCatalogue());
+        if (maps.length === 0) {
+            FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_share_none_found', '分享連結裡沒有找得到的寶圖'), 'warning');
+            this.removeSharedParam();
+            return;
+        }
+        this.listDialogs.openShare(maps, missing);
+    }
+
+    // 處理完分享連結（加入、不用了、關掉，或一張都找不到）：把網址裡的 maps 拿掉，其他參數與 hash 保留，重新整理就不會再問一次
+    removeSharedParam() {
+        history.replaceState(history.state, '', ListShare.stripParam(location.href));
     }
 
     // 把一批寶圖套進清單（匯入與分享連結共用）。隊伍裡上限 8 張，並先照 RoomCollaboration.validateMapOperations() 驗過整批操作，
@@ -1382,4 +1421,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 連接協作功能
     treasureMapFinder.setRoomCollaboration(roomCollaboration);
+
+    // 分享連結（網址有 ?maps=）：寶圖資料載入、隊伍還原或自動加入都結束後才處理（任何一邊失敗也照樣處理，所以用 allSettled）
+    Promise.allSettled([treasureMapFinder.ready, roomCollaboration.ready]).then(() => treasureMapFinder.handleSharedMaps());
 });

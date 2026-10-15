@@ -132,6 +132,24 @@ const TreasureMapTranslations = {
         treasure_map_share_replace_room: '取代隊伍清單',
         treasure_map_share_none_found: '分享連結裡沒有找得到的寶圖',
 
+        // 分享連結：清單動作列的按鈕、打開連結時的對話框
+        treasure_map_share_link: '複製分享連結',
+        treasure_map_share_copied: '已複製分享連結（{count} 張）',
+        treasure_map_share_title: '加入分享的寶圖',
+        treasure_map_share_lede: '這個連結有 {count} 張寶圖：',
+        treasure_map_share_in_list: '已在清單',
+        treasure_map_share_missing: '另外 {count} 張找不到，已略過',
+        treasure_map_share_choice: '要怎麼加入',
+        treasure_map_share_merge: '加進我的清單',
+        treasure_map_share_merge_room: '加進隊伍清單',
+        treasure_map_share_merge_hint: '重複的 {duplicates} 張只留一張，共 {total} 張',
+        treasure_map_share_merge_hint_new: '共 {total} 張',
+        treasure_map_share_replace_hint: '只留這 {count} 張',
+        treasure_map_share_over_limit_merge: '隊伍清單最多 {max} 張，加進去會變成 {total} 張',
+        treasure_map_share_over_limit_replace: '隊伍清單最多 {max} 張，這個連結有 {total} 張',
+        treasure_map_share_dismiss: '不用了',
+        treasure_map_share_confirm: '加入清單',
+
         // 通用按鈕
         treasure_map_cancel: '取消',
         treasure_map_confirm: '確認',
@@ -387,6 +405,24 @@ const TreasureMapTranslations = {
         treasure_map_share_replace_room: 'Replace the team list',
         treasure_map_share_none_found: 'None of the maps in this share link could be found',
 
+        // Share link: the button in the list actions, the dialog shown when a link is opened
+        treasure_map_share_link: 'Copy share link',
+        treasure_map_share_copied: 'Share link copied (maps: {count})',
+        treasure_map_share_title: 'Add shared maps',
+        treasure_map_share_lede: 'Maps in this link ({count}):',
+        treasure_map_share_in_list: 'Already in your list',
+        treasure_map_share_missing: 'Not found and skipped: {count}',
+        treasure_map_share_choice: 'How to add them',
+        treasure_map_share_merge: 'Add to my list',
+        treasure_map_share_merge_room: 'Add to the team list',
+        treasure_map_share_merge_hint: 'Duplicates kept once: {duplicates} · Total: {total}',
+        treasure_map_share_merge_hint_new: 'Total: {total}',
+        treasure_map_share_replace_hint: 'Keep only the maps from this link ({count})',
+        treasure_map_share_over_limit_merge: 'A team list holds up to {max} maps; adding these would make {total}',
+        treasure_map_share_over_limit_replace: 'A team list holds up to {max} maps; this link has {total}',
+        treasure_map_share_dismiss: 'No thanks',
+        treasure_map_share_confirm: 'Add to list',
+
         // Common buttons
         treasure_map_cancel: 'Cancel',
         treasure_map_confirm: 'Confirm',
@@ -641,6 +677,24 @@ const TreasureMapTranslations = {
         treasure_map_share_replace: 'マイリストを置き換える',
         treasure_map_share_replace_room: 'チームリストを置き換える',
         treasure_map_share_none_found: '共有リンクの地図が見つかりませんでした',
+
+        // 共有リンク：リストの操作ボタン、リンクを開いたときのダイアログ
+        treasure_map_share_link: '共有リンクをコピー',
+        treasure_map_share_copied: '共有リンクをコピーしました（{count} 枚）',
+        treasure_map_share_title: '共有された地図を追加',
+        treasure_map_share_lede: 'このリンクには地図が {count} 枚あります：',
+        treasure_map_share_in_list: 'リストにあります',
+        treasure_map_share_missing: 'ほかの {count} 枚は見つからなかったので省きました',
+        treasure_map_share_choice: '追加のしかた',
+        treasure_map_share_merge: 'マイリストに追加',
+        treasure_map_share_merge_room: 'チームリストに追加',
+        treasure_map_share_merge_hint: '重複の {duplicates} 枚は 1 枚にまとめ、合計 {total} 枚',
+        treasure_map_share_merge_hint_new: '合計 {total} 枚',
+        treasure_map_share_replace_hint: 'この {count} 枚だけにする',
+        treasure_map_share_over_limit_merge: 'チームリストは {max} 枚までです。追加すると {total} 枚になります',
+        treasure_map_share_over_limit_replace: 'チームリストは {max} 枚までです。このリンクには {total} 枚あります',
+        treasure_map_share_dismiss: '追加しない',
+        treasure_map_share_confirm: 'リストに追加',
 
         // 共通ボタン
         treasure_map_cancel: 'キャンセル',

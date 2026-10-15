@@ -1,4 +1,5 @@
-// 清單的頁內對話框：清空確認與匯入（之後再加分享連結）。標記都在 index.html（#clearListModal、#importListModal）。
+// 清單的頁內對話框：清空確認、匯入，以及打開分享連結時的「加入分享的寶圖」。
+// 標記都在 index.html（#clearListModal、#importListModal、#shareMapsModal）。
 // 開關照 RoomCollaboration#showModal()：拿掉 .hidden、交給 ModalManager 以 style.display 顯示，關閉時加回 .hidden。
 // 說明、狀態與選項的字帶張數、在隊伍裡還要換字，由這裡依狀態組出來、不掛 data-i18n：
 // I18nManager 切換語言時會把 [data-i18n] 的文字整個換掉
@@ -8,12 +9,15 @@ class ListDialogs {
         // 自己的 ModalManager：清單面板那個實例正拿著 #myListPanel，一個實例一次只管一個視窗。
         // 對話框開在面板上面，共用的堆疊讓 Escape 與焦點陷阱只作用在對話框，關閉後焦點回到按下去的按鈕
         this.modalManager = new ModalManager();
-        // 第幾次打開對話框（兩個對話框共用；showModal() 每次打開、關閉都加一）。隊伍裡匯入要等同步，這段時間玩家可能按 Escape
+        // 第幾次打開對話框（三個對話框共用；showModal() 每次打開、關閉都加一）。隊伍裡匯入要等同步，這段時間玩家可能按 Escape
         // 關掉又重新打開：那是新的一次，上一次匯入的結果不能把它關掉、把錯誤寫進去，也不能擋住它的按鈕
         this.opening = 0;
-        // 正在匯入的是哪一次打開的對話框（opening 的值），沒有是 null。隊伍裡要等同步：
+        // 正在匯入（或加入分享的寶圖）的是哪一次打開的對話框（opening 的值），沒有是 null。隊伍裡要等同步：
         // 同一次打開不接受第二次按下，那一次的對話框還開著時也不重畫（見 refresh）
         this.importing = null;
+        // 分享對話框現在列的寶圖：{ maps: 目錄裡找得到的寶圖, missing: 找不到而略過的張數, listKey: 上一次畫的列表內容 }
+        // （openShare 設定，refresh 重畫用）
+        this.shared = null;
 
         const byId = id => document.getElementById(id);
         this.elements = {
@@ -35,13 +39,29 @@ class ListDialogs {
             replaceHint: byId('importModeReplaceHint'),
             importError: byId('importListError'),
             cancelImport: byId('cancelImportBtn'),
-            confirmImport: byId('confirmImportBtn')
+            confirmImport: byId('confirmImportBtn'),
+            shareModal: byId('shareMapsModal'),
+            closeShare: byId('closeShareModalBtn'),
+            shareLede: byId('shareMapsLede'),
+            shareList: byId('shareMapsList'),
+            shareMissing: byId('shareMapsMissing'),
+            shareChoice: byId('shareMapsChoice'),
+            shareModeMerge: byId('shareModeMerge'),
+            shareModeReplace: byId('shareModeReplace'),
+            shareMergeTitle: byId('shareModeMergeTitle'),
+            shareMergeHint: byId('shareModeMergeHint'),
+            shareReplaceTitle: byId('shareModeReplaceTitle'),
+            shareReplaceHint: byId('shareModeReplaceHint'),
+            shareNote: byId('shareMapsNote'),
+            shareError: byId('shareMapsError'),
+            dismissShare: byId('dismissShareBtn'),
+            confirmShare: byId('confirmShareBtn')
         };
 
         window.i18n.onLanguageChange(() => this.handleLanguageChange());
     }
 
-    // 由 TreasureMapFinder#setupEventListeners() 呼叫：接上兩個對話框裡的按鈕與貼上內容的欄位
+    // 由 TreasureMapFinder#setupEventListeners() 呼叫：接上三個對話框裡的按鈕、貼上內容的欄位與分享的兩個選項
     init() {
         const { elements } = this;
         elements.closeClear.addEventListener('click', () => this.close(elements.clearModal));
@@ -51,10 +71,17 @@ class ListDialogs {
         elements.cancelImport.addEventListener('click', () => this.close(elements.importModal));
         elements.confirmImport.addEventListener('click', () => this.confirmImport());
         elements.importText.addEventListener('input', () => this.handleImportInput());
+        elements.closeShare.addEventListener('click', () => this.close(elements.shareModal));
+        elements.dismissShare.addEventListener('click', () => this.close(elements.shareModal));
+        elements.confirmShare.addEventListener('click', () => this.confirmShare());
+        for (const radio of [elements.shareModeMerge, elements.shareModeReplace]) {
+            radio.addEventListener('change', () => this.handleShareModeChange(radio));
+        }
     }
 
-    // 拿掉 .hidden 再交給 ModalManager 顯示；關閉時加回 .hidden、清掉 ModalManager 設的 display
-    showModal(element) {
+    // 拿掉 .hidden 再交給 ModalManager 顯示；關閉時加回 .hidden、清掉 ModalManager 設的 display，最後呼叫 onClose
+    // （不管怎麼關：按鈕、Escape、點遮罩都會走到；ModalManager 已經先把焦點還給開啟前的元素）
+    showModal(element, onClose) {
         element.classList.remove('hidden');
         this.opening += 1;
         this.modalManager.show(element, {
@@ -64,6 +91,7 @@ class ListDialogs {
                 this.opening += 1;
                 element.classList.add('hidden');
                 element.style.display = '';
+                onClose?.();
             }
         });
     }
@@ -83,14 +111,15 @@ class ListDialogs {
     // 其餘由程式組的字照 refresh() 重畫（固定的字由 I18nManager 依 [data-i18n] 換）
     handleLanguageChange() {
         this.hideImportError();
+        this.hideShareError();
         if (this.modalManager.activeModal === this.elements.importModal) this.updateImportStatus();
         this.refresh();
     }
 
     // 開著的對話框裡跟著清單與語言走的部分重畫：切換語言、清單變了（隊友同步、進出隊伍；TreasureMapFinder#updateListCount()）都會來，
     // 這樣隊友的同步不會讓「清空 6 張」其實清掉 7 張。只重畫文字與顯示，玩家已經選的（模式、貼上的內容）不動；沒開著的下次打開時才畫。
-    // 匯入進行中不重畫：隊伍裡要等同步，清單已經換成新的、對話框還沒關，這時重畫只會讓選項冒出來又消失。
-    // 重畫可能把焦點所在的那顆藏起來（隊友清空清單時「合併／取代」整組藏起來）：焦點先記下來，畫完再看
+    // 匯入或加入分享的寶圖進行中不重畫：隊伍裡要等同步，清單已經換成新的、對話框還沒關，這時重畫只會讓選項與「已在清單」冒出來又消失。
+    // 重畫可能把焦點所在的那顆藏起來或停用（隊友清空清單時「合併／取代」整組藏起來、超過上限時「加入清單」停用）：焦點先記下來，畫完再看
     refresh() {
         if (this.importing === this.opening) return;
         const { finder, elements } = this;
@@ -109,6 +138,9 @@ class ListDialogs {
             // 隊伍每兩秒輪詢一次都會經過這裡，同樣的字重寫一遍會讓螢幕閱讀器重念
             this.renderImportChoice();
             this.keepFocus(active, elements.importText);
+        } else if (open === elements.shareModal) {
+            this.renderShare();
+            this.keepFocus(active, elements.dismissShare);
         }
     }
 
@@ -238,7 +270,7 @@ class ListDialogs {
         );
     }
 
-    // 送出：apply() 回傳 { success, message }，成功就關閉 modal，失敗交給 showError。
+    // 匯入與加入分享的寶圖共用：apply() 回傳 { success, message }，成功就關閉 modal，失敗交給 showError。
     // 同一次打開只送一次；隊伍裡要等同步，等的時候對話框被關掉（也可能又打開了一次）：結果屬於已經關掉的那一次，
     // 不關、不寫錯誤，也不擋住之後打開的那一次
     async submitImport(apply, modal, showError) {
@@ -256,5 +288,144 @@ class ListDialogs {
         } finally {
             if (this.importing === opening) this.importing = null;
         }
+    }
+
+    // ---------- 分享連結 ----------
+    // 打開帶 ?maps= 的連結時問一次（TreasureMapFinder#handleSharedMaps）：列出連結裡的寶圖，清單不是空的再問「加進」還是「取代」。
+    // maps 是目錄裡找得到的那幾張，missing 是找不到而略過的張數。隊伍連線中、結果超過隊伍上限時不能加入，原因寫在對話框裡。
+    // 不管怎麼關（加入成功、「不用了」、✕、Escape、點遮罩）：網址裡的 maps 拿掉，焦點放到結果張數
+    // （這個對話框是載入時自動打開的，不是按哪顆按鈕打開的，沒有按鈕可以還焦點）。
+    // 下面還開著別的視窗時（隊伍自動加入還沒結束，玩家先打開了清單面板），焦點留給 ModalManager 還原到那個視窗裡：結果張數在它外面，
+    // 放過去再按 Tab 會跑出開著的視窗。加入的寶圖讓面板重畫、原本有焦點的那顆換掉了（還原不了）時，放到面板標題
+    openShare(maps, missing) {
+        const { finder, elements } = this;
+        this.shared = { maps, missing, listKey: null };
+        this.hideShareError();
+        // 兩顆都明確設成預設值（加進），不靠同一組 radio 的互斥
+        elements.shareModeMerge.checked = true;
+        elements.shareModeReplace.checked = false;
+        this.renderShare();
+        this.showModal(elements.shareModal, () => {
+            finder.removeSharedParam();
+            const below = ModalManager.topmost()?.activeModal;
+            if (!below) {
+                finder.elements.resultCount?.focus();
+            } else if (below === finder.elements.myListPanel && !below.contains(document.activeElement)) {
+                finder.elements.listTitle?.focus();
+            }
+        });
+    }
+
+    // 說明、寶圖列表、缺少的張數與下面的選項：切換語言、清單變了（哪些已經在清單、加進來共幾張）都會重畫；玩家選的模式不動。
+    // 寶圖列表只在內容真的變了（語言、哪幾張已在清單）才重畫：隊伍每兩秒輪詢一次都會經過這裡，整排縮圖不該每兩秒換新
+    renderShare() {
+        const { finder, elements } = this;
+        const { maps, missing } = this.shared;
+        ListDialogs.setText(elements.shareLede, FF14Utils.getI18nText('treasure_map_share_lede', '這個連結有 {count} 張寶圖：', { count: maps.length }));
+        const listKey = [window.i18n.getCurrentLanguage(), ...maps.map(map => `${map.id}:${finder.listManager.has(map.id)}`)].join('|');
+        if (listKey !== this.shared.listKey) {
+            SecurityUtils.clearElement(elements.shareList);
+            for (const map of maps) elements.shareList.appendChild(this.createSharedItem(map));
+            this.shared.listKey = listKey;
+        }
+        ListDialogs.setText(elements.shareMissing, missing > 0
+            ? FF14Utils.getI18nText('treasure_map_share_missing', '另外 {count} 張找不到，已略過', { count: missing })
+            : '');
+        elements.shareMissing.classList.toggle('hidden', missing === 0);
+        this.renderShareChoice();
+    }
+
+    // 連結裡的一張寶圖：縮圖（裝飾，alt 空白）、等級＋目前語言的地名＋座標；已經在清單裡的多一個小標籤
+    createSharedItem(map) {
+        const { finder } = this;
+        const info = finder.describeListItem(map);
+        const item = document.createElement('li');
+        item.className = 'tm-mini';
+        item.appendChild(finder.createThumbnailImage(info.thumbnail));
+        const text = document.createElement('span');
+        text.className = 'tm-mini-text';
+        text.textContent = `${info.grade} ${info.zoneName} ${info.coordsText}`;
+        item.appendChild(text);
+        if (finder.listManager.has(map.id)) {
+            // 標籤前面留一個空白：讀出來、複製下來都是「G17 烏爾科帕恰 (13.7, 14.2) 已在清單」（flex 裡只有空白的文字不畫出來，版面不變）
+            item.appendChild(document.createTextNode(' '));
+            const tag = document.createElement('span');
+            tag.className = 'tag';
+            tag.textContent = FF14Utils.getI18nText('treasure_map_share_in_list', '已在清單');
+            item.appendChild(tag);
+        }
+        return item;
+    }
+
+    // 「加進／取代」：清單不是空的才有選項，標題在隊伍裡寫成隊伍清單，說明各寫選了那個之後清單會有幾張。
+    // 目前選的那個結果放不下（隊伍上限）、或隊伍連線中：下面的提醒寫原因並停用「加入清單」（連線中優先）。
+    // 清單是空的時沒有選項，等於取代：只看連結裡的張數
+    renderShareChoice() {
+        const { finder, elements } = this;
+        const currentIds = finder.listManager.getList().map(item => item.id);
+        const incomingIds = this.shared.maps.map(map => map.id);
+        const inRoom = Boolean(finder.roomCollaboration?.currentRoom);
+
+        elements.shareChoice.classList.toggle('hidden', currentIds.length === 0);
+        ListDialogs.setText(elements.shareMergeTitle, inRoom
+            ? FF14Utils.getI18nText('treasure_map_share_merge_room', '加進隊伍清單')
+            : FF14Utils.getI18nText('treasure_map_share_merge', '加進我的清單'));
+        ListDialogs.setText(elements.shareReplaceTitle, inRoom
+            ? FF14Utils.getI18nText('treasure_map_share_replace_room', '取代隊伍清單')
+            : FF14Utils.getI18nText('treasure_map_share_replace', '取代我的清單'));
+        const added = ListShare.projectedCount(currentIds, incomingIds, true);
+        const replaced = ListShare.projectedCount(currentIds, incomingIds, false);
+        ListDialogs.setText(elements.shareMergeHint, added.duplicates > 0
+            ? FF14Utils.getI18nText('treasure_map_share_merge_hint', '重複的 {duplicates} 張只留一張，共 {total} 張', { duplicates: added.duplicates, total: added.total })
+            : FF14Utils.getI18nText('treasure_map_share_merge_hint_new', '共 {total} 張', { total: added.total }));
+        ListDialogs.setText(elements.shareReplaceHint, FF14Utils.getI18nText('treasure_map_share_replace_hint', '只留這 {count} 張', { count: replaced.total }));
+
+        const merge = this.isMerge(elements.shareModeReplace);
+        const total = (merge ? added : replaced).total;
+        const max = RoomCollaboration.CONSTANTS.MAX_MAPS;
+        let note = '';
+        if (finder.roomCollaboration?.isConnecting) {
+            note = finder.getConnectingMessage();
+        } else if (inRoom && total > max) {
+            note = merge
+                ? FF14Utils.getI18nText('treasure_map_share_over_limit_merge', '隊伍清單最多 {max} 張，加進去會變成 {total} 張', { max, total })
+                : FF14Utils.getI18nText('treasure_map_share_over_limit_replace', '隊伍清單最多 {max} 張，這個連結有 {total} 張', { max, total });
+        }
+        // 提醒是 role="status"，而且 #shareMapsModal 的 aria-describedby 指向它：藏起來的元素照樣會被算進對話框的說明，所以沒有提醒時文字也要是空的
+        ListDialogs.setText(elements.shareNote, note);
+        elements.shareNote.classList.toggle('hidden', note === '');
+        elements.confirmShare.disabled = note !== '';
+    }
+
+    // 改了選項（radio 是剛選的那個）：上一次加入失敗的錯誤是對上一個選項說的，收起來；提醒與「加入清單」能不能按重新判斷。
+    // 焦點可能還停在「加入清單」上（Safari 與 macOS 的 Firefox 點選項不會把焦點移過去）：它這次停用了，焦點就放到剛選的選項
+    handleShareModeChange(radio) {
+        const active = document.activeElement;
+        this.hideShareError();
+        this.renderShareChoice();
+        this.keepFocus(active, radio);
+    }
+
+    showShareError(message) {
+        const { shareError } = this.elements;
+        shareError.textContent = message;
+        shareError.classList.remove('hidden');
+    }
+
+    hideShareError() {
+        const { shareError } = this.elements;
+        shareError.textContent = '';
+        shareError.classList.add('hidden');
+    }
+
+    // 「加入清單」：照目前的選項加進或取代（走 applyListImport，隊伍裡上限與驗證都在那裡）。
+    // 成功就關閉；失敗把原因寫在對話框裡、不關，讓玩家改選項再試
+    confirmShare() {
+        const { elements } = this;
+        return this.submitImport(
+            () => this.finder.applyListImport(this.shared.maps, { merge: this.isMerge(elements.shareModeReplace) }),
+            elements.shareModal,
+            message => this.showShareError(message)
+        );
     }
 }

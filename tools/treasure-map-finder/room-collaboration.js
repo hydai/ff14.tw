@@ -120,7 +120,7 @@ class RoomCollaboration {
             this.renderHistory();
         });
 
-        this.init();
+        this.ready = this.init();
     }
 
     async init() {

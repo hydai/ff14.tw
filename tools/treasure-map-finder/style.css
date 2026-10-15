@@ -1112,6 +1112,44 @@
     color: var(--color-muted);
 }
 
+/* 分享連結對話框（#shareMapsModal）：先說連結裡有幾張，下面一列一張（縮圖、等級＋地名＋座標，已經在清單裡的多一個小標籤）。
+   個人清單沒有張數上限，連結可以很長：列表在對話框裡自己捲動，下面的選項與按鈕不會被推出畫面 */
+.tm-dialog-lede {
+    color: var(--color-heading);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+}
+
+.tm-mini-list {
+    display: grid;
+    gap: var(--space-2);
+    max-height: 40vh;
+    padding: 0;
+    overflow-y: auto;
+    list-style: none;
+}
+
+.tm-mini {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-sm);
+}
+
+.tm-mini img {
+    flex: none;
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-sm);
+    object-fit: cover;
+}
+
+.tm-mini-text {
+    flex: 1;
+    min-width: 0;
+    font-variant-numeric: tabular-nums;
+}
+
 /* 資料來源：外觀由 .card 提供 */
 .source-section {
     margin-top: var(--space-9);

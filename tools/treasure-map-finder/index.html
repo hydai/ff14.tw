@@ -181,8 +181,11 @@
                 <div class="list-content" id="listContent" role="tabpanel" aria-labelledby="tab-panel-list">
                     <!-- 清單項目將由 JavaScript 動態生成 -->
                 </div>
-                <!-- 清單下面的動作列：清單是空的時只有「匯入」（「清空清單」由 JavaScript 藏起來）；隊伍的「歷史」分頁時整列跟清單一起藏起來 -->
+                <!-- 清單下面的動作列：清單是空的時只有「匯入」（「複製分享連結」與「清空清單」由 JavaScript 藏起來）；隊伍的「歷史」分頁時整列跟清單一起藏起來 -->
                 <div class="tm-list-actions" id="listActions">
+                    <button type="button" class="btn btn-sm" id="shareListBtn">
+                        <span class="btn-icon">🔗</span> <span data-i18n="treasure_map_share_link">複製分享連結</span>
+                    </button>
                     <button type="button" class="btn btn-sm" id="importListBtn">
                         <span class="btn-icon">📥</span> <span data-i18n="treasure_map_import">匯入</span>
                     </button>
@@ -392,6 +395,46 @@
             <div class="dialog-actions">
                 <button type="button" class="btn" id="cancelImportBtn" data-i18n="treasure_map_cancel">取消</button>
                 <button type="button" class="btn btn-primary" id="confirmImportBtn" data-i18n="treasure_map_import">匯入</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 分享連結對話框（ListDialogs#openShare）：打開帶 ?maps= 的連結時問一次，沒有按下「加入清單」就不動清單。
+         說明、寶圖列、缺少的張數、選項、提醒與錯誤都帶張數、在隊伍裡還要換字，由 JavaScript 填入（不掛 data-i18n）；
+         清單不是空的才有「加進／取代」選項 -->
+    <div class="dialog-overlay hidden" id="shareMapsModal" role="dialog" aria-modal="true" aria-labelledby="shareMapsModal-title" aria-describedby="shareMapsNote">
+        <div class="dialog tm-dialog">
+            <div class="dialog-header">
+                <h3 class="dialog-title" id="shareMapsModal-title" data-i18n="treasure_map_share_title">加入分享的寶圖</h3>
+                <button type="button" class="btn btn-close" id="closeShareModalBtn" aria-label="關閉" data-i18n="treasure_map_close" data-i18n-attr="aria-label">×</button>
+            </div>
+            <div class="dialog-body">
+                <p class="tm-dialog-lede" id="shareMapsLede"></p>
+                <ul class="tm-mini-list" id="shareMapsList"></ul>
+                <p class="form-text hidden" id="shareMapsMissing"></p>
+                <fieldset class="tm-choice hidden" id="shareMapsChoice">
+                    <legend class="visually-hidden" data-i18n="treasure_map_share_choice">要怎麼加入</legend>
+                    <div class="form-check">
+                        <input type="radio" class="form-check-input" name="shareMode" id="shareModeMerge" value="merge" checked>
+                        <label class="form-check-label" for="shareModeMerge">
+                            <span class="tm-choice-title" id="shareModeMergeTitle"></span>
+                            <span class="tm-choice-hint" id="shareModeMergeHint"></span>
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input type="radio" class="form-check-input" name="shareMode" id="shareModeReplace" value="replace">
+                        <label class="form-check-label" for="shareModeReplace">
+                            <span class="tm-choice-title" id="shareModeReplaceTitle"></span>
+                            <span class="tm-choice-hint" id="shareModeReplaceHint"></span>
+                        </label>
+                    </div>
+                </fieldset>
+                <p class="warning-message hidden" id="shareMapsNote" role="status"></p>
+                <p class="error-message hidden" id="shareMapsError" role="alert"></p>
+            </div>
+            <div class="dialog-actions">
+                <button type="button" class="btn" id="dismissShareBtn" data-i18n="treasure_map_share_dismiss">不用了</button>
+                <button type="button" class="btn btn-primary" id="confirmShareBtn" data-i18n="treasure_map_share_confirm">加入清單</button>
             </div>
         </div>
     </div>

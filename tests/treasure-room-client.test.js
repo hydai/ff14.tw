@@ -249,6 +249,26 @@ test('restoration waits for the catalogue before reading the saved room', async 
     assert.deepEqual(events, ['events', 'restore']);
 });
 
+test('ready settles only after the saved room is restored or auto-joined (the shared-link dialog waits for it)', async () => {
+    const state = setup(() => ({ body: room() }));
+    const RoomCollaboration = vm.runInContext('RoomCollaboration', state.context);
+    const events = [];
+    let finishRestore;
+    RoomCollaboration.prototype.init = state.originalInit;
+    RoomCollaboration.prototype.setupEventListeners = () => events.push('events');
+    RoomCollaboration.prototype.checkExistingRoom = () => new Promise(resolve => {
+        finishRestore = () => { events.push('restored'); resolve(); };
+    });
+    const client = new RoomCollaboration(state.finder);
+    let settled = false;
+    client.ready.then(() => { settled = true; });
+    await new Promise(resolve => setImmediate(resolve));
+    assert.deepEqual([events, settled], [['events'], false]);
+    finishRestore();
+    await client.ready;
+    assert.deepEqual([events, settled], [['events', 'restored'], true]);
+});
+
 test('editing is blocked during connection so the initial room response cannot erase a local edit', async () => {
     let resolve;
     const delayed = new Promise(done => { resolve = done; });

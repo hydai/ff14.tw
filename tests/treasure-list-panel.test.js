@@ -47,10 +47,10 @@ function declarations(selector, media = null) {
 }
 
 // ---------- 清單面板的頁面替身 ----------
-// 照 index.html 建出這些元素（mountFromHtml），跑真正的建構函式與 init()。清單的對話框（清空、匯入；之後還有分享）的 id 加在 mapDetailModal 前面，
+// 照 index.html 建出這些元素（mountFromHtml），跑真正的建構函式與 init()。清單的對話框（清空、匯入、分享）的 id 加在 mapDetailModal 前面，
 // 順序同 index.html
 const PANEL_IDS = ['stepHint', 'listEntryDesktop', 'levelTags', 'zoneFilterRow', 'resultCount', 'clearZonesBtn', 'treasureEmpty', 'treasureGrid',
-    'listEntryMobile', 'listAnnouncer', 'panelOverlay', 'myListPanel', 'clearListModal', 'importListModal', 'mapDetailModal'];
+    'listEntryMobile', 'listAnnouncer', 'panelOverlay', 'myListPanel', 'clearListModal', 'importListModal', 'shareMapsModal', 'mapDetailModal'];
 const PAGE_HTML = read(`${TOOL_DIR}/index.html`);
 // 照 index.html 的順序載入：這個工具的翻譯檔、共用的 security-utils.js，以及工具目錄自己的每一個 <script src>（src 不含 /）。
 // 之後的任務在 index.html 加了新模組，這裡會自動載入；modal-manager.js 的 src 含 /，不載入，改用下面的替身
@@ -395,7 +395,7 @@ test('隊伍同步重畫時，被移除的不是焦點所在的那一列：焦�
     assert.ok(page.focused() === removeButton('tm_013'), '焦點上面的那一列被移除也不影響');
 });
 
-test('隊友移除了最後一張，焦點在「清空清單」或「生成路線」上（藏起來或停用了）：焦點放到面板標題，不掉到 body；焦點在別處就不動', async () => {
+test('隊友移除了最後一張，焦點在「複製分享連結」「清空清單」或「生成路線」上（藏起來或停用了）：焦點放到面板標題，不掉到 body；焦點在別處就不動', async () => {
     const page = await createPanelPage();
     page.finder.openListPanel();
     // 隊伍同步把清單清空：更新張數、重畫清單
@@ -404,7 +404,7 @@ test('隊友移除了最後一張，焦點在「清空清單」或「生成路�
         page.finder.updateListCount();
         page.finder.renderMyList();
     };
-    for (const id of ['clearAllBtn', 'generateRouteBtn']) {
+    for (const id of ['shareListBtn', 'clearAllBtn', 'generateRouteBtn']) {
         page.addMaps(['tm_017']);
         page.$(id).focus();
         teammateEmpties();
@@ -1001,12 +1001,12 @@ test('瀏覽器封鎖網站資料：從對話框匯入照常運作，提示一�
     assert.deepEqual(page.toasts.slice(2), [{ message: '已合併匯入 1 張新寶圖', type: 'success' }]);
 });
 
-test('清空與匯入對話框的結構：遮罩層 > .dialog.tm-dialog > 標頭、內文、動作列，放在離開隊伍對話框之後、詳細檢視之前', () => {
+test('清空、匯入與分享對話框的結構：遮罩層 > .dialog.tm-dialog > 標頭、內文、動作列，放在離開隊伍對話框之後、詳細檢視之前', () => {
     const html = read(`${TOOL_DIR}/index.html`);
-    const order = ['id="leaveRoomModal"', 'id="clearListModal"', 'id="importListModal"', 'id="mapDetailModal"'].map((s) => html.indexOf(s));
+    const order = ['id="leaveRoomModal"', 'id="clearListModal"', 'id="importListModal"', 'id="shareMapsModal"', 'id="mapDetailModal"'].map((s) => html.indexOf(s));
     assert.ok(!order.includes(-1), `缺對話框：${order}`);
     assert.deepEqual([...order].sort((a, b) => a - b), order, `對話框的順序：${order}`);
-    for (const [id, close] of [['clearListModal', 'closeClearModalBtn'], ['importListModal', 'closeImportModalBtn']]) {
+    for (const [id, close] of [['clearListModal', 'closeClearModalBtn'], ['importListModal', 'closeImportModalBtn'], ['shareMapsModal', 'closeShareModalBtn']]) {
         const overlay = tagAttrs(html, id);
         assert.deepEqual(classesOf(overlay), ['dialog-overlay', 'hidden'], id);
         assert.deepEqual([overlay.role, overlay['aria-modal'], overlay['aria-labelledby']], ['dialog', 'true', `${id}-title`], id);
@@ -1144,4 +1144,593 @@ test('清空與匯入對話框的三語鍵值照設計；舊的確認、說明�
         for (const key of gone) assert.doesNotMatch(read(file), new RegExp(`['"]${key}['"]`), `${file} 還在用 ${key}`);
     }
     assert.doesNotMatch(read(`${TOOL_DIR}/script.js`), /clearAllMaps|showImportDialog/);
+});
+
+// ---------- 分享連結 ----------
+const URL_BASE = 'https://ff14.tw/tools/treasure-map-finder/';
+const currentUrl = (page) => String(page.dom.window.location);
+// 在分享對話框選「加進」或「取代」。fake-dom 的 radio 沒有互斥，所以兩顆都設；change 只由剛選中的那顆送出（同瀏覽器）
+const chooseShareMode = (page, mode) => {
+    page.$('shareModeMerge').checked = mode === 'merge';
+    page.$('shareModeReplace').checked = mode === 'replace';
+    page.$(mode === 'merge' ? 'shareModeMerge' : 'shareModeReplace').dispatchEvent(new page.dom.window.Event('change', { bubbles: true }));
+};
+const SIX_MAPS = ['tm_017', 'tm_007', 'tm_013', 'tm_022', 'tm_010', 'tm_033'];
+
+test('複製分享連結：只帶寶圖 id（依清單順序），提示張數', async () => {
+    const page = await createPanelPage({ url: `${URL_BASE}?grade=g17&room=ABC123` });
+    page.addMaps(['tm_017', 'tm_007', 'tm_013']);
+    await page.finder.copyShareLink();
+    assert.deepEqual(page.clipboardWrites, [`${URL_BASE}?maps=tm_017,tm_007,tm_013`]);
+    assert.deepEqual(page.toasts.at(-1), { message: '已複製分享連結（3 張）', type: 'success' });
+});
+
+test('複製分享連結：清單是空的就不做；剪貼簿拒絕寫入、或 id 編不成網址（結尾是不成對的代理字元）時跳「複製失敗」', async () => {
+    const empty = await createPanelPage();
+    await empty.finder.copyShareLink();
+    assert.deepEqual([empty.clipboardWrites, empty.toasts], [[], []]);
+
+    const denied = await createPanelPage({ clipboard: 'reject' });
+    denied.addMaps(['tm_017']);
+    await denied.finder.copyShareLink();
+    assert.deepEqual(denied.toasts, [{ message: '複製失敗', type: 'error' }]);
+
+    // 匯入進來的 id 若被 list-manager 照 UTF-16 code unit 截在一個字元的一半，encodeURIComponent 會丟 URIError：一樣走「複製失敗」，不是沒人接的例外
+    const broken = await createPanelPage();
+    broken.finder.listManager.add({ id: 'g8_test_\uD83D', level: 'g8', zone: 'Test', coords: { x: 10, y: 20 } });
+    await broken.finder.copyShareLink();
+    assert.deepEqual([broken.clipboardWrites, broken.toasts], [[], [{ message: '複製失敗', type: 'error' }]]);
+});
+
+test('「複製分享連結」在清單動作列的最前面：清單是空的時藏起來，按下去複製，名稱跟著語言', async () => {
+    const page = await createPanelPage({ url: `${URL_BASE}?grade=g17` });
+    assert.equal(isHidden(page, 'shareListBtn'), true);
+    assert.equal(isHidden(page, 'importListBtn'), false);
+    page.addMaps(['tm_017', 'tm_007']);
+    assert.equal(isHidden(page, 'shareListBtn'), false);
+    page.$('shareListBtn').click();
+    await settle();
+    assert.deepEqual(page.clipboardWrites, [`${URL_BASE}?maps=tm_017,tm_007`]);
+    assert.deepEqual(page.toasts.at(-1), { message: '已複製分享連結（2 張）', type: 'success' });
+    const label = () => page.$('shareListBtn').querySelector('[data-i18n]').textContent;
+    assert.equal(label(), '複製分享連結');
+    page.setLang('en');
+    assert.equal(label(), 'Copy share link');
+    page.setLang('ja');
+    assert.equal(label(), '共有リンクをコピー');
+    page.finder.listManager.clear();
+    page.finder.updateListCount();
+    assert.equal(isHidden(page, 'shareListBtn'), true);
+});
+
+test('打開分享連結（清單是空的）：列出寶圖、不顯示選項；加入後網址拿掉 maps、保留其他參數，焦點在結果張數', async () => {
+    const page = await createPanelPage({ url: `${URL_BASE}?grade=g17&maps=tm_017,tm_999,tm_007&zone=urqopacha` });
+    page.finder.handleSharedMaps();
+    assert.equal(page.$('shareMapsModal').classList.contains('hidden'), false);
+    assert.equal(page.$('shareMapsLede').textContent, '這個連結有 2 張寶圖：');
+    assert.equal(page.$('shareMapsList').querySelectorAll('li').length, 2);
+    assert.match(page.$('shareMapsList').textContent, /G17 科扎馬烏卡 \(20\.0, 6\.9\)/);
+    assert.equal(page.$('shareMapsMissing').textContent, '另外 1 張找不到，已略過');
+    assert.equal(page.$('shareMapsChoice').classList.contains('hidden'), true);
+    page.$('confirmShareBtn').click();
+    await settle();
+    assert.deepEqual(Array.from(page.finder.listManager.getList(), (map) => map.id), ['tm_017', 'tm_007']);
+    assert.equal(String(page.dom.window.location), `${URL_BASE}?grade=g17&zone=urqopacha`);
+    assert.ok(page.focused() === page.$('resultCount'));
+});
+
+test('打開分享連結（清單不是空的）：預設加進、提示重複與總數；選取代只留連結裡的', async () => {
+    const page = await createPanelPage({ url: `${URL_BASE}?maps=tm_017,tm_007` });
+    page.addMaps(['tm_007', 'tm_013']);
+    page.finder.handleSharedMaps();
+    assert.equal(page.$('shareModeMerge').checked, true);
+    assert.equal(page.$('shareModeMergeHint').textContent, '重複的 1 張只留一張，共 3 張');
+    assert.equal(page.$('shareModeReplaceHint').textContent, '只留這 2 張');
+    assert.match(page.$('shareMapsList').textContent, /已在清單/);
+    page.$('shareModeReplace').checked = true;
+    page.$('shareModeReplace').dispatchEvent(new page.dom.window.Event('change', { bubbles: true }));
+    page.$('confirmShareBtn').click();
+    await settle();
+    assert.deepEqual(Array.from(page.finder.listManager.getList(), (map) => map.id), ['tm_017', 'tm_007']);
+});
+
+test('「不用了」、✕、Escape 都不改清單，網址一樣拿掉 maps', async () => {
+    for (const close of [(page) => page.$('dismissShareBtn').click(), (page) => page.$('closeShareModalBtn').click(), (page) => page.key('Escape')]) {
+        const page = await createPanelPage({ url: `${URL_BASE}?maps=tm_017&room=ABC123` });
+        page.finder.handleSharedMaps();
+        close(page);
+        assert.equal(page.finder.listManager.getLength(), 0);
+        assert.equal(String(page.dom.window.location), `${URL_BASE}?room=ABC123`);
+    }
+});
+
+test('分享連結裡一張都找不到：提示並拿掉 maps，不開對話框', async () => {
+    const page = await createPanelPage({ url: `${URL_BASE}?maps=tm_998,tm_999` });
+    page.finder.handleSharedMaps();
+    assert.equal(page.$('shareMapsModal').classList.contains('hidden'), true);
+    assert.deepEqual(page.toasts.at(-1), { message: '分享連結裡沒有找得到的寶圖', type: 'warning' });
+    assert.equal(String(page.dom.window.location), URL_BASE);
+});
+
+test('隊伍裡：選項寫隊伍清單；超過 8 張或連線中時說明並停用「加入清單」（Review Focus 1、2）', async () => {
+    const page = await createPanelPage({ url: `${URL_BASE}?maps=tm_008,tm_009,tm_011&room=ABC123` });
+    page.addMaps(['tm_017', 'tm_007', 'tm_013', 'tm_022', 'tm_010', 'tm_033']);
+    page.team();
+    page.finder.handleSharedMaps();
+    assert.equal(page.$('shareModeMergeTitle').textContent, '加進隊伍清單');
+    assert.equal(page.$('shareMapsNote').textContent, '隊伍清單最多 8 張，加進去會變成 9 張');
+    assert.equal(page.$('confirmShareBtn').disabled, true);
+    page.$('shareModeReplace').checked = true;
+    page.$('shareModeReplace').dispatchEvent(new page.dom.window.Event('change', { bubbles: true }));
+    assert.equal(page.$('confirmShareBtn').disabled, false);
+    const connecting = await createPanelPage({ url: `${URL_BASE}?maps=tm_008` });
+    connecting.team({ connecting: true });
+    connecting.finder.handleSharedMaps();
+    assert.equal(connecting.$('shareMapsNote').textContent, '隊伍連線中，請稍候再修改清單。');
+    assert.equal(connecting.$('confirmShareBtn').disabled, true);
+});
+
+test('載入順序：寶圖資料與隊伍還原或自動加入都結束後，才處理分享連結', () => {
+    assert.match(read('tools/treasure-map-finder/script.js'), /Promise\.allSettled\(\[treasureMapFinder\.ready, roomCollaboration\.ready\]\)\.then\(\(\) => treasureMapFinder\.handleSharedMaps\(\)\)/);
+    assert.match(read('tools/treasure-map-finder/room-collaboration.js'), /this\.ready = this\.init\(\);/);
+});
+
+test('網址沒有 maps、或寶圖資料沒載入成功：不開對話框、不跳 toast、網址不動', async () => {
+    const plain = await createPanelPage({ url: `${URL_BASE}?grade=g17` });
+    plain.finder.handleSharedMaps();
+    const noData = await createPanelPage({ url: `${URL_BASE}?maps=tm_017` });
+    noData.finder.maps = [];
+    noData.finder.handleSharedMaps();
+    for (const [page, url] of [[plain, `${URL_BASE}?grade=g17`], [noData, `${URL_BASE}?maps=tm_017`]]) {
+        assert.equal(isHidden(page, 'shareMapsModal'), true, url);
+        assert.deepEqual(page.toasts, [], url);
+        assert.deepEqual(page.historyCalls, [], url);
+        assert.equal(currentUrl(page), url);
+    }
+});
+
+test('分享連結的 id：去掉空白與重複、順序照連結；maps 是空的算一張都找不到', async () => {
+    const page = await createPanelPage({ url: `${URL_BASE}?maps=tm_017,%20tm_007,tm_017,,tm_013` });
+    page.finder.handleSharedMaps();
+    assert.equal(page.$('shareMapsLede').textContent, '這個連結有 3 張寶圖：');
+    assert.equal(isHidden(page, 'shareMapsMissing'), true, '沒有找不到的就不寫');
+    page.$('confirmShareBtn').click();
+    await settle();
+    assert.deepEqual(mapIds(page), ['tm_017', 'tm_007', 'tm_013']);
+    const blank = await createPanelPage({ url: `${URL_BASE}?maps=&room=ABC123` });
+    blank.finder.handleSharedMaps();
+    assert.equal(isHidden(blank, 'shareMapsModal'), true);
+    assert.deepEqual(blank.toasts.at(-1), { message: '分享連結裡沒有找得到的寶圖', type: 'warning' });
+    assert.equal(currentUrl(blank), `${URL_BASE}?room=ABC123`);
+});
+
+test('分享的寶圖一列一張：縮圖（alt 空白）、等級＋地名＋座標；已在清單的標「已在清單」', async () => {
+    const page = await createPanelPage({ url: `${URL_BASE}?maps=tm_017,tm_007` });
+    page.addMaps(['tm_007']);
+    page.finder.handleSharedMaps();
+    const rows = page.$('shareMapsList').querySelectorAll('li');
+    assert.deepEqual(rows.map((row) => row.className), ['tm-mini', 'tm-mini']);
+    const [first, second] = rows;
+    assert.deepEqual(first.children.map((child) => child.tagName), ['IMG', 'SPAN']);
+    assert.deepEqual(second.children.map((child) => child.tagName), ['IMG', 'SPAN', 'SPAN']);
+    assert.deepEqual([first.querySelector('img').getAttribute('alt'), first.querySelector('img').src], ['', catalogued(page, 'tm_017').thumbnail]);
+    assert.deepEqual(first.children.map((child) => child.textContent), ['', 'G17 科扎馬烏卡 (20.0, 6.9)']);
+    assert.deepEqual(second.children.map((child) => child.textContent), ['', 'G17 烏爾科帕恰 (13.7, 14.2)', '已在清單']);
+    assert.deepEqual(second.children[2].className, 'tag');
+    // 標籤前面有一個空白文字節點（children 只算元素，看不到它）：讀出來、複製下來都是「… (13.7, 14.2) 已在清單」，不黏在一起
+    assert.deepEqual([first.textContent, second.textContent], ['G17 科扎馬烏卡 (20.0, 6.9)', 'G17 烏爾科帕恰 (13.7, 14.2) 已在清單']);
+});
+
+test('加入分享的寶圖：清單是空的 →「已匯入」，加進 →「已合併匯入」並保留原本的順序，取代 →「已匯入」', async () => {
+    const empty = await createPanelPage({ url: `${URL_BASE}?maps=tm_017,tm_007` });
+    empty.finder.handleSharedMaps();
+    empty.$('confirmShareBtn').click();
+    await settle();
+    assert.deepEqual(empty.toasts, [{ message: '已匯入 2 張寶圖', type: 'success' }]);
+    assert.equal(isHidden(empty, 'shareMapsModal'), true);
+
+    const merged = await createPanelPage({ url: `${URL_BASE}?maps=tm_017,tm_007` });
+    merged.addMaps(['tm_007', 'tm_013']);
+    merged.finder.handleSharedMaps();
+    merged.$('confirmShareBtn').click();
+    await settle();
+    assert.deepEqual(merged.toasts, [{ message: '已合併匯入 1 張新寶圖', type: 'success' }]);
+    assert.deepEqual(mapIds(merged), ['tm_007', 'tm_013', 'tm_017']);
+
+    const replaced = await createPanelPage({ url: `${URL_BASE}?maps=tm_017,tm_007` });
+    replaced.addMaps(['tm_007', 'tm_013']);
+    replaced.finder.handleSharedMaps();
+    chooseShareMode(replaced, 'replace');
+    replaced.$('confirmShareBtn').click();
+    await settle();
+    assert.deepEqual(replaced.toasts, [{ message: '已匯入 2 張寶圖', type: 'success' }]);
+    assert.deepEqual(mapIds(replaced), ['tm_017', 'tm_007']);
+});
+
+test('加入分享的寶圖之後：清單入口與卡片的按鈕更新，隊伍收到新清單', async () => {
+    const page = await createPanelPage({ url: `${URL_BASE}?grade=g17&maps=tm_017,tm_007` });
+    const sent = page.team();
+    page.finder.handleSharedMaps();
+    page.$('confirmShareBtn').click();
+    await settle();
+    assert.equal(page.$('listEntryDesktop').querySelector('.tm-entry-label').textContent, '👥 隊伍清單 2/8');
+    assert.equal(page.$('treasureGrid').querySelector('[data-map-id="tm_017"] .btn-add-to-list').dataset.state, 'added');
+    assert.deepEqual(sent.map((maps) => Array.from(maps, (map) => map.id)), [['tm_017', 'tm_007']]);
+});
+
+test('隊伍裡分享對話框開著時清單變了（隊友同步）：上限說明、選項與「已在清單」跟著新的清單；玩家選的不被改掉', async () => {
+    const page = await createPanelPage({ url: `${URL_BASE}?maps=tm_008,tm_009,tm_011` });
+    page.addMaps(SIX_MAPS);
+    page.team();
+    page.finder.handleSharedMaps();
+    const note = () => (isHidden(page, 'shareMapsNote') ? null : page.$('shareMapsNote').textContent);
+    assert.deepEqual([note(), page.$('confirmShareBtn').disabled], ['隊伍清單最多 8 張，加進去會變成 9 張', true]);
+    // 隊友移除一張：5 + 3 = 8，剛好放得下
+    changeList(page, () => page.finder.listManager.remove('tm_033'));
+    assert.deepEqual([note(), page.$('confirmShareBtn').disabled, page.$('shareModeMergeHint').textContent], [null, false, '共 8 張']);
+    // 隊友加了連結裡的 tm_008 和 tm_033：7 張，加進來是 7 + 3 - 1 = 9
+    changeList(page, () => { page.finder.listManager.add(catalogued(page, 'tm_008')); page.finder.listManager.add(catalogued(page, 'tm_033')); });
+    assert.deepEqual([note(), page.$('confirmShareBtn').disabled], ['隊伍清單最多 8 張，加進去會變成 9 張', true]);
+    assert.equal(page.$('shareModeMergeHint').textContent, '重複的 1 張只留一張，共 9 張');
+    assert.match(page.$('shareMapsList').querySelector('li').textContent, /已在清單/);
+    // 選了取代：只留連結裡的 3 張，放得下；改回加進又超過；之後隊友再動清單，玩家選的取代還在
+    chooseShareMode(page, 'replace');
+    assert.deepEqual([note(), page.$('confirmShareBtn').disabled], [null, false]);
+    chooseShareMode(page, 'merge');
+    assert.deepEqual([note(), page.$('confirmShareBtn').disabled], ['隊伍清單最多 8 張，加進去會變成 9 張', true]);
+    chooseShareMode(page, 'replace');
+    changeList(page, () => page.finder.listManager.remove('tm_033'));
+    assert.deepEqual([page.$('shareModeReplace').checked, note(), page.$('confirmShareBtn').disabled], [true, null, false]);
+    assert.equal(page.$('shareModeMergeHint').textContent, '重複的 1 張只留一張，共 8 張');
+});
+
+test('隊伍連線中又超過上限：提醒只寫連線中；不在隊伍裡沒有張數上限，個人清單再多也能加', async () => {
+    const connecting = await createPanelPage({ url: `${URL_BASE}?maps=tm_008,tm_009,tm_011` });
+    connecting.addMaps(SIX_MAPS);
+    connecting.team({ connecting: true });
+    connecting.finder.handleSharedMaps();
+    assert.deepEqual([connecting.$('shareMapsNote').textContent, connecting.$('confirmShareBtn').disabled], ['隊伍連線中，請稍候再修改清單。', true]);
+
+    const personal = await createPanelPage({ url: `${URL_BASE}?maps=tm_008,tm_009,tm_011` });
+    personal.addMaps(SIX_MAPS);
+    personal.finder.handleSharedMaps();
+    assert.deepEqual([isHidden(personal, 'shareMapsNote'), personal.$('confirmShareBtn').disabled, personal.$('shareModeMergeHint').textContent], [true, false, '共 9 張']);
+    assert.equal(personal.$('shareMapsNote').textContent, '', '藏起來的提醒不留舊的字（對話框的 aria-describedby 指向它）');
+    personal.$('confirmShareBtn').click();
+    await settle();
+    assert.equal(personal.finder.listManager.getLength(), 9);
+});
+
+test('隊伍裡連結的寶圖比上限多：選取代、或清單是空的（等於取代）都說「這個連結有 N 張」並停用', async () => {
+    const nine = (page) => page.finder.maps.slice(0, 9).map((map) => map.id);
+    const preview = await createPanelPage();
+    const url = `${URL_BASE}?maps=${nine(preview).join(',')}`;
+    const full = await createPanelPage({ url });
+    full.addMaps(['tm_017']);
+    full.team();
+    full.finder.handleSharedMaps();
+    assert.equal(full.$('shareMapsNote').textContent, '隊伍清單最多 8 張，加進去會變成 10 張');
+    chooseShareMode(full, 'replace');
+    assert.deepEqual([full.$('shareMapsNote').textContent, full.$('confirmShareBtn').disabled], ['隊伍清單最多 8 張，這個連結有 9 張', true]);
+    const empty = await createPanelPage({ url });
+    empty.team();
+    empty.finder.handleSharedMaps();
+    assert.equal(isHidden(empty, 'shareMapsChoice'), true);
+    assert.deepEqual([empty.$('shareMapsNote').textContent, empty.$('confirmShareBtn').disabled], ['隊伍清單最多 8 張，這個連結有 9 張', true]);
+});
+
+test('縮圖：卡片、清單的每一列、分享對話框的每一張都走同一個函式——圖片是裝飾（alt 空白）、延遲載入、載入失敗換成預設圖', async () => {
+    const page = await createPanelPage({ url: `${URL_BASE}?grade=g17&maps=tm_017` });
+    page.addMaps(['tm_007']);
+    page.finder.handleSharedMaps();
+    const images = [
+        page.$('treasureGrid').querySelector('.tm-thumb').querySelector('img'),
+        page.$('listContent').querySelector('.list-item').querySelector('img'),
+        page.$('shareMapsList').querySelector('li').querySelector('img')
+    ];
+    for (const img of images) {
+        assert.deepEqual([img.getAttribute('alt'), img.getAttribute('loading')], ['', 'lazy']);
+        img.onerror.call(img);
+        assert.equal(img.src, '/assets/images/treasure-map-placeholder.png');
+    }
+});
+
+test('分享對話框開著時隊伍每兩秒同步一次：寶圖列只在內容真的變了（哪幾張已在清單、語言）才重畫，縮圖不閃', async () => {
+    const page = await createPanelPage({ url: `${URL_BASE}?maps=tm_017,tm_007` });
+    page.addMaps(['tm_013']);
+    page.team();
+    page.finder.handleSharedMaps();
+    const rows = () => page.$('shareMapsList').children;
+    const [first, second] = rows();
+    changeList(page, () => {});
+    // 清單變了，但連結裡的寶圖沒有一張受影響：列不動，下面選項的說明照常更新
+    changeList(page, () => page.finder.listManager.add(catalogued(page, 'tm_022')));
+    assert.deepEqual([rows()[0] === first, rows()[1] === second], [true, true]);
+    assert.equal(page.$('shareModeMergeHint').textContent, '共 4 張');
+    // 連結裡的 tm_007 進了清單、或換了語言：才重畫
+    changeList(page, () => page.finder.listManager.add(catalogued(page, 'tm_007')));
+    assert.ok(rows()[1] !== second);
+    assert.match(rows()[1].textContent, /已在清單/);
+    const settled = rows()[0];
+    page.setLang('en');
+    assert.ok(rows()[0] !== settled);
+});
+
+test('分享對話框開著時隊伍每兩秒同步一次：說明、缺少、選項與提醒同樣的字不重寫；提醒消失時藏起來、文字也清空', async () => {
+    const page = await createPanelPage({ url: `${URL_BASE}?maps=tm_008,tm_009,tm_011,tm_999` });
+    page.addMaps(SIX_MAPS);
+    page.team();
+    page.finder.handleSharedMaps();
+    const ids = ['shareMapsLede', 'shareMapsMissing', 'shareModeMergeTitle', 'shareModeMergeHint', 'shareModeReplaceTitle', 'shareModeReplaceHint', 'shareMapsNote'];
+    const written = textNodesOf(page, ids);
+    assert.deepEqual(textsOf(page, ids), ['這個連結有 3 張寶圖：', '另外 1 張找不到，已略過', '加進隊伍清單', '共 9 張', '取代隊伍清單', '只留這 3 張',
+        '隊伍清單最多 8 張，加進去會變成 9 張']);
+    page.finder.updateListCount();
+    page.finder.updateListCount();
+    assert.ok(sameNodes(page, ids, written), '清單沒變：文字節點還是同一個');
+    // 隊友移除一張，加進來剛好 8 張：合併的說明換字、提醒消失；只有這兩處換節點
+    changeList(page, () => page.finder.listManager.remove('tm_033'));
+    assert.deepEqual([page.$('shareModeMergeHint').textContent, isHidden(page, 'shareMapsNote'), page.$('shareMapsNote').textContent], ['共 8 張', true, '']);
+    assert.deepEqual(ids.map((id, index) => page.$(id).firstChild === written[index]), [true, true, true, false, true, true, false]);
+});
+
+test('分享對話框開著時清單從空變成有寶圖：出現「加進／取代」；整份被清空則收起，說明跟著變', async () => {
+    const page = await createPanelPage({ url: `${URL_BASE}?maps=tm_017,tm_007` });
+    page.finder.handleSharedMaps();
+    assert.equal(isHidden(page, 'shareMapsChoice'), true);
+    changeList(page, () => page.finder.listManager.add(catalogued(page, 'tm_007')));
+    assert.equal(isHidden(page, 'shareMapsChoice'), false);
+    assert.equal(page.$('shareModeMergeHint').textContent, '重複的 1 張只留一張，共 2 張');
+    assert.match(page.$('shareMapsList').textContent, /已在清單/);
+    changeList(page, () => page.finder.listManager.clear());
+    assert.equal(isHidden(page, 'shareMapsChoice'), true);
+    assert.doesNotMatch(page.$('shareMapsList').textContent, /已在清單/);
+    assert.equal(isHidden(page, 'shareMapsModal'), false, '分享對話框還在');
+});
+
+test('分享對話框開著時切換語言：標題、說明、清單的地名與標籤、選項重畫，上一次的錯誤收起來', async () => {
+    const page = await createPanelPage({ url: `${URL_BASE}?maps=tm_017,tm_007,tm_999` });
+    page.addMaps(['tm_007']);
+    page.finder.handleSharedMaps();
+    assert.equal(isHidden(page, 'shareMapsMissing'), false, '有找不到的寶圖時顯示說明');
+    const ids = ['shareMapsModal-title', 'shareMapsLede', 'shareMapsMissing', 'shareModeMergeTitle', 'shareModeMergeHint', 'shareModeReplaceTitle',
+        'shareModeReplaceHint', 'dismissShareBtn', 'confirmShareBtn'];
+    page.setLang('en');
+    assert.deepEqual(textsOf(page, ids), ['Add shared maps', 'Maps in this link (2):', 'Not found and skipped: 1', 'Add to my list',
+        'Duplicates kept once: 1 · Total: 2', 'Replace my list', 'Keep only the maps from this link (2)', 'No thanks', 'Add to list']);
+    assert.deepEqual(page.$('shareMapsList').querySelectorAll('li').map((row) => row.textContent),
+        ["G17 Kozama'uka (20.0, 6.9)", 'G17 Urqopacha (13.7, 14.2) Already in your list']);
+    page.$('shareMapsError').textContent = '舊語言寫的錯誤';
+    page.$('shareMapsError').classList.remove('hidden');
+    page.setLang('ja');
+    assert.deepEqual(textsOf(page, ids), ['共有された地図を追加', 'このリンクには地図が 2 枚あります：', 'ほかの 1 枚は見つからなかったので省きました', 'マイリストに追加',
+        '重複の 1 枚は 1 枚にまとめ、合計 2 枚', 'マイリストを置き換える', 'この 2 枚だけにする', '追加しない', 'リストに追加']);
+    assert.match(page.$('shareMapsList').textContent, /リストにあります/);
+    assert.deepEqual([isHidden(page, 'shareMapsError'), page.$('shareMapsError').textContent], [true, '']);
+    page.team();
+    assert.deepEqual(textsOf(page, ['shareModeMergeTitle', 'shareModeReplaceTitle']), ['チームリストに追加', 'チームリストを置き換える']);
+});
+
+test('加入失敗：原因寫在對話框裡、對話框不關、網址還沒動；改選項就收起錯誤；關起來之後網址才拿掉', async () => {
+    const page = await createPanelPage({ url: `${URL_BASE}?maps=tm_017&grade=g17` });
+    page.addMaps(['tm_007']);
+    page.team();
+    // 隊伍還在同步：驗證整批操作時超過一次能送的數量（RoomCollaboration.validateMapOperations）
+    page.finder.roomCollaboration.mapSync.getOperations = () => Array.from({ length: 17 }, () => ({ type: 'remove', id: 'x' }));
+    page.finder.handleSharedMaps();
+    page.$('confirmShareBtn').click();
+    await settle();
+    assert.deepEqual([isHidden(page, 'shareMapsError'), page.$('shareMapsError').textContent], [false, '請等待隊伍同步完成後再匯入。']);
+    assert.deepEqual([isHidden(page, 'shareMapsModal'), mapIds(page), currentUrl(page)], [false, ['tm_007'], `${URL_BASE}?maps=tm_017&grade=g17`]);
+    assert.deepEqual(page.toasts, []);
+    chooseShareMode(page, 'replace');
+    assert.equal(isHidden(page, 'shareMapsError'), true, '改了選項，上一次的錯誤不再適用');
+    page.$('dismissShareBtn').click();
+    assert.equal(currentUrl(page), `${URL_BASE}?grade=g17`);
+});
+
+test('按兩次「加入清單」只加入一次；等隊伍同步的這段時間，對話框不跟著新清單重畫', async () => {
+    const page = await createPanelPage({ url: `${URL_BASE}?maps=tm_017,tm_007` });
+    page.addMaps(['tm_007']);
+    const sent = page.team();
+    page.finder.handleSharedMaps();
+    page.$('confirmShareBtn').click();
+    page.$('confirmShareBtn').click();
+    // 清單已經換成新的、同步還沒回來：「已在清單」不會冒出來、選項不會變
+    assert.deepEqual(mapIds(page), ['tm_007', 'tm_017']);
+    assert.doesNotMatch(page.$('shareMapsList').querySelector('li').textContent, /已在清單/);
+    assert.equal(isHidden(page, 'shareMapsModal'), false);
+    await settle();
+    assert.equal(sent.length, 1);
+    assert.equal(page.toasts.filter((toast) => toast.type === 'success').length, 1);
+    assert.equal(isHidden(page, 'shareMapsModal'), true);
+});
+
+test('隊伍裡分享對話框開著時隊友改了清單：焦點所在的「加入清單」停用、或「加進／取代」整組藏起來時，焦點移到「不用了」，不掉到 body；焦點在別處就不動', async () => {
+    const page = await createPanelPage({ url: `${URL_BASE}?maps=tm_008,tm_009,tm_011` });
+    page.addMaps(['tm_017', 'tm_007', 'tm_013', 'tm_022', 'tm_010']);
+    page.team();
+    page.finder.handleSharedMaps();
+    assert.equal(page.$('confirmShareBtn').disabled, false, '5 + 3 = 8，剛好放得下');
+    page.$('confirmShareBtn').focus();
+    changeList(page, () => page.finder.listManager.add(catalogued(page, 'tm_033')));   // 隊友加了一張：加進去會變成 9 張
+    assert.equal(page.$('confirmShareBtn').disabled, true);
+    assert.ok(page.focused() === page.$('dismissShareBtn'));
+    page.$('shareModeReplace').focus();
+    chooseShareMode(page, 'replace');
+    changeList(page, () => page.finder.listManager.clear());   // 隊友清空：沒有「加進／取代」可選
+    assert.equal(isHidden(page, 'shareMapsChoice'), true);
+    assert.ok(page.focused() === page.$('dismissShareBtn'));
+    page.$('closeShareModalBtn').focus();
+    changeList(page, () => page.finder.listManager.add(catalogued(page, 'tm_033')));
+    assert.ok(page.focused() === page.$('closeShareModalBtn'));
+});
+
+test('分享對話框：焦點停在「加入清單」時改了選項（Safari 與 macOS 的 Firefox 點選項不會移動焦點），「加入清單」這次停用了就把焦點放到剛選的選項', async () => {
+    const page = await createPanelPage({ url: `${URL_BASE}?maps=tm_008,tm_009,tm_011` });
+    page.addMaps(SIX_MAPS);
+    page.team();
+    page.finder.handleSharedMaps();
+    chooseShareMode(page, 'replace');
+    assert.equal(page.$('confirmShareBtn').disabled, false, '取代：只留連結裡的 3 張');
+    page.$('confirmShareBtn').focus();
+    chooseShareMode(page, 'merge');   // 點「加進」：6 + 3 = 9 張，放不下
+    assert.equal(page.$('confirmShareBtn').disabled, true);
+    assert.ok(page.focused() === page.$('shareModeMerge'));
+    chooseShareMode(page, 'replace');   // 焦點在選項上時改選項：不動
+    assert.ok(page.focused() === page.$('shareModeMerge'));
+});
+
+test('等隊伍同步時關掉分享對話框、改用匯入：匯入不被擋住，分享的同步回來時也不關掉匯入對話框', async () => {
+    const page = await createPanelPage({ url: `${URL_BASE}?maps=tm_017` });
+    page.team();
+    const sync = holdSync(page);
+    page.finder.handleSharedMaps();
+    page.$('confirmShareBtn').click();
+    page.key('Escape');
+    page.finder.openListPanel();
+    page.$('importListBtn').focus();
+    openImportWith(page, '?maps=tm_007');
+    page.$('confirmImportBtn').click();
+    assert.deepEqual(mapIds(page), ['tm_017', 'tm_007']);
+    sync.release();   // 分享的同步回來了
+    await settle();
+    assert.equal(isHidden(page, 'importListModal'), false, '匯入還在等自己的同步');
+    sync.release();
+    await settle();
+    assert.equal(isHidden(page, 'importListModal'), true);
+    assert.equal(currentUrl(page), URL_BASE);
+});
+
+test('點遮罩也算關閉：網址拿掉 maps、焦點在結果張數；再打開一次是乾淨的（預設加進、沒有舊錯誤）', async () => {
+    const page = await createPanelPage({ url: `${URL_BASE}?maps=tm_017&room=ABC123#top` });
+    page.addMaps(['tm_007']);
+    page.finder.handleSharedMaps();
+    chooseShareMode(page, 'replace');
+    page.$('shareMapsError').textContent = '舊的錯誤';
+    page.$('shareMapsError').classList.remove('hidden');
+    page.$('shareMapsModal').click();
+    assert.equal(isHidden(page, 'shareMapsModal'), true);
+    assert.equal(page.$('shareMapsModal').style.display, '', '關閉後不留 display');
+    assert.equal(currentUrl(page), `${URL_BASE}?room=ABC123#top`, '其他參數與 hash 保留');
+    assert.ok(page.focused() === page.$('resultCount'));
+    assert.deepEqual(mapIds(page), ['tm_007']);
+    page.finder.listDialogs.openShare([catalogued(page, 'tm_017')], 0);
+    assert.deepEqual([page.$('shareModeMerge').checked, page.$('shareModeReplace').checked], [true, false]);
+    assert.deepEqual([isHidden(page, 'shareMapsError'), page.$('shareMapsError').textContent], [true, '']);
+    assert.equal(isHidden(page, 'shareMapsMissing'), true);
+});
+
+test('分享對話框疊在開著的清單面板上（隊伍自動加入還沒結束時先打開了面板）：關掉後焦點回到面板裡，不跑到面板外的結果張數；原本那顆被重畫換掉了就放到面板標題', async () => {
+    const page = await createPanelPage({ url: `${URL_BASE}?maps=tm_017&room=ABC123` });
+    page.addMaps(['tm_007']);
+    page.finder.openListPanel();
+    page.finder.handleSharedMaps();
+    page.$('dismissShareBtn').click();
+    assert.ok(page.finder.modalManager.activeModal === page.$('myListPanel'), '面板還開著');
+    assert.ok(page.focused() === page.$('closePanelBtn'), '焦點回到分享對話框打開之前的位置');
+    // 取代：清單重畫，焦點原本所在的 ✕ 換掉了，ModalManager 還原不了
+    page.$('listContent').querySelector('[data-map-id="tm_007"] .btn-remove').focus();
+    page.finder.listDialogs.openShare([catalogued(page, 'tm_017')], 0);
+    chooseShareMode(page, 'replace');
+    page.$('confirmShareBtn').click();
+    await settle();
+    assert.deepEqual(mapIds(page), ['tm_017']);
+    assert.ok(page.focused() === page.$('myListPanel-title'));
+});
+
+test('分享對話框的標記：說明、清單、缺少、選項、提醒、錯誤由程式填（不掛 data-i18n）；只有一顆主要按鈕；分享鈕在清單動作列最前面', () => {
+    const html = read(`${TOOL_DIR}/index.html`);
+    const share = sliceElementById(html, 'shareMapsModal');
+    assert.equal(tagAttrs(html, 'shareMapsModal-title')['data-i18n'], 'treasure_map_share_title');
+    const plain = (id, classes) => {
+        const attrs = tagAttrs(html, id);
+        assert.deepEqual([classesOf(attrs), attrs['data-i18n']], [classes, undefined], id);
+        return attrs;
+    };
+    plain('shareMapsLede', ['tm-dialog-lede']);
+    plain('shareMapsList', ['tm-mini-list']);
+    assert.match(share, /<ul\b[^>]*\sid="shareMapsList"/);
+    plain('shareMapsMissing', ['form-text', 'hidden']);
+    plain('shareMapsChoice', ['tm-choice', 'hidden']);
+    // 提醒（隊伍上限、連線中）是狀態訊息：role="status" 讓它出現時被唸出來；對話框的說明指向它，打開時一併唸出
+    assert.equal(plain('shareMapsNote', ['warning-message', 'hidden']).role, 'status');
+    assert.equal(tagAttrs(html, 'shareMapsModal')['aria-describedby'], 'shareMapsNote');
+    assert.equal(plain('shareMapsError', ['error-message', 'hidden']).role, 'alert');
+    const legend = parseAttrs(share.match(/<legend\b[^>]*>/)[0]);
+    assert.deepEqual([classesOf(legend), legend['data-i18n']], [['visually-hidden'], 'treasure_map_share_choice']);
+    assert.equal((share.match(/class="form-check"/g) || []).length, 2);
+    const labels = [...share.matchAll(/<label\b[^>]*>/g)].map((m) => parseAttrs(m[0]));
+    for (const [mode, checked] of [['Merge', true], ['Replace', false]]) {
+        const radio = tagAttrs(html, `shareMode${mode}`);
+        assert.deepEqual([radio.type, radio.name, radio.value, classesOf(radio)], ['radio', 'shareMode', mode.toLowerCase(), ['form-check-input']], mode);
+        assert.equal(new RegExp(`<input\\b[^>]*id="shareMode${mode}"[^>]*\\schecked[\\s>]`).test(share), checked, `${mode} 的 checked`);
+        assert.deepEqual(classesOf(labels.find((attrs) => attrs.for === `shareMode${mode}`)), ['form-check-label'], mode);
+        plain(`shareMode${mode}Title`, ['tm-choice-title']);
+        plain(`shareMode${mode}Hint`, ['tm-choice-hint']);
+    }
+    const dismiss = tagAttrs(html, 'dismissShareBtn');
+    const confirmAttrs = tagAttrs(html, 'confirmShareBtn');
+    assert.deepEqual([classesOf(dismiss), dismiss['data-i18n']], [['btn'], 'treasure_map_share_dismiss']);
+    assert.deepEqual([classesOf(confirmAttrs), confirmAttrs['data-i18n']], [['btn', 'btn-primary'], 'treasure_map_share_confirm']);
+    assert.equal((share.match(/\bbtn-primary\b/g) || []).length, 1);
+    // 清單動作列：分享、匯入、（靠右的）清空
+    const actions = sliceElementById(html, 'listActions');
+    const order = ['id="shareListBtn"', 'id="importListBtn"', 'id="clearAllBtn"'].map((s) => actions.indexOf(s));
+    assert.ok(!order.includes(-1) && order[0] < order[1] && order[1] < order[2], `動作列的順序：${order}`);
+    const shareBtn = tagAttrs(html, 'shareListBtn');
+    assert.deepEqual([classesOf(shareBtn), shareBtn.type], [['btn', 'btn-sm'], 'button']);
+    assert.match(actions, /<span class="btn-icon">🔗<\/span> <span data-i18n="treasure_map_share_link">複製分享連結<\/span>/);
+});
+
+test('分享對話框的樣式：說明、縮圖清單寫在最後的 .hidden 前面，清單去掉項目符號與內距', () => {
+    const css = read(`${TOOL_DIR}/style.css`);
+    const hiddenAt = css.lastIndexOf('\n.hidden {');
+    for (const rule of ['.tm-dialog-lede {', '.tm-mini-list {', '.tm-mini {', '.tm-mini img {', '.tm-mini-text {']) {
+        assert.ok(css.indexOf(rule) !== -1 && css.indexOf(rule) < hiddenAt, rule);
+    }
+    // ul 預設的項目符號與內距要清掉（對話框內文的 > * 只清邊界）
+    const list = declarations('.tm-mini-list');
+    assert.match(list, /list-style:\s*none/);
+    assert.match(list, /padding:\s*0/);
+    assert.match(declarations('.tm-mini'), /display:\s*flex/);
+    assert.match(declarations('.tm-mini img'), /width:\s*36px/);
+    assert.match(declarations('.tm-mini-text'), /min-width:\s*0/);
+});
+
+test('分享連結的三語鍵值照設計', () => {
+    const expected = {
+        treasure_map_share_link: ['複製分享連結', 'Copy share link', '共有リンクをコピー'],
+        treasure_map_share_copied: ['已複製分享連結（{count} 張）', 'Share link copied (maps: {count})', '共有リンクをコピーしました（{count} 枚）'],
+        treasure_map_share_title: ['加入分享的寶圖', 'Add shared maps', '共有された地図を追加'],
+        treasure_map_share_lede: ['這個連結有 {count} 張寶圖：', 'Maps in this link ({count}):', 'このリンクには地図が {count} 枚あります：'],
+        treasure_map_share_in_list: ['已在清單', 'Already in your list', 'リストにあります'],
+        treasure_map_share_missing: ['另外 {count} 張找不到，已略過', 'Not found and skipped: {count}', 'ほかの {count} 枚は見つからなかったので省きました'],
+        treasure_map_share_choice: ['要怎麼加入', 'How to add them', '追加のしかた'],
+        treasure_map_share_merge: ['加進我的清單', 'Add to my list', 'マイリストに追加'],
+        treasure_map_share_merge_room: ['加進隊伍清單', 'Add to the team list', 'チームリストに追加'],
+        treasure_map_share_merge_hint: [
+            '重複的 {duplicates} 張只留一張，共 {total} 張',
+            'Duplicates kept once: {duplicates} · Total: {total}',
+            '重複の {duplicates} 枚は 1 枚にまとめ、合計 {total} 枚'
+        ],
+        treasure_map_share_merge_hint_new: ['共 {total} 張', 'Total: {total}', '合計 {total} 枚'],
+        treasure_map_share_replace_hint: ['只留這 {count} 張', 'Keep only the maps from this link ({count})', 'この {count} 枚だけにする'],
+        treasure_map_share_over_limit_merge: [
+            '隊伍清單最多 {max} 張，加進去會變成 {total} 張',
+            'A team list holds up to {max} maps; adding these would make {total}',
+            'チームリストは {max} 枚までです。追加すると {total} 枚になります'
+        ],
+        treasure_map_share_over_limit_replace: [
+            '隊伍清單最多 {max} 張，這個連結有 {total} 張',
+            'A team list holds up to {max} maps; this link has {total}',
+            'チームリストは {max} 枚までです。このリンクには {total} 枚あります'
+        ],
+        treasure_map_share_dismiss: ['不用了', 'No thanks', '追加しない'],
+        treasure_map_share_confirm: ['加入清單', 'Add to list', 'リストに追加']
+    };
+    ['zh', 'en', 'ja'].forEach((lang, index) => {
+        const values = translationValues(TRANSLATIONS, lang);
+        for (const [key, texts] of Object.entries(expected)) assert.equal(values.get(key), texts[index], `${lang} ${key}`);
+    });
 });
