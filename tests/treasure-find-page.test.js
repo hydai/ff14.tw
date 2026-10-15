@@ -1205,10 +1205,32 @@ test('複製失敗（剪貼簿拒絕寫入、或瀏覽器沒有剪貼簿 API）�
     }
 });
 
-test('卡片的複製不再產生 /pos：copyCoordinatesToClipboard 刪掉，路線複製用的 formatCoordinatesAsCommand 沒動', () => {
+test('路線與卡片都不再產生 /pos：formatCoordinatesAsCommand、formatCoordinatesShort 刪掉，工具的程式（不含註解）沒有 /pos', () => {
     assert.equal(CoordinateUtils.copyCoordinatesToClipboard, undefined);
-    assert.equal(CoordinateUtils.formatCoordinatesAsCommand({ x: 13.7, y: 14.2, z: 1.7 }), '/pos 13.7 14.2 1.7');
-    assert.doesNotMatch(read('tools/treasure-map-finder/script.js'), /copyCoordinatesToClipboard/);
+    assert.equal(CoordinateUtils.formatCoordinatesAsCommand, undefined);
+    assert.equal(CoordinateUtils.formatCoordinatesShort, undefined);
+    for (const file of fs.readdirSync(path.join(ROOT, 'tools/treasure-map-finder')).filter((name) => name.endsWith('.js'))) {
+        const code = read(`tools/treasure-map-finder/${file}`).replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+        assert.doesNotMatch(code, /\/pos\b/, file);
+    }
+});
+
+test('拿掉的路線面板、格式面板、匯出、檔案匯入與確認對話框的鍵值，三語都刪掉', () => {
+    const gone = ['treasure_map_entry_hint_one', 'treasure_map_no_maps_for_route', 'treasure_map_export', 'treasure_map_export_title',
+        'treasure_map_export_instruction', 'treasure_map_export_empty', 'treasure_map_export_success', 'treasure_map_copy_manual',
+        'treasure_map_copy_fallback_manual', 'treasure_map_copy_clipboard_success', 'treasure_map_read_file_failed', 'treasure_map_clear_all',
+        'treasure_map_clear_all_title', 'treasure_map_total', 'treasure_map_maps_unit', 'treasure_map_remove_confirm', 'treasure_map_clear_confirm',
+        'treasure_map_import_instruction', 'treasure_map_import_placeholder', 'treasure_map_import_text_required', 'treasure_map_import_file_format_error',
+        'treasure_map_import_failed', 'treasure_map_best_route', 'treasure_map_copy_route', 'treasure_map_custom_format', 'treasure_map_custom_output',
+        'treasure_map_quick_lang', 'treasure_map_teleport_format', 'treasure_map_map_format', 'treasure_map_available_vars', 'treasure_map_preview',
+        'treasure_map_format_switched_zh', 'treasure_map_format_switched_en', 'treasure_map_format_switched_ja', 'treasure_map_no_route_to_copy',
+        'treasure_map_route_copy_success', 'treasure_map_route_summary', 'treasure_map_route_regions', 'treasure_map_route_teleports',
+        'treasure_map_route_total_maps', 'treasure_map_route_teleport_to', 'treasure_map_route_step_copy_title', 'treasure_map_route_step_copy_success',
+        'treasure_map_route_generation_failed'];
+    ['zh', 'en', 'ja'].forEach((lang) => {
+        const keys = translationKeySet(TRANSLATIONS, lang);
+        for (const key of gone) assert.ok(!keys.has(key), `${lang} 的 ${key} 應已刪除`);
+    });
 });
 
 test('隊伍頻道句子的三語鍵值：句子範本、找不到傳送點的範本、複製成功的提示', () => {

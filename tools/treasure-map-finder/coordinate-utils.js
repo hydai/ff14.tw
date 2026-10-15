@@ -34,16 +34,6 @@ class CoordinateUtils {
     }
 
     /**
-     * 格式化座標為遊戲指令
-     * @param {Object} coords - 座標物件 {x, y, z}
-     * @returns {string} 格式化的座標指令
-     */
-    static formatCoordinatesAsCommand(coords) {
-        const z = coords.z || this.CONSTANTS.DEFAULT_Z;
-        return `/pos ${coords.x} ${coords.y} ${z}`;
-    }
-
-    /**
      * 格式化座標為顯示文字
      * @param {Object} coords - 座標物件 {x, y, z}
      * @param {boolean} includeZ - 是否包含 Z 座標
@@ -55,16 +45,6 @@ class CoordinateUtils {
             return `X: ${coords.x} Y: ${coords.y} Z: ${z}`;
         }
         return `X: ${coords.x} Y: ${coords.y}`;
-    }
-
-    /**
-     * 格式化座標為簡短文字
-     * @param {Object} coords - 座標物件 {x, y, z}
-     * @returns {string} 簡短的座標文字
-     */
-    static formatCoordinatesShort(coords) {
-        const z = coords.z || this.CONSTANTS.DEFAULT_Z;
-        return `(${coords.x}, ${coords.y}, ${z})`;
     }
 
     /**
