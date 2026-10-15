@@ -340,6 +340,61 @@
         </div>
     </div>
 
+    <!-- 清空清單確認對話框（ListDialogs）：說明與確認鈕的張數、隊伍裡的換字由 JavaScript 填入（不掛 data-i18n）。
+         和清單面板同一個 z-index，靠排在面板後面疊在它上面（同上面的加入隊伍對話框）；沒有主要按鈕，「清空 N 張」是危險按鈕 -->
+    <div class="dialog-overlay hidden" id="clearListModal" role="dialog" aria-modal="true" aria-labelledby="clearListModal-title">
+        <div class="dialog tm-dialog">
+            <div class="dialog-header">
+                <h3 class="dialog-title" id="clearListModal-title" data-i18n="treasure_map_clear_title">清空清單？</h3>
+                <button type="button" class="btn btn-close" id="closeClearModalBtn" aria-label="關閉" data-i18n="treasure_map_close" data-i18n-attr="aria-label">×</button>
+            </div>
+            <div class="dialog-body">
+                <p id="clearListBody"></p>
+            </div>
+            <div class="dialog-actions">
+                <button type="button" class="btn" id="cancelClearBtn" data-i18n="treasure_map_cancel">取消</button>
+                <button type="button" class="btn btn-danger" id="confirmClearBtn"></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 匯入清單對話框（ListDialogs）：一邊貼一邊解析，看得懂才能按「匯入」。
+         清單不是空的才有「合併／取代」兩個選項，選項的標題與說明在隊伍裡換字，由 JavaScript 填入（不掛 data-i18n） -->
+    <div class="dialog-overlay hidden" id="importListModal" role="dialog" aria-modal="true" aria-labelledby="importListModal-title">
+        <div class="dialog tm-dialog">
+            <div class="dialog-header">
+                <h3 class="dialog-title" id="importListModal-title" data-i18n="treasure_map_import_title">匯入清單</h3>
+                <button type="button" class="btn btn-close" id="closeImportModalBtn" aria-label="關閉" data-i18n="treasure_map_close" data-i18n-attr="aria-label">×</button>
+            </div>
+            <div class="dialog-body">
+                <label class="form-label" for="importListText" data-i18n="treasure_map_import_label">貼上分享連結，或以前用「匯出」複製的內容</label>
+                <textarea class="form-control" id="importListText" rows="4" spellcheck="false" autocapitalize="off" autocorrect="off" autocomplete="off" aria-describedby="importListStatus"></textarea>
+                <p class="form-text" id="importListStatus" aria-live="polite"></p>
+                <fieldset class="tm-choice hidden" id="importListChoice">
+                    <legend class="visually-hidden" data-i18n="treasure_map_import_choice">匯入方式</legend>
+                    <div class="form-check">
+                        <input type="radio" class="form-check-input" name="importMode" id="importModeMerge" value="merge" checked>
+                        <label class="form-check-label" for="importModeMerge">
+                            <span class="tm-choice-title" id="importModeMergeTitle"></span>
+                            <span class="tm-choice-hint" id="importModeMergeHint"></span>
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input type="radio" class="form-check-input" name="importMode" id="importModeReplace" value="replace">
+                        <label class="form-check-label" for="importModeReplace">
+                            <span class="tm-choice-title" id="importModeReplaceTitle"></span>
+                            <span class="tm-choice-hint" id="importModeReplaceHint"></span>
+                        </label>
+                    </div>
+                </fieldset>
+                <p class="error-message hidden" id="importListError" role="alert"></p>
+            </div>
+            <div class="dialog-actions">
+                <button type="button" class="btn" id="cancelImportBtn" data-i18n="treasure_map_cancel">取消</button>
+                <button type="button" class="btn btn-primary" id="confirmImportBtn" data-i18n="treasure_map_import">匯入</button>
+            </div>
+        </div>
+    </div>
 
     <!-- 地圖詳細檢視：標頭（標題、關閉）、中間（地圖＋資訊；手機全螢幕時只有這一塊捲動）、動作列（切換、複製、加入清單）。
          標題、資訊的值、位置與加入鈕的文字跟著目前這張寶圖，由 JavaScript 填入 -->
@@ -414,6 +469,8 @@
     <script src="room-map-sync.js"></script>
     <script src="room-collaboration.js"></script>
     <script src="route-calculator.js"></script>
+    <script src="list-share.js"></script>
+    <script src="list-dialogs.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

@@ -14,9 +14,6 @@ class UIDialogManager {
         }
     };
 
-    // 動態對話框標題 id 的流水號（單調遞增，避免同一毫秒內產生重複 id）
-    static dialogTitleSeq = 0;
-
     // 詳細地圖上疊的寶圖縮圖：離邊緣、寬、高佔地圖邊長的比例（縮圖 207×174）。style.css 的 .map-detail-thumb 用同樣的數字；
     // 依序試這四個角（見 thumbCorner）
     static THUMB_BOX = { inset: 0.02, width: 0.34, height: 0.34 * 174 / 207 };
@@ -477,111 +474,6 @@ class UIDialogManager {
     }
 
     /**
-     * 顯示匯入對話框
-     * @param {Function} onImport - 匯入回調函數
-     * @param {Object} options - 選項
-     */
-    showImportDialog(onImport, options = {}) {
-        const defaultTitle = FF14Utils.getI18nText('treasure_map_import_title', '匯入清單');
-        const defaultInstruction = FF14Utils.getI18nText('treasure_map_import_instruction', '請貼上清單內容：');
-        const defaultPlaceholder = FF14Utils.getI18nText('treasure_map_import_placeholder', '在此貼上清單資料...');
-        const { title = defaultTitle, instruction = defaultInstruction, placeholder = defaultPlaceholder } = options;
-
-        // 建立對話框內容
-        // 只有在呼叫端沒有自訂文字時才掛 data-i18n key
-        const contentElement = this._createImportDialogContent(
-            instruction,
-            placeholder,
-            instruction === defaultInstruction ? 'treasure_map_import_instruction' : undefined,
-            placeholder === defaultPlaceholder ? 'treasure_map_import_placeholder' : undefined
-        );
-
-        // 建立帶有 overlay 的對話框
-        const { overlay, dialog } = this.createDialogWithOverlay({
-            title,
-            titleKey: title === defaultTitle ? 'treasure_map_import_title' : undefined,
-            content: contentElement
-        });
-
-        // 設置事件
-        const textarea = dialog.querySelector('#importTextarea');
-        const confirmBtn = dialog.querySelector('#importConfirmBtn');
-        const cancelBtn = dialog.querySelector('#importCancelBtn');
-
-        const closeDialog = () => this.modalManager.hide();
-
-        confirmBtn.onclick = () => {
-            const text = textarea.value;
-            closeDialog();
-            if (onImport) {
-                onImport(text);
-            }
-        };
-
-        cancelBtn.onclick = closeDialog;
-
-        document.body.appendChild(overlay);
-
-        // 使用 ModalManager 顯示
-        this.modalManager.show(overlay, {
-            // useClass default is 'active'
-            closeOnOverlayClick: true,
-            closeOnEsc: true,
-            onClose: () => overlay.remove()
-        });
-
-        // 自動聚焦 (需在顯示後執行)
-        setTimeout(() => textarea.focus(), 0);
-    }
-
-    /**
-     * 建立匯入對話框內容
-     * @private
-     */
-    _createImportDialogContent(instruction, placeholder, instructionKey, placeholderKey) {
-        const container = document.createElement('div');
-
-        const instructionP = document.createElement('p');
-        instructionP.className = 'ui-dialog-instruction';
-        instructionP.textContent = instruction;
-        if (instructionKey) {
-            instructionP.dataset.i18n = instructionKey;
-        }
-        container.appendChild(instructionP);
-
-        const textarea = document.createElement('textarea');
-        textarea.id = 'importTextarea';
-        textarea.className = 'ui-dialog-textarea form-control';
-        textarea.placeholder = placeholder;
-        if (placeholderKey) {
-            textarea.dataset.i18n = placeholderKey;
-            textarea.dataset.i18nAttr = 'placeholder';
-        }
-        container.appendChild(textarea);
-
-        const buttonContainer = document.createElement('div');
-        buttonContainer.className = 'ui-dialog-actions';
-
-        const confirmBtn = document.createElement('button');
-        confirmBtn.className = 'btn btn-primary';
-        confirmBtn.id = 'importConfirmBtn';
-        confirmBtn.textContent = FF14Utils.getI18nText('treasure_map_confirm', '匯入');
-        confirmBtn.dataset.i18n = 'treasure_map_confirm';
-        buttonContainer.appendChild(confirmBtn);
-
-        const cancelBtn = document.createElement('button');
-        cancelBtn.className = 'btn btn-secondary';
-        cancelBtn.id = 'importCancelBtn';
-        cancelBtn.textContent = FF14Utils.getI18nText('treasure_map_cancel', '取消');
-        cancelBtn.dataset.i18n = 'treasure_map_cancel';
-        buttonContainer.appendChild(cancelBtn);
-
-        container.appendChild(buttonContainer);
-
-        return container;
-    }
-
-    /**
      * 顯示路線結果面板
      * @param {Object} result - 路線計算結果
      * @param {Object} options - 選項
@@ -872,58 +764,6 @@ class UIDialogManager {
         if (values.map !== undefined) {
             elements.mapFormat.value = values.map;
         }
-    }
-
-    /**
-     * 建立帶有遮罩層的對話框
-     * @param {Object} options - 選項
-     * @param {string} options.title - 標題
-     * @param {HTMLElement|string} options.content - 內容
-     * @param {string} options.className - 額外的 CSS class
-     * @returns {Object} { overlay, dialog } - 遮罩層和對話框元素
-     */
-    createDialogWithOverlay(options) {
-        const { title, titleKey, content, className = '' } = options;
-
-        // 建立遮罩層
-        // ARIA 一律掛在遮罩層（交給 ModalManager 的那一層），內層 .ui-dialog 維持沒有 role 的容器
-        const overlay = document.createElement('div');
-        overlay.className = 'ui-dialog-overlay dialog-overlay';
-        overlay.setAttribute('role', 'dialog');
-        overlay.setAttribute('aria-modal', 'true');
-        // Z-index handled by CSS class or default
-
-        // 建立對話框
-        const dialog = document.createElement('div');
-        dialog.className = `ui-dialog dialog ${className}`;
-
-        if (title) {
-            const titleId = `ui-dialog-title-${++UIDialogManager.dialogTitleSeq}`;
-            const titleElement = document.createElement('h3');
-            titleElement.id = titleId;
-            titleElement.textContent = title;
-            // 靜態標題文字：掛上 data-i18n，讓 window.i18n.setLanguage() 之後切換語言時
-            // 能透過全域的 [data-i18n] 重新套用，不需要在本檔另外寫 observer
-            if (titleKey) {
-                titleElement.dataset.i18n = titleKey;
-            }
-            dialog.appendChild(titleElement);
-            overlay.setAttribute('aria-labelledby', titleId);
-        }
-
-        if (content) {
-            const contentDiv = document.createElement('div');
-            if (typeof content === 'string') {
-                contentDiv.textContent = content;
-            } else if (content instanceof HTMLElement) {
-                contentDiv.appendChild(content);
-            }
-            dialog.appendChild(contentDiv);
-        }
-
-        overlay.appendChild(dialog);
-
-        return { overlay, dialog };
     }
 }
 

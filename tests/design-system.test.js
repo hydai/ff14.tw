@@ -261,7 +261,7 @@ test('對話框的 role="dialog" 放在遮罩層，且有 aria-labelledby 與 ar
 // 內容仍留在 Tab 順序與 a11y tree 裡，ModalManager 會把焦點還給一顆看不見的按鈕。
 test('寶圖搜尋器的模態面板在未開啟時用 display:none 或 visibility:hidden 隱藏，不得只靠 transform／opacity', () => {
     const css = stripComments(read('tools/treasure-map-finder/style.css'));
-    const PANELS = ['.my-list-panel', '.route-panel', '.format-panel', '.map-detail-modal', '.ui-dialog-overlay'];
+    const PANELS = ['.my-list-panel', '.route-panel', '.format-panel', '.map-detail-modal'];
     // 把整份 CSS 拆成「選擇器清單 → 宣告區」；只看最外層規則的宣告區（@media 內的規則會被 split 拆開，一併掃到）
     const rules = [];
     for (const m of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {

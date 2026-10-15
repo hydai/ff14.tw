@@ -115,6 +115,23 @@ const TreasureMapTranslations = {
         treasure_map_keep_and_leave: '保留清單並離開',
         treasure_map_clear_and_leave: '清空清單並離開',
 
+        // 清空與匯入對話框（treasure_map_share_* 是分享連結也會用到的）
+        treasure_map_clear_title: '清空清單？',
+        treasure_map_clear_body: '清單裡的 {count} 張寶圖都會移除。',
+        treasure_map_clear_body_room: '隊伍清單裡的 {count} 張寶圖都會移除，隊友的清單也會跟著清空。',
+        treasure_map_clear_confirm_button: '清空 {count} 張',
+        treasure_map_import_label: '貼上分享連結，或以前用「匯出」複製的內容',
+        treasure_map_import_found_link: '連結裡有 {count} 張寶圖',
+        treasure_map_import_found_json: '內容有 {count} 張寶圖',
+        treasure_map_import_unreadable: '看不懂這段內容：請貼上分享連結，或以前匯出的內容',
+        treasure_map_import_choice: '匯入方式',
+        treasure_map_import_merge: '合併',
+        treasure_map_import_merge_hint: '重複的只留一張',
+        treasure_map_import_replace_hint: '原本的寶圖會移除',
+        treasure_map_share_replace: '取代我的清單',
+        treasure_map_share_replace_room: '取代隊伍清單',
+        treasure_map_share_none_found: '分享連結裡沒有找得到的寶圖',
+
         // 通用按鈕
         treasure_map_cancel: '取消',
         treasure_map_confirm: '確認',
@@ -124,7 +141,6 @@ const TreasureMapTranslations = {
         // 訊息
         treasure_map_copy_success: '已複製，可以貼到隊伍頻道',
         treasure_map_copy_failed: '複製失敗',
-        treasure_map_clear_confirm: '確定要清空所有寶圖嗎？共 {count} 張',
         treasure_map_empty_list: '清單是空的',
         treasure_map_list_hint: '點擊寶圖卡片上的「加入清單」開始建立',
         treasure_map_loading: '載入中...',
@@ -163,8 +179,6 @@ const TreasureMapTranslations = {
         treasure_map_list_cleared: '已清空清單',
         treasure_map_storage_blocked: '瀏覽器不允許儲存資料：清單只會保留到關閉這個頁面。',
         treasure_map_import_title: '匯入清單',
-        treasure_map_import_instruction: '請貼上清單內容：',
-        treasure_map_import_placeholder: '在此貼上清單資料...',
         treasure_map_import_success: '已匯入 {count} 張寶圖',
         treasure_map_import_merged: '已合併匯入 {count} 張新寶圖',
         treasure_map_route_summary: '路線摘要：',
@@ -181,9 +195,6 @@ const TreasureMapTranslations = {
         treasure_map_copy_room_code: '複製隊伍代號',
 
         // 匯入／路線／同步錯誤訊息
-        treasure_map_import_text_required: '請貼上清單內容',
-        treasure_map_import_file_format_error: '檔案格式錯誤',
-        treasure_map_import_failed: '匯入失敗：{message}',
         treasure_map_import_generic_failed: '匯入失敗',
         treasure_map_import_wait_for_sync: '請等待隊伍同步完成後再匯入。',
         treasure_map_import_invalid_room_maps: '匯入清單含有隊伍不支援的寶圖資料，請檢查後再試。',
@@ -359,6 +370,23 @@ const TreasureMapTranslations = {
         treasure_map_keep_and_leave: 'Keep List & Leave',
         treasure_map_clear_and_leave: 'Clear List & Leave',
 
+        // Clear and import dialogs (treasure_map_share_* are shared with the share-link dialog)
+        treasure_map_clear_title: 'Clear the list?',
+        treasure_map_clear_body: 'All maps in the list will be removed ({count}).',
+        treasure_map_clear_body_room: 'All maps in the team list will be removed ({count}), and your teammates\' lists will be cleared too.',
+        treasure_map_clear_confirm_button: 'Clear all ({count})',
+        treasure_map_import_label: 'Paste a share link, or the text you copied with “Export” before',
+        treasure_map_import_found_link: 'Maps in the link: {count}',
+        treasure_map_import_found_json: 'Maps in the text: {count}',
+        treasure_map_import_unreadable: 'Couldn\'t read this. Paste a share link or text you exported before.',
+        treasure_map_import_choice: 'How to import',
+        treasure_map_import_merge: 'Merge',
+        treasure_map_import_merge_hint: 'Duplicates are kept once',
+        treasure_map_import_replace_hint: 'Your current maps will be removed',
+        treasure_map_share_replace: 'Replace my list',
+        treasure_map_share_replace_room: 'Replace the team list',
+        treasure_map_share_none_found: 'None of the maps in this share link could be found',
+
         // Common buttons
         treasure_map_cancel: 'Cancel',
         treasure_map_confirm: 'Confirm',
@@ -368,7 +396,6 @@ const TreasureMapTranslations = {
         // Messages
         treasure_map_copy_success: 'Copied. Paste it into party chat.',
         treasure_map_copy_failed: 'Copy failed',
-        treasure_map_clear_confirm: 'Are you sure you want to clear all maps? Total: {count}',
         treasure_map_empty_list: 'List is empty',
         treasure_map_list_hint: 'Click "Add to List" on map cards to start building',
         treasure_map_loading: 'Loading...',
@@ -407,10 +434,8 @@ const TreasureMapTranslations = {
         treasure_map_list_cleared: 'List cleared',
         treasure_map_storage_blocked: 'Your browser does not allow storing data: the list will only be kept until you close this page.',
         treasure_map_import_title: 'Import List',
-        treasure_map_import_instruction: 'Please paste the list content:',
-        treasure_map_import_placeholder: 'Paste list data here...',
-        treasure_map_import_success: 'Imported {count} maps',
-        treasure_map_import_merged: 'Merged {count} new maps',
+        treasure_map_import_success: 'Maps imported: {count}',
+        treasure_map_import_merged: 'New maps merged: {count}',
         treasure_map_route_summary: 'Route Summary:',
         treasure_map_route_regions: 'Region Order: {regions}',
         treasure_map_route_teleports: 'Total Teleports: {count}',
@@ -425,9 +450,6 @@ const TreasureMapTranslations = {
         treasure_map_copy_room_code: 'Copy Room Code',
 
         // Import / route / sync error messages
-        treasure_map_import_text_required: 'Paste the list content first',
-        treasure_map_import_file_format_error: 'Invalid file format',
-        treasure_map_import_failed: 'Import failed: {message}',
         treasure_map_import_generic_failed: 'Import failed',
         treasure_map_import_wait_for_sync: 'Please wait for the party to finish syncing before importing.',
         treasure_map_import_invalid_room_maps: 'The imported list contains map data unsupported by parties. Please check it and try again.',
@@ -603,6 +625,23 @@ const TreasureMapTranslations = {
         treasure_map_keep_and_leave: 'リストを保持して離れる',
         treasure_map_clear_and_leave: 'リストをクリアして離れる',
 
+        // 空にする・インポートのダイアログ（treasure_map_share_* は共有リンクでも使う）
+        treasure_map_clear_title: 'リストを空にしますか？',
+        treasure_map_clear_body: 'リストの地図 {count} 枚がすべて削除されます。',
+        treasure_map_clear_body_room: 'チームリストの地図 {count} 枚がすべて削除され、メンバーのリストも空になります。',
+        treasure_map_clear_confirm_button: '{count} 枚を削除',
+        treasure_map_import_label: '共有リンク、または以前「エクスポート」でコピーした内容を貼り付けてください',
+        treasure_map_import_found_link: 'リンクに地図が {count} 枚あります',
+        treasure_map_import_found_json: '内容に地図が {count} 枚あります',
+        treasure_map_import_unreadable: 'この内容は読み取れません。共有リンクか、以前エクスポートした内容を貼り付けてください',
+        treasure_map_import_choice: 'インポート方法',
+        treasure_map_import_merge: 'まとめる',
+        treasure_map_import_merge_hint: '重複は 1 枚にまとめます',
+        treasure_map_import_replace_hint: '今ある地図は削除されます',
+        treasure_map_share_replace: 'マイリストを置き換える',
+        treasure_map_share_replace_room: 'チームリストを置き換える',
+        treasure_map_share_none_found: '共有リンクの地図が見つかりませんでした',
+
         // 共通ボタン
         treasure_map_cancel: 'キャンセル',
         treasure_map_confirm: '確認',
@@ -612,7 +651,6 @@ const TreasureMapTranslations = {
         // メッセージ
         treasure_map_copy_success: 'コピーしました。パーティチャットに貼り付けられます。',
         treasure_map_copy_failed: 'コピーに失敗しました',
-        treasure_map_clear_confirm: 'すべての地図をクリアしてもよろしいですか？合計：{count} 枚',
         treasure_map_empty_list: 'リストは空です',
         treasure_map_list_hint: 'カードの「リストに追加」をクリックして作成を開始します',
         treasure_map_loading: '読み込み中...',
@@ -651,8 +689,6 @@ const TreasureMapTranslations = {
         treasure_map_list_cleared: 'リストをクリアしました',
         treasure_map_storage_blocked: 'ブラウザがデータの保存を許可していません：リストはこのページを閉じるまでしか残りません。',
         treasure_map_import_title: 'リストのインポート',
-        treasure_map_import_instruction: 'リストの内容を貼り付けてください：',
-        treasure_map_import_placeholder: 'ここにリストデータを貼り付け...',
         treasure_map_import_success: '{count} 枚の地図をインポートしました',
         treasure_map_import_merged: '{count} 枚の新しい地図をマージしました',
         treasure_map_route_summary: 'ルート概要：',
@@ -669,9 +705,6 @@ const TreasureMapTranslations = {
         treasure_map_copy_room_code: 'ルームコードをコピー',
 
         // インポート／ルート／同期エラーメッセージ
-        treasure_map_import_text_required: 'リストの内容を貼り付けてください',
-        treasure_map_import_file_format_error: 'ファイル形式が正しくありません',
-        treasure_map_import_failed: 'インポートに失敗しました：{message}',
         treasure_map_import_generic_failed: 'インポートに失敗しました',
         treasure_map_import_wait_for_sync: 'パーティの同期が完了してからインポートしてください。',
         treasure_map_import_invalid_room_maps: 'インポートするリストにパーティで使用できない宝の地図データが含まれています。内容を確認して再試行してください。',

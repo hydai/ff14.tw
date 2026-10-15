@@ -5,7 +5,8 @@ const path = require('node:path');
 const vm = require('node:vm');
 
 const { createFakeDom } = require('./helpers/fake-dom.js');
-const { classesOf, tagAttrs, sliceElementById, mountFromHtml } = require('./helpers/html-fragment.js');
+const { classesOf, tagAttrs, sliceElementById, mountFromHtml, parseAttrs } = require('./helpers/html-fragment.js');
+const { translationKeySet, translationValues } = require('./helpers/translation-parsers.js');
 
 const ROOT = path.resolve(__dirname, '..');
 const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
@@ -46,9 +47,10 @@ function declarations(selector, media = null) {
 }
 
 // ---------- 清單面板的頁面替身 ----------
-// 照 index.html 建出這些元素（mountFromHtml），跑真正的建構函式與 init()。Task 8、9 把新對話框的 id 加在 mapDetailModal 前面
+// 照 index.html 建出這些元素（mountFromHtml），跑真正的建構函式與 init()。清單的對話框（清空、匯入；之後還有分享）的 id 加在 mapDetailModal 前面，
+// 順序同 index.html
 const PANEL_IDS = ['stepHint', 'listEntryDesktop', 'levelTags', 'zoneFilterRow', 'resultCount', 'clearZonesBtn', 'treasureEmpty', 'treasureGrid',
-    'listEntryMobile', 'listAnnouncer', 'panelOverlay', 'myListPanel', 'mapDetailModal'];
+    'listEntryMobile', 'listAnnouncer', 'panelOverlay', 'myListPanel', 'clearListModal', 'importListModal', 'mapDetailModal'];
 const PAGE_HTML = read(`${TOOL_DIR}/index.html`);
 // 照 index.html 的順序載入：這個工具的翻譯檔、共用的 security-utils.js，以及工具目錄自己的每一個 <script src>（src 不含 /）。
 // 之後的任務在 index.html 加了新模組，這裡會自動載入；modal-manager.js 的 src 含 /，不載入，改用下面的替身
@@ -456,4 +458,690 @@ test('瀏覽器封鎖網站資料：清單頁的 ✕ 照常移除，提示一次
     assert.deepEqual(Array.from(page.finder.listManager.getList(), (map) => map.id), ['tm_007']);
     assert.ok(page.$('listContent').querySelector('[data-map-id="tm_017"]') === null, '移除的那一列不見了');
     assert.deepEqual(page.toasts, [{ message: '瀏覽器不允許儲存資料：清單只會保留到關閉這個頁面。', type: 'warning' }]);
+});
+
+// ---------- 清空與匯入：頁內對話框 ----------
+const settle = async () => {
+    for (let round = 0; round < 5; round += 1) await new Promise((resolve) => setImmediate(resolve));
+};
+// 在匯入對話框的 textarea 貼上內容：寫入 value、派送 input；openImportWith 先按「匯入」打開對話框
+const paste = (page, text) => {
+    page.$('importListText').value = text;
+    page.$('importListText').dispatchEvent(new page.dom.window.Event('input', { bubbles: true }));
+};
+const openImportWith = (page, text) => {
+    page.$('importListBtn').click();
+    paste(page, text);
+};
+const mapIds = (page) => Array.from(page.finder.listManager.getList(), (map) => map.id);
+const isHidden = (page, id) => page.$(id).classList.contains('hidden');
+const textsOf = (page, ids) => ids.map((id) => page.$(id).textContent);
+const BLOCKED_WARNING = { message: '瀏覽器不允許儲存資料：清單只會保留到關閉這個頁面。', type: 'warning' };
+
+test('script.js、list-manager.js 不再呼叫 confirm()', () => {
+    for (const file of ['script.js', 'list-manager.js']) assert.doesNotMatch(read(`tools/treasure-map-finder/${file}`), /\bconfirm\(/, file);
+});
+
+test('清空：頁內對話框，焦點在「取消」；按「清空 3 張」才清空，之後焦點在面板標題；Escape 只關對話框', async () => {
+    const page = await createPanelPage();
+    page.addMaps(['tm_017', 'tm_007', 'tm_013']);
+    page.finder.openListPanel();
+    page.$('clearAllBtn').click();
+    assert.equal(page.$('clearListModal').classList.contains('hidden'), false);
+    assert.equal(page.$('clearListBody').textContent, '清單裡的 3 張寶圖都會移除。');
+    assert.equal(page.$('confirmClearBtn').textContent, '清空 3 張');
+    assert.ok(page.focused() === page.$('cancelClearBtn'));
+    page.key('Escape');
+    assert.equal(page.$('clearListModal').classList.contains('hidden'), true);
+    assert.equal(page.finder.listManager.getLength(), 3);
+    assert.ok(page.finder.modalManager.activeModal === page.$('myListPanel'), '清單面板還開著');
+    page.$('clearAllBtn').click();
+    page.$('confirmClearBtn').click();
+    assert.equal(page.finder.listManager.getLength(), 0);
+    assert.ok(page.focused() === page.$('myListPanel-title'));
+});
+
+test('清空：隊伍裡的說明提到隊友也會清空', async () => {
+    const page = await createPanelPage();
+    page.addMaps(['tm_017', 'tm_007']);
+    page.team();
+    page.$('clearAllBtn').click();
+    assert.equal(page.$('clearListBody').textContent, '隊伍清單裡的 2 張寶圖都會移除，隊友的清單也會跟著清空。');
+});
+
+test('清空：「取消」、✕、點遮罩都不動清單，焦點回到「清空清單」；清空成功有 toast、更新入口與清單，隊伍收到空清單', async () => {
+    const page = await createPanelPage();
+    page.addMaps(['tm_017', 'tm_007']);
+    page.finder.openListPanel();
+    for (const close of [() => page.$('cancelClearBtn').click(), () => page.$('closeClearModalBtn').click(), () => page.$('clearListModal').click()]) {
+        page.$('clearAllBtn').focus();
+        page.$('clearAllBtn').click();
+        assert.equal(isHidden(page, 'clearListModal'), false);
+        close();
+        assert.equal(isHidden(page, 'clearListModal'), true);
+        assert.equal(page.$('clearListModal').style.display, '', '關閉後不留 display');
+        assert.equal(page.finder.listManager.getLength(), 2);
+        assert.ok(page.focused() === page.$('clearAllBtn'));
+    }
+    assert.deepEqual(page.toasts, []);
+    const sent = page.team();
+    page.$('clearAllBtn').click();
+    page.$('confirmClearBtn').click();
+    assert.deepEqual(page.toasts, [{ message: '已清空清單', type: 'success' }]);
+    assert.equal(page.$('listEntryDesktop').querySelector('.tm-entry-label').textContent, '👥 隊伍清單 0/8');
+    assert.ok(page.$('listContent').querySelector('.empty-state') !== null, '清單頁換成空狀態');
+    assert.equal(sent.length, 1);
+    assert.equal(sent[0].length, 0);
+});
+
+test('沒有東西可清、或隊伍連線中：不開清空與匯入對話框，匯入與清空的函式也不動清單', async () => {
+    const page = await createPanelPage();
+    page.finder.openListPanel();
+    page.finder.listDialogs.openClear();
+    assert.equal(isHidden(page, 'clearListModal'), true, '清單是空的');
+    page.addMaps(['tm_017']);
+    page.team({ connecting: true });
+    const connecting = { message: '隊伍連線中，請稍候再修改清單。', type: 'info' };
+    page.$('clearAllBtn').click();
+    page.$('importListBtn').click();
+    assert.equal(isHidden(page, 'clearListModal'), true);
+    assert.equal(isHidden(page, 'importListModal'), true);
+    assert.deepEqual(page.toasts, [connecting, connecting]);
+    page.toasts.length = 0;
+    // 匯入的函式不跳 toast：訊息交給匯入對話框顯示
+    const imported = await page.finder.importFromText('?maps=tm_007', { merge: true });
+    assert.deepEqual([imported.success, imported.message], [false, '隊伍連線中，請稍候再修改清單。']);
+    assert.deepEqual(page.toasts, []);
+    assert.deepEqual([page.finder.clearList().success, mapIds(page)], [false, ['tm_017']]);
+});
+
+test('匯入：一邊貼一邊解析；看不懂時標成錯誤並停用「匯入」', async () => {
+    const page = await createPanelPage();
+    openImportWith(page, 'https://ff14.tw/tools/treasure-map-finder/?maps=tm_017,tm_007,tm_999');
+    assert.equal(page.$('importListStatus').textContent, '連結裡有 2 張寶圖');
+    assert.equal(page.$('confirmImportBtn').disabled, false);
+    assert.equal(page.$('importListChoice').classList.contains('hidden'), true, '清單是空的時不顯示選項');
+    openImportWith(page, 'hello');
+    assert.equal(page.$('importListStatus').textContent, '看不懂這段內容：請貼上分享連結，或以前匯出的內容');
+    assert.ok(page.$('importListText').classList.contains('is-invalid'));
+    assert.equal(page.$('confirmImportBtn').disabled, true);
+});
+
+test('匯入：預設合併；選「取代我的清單」才換掉；舊的匯出 JSON 以目錄的資料為準', async () => {
+    const page = await createPanelPage();
+    page.addMaps(['tm_017']);
+    openImportWith(page, JSON.stringify({ version: '1.0', maps: [{ id: 'tm_007', level: 'g17', zone: 'Urqopacha', coords: { x: 13.7, y: 14.2 } }] }));
+    assert.equal(page.$('importListStatus').textContent, '內容有 1 張寶圖');
+    assert.equal(page.$('importModeMerge').checked, true);
+    page.$('confirmImportBtn').click();
+    await settle();
+    assert.deepEqual(Array.from(page.finder.listManager.getList(), (map) => map.id), ['tm_017', 'tm_007']);
+    assert.equal(page.finder.listManager.getList()[1].zoneId, 'urqopacha');
+    assert.equal(page.$('importListModal').classList.contains('hidden'), true);
+    openImportWith(page, '?maps=tm_013');
+    page.$('importModeReplace').checked = true;
+    page.$('confirmImportBtn').click();
+    await settle();
+    assert.deepEqual(Array.from(page.finder.listManager.getList(), (map) => map.id), ['tm_013']);
+});
+
+test('匯入：清單是空的時沒有「合併」可言，成功訊息是「已匯入 N 張寶圖」；清單裡有寶圖時預設合併，訊息是「已合併匯入」', async () => {
+    const page = await createPanelPage();
+    openImportWith(page, '?maps=tm_017,tm_007');
+    page.$('confirmImportBtn').click();
+    await settle();
+    assert.deepEqual(page.toasts, [{ message: '已匯入 2 張寶圖', type: 'success' }]);
+    openImportWith(page, '?maps=tm_007,tm_013');
+    page.$('confirmImportBtn').click();
+    await settle();
+    assert.deepEqual(page.toasts.slice(1), [{ message: '已合併匯入 1 張新寶圖', type: 'success' }]);
+    assert.deepEqual(mapIds(page), ['tm_017', 'tm_007', 'tm_013']);
+});
+
+test('匯入成功的訊息（英文沒有複數規則）：張數放在冒號後面，一張也不會寫成「1 maps」', async () => {
+    const page = await createPanelPage({ lang: 'en' });
+    openImportWith(page, '?maps=tm_017');
+    page.$('confirmImportBtn').click();
+    await settle();
+    assert.deepEqual(page.toasts, [{ message: 'Maps imported: 1', type: 'success' }]);
+    openImportWith(page, '?maps=tm_017,tm_007');
+    assert.equal(page.$('importListStatus').textContent, 'Maps in the link: 2');
+    page.$('confirmImportBtn').click();
+    await settle();
+    assert.deepEqual(page.toasts.slice(1), [{ message: 'New maps merged: 1', type: 'success' }]);
+});
+
+test('匯入：隊伍裡超過 8 張時錯誤寫在對話框裡，對話框不關、清單不變（Review Focus 2）', async () => {
+    const page = await createPanelPage();
+    page.addMaps(['tm_017', 'tm_007', 'tm_013', 'tm_022', 'tm_010', 'tm_033']);
+    page.team();
+    openImportWith(page, '?maps=tm_008,tm_009,tm_011');
+    page.$('confirmImportBtn').click();
+    await settle();
+    assert.equal(page.finder.listManager.getLength(), 6);
+    assert.equal(page.$('importListModal').classList.contains('hidden'), false);
+    assert.equal(page.$('importListError').classList.contains('hidden'), false);
+    assert.match(page.$('importListError').textContent, /清單已滿/);
+});
+
+test('匯入失敗之後：改內容就收起錯誤；改選「取代」再匯入成功，對話框關閉、焦點回到「匯入」，隊伍收到新清單', async () => {
+    const page = await createPanelPage();
+    page.addMaps(['tm_017', 'tm_007', 'tm_013', 'tm_022', 'tm_010', 'tm_033']);
+    const sent = page.team();
+    page.finder.openListPanel();
+    page.$('importListBtn').focus();
+    openImportWith(page, '?maps=tm_008,tm_009,tm_011');
+    assert.ok(page.focused() === page.$('importListText'), '打開後焦點在貼上的欄位');
+    page.$('confirmImportBtn').click();
+    await settle();
+    assert.equal(isHidden(page, 'importListError'), false);
+    paste(page, '?maps=tm_008,tm_009,tm_011');
+    assert.equal(isHidden(page, 'importListError'), true, '內容一改，上一次的錯誤就不再適用');
+    assert.equal(page.$('importListError').textContent, '');
+    page.$('importModeReplace').checked = true;
+    page.$('confirmImportBtn').click();
+    await settle();
+    assert.deepEqual(mapIds(page), ['tm_008', 'tm_009', 'tm_011']);
+    assert.equal(isHidden(page, 'importListModal'), true);
+    assert.equal(sent.length, 1);
+    assert.ok(page.focused() === page.$('importListBtn'));
+});
+
+test('按兩次「匯入」只匯入一次（隊伍同步還沒回來的時候）', async () => {
+    const page = await createPanelPage();
+    const sent = page.team();
+    openImportWith(page, '?maps=tm_017,tm_007');
+    page.$('confirmImportBtn').click();
+    page.$('confirmImportBtn').click();
+    await settle();
+    assert.deepEqual(mapIds(page), ['tm_017', 'tm_007']);
+    assert.equal(sent.length, 1);
+    assert.equal(page.toasts.filter((toast) => toast.type === 'success').length, 1);
+    assert.equal(isHidden(page, 'importListModal'), true);
+});
+
+test('每次打開匯入對話框都是乾淨的：內容、狀態、錯誤、模式回到預設，Escape 後焦點回到「匯入」；隊伍裡的「取代」寫成取代隊伍清單', async () => {
+    const page = await createPanelPage();
+    page.addMaps(['tm_017']);
+    page.finder.openListPanel();
+    page.$('importListBtn').focus();
+    openImportWith(page, 'hello');
+    page.$('importModeMerge').checked = false;
+    page.$('importModeReplace').checked = true;
+    page.$('importListError').classList.remove('hidden');
+    page.$('importListError').textContent = '上一次的錯誤';
+    page.key('Escape');
+    assert.equal(isHidden(page, 'importListModal'), true);
+    assert.ok(page.focused() === page.$('importListBtn'));
+    page.$('importListBtn').click();
+    const text = page.$('importListText');
+    assert.deepEqual([text.value, text.classList.contains('is-invalid'), text.hasAttribute('aria-invalid')], ['', false, false]);
+    assert.equal(page.$('importListStatus').textContent, '');
+    assert.equal(isHidden(page, 'importListError'), true);
+    assert.equal(page.$('importListError').textContent, '');
+    assert.equal(page.$('confirmImportBtn').disabled, true);
+    assert.deepEqual([page.$('importModeMerge').checked, page.$('importModeReplace').checked], [true, false]);
+    assert.equal(isHidden(page, 'importListChoice'), false, '清單不是空的：顯示選項');
+    assert.deepEqual(textsOf(page, ['importModeMergeTitle', 'importModeMergeHint', 'importModeReplaceTitle', 'importModeReplaceHint']),
+        ['合併', '重複的只留一張', '取代我的清單', '原本的寶圖會移除']);
+    assert.ok(page.focused() === text);
+    paste(page, 'hello');
+    assert.deepEqual([text.classList.contains('is-invalid'), text.getAttribute('aria-invalid')], [true, 'true']);
+    paste(page, '?maps=tm_007');
+    assert.deepEqual([text.classList.contains('is-invalid'), text.hasAttribute('aria-invalid')], [false, false], '改成讀得懂的內容就不再是錯誤');
+    page.key('Escape');
+    page.team();
+    page.$('importListBtn').click();
+    assert.deepEqual(textsOf(page, ['importModeMergeTitle', 'importModeReplaceTitle']), ['合併', '取代隊伍清單']);
+});
+
+test('匯入：連結裡一張都找不到、看不懂、空白時，importFromText 回傳說明、不動清單、不跳 toast；對話框的「匯入」停用', async () => {
+    const page = await createPanelPage();
+    page.addMaps(['tm_017']);
+    openImportWith(page, '?maps=tm_998,tm_999');
+    assert.equal(page.$('importListStatus').textContent, '分享連結裡沒有找得到的寶圖');
+    assert.equal(page.$('confirmImportBtn').disabled, true);
+    paste(page, '   ');
+    assert.deepEqual([page.$('importListStatus').textContent, page.$('confirmImportBtn').disabled], ['', true]);
+    page.toasts.length = 0;
+    const results = [];
+    for (const text of ['?maps=tm_998,tm_999', 'hello', '   ']) {
+        const result = await page.finder.importFromText(text);
+        results.push([result.success, result.message]);
+    }
+    const unreadable = '看不懂這段內容：請貼上分享連結，或以前匯出的內容';
+    assert.deepEqual(results, [[false, '分享連結裡沒有找得到的寶圖'], [false, unreadable], [false, unreadable]]);
+    assert.deepEqual(page.toasts, []);
+    assert.deepEqual(mapIds(page), ['tm_017']);
+});
+
+test('舊的匯出 JSON：目錄裡沒有的寶圖照原樣匯入、無效的略過；全都無效時錯誤寫在對話框', async () => {
+    const page = await createPanelPage();
+    const custom = { id: 'g8_test_1', level: 'g8', zone: 'Test', coords: { x: 10, y: 20 } };
+    openImportWith(page, JSON.stringify({ maps: [custom, { id: 'broken' }, null] }));
+    assert.equal(page.$('importListStatus').textContent, '內容有 3 張寶圖');
+    page.$('confirmImportBtn').click();
+    await settle();
+    assert.deepEqual(Array.from(page.finder.listManager.getList(), (map) => [map.id, map.zone]), [['g8_test_1', 'Test']]);
+    assert.equal(isHidden(page, 'importListModal'), true);
+    openImportWith(page, JSON.stringify({ maps: [{ id: 'broken' }] }));
+    page.$('confirmImportBtn').click();
+    await settle();
+    assert.equal(isHidden(page, 'importListModal'), false);
+    assert.equal(page.$('importListError').textContent, '沒有有效的地圖資料');
+    assert.deepEqual(mapIds(page), ['g8_test_1']);
+});
+
+test('對話框開著時切換語言：固定的字由 i18n 換，帶張數與隊伍的說明由對話框重畫', async () => {
+    const page = await createPanelPage();
+    page.addMaps(['tm_017', 'tm_007']);
+    page.finder.openListPanel();
+    page.$('clearAllBtn').click();
+    page.setLang('en');
+    assert.deepEqual(textsOf(page, ['clearListModal-title', 'clearListBody', 'confirmClearBtn', 'cancelClearBtn']),
+        ['Clear the list?', 'All maps in the list will be removed (2).', 'Clear all (2)', 'Cancel']);
+    page.setLang('ja');
+    assert.deepEqual(textsOf(page, ['clearListBody', 'confirmClearBtn']), ['リストの地図 2 枚がすべて削除されます。', '2 枚を削除']);
+    page.key('Escape');
+    page.setLang('zh');
+    openImportWith(page, '?maps=tm_017,tm_999');
+    page.setLang('en');
+    assert.deepEqual(textsOf(page, ['importListModal-title', 'importListStatus', 'importModeMergeTitle', 'importModeMergeHint', 'importModeReplaceTitle', 'importModeReplaceHint']),
+        ['Import List', 'Maps in the link: 1', 'Merge', 'Duplicates are kept once', 'Replace my list', 'Your current maps will be removed']);
+    paste(page, 'hello');
+    page.setLang('ja');
+    assert.equal(page.$('importListStatus').textContent, 'この内容は読み取れません。共有リンクか、以前エクスポートした内容を貼り付けてください');
+    assert.equal(page.$('importListText').classList.contains('is-invalid'), true);
+});
+
+// ---------- 對話框開著時清單變了（隊友同步、進出隊伍） ----------
+// 隊友的同步走 syncFromRoom() → updateListCount() → renderMyList()：測試直接改清單，再呼叫這兩個
+const changeList = (page, change) => {
+    change();
+    page.finder.updateListCount();
+    page.finder.renderMyList();
+};
+const catalogued = (page, id) => page.finder.maps.find((map) => map.id === id);
+
+test('清空對話框開著時清單變了：說明與確認鈕跟著新的張數，進隊伍時說明也換成隊伍的；確認清掉的就是畫面上寫的張數', async () => {
+    const page = await createPanelPage();
+    page.addMaps(['tm_017', 'tm_007']);
+    page.finder.openListPanel();
+    page.$('clearAllBtn').click();
+    assert.deepEqual(textsOf(page, ['clearListBody', 'confirmClearBtn']), ['清單裡的 2 張寶圖都會移除。', '清空 2 張']);
+    changeList(page, () => page.finder.listManager.add(catalogued(page, 'tm_013')));
+    assert.deepEqual(textsOf(page, ['clearListBody', 'confirmClearBtn']), ['清單裡的 3 張寶圖都會移除。', '清空 3 張']);
+    page.team();
+    assert.equal(page.$('clearListBody').textContent, '隊伍清單裡的 3 張寶圖都會移除，隊友的清單也會跟著清空。');
+    page.$('confirmClearBtn').click();
+    assert.deepEqual(page.toasts, [{ message: '已清空清單', type: 'success' }]);
+    assert.equal(page.finder.listManager.getLength(), 0);
+    assert.equal(isHidden(page, 'clearListModal'), true);
+});
+
+test('清空對話框開著時清單被清空了（隊友清的）：沒有東西可問，對話框收起來，焦點放到面板標題', async () => {
+    const page = await createPanelPage();
+    page.addMaps(['tm_017', 'tm_007']);
+    page.finder.openListPanel();
+    page.$('clearAllBtn').click();
+    changeList(page, () => page.finder.listManager.clear());
+    assert.equal(isHidden(page, 'clearListModal'), true);
+    assert.equal(page.$('clearListModal').style.display, '', '關閉後不留 display');
+    assert.ok(page.focused() === page.$('myListPanel-title'));
+    assert.deepEqual(page.toasts, []);
+});
+
+test('匯入對話框開著時清單變了：有寶圖才有「合併／取代」，同步不會把玩家選的改回預設；上一次的錯誤不受影響', async () => {
+    const page = await createPanelPage();
+    page.finder.openListPanel();
+    page.$('importListBtn').click();
+    assert.equal(isHidden(page, 'importListChoice'), true);
+    changeList(page, () => page.finder.listManager.add(catalogued(page, 'tm_017')));
+    assert.equal(isHidden(page, 'importListChoice'), false);
+    page.$('importModeReplace').checked = true;
+    page.$('importListError').textContent = '上一次的錯誤';
+    page.$('importListError').classList.remove('hidden');
+    changeList(page, () => page.finder.listManager.add(catalogued(page, 'tm_007')));
+    assert.equal(page.$('importModeReplace').checked, true, '玩家選的「取代」還在');
+    assert.deepEqual([isHidden(page, 'importListError'), page.$('importListError').textContent], [false, '上一次的錯誤']);
+    changeList(page, () => page.finder.listManager.clear());
+    assert.equal(isHidden(page, 'importListChoice'), true);
+});
+
+test('在隊伍裡匯入進空清單：等同步的這段時間，對話框不跟著新清單重畫（選項不會冒出來）', async () => {
+    const page = await createPanelPage();
+    page.team();
+    openImportWith(page, '?maps=tm_017,tm_007');
+    page.$('confirmImportBtn').click();
+    assert.deepEqual([page.finder.listManager.getLength(), isHidden(page, 'importListModal'), isHidden(page, 'importListChoice')], [2, false, true]);
+    await settle();
+    assert.equal(isHidden(page, 'importListModal'), true);
+});
+
+test('匯入對話框開著時隊友把清單清空：焦點原本在「合併／取代」上（整組藏起來了）就移到貼上內容的欄位，不掉到 body；焦點在別處就不動', async () => {
+    const page = await createPanelPage();
+    page.addMaps(['tm_017', 'tm_007']);
+    page.team();
+    page.finder.openListPanel();
+    page.$('importListBtn').click();
+    page.$('importModeReplace').focus();
+    changeList(page, () => page.finder.listManager.clear());
+    assert.equal(isHidden(page, 'importListChoice'), true);
+    assert.ok(page.focused() === page.$('importListText'));
+    changeList(page, () => page.finder.listManager.add(catalogued(page, 'tm_017')));
+    page.$('cancelImportBtn').focus();
+    changeList(page, () => page.finder.listManager.clear());
+    assert.ok(page.focused() === page.$('cancelImportBtn'));
+});
+
+// 隊伍同步不馬上回來：每次送出的清單（寶圖 id）記在 sent，release() 讓最早送出、還沒回來的那一次回來
+const holdSync = (page) => {
+    const sent = [];
+    const waiting = [];
+    page.finder.roomCollaboration.mapSync.replaceLocal = (maps) => {
+        sent.push(Array.from(maps, (map) => map.id));
+        return new Promise((resolve) => waiting.push(resolve));
+    };
+    return { sent, release: () => waiting.shift()(true) };
+};
+
+test('等隊伍同步時關掉匯入對話框又重新打開：上一次的同步回來時，不關掉新打開的這一次、不寫錯誤，貼上的內容還在；這一次照常能匯入', async () => {
+    const page = await createPanelPage();
+    page.team();
+    const sync = holdSync(page);
+    page.finder.openListPanel();
+    page.$('importListBtn').focus();
+    openImportWith(page, '?maps=tm_017');
+    page.$('confirmImportBtn').click();
+    await settle();
+    assert.equal(isHidden(page, 'importListModal'), false, '還在等同步');
+    page.key('Escape');
+    openImportWith(page, '?maps=tm_007');
+    sync.release();
+    await settle();
+    assert.equal(isHidden(page, 'importListModal'), false, '新打開的這一次還開著');
+    assert.equal(page.$('importListText').value, '?maps=tm_007');
+    assert.deepEqual([isHidden(page, 'importListError'), page.$('importListError').textContent], [true, '']);
+    page.$('confirmImportBtn').click();
+    sync.release();
+    await settle();
+    assert.deepEqual(mapIds(page), ['tm_017', 'tm_007']);
+    assert.deepEqual(sync.sent, [['tm_017'], ['tm_017', 'tm_007']]);
+    assert.equal(isHidden(page, 'importListModal'), true);
+    assert.ok(page.focused() === page.$('importListBtn'));
+});
+
+test('等隊伍同步時關掉匯入對話框又重新打開：上一次還沒回來也能匯入（不被擋住），各自的同步回來時只關自己那一次', async () => {
+    const page = await createPanelPage();
+    page.team();
+    const sync = holdSync(page);
+    page.finder.openListPanel();
+    page.$('importListBtn').focus();
+    openImportWith(page, '?maps=tm_017');
+    page.$('confirmImportBtn').click();
+    page.key('Escape');
+    openImportWith(page, '?maps=tm_007');
+    page.$('confirmImportBtn').click();
+    assert.deepEqual(mapIds(page), ['tm_017', 'tm_007']);
+    assert.deepEqual(sync.sent, [['tm_017'], ['tm_017', 'tm_007']]);
+    sync.release();   // 上一次的同步回來了，這一次的還沒
+    await settle();
+    assert.equal(isHidden(page, 'importListModal'), false);
+    sync.release();
+    await settle();
+    assert.equal(isHidden(page, 'importListModal'), true);
+    assert.ok(page.focused() === page.$('importListBtn'));
+});
+
+test('切換語言：上一次失敗的錯誤是舊語言寫的，收起來', async () => {
+    const page = await createPanelPage();
+    page.addMaps(['tm_017', 'tm_007', 'tm_013', 'tm_022', 'tm_010', 'tm_033']);
+    page.team();
+    openImportWith(page, '?maps=tm_008,tm_009,tm_011');
+    page.$('confirmImportBtn').click();
+    await settle();
+    assert.equal(isHidden(page, 'importListError'), false);
+    page.setLang('en');
+    assert.deepEqual([isHidden(page, 'importListError'), page.$('importListError').textContent], [true, '']);
+    assert.equal(isHidden(page, 'importListModal'), false, '對話框還開著');
+});
+
+test('匯入對話框開著時隊伍同步（每兩秒一次）：「連結裡有 N 張寶圖」（aria-live）同樣的字不重寫；切換語言才用新語言重寫', async () => {
+    const page = await createPanelPage();
+    page.addMaps(['tm_017']);
+    page.team();
+    page.finder.openListPanel();
+    openImportWith(page, '?maps=tm_017,tm_007');
+    const status = page.$('importListStatus');
+    const written = status.firstChild;
+    assert.equal(written.textContent, '連結裡有 2 張寶圖');
+    changeList(page, () => page.finder.listManager.add(catalogued(page, 'tm_013')));
+    changeList(page, () => {});
+    assert.ok(status.firstChild === written, '重寫相同的字會讓螢幕閱讀器重念一遍');
+    page.setLang('en');
+    assert.equal(status.textContent, 'Maps in the link: 2');
+});
+
+// 隊伍每兩秒輪詢一次：updateListCount() → ListDialogs#refresh()。textContent 一寫就會換掉文字節點，螢幕閱讀器的閱讀位置可能跟著跑掉，
+// 所以同樣的字不重寫（文字節點還是同一個），字真的變了才換
+const textNodesOf = (page, ids) => ids.map((id) => page.$(id).firstChild);
+const sameNodes = (page, ids, before) => ids.every((id, index) => before[index] !== null && page.$(id).firstChild === before[index]);
+
+test('清空對話框開著時隊伍每兩秒同步一次：說明與確認鈕同樣的字不重寫，張數或隊伍變了才換', async () => {
+    const page = await createPanelPage();
+    page.addMaps(['tm_017', 'tm_007']);
+    page.finder.openListPanel();
+    page.$('clearAllBtn').click();
+    const ids = ['clearListBody', 'confirmClearBtn'];
+    const written = textNodesOf(page, ids);
+    page.finder.updateListCount();
+    page.finder.updateListCount();
+    assert.ok(sameNodes(page, ids, written), '清單沒變：文字節點還是同一個');
+    changeList(page, () => page.finder.listManager.add(catalogued(page, 'tm_013')));
+    assert.deepEqual(textsOf(page, ids), ['清單裡的 3 張寶圖都會移除。', '清空 3 張']);
+    assert.ok(ids.every((id, index) => page.$(id).firstChild !== written[index]), '張數變了：兩處都換成新的字');
+    const counted = textNodesOf(page, ids);
+    page.team();
+    assert.equal(page.$('clearListBody').textContent, '隊伍清單裡的 3 張寶圖都會移除，隊友的清單也會跟著清空。');
+    assert.ok(page.$('clearListBody').firstChild !== counted[0], '進了隊伍：說明換字');
+    assert.ok(page.$('confirmClearBtn').firstChild === counted[1], '確認鈕的字沒變：不重寫');
+});
+
+test('匯入對話框開著時隊伍每兩秒同步一次：「合併／取代」的標題與說明同樣的字不重寫，進了隊伍只有「取代」的標題換字', async () => {
+    const page = await createPanelPage();
+    page.addMaps(['tm_017']);
+    page.finder.openListPanel();
+    openImportWith(page, '?maps=tm_007');
+    const ids = ['importModeMergeTitle', 'importModeMergeHint', 'importModeReplaceTitle', 'importModeReplaceHint'];
+    const written = textNodesOf(page, ids);
+    assert.deepEqual(textsOf(page, ids), ['合併', '重複的只留一張', '取代我的清單', '原本的寶圖會移除']);
+    page.finder.updateListCount();
+    page.finder.updateListCount();
+    assert.ok(sameNodes(page, ids, written), '清單沒變：文字節點還是同一個');
+    page.team();
+    assert.deepEqual(textsOf(page, ids), ['合併', '重複的只留一張', '取代隊伍清單', '原本的寶圖會移除']);
+    assert.deepEqual(ids.map((id, index) => page.$(id).firstChild === written[index]), [true, true, false, true]);
+});
+
+test('瀏覽器封鎖網站資料：從對話框清空照常運作，成功提示之後只警告一次記不住', async () => {
+    const page = await createPanelPage({ storageThrows: true });
+    // 直接放進清單（不經過卡片，所以還沒提示過）：提示留給清空那一次
+    const fill = () => {
+        for (const id of ['tm_017', 'tm_007']) page.finder.listManager.add(page.finder.maps.find((map) => map.id === id));
+        page.finder.updateListCount();
+        page.finder.renderMyList();
+    };
+    fill();
+    page.finder.openListPanel();
+    page.$('clearAllBtn').click();
+    page.$('confirmClearBtn').click();
+    assert.equal(page.finder.listManager.getLength(), 0);
+    assert.equal(isHidden(page, 'clearListModal'), true);
+    assert.deepEqual(page.toasts, [{ message: '已清空清單', type: 'success' }, BLOCKED_WARNING]);
+    // 同一個頁面再清一次：照常清空，不再警告
+    fill();
+    page.$('clearAllBtn').click();
+    page.$('confirmClearBtn').click();
+    assert.equal(page.finder.listManager.getLength(), 0);
+    assert.deepEqual(page.toasts.slice(2), [{ message: '已清空清單', type: 'success' }]);
+});
+
+test('瀏覽器封鎖網站資料：從對話框匯入照常運作，提示一次記不住', async () => {
+    const page = await createPanelPage({ storageThrows: true });
+    openImportWith(page, '?maps=tm_017,tm_007');
+    page.$('confirmImportBtn').click();
+    await settle();
+    assert.deepEqual(mapIds(page), ['tm_017', 'tm_007']);
+    assert.equal(isHidden(page, 'importListModal'), true);
+    assert.deepEqual(page.toasts, [{ message: '已匯入 2 張寶圖', type: 'success' }, BLOCKED_WARNING]);
+    openImportWith(page, '?maps=tm_013');
+    page.$('confirmImportBtn').click();
+    await settle();
+    assert.deepEqual(mapIds(page), ['tm_017', 'tm_007', 'tm_013']);
+    assert.deepEqual(page.toasts.slice(2), [{ message: '已合併匯入 1 張新寶圖', type: 'success' }]);
+});
+
+test('清空與匯入對話框的結構：遮罩層 > .dialog.tm-dialog > 標頭、內文、動作列，放在離開隊伍對話框之後、詳細檢視之前', () => {
+    const html = read(`${TOOL_DIR}/index.html`);
+    const order = ['id="leaveRoomModal"', 'id="clearListModal"', 'id="importListModal"', 'id="mapDetailModal"'].map((s) => html.indexOf(s));
+    assert.ok(!order.includes(-1), `缺對話框：${order}`);
+    assert.deepEqual([...order].sort((a, b) => a - b), order, `對話框的順序：${order}`);
+    for (const [id, close] of [['clearListModal', 'closeClearModalBtn'], ['importListModal', 'closeImportModalBtn']]) {
+        const overlay = tagAttrs(html, id);
+        assert.deepEqual(classesOf(overlay), ['dialog-overlay', 'hidden'], id);
+        assert.deepEqual([overlay.role, overlay['aria-modal'], overlay['aria-labelledby']], ['dialog', 'true', `${id}-title`], id);
+        const dialog = sliceElementById(html, id);
+        // 不用房間對話框的 .modal 系列：.modal-body label { display: block } 會弄亂 radio
+        const classes = [...dialog.matchAll(/\sclass="([^"]*)"/g)].flatMap((m) => m[1].split(/\s+/));
+        for (const gone of ['modal', 'modal-content', 'modal-body', 'modal-footer']) assert.ok(!classes.includes(gone), `${id} 不該用 .${gone}`);
+        assert.equal((dialog.match(/<div class="dialog tm-dialog">/g) || []).length, 1, id);
+        const parts = ['dialog-header', 'dialog-body', 'dialog-actions'].map((name) => dialog.indexOf(`class="${name}"`));
+        assert.ok(!parts.includes(-1) && parts[0] < parts[1] && parts[1] < parts[2], `${id} 的標頭、內文、動作列：${parts}`);
+        assert.deepEqual(classesOf(tagAttrs(html, `${id}-title`)), ['dialog-title'], id);
+        const closeButton = tagAttrs(html, close);
+        assert.deepEqual([classesOf(closeButton), closeButton['aria-label'], closeButton['data-i18n'], closeButton['data-i18n-attr']],
+            [['btn', 'btn-close'], '關閉', 'treasure_map_close', 'aria-label'], close);
+    }
+
+    // 清空：說明與確認鈕帶張數、隊伍裡還換字，由 JavaScript 填、不掛 data-i18n（切換語言時 I18nManager 會把 [data-i18n] 整個換掉）；沒有主要按鈕
+    const clear = sliceElementById(html, 'clearListModal');
+    assert.equal(tagAttrs(html, 'clearListModal-title')['data-i18n'], 'treasure_map_clear_title');
+    assert.deepEqual(classesOf(tagAttrs(html, 'cancelClearBtn')), ['btn']);
+    assert.equal(tagAttrs(html, 'cancelClearBtn')['data-i18n'], 'treasure_map_cancel');
+    assert.deepEqual(classesOf(tagAttrs(html, 'confirmClearBtn')), ['btn', 'btn-danger']);
+    for (const id of ['clearListBody', 'confirmClearBtn']) assert.equal(tagAttrs(html, id)['data-i18n'], undefined, id);
+    assert.doesNotMatch(clear, /btn-primary/);
+
+    // 匯入：label 與 textarea、狀態、選項、錯誤、兩顆按鈕（只有一顆主要按鈕）
+    const imported = sliceElementById(html, 'importListModal');
+    assert.equal(tagAttrs(html, 'importListModal-title')['data-i18n'], 'treasure_map_import_title');
+    const labels = [...imported.matchAll(/<label\b[^>]*>/g)].map((m) => parseAttrs(m[0]));
+    const inputLabel = labels.find((attrs) => attrs.for === 'importListText');
+    assert.deepEqual([classesOf(inputLabel), inputLabel['data-i18n']], [['form-label'], 'treasure_map_import_label']);
+    const textarea = tagAttrs(html, 'importListText');
+    assert.deepEqual([classesOf(textarea), textarea.rows, textarea.spellcheck, textarea['aria-describedby']], [['form-control'], '4', 'false', 'importListStatus']);
+    // 貼的是連結或 JSON：手機不要自動大寫、自動修正或跳出自動填入的建議
+    assert.deepEqual([textarea.autocapitalize, textarea.autocorrect, textarea.autocomplete], ['off', 'off', 'off']);
+    const status = tagAttrs(html, 'importListStatus');
+    assert.deepEqual([classesOf(status), status['aria-live'], status['data-i18n']], [['form-text'], 'polite', undefined]);
+    assert.deepEqual(classesOf(tagAttrs(html, 'importListChoice')), ['tm-choice', 'hidden']);
+    const legend = parseAttrs(imported.match(/<legend\b[^>]*>/)[0]);
+    assert.deepEqual([classesOf(legend), legend['data-i18n']], [['visually-hidden'], 'treasure_map_import_choice']);
+    assert.equal((imported.match(/class="form-check"/g) || []).length, 2);
+    for (const [mode, checked] of [['Merge', true], ['Replace', false]]) {
+        const radio = tagAttrs(html, `importMode${mode}`);
+        assert.deepEqual([radio.type, radio.name, radio.value, classesOf(radio)], ['radio', 'importMode', mode.toLowerCase(), ['form-check-input']], mode);
+        assert.equal(new RegExp(`<input\\b[^>]*id="importMode${mode}"[^>]*\\schecked[\\s>]`).test(imported), checked, `${mode} 的 checked`);
+        const modeLabel = labels.find((attrs) => attrs.for === `importMode${mode}`);
+        assert.deepEqual(classesOf(modeLabel), ['form-check-label'], mode);
+        // 標題與說明依狀態（清單空不空、在不在隊伍裡）由 JavaScript 填
+        for (const [part, className] of [['Title', 'tm-choice-title'], ['Hint', 'tm-choice-hint']]) {
+            const span = tagAttrs(html, `importMode${mode}${part}`);
+            assert.deepEqual([classesOf(span), span['data-i18n']], [[className], undefined], `${mode}${part}`);
+        }
+    }
+    const error = tagAttrs(html, 'importListError');
+    assert.deepEqual([classesOf(error), error.role], [['error-message', 'hidden'], 'alert']);
+    assert.deepEqual([classesOf(tagAttrs(html, 'cancelImportBtn')), tagAttrs(html, 'cancelImportBtn')['data-i18n']], [['btn'], 'treasure_map_cancel']);
+    assert.deepEqual([classesOf(tagAttrs(html, 'confirmImportBtn')), tagAttrs(html, 'confirmImportBtn')['data-i18n']], [['btn', 'btn-primary'], 'treasure_map_import']);
+    assert.equal((imported.match(/\bbtn-primary\b/g) || []).length, 1);
+});
+
+test('index.html 的腳本順序：list-share.js、list-dialogs.js 在 route-calculator.js 之後、script.js 之前', () => {
+    const scripts = scriptSources(read(`${TOOL_DIR}/index.html`));
+    const at = (name) => scripts.indexOf(name);
+    assert.ok(at('route-calculator.js') !== -1 && at('route-calculator.js') < at('list-share.js'), scripts.join());
+    assert.ok(at('list-share.js') < at('list-dialogs.js') && at('list-dialogs.js') < at('script.js'), scripts.join());
+});
+
+test('對話框的樣式：.tm-dialog 與 .tm-choice 寫在最後的 .hidden 前面；舊的 .ui-dialog 樣式與程式拿掉', () => {
+    const css = read(`${TOOL_DIR}/style.css`);
+    for (const selector of ['.tm-dialog', '.tm-dialog .dialog-body', '.tm-choice', '.tm-choice .form-check-label', '.tm-choice-title', '.tm-choice-hint']) {
+        declarations(selector);
+    }
+    const hiddenAt = css.lastIndexOf('\n.hidden {');
+    assert.ok(hiddenAt > 0);
+    for (const rule of ['.tm-dialog {', '.tm-choice {']) assert.ok(css.indexOf(rule) !== -1 && css.indexOf(rule) < hiddenAt, rule);
+    // fieldset 預設的框線、邊界、內距與最小寬度要清掉（窄螢幕才縮得進對話框）；.tm-choice 會被 .hidden 切換，display 只由這個單一 class 的選擇器設定
+    const choice = declarations('.tm-choice');
+    assert.match(choice, /display:\s*grid/);
+    for (const reset of [/border:\s*0/, /margin:\s*0/, /padding:\s*0/, /min-width:\s*0/]) assert.match(choice, reset);
+    assert.match(declarations('.tm-choice .form-check-label'), /display:\s*grid/);
+    // 貼上的欄位用等寬字、字級不另外縮小：小於 16px 時 iOS Safari 一聚焦（openImport() 一打開就聚焦它）就會放大頁面
+    const pasteBox = declarations('.tm-dialog textarea.form-control');
+    assert.match(pasteBox, /font-family:\s*var\(--font-mono\)/);
+    assert.doesNotMatch(pasteBox, /font-size/);
+    // 選項的標題與說明是兩行：單選鈕對齊第一行，不是兩行的正中間（共用的 .form-check 是置中）
+    assert.match(declarations('.tm-choice .form-check'), /align-items:\s*flex-start/);
+    assert.doesNotMatch(css, /\.ui-dialog/);
+    assert.doesNotMatch(read(`${TOOL_DIR}/ui-dialog-manager.js`), /showImportDialog|_createImportDialogContent|createDialogWithOverlay|dialogTitleSeq|ui-dialog/);
+});
+
+test('清空與匯入對話框的三語鍵值照設計；舊的確認、說明、提示用的鍵值刪掉，頁面與程式裡也不留', () => {
+    const expected = {
+        treasure_map_clear_title: ['清空清單？', 'Clear the list?', 'リストを空にしますか？'],
+        treasure_map_clear_body: ['清單裡的 {count} 張寶圖都會移除。', 'All maps in the list will be removed ({count}).', 'リストの地図 {count} 枚がすべて削除されます。'],
+        treasure_map_clear_body_room: [
+            '隊伍清單裡的 {count} 張寶圖都會移除，隊友的清單也會跟著清空。',
+            "All maps in the team list will be removed ({count}), and your teammates' lists will be cleared too.",
+            'チームリストの地図 {count} 枚がすべて削除され、メンバーのリストも空になります。'
+        ],
+        treasure_map_clear_confirm_button: ['清空 {count} 張', 'Clear all ({count})', '{count} 枚を削除'],
+        treasure_map_import_label: [
+            '貼上分享連結，或以前用「匯出」複製的內容',
+            'Paste a share link, or the text you copied with “Export” before',
+            '共有リンク、または以前「エクスポート」でコピーした内容を貼り付けてください'
+        ],
+        treasure_map_import_found_link: ['連結裡有 {count} 張寶圖', 'Maps in the link: {count}', 'リンクに地図が {count} 枚あります'],
+        treasure_map_import_found_json: ['內容有 {count} 張寶圖', 'Maps in the text: {count}', '内容に地図が {count} 枚あります'],
+        treasure_map_import_success: ['已匯入 {count} 張寶圖', 'Maps imported: {count}', '{count} 枚の地図をインポートしました'],
+        treasure_map_import_merged: ['已合併匯入 {count} 張新寶圖', 'New maps merged: {count}', '{count} 枚の新しい地図をマージしました'],
+        treasure_map_import_unreadable: [
+            '看不懂這段內容：請貼上分享連結，或以前匯出的內容',
+            "Couldn't read this. Paste a share link or text you exported before.",
+            'この内容は読み取れません。共有リンクか、以前エクスポートした内容を貼り付けてください'
+        ],
+        treasure_map_import_choice: ['匯入方式', 'How to import', 'インポート方法'],
+        treasure_map_import_merge: ['合併', 'Merge', 'まとめる'],
+        treasure_map_import_merge_hint: ['重複的只留一張', 'Duplicates are kept once', '重複は 1 枚にまとめます'],
+        treasure_map_import_replace_hint: ['原本的寶圖會移除', 'Your current maps will be removed', '今ある地図は削除されます'],
+        treasure_map_share_replace: ['取代我的清單', 'Replace my list', 'マイリストを置き換える'],
+        treasure_map_share_replace_room: ['取代隊伍清單', 'Replace the team list', 'チームリストを置き換える'],
+        treasure_map_share_none_found: ['分享連結裡沒有找得到的寶圖', 'None of the maps in this share link could be found', '共有リンクの地図が見つかりませんでした']
+    };
+    const gone = ['treasure_map_clear_confirm', 'treasure_map_import_instruction', 'treasure_map_import_placeholder', 'treasure_map_import_text_required',
+        'treasure_map_import_file_format_error', 'treasure_map_import_failed'];
+    ['zh', 'en', 'ja'].forEach((lang, index) => {
+        const values = translationValues(TRANSLATIONS, lang);
+        for (const [key, texts] of Object.entries(expected)) assert.equal(values.get(key), texts[index], `${lang} ${key}`);
+        const keys = translationKeySet(TRANSLATIONS, lang);
+        for (const key of gone) assert.ok(!keys.has(key), `${lang} 的 ${key} 應已刪除`);
+    });
+    // 刪掉的鍵值在頁面與工具的程式裡也不能留下（含註解：tests/scripts.test.js 會逐一檢查單引號字串）。
+    // 'treasure_map_clear_confirm' 是新鍵值 'treasure_map_clear_confirm_button' 的前綴，所以連引號一起比
+    const sources = [`${TOOL_DIR}/index.html`, ...fs.readdirSync(path.join(ROOT, TOOL_DIR)).filter((file) => file.endsWith('.js')).map((file) => `${TOOL_DIR}/${file}`)];
+    for (const file of sources) {
+        for (const key of gone) assert.doesNotMatch(read(file), new RegExp(`['"]${key}['"]`), `${file} 還在用 ${key}`);
+    }
+    assert.doesNotMatch(read(`${TOOL_DIR}/script.js`), /clearAllMaps|showImportDialog/);
 });

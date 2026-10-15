@@ -8,6 +8,7 @@ class TreasureMapFinder {
         this.filterManager = new FilterManager(); // 使用 FilterManager 模組
         this.uiDialogManager = new UIDialogManager(); // 使用 UIDialogManager 模組
         this.modalManager = new ModalManager(); // 我的清單面板的焦點管理（開啟時移入焦點、Tab 循環、ESC／關閉時還原焦點）
+        this.listDialogs = new ListDialogs(this); // 清空、匯入的頁內對話框（自己的 ModalManager，疊在清單面板上）
         this.aetheryteIcon = null; // 傳送點圖標
         this.roomCollaboration = null; // 協作功能實例
         this.lastListCount = null; // updateListCount() 上一次的張數（還沒呼叫過是 null，第一次只記下、不唸）
@@ -148,18 +149,17 @@ class TreasureMapFinder {
     setupEventListeners() {
         // 清單入口（桌機在最上面那一列、手機在底部列）與我的清單
         this.setupListEntries();
-        this.elements.clearAllBtn.addEventListener('click', () => this.clearAllMaps());
-        
+
+        // 清空、匯入（清單下面的動作列）：打開頁內對話框，確認之後才動清單
+        this.listDialogs.init();
+        this.elements.clearAllBtn.addEventListener('click', () => this.listDialogs.openClear());
+        document.getElementById('importListBtn').addEventListener('click', () => this.listDialogs.openImport());
+
         // 關閉面板按鈕
         const closePanelBtn = document.getElementById('closePanelBtn');
         if (closePanelBtn) {
             closePanelBtn.addEventListener('click', () => this.toggleListPanel());
         }
-        
-        // 匯入（清單下面的動作列）
-        document.getElementById('importListBtn').addEventListener('click', () => {
-            this.uiDialogManager.showImportDialog((text) => this.importFromText(text));
-        });
 
         // 點擊遮罩關閉
         const overlay = document.getElementById('panelOverlay');
@@ -485,9 +485,14 @@ class TreasureMapFinder {
         FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_copy_success', '已複製，可以貼到隊伍頻道'), 'success');
     }
 
+    // 隊伍連線中不能改清單（RoomCollaboration.setConnecting() 也停用了按鈕）：canEditList() 的 toast 與匯入、清空的回傳值共用這句話
+    getConnectingMessage() {
+        return FF14Utils.getI18nText('treasure_map_room_connecting', '隊伍連線中，請稍候再修改清單。');
+    }
+
     canEditList() {
         if (!this.roomCollaboration?.isConnecting) return true;
-        FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_room_connecting', '隊伍連線中，請稍候再修改清單。'), 'info');
+        FF14Utils.showToast(this.getConnectingMessage(), 'info');
         return false;
     }
 
@@ -808,42 +813,35 @@ class TreasureMapFinder {
         }
     }
     
-    clearAllMaps() {
-        if (!this.canEditList()) return;
-        const currentLength = this.listManager.getLength();
+    // 清空整份清單。要不要清已經由 ListDialogs 的清空對話框問過了，這裡不再確認。
+    // 成功有 toast；隊伍裡記進操作歷史、同步給隊友。回傳 ListManager 的結果 { success, message, count }
+    clearList() {
+        if (!this.canEditList()) return { success: false, message: this.getConnectingMessage(), count: 0 };
+        const result = this.listManager.clear();
+        if (!result.success) return result;
 
-        if (currentLength === 0) {
-            FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_empty_list', '清單是空的'), 'info');
-            return;
+        FF14Utils.showToast(result.message, 'success');
+        this.notifyIfUnsaved(result);
+        this.updateListCount();
+        this.updateCardButtons();
+        this.renderMyList();
+
+        // 記錄操作歷史
+        if (this.roomCollaboration?.currentRoom) {
+            this.roomCollaboration.addOperationHistory({
+                type: 'clear_all',
+                message: `${this.roomCollaboration.currentUser.nickname} 清空了所有寶圖`,
+                timestamp: new Date().toISOString()
+            });
         }
 
-        if (confirm(FF14Utils.getI18nText('treasure_map_clear_confirm', '確定要清空所有寶圖嗎？共 {count} 張', { count: currentLength }))) {
-            const result = this.listManager.clear();
-
-            if (result.success) {
-                FF14Utils.showToast(result.message, 'success');
-                this.notifyIfUnsaved(result);
-                this.updateListCount();
-                this.updateCardButtons();
-                this.renderMyList();
-                
-                // 記錄操作歷史
-                if (this.roomCollaboration?.currentRoom) {
-                    this.roomCollaboration.addOperationHistory({
-                        type: 'clear_all',
-                        message: `${this.roomCollaboration.currentUser.nickname} 清空了所有寶圖`,
-                        timestamp: new Date().toISOString()
-                    });
-                }
-                
-                // 同步到房間
-                if (this.roomCollaboration?.currentRoom) {
-                    this.syncToRoom();
-                }
-            }
+        // 同步到房間
+        if (this.roomCollaboration?.currentRoom) {
+            this.syncToRoom();
         }
+        return result;
     }
-    
+
     // 「40 張 G17 寶圖」：實際符合的張數與等級。等級列結果裡真的有的（選了 G18、G17 再選只有 G17 的地區，就只寫 G17），
     // 照 FilterManager.GRADE_ORDER 的順序；0 張時沒有結果可看，改列已選的等級。還沒選等級時是空的（由空狀態說明）
     updateResultCount() {
@@ -906,6 +904,10 @@ class TreasureMapFinder {
         }
 
         this.updateListEntry();
+
+        // 開著的清單對話框（清空的張數、匯入與分享的選項）跟著新的清單重畫：隊友同步後「清空 6 張」不能其實清掉 7 張。
+        // 測試替身不一定有 listDialogs
+        this.listDialogs?.refresh();
 
         // 加入、移除不再跳 toast：張數變了就由 #listAnnouncer 唸出來。第一次呼叫（載入時）只記下張數
         if (typeof this.lastListCount === 'number' && count !== this.lastListCount) {
@@ -999,60 +1001,65 @@ class TreasureMapFinder {
         this.elements.treasureGrid.appendChild(errorDiv);
     }
     
-    // 從文字匯入清單
-    async importFromText(text) {
-        if (!this.canEditList()) return;
-        if (!text.trim()) {
-            FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_import_text_required', '請貼上清單內容'), 'warning');
-            return;
+    // 目錄：寶圖 id → 目錄裡的那一張。匯入的分享連結與舊的匯出 JSON 都以目錄的資料為準
+    getCatalogue() {
+        return new Map(this.maps.map(map => [map.id, map]));
+    }
+
+    // 貼進來的內容讀成要匯入的寶圖。匯入對話框一邊貼一邊看、importFromText() 按下「匯入」時用的是同一份結果，所以「連結裡有 N 張」就是會匯入的 N 張：
+    // 分享連結 → 目錄裡找得到的那幾張（一張都沒有算失敗）；舊的匯出 JSON → 每一張有目錄裡同 id 的就換成目錄那張，否則照原樣（交給 ListManager 驗證）。
+    // 回傳 { ok: true, kind, maps }，或 { ok: false, kind, message }：kind 是 null 表示看不懂
+    parseImportText(text) {
+        const parsed = ListShare.parseText(text);
+        if (!parsed) {
+            return {
+                ok: false,
+                kind: null,
+                message: FF14Utils.getI18nText('treasure_map_import_unreadable', '看不懂這段內容：請貼上分享連結，或以前匯出的內容')
+            };
         }
-        
-        try {
-            // 確認是否要合併或取代
-            let merge = false;
-            
-            if (this.listManager.getLength() > 0) {
-                // 先解析資料以獲取數量
-                const parseResult = SecurityUtils.safeJSONParse(text);
-                if (!parseResult.success) {
-                    FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_import_file_format_error', '檔案格式錯誤'), 'error');
-                    return;
-                }
-                const previewData = parseResult.data;
-                const confirmMessage = `目前清單有 ${this.listManager.getLength()} 張寶圖。\n` +
-                    `要匯入的清單包含 ${previewData.maps?.length || 0} 張寶圖。\n\n` +
-                    `選擇「確定」將合併清單（避免重複）\n` +
-                    `選擇「取消」將取代現有清單`;
-                
-                merge = confirm(confirmMessage);
+        const catalogue = this.getCatalogue();
+        if (parsed.kind === 'link') {
+            const { maps } = ListShare.resolveIds(parsed.ids, catalogue);
+            if (maps.length === 0) {
+                return { ok: false, kind: 'link', message: FF14Utils.getI18nText('treasure_map_share_none_found', '分享連結裡沒有找得到的寶圖') };
             }
-            
-            // Validate the projected room size and operation batch before committing the import.
-            const collaboration = this.roomCollaboration?.currentRoom ? this.roomCollaboration : null;
-            const result = this.listManager.import(text, merge, {
-                maxItems: collaboration ? RoomCollaboration.CONSTANTS.MAX_MAPS : Infinity,
-                validate: maps => {
-                    if (!collaboration) return;
-                    const operations = collaboration.mapSync.getOperations(maps.map(map => this.toRoomMap(map)));
-                    RoomCollaboration.validateMapOperations(operations);
-                }
-            });
-            
-            if (result.success) {
-                FF14Utils.showToast(result.message, 'success');
-                this.notifyIfUnsaved(result);
-                this.updateListCount();
-                this.updateCardButtons();
-                this.renderMyList();
-                await this.syncToRoom();
-            } else {
-                FF14Utils.showToast(result.message, 'error');
-            }
-            
-        } catch (error) {
-            console.error('匯入失敗:', error);
-            FF14Utils.showToast(FF14Utils.getI18nText('treasure_map_import_failed', '匯入失敗：{message}', { message: error.message }), 'error');
+            return { ok: true, kind: 'link', maps };
         }
+        return { ok: true, kind: 'json', maps: parsed.maps.map(map => catalogue.get(map?.id) ?? map) };
+    }
+
+    // 從貼進來的文字匯入清單（分享連結，或以前匯出的 JSON）；merge 是合併（true）或取代（false）。
+    // 失敗（連線中、看不懂、超過隊伍上限…）不跳 toast，原因放在回傳的 message 裡，由匯入對話框顯示
+    async importFromText(text, { merge = true } = {}) {
+        if (this.roomCollaboration?.isConnecting) return { success: false, message: this.getConnectingMessage() };
+        const read = this.parseImportText(text);
+        if (!read.ok) return { success: false, message: read.message };
+        return this.applyListImport(read.maps, { merge });
+    }
+
+    // 把一批寶圖套進清單（匯入與分享連結共用）。隊伍裡上限 8 張，並先照 RoomCollaboration.validateMapOperations() 驗過整批操作，
+    // 都通過了才動清單。失敗不跳 toast、原樣回傳 ListManager 的結果（success: false 與 message）；
+    // 成功才 toast、更新畫面並同步給隊友，回傳 { success, message, imported, skipped, saved }
+    async applyListImport(maps, { merge = true } = {}) {
+        const collaboration = this.roomCollaboration?.currentRoom ? this.roomCollaboration : null;
+        const result = this.listManager.import({ maps }, merge, {
+            maxItems: collaboration ? RoomCollaboration.CONSTANTS.MAX_MAPS : Infinity,
+            validate: list => {
+                if (!collaboration) return;
+                const operations = collaboration.mapSync.getOperations(list.map(map => this.toRoomMap(map)));
+                RoomCollaboration.validateMapOperations(operations);
+            }
+        });
+        if (!result.success) return result;
+
+        FF14Utils.showToast(result.message, 'success');
+        this.notifyIfUnsaved(result);
+        this.updateListCount();
+        this.updateCardButtons();
+        this.renderMyList();
+        await this.syncToRoom();
+        return result;
     }
     
     // 生成路線

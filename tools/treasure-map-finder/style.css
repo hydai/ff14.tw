@@ -1049,42 +1049,67 @@
     text-align: center;
 }
 
-/* 匯出／匯入對話框（JS 建立）：外觀由 .dialog-overlay / .dialog 提供，這裡管顯示切換與內距 */
-.ui-dialog-overlay {
-    display: none;
-    z-index: calc(var(--z-toast) + 1);
+/* 清空、匯入對話框（ListDialogs）：外觀由 .dialog-overlay / .dialog 提供，這裡補寬度與內文版面。
+   遮罩層和清單面板同一個 z-index（--z-overlay），靠排在面板後面疊在它上面（同加入隊伍對話框）；
+   平常用 .hidden（最後那一條）藏起來，顯示時由 ModalManager 設 style.display */
+.tm-dialog {
+    max-width: 440px;
 }
 
-.ui-dialog-overlay.active {
-    display: flex;
+/* 內文一欄到底，間距全由 gap 決定：共用元件各自的上下邊界（.form-label、.form-text、.error-message）清掉 */
+.tm-dialog .dialog-body {
+    display: grid;
+    gap: var(--space-3);
 }
 
-.ui-dialog {
-    max-width: 500px;
-    padding: var(--space-5);
+.tm-dialog .dialog-body > * {
+    margin: 0;
 }
 
-.ui-dialog h3 {
-    margin: 0 0 var(--space-3);
-    font-size: var(--text-lg);
+/* 貼上內容的欄位：等寬字，放得下一條分享連結或一段匯出的 JSON；字級不另外縮小（沿用 .form-control 的 16px）：
+   小於 16px 時 iOS Safari 一聚焦就會放大頁面，而 openImport() 一打開就聚焦它。
+   看不懂時下面的說明也改成錯誤色（欄位的紅框由 .is-invalid 提供） */
+.tm-dialog textarea.form-control {
+    font-family: var(--font-mono);
+}
+
+.tm-dialog .form-control.is-invalid ~ .form-text {
+    color: var(--color-danger-text);
+}
+
+/* 說明那一行先留著位置：一貼上就出現「連結裡有 3 張寶圖」，下面的選項不會跟著往下跳 */
+#importListStatus {
+    min-height: calc(var(--text-sm) * var(--leading-normal));
+}
+
+/* 單選選項（匯入的「合併／取代」）：fieldset 預設的框線、邊界、內距與最小寬度清掉（窄螢幕才縮得進對話框），
+   每個選項兩行：標題、說明。整組用 .hidden 切換，所以 display 只在這個單一 class 的選擇器上設，才輸給最後的 .hidden */
+.tm-choice {
+    display: grid;
+    gap: var(--space-2);
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+/* 標籤是兩行（標題、說明）：單選鈕對齊第一行，共用的 .form-check 是置中對齊 */
+.tm-choice .form-check {
+    align-items: flex-start;
+    margin-bottom: 0;
+}
+
+.tm-choice .form-check-label {
+    display: grid;
+}
+
+.tm-choice-title {
+    font-weight: var(--weight-semibold);
     color: var(--color-heading);
 }
 
-.ui-dialog-textarea.form-control {
-    height: 200px;
-    margin-bottom: var(--space-3);
-    font-family: var(--font-mono);
-    font-size: var(--text-xs);
-}
-
-.ui-dialog-instruction {
-    margin-bottom: var(--space-3);
-}
-
-.ui-dialog-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: var(--space-2);
+.tm-choice-hint {
+    color: var(--color-muted);
 }
 
 /* 資料來源：外觀由 .card 提供 */
