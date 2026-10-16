@@ -269,21 +269,48 @@
         </div>
     </div>
 
-    <!-- 加入隊伍對話框 -->
-    <div class="modal dialog-overlay hidden" id="joinRoomModal" role="dialog" aria-modal="true" aria-labelledby="joinRoomModal-title">
-        <div class="modal-content dialog">
+    <!-- 加入隊伍對話框（RoomDialogs#openJoin）：輸入隊伍代號；清單不是空的，同一個對話框裡再問這些寶圖帶進隊伍還是清空（#joinPartyMaps，清單是空的時整塊藏起來）。
+         按下「加入」對話框不關：錯誤寫在代號欄下面，取代那一行說明（#roomCodeError 是 role="alert"，代號欄加 is-invalid 與 aria-invalid）。
+         錯誤、「你的清單」那一塊的說明、迷你清單、選項的字與提醒帶張數、會換語言，由 JavaScript 填入（不掛 data-i18n）；
+         清單超過 8 張時「帶進」停用、兩個選項都不預先勾，選了「不帶」才能按「加入」（這個對話框唯一的主要按鈕）。
+         和清單面板同一個 z-index，靠排在面板後面疊在它上面（同上面的建立隊伍對話框） -->
+    <div class="dialog-overlay hidden" id="joinRoomModal" role="dialog" aria-modal="true" aria-labelledby="joinRoomModal-title">
+        <div class="dialog tm-dialog">
             <div class="dialog-header">
-                <h3 id="joinRoomModal-title" class="dialog-title" data-i18n="treasure_map_join_title">加入隊伍</h3>
-                <button class="btn btn-close" id="closeJoinModalBtn" aria-label="關閉" data-i18n="treasure_map_close" data-i18n-attr="aria-label">×</button>
+                <h3 class="dialog-title" id="joinRoomModal-title" data-i18n="treasure_map_join_title">加入隊伍</h3>
+                <button type="button" class="btn btn-close" id="closeJoinModalBtn" aria-label="關閉" data-i18n="treasure_map_close" data-i18n-attr="aria-label">×</button>
             </div>
-            <div class="modal-body dialog-body">
-                <label for="roomCodeInput" data-i18n="treasure_map_enter_code">請輸入隊伍代號：</label>
-                <input type="text" id="roomCodeInput" class="input-field form-control input-uppercase" placeholder="例如：A3B7K9" maxlength="6" data-i18n="treasure_map_code_placeholder" data-i18n-attr="placeholder">
-                <div class="form-text" data-i18n="treasure_map_code_hint">請向隊長取得 6 位英數字代號</div>
+            <div class="dialog-body">
+                <label class="form-label" for="roomCodeInput" data-i18n="treasure_map_party_code">隊伍代號</label>
+                <input type="text" class="form-control input-uppercase" id="roomCodeInput" maxlength="6" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-describedby="roomCodeHint roomCodeError" placeholder="例如：A3B7K9" data-i18n="treasure_map_code_placeholder" data-i18n-attr="placeholder">
+                <p class="form-text" id="roomCodeHint" data-i18n="treasure_map_code_hint">6 碼英文和數字，向隊長要。打開隊長貼的邀請連結就不用輸入。</p>
+                <p class="form-text tm-field-error hidden" id="roomCodeError" role="alert"></p>
+                <div class="tm-dialog-group hidden" id="joinPartyMaps">
+                    <p class="tm-dialog-lede" id="joinPartyLede"></p>
+                    <ul class="tm-mini-list" id="joinPartyList"></ul>
+                    <fieldset class="tm-choice" id="joinPartyChoice">
+                        <legend class="visually-hidden" data-i18n="treasure_map_choice_legend">你的寶圖要怎麼處理</legend>
+                        <div class="form-check">
+                            <input type="radio" class="form-check-input" name="joinMode" id="joinModeBring" value="bring" checked>
+                            <label class="form-check-label" for="joinModeBring">
+                                <span class="tm-choice-title" id="joinModeBringTitle"></span>
+                                <span class="tm-choice-hint" id="joinModeBringHint"></span>
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input type="radio" class="form-check-input" name="joinMode" id="joinModeClear" value="clear">
+                            <label class="form-check-label" for="joinModeClear">
+                                <span class="tm-choice-title" id="joinModeClearTitle"></span>
+                                <span class="tm-choice-hint" id="joinModeClearHint"></span>
+                            </label>
+                        </div>
+                    </fieldset>
+                    <p class="warning-message hidden" id="joinPartyNote" role="status"></p>
+                </div>
             </div>
-            <div class="modal-footer dialog-actions">
-                <button class="btn btn-secondary" id="cancelJoinBtn" data-i18n="treasure_map_cancel">取消</button>
-                <button class="btn btn-primary" id="confirmJoinBtn" data-i18n="treasure_map_join">加入</button>
+            <div class="dialog-actions">
+                <button type="button" class="btn" id="cancelJoinBtn" data-i18n="treasure_map_cancel">取消</button>
+                <button type="button" class="btn btn-primary" id="confirmJoinBtn" data-i18n="treasure_map_join">加入</button>
             </div>
         </div>
     </div>

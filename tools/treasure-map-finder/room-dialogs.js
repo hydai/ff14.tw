@@ -1,12 +1,13 @@
-// 組隊的頁內對話框：目前是「建立隊伍」（加入、邀請連結、離開、移出成員的對話框之後再加進來）。
-// 標記都在 index.html（#createPartyModal）。開關照 ListDialogs#showModal()：拿掉 .hidden、交給 ModalManager 以 style.display 顯示，
-// 關閉時加回 .hidden。說明、迷你清單與選項的字帶張數、還要換語言，由這裡依狀態組出來、不掛 data-i18n：
+// 組隊的頁內對話框：目前是「建立隊伍」與「加入隊伍」（邀請連結、離開、移出成員的對話框之後再加進來）。
+// 標記都在 index.html（#createPartyModal、#joinRoomModal）。開關照 ListDialogs#showModal()：拿掉 .hidden、交給 ModalManager 以 style.display 顯示，
+// 關閉時加回 .hidden。說明、迷你清單、選項與錯誤的字帶張數、代號、還要換語言，由這裡依狀態組出來、不掛 data-i18n：
 // I18nManager 切換語言時會把 [data-i18n] 的文字整個換掉。
 // 由 RoomCollaboration 建立（this.dialogs）；建構時只抓元素，事件在 init() 才掛
 class RoomDialogs {
-    // renderChoice() 的確認鈕：prefix → 按鈕的 id（加入、邀請連結的對話框做的時候各加一筆）
+    // renderChoice() 的確認鈕：prefix → 按鈕的 id（邀請連結的對話框做的時候再加一筆）
     static CONFIRM_BUTTONS = {
-        create: 'confirmCreateBtn'
+        create: 'confirmCreateBtn',
+        join: 'confirmJoinBtn'
     };
 
     // 字不一樣才寫：textContent 一寫就會換掉整個文字節點，螢幕閱讀器的閱讀位置可能跟著跑掉（同 ListDialogs.setText）
@@ -14,7 +15,7 @@ class RoomDialogs {
         if (element.textContent !== text) element.textContent = text;
     }
 
-    // collaboration 是 RoomCollaboration：隊伍的連線（createRoom()）、結束後的焦點與 toast 都在它那裡
+    // collaboration 是 RoomCollaboration：隊伍的連線（createRoom()、joinRoom()）、結束後的焦點與 toast 都在它那裡
     constructor(collaboration) {
         this.collaboration = collaboration;
         this.finder = collaboration.finder;
@@ -34,11 +35,19 @@ class RoomDialogs {
             createModal: byId('createPartyModal'),
             closeCreate: byId('closeCreateModalBtn'),
             cancelCreate: byId('cancelCreateBtn'),
-            createError: byId('createPartyError')
+            createError: byId('createPartyError'),
+            joinModal: byId('joinRoomModal'),
+            closeJoin: byId('closeJoinModalBtn'),
+            cancelJoin: byId('cancelJoinBtn'),
+            roomCode: byId('roomCodeInput'),
+            roomCodeHint: byId('roomCodeHint'),
+            roomCodeError: byId('roomCodeError'),
+            joinMaps: byId('joinPartyMaps')
         };
-        // renderChoice() 用到的元素，依 prefix 記起來（建立的現在抓，其他的第一次用到時才抓）
+        // renderChoice() 用到的元素，依 prefix 記起來（建立與加入的現在抓，其他的第一次用到時才抓）
         this.choices = {};
         this.choiceElements('create');
+        this.choiceElements('join');
 
         window.i18n.onLanguageChange(() => this.refresh());
     }
@@ -64,16 +73,30 @@ class RoomDialogs {
         return this.choices[prefix];
     }
 
-    // 由 RoomCollaboration#setupEventListeners() 呼叫：接上建立隊伍對話框裡的按鈕與兩個選項
+    // 由 RoomCollaboration#setupEventListeners() 呼叫：接上建立與加入隊伍對話框裡的按鈕、代號欄與兩個選項
     init() {
         const { elements } = this;
-        const { bring, clear, confirm } = this.choiceElements('create');
+        const create = this.choiceElements('create');
         elements.closeCreate.addEventListener('click', () => this.close(elements.createModal));
         elements.cancelCreate.addEventListener('click', () => this.close(elements.createModal));
-        confirm.addEventListener('click', () => this.confirmCreate());
-        for (const radio of [bring, clear]) {
+        create.confirm.addEventListener('click', () => this.confirmCreate());
+        for (const radio of [create.bring, create.clear]) {
             radio.addEventListener('change', () => this.handleCreateModeChange());
         }
+
+        const join = this.choiceElements('join');
+        elements.closeJoin.addEventListener('click', () => this.close(elements.joinModal));
+        elements.cancelJoin.addEventListener('click', () => this.close(elements.joinModal));
+        join.confirm.addEventListener('click', () => this.confirmJoin());
+        for (const radio of [join.bring, join.clear]) {
+            radio.addEventListener('change', () => this.handleJoinModeChange());
+        }
+        // 改了代號，上一次失敗的錯誤就不再適用
+        elements.roomCode.addEventListener('input', () => this.clearJoinError());
+        // 代號欄按 Enter 等於按「加入」。輸入法選字時的 Enter 是選字（keydown 的 isComposing 是 true），不是送出
+        elements.roomCode.addEventListener('keydown', event => {
+            if (event.key === 'Enter' && !event.isComposing) this.confirmJoin();
+        });
     }
 
     // 拿掉 .hidden 再交給 ModalManager 顯示；關閉時加回 .hidden、清掉 ModalManager 設的 display，最後呼叫 onClose
@@ -103,9 +126,14 @@ class RoomDialogs {
     // 連線中（建立或加入）不重畫：選項與確認鈕停用著，連上之後清單也會換成隊伍的清單
     refresh() {
         if (this.connecting === this.opening) return;
-        if (this.modalManager.activeModal === this.elements.createModal) {
+        const open = this.modalManager.activeModal;
+        if (open === this.elements.createModal) {
             this.hideCreateError();
             this.renderCreate(false);
+        } else if (open === this.elements.joinModal) {
+            // 加入也一樣：錯誤收起來，說明接著回來；玩家打的代號與勾的選項不動
+            this.clearJoinError();
+            this.renderJoin(false);
         }
     }
 
@@ -274,6 +302,109 @@ class RoomDialogs {
         const { createError } = this.elements;
         createError.textContent = '';
         createError.classList.add('hidden');
+    }
+
+    // ---------- 加入隊伍 ----------
+    /**
+     * 「加入隊伍」鈕：已經在隊伍裡就提示、不開；否則打開對話框，輸入隊伍代號。
+     * 清單不是空的，同一個對話框裡再問這些寶圖要帶進隊伍還是清空（一步完成）；清單是空的就沒有東西可問。
+     * 每次打開都從頭開始：代號欄是空的、沒有錯誤、選項回到預設。初始焦點放在代號欄
+     */
+    openJoin() {
+        const { collaboration, elements } = this;
+        if (collaboration.currentRoom) {
+            collaboration.showToast(FF14Utils.getI18nText('treasure_map_already_in_room', '您已在隊伍中，請先離開現有隊伍'), 'warning');
+            return;
+        }
+        // 正在連線（按鈕本來就停用了），或對話框已經開著：沒有東西可開，也不重設玩家打的代號與勾的選項
+        if (collaboration.isConnecting || this.modalManager.activeModal === elements.joinModal) return;
+        elements.roomCode.value = '';
+        this.clearJoinError();
+        this.renderJoin(true);
+        this.showModal(elements.joinModal);
+        elements.roomCode.focus();
+    }
+
+    // 加入隊伍對話框裡由程式組的字與選項。清單是空的就沒有東西可問，「你的清單」那一塊（#joinPartyMaps）整個藏起來。reset 是剛打開（見 renderChoice）
+    renderJoin(reset) {
+        const count = this.finder.listManager.getLength();
+        this.elements.joinMaps.classList.toggle('hidden', count === 0);
+        this.renderChoice('join', {
+            count,
+            overLimit: count > RoomCollaboration.CONSTANTS.MAX_MAPS,
+            bringHint: FF14Utils.getI18nText('treasure_map_choice_bring_hint', '隊友也看得到，會標成你的圖'),
+            clearHint: FF14Utils.getI18nText('treasure_map_choice_clear_hint_join', '只用隊伍清單'),
+            reset
+        });
+    }
+
+    // 改了選項：上一次失敗的錯誤是對上一個選項說的（例如「選『不帶』，或先把它們刪掉」），收起來；
+    // 超過上限時「加入」要等選了「不帶」才能按
+    handleJoinModeChange() {
+        this.clearJoinError();
+        this.renderJoin(false);
+    }
+
+    /**
+     * 對話框的「加入」：代號去掉頭尾空白、轉大寫；「不帶」那顆勾著就清空本機清單（clearLocal），否則把清單帶進隊伍。
+     * 同 confirmCreate()：連線時對話框不關、選項與「加入」停用；成功就關掉，焦點到「複製邀請連結」；連線途中玩家自己關掉了對話框，
+     * 結果照常處理（成功進隊伍，失敗改跳 toast）。失敗把原因寫在代號欄下面（見 showJoinError()），讓玩家改代號或選項再按一次
+     * （連不上時重試帶同一個 clientRequestId）。舊的唯讀隊伍（legacy）：寶圖已經留在本機、警告 recoverLegacyRoom() 跳過了，沒有東西可寫，關掉對話框
+     */
+    async confirmJoin() {
+        const { collaboration, elements } = this;
+        const { clear, confirm } = this.choiceElements('join');
+        // 停用的「加入」（連線中、超過上限又沒選「不帶」）不接受：代號欄按 Enter 或程式直接呼叫也一樣
+        if (confirm.disabled) return;
+        const opening = this.opening;
+        const trigger = collaboration.elements.joinRoomBtn;
+        const code = elements.roomCode.value.trim().toUpperCase();
+        // 先收起上一次的錯誤：同樣的錯誤再來一次會重新寫過，role="alert" 才會再唸
+        this.clearJoinError();
+        const result = await this.whileBusy('join', opening, () => collaboration.joinRoom(code, { clearLocal: clear.checked }));
+
+        if (opening !== this.opening) {
+            // 連線途中對話框被關掉了：成功就照常進隊伍，失敗沒有地方寫錯誤，改跳 toast
+            if (!result.success && result.message) collaboration.showToast(result.message, 'error');
+            collaboration.focusAfterConnecting(trigger);
+        } else if (result.success || result.kind === 'legacy') {
+            this.close(elements.joinModal);
+            collaboration.focusAfterConnecting(trigger);
+        } else {
+            // 選項與「加入」恢復（超過上限的停用接回去），錯誤寫在代號欄下面。連線中停在 ✕ 的焦點 whileBusy() 已經放回「加入」；
+            // 代號打錯時 showJoinError() 再把焦點移到代號欄；焦點不在對話框裡也放回「加入」，玩家可以直接再按一次
+            this.renderJoin(false);
+            if (result.message) this.showJoinError(result);
+            if (!elements.joinModal.contains(document.activeElement)) confirm.focus();
+        }
+    }
+
+    /**
+     * 失敗的原因寫在代號欄下面，取代那一行說明（紅字）；代號欄加紅框與 aria-invalid，aria-describedby 本來就連到這一行，role="alert" 會唸出來。
+     * 代號保留。格式不對、找不到是代號的問題：焦點回到代號欄並選取內容，直接重打；其他的錯誤不在代號上，焦點留在原處
+     * @param {{kind: string, message: string}} failure - joinRoom() 回傳的失敗結果
+     */
+    showJoinError({ kind, message }) {
+        const { roomCode, roomCodeHint, roomCodeError } = this.elements;
+        roomCodeError.textContent = message;
+        roomCodeError.classList.remove('hidden');
+        roomCodeHint.classList.add('hidden');
+        roomCode.classList.add('is-invalid');
+        roomCode.setAttribute('aria-invalid', 'true');
+        if (kind === 'format' || kind === 'not_found') {
+            roomCode.focus();
+            roomCode.select();
+        }
+    }
+
+    // 收起錯誤、說明回來、紅框與 aria-invalid 拿掉：改了代號或選項、再按一次「加入」、打開對話框、切換語言時都會來（沒有錯誤時什麼都不變）
+    clearJoinError() {
+        const { roomCode, roomCodeHint, roomCodeError } = this.elements;
+        roomCodeError.textContent = '';
+        roomCodeError.classList.add('hidden');
+        roomCodeHint.classList.remove('hidden');
+        roomCode.classList.remove('is-invalid');
+        roomCode.removeAttribute('aria-invalid');
     }
 }
 

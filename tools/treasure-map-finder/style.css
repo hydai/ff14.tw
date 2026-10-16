@@ -1264,6 +1264,35 @@
     flex-wrap: wrap;
 }
 
+/* 加入隊伍對話框（#joinRoomModal）：代號欄、說明與選項用上面共用的規則。
+   「你的清單」那一塊（#joinPartyMaps）清單是空的時整塊用 .hidden 藏起來，所以 display 只設在單一 class 上，才輸給最後的 .hidden。
+   它不是 .dialog-body 的直接子元素，內文的間距規則（.tm-dialog .dialog-body 底下一層）碰不到它的小孩：
+   間距同樣由 gap 決定，小孩各自的上下邊界（例如 .warning-message 的 margin）清掉 */
+.tm-dialog-group {
+    display: grid;
+    gap: var(--space-3);
+}
+
+.tm-dialog-group > * {
+    margin: 0;
+}
+
+/* 錯誤寫在代號欄下面，取代那一行說明（紅字） */
+.tm-field-error {
+    color: var(--color-danger-text);
+}
+
+/* 代號欄的紅框與紅色聚焦光圈用 id 規則：common.css 的 input:not(…) 規則特異度是 (0,7,1)，聚焦時的 input:not(…):focus 是 (0,8,1)，
+   蓋過 .form-control.is-invalid 的 (0,2,0) 與 .form-control.is-invalid:focus 的 (0,3,0)，class 的寫法出不來。
+   格式不對、找不到時焦點正好回到這個欄位，紅框和光圈要一起紅 */
+#roomCodeInput.is-invalid {
+    border-color: var(--color-danger);
+}
+
+#roomCodeInput.is-invalid:focus {
+    box-shadow: var(--ring-danger);
+}
+
 /* 資料來源：外觀由 .card 提供 */
 .source-section {
     margin-top: var(--space-9);

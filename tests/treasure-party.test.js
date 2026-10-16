@@ -203,6 +203,79 @@ test('建立隊伍對話框的標記：照頁內對話框的結構，說明、�
     assert.equal((dialog.match(/\bbtn-primary\b/g) || []).length, 1);
 });
 
+test('加入隊伍對話框的標記：照頁內對話框的結構；label 對到代號欄，說明與錯誤接在欄下面（錯誤 role=alert、先藏起來），aria-describedby 兩個都指；「你的清單」那一塊用一個先藏起來的 div 包住；只有一顆主要按鈕；不再用 .modal 那一套', () => {
+    const html = read(`${TOOL_DIR}/index.html`);
+    const dialog = sliceElementById(html, 'joinRoomModal');
+    const overlay = tagAttrs(html, 'joinRoomModal');
+    assert.deepEqual([classesOf(overlay), overlay.role, overlay['aria-modal'], overlay['aria-labelledby']], [['dialog-overlay', 'hidden'], 'dialog', 'true', 'joinRoomModal-title']);
+    assert.match(dialog, /<div class="dialog tm-dialog">/);
+    assert.doesNotMatch(dialog, /class="[^"]*\b(?:modal|modal-content|modal-body|modal-footer|input-field)\b/, '改寫的對話框不用舊的 .modal 那一套');
+    // 隊伍的對話框那一段：建立隊伍之後、編輯暱稱之前，都在清空清單對話框前面（疊在清單面板上面）
+    const order = ['id="myListPanel"', 'id="createPartyModal"', 'id="joinRoomModal"', 'id="editNicknameModal"', 'id="clearListModal"'].map((s) => html.indexOf(s));
+    assert.ok(!order.includes(-1) && order.every((at, index) => index === 0 || order[index - 1] < at), `對話框的順序：${order}`);
+
+    const title = tagAttrs(html, 'joinRoomModal-title');
+    assert.match(dialog, /<h3\b[^>]*\sid="joinRoomModal-title"/);
+    assert.deepEqual([classesOf(title), title['data-i18n']], [['dialog-title'], 'treasure_map_join_title']);
+    const close = tagAttrs(html, 'closeJoinModalBtn');
+    assert.deepEqual([close.type, classesOf(close), close['aria-label'], close['data-i18n'], close['data-i18n-attr']], ['button', ['btn', 'btn-close'], '關閉', 'treasure_map_close', 'aria-label']);
+
+    // 代號欄：label 用 for 對到它；一般的 .form-control（再加轉大寫的 .input-uppercase）；說明與錯誤都接在它後面，aria-describedby 兩個都指
+    const labels = [...dialog.matchAll(/<label\b[^>]*>/g)].map((m) => parseAttrs(m[0]));
+    const codeLabel = labels.find((attrs) => attrs.for === 'roomCodeInput');
+    assert.deepEqual([classesOf(codeLabel), codeLabel['data-i18n']], [['form-label'], 'treasure_map_party_code']);
+    const input = tagAttrs(html, 'roomCodeInput');
+    assert.deepEqual([input.type, classesOf(input), input.maxlength, input.autocomplete, input.autocapitalize, input.spellcheck, input['aria-describedby']],
+        ['text', ['form-control', 'input-uppercase'], '6', 'off', 'characters', 'false', 'roomCodeHint roomCodeError']);
+    assert.deepEqual([input.placeholder, input['data-i18n'], input['data-i18n-attr']], ['例如：A3B7K9', 'treasure_map_code_placeholder', 'placeholder']);
+    // 說明是固定的字（掛 data-i18n）；錯誤的字由程式依代號與伺服器的回應組出來，不掛 data-i18n，是 role="alert"，先藏起來
+    assert.match(dialog, /<p class="form-text" id="roomCodeHint" data-i18n="treasure_map_code_hint">6 碼英文和數字，向隊長要。打開隊長貼的邀請連結就不用輸入。<\/p>/);
+    const error = tagAttrs(html, 'roomCodeError');
+    assert.deepEqual([classesOf(error), error.role, error['data-i18n']], [['form-text', 'tm-field-error', 'hidden'], 'alert', undefined]);
+    assert.match(dialog, /<p class="form-text tm-field-error hidden" id="roomCodeError" role="alert"><\/p>/, '先是空的');
+
+    // 「你的清單」那一塊：清單是空的時整塊藏起來，所以一個 div 包住說明、迷你清單、選項與提醒；程式填的字不掛 data-i18n
+    const group = tagAttrs(html, 'joinPartyMaps');
+    assert.deepEqual(classesOf(group), ['tm-dialog-group', 'hidden']);
+    assert.match(dialog, /<div\b[^>]*\sid="joinPartyMaps"/);
+    const groupHtml = sliceElementById(html, 'joinPartyMaps');
+    const plain = (id, classes) => {
+        const attrs = tagAttrs(html, id);
+        assert.deepEqual([classesOf(attrs), attrs['data-i18n']], [classes, undefined], id);
+        return attrs;
+    };
+    plain('joinPartyLede', ['tm-dialog-lede']);
+    plain('joinPartyList', ['tm-mini-list']);
+    plain('joinPartyChoice', ['tm-choice']);
+    assert.match(groupHtml, /<p\b[^>]*\sid="joinPartyLede"/);
+    assert.match(groupHtml, /<ul\b[^>]*\sid="joinPartyList"/);
+    assert.match(groupHtml, /<fieldset\b[^>]*\sid="joinPartyChoice"/);
+    assert.equal(plain('joinPartyNote', ['warning-message', 'hidden']).role, 'status');
+    const body = ['<label', 'id="roomCodeInput"', 'id="roomCodeHint"', 'id="roomCodeError"', 'id="joinPartyMaps"', 'id="joinPartyLede"', 'id="joinPartyList"', 'id="joinPartyChoice"', 'id="joinPartyNote"']
+        .map((s) => dialog.indexOf(s));
+    assert.ok(!body.includes(-1) && body.every((at, index) => index === 0 || body[index - 1] < at), `內文的順序：${body}`);
+
+    // 單選：和建立隊伍的對話框同一個寫法，name 是 joinMode，只有「帶進」預設勾
+    const legend = parseAttrs(groupHtml.match(/<legend\b[^>]*>/)[0]);
+    assert.deepEqual([classesOf(legend), legend['data-i18n']], [['visually-hidden'], 'treasure_map_choice_legend']);
+    assert.equal((groupHtml.match(/class="form-check"/g) || []).length, 2);
+    for (const [mode, checked] of [['Bring', true], ['Clear', false]]) {
+        const radio = tagAttrs(html, `joinMode${mode}`);
+        assert.deepEqual([radio.type, radio.name, radio.value, classesOf(radio)], ['radio', 'joinMode', mode.toLowerCase(), ['form-check-input']], mode);
+        assert.equal(new RegExp(`<input\\b[^>]*id="joinMode${mode}"[^>]*\\schecked[\\s>]`).test(groupHtml), checked, `${mode} 的 checked`);
+        assert.deepEqual(classesOf(labels.find((attrs) => attrs.for === `joinMode${mode}`)), ['form-check-label'], mode);
+        plain(`joinMode${mode}Title`, ['tm-choice-title']);
+        plain(`joinMode${mode}Hint`, ['tm-choice-hint']);
+    }
+
+    // 取消與「加入」：這個對話框唯一的主要按鈕是「加入」
+    const cancel = tagAttrs(html, 'cancelJoinBtn');
+    const confirm = tagAttrs(html, 'confirmJoinBtn');
+    assert.deepEqual([cancel.type, classesOf(cancel), cancel['data-i18n']], ['button', ['btn'], 'treasure_map_cancel']);
+    assert.deepEqual([confirm.type, classesOf(confirm), confirm['data-i18n']], ['button', ['btn', 'btn-primary'], 'treasure_map_join']);
+    assert.equal((dialog.match(/\bbtn-primary\b/g) || []).length, 1);
+});
+
 test('index.html 的腳本順序：room-dialogs.js 在 room-collaboration.js 前面（建構函式一開始就要建 RoomDialogs）；RoomCollaboration 不再有 handleCreateClick，建立隊伍鈕交給 dialogs.openCreate()', () => {
     const html = read(`${TOOL_DIR}/index.html`);
     const at = (name) => html.indexOf(`<script src="${name}"></script>`);
@@ -212,6 +285,19 @@ test('index.html 的腳本順序：room-dialogs.js 在 room-collaboration.js 前
     assert.doesNotMatch(source, /handleCreateClick/);
     assert.match(source, /createRoomBtn\.addEventListener\('click', \(\) => this\.dialogs\.openCreate\(\)\)/);
     assert.match(read(`${TOOL_DIR}/room-dialogs.js`), /window\.RoomDialogs = RoomDialogs;/);
+});
+
+test('加入隊伍鈕交給 dialogs.openJoin()：room-collaboration.js 不再有舊的加入對話框（showJoinRoomDialog、confirmJoinRoom、代號欄的 Enter 監聽、三顆按鈕的監聽、modals.joinRoom）', () => {
+    const source = read(`${TOOL_DIR}/room-collaboration.js`);
+    assert.match(source, /joinRoomBtn\.addEventListener\('click', \(\) => this\.dialogs\.openJoin\(\)\)/);
+    for (const gone of ['showJoinRoomDialog', 'confirmJoinRoom', 'roomCodeInput', 'closeJoinModalBtn', 'cancelJoinBtn', 'confirmJoinBtn', 'joinRoomModal', "'joinRoom'", 'joinRoom:']) {
+        assert.ok(!source.includes(gone), `room-collaboration.js 還有 ${gone}`);
+    }
+    // 代號欄的 Enter 現在在 RoomDialogs：keydown（keypress 已經不建議用），輸入法選字時的 Enter 不算
+    const dialogs = read(`${TOOL_DIR}/room-dialogs.js`);
+    assert.match(dialogs, /roomCode\.addEventListener\('keydown'/);
+    assert.doesNotMatch(dialogs, /keypress/);
+    assert.match(dialogs, /isComposing/);
 });
 
 test('入口說明的樣式：.tm-team-intro 是單一 class（display: grid），舊的 .team-actions 規則換掉；新規則寫在最後的 .hidden 前面', () => {
@@ -242,6 +328,40 @@ test('入口說明的樣式：.tm-team-intro 是單一 class（display: grid）�
     assert.match(bodyOf('#createPartyModal .dialog-actions'), /flex-wrap:\s*wrap/);
     assert.ok(css.indexOf('#createPartyModal .dialog-actions {') < css.lastIndexOf('\n.hidden {'));
     assert.equal(bodyOf('.tm-dialog .dialog-actions'), '', '別的對話框的按鈕列不動');
+});
+
+test('加入隊伍對話框的樣式：代號欄的紅框用 id 規則（附原因的註解），錯誤字是 danger-text，「你的清單」那一塊是單一 class 的 grid；只用 token，寫在最後的 .hidden 前面', () => {
+    const raw = read(`${TOOL_DIR}/style.css`);
+    const css = stripComments(raw);
+    const { rules, bodyOf } = cssRules(css);
+    const tokens = new Set([...read('assets/css/tokens.css').matchAll(/(--[a-z0-9-]+)\s*:/g)].map((m) => m[1]));
+
+    // common.css 的 input:not(…) 規則特異度是 (0,7,1)，蓋過 .form-control.is-invalid 的 (0,2,0)：紅框要靠 id 規則才出得來
+    assert.match(bodyOf('#roomCodeInput.is-invalid'), /border-color:\s*var\(--color-danger\)/);
+    // 聚焦時 common.css 的 input:not(…):focus 一樣蓋過 .form-control.is-invalid:focus 的紅色光圈（改成主色）：格式不對、找不到時焦點正好回到代號欄
+    assert.match(bodyOf('#roomCodeInput.is-invalid:focus'), /box-shadow:\s*var\(--ring-danger\)/);
+    assert.match(bodyOf('.tm-field-error'), /color:\s*var\(--color-danger-text\)/);
+    const at = raw.indexOf('#roomCodeInput.is-invalid {');
+    assert.notEqual(at, -1);
+    assert.match(raw.slice(raw.lastIndexOf('/*', at), at), /input:not/, '規則前面的註解要寫明為什麼用 id');
+
+    // 「你的清單」那一塊（#joinPartyMaps）清單是空的時用 .hidden 藏起來：display 只能設在單一 class 上，不然 .hidden 藏不起來；裡面的間距由 gap 決定
+    assert.match(bodyOf('.tm-dialog-group'), /display:\s*grid/);
+    assert.match(bodyOf('.tm-dialog-group'), /gap:\s*var\(--space-3\)/);
+    assert.match(bodyOf('.tm-dialog-group > *'), /margin:\s*0/);
+    for (const rule of rules.filter((r) => /(?:^|[;\s])display\s*:/.test(r.body))) {
+        for (const selector of rule.selectors.filter((s) => /joinPartyMaps|tm-dialog-group/.test(s))) {
+            assert.equal(selector, '.tm-dialog-group', `${selector} 讓 .hidden 失效`);
+        }
+    }
+
+    // 只用 token：沒有色碼、rgb()、!important，var(--…) 都是 tokens.css 定義過的；新規則都在最後的 .hidden 前面
+    for (const selector of ['#roomCodeInput.is-invalid', '#roomCodeInput.is-invalid:focus', '.tm-field-error', '.tm-dialog-group', '.tm-dialog-group > *']) {
+        const body = bodyOf(selector);
+        assert.doesNotMatch(body, /#[0-9a-f]{3,8}\b|rgba?\(|hsla?\(|!important/i, selector);
+        for (const [, name] of body.matchAll(/var\(\s*(--[a-z0-9-]+)/g)) assert.ok(tokens.has(name), `${selector} 用了 tokens.css 沒有的 ${name}`);
+        assert.ok(css.indexOf(`${selector} {`) < css.lastIndexOf('\n.hidden {'), `${selector} 要寫在最後的 .hidden 前面`);
+    }
 });
 
 // ---------- 頁面：真的 RoomCollaboration 接在清單面板上 ----------
@@ -309,19 +429,25 @@ test('清單是空的、建立失敗：焦點回到「建立隊伍」，訊息�
     assert.equal(page.client.dialogs.opening, 0);
 });
 
-test('加入隊伍成功：焦點移到「複製邀請連結」；失敗：焦點回到「加入隊伍」', async () => {
-    for (const [respond, expected] of [[joinable, 'copyInviteBtn'], [() => { throw roomError(404, 'ROOM_NOT_FOUND'); }, 'joinRoomBtn']]) {
+test('加入隊伍成功：焦點移到「複製邀請連結」；失敗（找不到）：對話框不關，焦點在代號欄，訊息寫在欄下面、不跳 toast', async () => {
+    const notFound = '找不到隊伍 ABC123。可能打錯了，或隊伍已經解散（24 小時沒有動靜就會解散）。';
+    for (const [respond, expected] of [[joinable, 'copyInviteBtn'], [() => { throw roomError(404, 'ROOM_NOT_FOUND'); }, 'roomCodeInput']]) {
         const page = await createParty(respond);
+        page.$('roomCodeInput').select = () => {}; // fake-dom 的 input 沒有 select()
         page.finder.openListPanel();
         page.$('joinRoomBtn').focus();
         page.$('joinRoomBtn').click();
         assertFocusOn(page, 'roomCodeInput', '打開加入隊伍對話框');
         page.$('roomCodeInput').value = 'abc123';
-        await page.client.confirmJoinRoom();
+        page.$('confirmJoinBtn').focus();
+        page.$('confirmJoinBtn').click();
+        await page.settle();
         const joined = expected === 'copyInviteBtn';
         assert.equal(page.client.currentRoom?.roomCode ?? null, joined ? 'ABC123' : null);
         assertFocusOn(page, expected, joined ? '加入成功' : '加入失敗');
-        assert.deepEqual(messages(page), joined ? ['成功加入隊伍 ABC123'] : ['找不到隊伍 ABC123。可能打錯了，或隊伍已經解散（24 小時沒有動靜就會解散）。']);
+        assert.deepEqual(messages(page), joined ? ['成功加入隊伍 ABC123'] : []);
+        assert.equal(page.client.dialogs.modalManager.activeModal === page.$('joinRoomModal'), !joined, joined ? '加入成功：對話框關掉' : '加入失敗：對話框還開著');
+        assert.equal(page.$('roomCodeError').textContent, joined ? '' : notFound);
     }
 });
 
@@ -427,11 +553,11 @@ const pressCreate = (page) => {
     page.$('createRoomBtn').focus();
     page.$('createRoomBtn').click();
 };
-// 選「帶進」或「不帶」：fake-dom 的 radio 不會互斥，兩顆都照瀏覽器設好，再在選到的那顆上送 change
-const chooseMode = (page, mode) => {
-    page.$('createModeBring').checked = mode === 'bring';
-    page.$('createModeClear').checked = mode === 'clear';
-    page.$(mode === 'bring' ? 'createModeBring' : 'createModeClear').dispatchEvent(new page.dom.window.Event('change', { bubbles: true }));
+// 選「帶進」或「不帶」：fake-dom 的 radio 不會互斥，兩顆都照瀏覽器設好，再在選到的那顆上送 change（prefix 是 'create' 或 'join'）
+const chooseMode = (page, mode, prefix = 'create') => {
+    page.$(`${prefix}ModeBring`).checked = mode === 'bring';
+    page.$(`${prefix}ModeClear`).checked = mode === 'clear';
+    page.$(`${prefix}Mode${mode === 'bring' ? 'Bring' : 'Clear'}`).dispatchEvent(new page.dom.window.Event('change', { bubbles: true }));
 };
 // 玩家按「建立隊伍」：焦點在那顆鈕上（連線中它停用，停用之前焦點先移到 ✕），等連線結束
 const pressConfirm = async (page) => {
@@ -1302,6 +1428,591 @@ test('RoomCollaboration.inviteLink：只有網址的來源、路徑與 room，�
     assert.equal(RoomCollaboration.inviteLink('http://localhost:8000/tools/treasure-map-finder/?maps=tm_017', 'XYZ789'), 'http://localhost:8000/tools/treasure-map-finder/?room=XYZ789');
 });
 
+// ---------- 加入隊伍：輸入代號，錯誤寫在代號欄下面 ----------
+// 加入對話框現在開著嗎（ModalManager 認得它，而且看得到）
+const joinOpen = (page) => page.client.dialogs.modalManager.activeModal === page.$('joinRoomModal') && !isHidden(page, 'joinRoomModal');
+// 打開面板、焦點在「加入隊伍」上、按下去
+const pressJoin = (page) => {
+    page.finder.openListPanel();
+    page.$('joinRoomBtn').focus();
+    page.$('joinRoomBtn').click();
+};
+// 在代號欄打字：和瀏覽器一樣，值變了再送 input 事件
+const typeCode = (page, value) => {
+    page.$('roomCodeInput').value = value;
+    page.$('roomCodeInput').dispatchEvent(new page.dom.window.Event('input', { bubbles: true }));
+};
+// fake-dom 的 input 沒有 select()：換上一個會記錄的，回傳的陣列是每次呼叫當下有焦點的元素
+const spySelect = (page) => {
+    const calls = [];
+    page.$('roomCodeInput').select = () => { calls.push(page.focused()); };
+    return calls;
+};
+// 玩家按「加入」：焦點在那顆鈕上（連線中它停用，停用之前焦點先移到 ✕），等連線結束
+const pressJoinConfirm = async (page) => {
+    page.$('confirmJoinBtn').focus();
+    page.$('confirmJoinBtn').click();
+    await page.settle();
+};
+// 對話框裡會因為連線中而停用的控制項，依序是 [帶進, 不帶, 加入, 取消, ✕]：取消與 ✕ 連線中還能按
+const JOIN_CONTROLS = ['joinModeBring', 'joinModeClear', 'confirmJoinBtn', 'cancelJoinBtn', 'closeJoinModalBtn'];
+const joinDisabledOf = (page) => JOIN_CONTROLS.map((id) => page.$(id).disabled);
+// 代號欄的狀態：[錯誤的字, 錯誤顯示著, 說明顯示著, is-invalid, aria-invalid]
+const codeState = (page) => [page.$('roomCodeError').textContent, !isHidden(page, 'roomCodeError'), !isHidden(page, 'roomCodeHint'),
+    page.$('roomCodeInput').classList.contains('is-invalid'), page.$('roomCodeInput').getAttribute('aria-invalid')];
+const NO_ERROR = ['', false, true, false, null];
+const GET_ROOM = 'GET /rooms/ABC123';
+const POST_JOIN = 'POST /rooms/ABC123/join';
+// 隊伍 ABC123 裡已經有的 count 張寶圖（id 是 room_0、room_1…，目錄裡沒有）
+const partyMaps = (count) => Array.from({ length: count }, (_, index) => serverMap(`room_${index}`, member.id));
+// 伺服器替身：ABC123 已經有 members（預設只有隊長）和 treasureMaps；加入時把送來的 initialMaps 裡隊伍還沒有的收進去（addedBy 是自己）。
+// requests 記下每一次的請求（method、path、body）
+const joiningServer = ({ members = [member], treasureMaps = [] } = {}) => {
+    const requests = [];
+    return {
+        requests,
+        respond: (path, options) => {
+            const method = options.method ?? 'GET';
+            requests.push({ method, path, body: options.body });
+            if (path === '/rooms/ABC123' && method === 'GET') return room(treasureMaps, members);
+            if (path === '/rooms/ABC123/join' && method === 'POST') {
+                const own = options.body.initialMaps.filter((map) => !treasureMaps.some((item) => item.id === map.id))
+                    .map((map) => ({ ...map, addedBy: newMember.id, addedAt: new Date().toISOString() }));
+                return { room: room([...treasureMaps, ...own], [...members, newMember]), newMember, memberToken: TOKEN };
+            }
+            throw new Error(`unexpected ${method} ${path}`);
+        }
+    };
+};
+const requestsOf = (server) => server.requests.map(({ method, path }) => `${method} ${path}`);
+const listIds = (page) => plain(Array.from(page.finder.listManager.getList(), (map) => map.id));
+
+test('清單是空的：打開加入對話框，焦點在代號欄、代號欄是空的、說明在、錯誤藏著、沒有「你的清單」那一塊；每次打開都從頭開始', async () => {
+    const page = await createParty(joiningServer().respond);
+    assert.equal(joinOpen(page), false);
+    pressJoin(page);
+
+    assert.ok(joinOpen(page));
+    assertFocusOn(page, 'roomCodeInput', '打開時焦點在代號欄');
+    assert.equal(page.$('joinRoomModal-title').textContent, '加入隊伍');
+    assert.equal(page.$('roomCodeInput').value, '');
+    assert.equal(page.$('roomCodeHint').textContent, '6 碼英文和數字，向隊長要。打開隊長貼的邀請連結就不用輸入。');
+    assert.deepEqual(codeState(page), NO_ERROR);
+    // 清單是空的沒有東西可問：整塊藏起來（說明、迷你清單、選項、提醒都在裡面）
+    assert.equal(isHidden(page, 'joinPartyMaps'), true);
+    assert.equal(isHidden(page, 'joinPartyNote'), true);
+    assert.deepEqual(joinDisabledOf(page), [false, false, false, false, false]);
+    assert.equal(page.client.dialogs.opening, 1);
+    assert.deepEqual(page.toasts, []);
+
+    // 這一塊跟著清單走：有寶圖時打開就出現，清單清空之後再打開又整塊藏起來
+    page.key('Escape');
+    page.addMaps(TWO);
+    page.$('joinRoomBtn').click();
+    assert.equal(isHidden(page, 'joinPartyMaps'), false);
+    page.key('Escape');
+    page.finder.listManager.clear();
+    page.$('joinRoomBtn').click();
+    assert.ok(joinOpen(page));
+    assert.equal(isHidden(page, 'joinPartyMaps'), true);
+});
+
+test('清單 2 張：對話框寫「你的清單有 2 張寶圖：」、兩列迷你清單、預設勾帶進、說明「只用隊伍清單」；加入 → initialMaps 2 張、合進隊伍清單、連線中選項與按鈕停用', async () => {
+    const server = joiningServer({ treasureMaps: partyMaps(3) });
+    const page = await createParty(server.respond);
+    page.addMaps(TWO);
+    pressJoin(page);
+
+    assert.ok(joinOpen(page));
+    assert.equal(isHidden(page, 'joinPartyMaps'), false);
+    const text = (id) => page.$(id).textContent;
+    assert.equal(text('joinPartyLede'), '你的清單有 2 張寶圖：');
+    assert.deepEqual(page.$('joinPartyList').children.map((row) => row.className), ['tm-mini', 'tm-mini']);
+    assert.deepEqual(page.$('joinPartyList').children.map((row) => row.textContent), ['G17 科扎馬烏卡 (20.0, 6.9)', 'G17 烏爾科帕恰 (13.7, 14.2)']);
+    assert.equal(page.$('joinPartyChoice').querySelector('legend').textContent, '你的寶圖要怎麼處理');
+    assert.deepEqual(['joinModeBringTitle', 'joinModeBringHint', 'joinModeClearTitle', 'joinModeClearHint'].map(text),
+        ['帶進隊伍清單', '隊友也看得到，會標成你的圖', '不帶，清空這 2 張', '只用隊伍清單']);
+    assert.deepEqual([page.$('joinModeBring').checked, page.$('joinModeClear').checked], [true, false], '預設帶進');
+    assert.equal(isHidden(page, 'joinPartyNote'), true);
+    assert.deepEqual(joinDisabledOf(page), [false, false, false, false, false]);
+    assert.equal(text('createPartyLede'), '', '建立隊伍的對話框是另一組元素，沒有被動到');
+
+    typeCode(page, 'abc123');
+    page.$('confirmJoinBtn').focus();
+    page.$('confirmJoinBtn').click();
+    // 連線中：選項與「加入」停用（取消與 ✕ 還能按），「加入」轉圈；代號欄不停用；成功之前對話框不關
+    assert.deepEqual(joinDisabledOf(page), [true, true, true, false, false]);
+    assert.equal(page.$('confirmJoinBtn').classList.contains('btn-loading'), true);
+    assert.equal(page.$('roomCodeInput').disabled === true, false);
+    assert.ok(joinOpen(page));
+    assertFocusOn(page, 'closeJoinModalBtn', '「加入」停用之前焦點先移到 ✕，不會掉到 body');
+    await page.settle();
+
+    // 代號去掉空白、轉大寫再用；先讀隊伍、再加入；沒有勾「不帶」，清單帶進去
+    assert.deepEqual(requestsOf(server), [GET_ROOM, POST_JOIN]);
+    assert.deepEqual(plain(server.requests[1].body.initialMaps.map((map) => map.id)), TWO);
+    assert.equal(page.client.currentRoom.roomCode, 'ABC123');
+    assert.deepEqual(listIds(page), ['room_0', 'room_1', 'room_2', ...TWO], '帶進去的和隊伍原本的合成隊伍清單');
+    assert.equal(joinOpen(page), false);
+});
+
+test('選不帶：initialMaps 是空的，加入後清單就是隊伍清單（決定只看「不帶」那顆有沒有勾）', async () => {
+    const server = joiningServer({ treasureMaps: partyMaps(3) });
+    const page = await createParty(server.respond);
+    page.addMaps(TWO);
+    pressJoin(page);
+    typeCode(page, 'ABC123');
+    // fake-dom 的 radio 不會互斥：只勾「不帶」，「帶進」那顆還勾著
+    page.$('joinModeClear').checked = true;
+    page.$('joinModeClear').dispatchEvent(new page.dom.window.Event('change', { bubbles: true }));
+    await pressJoinConfirm(page);
+
+    assert.deepEqual(requestsOf(server), [GET_ROOM, POST_JOIN]);
+    assert.deepEqual(plain(server.requests[1].body.initialMaps), []);
+    assert.equal(page.client.currentRoom.roomCode, 'ABC123');
+    assert.deepEqual(listIds(page), ['room_0', 'room_1', 'room_2'], '不帶：清單只剩隊伍清單');
+    assert.equal(joinOpen(page), false);
+    assertFocusOn(page, 'copyInviteBtn', '加入成功');
+});
+
+test('代號格式不對：錯誤寫在代號欄下面（說明讓位）、代號欄 is-invalid 與 aria-invalid、焦點回到代號欄並選取內容；不送請求、不跳 toast、對話框不關、代號保留', async () => {
+    for (const typed of ['', 'abc', 'AB-123', 'abc1234']) {
+        const label = JSON.stringify(typed);
+        const server = joiningServer();
+        const page = await createParty(server.respond);
+        const selected = spySelect(page);
+        pressJoin(page);
+        typeCode(page, typed);
+        await pressJoinConfirm(page);
+
+        assert.deepEqual(server.requests, [], `${label}：格式不對不送請求`);
+        assert.ok(joinOpen(page), `${label}：對話框不關`);
+        assert.deepEqual(codeState(page), ['代號是 6 碼英文和數字。', true, false, true, 'true'], label);
+        assertFocusOn(page, 'roomCodeInput', `${label}：焦點回到代號欄`);
+        assert.deepEqual(selected.map((element) => element.id), ['roomCodeInput'], `${label}：焦點到了代號欄才選取內容`);
+        assert.equal(page.$('roomCodeInput').value, typed, `${label}：代號保留`);
+        assert.deepEqual(page.toasts, [], `${label}：錯誤在對話框裡，不跳 toast`);
+        assert.deepEqual(joinDisabledOf(page), [false, false, false, false, false], `${label}：可以再按`);
+        assert.equal(page.$('confirmJoinBtn').classList.contains('btn-loading'), false, label);
+
+        // 再按一次同樣的錯誤：按下去就先收起上一次的（說明回來），結果出來再重新寫，role="alert" 才會再唸一次
+        page.$('confirmJoinBtn').focus();
+        page.$('confirmJoinBtn').click();
+        assert.deepEqual(codeState(page), NO_ERROR, `${label}：按下去先收起上一次的錯誤`);
+        await page.settle();
+        assert.deepEqual(codeState(page), ['代號是 6 碼英文和數字。', true, false, true, 'true'], label);
+    }
+});
+
+test('找不到（404）：「找不到隊伍 AB12CD。…」，對話框不關、代號還在、焦點回到代號欄並選取；再打字，錯誤收起來、說明回來、紅框拿掉', async () => {
+    const paths = [];
+    const page = await createParty((path) => { paths.push(path); throw roomError(404, 'ROOM_NOT_FOUND'); });
+    const selected = spySelect(page);
+    pressJoin(page);
+    typeCode(page, ' ab12cd ');
+    await pressJoinConfirm(page);
+
+    assert.deepEqual(paths, ['/rooms/AB12CD'], '代號去掉頭尾空白、轉大寫，讀一次隊伍');
+    assert.ok(joinOpen(page));
+    assert.deepEqual(codeState(page), ['找不到隊伍 AB12CD。可能打錯了，或隊伍已經解散（24 小時沒有動靜就會解散）。', true, false, true, 'true']);
+    assertFocusOn(page, 'roomCodeInput', '找不到：焦點回到代號欄');
+    assert.deepEqual(selected.map((element) => element.id), ['roomCodeInput']);
+    assert.equal(page.$('roomCodeInput').value, ' ab12cd ', '代號還在');
+    assert.deepEqual(page.toasts, []);
+    assert.equal(page.client.currentRoom, null);
+
+    typeCode(page, 'ab12c');
+    assert.deepEqual(codeState(page), NO_ERROR);
+    assert.ok(joinOpen(page));
+    assertFocusOn(page, 'roomCodeInput', '打字不動焦點');
+});
+
+test('讀到成員已經 8 人：「隊伍 ABC123 已經滿 8 人了。」寫在代號欄下面，不送加入；不是代號打錯，焦點留在原處、不選取', async () => {
+    const eight = Array.from({ length: 8 }, (_, index) => ({ id: `member_${index}`, nickname: `Member ${index}`, joinedAt: '2026-10-17T00:00:00.000Z' }));
+    const server = joiningServer({ members: eight });
+    const page = await createParty(server.respond);
+    const selected = spySelect(page);
+    pressJoin(page);
+    typeCode(page, 'abc123');
+    await pressJoinConfirm(page);
+
+    assert.deepEqual(requestsOf(server), [GET_ROOM], '只讀了隊伍，沒有送加入');
+    assert.ok(joinOpen(page));
+    assert.deepEqual(codeState(page), ['隊伍 ABC123 已經滿 8 人了。', true, false, true, 'true']);
+    assertFocusOn(page, 'confirmJoinBtn', '連線中焦點在 ✕，失敗之後放回「加入」');
+    assert.equal(selected.length, 0);
+    assert.deepEqual(page.toasts, []);
+    assert.deepEqual(joinDisabledOf(page), [false, false, false, false, false]);
+});
+
+test('帶進會超過 8 張：訊息帶隊伍和自己的張數、不送加入；照建議改選不帶，錯誤收起來，再按加入 → initialMaps 是空的、加入成功、清單成了隊伍清單', async () => {
+    const server = joiningServer({ treasureMaps: partyMaps(5) });
+    const page = await createParty(server.respond);
+    page.addMaps(page.finder.maps.slice(0, 4).map((map) => map.id));
+    pressJoin(page);
+    typeCode(page, 'abc123');
+    await pressJoinConfirm(page);
+
+    assert.deepEqual(requestsOf(server), [GET_ROOM], '合計超過 8 張，不送加入');
+    assert.ok(joinOpen(page));
+    assert.deepEqual(codeState(page), ['隊伍清單已經有 5 張，加上你的 4 張會超過 8 張。選「不帶」，或先刪掉幾張再加入。', true, false, true, 'true']);
+    assertFocusOn(page, 'confirmJoinBtn', '失敗之後放回去');
+    assert.equal(page.finder.listManager.getLength(), 4, '清單沒動');
+    assert.deepEqual(page.toasts, []);
+
+    chooseMode(page, 'clear', 'join');
+    assert.deepEqual(codeState(page), NO_ERROR, '照建議改選不帶，舊的錯誤不再適用');
+    await pressJoinConfirm(page);
+    assert.deepEqual(requestsOf(server), [GET_ROOM, GET_ROOM, POST_JOIN]);
+    assert.deepEqual(plain(server.requests[2].body.initialMaps), []);
+    assert.equal(page.client.currentRoom.roomCode, 'ABC123');
+    assert.equal(page.finder.listManager.getLength(), 5, '本機清單成了隊伍清單');
+    assert.equal(joinOpen(page), false);
+    assertFocusOn(page, 'copyInviteBtn', '加入成功');
+});
+
+test('連不上：訊息寫在代號欄下面、焦點留在原處；再按一次送同一個 clientRequestId，成功就進隊伍、錯誤收起來、對話框關掉', async () => {
+    const server = joiningServer();
+    const ids = [];
+    const page = await createParty((path, options) => {
+        if (options.method === 'POST') {
+            ids.push(options.body.clientRequestId);
+            if (ids.length === 1) throw roomError(503, 'UNAVAILABLE');
+        }
+        return server.respond(path, options);
+    });
+    const selected = spySelect(page);
+    pressJoin(page);
+    typeCode(page, 'abc123');
+    await pressJoinConfirm(page);
+
+    assert.deepEqual(codeState(page), [NETWORK_ERROR, true, false, true, 'true']);
+    assert.ok(joinOpen(page));
+    assertFocusOn(page, 'confirmJoinBtn', '連不上：不是代號的問題，焦點留在原處');
+    assert.equal(selected.length, 0);
+    assert.deepEqual(page.toasts, []);
+
+    await pressJoinConfirm(page);
+    assert.equal(ids.length, 2);
+    assert.match(ids[0], /^[a-f0-9-]{36}$/);
+    assert.equal(ids[1], ids[0], '重試帶同一個 clientRequestId：第一次可能已經成功、只是回應掉了');
+    assert.equal(joinOpen(page), false);
+    assert.deepEqual(codeState(page), NO_ERROR, '成功之後沒有舊的錯誤留著');
+    assert.equal(page.client.currentRoom.roomCode, 'ABC123');
+    assert.deepEqual(messages(page), ['成功加入隊伍 ABC123']);
+    assertFocusOn(page, 'copyInviteBtn', '重試成功');
+});
+
+test('其他錯誤（伺服器回 4xx）：「加入失敗，請再試一次。」寫在代號欄下面，焦點留在原處；對話框不關、清單沒動', async () => {
+    const server = joiningServer();
+    const page = await createParty((path, options) => {
+        if (options.method === 'POST') throw roomError(409, 'REQUEST_ALREADY_COMPLETED');
+        return server.respond(path, options);
+    });
+    page.addMaps(TWO);
+    pressJoin(page);
+    typeCode(page, 'abc123');
+    await pressJoinConfirm(page);
+
+    assert.deepEqual(codeState(page), ['加入失敗，請再試一次。', true, false, true, 'true']);
+    assert.ok(joinOpen(page));
+    assertFocusOn(page, 'confirmJoinBtn', '失敗之後放回去');
+    assert.deepEqual(page.toasts, []);
+    assert.deepEqual(listIds(page), TWO);
+    assert.equal(page.client.currentRoom, null);
+});
+
+test('成功：對話框關掉（加回 .hidden、清掉 display）、toast「成功加入隊伍 ABC123」、焦點到複製邀請連結；控制項恢復，下次打開不會卡在連線中', async () => {
+    const page = await createParty(joiningServer().respond);
+    pressJoin(page);
+    typeCode(page, 'abc123');
+    await pressJoinConfirm(page);
+
+    assert.equal(page.client.currentRoom.roomCode, 'ABC123');
+    assert.equal(joinOpen(page), false);
+    assert.deepEqual([page.$('joinRoomModal').classList.contains('hidden'), page.$('joinRoomModal').style.display], [true, '']);
+    assert.deepEqual(page.toasts, [{ message: '成功加入隊伍 ABC123', type: 'success' }]);
+    assertFocusOn(page, 'copyInviteBtn', '加入成功');
+    assert.equal(page.$('teamActions').classList.contains('hidden'), true);
+    assert.deepEqual(joinDisabledOf(page), [false, false, false, false, false]);
+    assert.equal(page.$('confirmJoinBtn').classList.contains('btn-loading'), false);
+    assert.equal(page.client.dialogs.opening, 2, '打開一次、關閉一次');
+    assert.deepEqual(codeState(page), NO_ERROR);
+});
+
+test('在代號欄按 Enter 等於按「加入」；輸入法選字中的 Enter 不算；連線中再按 Enter 不會再送一次', async () => {
+    const held = holdResponse(joiningServer().respond);
+    const page = await createParty(held.respond);
+    pressJoin(page);
+    assertFocusOn(page, 'roomCodeInput', '打開時焦點在代號欄');
+    typeCode(page, 'abc123');
+
+    // 輸入法選字中的 Enter（keydown 的 isComposing 是 true）是選字，不是送出
+    page.$('roomCodeInput').dispatchEvent(new page.dom.window.Event('keydown', { bubbles: true, cancelable: true, key: 'Enter', isComposing: true }));
+    page.key('a');
+    assert.equal(held.sent.length, 0, '選字中的 Enter 與別的鍵都不送出');
+
+    page.key('Enter');
+    assert.equal(held.sent.length, 1, 'Enter 開始連線（先讀隊伍）');
+    assert.deepEqual(joinDisabledOf(page), [true, true, true, false, false]);
+    assertFocusOn(page, 'roomCodeInput', '焦點本來就在不會停用的代號欄，留在原處');
+    page.key('Enter');
+    assert.equal(held.sent.length, 1, '連線中「加入」停用，Enter 不再送一次');
+
+    held.release();
+    await page.settle();
+    assert.equal(page.client.currentRoom.roomCode, 'ABC123');
+    assert.equal(joinOpen(page), false);
+    assert.deepEqual(messages(page), ['成功加入隊伍 ABC123']);
+    assertFocusOn(page, 'copyInviteBtn', 'Enter 加入成功');
+});
+
+test('清單有隊伍收不下的自訂寶圖（以前匯入、id 有空白），選帶進（Review Focus 4）：顯示「你的清單裡有隊伍不支援的寶圖…」、一個請求都不送；改選不帶，錯誤收起來，就能加入', async () => {
+    const server = joiningServer({ treasureMaps: partyMaps(2) });
+    const page = await createParty(server.respond);
+    page.addMaps(['tm_017']);
+    page.finder.listManager.add({ id: 'bad id', level: 'g8', zone: 'Test', coords: { x: 10, y: 20 } });
+    pressJoin(page);
+    assert.equal(page.$('joinPartyLede').textContent, '你的清單有 2 張寶圖：');
+    assert.equal(page.$('joinPartyList').children[1].textContent, 'G8 Test (10.0, 20.0)');
+    typeCode(page, 'abc123');
+    await pressJoinConfirm(page);
+
+    assert.deepEqual(server.requests, [], '帶進會被隊伍拒絕，所以一個請求都不送（連讀隊伍都不用）');
+    assert.ok(joinOpen(page));
+    assert.deepEqual(codeState(page), ['你的清單裡有隊伍不支援的寶圖。選「不帶」，或先把它們刪掉。', true, false, true, 'true']);
+    assertFocusOn(page, 'confirmJoinBtn', '失敗之後放回去');
+    assert.equal(page.finder.listManager.getLength(), 2);
+    assert.deepEqual(page.toasts, []);
+
+    chooseMode(page, 'clear', 'join');
+    assert.deepEqual(codeState(page), NO_ERROR, '照錯誤的建議改選不帶，舊的錯誤不再適用');
+    await pressJoinConfirm(page);
+    assert.deepEqual(requestsOf(server), [GET_ROOM, POST_JOIN]);
+    assert.deepEqual(plain(server.requests[1].body.initialMaps), []);
+    assert.equal(page.client.currentRoom.roomCode, 'ABC123');
+    assert.deepEqual(listIds(page), ['room_0', 'room_1'], '本機清單成了隊伍清單');
+    assert.equal(joinOpen(page), false);
+});
+
+test('清單 9 張：帶進停用、兩個都沒勾、提醒顯示、「加入」停用（代號欄按 Enter 也不送）；勾了不帶才能加入；剛好 8 張照常預設帶進', async () => {
+    const server = joiningServer();
+    const page = await createParty(server.respond);
+    page.addMaps(page.finder.maps.slice(0, 9).map((map) => map.id));
+    pressJoin(page);
+
+    assert.ok(joinOpen(page));
+    assert.equal(page.$('joinPartyLede').textContent, '你的清單有 9 張寶圖：');
+    assert.equal(page.$('joinPartyList').children.length, 9);
+    assert.deepEqual([page.$('joinModeBring').disabled, page.$('joinModeClear').disabled], [true, false]);
+    assert.deepEqual([page.$('joinModeBring').checked, page.$('joinModeClear').checked], [false, false], '兩個都不預先勾');
+    assert.equal(page.$('joinModeClearTitle').textContent, '不帶，清空這 9 張');
+    assert.equal(isHidden(page, 'joinPartyNote'), false);
+    assert.equal(page.$('joinPartyNote').textContent, '隊伍清單最多 8 張：先把清單刪到 8 張以內，或選「不帶」。');
+    assert.equal(page.$('confirmJoinBtn').disabled, true);
+
+    // 停用的「加入」不接受：Enter 或程式直接呼叫也不會送、不會冒出錯誤
+    typeCode(page, 'abc123');
+    page.key('Enter');
+    await page.client.dialogs.confirmJoin();
+    await page.settle();
+    assert.deepEqual(server.requests, []);
+    assert.equal(page.finder.listManager.getLength(), 9);
+    assert.deepEqual(codeState(page), NO_ERROR);
+
+    // 勾了不帶才能加入；清單還是 9 張，帶進還是停用，提醒還在
+    chooseMode(page, 'clear', 'join');
+    assert.deepEqual([page.$('confirmJoinBtn').disabled, page.$('joinModeBring').disabled, isHidden(page, 'joinPartyNote')], [false, true, false]);
+    await pressJoinConfirm(page);
+    assert.deepEqual(requestsOf(server), [GET_ROOM, POST_JOIN]);
+    assert.deepEqual(plain(server.requests[1].body.initialMaps), []);
+    assert.equal(page.finder.listManager.getLength(), 0);
+    assert.equal(joinOpen(page), false);
+    assertFocusOn(page, 'copyInviteBtn', '勾了不帶之後加入成功');
+
+    // 剛好 8 張：還不算超過，照常預設帶進
+    const eight = await createParty(server.respond);
+    eight.addMaps(eight.finder.maps.slice(0, 8).map((map) => map.id));
+    pressJoin(eight);
+    assert.deepEqual([eight.$('joinModeBring').disabled, eight.$('joinModeBring').checked, eight.$('joinModeClear').checked,
+        isHidden(eight, 'joinPartyNote'), eight.$('confirmJoinBtn').disabled], [false, true, false, true, false]);
+});
+
+test('取消、✕、Escape 都關掉對話框：不加入、不動清單，焦點回到「加入隊伍」；再打開是乾淨的（代號清空、預設帶進、沒有舊的錯誤）', async () => {
+    const closers = {
+        取消: (page) => page.$('cancelJoinBtn').click(),
+        '✕': (page) => page.$('closeJoinModalBtn').click(),
+        Escape: (page) => page.key('Escape')
+    };
+    for (const [label, close] of Object.entries(closers)) {
+        const page = await createParty(() => { throw roomError(404, 'ROOM_NOT_FOUND'); });
+        spySelect(page);
+        page.addMaps(TWO);
+        pressJoin(page);
+        // 先弄髒：打代號、選不帶、按加入 → 找不到，錯誤留在對話框裡
+        typeCode(page, 'ab12cd');
+        chooseMode(page, 'clear', 'join');
+        await pressJoinConfirm(page);
+        assert.equal(isHidden(page, 'roomCodeError'), false, label);
+
+        close(page);
+        assert.equal(joinOpen(page), false, label);
+        assert.deepEqual([page.$('joinRoomModal').classList.contains('hidden'), page.$('joinRoomModal').style.display], [true, ''], label);
+        assertFocusOn(page, 'joinRoomBtn', `${label}：焦點回到按下去的那一顆`);
+        assert.equal(page.client.currentRoom, null, label);
+        assert.deepEqual(listIds(page), TWO, label);
+
+        page.$('joinRoomBtn').click();
+        assert.ok(joinOpen(page), label);
+        assert.equal(page.$('roomCodeInput').value, '', `${label}：代號清空`);
+        assert.deepEqual(codeState(page), NO_ERROR, `${label}：舊的錯誤不見了`);
+        assert.deepEqual([page.$('joinModeBring').checked, page.$('joinModeClear').checked], [true, false], `${label}：預設帶進`);
+        assertFocusOn(page, 'roomCodeInput', `${label}：焦點又在代號欄`);
+        assert.equal(page.client.dialogs.opening, 3, label);
+    }
+});
+
+test('已經在隊伍裡：按加入隊伍只跳「您已在隊伍中，請先離開現有隊伍」、不開對話框；連線中、對話框已經開著時 openJoin() 什麼都不做，開著的對話框不會被重設', async () => {
+    const page = await createParty(joiningServer().respond);
+    page.addMaps(TWO);
+    pressJoin(page);
+    typeCode(page, 'ab1');
+    chooseMode(page, 'clear', 'join');
+    page.client.dialogs.openJoin();
+    assert.deepEqual([page.$('roomCodeInput').value, page.$('joinModeClear').checked, page.client.dialogs.opening], ['ab1', true, 1], '打的代號與勾的選項還在，也沒有白白多算一次打開');
+    page.key('Escape');
+
+    page.client.isConnecting = true;
+    page.client.dialogs.openJoin();
+    assert.equal(joinOpen(page), false, '連線中不開');
+    page.client.isConnecting = false;
+
+    assert.deepEqual(plain(await page.client.joinRoom('ABC123')), { success: true });
+    const opening = page.client.dialogs.opening;
+    page.client.dialogs.openJoin();
+    assert.deepEqual([joinOpen(page), page.client.dialogs.opening], [false, opening], '已經在隊伍裡不開');
+    assert.deepEqual(page.toasts, [
+        { message: '成功加入隊伍 ABC123', type: 'success' },
+        { message: '您已在隊伍中，請先離開現有隊伍', type: 'warning' }
+    ]);
+});
+
+test('舊的唯讀隊伍：對話框關掉，寶圖留在本機，只有 recoverLegacyRoom() 的警告（不再寫進對話框），焦點回到「加入隊伍」', async () => {
+    const page = await createParty(() => ({ ...room([serverMap('old_0', 'creator')]), readOnly: true }));
+    page.addMaps(['tm_017']);
+    pressJoin(page);
+    typeCode(page, 'abc123');
+    await pressJoinConfirm(page);
+
+    assert.equal(joinOpen(page), false);
+    assert.equal(page.client.currentRoom, null);
+    assert.deepEqual(page.toasts, [{ message: '此隊伍已轉為唯讀，寶圖已保留在本機，請建立新隊伍。', type: 'warning' }]);
+    assert.deepEqual(codeState(page), NO_ERROR);
+    assert.deepEqual(listIds(page).sort(), ['old_0', 'tm_017'], '自己的和唯讀隊伍的寶圖都留在本機');
+    assertFocusOn(page, 'joinRoomBtn', '舊隊伍：焦點回到「加入隊伍」');
+});
+
+test('連線途中自己關掉對話框：成功照樣進隊伍（不用再關一次），焦點到複製邀請連結；失敗改跳 toast（不寫進已經關掉的對話框），焦點回到「加入隊伍」', async () => {
+    const held = holdResponse(joiningServer().respond);
+    const succeeded = await createParty(held.respond);
+    pressJoin(succeeded);
+    typeCode(succeeded, 'abc123');
+    succeeded.$('confirmJoinBtn').focus();
+    succeeded.$('confirmJoinBtn').click();
+    succeeded.$('confirmJoinBtn').click();
+    assert.equal(held.sent.length, 1, '連線中「加入」停用，再按不會再送一次');
+    succeeded.key('Escape');
+    assert.equal(joinOpen(succeeded), false, '連線中也關得掉');
+    assert.equal(succeeded.client.currentRoom, null, '還沒連上');
+    held.release();
+    await succeeded.settle();
+    assert.equal(succeeded.client.currentRoom.roomCode, 'ABC123');
+    assert.deepEqual(messages(succeeded), ['成功加入隊伍 ABC123']);
+    assertFocusOn(succeeded, 'copyInviteBtn', '連線途中關掉對話框，成功之後');
+    assert.deepEqual(joinDisabledOf(succeeded), [false, false, false, false, false], '關掉的對話框也恢復了');
+
+    const heldFailure = holdResponse(() => { throw roomError(503, 'UNAVAILABLE'); });
+    const failed = await createParty(heldFailure.respond);
+    spySelect(failed);
+    pressJoin(failed);
+    typeCode(failed, 'abc123');
+    failed.$('confirmJoinBtn').focus();
+    failed.$('confirmJoinBtn').click();
+    failed.key('Escape');
+    heldFailure.release();
+    await failed.settle();
+    assert.equal(failed.client.currentRoom, null);
+    assert.deepEqual(failed.toasts, [{ message: NETWORK_ERROR, type: 'error' }]);
+    assert.deepEqual(codeState(failed), NO_ERROR, '關掉的對話框裡沒有錯誤');
+    assert.equal(joinOpen(failed), false);
+    assertFocusOn(failed, 'joinRoomBtn', '失敗，對話框早就關了');
+    assert.deepEqual(joinDisabledOf(failed), [false, false, false, false, false]);
+});
+
+test('對話框開著時切到英文（Review Focus 5）：說明與兩個選項重畫成英文、迷你清單換地名、玩家打的代號與勾的選項不動；顯示中的中文錯誤收起來，說明用新語言回來；再按一次錯誤用英文重新產生', async () => {
+    const page = await createParty(() => { throw roomError(503, 'UNAVAILABLE'); });
+    page.addMaps(TWO);
+    pressJoin(page);
+    typeCode(page, 'abc123');
+    chooseMode(page, 'clear', 'join');
+    await pressJoinConfirm(page);
+    assert.deepEqual(codeState(page), [NETWORK_ERROR, true, false, true, 'true']);
+    const lede = page.$('joinPartyLede').firstChild;
+    const rows = [...page.$('joinPartyList').children];
+
+    page.setLang('en');
+    assert.deepEqual(codeState(page), ['', false, true, false, null], '中文的錯誤收起來，說明回來');
+    assert.equal(page.$('roomCodeHint').textContent, "6 letters and numbers — ask your party leader. No need to type it if you open the leader's invite link.");
+    assert.equal(page.$('joinPartyLede').textContent, 'Maps in your list: 2');
+    assert.deepEqual(['joinModeBringTitle', 'joinModeBringHint', 'joinModeClearTitle', 'joinModeClearHint'].map((id) => page.$(id).textContent),
+        ['Bring them into the party list', 'Your party sees them too, marked as yours', "Don't bring them — clear your list (2)", 'Use only the party list']);
+    assert.deepEqual(page.$('joinPartyList').children.map((row) => row.textContent), ["G17 Kozama'uka (20.0, 6.9)", 'G17 Urqopacha (13.7, 14.2)']);
+    assert.ok(page.$('joinPartyList').children.every((row, index) => row !== rows[index]), '地名是語言的字，迷你清單重建');
+    assert.equal(page.$('joinPartyLede').firstChild !== lede, true);
+    // 由 [data-i18n] 換的固定字也跟著換
+    assert.deepEqual(['joinRoomModal-title', 'confirmJoinBtn', 'cancelJoinBtn'].map((id) => page.$(id).textContent), ['Join a party', 'Join', 'Cancel']);
+    assert.equal(page.$('roomCodeInput').getAttribute('placeholder'), 'e.g., A3B7K9');
+    // 玩家打的代號、已經勾的「不帶」不動，對話框還開著、可以按
+    assert.deepEqual([page.$('roomCodeInput').value, page.$('joinModeClear').checked, joinOpen(page), page.$('confirmJoinBtn').disabled], ['abc123', true, true, false]);
+    // 內容沒變時重畫不重寫：同一個文字節點、同一批迷你清單的列
+    const settled = { lede: page.$('joinPartyLede').firstChild, rows: [...page.$('joinPartyList').children] };
+    page.client.dialogs.refresh();
+    assert.ok(page.$('joinPartyLede').firstChild === settled.lede);
+    assert.ok(page.$('joinPartyList').children.every((row, index) => row === settled.rows[index]));
+
+    await pressJoinConfirm(page);
+    assert.equal(page.$('roomCodeError').textContent, "Can't reach the party server. Please try again later.");
+    page.setLang('ja');
+    assert.deepEqual(codeState(page), ['', false, true, false, null]);
+    assert.equal(page.$('roomCodeHint').textContent, '英数字 6 文字。リーダーに聞いてください。リーダーの招待リンクを開けば入力は不要です。');
+    assert.equal(page.$('joinPartyLede').textContent, 'あなたのリストには地図が 2 枚あります：');
+    assert.deepEqual(['joinModeBringTitle', 'joinModeBringHint', 'joinModeClearTitle', 'joinModeClearHint'].map((id) => page.$(id).textContent),
+        ['パーティリストに持ち込む', 'メンバーにも表示され、あなたの地図として表示されます', '持ち込まない（2 枚を消す）', 'パーティリストだけを使う']);
+    assert.deepEqual(['joinRoomModal-title', 'confirmJoinBtn'].map((id) => page.$(id).textContent), ['パーティに参加', '参加']);
+    assert.equal(page.$('joinModeClear').checked, true);
+});
+
+test('連線中切換語言：選項與「加入」還是停用（重畫不能把它們解開），連線結束後照常收尾；對話框關著時切換語言什麼都不做', async () => {
+    const held = holdResponse(joiningServer().respond);
+    const page = await createParty(held.respond);
+    page.addMaps(TWO);
+    page.setLang('en');
+    assert.equal(page.$('joinPartyLede').textContent, '', '沒開著的對話框不重畫');
+    page.setLang('zh');
+    pressJoin(page);
+    typeCode(page, 'abc123');
+    page.$('confirmJoinBtn').focus();
+    page.$('confirmJoinBtn').click();
+    page.setLang('en');
+    assert.deepEqual(joinDisabledOf(page), [true, true, true, false, false]);
+    assert.equal(page.$('confirmJoinBtn').classList.contains('btn-loading'), true);
+    held.release();
+    await page.settle();
+    assert.equal(page.client.currentRoom.roomCode, 'ABC123');
+    assert.equal(joinOpen(page), false);
+    assert.deepEqual(joinDisabledOf(page), [false, false, false, false, false]);
+});
+
 // ---------- 三語的字 ----------
 test('隊伍狀態的鍵值：新增與改寫的三語都照設計寫；舊的最後更新、剩餘時間、暱稱列的鍵值三語都刪掉，頁面與程式裡也不留；新字沒有舊用語', () => {
     // key → [zh, en, ja]
@@ -1381,4 +2092,36 @@ test('入口與建立隊伍的鍵值：新增與改寫的三語都照設計寫�
         assert.match(en.get(key), /\{count\}\)?$/, key);
         assert.doesNotMatch(en.get(key), /\bmaps? (?:are|is)\b|\(s\)/i, key);
     }
+});
+
+test('加入隊伍的鍵值：改寫與新增的三語都照設計寫；舊的 treasure_map_enter_code 三語都刪掉，頁面與程式裡也不留；新字沒有舊用語', () => {
+    // key → [zh, en, ja]
+    const written = {
+        treasure_map_join_title: ['加入隊伍', 'Join a party', 'パーティに参加'],
+        treasure_map_code_hint: ['6 碼英文和數字，向隊長要。打開隊長貼的邀請連結就不用輸入。',
+            "6 letters and numbers — ask your party leader. No need to type it if you open the leader's invite link.",
+            '英数字 6 文字。リーダーに聞いてください。リーダーの招待リンクを開けば入力は不要です。'],
+        treasure_map_choice_clear_hint_join: ['只用隊伍清單', 'Use only the party list', 'パーティリストだけを使う']
+    };
+    const removed = ['treasure_map_enter_code'];
+    const oldWords = { zh: /房間/, en: /\b(?:room|team)\b/i, ja: /ルーム|チーム/ };
+    ['zh', 'en', 'ja'].forEach((lang, index) => {
+        const values = translationValues(TRANSLATIONS, lang);
+        for (const [key, texts] of Object.entries(written)) {
+            assert.equal(values.get(key), texts[index], `${lang} ${key}`);
+            assert.doesNotMatch(texts[index], oldWords[lang], `${lang} ${key} 還有舊用語`);
+        }
+        const keys = translationKeySet(TRANSLATIONS, lang);
+        for (const key of removed) assert.equal(keys.has(key), false, `${lang} 還有 ${key}`);
+        // 沒有改寫的鍵值照用：代號欄的 placeholder、取消、加入、關閉
+        for (const key of ['treasure_map_code_placeholder', 'treasure_map_cancel', 'treasure_map_join', 'treasure_map_close']) assert.ok(keys.has(key), `${lang} 少了 ${key}`);
+    });
+
+    // 頁面與程式（含註解）裡不留舊的鍵值
+    const sources = [`${TOOL_DIR}/index.html`, ...fs.readdirSync(path.join(ROOT, TOOL_DIR)).filter((name) => name.endsWith('.js')).map((name) => `${TOOL_DIR}/${name}`)];
+    for (const file of sources) {
+        for (const key of removed) assert.doesNotMatch(read(file), new RegExp(`\\b${key}\\b`), `${file} 還有 ${key}`);
+    }
+    // 新的說明鍵值有人用：加入對話框的「不帶」說明
+    assert.match(read(`${TOOL_DIR}/room-dialogs.js`), /'treasure_map_choice_clear_hint_join'/);
 });

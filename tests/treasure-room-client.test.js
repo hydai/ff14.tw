@@ -1307,7 +1307,7 @@ test('RoomCollaboration.errorMessage：每種 kind 的字；map_limit 有 room �
     assert.equal(errorMessage('legacy'), '');
 });
 
-test('入口把結果接起來：建立鈕（清單是空的）與加入的對話框失敗時跳回傳的訊息；成功只有成功的 toast；busy 不多跳；網址的 ?room= 自動加入失敗時也跳訊息', async () => {
+test('入口把結果接起來：建立鈕（清單是空的）失敗時跳回傳的訊息；成功只有成功的 toast；busy 不多跳；網址的 ?room= 自動加入失敗時也跳訊息（加入的對話框把失敗寫在代號欄下面，由 treasure-party.test.js 用真的頁面測）', async () => {
     const failing = setup(() => ({ status: 503, body: { error: 'Service unavailable' } }));
     await failing.client.dialogs.openCreate();
     assert.deepEqual(failing.toasts, [NETWORK]);
@@ -1317,28 +1317,6 @@ test('入口把結果接起來：建立鈕（清單是空的）與加入的對�
     assert.deepEqual(creating.toasts, ['隊伍 ABC123 建立成功！']);
     await creating.client.dialogs.openCreate();
     assert.deepEqual(creating.toasts, ['隊伍 ABC123 建立成功！'], '已經在隊伍裡：busy 沒有訊息，不多跳');
-
-    // 加入的對話框：代號欄的內容去掉頭尾空白、轉大寫
-    const typed = (state, value) => {
-        const getElementById = state.document.getElementById;
-        state.document.getElementById = id => (id === 'roomCodeInput' ? { value } : getElementById(id));
-    };
-    const notFound = setup(() => ({ status: 404, body: { error: 'Room not found', code: 'ROOM_NOT_FOUND' } }));
-    typed(notFound, ' abc123 ');
-    await notFound.client.confirmJoinRoom();
-    assert.deepEqual(pathsOf(notFound), [GET]);
-    assert.deepEqual(notFound.toasts, [NOT_FOUND]);
-
-    const mistyped = setup(() => { throw new Error('格式不對不該送請求'); });
-    typed(mistyped, 'abc');
-    await mistyped.client.confirmJoinRoom();
-    assert.equal(mistyped.requests.length, 0);
-    assert.deepEqual(mistyped.toasts, [FORMAT]);
-
-    const joined = setup(joinsRoom());
-    typed(joined, 'abc123');
-    await joined.client.confirmJoinRoom();
-    assert.deepEqual(joined.toasts, ['成功加入隊伍 ABC123']);
 
     // 網址的 ?room=：載入時自動加入，失敗跳訊息，成功只有成功的 toast
     const link = 'http://localhost:8765/tools/treasure-map-finder/?room=abc123';

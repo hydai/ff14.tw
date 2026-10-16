@@ -132,11 +132,11 @@ const TreasureMapTranslations = {
         treasure_map_choice_clear: '不帶，清空這 {count} 張',
         treasure_map_choice_clear_hint_create: '隊伍清單從空的開始',
 
-        // 加入隊伍對話框
+        // 加入隊伍對話框（清單不是空的時，同一個對話框裡再問帶不帶）
         treasure_map_join_title: '加入隊伍',
-        treasure_map_enter_code: '請輸入隊伍代號：',
         treasure_map_code_placeholder: '例如：A3B7K9',
-        treasure_map_code_hint: '請向隊長取得 6 位英數字代號',
+        treasure_map_code_hint: '6 碼英文和數字，向隊長要。打開隊長貼的邀請連結就不用輸入。',
+        treasure_map_choice_clear_hint_join: '只用隊伍清單',
 
         // 編輯暱稱對話框
         treasure_map_edit_nickname: '編輯暱稱',
@@ -412,11 +412,11 @@ const TreasureMapTranslations = {
         treasure_map_choice_clear: 'Don\'t bring them — clear your list ({count})',
         treasure_map_choice_clear_hint_create: 'The party list starts empty',
 
-        // Join room dialog
-        treasure_map_join_title: 'Join Room',
-        treasure_map_enter_code: 'Enter Room Code:',
+        // Join party dialog (when your list isn't empty, the same dialog also asks what to do with it)
+        treasure_map_join_title: 'Join a party',
         treasure_map_code_placeholder: 'e.g., A3B7K9',
-        treasure_map_code_hint: 'Get the 6-character code from the room leader',
+        treasure_map_code_hint: '6 letters and numbers — ask your party leader. No need to type it if you open the leader\'s invite link.',
+        treasure_map_choice_clear_hint_join: 'Use only the party list',
 
         // Edit nickname dialog
         treasure_map_edit_nickname: 'Edit Nickname',
@@ -692,11 +692,11 @@ const TreasureMapTranslations = {
         treasure_map_choice_clear: '持ち込まない（{count} 枚を消す）',
         treasure_map_choice_clear_hint_create: 'パーティリストは空から始まります',
 
-        // ルーム参加ダイアログ
-        treasure_map_join_title: 'ルーム参加',
-        treasure_map_enter_code: 'ルームコードを入力：',
+        // パーティ参加ダイアログ（リストが空でないときは、同じダイアログで持ち込むかも尋ねる）
+        treasure_map_join_title: 'パーティに参加',
         treasure_map_code_placeholder: '例：A3B7K9',
-        treasure_map_code_hint: 'リーダーから6桁のコードを取得してください',
+        treasure_map_code_hint: '英数字 6 文字。リーダーに聞いてください。リーダーの招待リンクを開けば入力は不要です。',
+        treasure_map_choice_clear_hint_join: 'パーティリストだけを使う',
 
         // ニックネーム編集ダイアログ
         treasure_map_edit_nickname: 'ニックネーム編集',

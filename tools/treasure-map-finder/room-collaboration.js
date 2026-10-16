@@ -198,14 +198,13 @@ class RoomCollaboration {
         };
 
         this.modals = {
-            joinRoom: document.getElementById('joinRoomModal'),
             editNickname: document.getElementById('editNicknameModal'),
             leaveRoom: document.getElementById('leaveRoomModal')
         };
 
         // 隊伍狀態（代號、同步狀態、成員一行與成員列表）由 PartyStatus 畫，建構時只抓元素，事件在 setupEventListeners() 才掛
         this.status = new PartyStatus(this);
-        // 組隊的頁內對話框（目前是建立隊伍）由 RoomDialogs 管，同樣建構時只抓元素，事件在 setupEventListeners() 才掛
+        // 組隊的頁內對話框（目前是建立與加入隊伍）由 RoomDialogs 管，同樣建構時只抓元素，事件在 setupEventListeners() 才掛
         this.dialogs = new RoomDialogs(this);
 
         // 語言切換時重畫隊伍狀態（成員一行的字、每一列的標籤與按鈕都帶語言）
@@ -367,18 +366,13 @@ class RoomCollaboration {
     }
 
     setupEventListeners() {
-        // 隊伍操作：建立隊伍由 RoomDialogs 處理（清單是空的直接建立，不是空的先問帶不帶）
+        // 隊伍操作：建立與加入隊伍由 RoomDialogs 處理（建立：清單是空的直接建立，不是空的先問帶不帶；加入：輸入隊伍代號）
         this.elements.createRoomBtn.addEventListener('click', () => this.dialogs.openCreate());
-        this.elements.joinRoomBtn.addEventListener('click', () => this.showJoinRoomDialog());
+        this.elements.joinRoomBtn.addEventListener('click', () => this.dialogs.openJoin());
         // 隊伍狀態的按鈕：複製邀請連結、複製代號、離開、成員一行與成員列表裡的改名、移出
         this.status.init();
-        // 建立隊伍對話框裡的按鈕與選項
+        // 建立與加入隊伍對話框裡的按鈕、代號欄與選項
         this.dialogs.init();
-
-        // 加入隊伍對話框
-        document.getElementById('closeJoinModalBtn').addEventListener('click', () => this.hideModal('joinRoom'));
-        document.getElementById('cancelJoinBtn').addEventListener('click', () => this.hideModal('joinRoom'));
-        document.getElementById('confirmJoinBtn').addEventListener('click', () => this.confirmJoinRoom());
 
         // 編輯暱稱對話框
         document.getElementById('closeNicknameModalBtn').addEventListener('click', () => this.hideModal('editNickname'));
@@ -392,9 +386,6 @@ class RoomCollaboration {
         document.getElementById('leaveClearListBtn').addEventListener('click', () => this.leaveRoom(false));
 
         // Enter 鍵確認
-        document.getElementById('roomCodeInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') this.confirmJoinRoom();
-        });
         document.getElementById('nicknameInput').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') this.confirmEditNickname();
         });
@@ -488,30 +479,10 @@ class RoomCollaboration {
         }
     }
 
-    // 顯示加入隊伍對話框
-    showJoinRoomDialog() {
-        if (this.currentRoom) {
-            this.showToast(FF14Utils.getI18nText('treasure_map_already_in_room', '您已在隊伍中，請先離開現有隊伍'), 'warning');
-            return;
-        }
-
-        document.getElementById('roomCodeInput').value = '';
-        this.showModal('joinRoom');
-        document.getElementById('roomCodeInput').focus();
-    }
-
-    // 確認加入隊伍：關掉對話框，用代號欄的內容加入（帶進本機清單），結束後的焦點與失敗的訊息在這裡處理
-    async confirmJoinRoom() {
-        const roomCode = document.getElementById('roomCodeInput').value.trim().toUpperCase();
-        this.hideModal('joinRoom');
-        const result = await this.joinRoom(roomCode);
-        this.focusAfterConnecting(this.elements.joinRoomBtn);
-        if (!result.success && result.message) this.showToast(result.message, 'error');
-    }
-
     /**
      * 加入隊伍。clearLocal 同 createRoom()；nickname 有給就原樣送出（邀請連結的對話框裡寫的名字），沒給用這台機器的預設名字。
-     * 回傳結果（見 failure()）；這裡只跳成功的 toast，焦點與錯誤訊息是呼叫的人的事
+     * 回傳結果（見 failure()）；這裡只跳成功的 toast，焦點與錯誤訊息是呼叫的人
+     * （RoomDialogs#confirmJoin()、載入時網址的 ?room=）的事
      * @param {string} roomCode
      * @param {{clearLocal?: boolean, nickname?: ?string}} [options]
      */
