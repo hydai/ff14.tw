@@ -1183,6 +1183,24 @@ test('分享的寶圖一列一張：縮圖（alt 空白）、等級＋地名＋�
     assert.deepEqual([first.textContent, second.textContent], ['G17 科扎馬烏卡 (20.0, 6.9)', 'G17 烏爾科帕恰 (13.7, 14.2) 已在清單']);
 });
 
+test('ListDialogs.createMiniItem：縮圖（alt 空白）加「等級 地名 座標」的一列，不看清單、沒有標籤；分享對話框的列是它再加「已在清單」', async () => {
+    const page = await createPanelPage();
+    page.addMaps(['tm_007']);
+    const { listDialogs } = page.finder;
+    const { createMiniItem } = listDialogs.constructor;
+    assert.equal(typeof createMiniItem, 'function');
+    for (const id of ['tm_017', 'tm_007']) {
+        const item = createMiniItem(page.finder, catalogued(page, id));
+        assert.deepEqual([item.tagName, item.className], ['LI', 'tm-mini']);
+        assert.deepEqual(item.children.map((child) => child.tagName), ['IMG', 'SPAN'], `${id} 在不在清單裡都沒有標籤`);
+        assert.deepEqual([item.querySelector('img').getAttribute('alt'), item.querySelector('img').src], ['', catalogued(page, id).thumbnail]);
+        assert.equal(item.children[1].className, 'tm-mini-text');
+    }
+    assert.equal(createMiniItem(page.finder, catalogued(page, 'tm_007')).textContent, 'G17 烏爾科帕恰 (13.7, 14.2)');
+    assert.equal(listDialogs.createSharedItem(catalogued(page, 'tm_007')).textContent, 'G17 烏爾科帕恰 (13.7, 14.2) 已在清單');
+    assert.equal(listDialogs.createSharedItem(catalogued(page, 'tm_017')).textContent, 'G17 科扎馬烏卡 (20.0, 6.9)');
+});
+
 test('加入分享的寶圖：清單是空的 →「已匯入」，加進 →「已合併匯入」並保留原本的順序，取代 →「已匯入」', async () => {
     const empty = await createPanelPage({ url: `${URL_BASE}?maps=tm_017,tm_007` });
     empty.finder.handleSharedMaps();

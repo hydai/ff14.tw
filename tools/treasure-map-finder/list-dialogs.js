@@ -335,9 +335,9 @@ class ListDialogs {
         this.renderShareChoice();
     }
 
-    // 連結裡的一張寶圖：縮圖（裝飾，alt 空白）、等級＋目前語言的地名＋座標；已經在清單裡的多一個小標籤
-    createSharedItem(map) {
-        const { finder } = this;
+    // 一張寶圖的迷你列（<li>）：縮圖（裝飾，alt 空白）、等級＋目前語言的地名＋座標。分享連結的對話框，以及建立、加入隊伍時
+    // 列出「你的清單」的對話框（RoomDialogs）共用；列出的是清單裡的項目或目錄裡的寶圖都行（describeListItem 兩種都看得懂）
+    static createMiniItem(finder, map) {
         const info = finder.describeListItem(map);
         const item = document.createElement('li');
         item.className = 'tm-mini';
@@ -346,6 +346,13 @@ class ListDialogs {
         text.className = 'tm-mini-text';
         text.textContent = `${info.grade} ${info.zoneName} ${info.coordsText}`;
         item.appendChild(text);
+        return item;
+    }
+
+    // 連結裡的一張寶圖：迷你列，已經在清單裡的多一個小標籤
+    createSharedItem(map) {
+        const { finder } = this;
+        const item = ListDialogs.createMiniItem(finder, map);
         if (finder.listManager.has(map.id)) {
             // 標籤前面留一個空白：讀出來、複製下來都是「G17 烏爾科帕恰 (13.7, 14.2) 已在清單」（flex 裡只有空白的文字不畫出來，版面不變）
             item.appendChild(document.createTextNode(' '));
