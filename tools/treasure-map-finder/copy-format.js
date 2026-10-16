@@ -23,6 +23,14 @@ class CopyFormat {
         ja: '/p <序號>/<總數> <寶圖等級> <地區_ja> <座標>'
     };
 
+    // 隊伍版預設範本的句尾：這張圖有主人、而且範本就是預設範本時，render() 當下接在句子最後（不存進存檔，所以存著的範本不變）。
+    // 中文、日文用全形括號，直接接在句子後面；英文用半形括號，前面要有一個空格。中文的名字後面還有一個空格（名字是英文字母時才分得開）
+    static OWNER_SUFFIX = {
+        zh: '（<寶圖主人> 的圖）',
+        en: " (<寶圖主人>'s map)",
+        ja: '（<寶圖主人>の地図）'
+    };
+
     // 舊版（傳送點和寶圖各一行的時代）的三個預設寶圖範本，只用來認出舊存檔裡的 map
     static LEGACY_MAP_PRESETS = {
         zh: '/p 下一個 <寶圖等級> - <地區> <座標>',
@@ -30,12 +38,12 @@ class CopyFormat {
         ja: '/p 次 <寶圖等級> - <地區_ja> <座標>'
     };
 
-    // 格式區塊裡有按鈕的六個變數，以及只在說明文字裡列出的四個；render() 認得的就是這十個
-    static BUTTON_VARIABLES = ['<序號>', '<總數>', '<寶圖等級>', '<地區>', '<座標>', '<傳送點>'];
+    // 格式區塊裡有按鈕的七個變數，以及只在說明文字裡列出的四個；render() 認得的就是這十一個
+    static BUTTON_VARIABLES = ['<序號>', '<總數>', '<寶圖等級>', '<地區>', '<座標>', '<傳送點>', '<寶圖主人>'];
     static MORE_VARIABLES = ['<地區_en>', '<地區_ja>', '<傳送點_en>', '<傳送點_ja>'];
 
     /**
-     * 範本是不是某個語言的預設範本（要一字不差，多一個空白就不是）
+     * 範本是不是某個語言的預設範本（要一字不差，多一個空白就不是；接上 OWNER_SUFFIX 的隊伍版也不是，它只在 render() 當下組）
      * @param {string} template
      * @returns {'zh'|'en'|'ja'|null} 不是預設範本是 null
      */
@@ -67,19 +75,32 @@ class CopyFormat {
 
     /**
      * 把一站的資料填進範本，同一個變數出現幾次就換幾次。
-     * 這一站沒有傳送點（stop.aetheryte 是 null）而且範本就是某個語言的預設範本時，改用那個語言拿掉傳送點那一段的版本；
-     * 自訂範本的傳送點變數換成空字串。只有範本裡出現的變數換成了空字串，才把連續的空格收成一個並去掉頭尾空白，
+     * 範本就是某個語言的預設範本時，依這一站的狀況組出那個語言的句子，兩種情況可以疊加：
+     * 沒有傳送點（stop.aetheryte 是 null）改用拿掉傳送點那一段的版本；有主人（stop.owner 是非空字串）句尾再接上 OWNER_SUFFIX。
+     * 這是隊伍版預設範本，只在這裡組、不存，所以 presetLanguage()、describe() 和存著的範本都不變。
+     * 自訂範本不猜意思：傳送點、主人的變數沒有值就換成空字串，不改範本、也不接句尾。
+     * 只有範本裡出現的變數換成了空字串，才把連續的空格收成一個並去掉頭尾空白，
      * 否則使用者自己打的空白一律不動。換行不收：全部複製是一站一行，範本裡使用者自己換的行要留著
      * @param {string} template
-     * @param {{index: number, total: number, grade: string, zone: {zh: string, en: string, ja: string}, coords: string, aetheryte: {zh: string, en: string, ja: string}|null}} stop
-     *   index 是站號（從 1 開始），coords 是 CoordinateUtils.formatPair() 的結果
+     * @param {{index: number, total: number, grade: string, zone: {zh: string, en: string, ja: string}, coords: string, aetheryte: {zh: string, en: string, ja: string}|null, owner?: string|null}} stop
+     *   index 是站號（從 1 開始），coords 是 CoordinateUtils.formatPair() 的結果；
+     *   owner 是這張圖的主人的名字（<寶圖主人>），不在隊伍裡或沒有主人時是 null，沒給（undefined）和空字串也都當作沒有主人；
+     *   名字裡的換行與控制字元換成空格（見函式開頭）
      * @returns {string}
      */
     static render(template, stop) {
         const zone = stop.zone || {};
         const aetheryte = stop.aetheryte || {};
-        const language = stop.aetheryte ? null : CopyFormat.presetLanguage(template);
-        const source = language ? CopyFormat.PRESETS_NO_AETHERYTE[language] : template;
+        // 名字是隊員自己取的，伺服器只檢查長度：換行與其他控制字元（Cc，以及 Unicode 的行、段落分隔字元）換成一個空格再去掉頭尾空白，
+        // 名字就不會讓這一站多出一行（貼進巨集時那一行會變成另一個指令）。範本裡使用者自己換的行不受影響；只剩控制字元就當作沒有主人
+        const owner = String(stop.owner ?? '').replace(/[\p{Cc}\p{Zl}\p{Zp}]+/gu, ' ').trim();
+        // 只有範本和某個語言的預設範本一字不差，才有「沒有傳送點」與「有主人」的版本
+        const language = CopyFormat.presetLanguage(template);
+        let source = template;
+        if (language) {
+            if (!stop.aetheryte) source = CopyFormat.PRESETS_NO_AETHERYTE[language];
+            if (owner !== '') source += CopyFormat.OWNER_SUFFIX[language];
+        }
 
         const values = {
             '<序號>': stop.index,
@@ -91,7 +112,8 @@ class CopyFormat {
             '<座標>': stop.coords,
             '<傳送點>': aetheryte.zh,
             '<傳送點_en>': aetheryte.en,
-            '<傳送點_ja>': aetheryte.ja
+            '<傳送點_ja>': aetheryte.ja,
+            '<寶圖主人>': owner
         };
         // 一次換完：換進去的文字不會再被當成變數換第二次，也不會被當成取代語法（值裡有 $& 之類的字也照原樣）
         const variables = new RegExp(Object.keys(values).join('|'), 'g');

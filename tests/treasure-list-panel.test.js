@@ -2381,15 +2381,15 @@ test('格式區塊不跟著路線頁重畫：textarea、按鈕、變數按鈕還
     assert.ok(ids.every((id, index) => page.$(id) === nodes[index]));
     assert.ok(page.focused() === page.$('saveFormatBtn'), '重畫路線頁不搶走格式區塊裡的焦點');
     const after = Array.from(page.$('formatVars').querySelectorAll('button'));
-    assert.equal(after.length, 6);
+    assert.equal(after.length, 7);
     assert.ok(after.every((button, index) => button === variableButtons[index]));
 });
 
-test('變數按鈕：依 CopyFormat.BUTTON_VARIABLES 的順序，文字就是變數；沒有選取範圍時接在最後', async () => {
+test('變數按鈕：依 CopyFormat.BUTTON_VARIABLES 的順序（七顆，最後一顆是 <寶圖主人>），文字就是變數；沒有選取範圍時接在最後', async () => {
     const page = await createPanelPage();
     openFormat(page);
     const buttons = Array.from(page.$('formatVars').querySelectorAll('button'));
-    assert.deepEqual(buttons.map((button) => button.textContent), ['<序號>', '<總數>', '<寶圖等級>', '<地區>', '<座標>', '<傳送點>']);
+    assert.deepEqual(buttons.map((button) => button.textContent), ['<序號>', '<總數>', '<寶圖等級>', '<地區>', '<座標>', '<傳送點>', '<寶圖主人>']);
     assert.deepEqual(buttons.map((button) => button.dataset.var), buttons.map((button) => button.textContent));
     assert.ok(buttons.every((button) => button.getAttribute('type') === 'button' && classesOf({ class: button.className }).join(' ') === 'btn btn-sm tm-format-var'));
     typeInto(page, '/p ');
