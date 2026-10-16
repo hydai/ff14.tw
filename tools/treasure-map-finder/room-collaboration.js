@@ -75,6 +75,70 @@ class RoomCollaboration {
         return url.toString();
     }
 
+    /**
+     * 建立、加入隊伍的結果：{ success: true }，或 { success: false, kind, message }。
+     * kind：busy（已經在隊伍裡或連線中）、format（代號格式不對）、not_found、full、map_limit、invalid_maps（清單裡有隊伍不收的寶圖）、
+     * network、failed，或 legacy（舊的唯讀隊伍，recoverLegacyRoom() 已經提示過）。
+     * busy 與 legacy 的 message 是空字串；錯誤訊息跳不跳、寫在哪裡、結束後的焦點，都是呼叫的人的事
+     * @param {string} kind
+     * @param {Object} [options] - 同 errorMessage()
+     * @returns {{success: false, kind: string, message: string}}
+     */
+    static failure(kind, options) {
+        return { success: false, kind, message: RoomCollaboration.errorMessage(kind, options) };
+    }
+
+    // 請求失敗的種類（failure() 的 kind）：先看 code 再看 status；沒有 status（fetch 失敗）、5xx、429 都當作連不上
+    static errorKind(error) {
+        if (error?.code === 'ROOM_NOT_FOUND' || error?.status === 404) return 'not_found';
+        if (error?.code === 'ROOM_FULL') return 'full';
+        if (error?.code === 'MAP_LIMIT') return 'map_limit';
+        if (error?.code === 'ROOM_RECREATE_REQUIRED') return 'legacy';
+        if (!error?.status || error.status >= 500 || error.status === 429) return 'network';
+        return 'failed';
+    }
+
+    /**
+     * 每種 kind 要給玩家看的字（busy、legacy 沒有字）。code 是要加入的隊伍代號；
+     * map_limit 有 room（隊伍清單現有幾張）和 mine（要帶進去幾張）兩個數字才寫張數，沒有就用通用的句子；
+     * failed 在建立隊伍（creating）時寫建立失敗
+     */
+    static errorMessage(kind, { code = '', room = null, mine = null, creating = false } = {}) {
+        switch (kind) {
+            case 'format':
+                return FF14Utils.getI18nText('treasure_map_join_error_format', '代號是 6 碼英文和數字。');
+            case 'not_found':
+                return FF14Utils.getI18nText('treasure_map_join_error_not_found', '找不到隊伍 {code}。可能打錯了，或隊伍已經解散（24 小時沒有動靜就會解散）。', { code });
+            case 'full':
+                return FF14Utils.getI18nText('treasure_map_join_error_full', '隊伍 {code} 已經滿 8 人了。', { code });
+            case 'map_limit':
+                return room !== null && mine !== null
+                    ? FF14Utils.getI18nText('treasure_map_join_error_map_limit', '隊伍清單已經有 {room} 張，加上你的 {mine} 張會超過 8 張。選「不帶」，或先刪掉幾張再加入。', { room, mine })
+                    : FF14Utils.getI18nText('treasure_map_join_error_map_limit_generic', '隊伍清單最多 8 張，加上你的寶圖會超過。選「不帶」，或先刪掉幾張再加入。');
+            case 'invalid_maps':
+                return FF14Utils.getI18nText('treasure_map_party_invalid_maps', '你的清單裡有隊伍不支援的寶圖。選「不帶」，或先把它們刪掉。');
+            case 'network':
+                return FF14Utils.getI18nText('treasure_map_join_error_network', '連不上隊伍伺服器，請稍後再試。');
+            case 'failed':
+                return creating
+                    ? FF14Utils.getI18nText('treasure_map_create_error_failed', '建立失敗，請再試一次。')
+                    : FF14Utils.getI18nText('treasure_map_join_error_failed', '加入失敗，請再試一次。');
+            default:
+                return '';
+        }
+    }
+
+    // 要帶進隊伍的寶圖（toRoomMap() 之後的樣子）能不能過隊伍的規則：以前匯入的自訂寶圖可能有隊伍不收的 id（空白、特殊字元），
+    // 照樣送出去整個建立或加入都會被拒絕，所以送出之前先用 validateMapOperations() 檢查
+    static mapsFitParty(initialMaps) {
+        try {
+            RoomCollaboration.validateMapOperations(initialMaps.map(map => ({ type: 'add', map })));
+            return true;
+        } catch {
+            return false;
+        }
+    }
+
     constructor(treasureMapFinder) {
         this.finder = treasureMapFinder;
         this.currentRoom = null;
@@ -233,6 +297,8 @@ class RoomCollaboration {
         return this.connectionAttempt.body;
     }
 
+    // 伺服器收下建立或加入之後接上隊伍；回傳結果（見 failure()）。重試途中別人加了圖、合計超過 8 張時不接上，
+    // 也不跳 toast：結果往外回，由呼叫的人顯示
     completeConnection(room, member, memberToken, retained) {
         const original = new Map(this.connectionAttempt.body.initialMaps.map(map => [map.id, map]));
         const latest = new Map(retained.map(map => [map.id, this.finder.toRoomMap(map)]));
@@ -250,14 +316,11 @@ class RoomCollaboration {
             if (operation.type === 'remove') projected.delete(operation.id);
             else projected.add(operation.map.id);
         }
-        if (projected.size > RoomCollaboration.CONSTANTS.MAX_MAPS) {
-            this.showToast(FF14Utils.getI18nText('treasure_map_local_maps_limit', '個人與隊伍清單合計超過 {max} 張，請先整理清單再加入。', { max: RoomCollaboration.CONSTANTS.MAX_MAPS }), 'warning');
-            return false;
-        }
+        if (projected.size > RoomCollaboration.CONSTANTS.MAX_MAPS) return RoomCollaboration.failure('map_limit');
         const pending = operations.length ? [{ clientRequestId: crypto.randomUUID(), operations,
             preserveLocalOnRejection: true }] : [];
         this.adoptSession(room, member, memberToken, pending);
-        return true;
+        return { success: true };
     }
 
     setConnecting(connecting) {
@@ -272,9 +335,9 @@ class RoomCollaboration {
         return Boolean(panel) && this.finder.modalManager?.activeModal === panel;
     }
 
-    // 建立或加入隊伍結束後（setConnecting(false) 之後）、清單面板開著時的焦點。按下去的那顆連線中被停用，
-    // Chrome 當下就把焦點退回 body：成功了它也跟著組隊按鈕藏起來，焦點放到隊伍狀態的第一個按鈕「複製隊伍代號」；
-    // 沒成功就放回那顆
+    // 建立或加入隊伍結束後、清單面板開著時的焦點，由呼叫 createRoom()／joinRoom() 的人在拿到結果之後呼叫
+    //（那時 setConnecting(false) 已經執行）。按下去的那顆連線中被停用，Chrome 當下就把焦點退回 body：
+    // 成功了它也跟著組隊按鈕藏起來，焦點放到隊伍狀態的第一個按鈕「複製隊伍代號」；沒成功就放回那顆（trigger）
     focusAfterConnecting(trigger) {
         if (!this.isListPanelOpen()) return;
         (this.currentRoom ? this.elements.copyRoomCodeBtn : trigger)?.focus?.();
@@ -308,7 +371,7 @@ class RoomCollaboration {
 
     setupEventListeners() {
         // 隊伍操作
-        this.elements.createRoomBtn.addEventListener('click', () => this.createRoom());
+        this.elements.createRoomBtn.addEventListener('click', () => this.handleCreateClick());
         this.elements.joinRoomBtn.addEventListener('click', () => this.showJoinRoomDialog());
         this.elements.leaveRoomBtn.addEventListener('click', () => this.showLeaveRoomDialog());
         this.elements.copyRoomCodeBtn.addEventListener('click', () => this.copyRoomCode());
@@ -369,7 +432,11 @@ class RoomCollaboration {
             return;
         }
         if (saved && !this.isRoomValid(saved)) this.forceLeaveRoom();
-        if (requestedCode) await this.joinRoom(requestedCode.toUpperCase());
+        if (requestedCode) {
+            // 載入時自動加入沒有按鈕可以還焦點：失敗只跳訊息
+            const result = await this.joinRoom(requestedCode.toUpperCase());
+            if (!result.success && result.message) this.showToast(result.message, 'error');
+        }
     }
 
     // 檢查隊伍是否有效（未過期且格式正確）
@@ -389,33 +456,43 @@ class RoomCollaboration {
         return Date.now() - new Date(roomData.lastSyncAt).getTime() < RoomCollaboration.CONSTANTS.ROOM_TTL;
     }
 
-    // 建立新隊伍
-    async createRoom() {
-        if (this.currentRoom || this.isConnecting) return;
+    // 「建立組隊」鈕：建立隊伍（帶進本機清單），結束後的焦點與失敗的訊息在這裡處理
+    async handleCreateClick() {
+        const result = await this.createRoom();
+        this.focusAfterConnecting(this.elements.createRoomBtn);
+        if (!result.success && result.message) this.showToast(result.message, 'error');
+    }
+
+    /**
+     * 建立新隊伍。本機清單帶不帶是玩家的選擇：clearLocal 是 false 就把清單帶進隊伍清單，true 就不帶（隊伍清單從空的開始，
+     * 成功後本機清單就是隊伍清單）。回傳結果（見 failure()）；這裡只跳成功的 toast，焦點與錯誤訊息是呼叫的人的事
+     * @param {{clearLocal?: boolean}} [options]
+     */
+    async createRoom({ clearLocal = false } = {}) {
+        if (this.currentRoom || this.isConnecting) return RoomCollaboration.failure('busy');
+        // 到 setConnecting(true) 之前都沒有 await：連按兩次時，第二次一定看得到第一次的連線中
+        const retained = clearLocal ? [] : this.finder.listManager.getList();
+        if (retained.length > RoomCollaboration.CONSTANTS.MAX_MAPS) {
+            return { success: false, kind: 'map_limit', message: FF14Utils.getI18nText('treasure_map_party_over_limit', '隊伍清單最多 8 張：先把清單刪到 8 張以內，或選「不帶」。') };
+        }
+        const initialMaps = retained.map(map => this.finder.toRoomMap(map));
+        if (!RoomCollaboration.mapsFitParty(initialMaps)) return RoomCollaboration.failure('invalid_maps');
         this.setConnecting(true);
         try {
-            const localMaps = this.finder.listManager.getList();
-            const clearLocal = localMaps.length > 0 && confirm(FF14Utils.getI18nText(
-                'treasure_map_create_room_local_maps_confirm', '要清空本地清單嗎？', { count: localMaps.length }));
-            const retained = clearLocal ? [] : localMaps;
-            if (retained.length > RoomCollaboration.CONSTANTS.MAX_MAPS) {
-                this.showToast(FF14Utils.getI18nText('treasure_map_local_maps_limit', '個人與隊伍清單合計超過 {max} 張，請先整理清單再加入。', { max: RoomCollaboration.CONSTANTS.MAX_MAPS }), 'warning');
-                return;
-            }
-            const body = this.connectionRequest('create', '', this.defaultNickname(),
-                retained.map(map => this.finder.toRoomMap(map)));
+            const body = this.connectionRequest('create', '', this.defaultNickname(), initialMaps);
             const data = await this.request('/rooms', { method: 'POST', body });
             const { memberId, memberToken, ...room } = data;
-            if (!this.completeConnection(room, room.members.find(member => member.id === memberId), memberToken, retained)) return;
+            const connected = this.completeConnection(room, room.members.find(member => member.id === memberId), memberToken, retained);
+            if (!connected.success) return connected;
             this.showToast(FF14Utils.getI18nText('treasure_map_create_room_success', '隊伍 {code} 建立成功！', { code: room.roomCode }));
             await this.mapSync.flush();
+            return { success: true };
         } catch (error) {
             if (error.status >= 400 && error.status < 500 && error.status !== 429) this.connectionAttempt = null;
             console.error('建立隊伍失敗:', error);
-            this.showToast(FF14Utils.getI18nText('treasure_map_create_room_failed_retry', '建立隊伍失敗，請稍後再試'), 'error');
+            return RoomCollaboration.failure(RoomCollaboration.errorKind(error), { creating: true });
         } finally {
             this.setConnecting(false);
-            this.focusAfterConnecting(this.elements.createRoomBtn);
         }
     }
 
@@ -431,59 +508,67 @@ class RoomCollaboration {
         document.getElementById('roomCodeInput').focus();
     }
 
-    // 確認加入隊伍
+    // 確認加入隊伍：關掉對話框，用代號欄的內容加入（帶進本機清單），結束後的焦點與失敗的訊息在這裡處理
     async confirmJoinRoom() {
         const roomCode = document.getElementById('roomCodeInput').value.trim().toUpperCase();
-
-        if (!roomCode || roomCode.length !== RoomCollaboration.CONSTANTS.ROOM_CODE_LENGTH) {
-            this.showToast(FF14Utils.getI18nText('treasure_map_invalid_room_code', '請輸入有效的 6 位隊伍代號'), 'warning');
-            return;
-        }
-
         this.hideModal('joinRoom');
-        await this.joinRoom(roomCode, this.elements.joinRoomBtn);
+        const result = await this.joinRoom(roomCode);
+        this.focusAfterConnecting(this.elements.joinRoomBtn);
+        if (!result.success && result.message) this.showToast(result.message, 'error');
     }
 
-    // 加入隊伍；trigger 是使用者按下的「加入隊伍」，結束後由它決定焦點（見 focusAfterConnecting）。
-    // 用網址的 ?room= 在載入時自動加入時沒有 trigger：不移動焦點
-    async joinRoom(roomCode, trigger = null) {
-        if (this.currentRoom || this.isConnecting) return;
-        if (!/^[A-Z0-9]{6}$/.test(roomCode)) {
-            this.showToast(FF14Utils.getI18nText('treasure_map_invalid_room_code', '請輸入有效的 6 位隊伍代號'), 'warning');
-            return;
-        }
+    /**
+     * 加入隊伍。clearLocal 同 createRoom()；nickname 有給就原樣送出（邀請連結的對話框裡寫的名字），沒給用這台機器的預設名字。
+     * 回傳結果（見 failure()）；這裡只跳成功的 toast，焦點與錯誤訊息是呼叫的人的事
+     * @param {string} roomCode
+     * @param {{clearLocal?: boolean, nickname?: ?string}} [options]
+     */
+    async joinRoom(roomCode, { clearLocal = false, nickname = null } = {}) {
+        if (this.currentRoom || this.isConnecting) return RoomCollaboration.failure('busy');
+        if (!/^[A-Z0-9]{6}$/.test(roomCode)) return RoomCollaboration.failure('format');
+        // 到 setConnecting(true) 之前都沒有 await：連按兩次時，第二次一定看得到第一次的連線中
+        const retained = clearLocal ? [] : this.finder.listManager.getList();
+        const initialMaps = retained.map(map => this.finder.toRoomMap(map));
+        if (!RoomCollaboration.mapsFitParty(initialMaps)) return RoomCollaboration.failure('invalid_maps');
         this.setConnecting(true);
         try {
-            const localMaps = this.finder.listManager.getList();
-            const clearLocal = localMaps.length > 0 && confirm(FF14Utils.getI18nText(
-                'treasure_map_join_room_local_maps_confirm', '要清空本地清單嗎？', { count: localMaps.length }));
-            const retained = clearLocal ? [] : localMaps;
             // Check before joining so a full room never destroys the player's personal list.
             const preview = await this.request(`/rooms/${roomCode}`);
             if (preview.readOnly) {
                 this.recoverLegacyRoom(preview);
-                return;
+                return RoomCollaboration.failure('legacy');
             }
-            if (this.connectionAttempt?.key !== `join:${roomCode}` &&
-                new Set([...preview.treasureMaps, ...retained].map(map => map.id)).size > RoomCollaboration.CONSTANTS.MAX_MAPS) {
-                this.showToast(FF14Utils.getI18nText('treasure_map_local_maps_limit', '個人與隊伍清單合計超過 {max} 張，請先整理清單再加入。', { max: RoomCollaboration.CONSTANTS.MAX_MAPS }), 'warning');
-                return;
+            // 重試同一個加入時，上一次可能已經成功、只是回應掉了（自己可能就是第 8 位成員，清單也已經併進隊伍）：
+            // 伺服器會把同一個成員還回來，所以人數與張數都不擋
+            if (this.connectionAttempt?.key !== `join:${roomCode}`) {
+                if (preview.members.length >= RoomCollaboration.CONSTANTS.MAX_MEMBERS) return RoomCollaboration.failure('full', { code: roomCode });
+                if (new Set([...preview.treasureMaps, ...retained].map(map => map.id)).size > RoomCollaboration.CONSTANTS.MAX_MAPS) {
+                    return RoomCollaboration.failure('map_limit', { room: preview.treasureMaps.length, mine: retained.length });
+                }
             }
             const { room, newMember, memberToken } = await this.request(`/rooms/${roomCode}/join`, {
-                method: 'POST', body: this.connectionRequest('join', roomCode, this.defaultNickname(),
-                    retained.map(map => this.finder.toRoomMap(map)))
+                method: 'POST', body: this.connectionRequest('join', roomCode, nickname ?? this.defaultNickname(), initialMaps)
             });
-            if (!this.completeConnection(room, newMember, memberToken, retained)) return;
+            const connected = this.completeConnection(room, newMember, memberToken, retained);
+            if (!connected.success) return connected;
             this.showToast(FF14Utils.getI18nText('treasure_map_join_room_success', '成功加入隊伍 {code}', { code: roomCode }));
             await this.mapSync.flush();
+            return { success: true };
         } catch (error) {
             if (error.status >= 400 && error.status < 500 && error.status !== 429) this.connectionAttempt = null;
             console.error('加入隊伍失敗:', error);
-            if (error.code === 'ROOM_RECREATE_REQUIRED' && error.room) this.recoverLegacyRoom(error.room);
-            else this.showToast(FF14Utils.getI18nText(error.status === 404 ? 'treasure_map_room_not_found' : 'treasure_map_join_room_failed_retry', '加入隊伍失敗，請確認隊伍代號是否正確'), 'error');
+            let kind = RoomCollaboration.errorKind(error);
+            if (kind === 'legacy') {
+                // 舊的唯讀隊伍：寶圖留在本機，由 recoverLegacyRoom() 提示；沒附隊伍就沒有東西可留，當作一般失敗
+                if (error.room) {
+                    this.recoverLegacyRoom(error.room);
+                    return RoomCollaboration.failure('legacy');
+                }
+                kind = 'failed';
+            }
+            return RoomCollaboration.failure(kind, { code: roomCode });
         } finally {
             this.setConnecting(false);
-            if (trigger) this.focusAfterConnecting(trigger);
         }
     }
 

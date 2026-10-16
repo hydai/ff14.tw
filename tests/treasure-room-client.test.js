@@ -6,7 +6,7 @@ const vm = require('node:vm');
 const { webcrypto } = require('node:crypto');
 
 const { createFakeDom } = require('./helpers/fake-dom.js');
-const { translationKeySet } = require('./helpers/translation-parsers.js');
+const { translationKeySet, translationValues } = require('./helpers/translation-parsers.js');
 
 const TOKEN = 'a'.repeat(64);
 const sample = { id: 'g8_test_1', level: 'g8', zone: 'Test', coords: { x: 10, y: 20 } };
@@ -35,7 +35,8 @@ function setup(respond, { lang = 'zh', stored = {} } = {}) {
         console: { log() {}, warn() {}, error() {} },
         FF14Utils: { getI18nText: (key, fallback, values = {}) => fallback.replace(/\{(\w+)\}/g, (_, name) => values[name]), showToast: message => toasts.push(message) },
         URL, URLSearchParams, crypto: webcrypto, ModalManager: class {},
-        confirm: () => false, setTimeout, clearTimeout,
+        // 帶不帶本機清單由 createRoom({ clearLocal })、joinRoom(code, { clearLocal }) 的選項決定，不再跳瀏覽器的確認視窗
+        confirm: () => { throw new Error('不該呼叫 confirm()'); }, setTimeout, clearTimeout,
         fetch: async (url, options = {}) => {
             const request = { url, ...options, body: options.body ? JSON.parse(options.body) : undefined };
             requests.push(request);
@@ -923,17 +924,448 @@ test('預設名字的開頭改由 PartyNames.BASES 提供：treasure_map_default
     }
 });
 
+// ---------- 建立、加入：不用 confirm()，選項由呼叫的人帶進來，回傳結果 ----------
+// createRoom()／joinRoom() 回傳 { success: true } 或 { success: false, kind, message }：錯誤訊息與焦點是呼叫的人的事，
+// 這兩個函式自己只跳成功的 toast。setup() 的 confirm() 一被呼叫就丟錯，所以帶不帶本機清單只能靠選項。
+// 結果是在 vm 裡建出來的物件，原型和測試端不同，assert.deepEqual 前先用 plain() 轉過
+
+const GET = 'GET /rooms/ABC123';
+const JOIN = 'POST /rooms/ABC123/join';
+// 送出的請求，例如 [GET, JOIN]
+const pathsOf = state => state.requests.map(request => `${request.method} ${request.url.replace(/^.*\/api/, '')}`);
+// 本機清單放 count 張寶圖（id 是 local_0、local_1…）
+const addLocalMaps = (state, count, prefix = 'local') => {
+    for (const map of importMaps(count, prefix)) state.finder.listManager.add(map);
+};
+const localIds = state => Array.from(state.finder.listManager.getList(), map => map.id);
+// 伺服器上 count 張別人加的寶圖（id 是 room_0、room_1…）
+const serverMaps = (count, prefix = 'room') => importMaps(count, prefix).map(map => ({
+    id: map.id, type: map.level, zone: map.zone, x: 10, y: 20, addedBy: member.id, addedAt: '2026-09-08T00:00:00.000Z'
+}));
+const eightMembers = Array.from({ length: 8 }, (_, index) => ({ id: `member_${index}`, nickname: `Member ${index}` }));
+// 建立：伺服器照 initialMaps 開出 ABC123
+const createsRoom = request => ({ body: { ...room(request.body.initialMaps), memberId: member.id, memberToken: TOKEN } });
+// 加入 ABC123：GET 回 preview，POST …/join 把自己加進去（隊伍的寶圖加上自己帶來、隊伍裡還沒有的）
+const joinsRoom = (preview = room()) => request => {
+    if (request.method === 'GET') return { body: preview };
+    const own = request.body.initialMaps.filter(map => !preview.treasureMaps.some(item => item.id === map.id));
+    const joined = { ...preview, members: [...preview.members, newMember], treasureMaps: [...preview.treasureMaps, ...own.map(map => ({ ...map, addedBy: newMember.id }))] };
+    return { body: { room: joined, newMember, memberId: newMember.id, memberToken: TOKEN } };
+};
+// GET 照常回 room()，送加入（POST）時才用 response
+const afterPreview = response => request => (request.method === 'GET' ? { body: room() } : response(request));
+
+const BUSY = { success: false, kind: 'busy', message: '' };
+const FORMAT = '代號是 6 碼英文和數字。';
+const NOT_FOUND = '找不到隊伍 ABC123。可能打錯了，或隊伍已經解散（24 小時沒有動靜就會解散）。';
+const FULL = '隊伍 ABC123 已經滿 8 人了。';
+const MAP_LIMIT_GENERIC = '隊伍清單最多 8 張，加上你的寶圖會超過。選「不帶」，或先刪掉幾張再加入。';
+const NETWORK = '連不上隊伍伺服器，請稍後再試。';
+const JOIN_FAILED = '加入失敗，請再試一次。';
+const CREATE_FAILED = '建立失敗，請再試一次。';
+const OVER_LIMIT = '隊伍清單最多 8 張：先把清單刪到 8 張以內，或選「不帶」。';
+const INVALID_MAPS = '你的清單裡有隊伍不支援的寶圖。選「不帶」，或先把它們刪掉。';
+
+test('room-collaboration.js 的建立與加入不再呼叫 confirm()（移出成員的確認還沒換成頁內對話框，掃的時候先排除它）', () => {
+    const source = fs.readFileSync(path.join(__dirname, '..', 'tools/treasure-map-finder/room-collaboration.js'), 'utf8');
+    const start = source.search(/^    async removeMember\(/m);
+    const rest = start === -1 ? source : source.slice(0, start) + source.slice(source.indexOf('\n    }\n', start));
+    assert.deepEqual(rest.split('\n').filter(line => /\bconfirm\(/.test(line)), []);
+});
+
+test('createRoom：預設把本機清單帶進隊伍；clearLocal 時 initialMaps 是空的，成功後本機清單是隊伍清單（空的）', async () => {
+    const bring = setup(createsRoom);
+    addLocalMaps(bring, 2);
+    assert.deepEqual(plain(await bring.client.createRoom()), { success: true });
+    assert.deepEqual(bring.requests[0].body.initialMaps.map(map => map.id), ['local_0', 'local_1']);
+    assert.deepEqual(localIds(bring), ['local_0', 'local_1'], '帶進去的就是隊伍清單');
+    assert.equal(bring.client.currentRoom.roomCode, 'ABC123');
+
+    const clear = setup(createsRoom);
+    addLocalMaps(clear, 2);
+    assert.deepEqual(plain(await clear.client.createRoom({ clearLocal: true })), { success: true });
+    assert.deepEqual(clear.requests[0].body.initialMaps, []);
+    assert.equal(clear.client.currentRoom.roomCode, 'ABC123');
+    assert.deepEqual(localIds(clear), [], '本機清單成了隊伍清單（空的）');
+    assert.deepEqual(clear.toasts, ['隊伍 ABC123 建立成功！']);
+});
+
+test('清單 9 張、帶進：createRoom 回 map_limit 與「隊伍清單最多 8 張」的字，不送請求；clearLocal 時照常建立；剛好 8 張可以帶', async () => {
+    const state = setup(createsRoom);
+    addLocalMaps(state, 9);
+    assert.deepEqual(plain(await state.client.createRoom()), { success: false, kind: 'map_limit', message: OVER_LIMIT });
+    assert.equal(state.requests.length, 0);
+    assert.equal(state.client.isConnecting, false);
+    assert.equal(state.client.currentRoom, null);
+    assert.equal(state.finder.listManager.getLength(), 9, '清單沒動');
+    assert.deepEqual(state.toasts, [], '訊息交給呼叫的人，這裡不跳 toast');
+
+    assert.deepEqual(plain(await state.client.createRoom({ clearLocal: true })), { success: true });
+    assert.deepEqual(state.requests[0].body.initialMaps, []);
+    assert.deepEqual(localIds(state), []);
+
+    const eight = setup(createsRoom);
+    addLocalMaps(eight, 8);
+    assert.deepEqual(plain(await eight.client.createRoom()), { success: true });
+    assert.equal(eight.requests[0].body.initialMaps.length, 8);
+});
+
+test('createRoom 的錯誤：連不上與其他都回 kind 與建立的字，不跳 toast；請求留著給重試的只有連不上', async () => {
+    // [說明, 伺服器, kind, 訊息, 請求留著給重試]
+    const cases = [
+        ['fetch 失敗', () => { throw new TypeError('Failed to fetch'); }, 'network', NETWORK, true],
+        ['503', () => ({ status: 503, body: { error: 'Service unavailable' } }), 'network', NETWORK, true],
+        ['429', () => ({ status: 429, body: { error: 'Too many requests' } }), 'network', NETWORK, true],
+        ['其他 4xx', () => ({ status: 400, body: { error: 'Invalid nickname', code: 'INVALID_REQUEST' } }), 'failed', CREATE_FAILED, false]
+    ];
+    for (const [label, respond, kind, message, kept] of cases) {
+        const state = setup(respond);
+        addLocalMaps(state, 1);
+        assert.deepEqual(plain(await state.client.createRoom()), { success: false, kind, message }, label);
+        assert.deepEqual(pathsOf(state), ['POST /rooms'], label);
+        assert.deepEqual(state.toasts, [], label);
+        assert.equal(state.client.currentRoom, null, label);
+        assert.equal(state.client.isConnecting, false, label);
+        assert.equal(state.finder.listManager.getLength(), 1, `${label}：本機清單沒動`);
+        assert.equal(state.client.connectionAttempt !== null, kept, label);
+    }
+});
+
+test('joinRoom 的代號格式不對：回 format，不送請求', async () => {
+    const state = setup(() => { throw new Error('格式不對不該送請求'); });
+    addLocalMaps(state, 1);
+    for (const code of ['', 'ABC12', 'ABC1234', 'abc123', 'AB-123', 'AB C12']) {
+        assert.deepEqual(plain(await state.client.joinRoom(code)), { success: false, kind: 'format', message: FORMAT }, JSON.stringify(code));
+    }
+    assert.equal(state.requests.length, 0);
+    assert.equal(state.client.isConnecting, false);
+    assert.deepEqual(state.toasts, []);
+});
+
+test('joinRoom 的錯誤：找不到、滿了、超過 8 張、連不上、其他：都回 kind 與訊息，不跳 toast，不動本機清單', async () => {
+    // [說明, 本機張數, 伺服器, kind, 訊息, 送出的請求, 送出後請求還留著給重試嗎（沒寫就不看）]
+    const cases = [
+        ['讀隊伍時 404', 0, () => ({ status: 404, body: { error: 'Room not found', code: 'ROOM_NOT_FOUND' } }), 'not_found', NOT_FOUND, [GET]],
+        ['404 沒有 code 也是找不到', 0, () => ({ status: 404, body: { error: 'Not found' } }), 'not_found', NOT_FOUND, [GET]],
+        ['讀到的成員已經 8 人：不送加入', 0, () => ({ body: room([], eightMembers) }), 'full', FULL, [GET]],
+        ['帶進的合計超過 8（隊伍 5 張、自己 4 張）：訊息帶這兩個數字，不送加入', 4, () => ({ body: room(serverMaps(5)) }), 'map_limit',
+            '隊伍清單已經有 5 張，加上你的 4 張會超過 8 張。選「不帶」，或先刪掉幾張再加入。', [GET]],
+        ['加入時伺服器回 ROOM_FULL', 0, afterPreview(() => ({ status: 400, body: { error: 'Room is full', code: 'ROOM_FULL' } })), 'full', FULL, [GET, JOIN], false],
+        ['加入時伺服器回 MAP_LIMIT：沒有張數可寫，用通用的字', 1,
+            afterPreview(() => ({ status: 400, body: { error: 'Room can contain at most 8 treasure maps', code: 'MAP_LIMIT' } })), 'map_limit', MAP_LIMIT_GENERIC, [GET, JOIN], false],
+        ['讀隊伍時 fetch 失敗', 0, () => { throw new TypeError('Failed to fetch'); }, 'network', NETWORK, [GET]],
+        ['加入時 fetch 失敗：請求留著給重試', 0, afterPreview(() => { throw new TypeError('Failed to fetch'); }), 'network', NETWORK, [GET, JOIN], true],
+        ['5xx 也是連不上', 0, () => ({ status: 503, body: { error: 'Service unavailable' } }), 'network', NETWORK, [GET]],
+        ['429 也是連不上：請求留著給重試', 0, afterPreview(() => ({ status: 429, body: { error: 'Too many requests' } })), 'network', NETWORK, [GET, JOIN], true],
+        ['其他 4xx（REQUEST_ALREADY_COMPLETED）：加入失敗', 0,
+            afterPreview(() => ({ status: 409, body: { error: 'This member session has ended', code: 'REQUEST_ALREADY_COMPLETED' } })), 'failed', JOIN_FAILED, [GET, JOIN], false],
+        ['其他 4xx（INVALID_REQUEST）：加入失敗', 0,
+            afterPreview(() => ({ status: 400, body: { error: 'Invalid nickname', code: 'INVALID_REQUEST' } })), 'failed', JOIN_FAILED, [GET, JOIN], false]
+    ];
+    for (const [label, local, respond, kind, message, paths, kept] of cases) {
+        const state = setup(respond);
+        addLocalMaps(state, local);
+        assert.deepEqual(plain(await state.client.joinRoom('ABC123')), { success: false, kind, message }, label);
+        assert.deepEqual(pathsOf(state), paths, label);
+        assert.deepEqual(state.toasts, [], `${label}：訊息交給呼叫的人，這裡不跳 toast`);
+        assert.equal(state.client.currentRoom, null, label);
+        assert.equal(state.client.isConnecting, false, label);
+        assert.equal(state.finder.listManager.getLength(), local, `${label}：本機清單沒動`);
+        if (kept !== undefined) assert.equal(state.client.connectionAttempt !== null, kept, `${label}：重試的請求${kept ? '留著' : '清掉'}`);
+    }
+});
+
+test('joinRoom：帶進的合計以 id 去重再算：隊伍 5 張、自己 4 張但 2 張是同一個 id，合計 7 張可以加入', async () => {
+    const state = setup(joinsRoom(room(serverMaps(5))));
+    for (const map of [...importMaps(2, 'room'), ...importMaps(2, 'mine')]) state.finder.listManager.add(map);
+    assert.deepEqual(plain(await state.client.joinRoom('ABC123')), { success: true });
+    assert.deepEqual(pathsOf(state), [GET, JOIN]);
+    assert.equal(state.client.currentRoom.roomCode, 'ABC123');
+    assert.equal(state.finder.listManager.getLength(), 7);
+});
+
+test('joinRoom：預設把本機清單帶進隊伍；clearLocal 時 initialMaps 是空的，加入後本機清單變成隊伍清單', async () => {
+    const bring = setup(joinsRoom(room(serverMaps(3))));
+    addLocalMaps(bring, 2);
+    assert.deepEqual(plain(await bring.client.joinRoom('ABC123')), { success: true });
+    assert.deepEqual(bring.requests[1].body.initialMaps.map(map => map.id), ['local_0', 'local_1']);
+    assert.deepEqual(localIds(bring), ['room_0', 'room_1', 'room_2', 'local_0', 'local_1']);
+
+    const clear = setup(joinsRoom(room(serverMaps(3))));
+    addLocalMaps(clear, 2);
+    assert.deepEqual(plain(await clear.client.joinRoom('ABC123', { clearLocal: true })), { success: true });
+    assert.deepEqual(clear.requests[1].body.initialMaps, []);
+    assert.deepEqual(localIds(clear), ['room_0', 'room_1', 'room_2'], '本機清單變成隊伍清單');
+    assert.deepEqual(clear.toasts, ['成功加入隊伍 ABC123']);
+});
+
+test('清單裡有 id 帶空白（或其他隊伍不收）的自訂寶圖：帶進時 create 與 join 都回 invalid_maps、不送請求；clearLocal 時照常進行', async () => {
+    for (const [label, invalid] of [['id 有空白', { id: 'custom map' }], ['id 有斜線', { id: 'bad/id' }], ['等級不是 g1～g18', { level: 'g19' }]]) {
+        for (const action of ['create', 'join']) {
+            const name = `${label}、${action}`;
+            const state = setup(action === 'create' ? createsRoom : joinsRoom());
+            state.finder.listManager.add(sample);
+            state.finder.listManager.add({ ...sample, id: 'custom_map', ...invalid });
+            const connect = options => (action === 'create' ? state.client.createRoom(options) : state.client.joinRoom('ABC123', options));
+
+            assert.deepEqual(plain(await connect()), { success: false, kind: 'invalid_maps', message: INVALID_MAPS }, name);
+            assert.equal(state.requests.length, 0, `${name}：不送任何請求`);
+            assert.equal(state.client.isConnecting, false, name);
+            assert.deepEqual(state.toasts, [], name);
+            assert.equal(state.finder.listManager.getLength(), 2, `${name}：清單原封不動`);
+
+            // 選「不帶」：自訂寶圖不送出去，照常進行
+            assert.deepEqual(plain(await connect({ clearLocal: true })), { success: true }, name);
+            assert.deepEqual(state.requests.find(request => request.method === 'POST').body.initialMaps, [], name);
+        }
+    }
+});
+
+test('連線中再按一次：第二次回 busy（沒有訊息），只送出一個請求；已經在隊伍裡也是 busy', async () => {
+    let release;
+    const gate = new Promise(resolve => { release = resolve; });
+    const state = setup(async request => { await gate; return createsRoom(request); });
+    // busy 是立刻回傳的；如果退步成又送出一個請求，它會卡在 gate 上，這裡讓出一輪就判它失敗，不讓測試卡住
+    const immediate = promise => Promise.race([promise, new Promise(resolve => setImmediate(() => resolve('卡在連線上')))]);
+    const first = state.client.createRoom();
+    try {
+        assert.equal(state.client.isConnecting, true);
+        assert.deepEqual(plain(await immediate(state.client.createRoom())), BUSY);
+        assert.deepEqual(plain(await immediate(state.client.joinRoom('XYZ789'))), BUSY, '連線中加入也一樣');
+        assert.equal(state.requests.length, 1, '只送出一個請求');
+        assert.equal(state.client.isConnecting, true, 'busy 的呼叫不能把第一個的連線中狀態關掉');
+    } finally {
+        release();
+    }
+    assert.deepEqual(plain(await first), { success: true });
+    assert.equal(state.client.isConnecting, false);
+
+    assert.deepEqual(plain(await state.client.createRoom()), BUSY, '已經在隊伍裡');
+    assert.deepEqual(plain(await state.client.joinRoom('XYZ789')), BUSY, '已經在隊伍裡');
+    assert.equal(state.requests.length, 1);
+    assert.deepEqual(state.toasts, ['隊伍 ABC123 建立成功！']);
+});
+
+test('joinRoom 的 nickname 參數原樣送出，沒給就是預設名字；重試時沿用第一次送的名字', async () => {
+    const stored = { ff14tw_nickname_tag: 'K7Q', ff14tw_user_nickname: 'Alice' };
+    const given = setup(joinsRoom(), { stored });
+    await given.client.joinRoom('ABC123', { nickname: 'Warrior of Light T8W' });
+    assert.equal(given.requests[1].body.memberNickname, 'Warrior of Light T8W', '給的名字原樣送，不看存著的 Alice');
+
+    const omitted = setup(joinsRoom(), { stored });
+    await omitted.client.joinRoom('ABC123');
+    assert.equal(omitted.requests[1].body.memberNickname, 'Alice', '沒給就是 defaultNickname()');
+
+    // 第一次送出的內容（名字、清單）固定：伺服器可能已經收下，重試要送一模一樣的
+    let attempts = 0;
+    const retried = setup(request => {
+        if (request.method === 'POST' && ++attempts === 1) throw new TypeError('Response lost');
+        return joinsRoom()(request);
+    }, { stored });
+    assert.equal((await retried.client.joinRoom('ABC123', { nickname: '第一次寫的名字' })).kind, 'network');
+    assert.deepEqual(plain(await retried.client.joinRoom('ABC123', { nickname: '第二次改的名字' })), { success: true });
+    const joins = retried.requests.filter(request => request.method === 'POST');
+    assert.equal(joins.length, 2);
+    assert.deepEqual(joins[1].body, joins[0].body);
+    assert.equal(joins[1].body.memberNickname, '第一次寫的名字');
+});
+
+test('重試同一個加入時，人數滿了也不擋：上一次可能已經成功（回應掉了），伺服器會把同一個成員還回來', async () => {
+    const seven = [member, ...Array.from({ length: 6 }, (_, index) => ({ id: `member_${index}`, nickname: `Member ${index}` }))];
+    let serverRoom = room([], seven);
+    let attempts = 0;
+    const state = setup(request => {
+        if (request.method === 'GET') return { body: serverRoom };
+        if (++attempts === 1) {
+            serverRoom = room([], [...seven, newMember]);
+            throw new TypeError('Join committed, but response was lost');
+        }
+        return { body: { room: serverRoom, newMember, memberId: newMember.id, memberToken: TOKEN } };
+    });
+    assert.equal((await state.client.joinRoom('ABC123')).kind, 'network');
+    assert.deepEqual(plain(await state.client.joinRoom('ABC123')), { success: true });
+    assert.deepEqual(pathsOf(state), [GET, JOIN, GET, JOIN]);
+    assert.equal(state.client.currentUser.id, newMember.id);
+    assert.equal(state.client.currentRoom.members.length, 8);
+});
+
+test('重試途中隊伍的張數加上新加的圖超過 8：回 map_limit 與通用的字，不跳 toast，不接上隊伍', async () => {
+    const others = serverMaps(7);
+    let attempts = 0;
+    const state = setup(request => {
+        if (request.method === 'GET') return { body: room(others) };
+        if (++attempts === 1) throw new TypeError('Response lost');
+        return { body: { room: room(others, [member, newMember]), newMember, memberId: newMember.id, memberToken: TOKEN } };
+    });
+    assert.equal((await state.client.joinRoom('ABC123')).kind, 'network');
+    addLocalMaps(state, 2);
+    assert.deepEqual(plain(await state.client.joinRoom('ABC123')), { success: false, kind: 'map_limit', message: MAP_LIMIT_GENERIC });
+    assert.equal(state.client.currentRoom, null);
+    assert.equal(state.client.isConnecting, false);
+    assert.deepEqual(state.toasts, []);
+    assert.equal(state.finder.listManager.getLength(), 2);
+});
+
+test('舊的唯讀隊伍：讀到 readOnly、加入時 ROOM_RECREATE_REQUIRED 都由 recoverLegacyRoom() 提示一次，回 legacy 與空字串；沒附隊伍的當作一般失敗', async () => {
+    const shared = { id: 'unknown_old_map', type: 'g8', x: 20, y: 25, zone: 'Old zone' };
+    const legacy = { ...room([shared]), readOnly: true, legacy: true };
+    const notice = '此隊伍已轉為唯讀，寶圖已保留在本機，請建立新隊伍。';
+
+    const preview = setup(() => ({ body: legacy }));
+    preview.finder.listManager.add(sample);
+    assert.deepEqual(plain(await preview.client.joinRoom('ABC123')), { success: false, kind: 'legacy', message: '' });
+    assert.deepEqual(pathsOf(preview), [GET]);
+    assert.deepEqual(preview.toasts, [notice]);
+    assert.deepEqual(localIds(preview), [sample.id, shared.id], '寶圖留在本機');
+
+    const blocked = setup(afterPreview(() => ({ status: 409, body: { error: 'This legacy room is read-only', code: 'ROOM_RECREATE_REQUIRED', room: legacy } })));
+    blocked.finder.listManager.add(sample);
+    assert.deepEqual(plain(await blocked.client.joinRoom('ABC123')), { success: false, kind: 'legacy', message: '' });
+    assert.deepEqual(pathsOf(blocked), [GET, JOIN]);
+    assert.deepEqual(blocked.toasts, [notice]);
+    assert.deepEqual(localIds(blocked), [sample.id, shared.id]);
+
+    const bare = setup(afterPreview(() => ({ status: 409, body: { error: 'This legacy room is read-only', code: 'ROOM_RECREATE_REQUIRED' } })));
+    assert.deepEqual(plain(await bare.client.joinRoom('ABC123')), { success: false, kind: 'failed', message: JOIN_FAILED });
+    assert.deepEqual(bare.toasts, []);
+});
+
+test('RoomCollaboration.errorKind：404 與 ROOM_NOT_FOUND 是 not_found；ROOM_FULL、MAP_LIMIT、ROOM_RECREATE_REQUIRED 各一種；沒有 status、5xx、429 是 network；其他是 failed', () => {
+    const { context } = setup(() => ({ body: room() }));
+    const RoomCollaboration = vm.runInContext('RoomCollaboration', context);
+    const cases = [
+        ['404', { status: 404 }, 'not_found'], ['404 與 code', { status: 404, code: 'ROOM_NOT_FOUND' }, 'not_found'], ['只有 code', { code: 'ROOM_NOT_FOUND' }, 'not_found'],
+        ['ROOM_FULL', { status: 400, code: 'ROOM_FULL' }, 'full'], ['MAP_LIMIT', { status: 400, code: 'MAP_LIMIT' }, 'map_limit'],
+        ['ROOM_RECREATE_REQUIRED', { status: 409, code: 'ROOM_RECREATE_REQUIRED' }, 'legacy'],
+        ['fetch 失敗（沒有 status）', new TypeError('Failed to fetch'), 'network'], ['500', { status: 500 }, 'network'], ['503', { status: 503 }, 'network'], ['429', { status: 429 }, 'network'],
+        ['INVALID_REQUEST', { status: 400, code: 'INVALID_REQUEST' }, 'failed'], ['401', { status: 401 }, 'failed'], ['403', { status: 403 }, 'failed'],
+        ['REQUEST_ALREADY_COMPLETED', { status: 409, code: 'REQUEST_ALREADY_COMPLETED' }, 'failed']
+    ];
+    for (const [label, error, kind] of cases) assert.equal(RoomCollaboration.errorKind(error), kind, label);
+});
+
+test('RoomCollaboration.errorMessage：每種 kind 的字；map_limit 有 room 與 mine 才寫張數；failed 在建立時是建立失敗；busy 與 legacy 是空字串', () => {
+    const { context } = setup(() => ({ body: room() }));
+    const RoomCollaboration = vm.runInContext('RoomCollaboration', context);
+    const errorMessage = (kind, options) => RoomCollaboration.errorMessage(kind, options);
+    assert.equal(errorMessage('format'), FORMAT);
+    assert.equal(errorMessage('not_found', { code: 'XYZ789' }), '找不到隊伍 XYZ789。可能打錯了，或隊伍已經解散（24 小時沒有動靜就會解散）。');
+    assert.equal(errorMessage('full', { code: 'XYZ789' }), '隊伍 XYZ789 已經滿 8 人了。');
+    assert.equal(errorMessage('map_limit', { room: 5, mine: 4 }), '隊伍清單已經有 5 張，加上你的 4 張會超過 8 張。選「不帶」，或先刪掉幾張再加入。');
+    assert.equal(errorMessage('map_limit', { room: 0, mine: 9 }), '隊伍清單已經有 0 張，加上你的 9 張會超過 8 張。選「不帶」，或先刪掉幾張再加入。', '0 張也要寫出來');
+    assert.equal(errorMessage('map_limit'), MAP_LIMIT_GENERIC);
+    assert.equal(errorMessage('map_limit', { room: 5 }), MAP_LIMIT_GENERIC, '只有一個數字寫不出整句：通用的字');
+    assert.equal(errorMessage('invalid_maps'), INVALID_MAPS);
+    assert.equal(errorMessage('network'), NETWORK);
+    assert.equal(errorMessage('failed'), JOIN_FAILED);
+    assert.equal(errorMessage('failed', { creating: true }), CREATE_FAILED);
+    assert.equal(errorMessage('busy'), '');
+    assert.equal(errorMessage('legacy'), '');
+});
+
+test('入口把結果接起來：建立鈕與加入的對話框失敗時跳回傳的訊息；成功只有成功的 toast；busy 不多跳；網址的 ?room= 自動加入失敗時也跳訊息', async () => {
+    const failing = setup(() => ({ status: 503, body: { error: 'Service unavailable' } }));
+    await failing.client.handleCreateClick();
+    assert.deepEqual(failing.toasts, [NETWORK]);
+
+    const creating = setup(createsRoom);
+    await creating.client.handleCreateClick();
+    assert.deepEqual(creating.toasts, ['隊伍 ABC123 建立成功！']);
+    await creating.client.handleCreateClick();
+    assert.deepEqual(creating.toasts, ['隊伍 ABC123 建立成功！'], '已經在隊伍裡：busy 沒有訊息，不多跳');
+
+    // 加入的對話框：代號欄的內容去掉頭尾空白、轉大寫
+    const typed = (state, value) => {
+        const getElementById = state.document.getElementById;
+        state.document.getElementById = id => (id === 'roomCodeInput' ? { value } : getElementById(id));
+    };
+    const notFound = setup(() => ({ status: 404, body: { error: 'Room not found', code: 'ROOM_NOT_FOUND' } }));
+    typed(notFound, ' abc123 ');
+    await notFound.client.confirmJoinRoom();
+    assert.deepEqual(pathsOf(notFound), [GET]);
+    assert.deepEqual(notFound.toasts, [NOT_FOUND]);
+
+    const mistyped = setup(() => { throw new Error('格式不對不該送請求'); });
+    typed(mistyped, 'abc');
+    await mistyped.client.confirmJoinRoom();
+    assert.equal(mistyped.requests.length, 0);
+    assert.deepEqual(mistyped.toasts, [FORMAT]);
+
+    const joined = setup(joinsRoom());
+    typed(joined, 'abc123');
+    await joined.client.confirmJoinRoom();
+    assert.deepEqual(joined.toasts, ['成功加入隊伍 ABC123']);
+
+    // 網址的 ?room=：載入時自動加入，失敗跳訊息，成功只有成功的 toast
+    const link = 'http://localhost:8765/tools/treasure-map-finder/?room=abc123';
+    const linkedFailure = setup(() => ({ status: 404, body: { error: 'Room not found', code: 'ROOM_NOT_FOUND' } }));
+    linkedFailure.window.location.href = link;
+    await linkedFailure.client.checkExistingRoom();
+    assert.deepEqual(linkedFailure.toasts, [NOT_FOUND]);
+
+    const linkedSuccess = setup(joinsRoom());
+    linkedSuccess.window.location.href = link;
+    await linkedSuccess.client.checkExistingRoom();
+    assert.deepEqual(linkedSuccess.toasts, ['成功加入隊伍 ABC123']);
+});
+
+test('建立、加入的新字串：十個新鍵值三語都照設計寫；舊的 confirm 與錯誤字串三語都刪掉了；新字沒有舊用語', () => {
+    const file = 'assets/js/i18n/translations/tools/treasure-map-finder.js';
+    // key → [zh, en, ja]
+    const added = {
+        treasure_map_join_error_format: ['代號是 6 碼英文和數字。', 'The code is 6 letters and numbers.', 'コードは英数字 6 文字です。'],
+        treasure_map_join_error_not_found: ['找不到隊伍 {code}。可能打錯了，或隊伍已經解散（24 小時沒有動靜就會解散）。',
+            'Party {code} wasn\'t found. The code may be mistyped, or the party has ended (parties end after 24 hours without activity).',
+            'パーティ {code} が見つかりません。コードの入力ミスか、パーティが解散した可能性があります（24 時間動きがないと解散します）。'],
+        treasure_map_join_error_full: ['隊伍 {code} 已經滿 8 人了。', 'Party {code} is full (8 members).', 'パーティ {code} は満員です（8 人）。'],
+        treasure_map_join_error_map_limit: ['隊伍清單已經有 {room} 張，加上你的 {mine} 張會超過 8 張。選「不帶」，或先刪掉幾張再加入。',
+            'The party list ({room}) and your maps ({mine}) together would exceed 8. Choose "Don\'t bring them", or remove some first.',
+            'パーティリストにはすでに {room} 枚あり、あなたの {mine} 枚を加えると 8 枚を超えます。「持ち込まない」を選ぶか、先に何枚か削除してください。'],
+        treasure_map_join_error_map_limit_generic: ['隊伍清單最多 8 張，加上你的寶圖會超過。選「不帶」，或先刪掉幾張再加入。',
+            'A party list holds up to 8 maps, and yours would go over. Choose "Don\'t bring them", or remove some first.',
+            'パーティリストは 8 枚までで、あなたの地図を加えると超えてしまいます。「持ち込まない」を選ぶか、先に何枚か削除してください。'],
+        treasure_map_join_error_network: ['連不上隊伍伺服器，請稍後再試。', 'Can\'t reach the party server. Please try again later.',
+            'パーティのサーバーに接続できません。しばらくしてからもう一度お試しください。'],
+        treasure_map_join_error_failed: ['加入失敗，請再試一次。', 'Couldn\'t join. Please try again.', '参加できませんでした。もう一度お試しください。'],
+        treasure_map_create_error_failed: ['建立失敗，請再試一次。', 'Couldn\'t create the party. Please try again.', 'パーティを作成できませんでした。もう一度お試しください。'],
+        treasure_map_party_invalid_maps: ['你的清單裡有隊伍不支援的寶圖。選「不帶」，或先把它們刪掉。',
+            'Your list has maps a party can\'t hold. Choose "Don\'t bring them", or remove those maps first.',
+            'あなたのリストにはパーティで扱えない地図があります。「持ち込まない」を選ぶか、先に削除してください。'],
+        treasure_map_party_over_limit: ['隊伍清單最多 8 張：先把清單刪到 8 張以內，或選「不帶」。',
+            'A party list holds up to 8 maps: shorten your list to 8 or fewer, or choose "Don\'t bring them".',
+            'パーティリストは 8 枚までです：リストを 8 枚以下にするか、「持ち込まない」を選んでください。']
+    };
+    const removed = [
+        'treasure_map_create_room_local_maps_confirm', 'treasure_map_join_room_local_maps_confirm',
+        'treasure_map_create_room_failed', 'treasure_map_create_room_failed_retry', 'treasure_map_join_room_failed', 'treasure_map_join_room_failed_retry',
+        'treasure_map_room_not_found', 'treasure_map_room_full', 'treasure_map_invalid_room_code', 'treasure_map_browser_room_limit',
+        // 合計超過 8 張的三個地方（建立、加入、重試途中）都改成上面的字，沒有人用了
+        'treasure_map_local_maps_limit'
+    ];
+    const oldWords = { zh: /房間/, en: /\b(?:room|team)\b/i, ja: /ルーム|チーム/ };
+    ['zh', 'en', 'ja'].forEach((lang, index) => {
+        const values = translationValues(file, lang);
+        for (const [key, texts] of Object.entries(added)) {
+            assert.equal(values.get(key), texts[index], `${lang} ${key}`);
+            // {room} 是張數的參數名稱，不是字：掃用語之前先拿掉 {…}
+            assert.doesNotMatch(texts[index].replace(/\{\w+\}/g, ''), oldWords[lang], `${lang} ${key} 還有舊用語`);
+        }
+        const keys = translationKeySet(file, lang);
+        for (const key of removed) assert.equal(keys.has(key), false, `${lang} 還有 ${key}`);
+    });
+});
+
 // ---------- 清單面板裡的組隊：焦點（fake-dom） ----------
 // 照 index.html 做出清單面板（標頭的關閉、組隊按鈕、隊伍狀態、清單與它下面的動作列）、三個隊伍對話框與面板外的一顆按鈕，
 // fake-dom 裡載入真正的 list-manager.js、party-names.js、room-map-sync.js、room-collaboration.js 與 script.js（清單面板的開關、隊伍同步、預設名字）。
 // finder 不跑建構函式，清單張數、卡片按鈕、清單內容換成空函式（同上面的 setup()）；client.init() 由測試自己呼叫（掛事件、處理網址的 ?room=）。
-// request() 換成 respond(path, options)：回傳值就是伺服器的回應，丟出的錯誤就是失敗。
+// request() 換成 respond(path, options)：回傳值就是伺服器的回應，丟出的錯誤就是失敗。toast 的訊息收在回傳的 toasts。
 // 按鈕與輸入框照 Chrome 的行為：拿著焦點時一停用，當場就失去焦點（activeElement 退回 body）；停用的、自己或祖先帶 .hidden 的，focus() 什麼都不做。
 // 少了這些，「連線中焦點掉到 body」與「焦點還給已經藏起來的按鈕」在測試裡都不會發生
 function createTeamPanel({ url = 'https://ff14.tw/tools/treasure-map-finder/', respond }) {
     const dom = createFakeDom({ url });
     const { el } = dom;
-    const storage = new Map();
+    const storage = new Map(), toasts = [];
     const button = (id, text) => el('button', { type: 'button', id, class: 'btn' }, text);
     const panel = el('div', { id: 'myListPanel', class: 'my-list-panel', role: 'dialog', inert: true },
         el('div', { class: 'panel-header' }, button('closePanelBtn', '×')),
@@ -1026,12 +1458,12 @@ function createTeamPanel({ url = 'https://ff14.tw/tools/treasure-map-finder/', r
     Object.assign(dom.window, {
         URLSearchParams,
         crypto: webcrypto,
-        confirm: () => false,
+        confirm: () => { throw new Error('不該呼叫 confirm()'); },
         console: { log() {}, warn() {}, error() {} },
         history: { state: null, pushState: navigate, replaceState: navigate },
         localStorage: { getItem: key => storage.get(key) ?? null, setItem: (key, value) => storage.set(key, String(value)), removeItem: key => storage.delete(key) },
         i18n: { getCurrentLanguage: () => 'zh', onLanguageChange() {} },
-        FF14Utils: { getI18nText: (key, fallback, values = {}) => fallback.replace(/\{(\w+)\}/g, (_, name) => values[name]), showToast() {} },
+        FF14Utils: { getI18nText: (key, fallback, values = {}) => fallback.replace(/\{(\w+)\}/g, (_, name) => values[name]), showToast: message => toasts.push(message) },
         ModalManager: FakeModalManager
     });
     for (const file of ['assets/js/security-utils.js', 'tools/treasure-map-finder/list-manager.js', 'tools/treasure-map-finder/party-names.js', 'tools/treasure-map-finder/room-map-sync.js', 'tools/treasure-map-finder/room-collaboration.js', 'tools/treasure-map-finder/script.js']) {
@@ -1057,7 +1489,7 @@ function createTeamPanel({ url = 'https://ff14.tw/tools/treasure-map-finder/', r
     finder.setRoomCollaboration(client);
     client.request = async (path, options = {}) => respond(path, options);
     client.startPolling = () => {};
-    return { dom, finder, client, $: id => dom.document.getElementById(id), focused: () => dom.document.activeElement };
+    return { dom, finder, client, toasts, $: id => dom.document.getElementById(id), focused: () => dom.document.activeElement };
 }
 
 // 焦點應該在 #id 上；比身分、訊息只寫 id（assert.equal 直接比節點，失敗時會把整頁的 DOM 展開成訊息）
@@ -1083,21 +1515,23 @@ test('建立組隊成功：焦點移到隊伍狀態的「複製隊伍代號」�
     await page.client.init();
     page.finder.handleListEntry('team');
     assertFocusOn(page, 'createRoomBtn', '按「組隊」打開面板');
-    const creating = page.client.createRoom();
+    const creating = page.client.handleCreateClick();
     assert.ok(page.focused() === page.dom.document.body, '連線中「建立組隊」停用，焦點當場退回 body');
     await creating;
     assert.equal(page.client.currentRoom.roomCode, 'ABC123');
     assert.equal(page.$('teamActions').classList.contains('hidden'), true);
     assertFocusOn(page, 'copyRoomCodeBtn', '建立成功');
+    assert.deepEqual(page.toasts, ['隊伍 ABC123 建立成功！']);
 });
 
 test('建立組隊失敗：焦點回到「建立組隊」', async () => {
     const page = createTeamPanel({ respond: () => { throw roomError(503, 'Service unavailable'); } });
     await page.client.init();
     page.finder.handleListEntry('team');
-    await page.client.createRoom();
+    await page.client.handleCreateClick();
     assert.equal(page.client.currentRoom, null);
     assertFocusOn(page, 'createRoomBtn', '建立失敗');
+    assert.deepEqual(page.toasts, ['連不上隊伍伺服器，請稍後再試。'], '失敗的訊息是 createRoom() 回傳的');
 });
 
 test('加入隊伍成功：焦點移到「複製隊伍代號」；失敗：焦點回到「加入隊伍」', async () => {
@@ -1112,7 +1546,33 @@ test('加入隊伍成功：焦點移到「複製隊伍代號」；失敗：焦�
         await page.client.confirmJoinRoom();
         assert.equal(page.client.currentRoom?.roomCode ?? null, expected === 'copyRoomCodeBtn' ? 'ABC123' : null);
         assertFocusOn(page, expected, expected === 'copyRoomCodeBtn' ? '加入成功' : '加入失敗');
+        assert.deepEqual(page.toasts, expected === 'copyRoomCodeBtn' ? ['成功加入隊伍 ABC123'] : ['找不到隊伍 ABC123。可能打錯了，或隊伍已經解散（24 小時沒有動靜就會解散）。']);
     }
+});
+
+test('createRoom()、joinRoom() 自己不移動焦點，也不跳錯誤訊息：結束後的焦點與訊息是呼叫的人的事', async () => {
+    const created = createTeamPanel({ respond: createAndLeave });
+    await created.client.init();
+    created.finder.handleListEntry('team');
+    assert.deepEqual(plain(await created.client.createRoom()), { success: true });
+    assert.equal(created.client.currentRoom.roomCode, 'ABC123');
+    assert.ok(created.focused() === created.dom.document.body, '成功了，焦點還在連線中退回的 body，沒有被移到「複製隊伍代號」');
+    assert.deepEqual(created.toasts, ['隊伍 ABC123 建立成功！']);
+
+    const failed = createTeamPanel({ respond: () => { throw roomError(503, 'Service unavailable'); } });
+    await failed.client.init();
+    failed.finder.handleListEntry('team');
+    assert.equal((await failed.client.createRoom()).success, false);
+    assert.ok(failed.focused() === failed.dom.document.body, '失敗了，焦點也沒有被放回「建立組隊」');
+    assert.deepEqual(failed.toasts, []);
+
+    const missing = createTeamPanel({ respond: () => { throw roomError(404, 'Room not found'); } });
+    await missing.client.init();
+    missing.finder.openListPanel();
+    missing.$('joinRoomBtn').focus();
+    assert.equal((await missing.client.joinRoom('ABC123')).kind, 'not_found');
+    assert.ok(missing.focused() === missing.dom.document.body);
+    assert.deepEqual(missing.toasts, []);
 });
 
 test('離開隊伍（保留或清空清單）：焦點回到又出現的「建立組隊」，不是已經藏起來的離開鈕', async () => {
