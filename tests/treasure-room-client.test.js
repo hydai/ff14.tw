@@ -790,6 +790,32 @@ test('ownerOf：me、member、離開但記得名字、離開沒看過、addedBy 
     assert.equal(state.client.ownerOf({ addedBy: 'creator' }), null, '離開之後');
 });
 
+test('離開隊伍的每一條路最後都重畫清單，而且重畫時隊伍已經沒了：畫面上才不會留著「誰的圖」', async () => {
+    // [說明, 伺服器的回應, 走這一條路離開]。保留清單離開時清單不會變，沒有這次重畫，每一列與開著的路線頁就停在離開之前的樣子
+    const paths = [
+        ['直接 forceLeaveRoom()', () => ({ body: room() }), client => client.forceLeaveRoom()],
+        ['離開隊伍（保留清單）', request => (request.method === 'POST' ? { body: { message: 'Left' } } : { body: room() }), client => client.leaveRoom(true)],
+        ['離開隊伍時伺服器已經不認得我（404）', request => (request.method === 'POST' ? { status: 404, body: { error: 'Room not found' } } : { body: room() }), client => client.leaveRoom(true)],
+        ['輪詢讀到 404（隊伍過期）', () => ({ status: 404, body: { error: 'Room not found' } }), client => client.poll()],
+        ['被移出或連線失效（輪詢回來的成員裡沒有自己）', () => ({ body: room() }), client => client.mapSync.receive(room([], [mate], 1))],
+        ['舊的唯讀隊伍', () => ({ body: { ...room(), readOnly: true, legacy: true } }), client => client.poll()]
+    ];
+    const problems = [];
+    for (const [label, respond, leave] of paths) {
+        const state = setup(respond);
+        state.client.adoptSession(room([], [member, mate]), member, TOKEN);
+        // 重畫時問 finder 這張圖是誰加的：在隊伍裡是自己，隊伍沒了是 null——清單的每一列、路線的每一站畫不畫「誰的圖」就看這個
+        const owners = [];
+        state.finder.renderMyList = () => owners.push(plain(state.finder.ownerOf({ addedBy: 'creator' })));
+        assert.equal(plain(state.finder.ownerOf({ addedBy: 'creator' })).kind, 'me', `${label}：離開之前在隊伍裡`);
+        await leave(state.client);
+        if (state.client.currentRoom !== null) problems.push(`${label}：沒有離開`);
+        else if (owners.length === 0) problems.push(`${label}：離開之後沒有重畫清單`);
+        else if (owners.at(-1) !== null) problems.push(`${label}：最後一次重畫時隊伍還在`);
+    }
+    assert.deepEqual(problems, []);
+});
+
 test('進出隊伍只用 replaceState、只動 room：網址 ?grade=g17&maps=tm_017 建立後是 ?grade=g17&maps=tm_017&room=ABC123，離開後回到 ?grade=g17&maps=tm_017；沒有 pushState', async () => {
     const state = setup(createThenJoin);
     const base = 'http://localhost:8765/tools/treasure-map-finder/';
@@ -1204,6 +1230,24 @@ test('重試途中隊伍的張數加上新加的圖超過 8：回 map_limit 與�
     assert.equal(state.client.isConnecting, false);
     assert.deepEqual(state.toasts, []);
     assert.equal(state.finder.listManager.getLength(), 2);
+});
+
+test('重試途中新加的圖：接上隊伍時排進佇列的那一筆記成自己的（同 toggleMapInList()），伺服器還沒收下時清單上就是自己的圖、算在自己的張數裡', async () => {
+    let attempts = 0;
+    const state = setup(request => {
+        if (request.method === 'GET') return { body: room() };
+        if (request.method === 'PUT') throw new TypeError('Failed to fetch');
+        if (++attempts === 1) throw new TypeError('Join committed, but response was lost');
+        return { body: { room: room([], [member, newMember]), newMember, memberId: newMember.id, memberToken: TOKEN } };
+    });
+    assert.equal((await state.client.joinRoom('ABC123')).kind, 'network');
+    addLocalMaps(state, 1, 'later');
+    assert.deepEqual(plain(await state.client.joinRoom('ABC123')), { success: true });
+    // 送不出去（PUT 連不上）：那一筆留在佇列裡等重送，這段時間它也要是自己的
+    const queued = Array.from(state.client.mapSync.pending.flatMap(batch => batch.operations), operation => [operation.type, operation.map.id, operation.map.addedBy]);
+    assert.deepEqual(queued, [['add', 'later_0', newMember.id]]);
+    assert.equal(state.client.mapSync.getMaps().find(map => map.id === 'later_0').addedBy, newMember.id, '隊伍的寶圖（含還沒送出的）裡它是自己的');
+    assert.equal(state.finder.listManager.getList().find(map => map.id === 'later_0').addedBy, newMember.id, '清單上誰的圖也是自己');
 });
 
 test('舊的唯讀隊伍：讀到 readOnly、加入時 ROOM_RECREATE_REQUIRED 都由 recoverLegacyRoom() 提示一次，回 legacy 與空字串；沒附隊伍的當作一般失敗', async () => {

@@ -1,6 +1,7 @@
 // 路線頁：清單面板的第二頁（標記在 index.html 的 #routeView），一站一張寶圖，站序由 RouteCalculator 排。
 // 目前這一站（依順序第一個還沒完成的）標亮並預覽會被複製的句子；每一站都能標記「完成」（RouteProgress，只記在這台裝置）；
-// 「複製下一站」複製目前這一站，「全部複製」一站一行。摘要、站別與按鈕上帶參數的字由這裡依清單、進度與語言組出來、不掛 data-i18n：
+// 「複製下一站」複製目前這一站，「全部複製」一站一行。在隊伍裡，每一站的名稱下面寫這張圖是誰的，複製的句子也帶主人的名字。
+// 摘要、站別與按鈕上帶參數的字由這裡依清單、進度與語言組出來、不掛 data-i18n：
 // I18nManager 切換語言時會把 [data-i18n] 的文字整個換掉。站別下面可以展開的「複製格式」區塊也在這裡：
 // 改複製的範本（語言範本、插入變數、預覽、儲存與恢復預設）
 class RouteView {
@@ -12,7 +13,8 @@ class RouteView {
         this.calculator = new RouteCalculator();
         // 存過的複製格式；沒存過是 null（跟著介面語言用預設範本）。讀到舊的 { teleport, map } 時 CopyFormat.read() 順便轉成新格式寫回
         this.savedTemplate = CopyFormat.read(FilterManager.safeStorage(window));
-        // 上一次畫的每一站（describeOrder 的站加上 describeListItem 的顯示資料與 done）：複製、完成的按鈕用它找到是哪一站。
+        // 上一次畫的每一站（describeOrder 的站加上清單項目 item、describeListItem 的顯示資料 info 與 done）：複製、完成的按鈕用它找到是哪一站，
+        // item 的 addedBy 用來問這張圖是誰的。
         // 站序與完成記號以存著的進度為準，畫面上的這一份可能已經過時（見 toggleDone）
         this.stops = [];
         // 上一次畫的時候的清單 id（依清單順序）、介面語言與複製格式：refresh() 只在這幾樣變了才重畫
@@ -147,8 +149,10 @@ class RouteView {
         }
     }
 
+    // 誰的圖也算在裡面：隊友改名、離開，或自己離開隊伍時清單 id 不變，路線上的那一行與複製的句子也要跟著變；
+    // 隊伍沒變時這一份和上一次相同，每 2 秒的輪詢不會重畫
     renderKey(list) {
-        return JSON.stringify([list.map(item => item.id), window.i18n.getCurrentLanguage(), this.savedTemplate]);
+        return JSON.stringify([list.map(item => item.id), window.i18n.getCurrentLanguage(), this.savedTemplate, list.map(item => this.finder.ownerOf(item))]);
     }
 
     // 路線頁沒開著時清單變了：已經有進度就照樣對齊清單（和開著時同一套規則，不在清單裡的從站序與完成記號拿掉），
@@ -177,7 +181,7 @@ class RouteView {
         const items = new Map(list.map(item => [item.id, item]));
         const doneIds = new Set(synced.done);
         const { stops, summary } = calculator.describeOrder(synced.order, list);
-        this.stops = stops.map(stop => ({ ...stop, info: finder.describeListItem(items.get(stop.mapId)), done: doneIds.has(stop.mapId) }));
+        this.stops = stops.map(stop => ({ ...stop, item: items.get(stop.mapId), info: finder.describeListItem(items.get(stop.mapId)), done: doneIds.has(stop.mapId) }));
         this.renderedKey = this.renderKey(list);
 
         const scrollTop = elements.body.scrollTop;
@@ -228,8 +232,8 @@ class RouteView {
         elements.resetBtn.classList.toggle('hidden', done === 0);
     }
 
-    // 一站：站號圓圈（對輔助科技隱藏，完成時是 ✓）；這一站之前要傳送時先一行「🔮 傳送 …」，再來是名稱與座標，目前這一站多一行
-    // 會被複製的句子；右邊 📋 與「完成」切換鈕（aria-pressed）。兩顆按鈕的名稱都帶站號才分得出是哪一站
+    // 一站：站號圓圈（對輔助科技隱藏，完成時是 ✓）；這一站之前要傳送時先一行「🔮 傳送 …」，再來是名稱、在隊伍裡的「誰的圖」與座標，
+    // 目前這一站多一行會被複製的句子；右邊 📋 與「完成」切換鈕（aria-pressed）。兩顆按鈕的名稱都帶站號才分得出是哪一站
     createStop(stop, index, isCurrent) {
         const { info } = stop;
         const n = index + 1;
@@ -262,6 +266,9 @@ class RouteView {
             body.appendChild(teleport);
         }
         body.appendChild(RouteView.createParagraph('tm-stop-title', info.name));
+        // 在隊伍裡，名稱下面多一行這張圖是誰加的
+        const ownerLine = this.finder.createOwnerLine(stop.item, 'tm-stop-owner');
+        if (ownerLine) body.appendChild(ownerLine);
         body.appendChild(RouteView.createParagraph('tm-stop-coords', info.coordsText));
         if (isCurrent) body.appendChild(RouteView.createParagraph('tm-stop-preview', this.stopText(index)));
         item.appendChild(body);
@@ -312,16 +319,18 @@ class RouteView {
     }
 
     // 第 index 站（從 0 開始）複製成的句子，格式預設是目前生效的（複製一律用它；格式區塊的預覽才傳還沒存的 textarea 內容）；
-    // 變數的值都來自 describeListItem()
+    // 變數的值都來自 describeListItem()，主人來自清單項目的 addedBy：在隊伍裡是加這張圖的人的名字（自己的圖寫自己的名字，
+    // 已經離開的寫「已離開隊員」），不在隊伍裡或沒有主人是 null，句子不變
     stopText(index, template = this.activeTemplate()) {
-        const { info } = this.stops[index];
+        const { info, item } = this.stops[index];
         return CopyFormat.render(template, {
             index: index + 1,
             total: this.stops.length,
             grade: info.grade,
             zone: info.zoneNames,
             coords: info.coordsText,
-            aetheryte: info.nearest?.name ?? null
+            aetheryte: info.nearest?.name ?? null,
+            owner: PartyNames.sentenceOwner(this.finder.ownerOf(item), FF14Utils.getI18nText.bind(FF14Utils))
         });
     }
 

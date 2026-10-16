@@ -78,7 +78,9 @@ const focusableElements = (root) => root.children.flatMap((child) => (isShown(ch
 // - storageThrows：光是讀 window.localStorage 就丟例外（Chrome 封鎖網站資料時是 SecurityError）；否則 localStorage 是 storage 這個 Map
 // - confirm() 一被呼叫就丟錯：清單的操作不再跳瀏覽器的確認視窗
 // - init() 出錯時只會 console.error 並在結果格顯示錯誤：console 的內容先記下來不印，載入失敗時直接丟出（附上記下來的訊息）
-// - addMaps(ids) 對每個 id 用目錄裡那張呼叫真正的 toggleMapInList()；team() 換上隊伍替身（不連伺服器），回傳每次同步送出的清單
+// - addMaps(ids) 對每個 id 用目錄裡那張呼叫真正的 toggleMapInList()；team() 換上隊伍替身（不連伺服器），回傳每次同步送出的清單。
+//   team({ meId, members, knownMembers, creatorId }) 決定隊伍裡有誰（預設只有自己：id 'me'、光之戰士K7Q）、看過哪些已離開的人的名字；
+//   替身的 ownerOf() 用真正的 PartyNames.ownerOf()，所以 addedBy 對得上 members／knownMembers 的圖就會寫是誰的
 async function createPanelPage({ url = 'https://ff14.tw/tools/treasure-map-finder/', lang = 'zh', stored = {}, storageThrows = false, clipboard = 'ok' } = {}) {
     const dom = createFakeDom({ url });
     const storage = new Map(Object.entries(stored));
@@ -241,12 +243,15 @@ async function createPanelPage({ url = 'https://ff14.tw/tools/treasure-map-finde
             finder.toggleMapInList(map);
         }
     };
-    const team = ({ connecting = false } = {}) => {
+    const team = ({ connecting = false, meId = 'me', members = [{ id: 'me', nickname: '光之戰士K7Q' }], knownMembers = {}, creatorId = 'me' } = {}) => {
         const sent = [];
         finder.roomCollaboration = {
-            currentRoom: { roomCode: 'ABC123', members: [] },
-            currentUser: { id: 'me', nickname: '光之戰士1' },
+            currentRoom: { roomCode: 'ABC123', members, creatorId },
+            currentUser: members.find((member) => member.id === meId) ?? null,
             isConnecting: connecting,
+            // 同 RoomCollaboration#ownerOf()，但不看 currentRoom：離開隊伍之後不再顯示是 TreasureMapFinder#ownerOf() 的事。
+            // members、knownMembers 照傳進來的那一份讀，測試改它們（隊友離開、改名）就是隊伍變了
+            ownerOf: (map) => dom.window.PartyNames.ownerOf(map, { members, knownMembers, meId }),
             mapSync: {
                 getOperations: (maps) => maps.map((map) => ({ type: 'add', map })),
                 replaceLocal: async (maps) => { sent.push(maps); return true; }
@@ -321,6 +326,72 @@ test('目錄裡找不到、也沒有 zoneId 的舊項目：和路線一樣用 zo
     page.setLang('en');
     assert.deepEqual([text('.item-zone'), text('.item-sub')], ["Kozama'uka", "(20.0, 6.9) · Nearest: Ok' Hanu"]);
     assert.equal(row().querySelector('.btn-remove').getAttribute('aria-label'), "Remove G17 Kozama'uka");
+});
+
+// ---------- 誰的圖 ----------
+// 隊伍：自己是 me（光之戰士K7Q），隊友 m4x（光之戰士M4X）；r6v 已經離開、但看過名字（knownMembers）；gone 離開了、沒看過名字
+const joinParty = (page, overrides = {}) => page.team({
+    members: [{ id: 'me', nickname: '光之戰士K7Q' }, { id: 'm4x', nickname: '光之戰士M4X' }],
+    knownMembers: { r6v: '光之戰士R6V' },
+    ...overrides
+});
+// 把寶圖加進清單，指定每張是誰加的（addedBy，null 是舊資料），再更新張數、重畫清單
+const addOwned = (page, entries) => {
+    for (const [id, addedBy] of entries) page.finder.listManager.add(page.finder.maps.find((map) => map.id === id), { addedBy });
+    page.finder.updateListCount();
+    page.finder.renderMyList();
+};
+const ownerLine = (page, id) => page.$('listContent').querySelector(`[data-map-id="${id}"]`).querySelector('.item-owner');
+const firstClass = (element) => element.className.split(/\s+/)[0];
+
+test('隊伍裡每一列寫是誰的圖：你的圖（is-me）、光之戰士M4X 的圖、光之戰士R6V（已離開）的圖、已離開隊員的圖；addedBy 空的沒有這一行；切到英文、日文跟著換', async () => {
+    const page = await createPanelPage();
+    joinParty(page);
+    addOwned(page, [['tm_017', 'me'], ['tm_007', 'm4x'], ['tm_013', 'r6v'], ['tm_022', 'gone'], ['tm_010', null]]);
+    const ids = ['tm_017', 'tm_007', 'tm_013', 'tm_022', 'tm_010'];
+    const lines = () => ids.map((id) => ownerLine(page, id)?.textContent ?? null);
+    assert.deepEqual(lines(), ['你的圖', '光之戰士M4X 的圖', '光之戰士R6V（已離開）的圖', '已離開隊員的圖', null]);
+    // 只有自己的圖用主要色（is-me）
+    assert.deepEqual(ids.slice(0, 4).map((id) => ownerLine(page, id).classList.contains('is-me')), [true, false, false, false]);
+    // 在座標那一行（.item-sub）下面，是同一格文字的最後一行
+    const info = page.$('listContent').querySelector('[data-map-id="tm_007"] .item-info');
+    assert.deepEqual(info.children.map(firstClass), ['item-title', 'item-sub', 'item-owner']);
+    assert.deepEqual(page.$('listContent').querySelector('[data-map-id="tm_010"] .item-info').children.map(firstClass), ['item-title', 'item-sub']);
+    page.setLang('en');
+    assert.deepEqual(lines(), ['Your map', "光之戰士M4X's map", "光之戰士R6V's map (left)", "A former member's map", null]);
+    page.setLang('ja');
+    assert.deepEqual(lines(), ['あなたの地図', '光之戰士M4Xの地図', '光之戰士R6V（退出済み）の地図', '退出したメンバーの地図', null]);
+});
+
+test('個人清單沒有誰的圖；離開隊伍之後重畫，畫面上的誰的圖都消失（清單內部的 addedBy 照舊）', async () => {
+    const solo = await createPanelPage();
+    solo.addMaps(['tm_017', 'tm_007']);
+    assert.equal(solo.$('listContent').querySelectorAll('.item-owner').length, 0);
+
+    const page = await createPanelPage();
+    joinParty(page);
+    addOwned(page, [['tm_017', 'me'], ['tm_007', 'm4x']]);
+    assert.equal(page.$('listContent').querySelectorAll('.item-owner').length, 2);
+    // 離開隊伍：沒有隊伍了（替身的 ownerOf 還答得出來，所以守住這件事的是 TreasureMapFinder#ownerOf）
+    page.finder.roomCollaboration.currentRoom = null;
+    page.finder.updateListCount();
+    page.finder.renderMyList();
+    assert.equal(page.$('listContent').querySelectorAll('.item-owner').length, 0);
+    assert.deepEqual(Array.from(page.finder.listManager.getList(), (item) => item.addedBy), ['me', 'm4x']);
+});
+
+test('ownerOf：不在隊伍裡、或隊伍的替身沒有 ownerOf 時是 null，清單照常畫、不丟例外；在隊伍裡才有主人', async () => {
+    const page = await createPanelPage();
+    const item = { id: 'tm_017', addedBy: 'me' };
+    assert.equal(page.finder.ownerOf(item), null, '沒有 roomCollaboration');
+    page.finder.roomCollaboration = { currentRoom: { roomCode: 'ABC123' } };
+    assert.equal(page.finder.ownerOf(item), null, '替身沒有 ownerOf');
+    addOwned(page, [['tm_017', 'me']]);
+    assert.equal(page.$('listContent').querySelectorAll('.item-owner').length, 0);
+    joinParty(page);
+    const { kind, id, name } = page.finder.ownerOf(item);
+    assert.deepEqual([kind, id, name], ['me', 'me', '光之戰士K7Q']);
+    assert.equal(page.finder.ownerOf({ id: 'tm_017', addedBy: null }), null);
 });
 
 test('標題與張數：個人清單「我的清單／6 張／6 張寶圖」，隊伍裡「隊伍清單／3/8／3/8 張」，切換語言跟著換', async () => {
@@ -2135,6 +2206,235 @@ test('目錄裡找不到、也沒有 zoneId 的舊項目：摘要算進一次傳
     assert.equal(page.clipboardWrites.at(-1), '/p 1/1 G17 科扎馬烏卡 (20.0, 6.9) 最近：奧克哈努');
 });
 
+// ---------- 路線頁：誰的圖 ----------
+// EXAMPLE 六張各是誰加的（joinParty 的隊伍）：自己、隊友、離開了（看過名字）、離開了（沒看過）、舊資料（沒有）、自己
+const OWNER_OF_STOP = { tm_010: 'me', tm_007: 'm4x', tm_013: 'r6v', tm_017: 'gone', tm_022: null, tm_033: 'me' };
+// EXAMPLE 的站序（tm_010、tm_007、tm_013、tm_017、tm_022、tm_033）沒有主人時每一站複製的句子；個人清單就是這六句
+const BASE_SENTENCES = {
+    zh: ['/p 1/6 G17 烏爾科帕恰 (21.6, 23.9) 最近：瓦群佩洛', '/p 2/6 G17 烏爾科帕恰 (13.7, 14.2) 最近：瓦群佩洛', '/p 3/6 G17 烏爾科帕恰 (34.1, 29.0) 最近：沃克爾·佐莫爾',
+        '/p 4/6 G17 科扎馬烏卡 (20.0, 6.9) 最近：奧克哈努', '/p 5/6 G17 科扎馬烏卡 (37.9, 21.8) 最近：波加停船所', '/p 6/6 G17 夏羅尼荒野 (18.2, 21.0) 最近：謝謝內青燐泉'],
+    en: ['/p 1/6 G17 Urqopacha (21.6, 23.9) Nearest: Wachunpelo', '/p 2/6 G17 Urqopacha (13.7, 14.2) Nearest: Wachunpelo', '/p 3/6 G17 Urqopacha (34.1, 29.0) Nearest: Worqor Zormor',
+        "/p 4/6 G17 Kozama'uka (20.0, 6.9) Nearest: Ok' Hanu", "/p 5/6 G17 Kozama'uka (37.9, 21.8) Nearest: Dock Poga", '/p 6/6 G17 Shaaloani (18.2, 21.0) Nearest: Sheshenewezi Springs'],
+    ja: ['/p 1/6 G17 オルコ・パチャ (21.6, 23.9) 最寄り：ワチュンペロ', '/p 2/6 G17 オルコ・パチャ (13.7, 14.2) 最寄り：ワチュンペロ', '/p 3/6 G17 オルコ・パチャ (34.1, 29.0) 最寄り：ウォルコルゾルモル',
+        '/p 4/6 G17 コザマル・カ (20.0, 6.9) 最寄り：オック・ハヌ', '/p 5/6 G17 コザマル・カ (37.9, 21.8) 最寄り：ポガ停船所', '/p 6/6 G17 シャーローニ荒野 (18.2, 21.0) 最寄り：シェシェネ青燐泉']
+};
+// 六站各自接在句尾的主人（OWNER_OF_STOP 的順序）：自己寫名字（不寫「你」），已經離開的不管有沒有看過名字都寫「已離開隊員」，沒有主人的不加
+const OWNER_SUFFIXES = {
+    zh: ['（光之戰士K7Q 的圖）', '（光之戰士M4X 的圖）', '（已離開隊員 的圖）', '（已離開隊員 的圖）', '', '（光之戰士K7Q 的圖）'],
+    en: [" (光之戰士K7Q's map)", " (光之戰士M4X's map)", " (a former member's map)", " (a former member's map)", '', " (光之戰士K7Q's map)"],
+    ja: ['（光之戰士K7Qの地図）', '（光之戰士M4Xの地図）', '（退出したメンバーの地図）', '（退出したメンバーの地図）', '', '（光之戰士K7Qの地図）']
+};
+// 進隊伍、加入 EXAMPLE 六張（各有主人）、打開路線頁
+const openOwnedRoute = (page) => {
+    joinParty(page);
+    addOwned(page, EXAMPLE.map((id) => [id, OWNER_OF_STOP[id]]));
+    page.finder.openRoute();
+};
+const stopOwnerLine = (page, id) => stopOf(page, id).querySelector('.tm-stop-owner');
+const stopOwnerTexts = (page) => stops(page).map((li) => li.querySelector('.tm-stop-owner')?.textContent ?? null);
+const copyStopText = async (page, id) => {
+    stopOf(page, id).querySelector('[data-action="copy"]').click();
+    await settle();
+    return page.clipboardWrites.at(-1);
+};
+
+test('路線每一站在名稱下面寫誰的圖：你的圖（is-me）、隊友、已離開（看過名字）、已離開隊員的圖；addedBy 空的沒有；切到英文、日文跟著換', async () => {
+    const page = await createPanelPage();
+    openOwnedRoute(page);
+    assert.deepEqual(stops(page).map((li) => li.dataset.mapId), Object.keys(OWNER_OF_STOP));
+    assert.deepEqual(stopOwnerTexts(page), ['你的圖', '光之戰士M4X 的圖', '光之戰士R6V（已離開）的圖', '已離開隊員的圖', null, '你的圖']);
+    // 只有自己的圖用主要色（is-me）
+    assert.deepEqual(stops(page).map((li) => li.querySelector('.tm-stop-owner')?.classList.contains('is-me') ?? null), [true, false, false, false, null, true]);
+    // 在名稱（.tm-stop-title）下面、座標上面；第 1 站前面有傳送、後面有預覽
+    assert.deepEqual(stops(page)[0].querySelector('.tm-stop-body').children.map(firstClass), ['tm-stop-tp', 'tm-stop-title', 'tm-stop-owner', 'tm-stop-coords', 'tm-stop-preview']);
+    assert.deepEqual(stops(page)[1].querySelector('.tm-stop-body').children.map(firstClass), ['tm-stop-title', 'tm-stop-owner', 'tm-stop-coords']);
+    page.setLang('en');
+    assert.deepEqual(stopOwnerTexts(page), ['Your map', "光之戰士M4X's map", "光之戰士R6V's map (left)", "A former member's map", null, 'Your map']);
+    page.setLang('ja');
+    assert.deepEqual(stopOwnerTexts(page), ['あなたの地図', '光之戰士M4Xの地図', '光之戰士R6V（退出済み）の地図', '退出したメンバーの地図', null, 'あなたの地図']);
+});
+
+test('個人清單的路線沒有誰的圖，複製的句子也不變', async () => {
+    const page = await createPanelPage();
+    openRouteWith(page, EXAMPLE);
+    assert.deepEqual(stopOwnerTexts(page), [null, null, null, null, null, null]);
+    assert.equal(stops(page)[0].querySelector('.tm-stop-preview').textContent, BASE_SENTENCES.zh[0]);
+    page.$('copyAllStopsBtn').click();
+    await settle();
+    assert.deepEqual(page.clipboardWrites.at(-1).split('\n'), BASE_SENTENCES.zh);
+});
+
+test('複製的句子帶主人：自己的寫「（光之戰士K7Q 的圖）」、隊友的寫隊友名字、已離開的寫「（已離開隊員 的圖）」、沒有主人的不加；預覽、複製下一站、每站的 📋、全部複製都一樣', async () => {
+    const page = await createPanelPage();
+    openOwnedRoute(page);
+    const expected = BASE_SENTENCES.zh.map((line, index) => line + OWNER_SUFFIXES.zh[index]);
+    assert.equal(stops(page)[0].querySelector('.tm-stop-preview').textContent, expected[0]);
+    assert.equal(expected[0], '/p 1/6 G17 烏爾科帕恰 (21.6, 23.9) 最近：瓦群佩洛（光之戰士K7Q 的圖）');
+    // 複製下一站：一站一站完成，每次複製的就是目前這一站
+    for (let index = 0; index < expected.length; index += 1) {
+        page.$('copyNextStopBtn').click();
+        await settle();
+        assert.equal(page.clipboardWrites.at(-1), expected[index], `第 ${index + 1} 站`);
+        stops(page)[index].querySelector('[data-action="done"]').click();
+    }
+    // 每站的 📋 與全部複製（完成的站也算）
+    assert.equal(await copyStopText(page, 'tm_007'), expected[1]);
+    assert.equal(await copyStopText(page, 'tm_013'), expected[2]);
+    assert.equal(await copyStopText(page, 'tm_022'), expected[4]);
+    page.$('copyAllStopsBtn').click();
+    await settle();
+    assert.deepEqual(page.clipboardWrites.at(-1).split('\n'), expected);
+});
+
+test('複製的句尾跟著介面語言：英文「 (光之戰士K7Q\'s map)」、日文「（光之戰士K7Qの地図）」，已離開隊員也換成該語言', async () => {
+    for (const lang of ['en', 'ja']) {
+        const page = await createPanelPage({ lang });
+        openOwnedRoute(page);
+        page.$('copyAllStopsBtn').click();
+        await settle();
+        assert.deepEqual(page.clipboardWrites.at(-1).split('\n'), BASE_SENTENCES[lang].map((line, index) => line + OWNER_SUFFIXES[lang][index]), lang);
+    }
+});
+
+test('自訂範本不加句尾：範本裡寫了 <寶圖主人> 才帶名字（已離開寫「已離開隊員」，沒有主人是空的）；每一站的那一行不受範本影響', async () => {
+    const stored = (template) => ({ treasureMapFormatSettings: JSON.stringify({ version: 2, template }) });
+    const plain = await createPanelPage({ stored: stored('/p <序號>/<總數>') });
+    openOwnedRoute(plain);
+    plain.$('copyAllStopsBtn').click();
+    await settle();
+    assert.deepEqual(plain.clipboardWrites.at(-1).split('\n'), ['/p 1/6', '/p 2/6', '/p 3/6', '/p 4/6', '/p 5/6', '/p 6/6']);
+    assert.equal(stops(plain)[0].querySelector('.tm-stop-preview').textContent, '/p 1/6');
+
+    const named = await createPanelPage({ stored: stored('/p <序號> <寶圖主人>') });
+    openOwnedRoute(named);
+    named.$('copyAllStopsBtn').click();
+    await settle();
+    assert.deepEqual(named.clipboardWrites.at(-1).split('\n'), ['/p 1 光之戰士K7Q', '/p 2 光之戰士M4X', '/p 3 已離開隊員', '/p 4 已離開隊員', '/p 5', '/p 6 光之戰士K7Q']);
+    assert.deepEqual(stopOwnerTexts(named), ['你的圖', '光之戰士M4X 的圖', '光之戰士R6V（已離開）的圖', '已離開隊員的圖', null, '你的圖']);
+});
+
+test('路線頁開著時隊伍變了：隊友改名、離開、自己離開之後，每一站的那一行與複製的句子跟著變；隊伍沒變時重畫不動節點（不閃）', async () => {
+    const members = [{ id: 'me', nickname: '光之戰士K7Q' }, { id: 'm4x', nickname: '光之戰士M4X' }];
+    const knownMembers = { m4x: '光之戰士M4X' };
+    const page = await createPanelPage();
+    page.team({ members, knownMembers });
+    addOwned(page, [['tm_010', 'me'], ['tm_007', 'm4x']]);
+    page.finder.openRoute();
+    const lines = () => [stopOwnerLine(page, 'tm_010').textContent, stopOwnerLine(page, 'tm_007')?.textContent ?? null];
+    assert.deepEqual(lines(), ['你的圖', '光之戰士M4X 的圖']);
+    assert.match(await copyStopText(page, 'tm_007'), /（光之戰士M4X 的圖）$/);
+    // 每 2 秒的輪詢：隊伍沒變，還是同一批節點
+    const before = stops(page);
+    page.finder.renderMyList();
+    assert.ok(stops(page).length === before.length && stops(page).every((li, index) => li === before[index]), '沒變不重畫');
+    // 隊友改名（真的 RoomCollaboration 會把新名字也記進 knownMembers）
+    members[1].nickname = '新名字';
+    knownMembers.m4x = '新名字';
+    page.finder.renderMyList();
+    assert.deepEqual(lines(), ['你的圖', '新名字 的圖']);
+    assert.match(await copyStopText(page, 'tm_007'), /（新名字 的圖）$/);
+    // 隊友離開了
+    members.splice(1, 1);
+    page.finder.renderMyList();
+    assert.deepEqual(lines(), ['你的圖', '新名字（已離開）的圖']);
+    assert.match(await copyStopText(page, 'tm_007'), /（已離開隊員 的圖）$/);
+    // 自己也離開了隊伍：路線上不再有誰的圖，句子回到沒有句尾
+    page.finder.roomCollaboration.currentRoom = null;
+    page.finder.updateListCount();
+    page.finder.renderMyList();
+    assert.deepEqual(stopOwnerTexts(page), [null, null]);
+    assert.doesNotMatch(await copyStopText(page, 'tm_007'), /的圖/);
+    assert.doesNotMatch(stops(page)[0].querySelector('.tm-stop-preview').textContent, /的圖/);
+});
+
+// 離開隊伍要用真的 RoomCollaboration，不能用 team() 的替身：不跑 init（不接事件、不讀網址與 localStorage 裡的舊隊伍），接在這一頁真的
+// TreasureMapFinder 上，走真的 adoptSession() 進隊伍（同建立、加入、接回隊伍之後的路）。伺服器給的隊伍資料自己準備：
+// members[0] 是自己（也是隊長），entries 是 [寶圖 id, addedBy]
+const adoptRealParty = (page, members, entries) => {
+    const { RoomCollaboration } = page.dom.window;
+    const { init } = RoomCollaboration.prototype;
+    RoomCollaboration.prototype.init = function () {};
+    const client = new RoomCollaboration(page.finder);
+    RoomCollaboration.prototype.init = init;
+    page.finder.setRoomCollaboration(client);
+    const treasureMaps = entries.map(([id, addedBy]) => page.finder.toRoomMap({
+        ...page.finder.maps.find((map) => map.id === id), addedBy, addedAt: '2026-10-17T00:00:00.000Z'
+    }));
+    client.adoptSession({ roomCode: 'ABC123', creatorId: members[0].id, members, treasureMaps, revision: 0, lastActivityAt: new Date().toISOString() },
+        members[0], 'a'.repeat(64), [], { poll: false });
+    return client;
+};
+
+test('離開隊伍（真的 RoomCollaboration#forceLeaveRoom，每一條離開的路都走這裡）：清單與開著的路線頁重畫，所有誰的圖都消失，清單項目與站都還在', async () => {
+    const page = await createPanelPage();
+    const members = [{ id: 'me', nickname: '光之戰士K7Q', isCreator: true }, { id: 'm4x', nickname: '光之戰士M4X' }];
+    // EXAMPLE 六張：自己 2 張、隊友 2 張、已離開隊員（沒看過名字）1 張、沒有主人 1 張
+    const addedBy = { tm_010: 'me', tm_007: 'm4x', tm_013: 'gone', tm_017: 'me', tm_022: null, tm_033: 'm4x' };
+    const client = adoptRealParty(page, members, EXAMPLE.map((id) => [id, addedBy[id]]));
+    page.finder.openRoute();
+    const ownerLineCounts = () => [page.$('listContent').querySelectorAll('.item-owner').length, page.$('routeStops').querySelectorAll('.tm-stop-owner').length];
+    assert.deepEqual(ownerLineCounts(), [5, 5], '在隊伍裡：清單與路線都是五張有主人、一張沒有');
+    assert.deepEqual(stopOwnerTexts(page), ['你的圖', '光之戰士M4X 的圖', '已離開隊員的圖', '你的圖', null, '光之戰士M4X 的圖']);
+    assert.equal(stops(page)[0].querySelector('.tm-stop-preview').textContent, `${BASE_SENTENCES.zh[0]}（光之戰士K7Q 的圖）`);
+
+    client.forceLeaveRoom();
+
+    assert.equal(client.currentRoom, null);
+    assert.deepEqual(ownerLineCounts(), [0, 0], '離開之後清單與路線都不再寫誰的圖');
+    assert.equal(page.$('listContent').querySelectorAll('.list-item').length, 6, '清單項目還在');
+    assert.deepEqual(stops(page).map((li) => li.dataset.mapId), Object.keys(addedBy), '路線的站還在');
+    assert.equal(stops(page)[0].querySelector('.tm-stop-preview').textContent, BASE_SENTENCES.zh[0], '複製的句子也回到沒有句尾');
+    // 清單內部的 addedBy 照舊保留
+    assert.deepEqual(Object.fromEntries(Array.from(page.finder.listManager.getList(), (item) => [item.id, item.addedBy])), addedBy);
+});
+
+test('隊伍裡匯入、或加入分享連結的寶圖：同步回來之前就寫「你的圖」（同從卡片加入）；原本就在清單裡的照舊是原本的主人', async () => {
+    const page = await createPanelPage();
+    const members = [{ id: 'me', nickname: '光之戰士K7Q', isCreator: true }, { id: 'm4x', nickname: '光之戰士M4X' }];
+    // 匯入之後 mapSync 要產生請求編號：頁面替身沒有 crypto 就補上 Node 的 webcrypto
+    page.dom.window.crypto ??= require('node:crypto').webcrypto;
+    const client = adoptRealParty(page, members, [['tm_007', 'm4x'], ['tm_010', 'me']]);
+    // 斷線：變更送不出去，一直留在待送的佇列裡，伺服器還沒把 addedBy 填上
+    client.request = async () => { throw new Error('offline'); };
+    const owners = () => Object.fromEntries(page.finder.listManager.getList().map((item) => [item.id, ownerLine(page, item.id)?.textContent ?? null]));
+
+    // 合併分享連結：新加的 tm_013 是自己的
+    assert.equal((await page.finder.importFromText('https://ff14.tw/tools/treasure-map-finder/?maps=tm_013', { merge: true })).success, true);
+    assert.ok(client.mapSync.pending.length > 0, '變更還沒送出去');
+    assert.deepEqual(owners(), { tm_007: '光之戰士M4X 的圖', tm_010: '你的圖', tm_013: '你的圖' });
+    assert.equal(client.mapSync.getMaps().find((map) => map.id === 'tm_013').addedBy, 'me', '隊伍狀態算張數用的這份也是自己的');
+
+    // 取代（以前匯出的內容）：還在的 tm_007 照舊是隊友的，新的 tm_022 是自己的
+    const exported = JSON.stringify({ maps: [{ id: 'tm_007' }, { id: 'tm_022' }] });
+    assert.equal((await page.finder.importFromText(exported, { merge: false })).success, true);
+    assert.deepEqual(owners(), { tm_007: '光之戰士M4X 的圖', tm_022: '你的圖' });
+});
+
+test('名字是純文字：隊友名字裡的 < > 照字顯示，清單與路線都不會長出元素', async () => {
+    const page = await createPanelPage();
+    const name = '<b>x</b>&amp;';
+    page.team({ members: [{ id: 'me', nickname: '光之戰士K7Q' }, { id: 'm4x', nickname: name }] });
+    addOwned(page, [['tm_007', 'm4x']]);
+    assert.equal(ownerLine(page, 'tm_007').textContent, `${name} 的圖`);
+    assert.equal(ownerLine(page, 'tm_007').children.length, 0);
+    page.finder.openRoute();
+    assert.equal(stopOwnerLine(page, 'tm_007').textContent, `${name} 的圖`);
+    assert.equal(stopOwnerLine(page, 'tm_007').children.length, 0);
+});
+
+test('誰的圖的樣式：清單與路線同一份次要色小字，自己的圖用主要色與半粗；只用 token', () => {
+    for (const selector of ['.item-owner', '.tm-stop-owner']) {
+        const base = declarations(selector);
+        assert.match(base, /margin:\s*0\b/, selector);
+        assert.match(base, /font-size:\s*var\(--text-sm\)/, selector);
+        assert.match(base, /color:\s*var\(--color-muted\)/, selector);
+        const me = declarations(`${selector}.is-me`);
+        assert.match(me, /color:\s*var\(--color-primary\)/, `${selector}.is-me`);
+        assert.match(me, /font-weight:\s*var\(--weight-semibold\)/, `${selector}.is-me`);
+        assert.doesNotMatch(`${base};${me}`, /#[0-9a-f]{3,8}\b|rgb|!important/i, selector);
+    }
+});
+
 test('「‹ 清單」回到清單頁、焦點在「生成路線」；Escape 關掉整個面板，下次從清單入口打開是清單頁', async () => {
     const page = await createPanelPage();
     openRouteWith(page, EXAMPLE);
@@ -2309,6 +2609,31 @@ test('跟著介面語言的字：收起時的名稱、「也可以用」說明�
     for (const id of ['tm_007', 'tm_013', 'tm_017', 'tm_022', 'tm_033']) stopOf(page, id).querySelector('[data-action="done"]').click();
     assert.equal(page.$('formatPreviewLabel').textContent, '預覽（第 1 站）');
     assert.equal(page.$('formatPreview').textContent, '/p 1/6 G17 烏爾科帕恰 (21.6, 23.9) 最近：瓦群佩洛');
+});
+
+test('隊伍裡的預覽也帶名字：預設範本接上句尾，按語言範本跟著語言，寫了 <寶圖主人> 的自訂範本就是名字；複製用生效的範本，不看還沒存的預覽', async () => {
+    const page = await createPanelPage();
+    joinParty(page);
+    // 隊伍裡用 toggleMapInList() 加的寶圖，addedBy 都是自己
+    openFormat(page);
+    assert.equal(page.$('formatPreview').textContent, `${BASE_SENTENCES.zh[0]}（光之戰士K7Q 的圖）`);
+    presetChip(page, 'ja').click();
+    assert.equal(page.$('formatPreview').textContent, `${BASE_SENTENCES.ja[0]}（光之戰士K7Qの地図）`);
+    presetChip(page, 'en').click();
+    assert.equal(page.$('formatPreview').textContent, `${BASE_SENTENCES.en[0]} (光之戰士K7Q's map)`);
+    typeInto(page, '/p <序號> <寶圖主人>');
+    assert.equal(page.$('formatPreview').textContent, '/p 1 光之戰士K7Q');
+    typeInto(page, '/p <序號>');
+    assert.equal(page.$('formatPreview').textContent, '/p 1');
+    // 預覽只是預覽：還沒存，複製用的還是生效的（跟著介面語言的）預設範本
+    page.$('copyNextStopBtn').click();
+    await settle();
+    assert.equal(page.clipboardWrites.at(-1), `${BASE_SENTENCES.zh[0]}（光之戰士K7Q 的圖）`);
+    // 預覽跟著目前這一站：第 1 站完成後是第 2 站，一樣自己的圖
+    stopOf(page, 'tm_010').querySelector('[data-action="done"]').click();
+    presetChip(page, 'zh').click();
+    assert.equal(page.$('formatPreviewLabel').textContent, '預覽（第 2 站）');
+    assert.equal(page.$('formatPreview').textContent, `${BASE_SENTENCES.zh[1]}（光之戰士K7Q 的圖）`);
 });
 
 test('儲存格式：照原樣存（不整理空白與換行）；只有空白時按鈕停用，即使點擊進來也不存；打了字就能存', async () => {

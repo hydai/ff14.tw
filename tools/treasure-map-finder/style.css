@@ -596,6 +596,20 @@
     font-variant-numeric: tabular-nums;
 }
 
+/* 誰的圖：只在隊伍裡才有的一行（清單的每一列在座標下面，路線的每一站在名稱下面）；自己的圖用主要色 */
+.item-owner,
+.tm-stop-owner {
+    margin: 0;
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+}
+
+.item-owner.is-me,
+.tm-stop-owner.is-me {
+    color: var(--color-primary);
+    font-weight: var(--weight-semibold);
+}
+
 .list-item .btn-remove {
     flex: none;
 }

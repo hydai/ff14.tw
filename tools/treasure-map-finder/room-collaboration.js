@@ -308,8 +308,9 @@ class RoomCollaboration {
                 operations.push({ type: 'remove', id: map.id });
             }
         }
+        // 重試途中才加進清單的圖：記成自己的（同 toggleMapInList()，伺服器收到之後也會這樣記），還沒送出去時「誰的圖」就是對的
         for (const [id, map] of latest) {
-            if (!original.has(id) && !room.treasureMaps.some(item => item.id === id)) operations.push({ type: 'add', map });
+            if (!original.has(id) && !room.treasureMaps.some(item => item.id === id)) operations.push({ type: 'add', map: { ...map, addedBy: member.id } });
         }
         const projected = new Set(room.treasureMaps.map(map => map.id));
         for (const operation of operations) {
@@ -803,6 +804,9 @@ class RoomCollaboration {
         // 同 adoptSession()：不新增瀏覽紀錄，網址只拿掉 room
         window.history.replaceState(window.history.state, '', RoomCollaboration.withRoom(window.location.href, null));
         this.updateRoomUI();
+        // 隊伍沒了：清單的每一列與開著的路線頁重畫，ownerOf() 回 null，畫面上的「誰的圖」就一起消失（保留清單離開時清單本身沒變，
+        // 不重畫的話每一列會停在離開之前的樣子）。每一條離開隊伍的路都走到這裡。測試替身不一定有 renderMyList
+        this.finder?.renderMyList?.();
     }
 
     // 更新活動時間

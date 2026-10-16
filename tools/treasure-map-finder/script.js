@@ -617,6 +617,24 @@ class TreasureMapFinder {
         return zoneManager.getZoneById(byName) ? byName : null;
     }
 
+    // 這張清單項目是誰加的（RoomCollaboration#ownerOf，見 PartyNames.ownerOf）。只在隊伍裡才有：不在隊伍裡、addedBy 是空的都是 null。
+    // 清單的每一列、路線的每一站、複製的句子都問這裡，所以離開隊伍之後重畫，畫面上的「誰的圖」就一起消失。測試替身不一定有 ownerOf
+    ownerOf(item) {
+        return this.roomCollaboration?.currentRoom ? (this.roomCollaboration.ownerOf?.(item) ?? null) : null;
+    }
+
+    // 「誰的圖」那一行（清單的每一列與路線的每一站共用）：className 是這一行的 class（item-owner、tm-stop-owner），自己的圖多一個 is-me。
+    // 帶了動態文字（名字、語言），每次重畫時用當下語言組出來，不掛 data-i18n。沒有要顯示的（不在隊伍裡、沒有主人）回 null，由呼叫的人不加這一行
+    createOwnerLine(item, className) {
+        const owner = this.ownerOf(item);
+        const label = PartyNames.ownerLabel(owner, FF14Utils.getI18nText.bind(FF14Utils));
+        if (!label) return null;
+        const line = document.createElement('p');
+        line.className = owner.kind === 'me' ? `${className} is-me` : className;
+        line.textContent = label;
+        return line;
+    }
+
     // 清單頁的清單：一張寶圖一列（見 createListItem）。列裡的字跟著語言與清單變，由程式組出來、不掛 data-i18n：
     // 切換語言、清單變了（加入、移除、清空、匯入、隊伍同步）都整份重畫
     renderMyList() {
@@ -672,7 +690,8 @@ class TreasureMapFinder {
         (removeButtons[position] || removeButtons[position - 1] || this.elements.listTitle)?.focus();
     }
 
-    // 清單的一列：縮圖（裝飾，alt 空白）；第一行是等級、目前語言的地名與編號，第二行是座標與最近傳送點；右邊的 ✕
+    // 清單的一列：縮圖（裝飾，alt 空白）；第一行是等級、目前語言的地名與編號，第二行是座標與最近傳送點，
+    // 在隊伍裡再多一行是誰的圖（createOwnerLine）；右邊的 ✕
     createListItem(item) {
         const info = this.describeListItem(item);
         const listItem = document.createElement('li');
@@ -715,6 +734,10 @@ class TreasureMapFinder {
             sub.textContent += ` · ${FF14Utils.getI18nText('treasure_map_nearest', '最近：{name}', { name: nearestName })}`;
         }
         itemInfo.appendChild(sub);
+
+        // 第三行（只在隊伍裡）：這張圖是誰加的，在座標那一行下面
+        const ownerLine = this.createOwnerLine(item, 'item-owner');
+        if (ownerLine) itemInfo.appendChild(ownerLine);
         listItem.appendChild(itemInfo);
 
         // ✕：每一列都有一顆，名稱要帶上等級、地名與編號才分得出來；帶了動態文字，不能用 data-i18n，每次重畫時用當下語言組出來。
@@ -1020,6 +1043,8 @@ class TreasureMapFinder {
         const collaboration = this.roomCollaboration?.currentRoom ? this.roomCollaboration : null;
         const result = this.listManager.import({ maps }, merge, {
             maxItems: collaboration ? RoomCollaboration.CONSTANTS.MAX_MAPS : Infinity,
+            // 在隊伍裡：這次加進來的寶圖記成自己的（同 toggleMapInList()，伺服器收到之後也會這樣記），還沒同步回來時「誰的圖」就是對的
+            ...(collaboration ? { addedBy: collaboration.currentUser?.id ?? null } : {}),
             validate: list => {
                 if (!collaboration) return;
                 const operations = collaboration.mapSync.getOperations(list.map(map => this.toRoomMap(map)));
