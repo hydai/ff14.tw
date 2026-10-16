@@ -522,7 +522,7 @@
     font-variant-numeric: tabular-nums;
 }
 
-/* 面板中間：組隊、隊伍狀態、頁籤、清單與動作列一起捲動，標頭與底部的「生成路線」固定在面板上下緣
+/* 面板中間：組隊、隊伍狀態、清單與動作列一起捲動，標頭與底部的「生成路線」固定在面板上下緣
    （手機的面板沒有整個畫面高，隊伍狀態加上清單放不下，「生成路線」會被擠出畫面） */
 .panel-body {
     flex: 1;
@@ -530,8 +530,7 @@
     overflow-y: auto;
 }
 
-.list-content,
-.history-content {
+.list-content {
     padding: var(--space-4);
 }
 
@@ -615,35 +614,6 @@
 
 #clearAllBtn {
     margin-left: auto;
-}
-
-/* 清單／歷史頁籤：外觀由 .tabs / .tab 提供 */
-.panel-tabs {
-    background: var(--color-surface-2);
-}
-
-.panel-tabs .tab {
-    flex: 1;
-}
-
-.history-item {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    padding: var(--space-3);
-    margin-bottom: var(--space-2);
-    background: var(--color-surface-2);
-    border-radius: var(--radius-md);
-    font-size: var(--text-sm);
-}
-
-.history-time {
-    font-size: var(--text-xs);
-    color: var(--color-muted);
-}
-
-.history-message {
-    flex: 1;
 }
 
 /* 兩頁的底部：一列，右邊是那一頁唯一的主要按鈕（清單頁：左邊張數、右邊「生成路線」；路線頁：左邊「全部複製」、右邊「複製下一站」） */

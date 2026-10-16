@@ -71,8 +71,6 @@ const TreasureMapTranslations = {
         // 面板操作
         treasure_map_import: '匯入',
         treasure_map_clear_list: '清空清單',
-        treasure_map_list_tab: '清單',
-        treasure_map_history_tab: '歷史',
         treasure_map_generate_route: '生成路線',
 
         // 路線頁（清單面板的第二頁）
@@ -267,22 +265,11 @@ const TreasureMapTranslations = {
         treasure_map_member_count: '{count}/{max}人',
         treasure_map_room_leader: '隊長',
         treasure_map_remove_member_tooltip: '移除 {nickname}',
-        treasure_map_unknown_user: '未知使用者',
         treasure_map_owner_me: '你的圖',
         treasure_map_owner_member: '{name} 的圖',
         treasure_map_owner_left: '{name}（已離開）的圖',
         treasure_map_owner_left_unknown: '已離開隊員的圖',
-        treasure_map_owner_former: '已離開隊員',
-        treasure_map_history_room_created: '建立了隊伍 {code}',
-        treasure_map_history_member_joined: '{nickname} 加入了房間',
-        treasure_map_history_nickname_updated: '{nickname} 更新了暱稱',
-        treasure_map_history_member_left: '{nickname} 離開了隊伍',
-        treasure_map_history_synced: '同步房間寶圖清單',
-        treasure_map_history_map_added: '{nickname} 新增了 {level} - {zone} ({x}, {y})',
-        treasure_map_history_map_removed: '{nickname} 移除了 {level} - {zone} ({x}, {y})',
-        treasure_map_history_map_operated: '{nickname} 操作了寶圖',
-        treasure_map_history_member_kicked: '{actor} 將 {target} 移出隊伍',
-        treasure_map_history_empty: '尚無操作記錄'
+        treasure_map_owner_former: '已離開隊員'
     },
     en: {
         treasure_map_room_connecting: 'Connecting to the room. Please wait before editing the list.',
@@ -353,8 +340,6 @@ const TreasureMapTranslations = {
         // Panel actions
         treasure_map_import: 'Import',
         treasure_map_clear_list: 'Clear list',
-        treasure_map_list_tab: 'List',
-        treasure_map_history_tab: 'History',
         treasure_map_generate_route: 'Generate Route',
 
         // Route page (the second page of the list panel)
@@ -549,22 +534,11 @@ const TreasureMapTranslations = {
         treasure_map_member_count: '{count}/{max}',
         treasure_map_room_leader: 'Leader',
         treasure_map_remove_member_tooltip: 'Remove {nickname}',
-        treasure_map_unknown_user: 'Unknown user',
         treasure_map_owner_me: 'Your map',
         treasure_map_owner_member: '{name}\'s map',
         treasure_map_owner_left: '{name}\'s map (left)',
         treasure_map_owner_left_unknown: 'A former member\'s map',
-        treasure_map_owner_former: 'a former member',
-        treasure_map_history_room_created: 'Created room {code}',
-        treasure_map_history_member_joined: '{nickname} joined the room',
-        treasure_map_history_nickname_updated: '{nickname} updated their nickname',
-        treasure_map_history_member_left: '{nickname} left the room',
-        treasure_map_history_synced: 'Synced the room map list',
-        treasure_map_history_map_added: '{nickname} added {level} - {zone} ({x}, {y})',
-        treasure_map_history_map_removed: '{nickname} removed {level} - {zone} ({x}, {y})',
-        treasure_map_history_map_operated: '{nickname} updated a map',
-        treasure_map_history_member_kicked: '{actor} removed {target} from the room',
-        treasure_map_history_empty: 'No activity yet'
+        treasure_map_owner_former: 'a former member'
     },
     ja: {
         treasure_map_room_connecting: 'ルームに接続しています。リストの編集は接続完了までお待ちください。',
@@ -635,8 +609,6 @@ const TreasureMapTranslations = {
         // パネルアクション
         treasure_map_import: 'インポート',
         treasure_map_clear_list: 'リストを空にする',
-        treasure_map_list_tab: 'リスト',
-        treasure_map_history_tab: '履歴',
         treasure_map_generate_route: 'ルート生成',
 
         // ルートページ（リストパネルの 2 ページ目）
@@ -831,22 +803,11 @@ const TreasureMapTranslations = {
         treasure_map_member_count: '{count}/{max}人',
         treasure_map_room_leader: 'リーダー',
         treasure_map_remove_member_tooltip: '{nickname} を削除',
-        treasure_map_unknown_user: '不明なユーザー',
         treasure_map_owner_me: 'あなたの地図',
         treasure_map_owner_member: '{name}の地図',
         treasure_map_owner_left: '{name}（退出済み）の地図',
         treasure_map_owner_left_unknown: '退出したメンバーの地図',
-        treasure_map_owner_former: '退出したメンバー',
-        treasure_map_history_room_created: 'ルーム {code} を作成しました',
-        treasure_map_history_member_joined: '{nickname} がルームに参加しました',
-        treasure_map_history_nickname_updated: '{nickname} がニックネームを更新しました',
-        treasure_map_history_member_left: '{nickname} がルームを離れました',
-        treasure_map_history_synced: 'ルームの地図リストを同期しました',
-        treasure_map_history_map_added: '{nickname} が {level} - {zone} ({x}, {y}) を追加しました',
-        treasure_map_history_map_removed: '{nickname} が {level} - {zone} ({x}, {y}) を削除しました',
-        treasure_map_history_map_operated: '{nickname} が地図を操作しました',
-        treasure_map_history_member_kicked: '{actor} が {target} をルームから削除しました',
-        treasure_map_history_empty: 'まだ操作記録はありません'
+        treasure_map_owner_former: '退出したメンバー'
     }
 };
 

@@ -121,7 +121,7 @@
                 </div>
                 <button class="btn btn-close" id="closePanelBtn" aria-label="關閉" data-i18n="treasure_map_close" data-i18n-attr="aria-label">×</button>
             </div>
-            <!-- 標頭與底部（張數、生成路線）固定，中間的組隊、隊伍狀態、頁籤、清單與動作列一起捲動 -->
+            <!-- 標頭與底部（張數、生成路線）固定，中間的組隊、隊伍狀態、清單與動作列一起捲動 -->
             <div class="panel-body">
                 <!-- 組隊：不在隊伍裡時顯示（面板的主要按鈕留給下面的「生成路線」） -->
                 <div class="team-actions" id="teamActions">
@@ -174,14 +174,10 @@
                         </div>
                     </div>
                 </div>
-                <div class="panel-tabs tabs hidden" id="panelTabs" role="tablist">
-                    <button class="tab-btn tab active" data-tab="list" id="tab-panel-list" role="tab" aria-selected="true" aria-controls="listContent" tabindex="0" data-i18n="treasure_map_list_tab">清單</button>
-                    <button class="tab-btn tab" data-tab="history" id="tab-panel-history" role="tab" aria-selected="false" aria-controls="historyContent" tabindex="-1" data-i18n="treasure_map_history_tab">歷史</button>
-                </div>
-                <div class="list-content" id="listContent" role="tabpanel" aria-labelledby="tab-panel-list">
+                <div class="list-content" id="listContent">
                     <!-- 清單項目將由 JavaScript 動態生成 -->
                 </div>
-                <!-- 清單下面的動作列：清單是空的時只有「匯入」（「複製分享連結」與「清空清單」由 JavaScript 藏起來）；隊伍的「歷史」分頁時整列跟清單一起藏起來 -->
+                <!-- 清單下面的動作列：清單是空的時只有「匯入」（「複製分享連結」與「清空清單」由 JavaScript 藏起來） -->
                 <div class="tm-list-actions" id="listActions">
                     <button type="button" class="btn btn-sm" id="shareListBtn">
                         <span class="btn-icon">🔗</span> <span data-i18n="treasure_map_share_link">複製分享連結</span>
@@ -190,9 +186,6 @@
                         <span class="btn-icon">📥</span> <span data-i18n="treasure_map_import">匯入</span>
                     </button>
                     <button type="button" class="btn btn-ghost btn-sm" id="clearAllBtn" data-i18n="treasure_map_clear_list">清空清單</button>
-                </div>
-                <div class="history-content hidden" id="historyContent" role="tabpanel" aria-labelledby="tab-panel-history">
-                    <!-- 操作歷史將由 JavaScript 動態生成 -->
                 </div>
             </div>
             <!-- 左邊張數（由 JavaScript 填入），右邊唯一的主要按鈕 -->

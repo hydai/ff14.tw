@@ -45,7 +45,7 @@ function setup(respond) {
         finder.updateListCount = finder.updateCardButtons = finder.renderMyList = () => {};
         globalThis.client = new RoomCollaboration(finder);
         finder.setRoomCollaboration(client);
-        client.updateRoomUI = client.addOperationHistory = client.loadOperationHistory = () => {};
+        client.updateRoomUI = () => {};
         client.startPolling = () => {};
     `, context);
     context.finder.maps = [sample];
@@ -280,21 +280,6 @@ test('editing is blocked during connection so the initial room response cannot e
     resolve({ body: { ...room(), memberId: member.id, memberToken: TOKEN } });
     await connecting;
     assert.equal(state.client.isConnecting, false);
-});
-
-test('optional history quota errors do not prevent an edit from reaching the room', async () => {
-    const state = setup(request => ({ body: room([request.body.operations[0].map], [member], 1) }));
-    state.client.adoptSession(room(), member, TOKEN);
-    delete state.client.addOperationHistory;
-    const originalSet = state.localStorage.setItem;
-    state.localStorage.setItem = (key, value) => {
-        if (key.startsWith('ff14tw_room_history_')) throw new Error('QuotaExceededError');
-        originalSet(key, value);
-    };
-    state.finder.toggleMapInList(sample);
-    await state.client.mapSync.flush();
-    assert.equal(state.requests.length, 1);
-    assert.equal(state.client.currentRoom.treasureMaps[0].id, sample.id);
 });
 
 test('malformed pending session records are rejected without throwing or modifying local maps', () => {
@@ -546,61 +531,6 @@ test('a delayed poll 404 cannot cancel the successful leave-and-clear flow', asy
     assert.equal(state.client.currentRoom, null);
 });
 
-test('離開隊伍後清單面板回到清單分頁，歷史內容隱藏', () => {
-    const { context, client } = setup(async () => ({ body: {} }));
-    // classList.toggle 與瀏覽器一致：有 force 時依 force 加入或移除，沒有才反轉
-    const fakeElement = (...initialClasses) => {
-        const classes = new Set(initialClasses), attributes = new Map();
-        return {
-            dataset: {}, tabIndex: 0,
-            classList: {
-                add: name => classes.add(name),
-                remove: name => classes.delete(name),
-                contains: name => classes.has(name),
-                toggle(name, force = !classes.has(name)) {
-                    if (force) classes.add(name); else classes.delete(name);
-                    return force;
-                }
-            },
-            setAttribute: (name, value) => attributes.set(name, String(value)),
-            getAttribute: name => attributes.get(name) ?? null
-        };
-    };
-    const elements = new Map();
-    context.document.getElementById = id => {
-        if (!elements.has(id)) elements.set(id, fakeElement());
-        return elements.get(id);
-    };
-    const tabButton = (tab, active) => {
-        const button = fakeElement(...(active ? ['active'] : []));
-        button.dataset.tab = tab;
-        button.tabIndex = active ? 0 : -1;
-        button.setAttribute('aria-selected', active);
-        return button;
-    };
-    // 離開前停在「歷史」分頁：歷史鈕為作用中，清單內容與下面的動作列被隱藏、歷史內容顯示
-    const listButton = tabButton('list', false), historyButton = tabButton('history', true);
-    context.document.querySelectorAll = selector => selector === '.tab-btn' ? [listButton, historyButton] : [];
-    const listContent = context.document.getElementById('listContent');
-    const listActions = context.document.getElementById('listActions');
-    const historyContent = context.document.getElementById('historyContent');
-    listContent.classList.add('hidden');
-    listActions.classList.add('hidden');
-
-    client.currentRoom = null;
-    client.elements = { roomSection: fakeElement(), roomStatus: fakeElement() };
-    vm.runInContext('RoomCollaboration.prototype.updateRoomUI.call(client)', context);
-
-    assert.equal(listContent.classList.contains('hidden'), false);
-    assert.equal(listActions.classList.contains('hidden'), false, '動作列跟著清單顯示');
-    assert.equal(historyContent.classList.contains('hidden'), true);
-    assert.equal(listButton.getAttribute('aria-selected'), 'true');
-    assert.equal(historyButton.getAttribute('aria-selected'), 'false');
-    assert.equal(listButton.classList.contains('active'), true);
-    assert.equal(historyButton.classList.contains('active'), false);
-    assert.deepEqual([listButton.tabIndex, historyButton.tabIndex], [0, -1]);
-});
-
 test('進出隊伍時清單入口跟著換：updateRoomUI() 最後更新清單張數與入口', () => {
     const { context, client, finder } = setup(async () => ({ body: {} }));
     let calls = 0;
@@ -610,8 +540,84 @@ test('進出隊伍時清單入口跟著換：updateRoomUI() 最後更新清單�
     assert.equal(calls, 1);
 });
 
+// ---------- 舊的隊伍歷史：整套拿掉，載入時清掉瀏覽器裡留下的 key ----------
+// storage 替身是一般物件：key 是自己的屬性；removeItem 同真的 Storage 的方法，不可列舉，預設刪屬性
+const storageOf = (items, removeItem = function (key) { delete this[key]; }) => {
+    const storage = { ...items };
+    Object.defineProperty(storage, 'removeItem', { value: removeItem });
+    return storage;
+};
+
+test('clearOldHistory：只刪 ff14tw_room_history_ 開頭的 key，其他留著；Object.keys 丟例外、removeItem 丟例外都不丟出', () => {
+    const { context } = setup(() => ({ body: room() }));
+    const RoomCollaboration = vm.runInContext('RoomCollaboration', context);
+
+    const storage = storageOf({
+        ff14tw_room_history_ABC123: '[]', ff14tw_room_history_XYZ789: '[]',
+        ff14tw_current_room: '{}', ff14tw_user_nickname: '光之戰士', ff14tw_nickname_tag: 'abc',
+        ff14tw_room_history: '少了最後的底線，不是這個前綴', old_ff14tw_room_history_ABC123: '前綴不在開頭'
+    });
+    RoomCollaboration.clearOldHistory(storage);
+    assert.deepEqual(Object.keys(storage), ['ff14tw_current_room', 'ff14tw_user_nickname', 'ff14tw_nickname_tag', 'ff14tw_room_history', 'old_ff14tw_room_history_ABC123']);
+
+    // 列不出 key（封鎖網站資料時 safeStorage() 回傳 null；列舉本身也可能丟例外）：安靜結束
+    const blocked = new Proxy({}, { ownKeys() { throw new Error('SecurityError'); } });
+    for (const unavailable of [blocked, null, undefined]) assert.doesNotThrow(() => RoomCollaboration.clearOldHistory(unavailable));
+
+    // 刪不掉：不丟出，而且一個刪不掉，其他的照樣試
+    const attempted = [];
+    const stubborn = storageOf({ ff14tw_room_history_A: '1', ff14tw_room_history_B: '2', ff14tw_current_room: '{}' }, (key) => {
+        attempted.push(key);
+        throw new Error('SecurityError');
+    });
+    assert.doesNotThrow(() => RoomCollaboration.clearOldHistory(stubborn));
+    assert.deepEqual(attempted, ['ff14tw_room_history_A', 'ff14tw_room_history_B']);
+});
+
+test('init()：還原隊伍之前先清掉舊歷史；瀏覽器封鎖網站資料（讀 localStorage 就丟例外）時安靜跳過，照常還原', async () => {
+    const state = setup(() => ({ body: room() }));
+    const RoomCollaboration = vm.runInContext('RoomCollaboration', state.context);
+    state.client.setupEventListeners = () => {};
+
+    // safeStorage()：讀得到就是 localStorage
+    assert.equal(RoomCollaboration.safeStorage(), state.context.localStorage);
+    const items = { ff14tw_room_history_ABC123: '[]', ff14tw_current_room: '{}' };
+    state.context.localStorage = storageOf(items);
+    const keysWhenRestoring = [];
+    state.client.checkExistingRoom = () => { keysWhenRestoring.push(Object.keys(state.context.localStorage)); };
+    await state.originalInit.call(state.client);
+    assert.deepEqual(keysWhenRestoring, [['ff14tw_current_room']], '還原隊伍時舊歷史已經清掉，隊伍的存檔還在');
+
+    // 讀的時候丟例外（Chrome 封鎖網站資料時，光是讀 localStorage 就是 SecurityError）：safeStorage() 回傳 null，要走到它的 catch。
+    // 存取器要在 context 裡面定義：主機端對 sandbox 物件定義的存取器，丟出的例外會被 vm 吞掉
+    // （typeof 變成 'undefined'、直接讀變成 ReferenceError），safeStorage() 走的是「沒有 localStorage」那一支，走不到 catch。
+    // 所以先確認這個 context 裡讀 localStorage 真的會丟例外，測試的前提才成立
+    vm.runInContext("Object.defineProperty(globalThis, 'localStorage', { get() { throw new Error('SecurityError'); }, configurable: true })", state.context);
+    assert.throws(() => vm.runInContext('typeof localStorage', state.context), /SecurityError/);
+    assert.equal(RoomCollaboration.safeStorage(), null);
+    let restored = 0;
+    state.client.checkExistingRoom = () => { restored++; };
+    await state.originalInit.call(state.client);
+    assert.equal(restored, 1, '清不了舊歷史也不影響還原');
+
+    // 根本沒有 localStorage：也是 null（走 typeof 那一支）
+    vm.runInContext('delete globalThis.localStorage', state.context);
+    assert.equal(vm.runInContext('typeof localStorage', state.context), 'undefined');
+    assert.equal(RoomCollaboration.safeStorage(), null);
+});
+
+test('歷史整套拿掉：room-collaboration.js 與 script.js 沒有 operationHistory、addOperationHistory、recordMapOperation、renderHistory、showPanelTab、setupTabSwitching', () => {
+    // 前六個是標題列的名字；後三個是同一套歷史裡的其他方法
+    const names = ['operationHistory', 'addOperationHistory', 'recordMapOperation', 'renderHistory', 'showPanelTab', 'setupTabSwitching',
+        'saveOperationHistory', 'loadOperationHistory', 'cleanupExpiredHistory'];
+    for (const file of ['room-collaboration.js', 'script.js']) {
+        const source = fs.readFileSync(path.join(__dirname, '..', 'tools/treasure-map-finder', file), 'utf8');
+        for (const name of names) assert.ok(!source.includes(name), `${file} 還有 ${name}`);
+    }
+});
+
 // ---------- 清單面板裡的組隊：焦點（fake-dom） ----------
-// 照 index.html 做出清單面板（標頭的關閉、組隊按鈕、隊伍狀態、頁籤、清單與它下面的動作列）、三個隊伍對話框與面板外的一顆按鈕，
+// 照 index.html 做出清單面板（標頭的關閉、組隊按鈕、隊伍狀態、清單與它下面的動作列）、三個隊伍對話框與面板外的一顆按鈕，
 // fake-dom 裡載入真正的 list-manager.js、room-map-sync.js、room-collaboration.js 與 script.js（清單面板的開關、隊伍同步）。
 // finder 不跑建構函式，清單張數、卡片按鈕、清單內容換成空函式（同上面的 setup()）；client.init() 由測試自己呼叫（掛事件、處理網址的 ?room=）。
 // request() 換成 respond(path, options)：回傳值就是伺服器的回應，丟出的錯誤就是失敗。
@@ -632,12 +638,8 @@ function createTeamPanel({ url = 'https://ff14.tw/tools/treasure-map-finder/', r
                     el('span', { id: 'roomMembers' }), el('span', { id: 'lastActivity' }), el('span', { id: 'roomTTL' }),
                     el('span', { id: 'userNickname' }), button('editNicknameBtn', '✏️'), button('leaveRoomBtn', '離開隊伍'),
                     el('div', { id: 'membersList' }))),
-            el('div', { id: 'panelTabs', class: 'panel-tabs hidden' },
-                el('button', { type: 'button', class: 'tab-btn active', 'data-tab': 'list' }, '清單'),
-                el('button', { type: 'button', class: 'tab-btn', 'data-tab': 'history' }, '歷史')),
             el('div', { id: 'listContent' }),
-            el('div', { id: 'listActions', class: 'tm-list-actions' }, button('importListBtn', '匯入'), button('clearAllBtn', '清空清單')),
-            el('div', { id: 'historyContent', class: 'hidden' })),
+            el('div', { id: 'listActions', class: 'tm-list-actions' }, button('importListBtn', '匯入'), button('clearAllBtn', '清空清單'))),
         el('div', { class: 'panel-footer' }, button('generateRouteBtn', '生成路線')));
     const dialog = (id, ...children) => el('div', { id, class: 'modal dialog-overlay hidden', role: 'dialog' }, ...children);
     for (const element of [

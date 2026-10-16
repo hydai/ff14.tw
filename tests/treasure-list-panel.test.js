@@ -250,9 +250,7 @@ async function createPanelPage({ url = 'https://ff14.tw/tools/treasure-map-finde
             mapSync: {
                 getOperations: (maps) => maps.map((map) => ({ type: 'add', map })),
                 replaceLocal: async (maps) => { sent.push(maps); return true; }
-            },
-            recordMapOperation() {},
-            addOperationHistory() {}
+            }
         };
         finder.updateListCount();
         return sent;
@@ -270,8 +268,8 @@ test('清單頁的結構：看得到的標題與張數、動作列在清單下�
     assert.deepEqual(classesOf(tagAttrs(html, 'listView')), ['tm-panel-view']);
     const title = tagAttrs(html, 'myListPanel-title');
     assert.deepEqual([classesOf(title), title.tabindex, title['data-i18n']], [[], '-1', undefined]);
-    const order = ['id="myListPanel-title"', 'id="listHeaderCount"', 'id="closePanelBtn"', 'id="teamActions"', 'id="roomSection"', 'id="panelTabs"',
-        'id="listContent"', 'id="listActions"', 'id="historyContent"', 'id="totalCount"', 'id="generateRouteBtn"'].map((s) => view.indexOf(s));
+    const order = ['id="myListPanel-title"', 'id="listHeaderCount"', 'id="closePanelBtn"', 'id="teamActions"', 'id="roomSection"',
+        'id="listContent"', 'id="listActions"', 'id="totalCount"', 'id="generateRouteBtn"'].map((s) => view.indexOf(s));
     assert.ok(!order.includes(-1), `清單頁缺東西：${order}`);
     assert.deepEqual([...order].sort((a, b) => a - b), order, `清單頁的順序：${order}`);
     assert.deepEqual(classesOf(tagAttrs(html, 'importListBtn')), ['btn', 'btn-sm']);
@@ -279,6 +277,18 @@ test('清單頁的結構：看得到的標題與張數、動作列在清單下�
     assert.equal((view.match(/class="[^"]*\bbtn-primary\b/g) || []).length, 1);
     for (const gone of ['exportListBtn', 'importFileInput', 'panel-header-actions']) assert.ok(!html.includes(gone), gone);
     assert.match(declarations('.my-list-panel', MOBILE), /height:\s*85vh;\s*height:\s*85dvh/);
+});
+
+test('沒有歷史頁籤：index.html 沒有 #panelTabs、#historyContent、class="tab-btn"；三語沒有 treasure_map_history_ 開頭的鍵值與 treasure_map_list_tab、treasure_map_history_tab', () => {
+    const html = read(`${TOOL_DIR}/index.html`);
+    for (const gone of ['id="panelTabs"', 'id="historyContent"']) assert.ok(!html.includes(gone), gone);
+    // 原本寫成 class="tab-btn tab active"，所以比的是 class 裡有沒有 tab-btn 這個詞，不是整段 class
+    assert.doesNotMatch(html, /class="[^"]*\btab-btn\b/);
+    for (const lang of ['zh', 'en', 'ja']) {
+        const keys = [...translationKeySet(TRANSLATIONS, lang)];
+        assert.deepEqual(keys.filter((key) => key.startsWith('treasure_map_history_')), [], `${lang} 還有歷史的鍵值`);
+        for (const gone of ['treasure_map_list_tab', 'treasure_map_history_tab']) assert.ok(!keys.includes(gone), `${lang} 還有 ${gone}`);
+    }
 });
 
 test('每一列：等級、目前語言的地名與編號、座標與最近傳送點；✕ 的名稱帶等級、地名與編號（zh／en）', async () => {

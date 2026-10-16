@@ -658,7 +658,7 @@ test('手機版把回到頂端按鈕移到底部列上方', () => {
     assert.match(declarations('.back-to-top', '(max-width: 768px)'), /bottom:/);
 });
 
-test('頁面結構：步驟列與桌機入口在 main 最上面、手機底部列在 main 之後；組隊在面板標頭之後、頁籤之前', () => {
+test('頁面結構：步驟列與桌機入口在 main 最上面、手機底部列在 main 之後；組隊在面板標頭之後、清單之前', () => {
     const html = read('tools/treasure-map-finder/index.html');
     const main = html.slice(html.indexOf('<main'), html.indexOf('</main>'));
     // main 裡第一個看得到的東西就是最上面那一列（前面只有視覺隱藏的 h1），裡面左邊步驟列、右邊桌機入口
@@ -697,14 +697,14 @@ test('頁面結構：步驟列與桌機入口在 main 最上面、手機底部�
         assert.match(entry, /data-entry="route"[\s\S]*data-i18n="treasure_map_generate_route"/, `${id} 的生成路線沿用原本的鍵值`);
     }
 
-    // 清單面板：組隊與隊伍狀態在標頭之後、頁籤之前，動作列在清單下面；建立組隊改成次要按鈕（面板的主要按鈕留給生成路線）
+    // 清單面板：組隊與隊伍狀態在標頭之後、清單之前，動作列在清單下面；建立組隊改成次要按鈕（面板的主要按鈕留給生成路線）
     const panel = sliceElementById(html, 'myListPanel');
-    const order = ['class="panel-header"', 'id="teamActions"', 'id="roomSection"', 'id="panelTabs"', 'id="listActions"', 'id="generateRouteBtn"'].map((s) => panel.indexOf(s));
+    const order = ['class="panel-header"', 'id="teamActions"', 'id="roomSection"', 'id="listActions"', 'id="generateRouteBtn"'].map((s) => panel.indexOf(s));
     assert.ok(!order.includes(-1), `面板裡缺東西：${order}`);
     assert.deepEqual([...order].sort((a, b) => a - b), order, `面板裡的順序：${order}`);
     assert.deepEqual(classesOf(tagAttrs(html, 'createRoomBtn')), ['btn', 'btn-secondary']);
     assert.deepEqual(classesOf(tagAttrs(html, 'joinRoomBtn')), ['btn', 'btn-secondary']);
-    // 中間（組隊、隊伍狀態、頁籤、清單、動作列、歷史）包在一起捲動，標頭與底部的「生成路線」留在外面固定
+    // 中間（組隊、隊伍狀態、清單、動作列）包在一起捲動，標頭與底部的「生成路線」留在外面固定
     const bodyStart = panel.indexOf('<div class="panel-body">');
     assert.notEqual(bodyStart, -1);
     const body = (() => {
@@ -717,7 +717,7 @@ test('頁面結構：步驟列與桌機入口在 main 最上面、手機底部�
         }
         return assert.fail('.panel-body 沒有結束標籤');
     })();
-    for (const id of ['teamActions', 'roomSection', 'panelTabs', 'listContent', 'listActions', 'historyContent']) assert.ok(body.includes(`id="${id}"`), `${id} 在 .panel-body 裡`);
+    for (const id of ['teamActions', 'roomSection', 'listContent', 'listActions']) assert.ok(body.includes(`id="${id}"`), `${id} 在 .panel-body 裡`);
     for (const outside of ['class="panel-header"', 'class="panel-footer"', 'id="generateRouteBtn"']) assert.ok(!body.includes(outside), `${outside} 不在 .panel-body 裡`);
     const panelBody = declarations('.panel-body');
     for (const re of [/flex:\s*1/, /min-height:\s*0/, /overflow-y:\s*auto/]) assert.match(panelBody, re);

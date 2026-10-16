@@ -458,18 +458,12 @@ class TreasureMapFinder {
         
         const result = this.listManager.toggle(map, options);
 
-        if (result.success) {
-            // 加入、移除成功不跳 toast：清單入口的張數會更新，#listAnnouncer 也會唸出來（見 updateListCount）
-
-            // 記錄操作歷史
-            if (this.roomCollaboration?.currentRoom && result.action === 'add') {
-                this.roomCollaboration.recordMapOperation('add', map, this.roomCollaboration.currentUser);
-            }
-        } else {
+        // 加入、移除成功不跳 toast：清單入口的張數會更新，#listAnnouncer 也會唸出來（見 updateListCount）
+        if (!result.success) {
             FF14Utils.showToast(result.message, 'error');
             return;
         }
-        
+
         this.updateListCount();
         this.updateCardButtons();
         this.renderMyList();
@@ -752,11 +746,6 @@ class TreasureMapFinder {
         this.renderMyList();
         this.focusListRow(position);
 
-        // 記錄操作歷史
-        if (this.roomCollaboration?.currentRoom && result.removedItem) {
-            this.roomCollaboration.recordMapOperation('remove', result.removedItem, this.roomCollaboration.currentUser);
-        }
-
         // 同步到房間
         if (this.roomCollaboration?.currentRoom) {
             this.syncToRoom();
@@ -764,7 +753,7 @@ class TreasureMapFinder {
     }
     
     // 清空整份清單。要不要清已經由 ListDialogs 的清空對話框問過了，這裡不再確認。
-    // 成功有 toast（路線進度由 updateListCount() 在清單變成 0 張時整份清掉）；隊伍裡記進操作歷史、同步給隊友。
+    // 成功有 toast（路線進度由 updateListCount() 在清單變成 0 張時整份清掉）；隊伍裡同步給隊友。
     // 回傳 ListManager 的結果 { success, message, count }
     clearList() {
         if (!this.canEditList()) return { success: false, message: this.getConnectingMessage(), count: 0 };
@@ -776,15 +765,6 @@ class TreasureMapFinder {
         this.updateListCount();
         this.updateCardButtons();
         this.renderMyList();
-
-        // 記錄操作歷史
-        if (this.roomCollaboration?.currentRoom) {
-            this.roomCollaboration.addOperationHistory({
-                type: 'clear_all',
-                message: `${this.roomCollaboration.currentUser.nickname} 清空了所有寶圖`,
-                timestamp: new Date().toISOString()
-            });
-        }
 
         // 同步到房間
         if (this.roomCollaboration?.currentRoom) {

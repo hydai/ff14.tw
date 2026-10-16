@@ -41,6 +41,23 @@ class RoomCollaboration {
         }
     }
 
+    // 瀏覽器封鎖網站資料時，光是讀 localStorage 就會丟例外（Chrome 是 SecurityError）：讀不到就回傳 null，由呼叫的人略過
+    static safeStorage() {
+        try { return typeof localStorage === 'undefined' ? null : localStorage; } catch { return null; }
+    }
+
+    // 舊版每加入過一個隊伍，就在 ff14tw_room_history_<隊伍代號> 留下一份歷史，從來沒清過；
+    // 歷史拿掉後這些 key 沒有用了，載入時全部刪掉。storage 是 safeStorage() 的回傳值，可以是 null：
+    // 列不出 key 就什麼都不做；每個 key 各刪各的，刪不掉的略過，不影響使用
+    static clearOldHistory(storage) {
+        let keys;
+        try { keys = Object.keys(storage); } catch { return; }
+        for (const key of keys) {
+            if (!key.startsWith('ff14tw_room_history_')) continue;
+            try { storage.removeItem(key); } catch { /* 刪不掉就留著 */ }
+        }
+    }
+
     constructor(treasureMapFinder) {
         this.finder = treasureMapFinder;
         this.currentRoom = null;
@@ -54,7 +71,6 @@ class RoomCollaboration {
         this.lastActivity = Date.now();
         this.isPolling = false;
         this.retryCount = 0;
-        this.operationHistory = [];
         this.modalManager = new ModalManager();
         this.mapSync = new RoomMapSync({
             send: (roomCode, batch) => this.request(`/rooms/${roomCode}`, {
@@ -111,13 +127,9 @@ class RoomCollaboration {
             leaveRoom: document.getElementById('leaveRoomModal')
         };
 
-        // 語言切換時重繪隊伍區塊（成員數、隊長／移除成員 tooltip）與操作歷史的空狀態；
-        // 歷史紀錄本身在記錄當下就已組好字串，不回溯翻譯（既有設計）
+        // 語言切換時重繪隊伍區塊（成員數、隊長／移除成員 tooltip）
         window.i18n.onLanguageChange(() => {
-            if (this.currentRoom) {
-                this.updateRoomUI();
-            }
-            this.renderHistory();
+            if (this.currentRoom) this.updateRoomUI();
         });
 
         this.ready = this.init();
@@ -127,6 +139,7 @@ class RoomCollaboration {
         // Room restoration must wait until map IDs can be resolved against the catalogue.
         await this.finder.ready;
         this.setupEventListeners();
+        RoomCollaboration.clearOldHistory(RoomCollaboration.safeStorage());
         await this.checkExistingRoom();
     }
 
@@ -248,9 +261,6 @@ class RoomCollaboration {
         this.elements.copyRoomCodeBtn.addEventListener('click', () => this.copyRoomCode());
         this.elements.editNicknameBtn.addEventListener('click', () => this.showEditNicknameDialog());
 
-        // 標籤頁切換
-        this.setupTabSwitching();
-
         // 加入隊伍對話框
         document.getElementById('closeJoinModalBtn').addEventListener('click', () => this.hideModal('joinRoom'));
         document.getElementById('cancelJoinBtn').addEventListener('click', () => this.hideModal('joinRoom'));
@@ -343,9 +353,6 @@ class RoomCollaboration {
             const data = await this.request('/rooms', { method: 'POST', body });
             const { memberId, memberToken, ...room } = data;
             if (!this.completeConnection(room, room.members.find(member => member.id === memberId), memberToken, retained)) return;
-            this.addOperationHistory({ type: 'room_create',
-                message: FF14Utils.getI18nText('treasure_map_history_room_created', '建立了隊伍 {code}', { code: room.roomCode }),
-                timestamp: new Date().toISOString() });
             this.showToast(FF14Utils.getI18nText('treasure_map_create_room_success', '隊伍 {code} 建立成功！', { code: room.roomCode }));
             await this.mapSync.flush();
         } catch (error) {
@@ -415,10 +422,6 @@ class RoomCollaboration {
                     retained.map(map => this.finder.toRoomMap(map)))
             });
             if (!this.completeConnection(room, newMember, memberToken, retained)) return;
-            this.loadOperationHistory();
-            this.addOperationHistory({ type: 'room_join',
-                message: FF14Utils.getI18nText('treasure_map_history_member_joined', '{nickname} 加入了房間', { nickname: newMember.nickname }),
-                timestamp: new Date().toISOString() });
             this.showToast(FF14Utils.getI18nText('treasure_map_join_room_success', '成功加入隊伍 {code}', { code: roomCode }));
             await this.mapSync.flush();
         } catch (error) {
@@ -456,9 +459,6 @@ class RoomCollaboration {
             try { localStorage.setItem('ff14tw_user_nickname', newNickname); } catch { /* optional preference */ }
             this.hideModal('editNickname');
             this.showToast(FF14Utils.getI18nText('treasure_map_nickname_updated', '暱稱已更新'));
-            this.addOperationHistory({ type: 'nickname_update',
-                message: FF14Utils.getI18nText('treasure_map_history_nickname_updated', '{nickname} 更新了暱稱', { nickname: newNickname }),
-                timestamp: new Date().toISOString() });
         } catch (error) {
             if (generation === this.sessionGeneration) this.showToast(FF14Utils.getI18nText('treasure_map_update_nickname_failed_retry', '更新暱稱失敗，請稍後再試'), 'error');
         }
@@ -699,184 +699,8 @@ class RoomCollaboration {
         FF14Utils.showToast(message, type);
     }
 
-    // 添加操作歷史
-    addOperationHistory(operation) {
-        const historyItem = {
-            ...operation,
-            id: Date.now(),
-            roomCode: this.currentRoom?.roomCode
-        };
-
-        this.operationHistory.unshift(historyItem);
-
-        // 限制歷史記錄數量（最多 50 筆）
-        if (this.operationHistory.length > 50) {
-            this.operationHistory = this.operationHistory.slice(0, 50);
-        }
-
-        // 儲存到 localStorage
-        this.saveOperationHistory();
-    }
-
-    // 儲存操作歷史
-    saveOperationHistory() {
-        const historyKey = `ff14tw_room_history_${this.currentRoom?.roomCode}`;
-        SecurityUtils.setStorageData(historyKey, this.operationHistory);
-    }
-
-    // 載入操作歷史
-    loadOperationHistory() {
-        if (!this.currentRoom) return;
-
-        const historyKey = `ff14tw_room_history_${this.currentRoom.roomCode}`;
-        const savedHistory = SecurityUtils.getValidatedStorageData(historyKey);
-        this.operationHistory = Array.isArray(savedHistory)
-            ? savedHistory.filter(item => item && typeof item.message === 'string').slice(0, 50) : [];
-    }
-
-    // 清理過期的操作歷史
-    cleanupExpiredHistory() {
-        let keys;
-        try { keys = Object.keys(localStorage); } catch { return; }
-        const now = Date.now();
-        const ttl = RoomCollaboration.CONSTANTS.ROOM_TTL;
-
-        keys.forEach(key => {
-            if (key.startsWith('ff14tw_room_history_')) {
-                try {
-                    const historyStr = localStorage.getItem(key);
-                    const parseResult = SecurityUtils.safeJSONParse(historyStr || '[]');
-                    const history = parseResult.success ? parseResult.data : [];
-                    if (Array.isArray(history) && history.length > 0) {
-                        const lastOperation = history[0];
-                        const lastTime = new Date(lastOperation.timestamp).getTime();
-
-                        if (now - lastTime > ttl) {
-                            localStorage.removeItem(key);
-                        }
-                    }
-                } catch (error) {
-                    // 無效的資料，直接刪除
-                    try { localStorage.removeItem(key); } catch { /* optional history */ }
-                }
-            }
-        });
-    }
-
-    // 記錄寶圖操作
-    recordMapOperation(type, map, user) {
-        const member = this.currentRoom?.members.find(m => m.id === (user?.id || this.currentUser?.id));
-        const nickname = member?.nickname || FF14Utils.getI18nText('treasure_map_unknown_user', '未知使用者');
-
-        let message;
-        switch (type) {
-            case 'add':
-                message = FF14Utils.getI18nText('treasure_map_history_map_added', '{nickname} 新增了 {level} - {zone} ({x}, {y})', { nickname, level: map.level.toUpperCase(), zone: map.zone, x: map.coords.x, y: map.coords.y });
-                break;
-            case 'remove':
-                message = FF14Utils.getI18nText('treasure_map_history_map_removed', '{nickname} 移除了 {level} - {zone} ({x}, {y})', { nickname, level: map.level.toUpperCase(), zone: map.zone, x: map.coords.x, y: map.coords.y });
-                break;
-            default:
-                message = FF14Utils.getI18nText('treasure_map_history_map_operated', '{nickname} 操作了寶圖', { nickname });
-        }
-
-        this.addOperationHistory({
-            type: 'map_' + type,
-            message,
-            mapId: map.id,
-            userId: user?.id || this.currentUser?.id,
-            timestamp: new Date().toISOString()
-        });
-    }
-
-    // 設定標籤頁切換
-    setupTabSwitching() {
-        const panelTabs = document.getElementById('panelTabs');
-
-        if (!panelTabs) return;
-
-        panelTabs.addEventListener('click', (e) => {
-            const tabBtn = e.target.closest('.tab-btn');
-            if (!tabBtn) return;
-
-            this.showPanelTab(tabBtn.dataset.tab);
-        });
-
-        // 方向鍵在分頁間移動並直接切換
-        panelTabs.addEventListener('keydown', (e) => {
-            if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
-            const tabs = Array.from(panelTabs.querySelectorAll('.tab-btn'));
-            const currentIndex = tabs.indexOf(document.activeElement);
-            if (currentIndex === -1) return;
-            e.preventDefault();
-            const nextIndex = e.key === 'ArrowRight'
-                ? (currentIndex + 1) % tabs.length
-                : (currentIndex - 1 + tabs.length) % tabs.length;
-            tabs[nextIndex].focus();
-            tabs[nextIndex].click();
-        });
-    }
-
-    // 切換清單面板的標籤頁：同步所有標籤按鈕的狀態與對應內容的顯示
-    showPanelTab(tab) {
-        const showHistory = tab === 'history';
-
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            const isActive = btn.dataset.tab === tab;
-            btn.classList.toggle('active', isActive);
-            btn.setAttribute('aria-selected', String(isActive));
-            btn.tabIndex = isActive ? 0 : -1;
-        });
-
-        document.getElementById('listContent')?.classList.toggle('hidden', showHistory);
-        document.getElementById('listActions')?.classList.toggle('hidden', showHistory);
-        document.getElementById('historyContent')?.classList.toggle('hidden', !showHistory);
-
-        if (showHistory) this.renderHistory();
-    }
-
-    // 渲染操作歷史
-    renderHistory() {
-        const historyContent = document.getElementById('historyContent');
-        if (!historyContent) return;
-
-        SecurityUtils.clearElement(historyContent);
-
-        if (this.operationHistory.length === 0) {
-            const emptyDiv = document.createElement('div');
-            emptyDiv.className = 'empty-state';
-            const p = document.createElement('p');
-            p.textContent = FF14Utils.getI18nText('treasure_map_history_empty', '尚無操作記錄');
-            emptyDiv.appendChild(p);
-            historyContent.appendChild(emptyDiv);
-            return;
-        }
-
-        this.operationHistory.forEach(item => {
-            const historyItem = document.createElement('div');
-            historyItem.className = 'history-item';
-
-            const time = new Date(item.timestamp);
-            const timeStr = `${time.getHours().toString().padStart(2, '0')}:${time.getMinutes().toString().padStart(2, '0')}`;
-
-            const timeSpan = document.createElement('span');
-            timeSpan.className = 'history-time';
-            timeSpan.textContent = timeStr;
-            
-            const messageSpan = document.createElement('span');
-            messageSpan.className = 'history-message';
-            messageSpan.textContent = item.message;
-            
-            historyItem.appendChild(timeSpan);
-            historyItem.appendChild(messageSpan);
-
-            historyContent.appendChild(historyItem);
-        });
-    }
-
     // 更新隊伍 UI
     updateRoomUI() {
-        const panelTabs = document.getElementById('panelTabs');
         const teamActions = document.getElementById('teamActions');
 
         if (this.currentRoom) {
@@ -889,11 +713,6 @@ class RoomCollaboration {
             // 隱藏清單面板裡的組隊按鈕
             if (teamActions) {
                 teamActions.classList.add('hidden');
-            }
-
-            // 顯示標籤頁
-            if (panelTabs) {
-                panelTabs.classList.remove('hidden');
             }
 
             // 更新隊伍資訊
@@ -917,14 +736,6 @@ class RoomCollaboration {
             if (teamActions) {
                 teamActions.classList.remove('hidden');
             }
-
-            // 隱藏標籤頁
-            if (panelTabs) {
-                panelTabs.classList.add('hidden');
-            }
-
-            // 標籤頁隱藏後無法再切換，離開隊伍時要讓面板回到「清單」，否則會卡在歷史內容
-            this.showPanelTab('list');
         }
 
         // 進出隊伍時清單入口跟著換（「隊伍清單 N/8」或「清單 N 張」）
