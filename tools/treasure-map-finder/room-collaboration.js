@@ -192,18 +192,9 @@ class RoomCollaboration {
         });
 
         this.elements = {
-            roomSection: document.getElementById('roomSection'),
-            roomStatus: document.getElementById('roomStatus'),
             createRoomBtn: document.getElementById('createRoomBtn'),
             joinRoomBtn: document.getElementById('joinRoomBtn'),
-            leaveRoomBtn: document.getElementById('leaveRoomBtn'),
-            roomCode: document.getElementById('roomCode'),
-            roomMembers: document.getElementById('roomMembers'),
-            lastActivity: document.getElementById('lastActivity'),
-            roomTTL: document.getElementById('roomTTL'),
-            userNickname: document.getElementById('userNickname'),
-            editNicknameBtn: document.getElementById('editNicknameBtn'),
-            copyRoomCodeBtn: document.getElementById('copyRoomCodeBtn')
+            copyInviteBtn: document.getElementById('copyInviteBtn')
         };
 
         this.modals = {
@@ -212,7 +203,10 @@ class RoomCollaboration {
             leaveRoom: document.getElementById('leaveRoomModal')
         };
 
-        // 語言切換時重繪隊伍區塊（成員數、隊長／移除成員 tooltip）
+        // 隊伍狀態（代號、同步狀態、成員一行與成員列表）由 PartyStatus 畫，建構時只抓元素，事件在 setupEventListeners() 才掛
+        this.status = new PartyStatus(this);
+
+        // 語言切換時重畫隊伍狀態（成員一行的字、每一列的標籤與按鈕都帶語言）
         window.i18n.onLanguageChange(() => {
             if (this.currentRoom) this.updateRoomUI();
         });
@@ -338,10 +332,10 @@ class RoomCollaboration {
 
     // 建立或加入隊伍結束後、清單面板開著時的焦點，由呼叫 createRoom()／joinRoom() 的人在拿到結果之後呼叫
     //（那時 setConnecting(false) 已經執行）。按下去的那顆連線中被停用，Chrome 當下就把焦點退回 body：
-    // 成功了它也跟著組隊按鈕藏起來，焦點放到隊伍狀態的第一個按鈕「複製隊伍代號」；沒成功就放回那顆（trigger）
+    // 成功了它也跟著組隊按鈕藏起來，焦點放到隊伍狀態的第一個按鈕「複製邀請連結」；沒成功就放回那顆（trigger）
     focusAfterConnecting(trigger) {
         if (!this.isListPanelOpen()) return;
-        (this.currentRoom ? this.elements.copyRoomCodeBtn : trigger)?.focus?.();
+        (this.currentRoom ? this.elements.copyInviteBtn : trigger)?.focus?.();
     }
 
     // poll 是 false 時不開始輪詢：呼叫的人還要先做別的事（例如先送完變更再離開）才會自己呼叫 startPolling()
@@ -374,9 +368,8 @@ class RoomCollaboration {
         // 隊伍操作
         this.elements.createRoomBtn.addEventListener('click', () => this.handleCreateClick());
         this.elements.joinRoomBtn.addEventListener('click', () => this.showJoinRoomDialog());
-        this.elements.leaveRoomBtn.addEventListener('click', () => this.showLeaveRoomDialog());
-        this.elements.copyRoomCodeBtn.addEventListener('click', () => this.copyRoomCode());
-        this.elements.editNicknameBtn.addEventListener('click', () => this.showEditNicknameDialog());
+        // 隊伍狀態的按鈕：複製邀請連結、複製代號、離開、成員一行與成員列表裡的改名、移出
+        this.status.init();
 
         // 加入隊伍對話框
         document.getElementById('closeJoinModalBtn').addEventListener('click', () => this.hideModal('joinRoom'));
@@ -656,22 +649,42 @@ class RoomCollaboration {
         }
     }
 
+    /**
+     * 邀請連結：網址的來源、路徑加上 ?room=代號。不帶等級、地區、maps 與 hash：對方打開的是乾淨的頁面，直接問要不要加入這個隊伍
+     * @param {string} href - 目前的完整網址，例如 location.href
+     * @param {string} code - 隊伍代號
+     * @returns {string}
+     */
+    static inviteLink(href, code) {
+        const url = new URL(href);
+        return `${url.origin}${url.pathname}?room=${code}`;
+    }
+
+    // 複製邀請連結
+    copyInviteLink() {
+        this.copyText(RoomCollaboration.inviteLink(window.location.href, this.currentRoom.roomCode), 'treasure_map_invite_copied', '已複製邀請連結');
+    }
+
     // 複製隊伍代號
     copyRoomCode() {
-        const code = this.currentRoom.roomCode;
+        this.copyText(this.currentRoom.roomCode, 'treasure_map_room_code_copied', '已複製隊伍代號');
+    }
+
+    // 把文字複製到剪貼簿，成功後跳 key 的 toast（fallback 是預設文字）。剪貼簿被拒絕、或根本沒有剪貼簿（不安全的環境）時改用備用複製
+    copyText(text, key, fallback) {
         if (navigator.clipboard) {
-            navigator.clipboard.writeText(code).then(() => {
-                this.showToast(FF14Utils.getI18nText('treasure_map_room_code_copied', '隊伍代號已複製'));
+            navigator.clipboard.writeText(text).then(() => {
+                this.showToast(FF14Utils.getI18nText(key, fallback));
             }).catch(() => {
-                this.fallbackCopy(code);
+                this.fallbackCopy(text, key, fallback);
             });
         } else {
-            this.fallbackCopy(code);
+            this.fallbackCopy(text, key, fallback);
         }
     }
 
-    // 備用複製方法
-    fallbackCopy(text) {
+    // 備用複製方法：選取一個暫時的 textarea 再下 copy 指令，之後跳同樣的 toast
+    fallbackCopy(text, key, fallback) {
         const textarea = document.createElement('textarea');
         textarea.value = text;
         textarea.style.position = 'fixed';
@@ -680,56 +693,7 @@ class RoomCollaboration {
         textarea.select();
         document.execCommand('copy');
         document.body.removeChild(textarea);
-        this.showToast(FF14Utils.getI18nText('treasure_map_room_code_copied', '隊伍代號已複製'));
-    }
-
-
-    // 更新最後活動時間
-    updateActivityTime() {
-        if (!this.currentRoom) return;
-
-        const lastActivity = new Date(this.currentRoom.lastActivityAt);
-        const now = new Date();
-        const diff = now - lastActivity;
-
-        let text;
-        if (diff < 60000) { // 1分鐘內
-            text = FF14Utils.getI18nText('treasure_map_just_now', '剛剛');
-        } else if (diff < 3600000) { // 1小時內
-            const minutes = Math.floor(diff / 60000);
-            text = FF14Utils.getI18nText('treasure_map_minutes_ago', '{minutes}分鐘前', { minutes });
-        } else if (diff < 86400000) { // 1天內
-            const hours = Math.floor(diff / 3600000);
-            text = FF14Utils.getI18nText('treasure_map_hours_ago', '{hours}小時前', { hours });
-        } else {
-            text = FF14Utils.getI18nText('treasure_map_more_than_a_day_ago', '超過1天前');
-        }
-
-        this.elements.lastActivity.textContent = text;
-    }
-
-    // 更新房間剩餘時間
-    updateRoomTTL() {
-        if (!this.currentRoom) return;
-
-        const lastActivity = new Date(this.currentRoom.lastActivityAt);
-        const expireTime = lastActivity.getTime() + RoomCollaboration.CONSTANTS.ROOM_TTL;
-        const now = Date.now();
-        const remaining = expireTime - now;
-
-        if (remaining <= 0) {
-            this.elements.roomTTL.textContent = FF14Utils.getI18nText('treasure_map_ttl_expired', '已過期');
-            return;
-        }
-
-        const hours = Math.floor(remaining / 3600000);
-        const minutes = Math.floor((remaining % 3600000) / 60000);
-
-        if (hours > 0) {
-            this.elements.roomTTL.textContent = FF14Utils.getI18nText('treasure_map_ttl_hours_minutes', '{hours}小時{minutes}分', { hours, minutes });
-        } else {
-            this.elements.roomTTL.textContent = FF14Utils.getI18nText('treasure_map_ttl_minutes', '{minutes}分鐘', { minutes });
-        }
+        this.showToast(FF14Utils.getI18nText(key, fallback));
     }
 
     // 開始輪詢
@@ -843,105 +807,13 @@ class RoomCollaboration {
         FF14Utils.showToast(message, type);
     }
 
-    // 更新隊伍 UI
+    // 更新隊伍 UI：清單面板裡的組隊按鈕（建立、加入）只在不在隊伍裡時顯示；隊伍狀態由 PartyStatus 畫
     updateRoomUI() {
-        const teamActions = document.getElementById('teamActions');
-
-        if (this.currentRoom) {
-            // 顯示隊伍狀態區域
-            this.elements.roomSection.classList.remove('hidden');
-            if (this.elements.roomStatus) {
-                this.elements.roomStatus.classList.remove('hidden');
-            }
-            
-            // 隱藏清單面板裡的組隊按鈕
-            if (teamActions) {
-                teamActions.classList.add('hidden');
-            }
-
-            // 更新隊伍資訊
-            this.elements.roomCode.textContent = this.currentRoom.roomCode;
-            this.elements.roomMembers.textContent = FF14Utils.getI18nText('treasure_map_member_count', '{count}/{max}人', { count: this.currentRoom.members.length, max: RoomCollaboration.CONSTANTS.MAX_MEMBERS });
-            this.elements.userNickname.textContent = this.currentUser.nickname;
-
-            // 更新成員列表
-            this.updateMembersList();
-
-            this.updateActivityTime();
-            this.updateRoomTTL();
-        } else {
-            // 隱藏隊伍狀態區域
-            this.elements.roomSection.classList.add('hidden');
-            if (this.elements.roomStatus) {
-                this.elements.roomStatus.classList.add('hidden');
-            }
-            
-            // 顯示清單面板裡的組隊按鈕
-            if (teamActions) {
-                teamActions.classList.remove('hidden');
-            }
-        }
+        document.getElementById('teamActions')?.classList.toggle('hidden', Boolean(this.currentRoom));
+        this.status.render();
 
         // 進出隊伍時清單入口跟著換（「隊伍清單 N/8」或「清單 N 張」）
         this.finder?.updateListCount?.();
-    }
-
-    // 更新成員列表
-    updateMembersList() {
-        const membersList = document.getElementById('membersList');
-        if (!membersList || !this.currentRoom) return;
-
-        SecurityUtils.clearElement(membersList);
-
-        // 排序成員（隊長優先，其次當前使用者，其他按加入時間）
-        const sortedMembers = [...this.currentRoom.members].sort((a, b) => {
-            // 隊長永遠排第一
-            if (a.id === this.currentRoom.creatorId) return -1;
-            if (b.id === this.currentRoom.creatorId) return 1;
-
-            // 當前使用者排第二（除非已經是隊長）
-            if (a.id === this.currentUser.id) return -1;
-            if (b.id === this.currentUser.id) return 1;
-
-            // 其他按加入時間排序
-            return new Date(a.joinedAt).getTime() - new Date(b.joinedAt).getTime();
-        });
-
-        sortedMembers.forEach(member => {
-            const memberTag = document.createElement('div');
-            memberTag.className = 'member-tag';
-            if (member.id === this.currentUser.id) {
-                memberTag.classList.add('current-user');
-            }
-
-            // 成員名稱
-            const nameSpan = document.createElement('span');
-            nameSpan.textContent = member.nickname;
-
-            // 標示隊長
-            const isCreator = member.id === this.currentRoom.creatorId;
-            if (isCreator) {
-                const crownIcon = document.createElement('span');
-                crownIcon.textContent = ' 👑';
-                crownIcon.title = FF14Utils.getI18nText('treasure_map_room_leader', '隊長');
-                nameSpan.appendChild(crownIcon);
-            }
-
-            memberTag.appendChild(nameSpan);
-
-            // 移除按鈕（只有隊長可以移除其他成員）
-            const currentUserIsCreator = this.currentUser.id === this.currentRoom.creatorId;
-            if (currentUserIsCreator && !isCreator) {
-                const removeBtn = document.createElement('button');
-                removeBtn.className = 'member-remove-btn';
-                removeBtn.textContent = '×';
-                removeBtn.title = FF14Utils.getI18nText('treasure_map_remove_member_tooltip', '移除 {nickname}', { nickname: member.nickname });
-                removeBtn.onclick = () => this.removeMember(member);
-                memberTag.appendChild(removeBtn);
-            }
-
-            membersList.appendChild(memberTag);
-        });
     }
 
     // 移除成員

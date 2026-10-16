@@ -132,48 +132,24 @@
                         <span class="btn-icon">🚪</span> <span data-i18n="treasure_map_join_room">加入隊伍</span>
                     </button>
                 </div>
-                <!-- 隊伍狀態：已加入隊伍時顯示 -->
-                <div class="room-section hidden" id="roomSection">
-                    <div class="room-status hidden" id="roomStatus">
-                        <div class="room-info">
-                            <span class="room-label" data-i18n="treasure_map_room_code">隊伍代號：</span>
-                            <span class="room-code" id="roomCode">A3B7K9</span>
-                            <button class="btn btn-sm" id="copyRoomCodeBtn" title="複製隊伍代號" data-i18n="treasure_map_copy_room_code" data-i18n-attr="title">
-                                <span class="btn-icon">📋</span>
-                            </button>
-                        </div>
-                        <div class="room-stats">
-                            <span class="room-stat">
-                                <span class="stat-icon">👥</span>
-                                <span id="roomMembers">1/8人</span>
-                            </span>
-                            <span class="room-stat">
-                                <span class="stat-icon">🕐</span>
-                                <span data-i18n="treasure_map_last_update">最後更新：</span><span id="lastActivity">剛剛</span>
-                            </span>
-                            <span class="room-stat">
-                                <span class="stat-icon">⏱️</span>
-                                <span data-i18n="treasure_map_room_ttl">剩餘：</span><span id="roomTTL">23小時59分</span>
-                            </span>
-                        </div>
-                        <div class="room-user">
-                            <span class="user-label" data-i18n="treasure_map_your_nickname">您的暱稱：</span>
-                            <span class="user-nickname" id="userNickname">光之戰士1</span>
-                            <button class="btn btn-sm" id="editNicknameBtn" title="編輯暱稱" data-i18n="treasure_map_edit_nickname" data-i18n-attr="title">
-                                <span class="btn-icon">✏️</span>
-                            </button>
-                            <button class="btn btn-danger btn-sm" id="leaveRoomBtn">
-                                <span class="btn-icon">🚪</span> <span data-i18n="treasure_map_leave_room">離開隊伍</span>
-                            </button>
-                        </div>
-                        <div class="room-members" id="roomMembersList">
-                            <div class="members-label" data-i18n="treasure_map_team_members">隊伍成員：</div>
-                            <div class="members-list" id="membersList">
-                                <!-- 成員列表將由 JavaScript 動態生成 -->
-                            </div>
-                        </div>
+                <!-- 隊伍狀態：在隊伍裡時顯示（PartyStatus）。代號、同步狀態、成員一行與成員列表跟著隊伍與語言，由 JavaScript 填入 -->
+                <section class="tm-team hidden" id="roomSection" aria-label="隊伍" data-i18n="treasure_map_party_label" data-i18n-attr="aria-label">
+                    <div class="tm-team-row">
+                        <p class="tm-team-code"><span data-i18n="treasure_map_party_code">隊伍代號</span> <strong id="roomCode"></strong></p>
+                        <p class="tm-sync" id="partySync" role="status"><span class="tm-sync-dot" aria-hidden="true"></span> <span id="partySyncText"></span></p>
                     </div>
-                </div>
+                    <p class="warning-message tm-sync-note hidden" id="partySyncNote" data-i18n="treasure_map_sync_note">清單可能不是最新的。你的變更會在連上之後送出。</p>
+                    <div class="tm-team-actions">
+                        <button type="button" class="btn btn-sm" id="copyInviteBtn"><span class="btn-icon" aria-hidden="true">🔗</span> <span data-i18n="treasure_map_copy_invite">複製邀請連結</span></button>
+                        <button type="button" class="btn btn-sm" id="copyRoomCodeBtn" data-i18n="treasure_map_copy_room_code">複製代號</button>
+                        <button type="button" class="btn btn-sm btn-ghost tm-leave" id="leaveRoomBtn" data-i18n="treasure_map_party_leave">離開隊伍</button>
+                    </div>
+                    <button type="button" class="tm-members-toggle" id="membersToggle" aria-expanded="false" aria-controls="membersPanel"><b id="membersCount"></b> <span class="tm-members-names" id="membersNames"></span> <span class="tm-chevron" id="membersChevron" aria-hidden="true">▸</span></button>
+                    <div class="tm-members hidden" id="membersPanel">
+                        <ul class="tm-member-list" id="membersList"></ul>
+                        <p class="tm-team-note" data-i18n="treasure_map_party_ttl_note">隊伍 24 小時沒有動靜會自動解散。</p>
+                    </div>
+                </section>
                 <div class="list-content" id="listContent">
                     <!-- 清單項目將由 JavaScript 動態生成 -->
                 </div>
@@ -476,6 +452,7 @@
     <script src="zone-manager.js"></script>
     <script src="party-names.js"></script>
     <script src="room-map-sync.js"></script>
+    <script src="party-status.js"></script>
     <script src="room-collaboration.js"></script>
     <script src="route-calculator.js"></script>
     <script src="route-progress.js"></script>

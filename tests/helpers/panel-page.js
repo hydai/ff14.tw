@@ -1,12 +1,14 @@
-// 寶圖搜尋器清單面板的頁面替身，給 tests/treasure-list-panel.test.js 共用。
+// 寶圖搜尋器清單面板的頁面替身，給 tests/treasure-list-panel.test.js、tests/treasure-party.test.js 共用。
 // 這是輔助模組，不是測試檔（只有 tests/*.test.js 會被 node --test 執行）。
 //
 //   const { createPanelPage, PANEL_IDS } = require('./helpers/panel-page.js');
 //   const page = await createPanelPage({ url, lang: 'en', stored: { key: '字串' }, storageThrows: true, clipboard: 'reject' });
+//   const party = await createPanelPage({ party: { respond }, realisticFocus: true });   // 接上真的 RoomCollaboration
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const { webcrypto } = require('node:crypto');
 
 const { createFakeDom } = require('./fake-dom.js');
 const { mountFromHtml } = require('./html-fragment.js');
@@ -25,10 +27,11 @@ function scriptSources(html) {
 }
 
 // ---------- 清單面板的頁面替身 ----------
-// 照 index.html 建出這些元素（mountFromHtml），跑真正的建構函式與 init()。清單的對話框（清空、匯入、分享）的 id 加在 mapDetailModal 前面，
-// 順序同 index.html
+// 照 index.html 建出這些元素（mountFromHtml），跑真正的建構函式與 init()。隊伍與清單的對話框 id 加在 myListPanel 後面、mapDetailModal 前面，
+// 順序同 index.html（後面的疊在前面的上面）；之後的任務在 index.html 加了新的對話框，也要加進來
 const PANEL_IDS = ['stepHint', 'listEntryDesktop', 'levelTags', 'zoneFilterRow', 'resultCount', 'clearZonesBtn', 'treasureEmpty', 'treasureGrid',
-    'listEntryMobile', 'listAnnouncer', 'panelOverlay', 'myListPanel', 'clearListModal', 'importListModal', 'shareMapsModal', 'mapDetailModal'];
+    'listEntryMobile', 'listAnnouncer', 'panelOverlay', 'myListPanel', 'joinRoomModal', 'editNicknameModal', 'leaveRoomModal',
+    'clearListModal', 'importListModal', 'shareMapsModal', 'mapDetailModal'];
 const PAGE_HTML = read(`${TOOL_DIR}/index.html`);
 // 照 index.html 的順序載入：這個工具的翻譯檔、共用的 security-utils.js，以及工具目錄自己的每一個 <script src>（src 不含 /）。
 // 之後的任務在 index.html 加了新模組，這裡會自動載入；modal-manager.js 的 src 含 /，不載入，改用下面的替身
@@ -49,6 +52,36 @@ const focusableElements = (root) => root.children.flatMap((child) => (isShown(ch
     ? [...(isFocusable(child) ? [child] : []), ...focusableElements(child)]
     : []));
 
+// 按鈕與輸入框照 Chrome 的行為：拿著焦點時一停用，當場就失去焦點（activeElement 退回 body）；停用的、自己或祖先帶 .hidden 的，focus() 什麼都不做。
+// 少了這些，「連線中焦點掉到 body」與「焦點還給已經藏起來的按鈕」在測試裡都不會發生。
+// 只處理呼叫當下已經存在的 button、input（掛載之後由程式建出來的不算）；停用狀態從元素現在的 disabled 接著算（標記裡寫了 disabled 的照樣停用）
+function makeFocusRealistic(document) {
+    const rendered = (element) => {
+        for (let node = element; node?.nodeType === 1; node = node.parentNode) if (node.classList.contains('hidden')) return false;
+        return true;
+    };
+    for (const control of [...document.querySelectorAll('button'), ...document.querySelectorAll('input')]) {
+        let disabled = Boolean(control.disabled);
+        const focus = control.focus;
+        Object.defineProperty(control, 'disabled', {
+            get: () => disabled,
+            set(value) {
+                disabled = Boolean(value);
+                if (disabled) control.blur();
+            }
+        });
+        control.focus = () => {
+            if (!disabled && rendered(control)) focus.call(control);
+        };
+    }
+}
+
+// fake-dom 不支援逗號分隔的選擇器清單（RoomCollaboration#setConnecting() 用一個清單選出要停用的按鈕）：拆開各查一次再合併
+function allowSelectorLists(document) {
+    const querySelectorAll = document.querySelectorAll.bind(document);
+    document.querySelectorAll = (selector) => [...new Set(selector.split(',').flatMap((part) => querySelectorAll(part.trim())))];
+}
+
 // 寶圖搜尋器的頁面：fake-dom 裡掛上 index.html 的 PANEL_IDS 元素、載入頁面的腳本，new TreasureMapFinder() 之後等 ready。
 //   const page = await createPanelPage({ url, lang: 'en', stored: { key: '字串' }, storageThrows: true, clipboard: 'reject' });
 // - i18n 替身從真正的翻譯檔取字（en、ja 找不到時退回 zh，同 I18nManager）並代入 {參數}；setLang(next) 照 I18nManager.setLanguage()
@@ -59,7 +92,12 @@ const focusableElements = (root) => root.children.flatMap((child) => (isShown(ch
 // - addMaps(ids) 對每個 id 用目錄裡那張呼叫真正的 toggleMapInList()；team() 換上隊伍替身（不連伺服器），回傳每次同步送出的清單。
 //   team({ meId, members, knownMembers, creatorId }) 決定隊伍裡有誰（預設只有自己：id 'me'、光之戰士K7Q）、看過哪些已離開的人的名字；
 //   替身的 ownerOf() 用真正的 PartyNames.ownerOf()，所以 addedBy 對得上 members／knownMembers 的圖就會寫是誰的
-async function createPanelPage({ url = 'https://ff14.tw/tools/treasure-map-finder/', lang = 'zh', stored = {}, storageThrows = false, clipboard = 'ok' } = {}) {
+// - party：{ respond, polling = false }。給了就在寶圖搜尋器 ready 之後建立真的 RoomCollaboration，接上 finder，init() 照常在背景跑
+//   （不等 client.ready：之後的邀請連結對話框會讓它一直不結束，測試用 settle() 讓已經排好的工作跑完）。
+//   request() 換成 respond(path, { method, body, authenticated })：回傳值就是伺服器的回應，丟出的錯誤就是失敗；polling 是 false 時不輪詢。
+//   回傳的物件多 client 與 settle()。team() 與 party 不要混用（兩個都會換掉 finder.roomCollaboration）
+// - realisticFocus：掛載時存在的每個 button、input 照 Chrome 的行為處理停用與隱藏（見 makeFocusRealistic）
+async function createPanelPage({ url = 'https://ff14.tw/tools/treasure-map-finder/', lang = 'zh', stored = {}, storageThrows = false, clipboard = 'ok', party = null, realisticFocus = false } = {}) {
     const dom = createFakeDom({ url });
     const storage = new Map(Object.entries(stored));
     const toasts = [];
@@ -143,6 +181,7 @@ async function createPanelPage({ url = 'https://ff14.tw/tools/treasure-map-finde
     };
     Object.assign(dom.window, {
         URLSearchParams, // FilterManager.parseUrl() 用到；fake-dom 預設只有 URL
+        crypto: webcrypto, // PartyNames.randomTag() 與 RoomCollaboration 的請求編號用到；fake-dom 預設沒有
         console: { log: (...args) => logged.push(args), warn: (...args) => logged.push(args), error: (...args) => logged.push(args) },
         history: { state: null, replaceState: navigate('replaceState'), pushState: navigate('pushState') },
         fetch: async (fetchUrl) => {
@@ -201,12 +240,24 @@ async function createPanelPage({ url = 'https://ff14.tw/tools/treasure-map-finde
     }
 
     mountFromHtml(dom, PAGE_HTML, PANEL_IDS);
+    if (realisticFocus) makeFocusRealistic(dom.document);
+    if (party) allowSelectorLists(dom.document);
     for (const file of PAGE_SCRIPTS) dom.load(file);
     translatePage();
     const finder = vm.runInContext('new TreasureMapFinder()', dom.window);
     await finder.ready;
     if (finder.elements.treasureGrid.querySelector('.error-message')) {
         throw new Error(`寶圖搜尋器沒有載入成功：${logged.map((args) => args.join(' ')).join('；')}`);
+    }
+
+    // 真的 RoomCollaboration（同 DOMContentLoaded 時的順序：建立、接上 finder）。建構函式裡的 init() 要等 finder.ready 才會往下，
+    // 而這裡 finder 已經 ready，所以 init() 的第一段排在下一個 microtask：同步換掉 request()，掛事件與讀網址的 ?room= 都已經走替身
+    let client = null;
+    if (party) {
+        client = new dom.window.RoomCollaboration(finder);
+        client.request = async (path, options = {}) => party.respond(path, options);
+        if (!party.polling) client.startPolling = () => {};
+        finder.setRoomCollaboration(client);
     }
 
     const setLang = (next) => {
@@ -240,7 +291,8 @@ async function createPanelPage({ url = 'https://ff14.tw/tools/treasure-map-finde
     };
     return {
         dom, finder, $: (id) => dom.document.getElementById(id), toasts, clipboardWrites, storage, historyCalls, setLang,
-        focused: () => dom.document.activeElement, key: (name) => dom.key(name), addMaps, team
+        focused: () => dom.document.activeElement, key: (name) => dom.key(name), addMaps, team,
+        ...(client ? { client, settle: () => new Promise((resolve) => setImmediate(resolve)) } : {})
     };
 }
 
