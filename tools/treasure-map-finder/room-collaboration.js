@@ -205,6 +205,8 @@ class RoomCollaboration {
 
         // 隊伍狀態（代號、同步狀態、成員一行與成員列表）由 PartyStatus 畫，建構時只抓元素，事件在 setupEventListeners() 才掛
         this.status = new PartyStatus(this);
+        // 組隊的頁內對話框（目前是建立隊伍）由 RoomDialogs 管，同樣建構時只抓元素，事件在 setupEventListeners() 才掛
+        this.dialogs = new RoomDialogs(this);
 
         // 語言切換時重畫隊伍狀態（成員一行的字、每一列的標籤與按鈕都帶語言）
         window.i18n.onLanguageChange(() => {
@@ -365,11 +367,13 @@ class RoomCollaboration {
     }
 
     setupEventListeners() {
-        // 隊伍操作
-        this.elements.createRoomBtn.addEventListener('click', () => this.handleCreateClick());
+        // 隊伍操作：建立隊伍由 RoomDialogs 處理（清單是空的直接建立，不是空的先問帶不帶）
+        this.elements.createRoomBtn.addEventListener('click', () => this.dialogs.openCreate());
         this.elements.joinRoomBtn.addEventListener('click', () => this.showJoinRoomDialog());
         // 隊伍狀態的按鈕：複製邀請連結、複製代號、離開、成員一行與成員列表裡的改名、移出
         this.status.init();
+        // 建立隊伍對話框裡的按鈕與選項
+        this.dialogs.init();
 
         // 加入隊伍對話框
         document.getElementById('closeJoinModalBtn').addEventListener('click', () => this.hideModal('joinRoom'));
@@ -450,16 +454,10 @@ class RoomCollaboration {
         return Date.now() - new Date(roomData.lastSyncAt).getTime() < RoomCollaboration.CONSTANTS.ROOM_TTL;
     }
 
-    // 「建立組隊」鈕：建立隊伍（帶進本機清單），結束後的焦點與失敗的訊息在這裡處理
-    async handleCreateClick() {
-        const result = await this.createRoom();
-        this.focusAfterConnecting(this.elements.createRoomBtn);
-        if (!result.success && result.message) this.showToast(result.message, 'error');
-    }
-
     /**
      * 建立新隊伍。本機清單帶不帶是玩家的選擇：clearLocal 是 false 就把清單帶進隊伍清單，true 就不帶（隊伍清單從空的開始，
-     * 成功後本機清單就是隊伍清單）。回傳結果（見 failure()）；這裡只跳成功的 toast，焦點與錯誤訊息是呼叫的人的事
+     * 成功後本機清單就是隊伍清單）。回傳結果（見 failure()）；這裡只跳成功的 toast，焦點與錯誤訊息是呼叫的人
+     * （RoomDialogs#openCreate()、#confirmCreate()）的事
      * @param {{clearLocal?: boolean}} [options]
      */
     async createRoom({ clearLocal = false } = {}) {
@@ -643,7 +641,7 @@ class RoomCollaboration {
             this.isLeaving = false;
             this.setConnecting(false);
             if (this.currentRoom && generation === this.sessionGeneration) this.startPolling();
-            // 離開了：隊伍狀態連同離開鈕藏起來，關掉對話框時焦點還給離開鈕等於沒還；改放到又出現的「建立組隊」
+            // 離開了：隊伍狀態連同離開鈕藏起來，關掉對話框時焦點還給離開鈕等於沒還；改放到又出現的「建立隊伍」
             //（連線中它是停用的，所以等 setConnecting(false) 之後）
             if (left && this.isListPanelOpen()) this.elements.createRoomBtn?.focus?.();
         }

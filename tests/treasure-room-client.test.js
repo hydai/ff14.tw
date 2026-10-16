@@ -43,8 +43,9 @@ function setup(respond, { lang = 'zh', stored = {} } = {}) {
             return new Response(JSON.stringify(result.body), { status: result.status || 200 });
         }
     });
-    // party-names.js、party-status.js 要排在 room-collaboration.js 前面（和 index.html 的順序一樣；建構函式一開始就要建 PartyStatus）
-    for (const file of ['assets/js/security-utils.js', 'tools/treasure-map-finder/coordinate-utils.js', 'tools/treasure-map-finder/list-manager.js', 'tools/treasure-map-finder/party-names.js', 'tools/treasure-map-finder/room-map-sync.js', 'tools/treasure-map-finder/party-status.js', 'tools/treasure-map-finder/room-collaboration.js', 'tools/treasure-map-finder/list-share.js', 'tools/treasure-map-finder/script.js']) {
+    // party-names.js、party-status.js、room-dialogs.js 要排在 room-collaboration.js 前面（和 index.html 的順序一樣；建構函式一開始就要建 PartyStatus 與 RoomDialogs）。
+    // 這裡的 ModalManager 是空的替身、getElementById 回傳假元素：RoomDialogs 的建構函式只抓元素、建 ModalManager，其餘都在 init() 與打開對話框之後
+    for (const file of ['assets/js/security-utils.js', 'tools/treasure-map-finder/coordinate-utils.js', 'tools/treasure-map-finder/list-manager.js', 'tools/treasure-map-finder/party-names.js', 'tools/treasure-map-finder/room-map-sync.js', 'tools/treasure-map-finder/party-status.js', 'tools/treasure-map-finder/room-dialogs.js', 'tools/treasure-map-finder/room-collaboration.js', 'tools/treasure-map-finder/list-share.js', 'tools/treasure-map-finder/script.js']) {
         vm.runInContext(fs.readFileSync(path.join(__dirname, '..', file), 'utf8'), context, { filename: file });
     }
     vm.runInContext(`
@@ -1306,15 +1307,15 @@ test('RoomCollaboration.errorMessage：每種 kind 的字；map_limit 有 room �
     assert.equal(errorMessage('legacy'), '');
 });
 
-test('入口把結果接起來：建立鈕與加入的對話框失敗時跳回傳的訊息；成功只有成功的 toast；busy 不多跳；網址的 ?room= 自動加入失敗時也跳訊息', async () => {
+test('入口把結果接起來：建立鈕（清單是空的）與加入的對話框失敗時跳回傳的訊息；成功只有成功的 toast；busy 不多跳；網址的 ?room= 自動加入失敗時也跳訊息', async () => {
     const failing = setup(() => ({ status: 503, body: { error: 'Service unavailable' } }));
-    await failing.client.handleCreateClick();
+    await failing.client.dialogs.openCreate();
     assert.deepEqual(failing.toasts, [NETWORK]);
 
     const creating = setup(createsRoom);
-    await creating.client.handleCreateClick();
+    await creating.client.dialogs.openCreate();
     assert.deepEqual(creating.toasts, ['隊伍 ABC123 建立成功！']);
-    await creating.client.handleCreateClick();
+    await creating.client.dialogs.openCreate();
     assert.deepEqual(creating.toasts, ['隊伍 ABC123 建立成功！'], '已經在隊伍裡：busy 沒有訊息，不多跳');
 
     // 加入的對話框：代號欄的內容去掉頭尾空白、轉大寫

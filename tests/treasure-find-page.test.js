@@ -697,13 +697,13 @@ test('頁面結構：步驟列與桌機入口在 main 最上面、手機底部�
         assert.match(entry, /data-entry="route"[\s\S]*data-i18n="treasure_map_generate_route"/, `${id} 的生成路線沿用原本的鍵值`);
     }
 
-    // 清單面板：組隊與隊伍狀態在標頭之後、清單之前，動作列在清單下面；建立組隊改成次要按鈕（面板的主要按鈕留給生成路線）
+    // 清單面板：組隊與隊伍狀態在標頭之後、清單之前，動作列在清單下面；建立隊伍與加入隊伍是一般按鈕（面板的主要按鈕留給生成路線）
     const panel = sliceElementById(html, 'myListPanel');
     const order = ['class="panel-header"', 'id="teamActions"', 'id="roomSection"', 'id="listActions"', 'id="generateRouteBtn"'].map((s) => panel.indexOf(s));
     assert.ok(!order.includes(-1), `面板裡缺東西：${order}`);
     assert.deepEqual([...order].sort((a, b) => a - b), order, `面板裡的順序：${order}`);
-    assert.deepEqual(classesOf(tagAttrs(html, 'createRoomBtn')), ['btn', 'btn-secondary']);
-    assert.deepEqual(classesOf(tagAttrs(html, 'joinRoomBtn')), ['btn', 'btn-secondary']);
+    assert.deepEqual(classesOf(tagAttrs(html, 'createRoomBtn')), ['btn']);
+    assert.deepEqual(classesOf(tagAttrs(html, 'joinRoomBtn')), ['btn']);
     // 中間（組隊、隊伍狀態、清單、動作列）包在一起捲動，標頭與底部的「生成路線」留在外面固定
     const bodyStart = panel.indexOf('<div class="panel-body">');
     assert.notEqual(bodyStart, -1);

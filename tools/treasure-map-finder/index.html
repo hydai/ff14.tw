@@ -123,14 +123,16 @@
             </div>
             <!-- 標頭與底部（張數、生成路線）固定，中間的組隊、隊伍狀態、清單與動作列一起捲動 -->
             <div class="panel-body">
-                <!-- 組隊：不在隊伍裡時顯示（面板的主要按鈕留給下面的「生成路線」） -->
-                <div class="team-actions" id="teamActions">
-                    <button class="btn btn-secondary" id="createRoomBtn">
-                        <span class="btn-icon">🏠</span> <span data-i18n="treasure_map_create_room">建立組隊</span>
-                    </button>
-                    <button class="btn btn-secondary" id="joinRoomBtn">
-                        <span class="btn-icon">🚪</span> <span data-i18n="treasure_map_join_room">加入隊伍</span>
-                    </button>
+                <!-- 組隊：不在隊伍裡時顯示一段說明與兩顆按鈕（面板的主要按鈕留給下面的「生成路線」）。在隊伍裡由 updateRoomUI() 用 .hidden 藏起來 -->
+                <div class="team-actions tm-team-intro" id="teamActions">
+                    <div class="tm-team-intro-text">
+                        <p class="tm-team-intro-title" data-i18n="treasure_map_party_intro_title">和隊友共用一份清單</p>
+                        <p class="tm-team-intro-hint" data-i18n="treasure_map_party_intro_hint">最多 8 人、8 張寶圖，每張都看得到是誰的。</p>
+                    </div>
+                    <div class="tm-team-intro-actions">
+                        <button type="button" class="btn" id="createRoomBtn"><span class="btn-icon" aria-hidden="true">👥</span> <span data-i18n="treasure_map_create_room">建立隊伍</span></button>
+                        <button type="button" class="btn" id="joinRoomBtn"><span class="btn-icon" aria-hidden="true">🔑</span> <span data-i18n="treasure_map_join_room">加入隊伍</span></button>
+                    </div>
                 </div>
                 <!-- 隊伍狀態：在隊伍裡時顯示（PartyStatus）。代號、同步狀態、成員一行與成員列表跟著隊伍與語言，由 JavaScript 填入 -->
                 <section class="tm-team hidden" id="roomSection" aria-label="隊伍" data-i18n="treasure_map_party_label" data-i18n-attr="aria-label">
@@ -223,6 +225,46 @@
             <div class="panel-footer">
                 <button type="button" class="btn" id="copyAllStopsBtn" data-i18n="treasure_map_route_copy_all">全部複製</button>
                 <button type="button" class="btn btn-primary" id="copyNextStopBtn"><span class="btn-icon">📋</span> <span id="copyNextStopLabel"></span></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 建立隊伍對話框（RoomDialogs#openCreate）：清單是空的就不開，直接建立。清單不是空的先問這些寶圖帶進隊伍還是清空。
+         說明、迷你清單、選項的字與提醒帶張數、會換語言，由 JavaScript 填入（不掛 data-i18n）；
+         清單超過 8 張時「帶進」停用、兩個選項都不預先勾，選了「不帶」才能按「建立隊伍」（這個對話框唯一的主要按鈕）。
+         和清單面板同一個 z-index，靠排在面板後面疊在它上面（同下面的隊伍與清單對話框） -->
+    <div class="dialog-overlay hidden" id="createPartyModal" role="dialog" aria-modal="true" aria-labelledby="createPartyModal-title">
+        <div class="dialog tm-dialog">
+            <div class="dialog-header">
+                <h3 class="dialog-title" id="createPartyModal-title" data-i18n="treasure_map_create_title">建立隊伍</h3>
+                <button type="button" class="btn btn-close" id="closeCreateModalBtn" aria-label="關閉" data-i18n="treasure_map_close" data-i18n-attr="aria-label">×</button>
+            </div>
+            <div class="dialog-body">
+                <p class="tm-dialog-lede" id="createPartyLede"></p>
+                <ul class="tm-mini-list" id="createPartyList"></ul>
+                <fieldset class="tm-choice" id="createPartyChoice">
+                    <legend class="visually-hidden" data-i18n="treasure_map_choice_legend">你的寶圖要怎麼處理</legend>
+                    <div class="form-check">
+                        <input type="radio" class="form-check-input" name="createMode" id="createModeBring" value="bring" checked>
+                        <label class="form-check-label" for="createModeBring">
+                            <span class="tm-choice-title" id="createModeBringTitle"></span>
+                            <span class="tm-choice-hint" id="createModeBringHint"></span>
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input type="radio" class="form-check-input" name="createMode" id="createModeClear" value="clear">
+                        <label class="form-check-label" for="createModeClear">
+                            <span class="tm-choice-title" id="createModeClearTitle"></span>
+                            <span class="tm-choice-hint" id="createModeClearHint"></span>
+                        </label>
+                    </div>
+                </fieldset>
+                <p class="warning-message hidden" id="createPartyNote" role="status"></p>
+                <p class="error-message hidden" id="createPartyError" role="alert"></p>
+            </div>
+            <div class="dialog-actions">
+                <button type="button" class="btn" id="cancelCreateBtn" data-i18n="treasure_map_cancel">取消</button>
+                <button type="button" class="btn btn-primary" id="confirmCreateBtn" data-i18n="treasure_map_create_room">建立隊伍</button>
             </div>
         </div>
     </div>
@@ -453,6 +495,7 @@
     <script src="party-names.js"></script>
     <script src="room-map-sync.js"></script>
     <script src="party-status.js"></script>
+    <script src="room-dialogs.js"></script>
     <script src="room-collaboration.js"></script>
     <script src="route-calculator.js"></script>
     <script src="route-progress.js"></script>

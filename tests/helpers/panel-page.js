@@ -30,7 +30,7 @@ function scriptSources(html) {
 // 照 index.html 建出這些元素（mountFromHtml），跑真正的建構函式與 init()。隊伍與清單的對話框 id 加在 myListPanel 後面、mapDetailModal 前面，
 // 順序同 index.html（後面的疊在前面的上面）；之後的任務在 index.html 加了新的對話框，也要加進來
 const PANEL_IDS = ['stepHint', 'listEntryDesktop', 'levelTags', 'zoneFilterRow', 'resultCount', 'clearZonesBtn', 'treasureEmpty', 'treasureGrid',
-    'listEntryMobile', 'listAnnouncer', 'panelOverlay', 'myListPanel', 'joinRoomModal', 'editNicknameModal', 'leaveRoomModal',
+    'listEntryMobile', 'listAnnouncer', 'panelOverlay', 'myListPanel', 'createPartyModal', 'joinRoomModal', 'editNicknameModal', 'leaveRoomModal',
     'clearListModal', 'importListModal', 'shareMapsModal', 'mapDetailModal'];
 const PAGE_HTML = read(`${TOOL_DIR}/index.html`);
 // 照 index.html 的順序載入：這個工具的翻譯檔、共用的 security-utils.js，以及工具目錄自己的每一個 <script src>（src 不含 /）。

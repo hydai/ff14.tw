@@ -97,15 +97,41 @@
     display: none;
 }
 
-/* 清單面板裡、標頭下面的組隊按鈕（不在隊伍裡時），兩顆平分一列 */
-.team-actions {
-    display: flex;
-    gap: var(--space-2);
-    padding: var(--space-4) var(--space-6);
+/* 清單面板裡、標頭下面的組隊入口（不在隊伍裡時）：一行標題、一行說明，下面兩顆按鈕平分一列。
+   #teamActions 進了隊伍用 .hidden 藏起來，所以 display 只設在單一 class（.tm-team-intro）上，才輸給最後的 .hidden；
+   底下的分隔線原本也在 .team-actions，一起搬過來。
+   欄寬固定是容器的寬度（minmax(0, 1fr)），按鈕列放不下時換行（flex-wrap）：按鈕是 nowrap 的，日文「パーティを作る」「パーティに参加」
+   在 320px 的面板裡兩顆並排放不下，不限制的話欄會被撐到兩顆按鈕的寬度，面板出現橫向捲軸、右邊的按鈕與說明被切掉（瀏覽器實測）；
+   現在放不下就上下各一顆、各佔滿一列 */
+.tm-team-intro {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-3);
+    padding: var(--space-4);
     border-bottom: 1px solid var(--color-border);
 }
 
-.team-actions .btn {
+.tm-team-intro-text p {
+    margin: 0;
+}
+
+.tm-team-intro-title {
+    font-weight: var(--weight-semibold);
+    color: var(--color-heading);
+}
+
+.tm-team-intro-hint {
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+}
+
+.tm-team-intro-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+.tm-team-intro-actions .btn {
     flex: 1;
 }
 
@@ -1230,6 +1256,12 @@
     flex: 1;
     min-width: 0;
     font-variant-numeric: tabular-nums;
+}
+
+/* 建立隊伍對話框（#createPartyModal）：說明、迷你清單與選項用上面共用的規則，只有按鈕列另外處理：放不下就換行。
+   日文的按鈕字比較長（「キャンセル」「パーティを作る」），320px 的對話框裡並排放不下，靠右排的取消鈕會超出左邊被切掉（瀏覽器實測） */
+#createPartyModal .dialog-actions {
+    flex-wrap: wrap;
 }
 
 /* 資料來源：外觀由 .card 提供 */

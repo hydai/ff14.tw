@@ -20,8 +20,12 @@ const TreasureMapTranslations = {
         treasure_map_panel_count_room: '{count}/{max}',
         treasure_map_footer_count: '{count} 張寶圖',
         treasure_map_footer_count_room: '{count}/{max} 張',
-        treasure_map_create_room: '建立組隊',
+        treasure_map_create_room: '建立隊伍',
         treasure_map_join_room: '加入隊伍',
+
+        // 組隊入口（清單面板裡，不在隊伍裡時顯示）
+        treasure_map_party_intro_title: '和隊友共用一份清單',
+        treasure_map_party_intro_hint: '最多 8 人、8 張寶圖，每張都看得到是誰的。',
 
         // 步驟提示與清單入口
         treasure_map_steps_label: '使用步驟',
@@ -118,6 +122,15 @@ const TreasureMapTranslations = {
         treasure_map_format_saved: '格式設定已儲存',
         treasure_map_format_save_failed: '無法儲存設定：瀏覽器不允許儲存資料',
         treasure_map_format_reset: '已恢復預設：跟著介面語言',
+
+        // 建立隊伍對話框（清單不是空的才問）
+        treasure_map_create_title: '建立隊伍',
+        treasure_map_choice_legend: '你的寶圖要怎麼處理',
+        treasure_map_party_your_maps: '你的清單有 {count} 張寶圖：',
+        treasure_map_choice_bring: '帶進隊伍清單',
+        treasure_map_choice_bring_hint: '隊友也看得到，會標成你的圖',
+        treasure_map_choice_clear: '不帶，清空這 {count} 張',
+        treasure_map_choice_clear_hint_create: '隊伍清單從空的開始',
 
         // 加入隊伍對話框
         treasure_map_join_title: '加入隊伍',
@@ -288,8 +301,12 @@ const TreasureMapTranslations = {
         treasure_map_panel_count_room: '{count}/{max}',
         treasure_map_footer_count: 'Total: {count}',
         treasure_map_footer_count_room: 'Total: {count}/{max}',
-        treasure_map_create_room: 'Create Room',
-        treasure_map_join_room: 'Join Room',
+        treasure_map_create_room: 'Create party',
+        treasure_map_join_room: 'Join party',
+
+        // Party entry (in the list panel, shown when you're not in a party)
+        treasure_map_party_intro_title: 'Share one list with your party',
+        treasure_map_party_intro_hint: 'Up to 8 members and 8 maps, and every map shows whose it is.',
 
         // Steps and list entry
         treasure_map_steps_label: 'Steps',
@@ -385,6 +402,15 @@ const TreasureMapTranslations = {
         treasure_map_format_saved: 'Format settings saved',
         treasure_map_format_save_failed: 'Could not save the settings: your browser does not allow storing data',
         treasure_map_format_reset: 'Default restored: follows the site language',
+
+        // Create party dialog (asked only when your list isn't empty)
+        treasure_map_create_title: 'Create a party',
+        treasure_map_choice_legend: 'What to do with your maps',
+        treasure_map_party_your_maps: 'Maps in your list: {count}',
+        treasure_map_choice_bring: 'Bring them into the party list',
+        treasure_map_choice_bring_hint: 'Your party sees them too, marked as yours',
+        treasure_map_choice_clear: 'Don\'t bring them — clear your list ({count})',
+        treasure_map_choice_clear_hint_create: 'The party list starts empty',
 
         // Join room dialog
         treasure_map_join_title: 'Join Room',
@@ -555,8 +581,12 @@ const TreasureMapTranslations = {
         treasure_map_panel_count_room: '{count}/{max}',
         treasure_map_footer_count: '地図 {count} 枚',
         treasure_map_footer_count_room: '{count}/{max} 枚',
-        treasure_map_create_room: 'ルーム作成',
-        treasure_map_join_room: 'ルーム参加',
+        treasure_map_create_room: 'パーティを作る',
+        treasure_map_join_room: 'パーティに参加',
+
+        // パーティの入口（リストパネルの中。パーティに入っていないときに表示）
+        treasure_map_party_intro_title: 'パーティで 1 つのリストを共有',
+        treasure_map_party_intro_hint: '最大 8 人・8 枚まで。どの地図も誰のものか分かります。',
 
         // 手順とリストの入口
         treasure_map_steps_label: '手順',
@@ -652,6 +682,15 @@ const TreasureMapTranslations = {
         treasure_map_format_saved: '書式設定を保存しました',
         treasure_map_format_save_failed: '設定を保存できませんでした：ブラウザがデータの保存を許可していません',
         treasure_map_format_reset: 'デフォルトに戻しました：表示言語に合わせます',
+
+        // パーティ作成ダイアログ（リストが空でないときだけ表示）
+        treasure_map_create_title: 'パーティを作る',
+        treasure_map_choice_legend: 'あなたの地図をどうするか',
+        treasure_map_party_your_maps: 'あなたのリストには地図が {count} 枚あります：',
+        treasure_map_choice_bring: 'パーティリストに持ち込む',
+        treasure_map_choice_bring_hint: 'メンバーにも表示され、あなたの地図として表示されます',
+        treasure_map_choice_clear: '持ち込まない（{count} 枚を消す）',
+        treasure_map_choice_clear_hint_create: 'パーティリストは空から始まります',
 
         // ルーム参加ダイアログ
         treasure_map_join_title: 'ルーム参加',
