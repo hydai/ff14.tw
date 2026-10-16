@@ -24,8 +24,8 @@ class RoomDialogs {
         // 第幾次打開對話框（showModal() 每次打開、關閉都加一）。連線要等伺服器，這段時間玩家可能按 Escape 關掉：
         // 那一次的結果屬於已經關掉的對話框，不能再去關它、把錯誤寫進去
         this.opening = 0;
-        // 正在建立隊伍的是哪一次打開的對話框（opening 的值），沒有是 null。連線中選項與確認鈕停用著，refresh() 不重畫
-        this.creating = null;
+        // 正在連線（建立或加入隊伍）的是哪一次打開的對話框（opening 的值），沒有是 null。連線中選項與確認鈕停用著，refresh() 不重畫
+        this.connecting = null;
         // 迷你清單上一次畫的內容（語言與每一張的 id），依 renderChoice() 的 prefix 記：沒變就不重建，縮圖才不會一直重載
         this.listKeys = new Map();
 
@@ -100,9 +100,9 @@ class RoomDialogs {
 
     // 開著的對話框裡由程式組的字重畫：切換語言（I18nManager 先換掉 [data-i18n] 的固定字，再來這裡）會來。
     // 上一次失敗的錯誤是舊語言寫的，收起來（再按一次就用新語言重新產生）；玩家已經勾的選項不動。沒開著的下次打開時才畫。
-    // 建立中不重畫：選項與確認鈕停用著，連上之後清單也會換成隊伍的清單
+    // 連線中（建立或加入）不重畫：選項與確認鈕停用著，連上之後清單也會換成隊伍的清單
     refresh() {
-        if (this.creating === this.opening) return;
+        if (this.connecting === this.opening) return;
         if (this.modalManager.activeModal === this.elements.createModal) {
             this.hideCreateError();
             this.renderCreate(false);
@@ -202,25 +202,13 @@ class RoomDialogs {
      */
     async confirmCreate() {
         const { collaboration, elements } = this;
-        const { bring, clear, confirm } = this.choiceElements('create');
+        const { clear, confirm } = this.choiceElements('create');
         // 停用的確認鈕（連線中、超過上限又沒選「不帶」）不接受：Enter 或程式直接呼叫也一樣
         if (confirm.disabled) return;
         const opening = this.opening;
         const trigger = collaboration.elements.createRoomBtn;
-        this.creating = opening;
         this.hideCreateError();
-        // 確認鈕正拿著焦點（剛按下去）時，停用之前先移到 ✕（見 parkFocus()）；結束時焦點還停在 ✕（玩家沒有移開）、
-        // 對話框也還是同一次打開的，就放回確認鈕，失敗之後可以直接再按一次
-        const parked = this.parkFocus([bring, clear, confirm]);
-        this.setCreateBusy(true);
-        let result;
-        try {
-            result = await collaboration.createRoom({ clearLocal: clear.checked });
-        } finally {
-            if (this.creating === opening) this.creating = null;
-            this.setCreateBusy(false);
-            if (parked && opening === this.opening && document.activeElement === parked.close) parked.control.focus();
-        }
+        const result = await this.whileBusy('create', opening, () => collaboration.createRoom({ clearLocal: clear.checked }));
 
         if (opening !== this.opening) {
             // 連線途中對話框被關掉了：成功就照常進隊伍，失敗沒有地方寫錯誤，改跳 toast
@@ -239,13 +227,30 @@ class RoomDialogs {
     }
 
     // 連線中：選項與確認鈕停用，確認鈕轉圈（取消與 ✕ 不停用，玩家隨時可以關掉）。
-    // 恢復時超過上限的停用由 renderCreate(false) 接回去
-    setCreateBusy(busy) {
-        const { bring, clear, confirm } = this.choiceElements('create');
+    // 恢復時超過上限的停用由 renderChoice() 接回去（呼叫的人在失敗後重畫）
+    setBusy(prefix, busy) {
+        const { bring, clear, confirm } = this.choiceElements(prefix);
         bring.disabled = busy;
         clear.disabled = busy;
         confirm.disabled = busy;
         confirm.classList.toggle('btn-loading', busy);
+    }
+
+    // 連線：記下是哪一次打開的對話框在連線、停用選項與確認鈕，等 run()（建立或加入）回來，不論成功或失敗都恢復，回傳 run() 的結果。
+    // 焦點在要停用的控制項上（剛按下去的確認鈕）時，停用之前先移到 ✕（見 parkFocus()）；恢復時焦點還停在 ✕（玩家沒有移開）、
+    // 對話框也還是同一次打開的，就放回那一顆，失敗之後可以直接再按一次
+    async whileBusy(prefix, opening, run) {
+        this.connecting = opening;
+        const { bring, clear, confirm } = this.choiceElements(prefix);
+        const parked = this.parkFocus([bring, clear, confirm]);
+        this.setBusy(prefix, true);
+        try {
+            return await run();
+        } finally {
+            if (this.connecting === opening) this.connecting = null;
+            this.setBusy(prefix, false);
+            if (parked && opening === this.opening && document.activeElement === parked.close) parked.control.focus();
+        }
     }
 
     // 進行中要停用的控制項（controls）正拿著焦點：先把焦點移到開著的對話框的 ✕（進行中不停用），回傳 { control, close }；焦點不在它們身上回傳 null。
