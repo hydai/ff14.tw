@@ -58,6 +58,23 @@ class RoomCollaboration {
         }
     }
 
+    /**
+     * 網址換上（或拿掉）隊伍代號：只動 room 這一個參數，其他參數與 hash 的內容不變；已經有 room 就原位換掉，沒有就接在最後。
+     * 整個查詢字串會重新編碼，寫法可能跟著變、意思不變（例如 %20 變成 +）；逗號改回不編碼（同 FilterManager.buildUrl()、ListShare.stripParam()），
+     * 所以 ?grade=g17,g10&maps=tm_017,tm_018 進隊伍後只多一個 room，離開後和進來前一模一樣
+     * @param {string} href - 目前的完整網址，例如 location.href
+     * @param {?string} code - 隊伍代號；null 就拿掉 room（參數拿光了就不留 ?）
+     * @returns {string}
+     */
+    static withRoom(href, code) {
+        const url = new URL(href);
+        if (code) url.searchParams.set('room', code);
+        else url.searchParams.delete('room');
+        // URLSearchParams 會把逗號編成 %2C；逗號在查詢字串裡本來就合法，改回來網址比較好讀，也和篩選、分享連結寫的一樣
+        url.search = url.searchParams.toString().replace(/%2C/gi, ',');
+        return url.toString();
+    }
+
     constructor(treasureMapFinder) {
         this.finder = treasureMapFinder;
         this.currentRoom = null;
@@ -71,6 +88,8 @@ class RoomCollaboration {
         this.lastActivity = Date.now();
         this.isPolling = false;
         this.retryCount = 0;
+        this.tag = null;          // 這台機器的預設名字字串；第一次需要時才讀或產生（nicknameTag()）
+        this.knownMembers = {};   // 看過的成員 id → 名字；離開隊伍的人之後還寫得出名字（rememberMembers()）
         this.modalManager = new ModalManager();
         this.mapSync = new RoomMapSync({
             send: (roomCode, batch) => this.request(`/rooms/${roomCode}`, {
@@ -86,6 +105,8 @@ class RoomCollaboration {
                     return;
                 }
                 this.currentUser = member;
+                // 先記名字再重畫、存檔：畫面要用它決定誰的圖，存檔要帶著它
+                this.rememberMembers(room);
                 this.finder.syncFromRoom(maps);
                 this.updateRoomUI();
                 this.saveSession();
@@ -166,7 +187,38 @@ class RoomCollaboration {
             currentUser: this.currentUser,
             memberToken: this.memberToken,
             pendingMapOperations: this.mapSync.pending,
+            knownMembers: this.knownMembers,
             lastSyncAt: new Date().toISOString()
+        });
+    }
+
+    // 這台機器的字串（光之戰士K7Q 的 K7Q）：第一次需要時才讀或產生，記在 this.tag。
+    // 瀏覽器封鎖網站資料時存不起來，所以要靠這裡記住：這個頁面開著的期間一直用同一組
+    nicknameTag() {
+        if (!this.tag) this.tag = PartyNames.readTag(RoomCollaboration.safeStorage());
+        return this.tag;
+    }
+
+    // 建立、加入隊伍時送出的名字：自己改過的優先，沒有就是目前介面語言的開頭接上這台機器的字串。不寫進 localStorage
+    defaultNickname() {
+        return PartyNames.resolveNickname(RoomCollaboration.safeStorage(), window.i18n.getCurrentLanguage(), this.nicknameTag());
+    }
+
+    // 把隊伍資料裡每位成員的名字併進 knownMembers：改名會更新，已經離開的人不會被拿掉。
+    // mapSync 的 onChange 在本機變更時也會觸發，每次都併，結果一樣
+    rememberMembers(room) {
+        for (const member of room.members) {
+            if (typeof member?.id === 'string' && typeof member.nickname === 'string') this.knownMembers[member.id] = member.nickname;
+        }
+    }
+
+    // 一張寶圖是誰加的（PartyNames.ownerOf()）；不在隊伍裡回 null
+    ownerOf(map) {
+        if (!this.currentRoom) return null;
+        return PartyNames.ownerOf(map, {
+            members: this.currentRoom.members,
+            knownMembers: this.knownMembers,
+            meId: this.currentUser?.id
         });
     }
 
@@ -228,17 +280,18 @@ class RoomCollaboration {
         (this.currentRoom ? this.elements.copyRoomCodeBtn : trigger)?.focus?.();
     }
 
-    adoptSession(room, member, memberToken, pending = []) {
+    // poll 是 false 時不開始輪詢：呼叫的人還要先做別的事（例如先送完變更再離開）才會自己呼叫 startPolling()
+    adoptSession(room, member, memberToken, pending = [], { poll = true } = {}) {
         if (!member || !/^[a-f0-9]{64}$/.test(memberToken || '')) throw new Error('Invalid room credentials');
         this.sessionGeneration++;
         this.currentUser = member;
         this.memberToken = memberToken;
+        this.rememberMembers(room);
         this.mapSync.connect(room, pending);
         this.connectionAttempt = null;
-        const url = new URL(window.location.href);
-        url.searchParams.set('room', room.roomCode);
-        window.history.pushState({}, '', url);
-        this.startPolling();
+        // 進出隊伍不新增瀏覽紀錄，網址只多一個 room（其他參數與 hash 的內容不變，見 withRoom()）
+        window.history.replaceState(window.history.state, '', RoomCollaboration.withRoom(window.location.href, room.roomCode));
+        if (poll) this.startPolling();
     }
 
     recoverLegacyRoom(room) {
@@ -295,7 +348,9 @@ class RoomCollaboration {
         const requestedCode = new URLSearchParams(window.location.search).get('room');
         const saved = SecurityUtils.getValidatedStorageData('ff14tw_current_room');
         if (saved && (!requestedCode || saved.roomCode === requestedCode) && this.isRoomValid(saved)) {
-            const { currentUser, memberToken, pendingMapOperations, lastSyncAt, ...room } = saved;
+            // knownMembers 是存檔裡的欄位，不屬於房間資料：拿出來驗證（存值壞掉就當作空的），不交給 mapSync.connect()
+            const { currentUser, memberToken, pendingMapOperations, lastSyncAt, knownMembers, ...room } = saved;
+            this.knownMembers = PartyNames.validKnownMembers(knownMembers);
             this.adoptSession(room, currentUser, memberToken, pendingMapOperations || []);
             return;
         }
@@ -347,8 +402,7 @@ class RoomCollaboration {
                 this.showToast(FF14Utils.getI18nText('treasure_map_local_maps_limit', '個人與隊伍清單合計超過 {max} 張，請先整理清單再加入。', { max: RoomCollaboration.CONSTANTS.MAX_MAPS }), 'warning');
                 return;
             }
-            const body = this.connectionRequest('create', '',
-                FF14Utils.getI18nText('treasure_map_default_nickname_creator', '光之戰士1'),
+            const body = this.connectionRequest('create', '', this.defaultNickname(),
                 retained.map(map => this.finder.toRoomMap(map)));
             const data = await this.request('/rooms', { method: 'POST', body });
             const { memberId, memberToken, ...room } = data;
@@ -415,10 +469,8 @@ class RoomCollaboration {
                 this.showToast(FF14Utils.getI18nText('treasure_map_local_maps_limit', '個人與隊伍清單合計超過 {max} 張，請先整理清單再加入。', { max: RoomCollaboration.CONSTANTS.MAX_MAPS }), 'warning');
                 return;
             }
-            let memberNickname = FF14Utils.getI18nText('treasure_map_default_nickname', '光之戰士');
-            try { memberNickname = localStorage.getItem('ff14tw_user_nickname') || memberNickname; } catch { /* optional preference */ }
             const { room, newMember, memberToken } = await this.request(`/rooms/${roomCode}/join`, {
-                method: 'POST', body: this.connectionRequest('join', roomCode, memberNickname,
+                method: 'POST', body: this.connectionRequest('join', roomCode, this.defaultNickname(),
                     retained.map(map => this.finder.toRoomMap(map)))
             });
             if (!this.completeConnection(room, newMember, memberToken, retained)) return;
@@ -449,6 +501,8 @@ class RoomCollaboration {
         const newNickname = document.getElementById('nicknameInput').value.trim();
         if (!newNickname || newNickname.length > 20 || !this.currentRoom) return;
         const generation = this.sessionGeneration;
+        // 送出前自己的名字：mapSync.receive() 一收到新名字就換掉 currentUser，之後再讀就是新名字了
+        const previous = this.currentUser.nickname;
         try {
             const updatedRoom = await this.request(`/rooms/${this.currentRoom.roomCode}`, {
                 method: 'PUT', authenticated: true,
@@ -456,7 +510,8 @@ class RoomCollaboration {
             });
             if (generation !== this.sessionGeneration) return;
             this.mapSync.receive(updatedRoom);
-            try { localStorage.setItem('ff14tw_user_nickname', newNickname); } catch { /* optional preference */ }
+            // 只有「改名」會寫 ff14tw_user_nickname：自訂的名字存起來，沒改就不寫，改成預設名字（或舊樣式）就刪掉
+            PartyNames.rememberRename(RoomCollaboration.safeStorage(), newNickname, { previous, tag: this.nicknameTag() });
             this.hideModal('editNickname');
             this.showToast(FF14Utils.getI18nText('treasure_map_nickname_updated', '暱稱已更新'));
         } catch (error) {
@@ -655,13 +710,13 @@ class RoomCollaboration {
         this.currentRoom = null;
         this.currentUser = null;
         this.memberToken = null;
+        this.knownMembers = {};
         try {
             localStorage.removeItem('ff14tw_current_room');
             localStorage.removeItem('ff14tw_room_created');
         } catch { /* keep the current page usable when storage is unavailable */ }
-        const url = new URL(window.location.href);
-        url.searchParams.delete('room');
-        window.history.pushState({}, '', url);
+        // 同 adoptSession()：不新增瀏覽紀錄，網址只拿掉 room
+        window.history.replaceState(window.history.state, '', RoomCollaboration.withRoom(window.location.href, null));
         this.updateRoomUI();
     }
 

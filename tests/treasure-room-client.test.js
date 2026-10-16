@@ -6,6 +6,7 @@ const vm = require('node:vm');
 const { webcrypto } = require('node:crypto');
 
 const { createFakeDom } = require('./helpers/fake-dom.js');
+const { translationKeySet } = require('./helpers/translation-parsers.js');
 
 const TOKEN = 'a'.repeat(64);
 const sample = { id: 'g8_test_1', level: 'g8', zone: 'Test', coords: { x: 10, y: 20 } };
@@ -13,12 +14,22 @@ const member = { id: 'creator', nickname: 'Creator', isCreator: true };
 const newMember = { id: 'joiner', nickname: 'Joiner' };
 const room = (maps = [], members = [member], revision = 0) => ({ roomCode: 'ABC123', creatorId: member.id, members, treasureMaps: maps, revision, lastActivityAt: new Date().toISOString() });
 
-function setup(respond) {
-    const storage = new Map(), requests = [], toasts = [];
+// lang：getCurrentLanguage() 回的介面語言（用 setLang() 在測試中途換）；stored：開始時 localStorage 裡已經有的 key／值（字串）
+function setup(respond, { lang = 'zh', stored = {} } = {}) {
+    const storage = new Map(Object.entries(stored)), requests = [], toasts = [], historyCalls = [];
     const location = new URL('http://localhost:8765/tools/treasure-map-finder/');
     const element = () => ({ textContent: '', classList: { add() {}, remove() {}, toggle() {} }, addEventListener() {}, setAttribute() {} });
+    // pushState／replaceState：記下呼叫，換掉 history.state 與 location（同瀏覽器）
+    const history = { state: null };
+    for (const method of ['pushState', 'replaceState']) {
+        history[method] = (state, title, href) => {
+            historyCalls.push({ method, state, href: String(href) });
+            history.state = state;
+            location.href = String(href);
+        };
+    }
     const context = vm.createContext({
-        window: { location, history: { pushState(state, title, url) { location.href = String(url); } }, i18n: { onLanguageChange() {} } },
+        window: { location, history, i18n: { getCurrentLanguage: () => lang, onLanguageChange() {} } },
         document: { addEventListener() {}, getElementById: () => element(), querySelectorAll: () => [] },
         localStorage: { getItem: key => storage.get(key) || null, setItem: (key, value) => storage.set(key, value), removeItem: key => storage.delete(key) },
         console: { log() {}, warn() {}, error() {} },
@@ -32,7 +43,8 @@ function setup(respond) {
             return new Response(JSON.stringify(result.body), { status: result.status || 200 });
         }
     });
-    for (const file of ['assets/js/security-utils.js', 'tools/treasure-map-finder/coordinate-utils.js', 'tools/treasure-map-finder/list-manager.js', 'tools/treasure-map-finder/room-map-sync.js', 'tools/treasure-map-finder/room-collaboration.js', 'tools/treasure-map-finder/list-share.js', 'tools/treasure-map-finder/script.js']) {
+    // party-names.js 要排在 room-collaboration.js 前面（和 index.html 的順序一樣）
+    for (const file of ['assets/js/security-utils.js', 'tools/treasure-map-finder/coordinate-utils.js', 'tools/treasure-map-finder/list-manager.js', 'tools/treasure-map-finder/party-names.js', 'tools/treasure-map-finder/room-map-sync.js', 'tools/treasure-map-finder/room-collaboration.js', 'tools/treasure-map-finder/list-share.js', 'tools/treasure-map-finder/script.js']) {
         vm.runInContext(fs.readFileSync(path.join(__dirname, '..', file), 'utf8'), context, { filename: file });
     }
     vm.runInContext(`
@@ -49,7 +61,7 @@ function setup(respond) {
         client.startPolling = () => {};
     `, context);
     context.finder.maps = [sample];
-    return { ...context, context, storage, requests, toasts };
+    return { ...context, context, storage, requests, toasts, historyCalls, setLang: value => { lang = value; } };
 }
 
 test('creating a room uses ListManager, atomically submits retained maps and persists private credentials', async () => {
@@ -616,9 +628,304 @@ test('歷史整套拿掉：room-collaboration.js 與 script.js 沒有 operationH
     }
 });
 
+// ---------- 預設名字、看過的成員與網址（進出隊伍） ----------
+// knownMembers、ownerOf() 回的物件是在 vm 裡建出來的：原型和測試端不同，assert.deepEqual 會失敗，先轉成測試端的物件再比
+const plain = value => (value === undefined ? undefined : JSON.parse(JSON.stringify(value)));
+const TAG_CHARS = '[23456789ABCDEFGHJKMNPQRSTUVWXYZ]';
+const mate = { id: 'mate', nickname: 'Mate' };
+const gone = { id: 'gone', nickname: 'Gone' };
+
+// 瀏覽器封鎖網站資料：光是讀 localStorage 就丟例外。存取器要在 context 裡面定義（理由見上面 init() 的測試），
+// 而且先確認這個 context 裡讀 localStorage 真的會丟例外，測試的前提才成立
+const blockStorage = context => {
+    vm.runInContext("Object.defineProperty(globalThis, 'localStorage', { get() { throw new Error('SecurityError'); }, configurable: true })", context);
+    assert.throws(() => vm.runInContext('typeof localStorage', context), /SecurityError/);
+};
+
+// 伺服器：POST /rooms 建立 ABC123（自己是 member）；之後加入 XYZ789（GET 預覽、POST …/join，自己是 newMember）；PUT 是改名
+const createThenJoin = request => {
+    if (request.method === 'POST' && request.url.endsWith('/rooms')) {
+        return { body: { ...room(request.body.initialMaps), memberId: member.id, memberToken: TOKEN } };
+    }
+    if (request.url.endsWith('/join')) {
+        return { body: { room: { ...room([], [member, newMember]), roomCode: 'XYZ789' }, newMember, memberId: newMember.id, memberToken: TOKEN } };
+    }
+    if (request.method === 'PUT') {
+        return { body: { ...room([], [member, { ...newMember, nickname: request.body.nickname }], 1), roomCode: 'XYZ789' } };
+    }
+    return { body: { ...room(), roomCode: 'XYZ789' } };
+};
+
+// 建立、加入送出的名字：[說明, setup() 的選項, 送出的名字]
+const NAME_CASES = [
+    ['沒改過名字：光之戰士＋這台機器的字串', { stored: { ff14tw_nickname_tag: 'K7Q' } }, '光之戰士K7Q'],
+    ['自己改過的名字優先', { stored: { ff14tw_nickname_tag: 'K7Q', ff14tw_user_nickname: 'Alice' } }, 'Alice'],
+    ['舊版的預設名字樣式不算自己取的', { stored: { ff14tw_nickname_tag: 'K7Q', ff14tw_user_nickname: '光之戰士1' } }, '光之戰士K7Q'],
+    ['英文：開頭跟介面語言，中間一個空格', { lang: 'en', stored: { ff14tw_nickname_tag: 'K7Q' } }, 'Warrior of Light K7Q'],
+    ['日文', { lang: 'ja', stored: { ff14tw_nickname_tag: 'K7Q' } }, '光の戦士K7Q']
+];
+
+test('建立時送存過的名字；沒有就是光之戰士＋這台機器的字串，英文是 Warrior of Light K7Q', async () => {
+    for (const [label, options, expected] of NAME_CASES) {
+        const state = setup(request => ({ body: { ...room(request.body.initialMaps), memberId: member.id, memberToken: TOKEN } }), options);
+        await state.client.createRoom();
+        assert.equal(state.requests.length, 1, label);
+        assert.equal(state.requests[0].body.memberNickname, expected, label);
+        assert.equal(state.client.currentUser.id, member.id, label);
+        // 預設名字不寫進 ff14tw_user_nickname，建立也不動它（只有「改名」會寫）
+        assert.equal(state.storage.get('ff14tw_user_nickname'), options.stored.ff14tw_user_nickname, label);
+    }
+});
+
+test('沒有字串時產生一組 31 個允許字元裡的 3 碼、存進 ff14tw_nickname_tag；之後加入別隊用同一組', async () => {
+    const state = setup(createThenJoin);
+    assert.equal(state.storage.has('ff14tw_nickname_tag'), false);
+    await state.client.createRoom();
+    const tag = state.storage.get('ff14tw_nickname_tag');
+    assert.match(tag, new RegExp(`^${TAG_CHARS}{3}$`));
+    assert.equal(state.requests[0].body.memberNickname, `光之戰士${tag}`);
+    assert.equal(state.client.nicknameTag(), tag);
+    assert.equal(state.storage.has('ff14tw_user_nickname'), false);
+
+    // 離開、換成英文介面再加入別隊：開頭換成英文，字串還是同一組
+    state.client.forceLeaveRoom();
+    state.setLang('en');
+    await state.client.joinRoom('XYZ789');
+    assert.equal(state.client.currentRoom.roomCode, 'XYZ789');
+    assert.equal(state.requests.find(request => request.url.endsWith('/join')).body.memberNickname, `Warrior of Light ${tag}`);
+    assert.equal(state.storage.get('ff14tw_nickname_tag'), tag);
+});
+
+test('加入時用同樣的規則送名字', async () => {
+    for (const [label, options, expected] of NAME_CASES) {
+        const state = setup(request => (request.method === 'GET'
+            ? { body: room() }
+            : { body: { room: room([], [member, newMember]), newMember, memberId: newMember.id, memberToken: TOKEN } }), options);
+        await state.client.joinRoom('ABC123');
+        const join = state.requests.find(request => request.url.endsWith('/join'));
+        assert.equal(join.body.memberNickname, expected, label);
+        assert.equal(state.client.currentUser.id, newMember.id, label);
+        assert.equal(state.storage.get('ff14tw_user_nickname'), options.stored.ff14tw_user_nickname, label);
+    }
+});
+
+test('knownMembers：每次隊伍資料都記下成員的名字，跟 session 一起存、重新整理後讀回；存值壞掉（陣列、非字串）當作空的，不影響接回隊伍；離開後清空', async () => {
+    const state = setup(() => ({ body: room() }));
+    assert.deepEqual(plain(state.client.knownMembers), {}, '建構時是空的');
+
+    // adoptSession() 自己也記，不靠 mapSync.connect() 觸發的 onChange（那裡也會記，兩邊結果一樣）
+    const direct = setup(() => ({ body: room() }));
+    direct.client.mapSync.connect = () => {};
+    direct.client.adoptSession(room([], [member, mate]), member, TOKEN);
+    assert.deepEqual(plain(direct.client.knownMembers), { creator: 'Creator', mate: 'Mate' });
+
+    // 進隊伍：隊裡現在的人
+    state.client.adoptSession(room([], [member, mate, gone]), member, TOKEN);
+    assert.deepEqual(plain(state.client.knownMembers), { creator: 'Creator', mate: 'Mate', gone: 'Gone' });
+
+    // 輪詢：gone 離開、mate 改名、late 加入。離開的人留著，改名更新，新來的加上
+    state.client.mapSync.receive(room([], [member, { id: 'mate', nickname: 'Mate2' }, { id: 'late', nickname: 'Late' }], 1));
+    const known = { creator: 'Creator', mate: 'Mate2', gone: 'Gone', late: 'Late' };
+    assert.deepEqual(plain(state.client.knownMembers), known);
+
+    // 跟 session 一起存；房間資料裡沒有這個欄位
+    const record = JSON.parse(state.storage.get('ff14tw_current_room'));
+    assert.deepEqual(record.knownMembers, known);
+    assert.equal(state.client.currentRoom.knownMembers, undefined);
+
+    // 重新整理：讀回來。gone 已經不在隊裡，名字仍然寫得出來；knownMembers 不跟著房間交給 mapSync
+    const reloaded = setup(() => ({ body: room() }), { stored: Object.fromEntries(state.storage) });
+    await reloaded.client.checkExistingRoom();
+    assert.equal(reloaded.client.currentRoom.roomCode, 'ABC123');
+    assert.deepEqual(plain(reloaded.client.knownMembers), known);
+    assert.equal(reloaded.client.currentRoom.knownMembers, undefined);
+    assert.equal(reloaded.client.mapSync.room.knownMembers, undefined);
+    assert.deepEqual(plain(reloaded.client.ownerOf({ addedBy: 'gone' })), { kind: 'left', id: 'gone', name: 'Gone' });
+
+    // 存值壞掉（不是物件、值不是字串）或欄位根本不存在（舊版的存檔）：當作空的，隊伍照樣接回，只剩現在隊裡的人
+    const present = { creator: 'Creator', mate: 'Mate2', late: 'Late' };
+    for (const bad of [['Gone'], 'Gone', 42, null, { gone: 5, '': 'x' }, undefined]) {
+        const damaged = { ...record, knownMembers: bad };
+        if (bad === undefined) delete damaged.knownMembers;
+        const page = setup(() => ({ body: room() }), { stored: { ff14tw_current_room: JSON.stringify(damaged) } });
+        await page.client.checkExistingRoom();
+        assert.equal(page.client.currentRoom?.roomCode, 'ABC123', `${JSON.stringify(bad)} 照樣接回隊伍`);
+        assert.deepEqual(plain(page.client.knownMembers), present, JSON.stringify(bad));
+    }
+
+    // 離開隊伍（不管保留或清空清單）：清空，存檔也刪掉
+    await state.client.leaveRoom(true);
+    assert.equal(state.client.currentRoom, null);
+    assert.deepEqual(plain(state.client.knownMembers), {});
+    assert.equal(state.storage.has('ff14tw_current_room'), false);
+
+    // 被移出（輪詢回來的成員裡沒有自己）：一樣清空
+    state.client.adoptSession(room([], [member, mate]), member, TOKEN);
+    assert.deepEqual(Object.keys(plain(state.client.knownMembers)), ['creator', 'mate']);
+    state.client.mapSync.receive(room([], [mate], 2));
+    assert.equal(state.client.currentRoom, null);
+    assert.deepEqual(plain(state.client.knownMembers), {});
+
+    // rememberMembers()：沒有字串 id、名字不是字串的成員不記
+    state.client.rememberMembers({ members: [{ id: 'x' }, { id: 'y', nickname: 7 }, null, { nickname: 'Nobody' }, { id: 'z', nickname: 'Zed' }] });
+    assert.deepEqual(plain(state.client.knownMembers), { z: 'Zed' });
+});
+
+test('ownerOf：me、member、離開但記得名字、離開沒看過、addedBy 空的；不在隊伍裡是 null', () => {
+    const state = setup(() => ({ body: room() }));
+    assert.equal(state.client.ownerOf({ addedBy: 'creator' }), null, '還沒進隊伍');
+
+    state.client.adoptSession(room([], [member, mate, gone]), member, TOKEN);
+    state.client.mapSync.receive(room([], [member, mate], 1));
+    const owner = addedBy => plain(state.client.ownerOf({ addedBy }));
+    assert.deepEqual(owner('creator'), { kind: 'me', id: 'creator', name: 'Creator' });
+    assert.deepEqual(owner('mate'), { kind: 'member', id: 'mate', name: 'Mate' });
+    assert.deepEqual(owner('gone'), { kind: 'left', id: 'gone', name: 'Gone' });
+    assert.deepEqual(owner('stranger'), { kind: 'left', id: 'stranger', name: null });
+    for (const addedBy of [undefined, null, '']) assert.equal(state.client.ownerOf({ addedBy }), null, String(addedBy));
+    assert.equal(state.client.ownerOf({}), null);
+
+    state.client.forceLeaveRoom();
+    assert.equal(state.client.ownerOf({ addedBy: 'creator' }), null, '離開之後');
+});
+
+test('進出隊伍只用 replaceState、只動 room：網址 ?grade=g17&maps=tm_017 建立後是 ?grade=g17&maps=tm_017&room=ABC123，離開後回到 ?grade=g17&maps=tm_017；沒有 pushState', async () => {
+    const state = setup(createThenJoin);
+    const base = 'http://localhost:8765/tools/treasure-map-finder/';
+    // 瀏覽器原本的 history.state 要原樣帶著，不換成 {}
+    const kept = { kept: true };
+    state.window.history.state = kept;
+    state.window.location.href = `${base}?grade=g17&maps=tm_017`;
+
+    await state.client.createRoom();
+    assert.equal(state.window.location.href, `${base}?grade=g17&maps=tm_017&room=ABC123`);
+    state.client.forceLeaveRoom();
+    assert.equal(state.window.location.href, `${base}?grade=g17&maps=tm_017`);
+
+    // 複選的篩選（grade、zone）與分享的寶圖（maps）用逗號隔開：逗號照舊寫成逗號，不變成 %2C；hash 不動；
+    // 建立、加入進來之後多一個 room，離開之後和進來前一模一樣
+    const multi = `${base}?grade=g17,g10&zone=a,b&maps=tm_017,tm_018#route`;
+    for (const [enter, code] of [[() => state.client.createRoom(), 'ABC123'], [() => state.client.joinRoom('XYZ789'), 'XYZ789']]) {
+        state.window.location.href = multi;
+        await enter();
+        assert.equal(state.window.location.href, `${base}?grade=g17,g10&zone=a,b&maps=tm_017,tm_018&room=${code}#route`);
+        state.client.forceLeaveRoom();
+        assert.equal(state.window.location.href, multi);
+    }
+
+    // 建立、離開、建立、離開、加入、離開，共六次，都是 replaceState
+    assert.deepEqual(state.historyCalls.map(call => call.method), Array(6).fill('replaceState'));
+    for (const call of state.historyCalls) assert.equal(call.state, kept);
+    assert.doesNotMatch(fs.readFileSync(path.join(__dirname, '..', 'tools/treasure-map-finder/room-collaboration.js'), 'utf8'), /pushState/);
+});
+
+test('RoomCollaboration.withRoom：只換 room 這一個參數，其他參數與 hash 照舊（逗號不編碼）；代號是 null 就拿掉，拿光了參數不留 ?', () => {
+    const { context } = setup(() => ({ body: room() }));
+    const RoomCollaboration = vm.runInContext('RoomCollaboration', context);
+    const base = 'https://ff14.tw/tools/treasure-map-finder/';
+    const multi = 'grade=g17,g10&zone=a,b&maps=tm_017,tm_018';
+    // [說明, 原網址, 代號, 結果]
+    const cases = [
+        ['沒有參數：加上 room', base, 'ABC123', `${base}?room=ABC123`],
+        ['接在其他參數後面；複選的值逗號照舊，hash 留著', `${base}?${multi}#route`, 'ABC123', `${base}?${multi}&room=ABC123#route`],
+        ['已經有 room：原位換掉，其他參數的順序不變', `${base}?room=OLD111&grade=g17,g10`, 'ABC123', `${base}?room=ABC123&grade=g17,g10`],
+        ['值裡編碼過的 & 不會被拆成兩個參數', `${base}?zone=a%26b&grade=g17`, 'ABC123', `${base}?zone=a%26b&grade=g17&room=ABC123`],
+        ['拿掉 room：回到加上之前的網址', `${base}?${multi}&room=ABC123#route`, null, `${base}?${multi}#route`],
+        ['拿掉最後一個參數：不留 ?，hash 留著', `${base}?room=ABC123#route`, null, `${base}#route`],
+        ['本來就沒有 room：網址不變', `${base}?${multi}#route`, null, `${base}?${multi}#route`]
+    ];
+    for (const [label, href, code, expected] of cases) assert.equal(RoomCollaboration.withRoom(href, code), expected, label);
+});
+
+test('改名：自訂的名字存起來；改成自己的預設名字或舊樣式就刪掉存值；沒改不寫', async () => {
+    // 在隊伍裡目前叫 current，名字欄填 typed 按確認；回傳之後 localStorage 裡的 ff14tw_user_nickname（沒有是 undefined）
+    const renameTo = async ({ current, typed, stored = {} }) => {
+        const me = { ...member, nickname: current };
+        const state = setup(request => ({ body: room([], [{ ...me, nickname: request.body.nickname }], 1) }),
+            { stored: { ff14tw_nickname_tag: 'K7Q', ...stored } });
+        state.client.adoptSession(room([], [me]), me, TOKEN);
+        const getElementById = state.document.getElementById;
+        state.document.getElementById = id => (id === 'nicknameInput' ? { value: typed } : getElementById(id));
+        await state.client.confirmEditNickname();
+        assert.equal(state.client.currentUser.nickname, typed.trim(), `${typed}：改名送出去了`);
+        return state.storage.get('ff14tw_user_nickname');
+    };
+
+    // 自訂的名字存起來（去掉頭尾空白）；原本存著別的名字就換掉
+    assert.equal(await renameTo({ current: '光之戰士K7Q', typed: '  Alice  ' }), 'Alice');
+    assert.equal(await renameTo({ current: 'Alice', typed: 'Bob', stored: { ff14tw_user_nickname: 'Alice' } }), 'Bob');
+
+    // 改成自己的預設名字（任何一種語言的開頭加上這台機器的字串）或舊樣式：刪掉存值，下次回到預設名字
+    for (const typed of ['光之戰士K7Q', '光の戦士K7Q', 'Warrior of Light K7Q', '光之戰士', '光之戰士1', 'Warrior of Light 2']) {
+        assert.equal(await renameTo({ current: 'Alice', typed, stored: { ff14tw_user_nickname: 'Alice' } }), undefined, typed);
+    }
+
+    // 沒改：不寫。存著的 Old 不會被目前的名字蓋掉，本來沒存也維持沒存
+    assert.equal(await renameTo({ current: 'Alice', typed: 'Alice', stored: { ff14tw_user_nickname: 'Old' } }), 'Old');
+    assert.equal(await renameTo({ current: 'Alice', typed: ' Alice ' }), undefined);
+    assert.equal(await renameTo({ current: '光之戰士K7Q', typed: '光之戰士K7Q' }), undefined);
+});
+
+test('讀 localStorage 就丟例外時：建立照樣送光之戰士＋字串，同一個頁面加入別隊時是同一組；不丟例外', async () => {
+    const state = setup(createThenJoin);
+    const errors = [];
+    state.console.error = (...args) => errors.push(String(args[0]));
+    blockStorage(state.context);
+    assert.doesNotThrow(() => state.client.defaultNickname());
+
+    await state.client.createRoom();
+    assert.equal(state.client.currentRoom?.roomCode, 'ABC123');
+    const created = state.requests[0].body.memberNickname;
+    assert.match(created, new RegExp(`^光之戰士${TAG_CHARS}{3}$`));
+    // 存檔（連同 knownMembers）真的試著寫了，寫不進去也只是記一筆錯誤，不丟出
+    assert.ok(errors.some(message => message.includes('Storage write error')), errors.join('、'));
+
+    // 存不起來，所以是這個頁面記住的那一組
+    state.client.forceLeaveRoom();
+    await state.client.joinRoom('XYZ789');
+    assert.equal(state.client.currentRoom?.roomCode, 'XYZ789');
+    assert.equal(state.requests.find(request => request.url.endsWith('/join')).body.memberNickname, created);
+
+    // knownMembers 照樣記在這個頁面（存不起來也不出錯）；改名照常
+    assert.deepEqual(plain(state.client.knownMembers), { creator: 'Creator', joiner: 'Joiner' });
+    const getElementById = state.document.getElementById;
+    state.document.getElementById = id => (id === 'nicknameInput' ? { value: 'Alice' } : getElementById(id));
+    await state.client.confirmEditNickname();
+    assert.equal(state.client.currentUser.nickname, 'Alice');
+    assert.deepEqual(state.toasts, ['隊伍 ABC123 建立成功！', '成功加入隊伍 XYZ789', '暱稱已更新']);
+
+    // 沒有 localStorage 這個東西（typeof 是 'undefined'）也一樣
+    vm.runInContext('delete globalThis.localStorage', state.context);
+    assert.equal(vm.runInContext('typeof localStorage', state.context), 'undefined');
+    assert.match(state.client.defaultNickname(), new RegExp(`^光之戰士${TAG_CHARS}{3}$`));
+});
+
+test('adoptSession：poll 是 false 時不開始輪詢，預設要輪詢', () => {
+    const state = setup(() => ({ body: room() }));
+    let polls = 0;
+    state.client.startPolling = () => { polls++; };
+    state.client.adoptSession(room(), member, TOKEN);
+    assert.equal(polls, 1);
+
+    state.client.forceLeaveRoom();
+    state.client.adoptSession(room(), member, TOKEN, [], { poll: false });
+    assert.equal(polls, 1, 'poll: false 沒有開始輪詢');
+    assert.equal(state.client.currentRoom.roomCode, 'ABC123', '其他照常接上');
+    assert.equal(state.client.currentUser.id, member.id);
+});
+
+test('預設名字的開頭改由 PartyNames.BASES 提供：treasure_map_default_nickname 與 _creator 三語都刪掉了', () => {
+    for (const lang of ['zh', 'en', 'ja']) {
+        const keys = translationKeySet('assets/js/i18n/translations/tools/treasure-map-finder.js', lang);
+        for (const key of ['treasure_map_default_nickname', 'treasure_map_default_nickname_creator']) {
+            assert.equal(keys.has(key), false, `${lang} 還有 ${key}`);
+        }
+    }
+});
+
 // ---------- 清單面板裡的組隊：焦點（fake-dom） ----------
 // 照 index.html 做出清單面板（標頭的關閉、組隊按鈕、隊伍狀態、清單與它下面的動作列）、三個隊伍對話框與面板外的一顆按鈕，
-// fake-dom 裡載入真正的 list-manager.js、room-map-sync.js、room-collaboration.js 與 script.js（清單面板的開關、隊伍同步）。
+// fake-dom 裡載入真正的 list-manager.js、party-names.js、room-map-sync.js、room-collaboration.js 與 script.js（清單面板的開關、隊伍同步、預設名字）。
 // finder 不跑建構函式，清單張數、卡片按鈕、清單內容換成空函式（同上面的 setup()）；client.init() 由測試自己呼叫（掛事件、處理網址的 ?room=）。
 // request() 換成 respond(path, options)：回傳值就是伺服器的回應，丟出的錯誤就是失敗。
 // 按鈕與輸入框照 Chrome 的行為：拿著焦點時一停用，當場就失去焦點（activeElement 退回 body）；停用的、自己或祖先帶 .hidden 的，focus() 什麼都不做。
@@ -711,18 +1018,23 @@ function createTeamPanel({ url = 'https://ff14.tw/tools/treasure-map-finder/', r
         }
     }
 
+    // 進出隊伍用 replaceState（pushState 也留著，同瀏覽器）：換掉 history.state 與 location
+    const navigate = (state, title, next) => {
+        dom.window.history.state = state;
+        dom.window.location = new URL(String(next));
+    };
     Object.assign(dom.window, {
         URLSearchParams,
         crypto: webcrypto,
         confirm: () => false,
         console: { log() {}, warn() {}, error() {} },
-        history: { pushState(state, title, next) { dom.window.location = new URL(String(next)); } },
+        history: { state: null, pushState: navigate, replaceState: navigate },
         localStorage: { getItem: key => storage.get(key) ?? null, setItem: (key, value) => storage.set(key, String(value)), removeItem: key => storage.delete(key) },
         i18n: { getCurrentLanguage: () => 'zh', onLanguageChange() {} },
         FF14Utils: { getI18nText: (key, fallback, values = {}) => fallback.replace(/\{(\w+)\}/g, (_, name) => values[name]), showToast() {} },
         ModalManager: FakeModalManager
     });
-    for (const file of ['assets/js/security-utils.js', 'tools/treasure-map-finder/list-manager.js', 'tools/treasure-map-finder/room-map-sync.js', 'tools/treasure-map-finder/room-collaboration.js', 'tools/treasure-map-finder/script.js']) {
+    for (const file of ['assets/js/security-utils.js', 'tools/treasure-map-finder/list-manager.js', 'tools/treasure-map-finder/party-names.js', 'tools/treasure-map-finder/room-map-sync.js', 'tools/treasure-map-finder/room-collaboration.js', 'tools/treasure-map-finder/script.js']) {
         dom.load(file);
     }
 
