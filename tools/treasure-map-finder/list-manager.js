@@ -40,7 +40,10 @@ class ListManager {
     }
 
     /**
-     * 儲存清單到本地儲存
+     * 儲存清單到本地儲存。瀏覽器不讓寫入（封鎖網站資料、空間滿了，光是讀 localStorage 就丟例外也算）時不丟例外：
+     * 記憶體裡的清單照樣可用，只是關掉頁面就沒了，由回傳值告訴呼叫端
+     * @param {Array} maps - 要寫入的清單（預設是目前的清單）
+     * @returns {boolean} 寫入成功 true，失敗 false
      */
     saveToStorage(maps = this.list) {
         const data = {
@@ -51,9 +54,10 @@ class ListManager {
         
         try {
             localStorage.setItem(ListManager.CONSTANTS.STORAGE_KEY, JSON.stringify(data));
+            return true;
         } catch (error) {
             console.error('儲存清單失敗:', error);
-            throw new Error('無法儲存清單');
+            return false;
         }
     }
 
@@ -86,7 +90,7 @@ class ListManager {
      * 加入項目到清單
      * @param {Object} map - 地圖資料
      * @param {Object} options - 選項 {maxItems, addedBy}
-     * @returns {{success: boolean, message: string}}
+     * @returns {{success: boolean, message: string, saved?: boolean}} 成功時才有 saved：false 表示清單已更新、但瀏覽器沒讓寫入
      */
     add(map, options = {}) {
         const { maxItems = Infinity, addedBy = null } = options;
@@ -118,21 +122,22 @@ class ListManager {
             addedBy: addedBy
         });
 
-        // 加入清單
+        // 加入清單：先改記憶體再存，存不起來清單照樣是新的
         this.list.push(mapData);
         this.listIds.add(map.id);
-        this.saveToStorage();
+        const saved = this.saveToStorage();
 
         return {
             success: true,
-            message: FF14Utils.getI18nText('treasure_map_item_added', '已加入清單')
+            message: FF14Utils.getI18nText('treasure_map_item_added', '已加入清單'),
+            saved
         };
     }
 
     /**
      * 從清單移除項目
      * @param {string} id - 項目 ID
-     * @returns {{success: boolean, message: string, removedItem: Object|null}}
+     * @returns {{success: boolean, message: string, removedItem: Object|null, saved?: boolean}} 成功時才有 saved（同 add）
      */
     remove(id) {
         if (!this.has(id)) {
@@ -149,18 +154,19 @@ class ListManager {
         // 移除
         this.list = this.list.filter(item => item.id !== id);
         this.listIds.delete(id);
-        this.saveToStorage();
+        const saved = this.saveToStorage();
 
         return {
             success: true,
             message: FF14Utils.getI18nText('treasure_map_item_removed', '已從清單移除'),
-            removedItem
+            removedItem,
+            saved
         };
     }
 
     /**
      * 清空整個清單
-     * @returns {{success: boolean, message: string, count: number}}
+     * @returns {{success: boolean, message: string, count: number, saved?: boolean}} 成功時才有 saved（同 add）
      */
     clear() {
         const count = this.list.length;
@@ -175,12 +181,13 @@ class ListManager {
 
         this.list = [];
         this.listIds.clear();
-        this.saveToStorage();
+        const saved = this.saveToStorage();
 
         return {
             success: true,
             message: FF14Utils.getI18nText('treasure_map_list_cleared', '已清空清單'),
-            count
+            count,
+            saved
         };
     }
 
@@ -188,7 +195,7 @@ class ListManager {
      * 切換項目的存在狀態
      * @param {Object} map - 地圖資料
      * @param {Object} options - 選項
-     * @returns {{action: 'add'|'remove', success: boolean, message: string}}
+     * @returns {{action: 'add'|'remove', success: boolean, message: string, saved?: boolean}} 其餘欄位同 add／remove
      */
     toggle(map, options = {}) {
         if (this.has(map.id)) {
@@ -237,39 +244,13 @@ class ListManager {
     }
 
     /**
-     * 匯出清單資料
-     * @returns {Object} 匯出資料物件
-     */
-    export() {
-        return {
-            version: '1.0',
-            exportDate: new Date().toISOString(),
-            appName: 'FF14.tw 寶圖搜尋器',
-            totalMaps: this.list.length,
-            maps: this.list.map(map => ({
-                id: map.id,
-                level: map.level,
-                levelName: map.levelName,
-                zone: map.zone,
-                coords: map.coords
-            }))
-        };
-    }
-
-    /**
-     * 匯出為 JSON 字串
-     * @returns {string}
-     */
-    exportAsJson() {
-        return JSON.stringify(this.export(), null, 2);
-    }
-
-    /**
      * 匯入清單資料
      * @param {Object|string} data - 匯入的資料或 JSON 字串
      * @param {boolean} merge - 是否合併（true）或取代（false）
-     * @param {Object} options - 選項 {maxItems, validate}；validate 在儲存前驗證完整結果
-     * @returns {{success: boolean, message: string, imported: number, skipped: number}}
+     * @param {Object} options - 選項 {maxItems, validate}；validate 在套用前驗證完整結果
+     * @returns {{success: boolean, message: string, imported: number, skipped: number, saved?: boolean}}
+     *   失敗（格式、重複、上限、validate 不通過）時不動清單也不動儲存，沒有 saved；
+     *   成功時 saved: false 表示清單已經換成新的、但瀏覽器沒讓寫入
      */
     import(data, merge = false, { maxItems = Infinity, validate } = {}) {
         try {
@@ -307,7 +288,7 @@ class ListManager {
                 throw new Error(FF14Utils.getI18nText('treasure_map_import_no_valid_maps', '沒有有效的地圖資料'));
             }
 
-            // Stage and deduplicate the projected list before persisting or reporting success.
+            // Stage and deduplicate the projected list, and let it pass every check, before touching the current list.
             const next = new Map((merge ? this.list : []).map(map => [map.id, map]));
             let importedCount = 0;
             for (const map of validatedMaps) {
@@ -324,9 +305,10 @@ class ListManager {
             }
             const nextList = [...next.values()];
             if (validate) validate(nextList);
-            this.saveToStorage(nextList);
+            // 檢查都通過了才動清單：先換記憶體裡的，再存；存不起來清單照樣是新的
             this.list = nextList;
             this.listIds = new Set(next.keys());
+            const saved = this.saveToStorage();
 
             return {
                 success: true,
@@ -334,7 +316,8 @@ class ListManager {
                     ? FF14Utils.getI18nText('treasure_map_import_merged', '已合併匯入 {count} 張新寶圖', { count: importedCount })
                     : FF14Utils.getI18nText('treasure_map_import_success', '已匯入 {count} 張寶圖', { count: importedCount }),
                 imported: importedCount,
-                skipped: skippedCount
+                skipped: skippedCount,
+                saved
             };
 
         } catch (error) {
@@ -369,12 +352,8 @@ class ListManager {
         }
         this.list = [...next.values()];
         this.listIds = new Set(next.keys());
-        try {
-            this.saveToStorage();
-        } catch (error) {
-            // A successful remote edit must remain usable even if browser storage is unavailable.
-            console.warn('共用清單僅保留於目前頁面', error);
-        }
+        // A successful remote edit must remain usable even if browser storage is unavailable.
+        if (!this.saveToStorage()) console.warn('共用清單僅保留於目前頁面');
     }
 
     /**

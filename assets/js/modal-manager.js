@@ -4,7 +4,7 @@
  *
  * 關於堆疊：全站所有 ModalManager 實例共用一個靜態堆疊 ModalManager._stack。
  * 每個實例一次仍只管理一個視窗（activeModal），但不同實例的視窗可以互相疊加
- * （例如寶圖搜尋器：我的清單面板 → 路線面板 → 格式面板）。堆疊有三個作用：
+ * （例如寶圖搜尋器：我的清單面板 → 清空、匯入或分享對話框）。堆疊有三個作用：
  *   1. 整個堆疊只掛「一個」document keydown 監聽器，事件永遠只分派給最上層，
  *      不會發生一次 Escape 把好幾層一起關掉；
  *   2. 焦點陷阱只在最上層生效，下層的 Tab 循環自動讓位；
@@ -40,8 +40,8 @@ class ModalManager {
         }
 
         // 原本的最上層退居下層：設為 inert，滑鼠、焦點與無障礙樹都碰不到它。
-        // 堆疊只分派鍵盤事件，若不擋掉指標事件，使用者可以點到露在新視窗外的
-        // 下層控制項（例如清單面板露在路線面板旁邊的按鈕），把整疊連鎖收掉。
+        // 堆疊只分派鍵盤事件，若不擋掉指標事件，使用者可以點到下層視窗的控制項
+        // （例如清單面板上的按鈕，而它上面正疊著清空或匯入對話框），把整疊連鎖收掉。
         // 注意 inert 只涵蓋 activeModal 自己的子樹；像清單面板的遮罩 #panelOverlay 這種
         // 手足元素不受影響，其點擊處理要自行用 ModalManager.topmost() 判斷（見 toggleListPanel）
         const previousTop = ModalManager._stack[ModalManager._stack.length - 1];

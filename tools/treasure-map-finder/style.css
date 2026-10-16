@@ -85,17 +85,11 @@
     color: var(--color-success-text);
 }
 
-/* 清單入口：左邊的清單按鈕，右邊「組隊」、提示、「生成路線」三選一（由 JS 切換 .hidden） */
+/* 清單入口：左邊的清單按鈕，右邊「組隊」、「生成路線」二選一（由 JS 切換 .hidden） */
 .tm-list-entry {
     display: flex;
     align-items: center;
     gap: var(--space-2);
-}
-
-.tm-entry-hint {
-    font-size: var(--text-sm);
-    line-height: var(--leading-snug);
-    color: var(--color-muted);
 }
 
 /* 手機的底部列；桌機用最上面那一列右邊的入口（底部列的版面見最下面的響應式） */
@@ -484,7 +478,16 @@
     transition: transform var(--duration-slow) var(--ease), visibility 0s;
 }
 
-/* 抽屜、路線面板、格式面板共用的標題列 */
+/* 面板裡的一頁（清單頁、路線頁）：撐滿面板，標頭與底部固定、中間的 .panel-body 捲動。
+   兩頁用 .hidden 切換：這裡的 display 和 .hidden 同優先權，靠 .hidden 寫在最後勝出 */
+.tm-panel-view {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+
+/* 清單面板兩頁共用的標題列 */
 .panel-header {
     display: flex;
     justify-content: space-between;
@@ -501,16 +504,26 @@
     color: var(--color-heading);
 }
 
-.panel-header-actions {
+/* 清單頁的標頭左邊：看得到的標題，旁邊是張數 */
+.tm-panel-heading {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    align-items: baseline;
     gap: var(--space-2);
-    width: 100%;
+    min-width: 0;
 }
 
-/* 面板中間：組隊、隊伍狀態、頁籤與清單一起捲動，標頭與底部的「生成路線」固定在面板上下緣
-   （手機的面板只有半個畫面高，隊伍狀態加上清單放不下，「生成路線」會被擠出畫面） */
+.tm-panel-heading h3 {
+    font-size: var(--text-lg);
+}
+
+.tm-panel-count {
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+/* 面板中間：組隊、隊伍狀態、頁籤、清單與動作列一起捲動，標頭與底部的「生成路線」固定在面板上下緣
+   （手機的面板沒有整個畫面高，隊伍狀態加上清單放不下，「生成路線」會被擠出畫面） */
 .panel-body {
     flex: 1;
     min-height: 0;
@@ -522,13 +535,20 @@
     padding: var(--space-4);
 }
 
+/* 清單的每一列：縮圖、兩行文字（等級、地名與編號；座標與最近傳送點）、右邊的 ✕ */
+.tm-list-items {
+    display: grid;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
 .list-item {
     display: flex;
-    flex-direction: row;
     align-items: center;
-    gap: var(--space-4);
-    padding: var(--space-3);
-    margin-bottom: var(--space-3);
+    gap: var(--space-3);
+    padding: var(--space-2) var(--space-3);
     background: var(--color-surface-2);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
@@ -540,13 +560,10 @@
     border-color: var(--color-border-strong);
 }
 
-.list-item:last-child {
-    margin-bottom: 0;
-}
-
 .list-item img {
-    width: 60px;
-    height: 60px;
+    flex: none;
+    width: 48px;
+    height: 48px;
     border-radius: var(--radius-sm);
     object-fit: cover;
 }
@@ -556,23 +573,48 @@
     min-width: 0;
 }
 
-.item-level {
-    margin-bottom: var(--space-1);
+.item-title,
+.item-sub {
+    margin: 0;
 }
 
-.item-zone {
-    display: block;
-    margin-bottom: 2px;
+.item-title {
+    font-weight: var(--weight-semibold);
+    line-height: var(--leading-snug);
+    color: var(--color-heading);
+}
+
+.item-index {
     font-size: var(--text-sm);
+    font-weight: var(--weight-normal);
+    color: var(--color-muted);
+    font-variant-numeric: tabular-nums;
 }
 
-.item-coords {
-    font-size: var(--text-xs);
+.item-sub {
+    font-size: var(--text-sm);
     color: var(--color-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+.list-item .btn-remove {
+    flex: none;
 }
 
 .list-item .btn-remove:hover:not(:disabled) {
     color: var(--color-danger-text);
+}
+
+/* 清單下面的動作列：放不下時換行，「清空清單」靠右 */
+.tm-list-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    padding: 0 var(--space-4) var(--space-4);
+}
+
+#clearAllBtn {
+    margin-left: auto;
 }
 
 /* 清單／歷史頁籤：外觀由 .tabs / .tab 提供 */
@@ -604,239 +646,298 @@
     flex: 1;
 }
 
+/* 兩頁的底部：一列，右邊是那一頁唯一的主要按鈕（清單頁：左邊張數、右邊「生成路線」；路線頁：左邊「全部複製」、右邊「複製下一站」） */
 .panel-footer {
     display: flex;
-    flex-direction: column;
-    gap: var(--space-4);
-    padding: var(--space-4) var(--space-6);
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-6);
     background: var(--color-surface-2);
     border-top: 1px solid var(--color-border);
 }
 
-.panel-footer p {
+.tm-footer-count {
     margin: 0;
-    text-align: center;
     font-weight: var(--weight-semibold);
     color: var(--color-heading);
+    font-variant-numeric: tabular-nums;
 }
 
-/* 總計行的三段文字各自是 data-i18n 節點，靠 margin 取代原本的空白字元 */
-#totalCount {
-    margin: 0 var(--space-1);
+/* 路線頁（#routeView）：標頭左邊是「‹ 清單」與標題「路線」 */
+#routeBackBtn {
+    padding-inline: var(--space-2);
 }
 
-.panel-footer .btn {
-    width: 100%;
-}
-
-/* 路線面板與格式面板：置中的固定面板（沒有遮罩，沿用原行為），以 .active 顯示 */
-.route-panel,
-.format-panel {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    display: none;
-    flex-direction: column;
-    width: 600px;
-    max-width: 90vw;
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-xl);
-    transform: translate(-50%, -50%);
-}
-
-.route-panel {
-    z-index: var(--z-modal);
-    max-height: 80vh;
-}
-
-.format-panel {
-    z-index: calc(var(--z-modal) + 1);
-    max-height: 85vh;
-}
-
-.route-panel.active,
-.format-panel.active {
+/* 摘要：「6 張 · 3 個地區 · 5 次傳送」，旁邊淡色的「順序依直線距離估算」；有完成的站時最右邊多一顆「重設進度」。放不下時換行。
+   說明與「重設進度」會被 .hidden 切換，這裡不設它們的 display */
+.tm-route-summary {
     display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-1) var(--space-3);
+    padding: var(--space-4) var(--space-4) 0;
 }
 
-.route-summary {
-    padding: var(--space-4) var(--space-6);
-    background: var(--color-info-tint);
-    border-bottom: 1px solid var(--color-info-border);
-}
-
-.route-summary p {
+.tm-route-overview,
+.tm-route-note {
     margin: 0;
-    font-weight: var(--weight-medium);
-    color: var(--color-text);
 }
 
-.route-summary-content {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1);
-}
-
-.route-actions {
-    display: flex;
-    justify-content: center;
-    gap: var(--space-3);
-    padding: var(--space-4) var(--space-6);
-    background: var(--color-surface-2);
-    border-bottom: 1px solid var(--color-border);
-}
-
-.route-actions .btn {
-    min-width: 150px;
-}
-
-.route-steps {
-    flex: 1;
-    overflow-y: auto;
-    padding: var(--space-4);
-}
-
-.route-step {
-    display: flex;
-    align-items: center;
-    gap: var(--space-4);
-    padding: var(--space-3);
-    margin-bottom: var(--space-2);
-    background: var(--color-surface-2);
-    border-radius: var(--radius-md);
-    transition: background-color var(--duration-base) var(--ease);
-}
-
-.route-step:hover {
-    background: var(--color-hover);
-}
-
-.route-step:last-child {
-    margin-bottom: 0;
-}
-
-.step-number {
-    flex-shrink: 0;
+.tm-route-overview {
     font-weight: var(--weight-semibold);
+    color: var(--color-heading);
+    font-variant-numeric: tabular-nums;
+}
+
+.tm-route-note {
+    font-size: var(--text-sm);
     color: var(--color-muted);
 }
 
-.step-content {
-    display: flex;
-    flex: 1;
-    align-items: center;
+#resetRouteBtn {
+    margin-left: auto;
+}
+
+/* 站別：一站一張寶圖。左邊站號圓圈，中間傳送、名稱與座標（目前這一站多一行預覽），右邊 📋 與「完成」 */
+.tm-stops {
+    display: grid;
     gap: var(--space-2);
+    margin: 0;
+    padding: var(--space-3) var(--space-4) var(--space-4);
+    list-style: none;
+}
+
+.tm-stop {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: start;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+}
+
+.tm-stop-num {
+    display: inline-grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border-radius: var(--radius-full);
+    background: var(--color-surface-2);
+    color: var(--color-heading);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-bold);
+    font-variant-numeric: tabular-nums;
+}
+
+.tm-stop-body {
     min-width: 0;
 }
 
-.step-icon {
-    width: var(--space-7);
-    font-size: var(--text-xl);
-    text-align: center;
+.tm-stop-tp,
+.tm-stop-title,
+.tm-stop-coords,
+.tm-stop-preview {
+    margin: 0;
 }
 
-.step-text {
-    flex: 1;
+.tm-stop-tp {
     font-size: var(--text-sm);
-}
-
-.step-coords {
-    font-family: var(--font-mono);
-    font-size: var(--text-xs);
-    color: var(--color-muted);
-}
-
-/* 自訂格式 */
-.format-content {
-    flex: 1;
-    overflow-y: auto;
-    padding: var(--space-6);
-}
-
-.format-lang-switcher,
-.format-preview {
-    padding: var(--space-4);
-    margin-bottom: var(--space-6);
-    background: var(--color-surface-2);
-    border-radius: var(--radius-md);
-}
-
-.format-lang-switcher label {
-    display: block;
-    margin-bottom: var(--space-3);
     font-weight: var(--weight-semibold);
-    color: var(--color-heading);
-}
-
-.lang-buttons {
-    display: flex;
-    gap: var(--space-2);
-}
-
-.lang-buttons .btn {
-    flex: 1;
-    min-width: auto;
-}
-
-.format-section {
-    margin-bottom: var(--space-7);
-}
-
-.format-section h4,
-.format-preview h4 {
-    margin: 0 0 var(--space-3);
-    font-size: var(--text-lg);
-    color: var(--color-heading);
-}
-
-/* 格式輸入框：外觀由 .form-control 提供 */
-.format-input {
-    font-family: var(--font-mono);
-    font-size: var(--text-sm);
-    resize: vertical;
-}
-
-.format-help {
-    margin-top: var(--space-2);
-    font-size: var(--text-xs);
-    line-height: var(--leading-relaxed);
-    color: var(--color-muted);
-}
-
-.format-var {
-    display: inline-block;
-    margin: 2px;
-    padding: 2px 6px;
-    border: 1px solid var(--color-primary-tint);
-    border-radius: var(--radius-sm);
-    background: var(--color-primary-tint);
     color: var(--color-primary);
-    font-family: var(--font-mono);
-    font-size: var(--text-xs);
 }
 
-.preview-box {
-    max-height: 150px;
-    overflow-y: auto;
-    padding: var(--space-4);
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    font-family: var(--font-mono);
+.tm-stop-title {
+    font-weight: var(--weight-semibold);
+    line-height: var(--leading-snug);
+    color: var(--color-heading);
+}
+
+.tm-stop-coords {
     font-size: var(--text-sm);
+    color: var(--color-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+/* 會被複製的那句話：等寬字；句子比欄位寬時在任何地方換行，不撐寬面板；自訂格式裡的換行照實顯示（複製出去就是多行） */
+.tm-stop-preview {
+    padding: var(--space-2) var(--space-3);
+    background: var(--color-surface-2);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--color-text);
+    overflow-wrap: anywhere;
     white-space: pre-wrap;
 }
 
-.format-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: var(--space-4);
+.tm-stop .tm-stop-preview {
+    margin-top: var(--space-2);
 }
 
-.format-actions .btn {
-    min-width: 120px;
+.tm-stop-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+/* 目前這一站：主色外框與淡主色底，站號圓圈換成主色 */
+.tm-stop.is-current {
+    background: var(--color-primary-tint);
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 1px var(--color-primary);
+}
+
+.tm-stop.is-current .tm-stop-num {
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+}
+
+/* 完成的站淡化：底色退成第二層、傳送與名稱改成次要色，站號圓圈是成功色的 ✓ */
+.tm-stop.is-done {
+    background: var(--color-surface-2);
+}
+
+.tm-stop.is-done .tm-stop-num {
+    background: var(--color-success-tint);
+    color: var(--color-success-text);
+}
+
+.tm-stop.is-done .tm-stop-tp,
+.tm-stop.is-done .tm-stop-title {
+    color: var(--color-muted);
+}
+
+/* 「完成」按下去的狀態（aria-pressed="true"）：成功色調。滑過去時共用 .btn:hover:not(:disabled) 會換掉底色與字色，所以 hover 也要寫一次 */
+.tm-done[aria-pressed="true"],
+.tm-done[aria-pressed="true"]:hover:not(:disabled) {
+    border-color: var(--color-success-border);
+    background: var(--color-success-tint);
+    color: var(--color-success-text);
+}
+
+/* 路線頁的主要按鈕撐滿底部剩下的寬度；英日文或窄螢幕放不下時字換成兩行（按鈕高度不變），不把按鈕擠出面板 */
+#copyNextStopBtn {
+    flex: 1;
+    min-width: 0;
+    white-space: normal;
+    text-align: center;
+}
+
+/* 複製格式：站別下面一顆可以展開的按鈕，收起時右邊寫目前用的範本。展開的區塊用 .hidden 切換，
+   所以 .tm-format-section 的 display 只設在這個單一 class 的選擇器上，才輸給最後的 .hidden */
+.tm-format {
+    margin: 0 var(--space-4) var(--space-4);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+}
+
+.tm-format-toggle {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    width: 100%;
+    min-height: var(--control-md);
+    padding: var(--space-2) var(--space-3);
+    border: 0;
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--color-heading);
+    font-family: var(--font-sans);
+    font-size: var(--text-md);
+    font-weight: var(--weight-semibold);
+    text-align: left;
+    cursor: pointer;
+}
+
+.tm-format-toggle:hover {
+    background: var(--color-hover);
+}
+
+.tm-format-toggle:focus-visible {
+    outline: none;
+    box-shadow: var(--ring-primary);
+}
+
+/* 標題不換行；窄螢幕放不下時換行的是旁邊的範本名稱（英文的「Follows the site language」最長） */
+.tm-format-toggle > [data-i18n] {
+    white-space: nowrap;
+}
+
+/* 目前用的範本：靠右、淡色；最後面的小箭頭是純 CSS 畫的，展開時朝上 */
+.tm-format-current {
+    margin-left: auto;
+    font-size: var(--text-sm);
+    font-weight: var(--weight-normal);
+    color: var(--color-muted);
+    text-align: right;
+}
+
+.tm-format-toggle::after {
+    content: "";
+    flex: none;
+    width: 8px;
+    height: 8px;
+    border-right: 2px solid var(--color-muted);
+    border-bottom: 2px solid var(--color-muted);
+    transform: translateY(-2px) rotate(45deg);
+}
+
+.tm-format-toggle[aria-expanded="true"]::after {
+    transform: translateY(2px) rotate(-135deg);
+}
+
+.tm-format-section {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-3);
+    padding: var(--space-3);
+    border-top: 1px solid var(--color-border);
+}
+
+/* 間距全由 gap 決定：共用元件各自的上下邊界（.form-label、.form-text）清掉 */
+.tm-format-section > * {
+    margin: 0;
+}
+
+/* 「語言範本」與「插入變數」：標籤在前，按鈕接在後面，放不下時換行 */
+.tm-format-row,
+.tm-format-chips,
+.tm-format-vars {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.tm-format-label,
+#formatVarsLabel {
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    color: var(--color-heading);
+}
+
+/* 範本欄位：等寬字。字級不另外設定（沿用 .form-control 的 16px）：小於 16px 時 iOS Safari 一聚焦就會放大頁面 */
+.tm-format-template {
+    font-family: var(--font-mono);
+}
+
+.tm-format-var {
+    padding-inline: var(--space-2);
+}
+
+.tm-format-preview-label {
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+}
+
+.tm-format-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-2);
 }
 
 /* 加入／暱稱／離開對話框：外觀由 .dialog-overlay / .dialog 提供，這裡只補內文版面 */
@@ -863,8 +964,8 @@
     flex-wrap: wrap;
 }
 
-/* 地圖詳細檢視：遮罩層本身交給 ModalManager（.active 顯示）。疊在路線面板（--z-modal）與格式面板（+1）之上，
-   在 toast 之下：在詳細檢視裡按「複製」的提示才看得到 */
+/* 地圖詳細檢視：遮罩層本身交給 ModalManager（.active 顯示）。疊在清單面板、它的遮罩與所有頁內對話框之上
+   （它們都在 --z-overlay 以下），在 toast 之下：在詳細檢視裡按「複製」的提示才看得到 */
 .map-detail-modal {
     position: fixed;
     inset: 0;
@@ -1014,42 +1115,105 @@
     text-align: center;
 }
 
-/* 匯出／匯入對話框（JS 建立）：外觀由 .dialog-overlay / .dialog 提供，這裡管顯示切換與內距 */
-.ui-dialog-overlay {
-    display: none;
-    z-index: calc(var(--z-toast) + 1);
+/* 清空、匯入對話框（ListDialogs）：外觀由 .dialog-overlay / .dialog 提供，這裡補寬度與內文版面。
+   遮罩層和清單面板同一個 z-index（--z-overlay），靠排在面板後面疊在它上面（同加入隊伍對話框）；
+   平常用 .hidden（最後那一條）藏起來，顯示時由 ModalManager 設 style.display */
+.tm-dialog {
+    max-width: 440px;
 }
 
-.ui-dialog-overlay.active {
-    display: flex;
+/* 內文一欄到底，間距全由 gap 決定：共用元件各自的上下邊界（.form-label、.form-text、.error-message）清掉 */
+.tm-dialog .dialog-body {
+    display: grid;
+    gap: var(--space-3);
 }
 
-.ui-dialog {
-    max-width: 500px;
-    padding: var(--space-5);
+.tm-dialog .dialog-body > * {
+    margin: 0;
 }
 
-.ui-dialog h3 {
-    margin: 0 0 var(--space-3);
-    font-size: var(--text-lg);
+/* 貼上內容的欄位：等寬字，放得下一條分享連結或一段匯出的 JSON；字級不另外縮小（沿用 .form-control 的 16px）：
+   小於 16px 時 iOS Safari 一聚焦就會放大頁面，而 openImport() 一打開就聚焦它。
+   看不懂時下面的說明也改成錯誤色（欄位的紅框由 .is-invalid 提供） */
+.tm-dialog textarea.form-control {
+    font-family: var(--font-mono);
+}
+
+.tm-dialog .form-control.is-invalid ~ .form-text {
+    color: var(--color-danger-text);
+}
+
+/* 說明那一行先留著位置：一貼上就出現「連結裡有 3 張寶圖」，下面的選項不會跟著往下跳 */
+#importListStatus {
+    min-height: calc(var(--text-sm) * var(--leading-normal));
+}
+
+/* 單選選項（匯入的「合併／取代」）：fieldset 預設的框線、邊界、內距與最小寬度清掉（窄螢幕才縮得進對話框），
+   每個選項兩行：標題、說明。整組用 .hidden 切換，所以 display 只在這個單一 class 的選擇器上設，才輸給最後的 .hidden */
+.tm-choice {
+    display: grid;
+    gap: var(--space-2);
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+/* 標籤是兩行（標題、說明）：單選鈕對齊第一行，共用的 .form-check 是置中對齊 */
+.tm-choice .form-check {
+    align-items: flex-start;
+    margin-bottom: 0;
+}
+
+.tm-choice .form-check-label {
+    display: grid;
+}
+
+.tm-choice-title {
+    font-weight: var(--weight-semibold);
     color: var(--color-heading);
 }
 
-.ui-dialog-textarea.form-control {
-    height: 200px;
-    margin-bottom: var(--space-3);
-    font-family: var(--font-mono);
-    font-size: var(--text-xs);
+.tm-choice-hint {
+    color: var(--color-muted);
 }
 
-.ui-dialog-instruction {
-    margin-bottom: var(--space-3);
+/* 分享連結對話框（#shareMapsModal）：先說連結裡有幾張，下面一列一張（縮圖、等級＋地名＋座標，已經在清單裡的多一個小標籤）。
+   個人清單沒有張數上限，連結可以很長：列表在對話框裡自己捲動，下面的選項與按鈕不會被推出畫面 */
+.tm-dialog-lede {
+    color: var(--color-heading);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
 }
 
-.ui-dialog-actions {
-    display: flex;
-    justify-content: flex-end;
+.tm-mini-list {
+    display: grid;
     gap: var(--space-2);
+    max-height: 40vh;
+    padding: 0;
+    overflow-y: auto;
+    list-style: none;
+}
+
+.tm-mini {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-sm);
+}
+
+.tm-mini img {
+    flex: none;
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-sm);
+    object-fit: cover;
+}
+
+.tm-mini-text {
+    flex: 1;
+    min-width: 0;
+    font-variant-numeric: tabular-nums;
 }
 
 /* 資料來源：外觀由 .card 提供 */
@@ -1141,13 +1305,6 @@
         text-overflow: ellipsis;
     }
 
-    /* 提示放不下時換行（最多兩行，仍在按鈕高度內），不把清單按鈕擠掉 */
-    .tm-bottom-bar .tm-entry-hint {
-        min-width: 0;
-        font-size: var(--text-xs);
-        text-align: right;
-    }
-
     /* 底部列不能蓋住內容：頁面最下面留出同樣的高度。留在 body 而不是 main：
        main 後面還有頁尾，捲到底時頁尾的最後一行也要露出來 */
     body {
@@ -1225,23 +1382,23 @@
         text-overflow: ellipsis;
     }
 
+    /* 清單面板從底部滑上來、佔畫面 85% 高；第二行的 dvh 給支援的瀏覽器（網址列收起、展開時跟著變），
+       不支援的照第一行的 vh。上方兩角圓角：標頭有自己的底色，overflow: hidden 才不會把圓角蓋掉 */
     .my-list-panel {
         top: auto;
         right: 0;
         bottom: 0;
         left: 0;
         width: 100%;
-        height: 50vh;
+        height: 85vh;
+        height: 85dvh;
+        border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+        overflow: hidden;
         transform: translateY(100%);
     }
 
     .my-list-panel.active {
         transform: translateY(0);
-    }
-
-    .panel-header-actions {
-        flex-wrap: wrap;
-        gap: var(--space-2);
     }
 
     /* 詳細檢視全螢幕：標頭與動作列固定，中間（地圖在上、資訊在下）捲動 */
@@ -1283,6 +1440,23 @@
     .map-detail-buttons .btn {
         flex: 1 1 0;
         min-width: max-content;
+    }
+}
+
+/* 很窄的手機（≤480px；寫在 768px 的規則後面，兩個都成立時這裡的才會贏）：路線頁底部的兩顆按鈕縮小左右內距、主要按鈕不放圖示，
+   日文的「すべてコピー」加「次をコピー（1/6）」在 320px 寬也排得下；每一站右邊的 📋 與「完成」改成上下疊，中間的名稱與預覽寬一點 */
+@media (max-width: 480px) {
+    #routeView .panel-footer .btn {
+        padding-inline: var(--space-3);
+    }
+
+    #copyNextStopBtn .btn-icon {
+        display: none;
+    }
+
+    .tm-stop-actions {
+        flex-direction: column;
+        align-items: flex-end;
     }
 }
 

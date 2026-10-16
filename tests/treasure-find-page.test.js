@@ -88,7 +88,7 @@ const TreasureMapFinder = (() => {
 // 步驟列與清單入口（照 index.html 的結構；兩個入口內容相同，手機那個多了 .tm-bottom-bar）
 const STEP_KEYS = ['treasure_map_step_grade', 'treasure_map_step_add', 'treasure_map_step_route'];
 const ENTRY_IDS = ['listEntryDesktop', 'listEntryMobile'];
-const ENTRY_ACTIONS = ['team', 'hint', 'route'];
+const ENTRY_ACTIONS = ['team', 'route'];
 function createStepHint(dom) {
     return dom.el('ol', { id: 'stepHint', class: 'tm-steps', role: 'list' }, ...STEP_KEYS.map((key, index) => dom.el('li', index === 0 ? { class: 'current', 'aria-current': 'step' } : {},
         dom.el('span', { class: 'tm-step-num' }, String(index + 1)), dom.el('span', { 'data-i18n': key }, key))));
@@ -97,7 +97,6 @@ function createListEntry(dom, id) {
     return dom.el('div', { id, class: id === 'listEntryMobile' ? 'tm-list-entry tm-bottom-bar' : 'tm-list-entry' },
         dom.el('button', { type: 'button', class: 'btn btn-ghost', 'data-entry': 'list' }, dom.el('span', { class: 'tm-entry-label' }, '📋 清單')),
         dom.el('button', { type: 'button', class: 'btn hidden', 'data-entry': 'team', 'data-i18n': 'treasure_map_entry_team' }, '組隊'),
-        dom.el('span', { class: 'tm-entry-hint hidden', 'data-entry': 'hint', 'data-i18n': 'treasure_map_entry_hint_one' }, '再加 1 張就能排路線'),
         dom.el('button', { type: 'button', class: 'btn btn-primary hidden', 'data-entry': 'route' }, '生成路線'));
 }
 
@@ -623,21 +622,24 @@ test('新增的三語鍵值照設計；舊篩選卡、載入更多的鍵值刪�
 });
 
 // ---------- 步驟提示與清單入口（Task 5） ----------
-test('getStep：清單 2 張以上第 3 步，選了等級第 2 步，否則第 1 步', () => {
+test('getStep：清單 1 張以上第 3 步，選了等級第 2 步，否則第 1 步', () => {
     assert.equal(TreasureMapFinder.getStep({ hasLevels: false, listCount: 0 }), 1);
-    assert.equal(TreasureMapFinder.getStep({ hasLevels: true, listCount: 1 }), 2);
-    assert.equal(TreasureMapFinder.getStep({ hasLevels: false, listCount: 2 }), 3);
+    assert.equal(TreasureMapFinder.getStep({ hasLevels: true, listCount: 0 }), 2);
+    assert.equal(TreasureMapFinder.getStep({ hasLevels: false, listCount: 1 }), 3);
 });
 
-test('getListEntryState：0／1／≥2 張與隊伍模式（Review Focus 1）', () => {
+test('getListEntryState：0 張「組隊」、1 張以上「生成路線」；隊伍裡 0 張不放動作（Review Focus 1）', () => {
     // vm 裡建出來的物件原型和這裡不同，先轉成這邊的物件再比（同 stateOf）
     const s = (count, inRoom) => JSON.parse(JSON.stringify(TreasureMapFinder.getListEntryState({ count, inRoom, maxMaps: 8 })));
     assert.deepEqual(s(0, false), { labelKey: 'treasure_map_entry_empty', labelParams: {}, action: 'team' });
-    assert.deepEqual(s(1, false), { labelKey: 'treasure_map_entry_count', labelParams: { count: 1 }, action: 'hint' });
-    assert.deepEqual(s(3, false), { labelKey: 'treasure_map_entry_count', labelParams: { count: 3 }, action: 'route' });
+    assert.deepEqual(s(1, false), { labelKey: 'treasure_map_entry_count', labelParams: { count: 1 }, action: 'route' });
     assert.deepEqual(s(0, true), { labelKey: 'treasure_map_entry_room', labelParams: { count: 0, max: 8 }, action: null });
-    assert.deepEqual(s(1, true), { labelKey: 'treasure_map_entry_room', labelParams: { count: 1, max: 8 }, action: 'hint' });
-    assert.deepEqual(s(5, true), { labelKey: 'treasure_map_entry_room', labelParams: { count: 5, max: 8 }, action: 'route' });
+    assert.deepEqual(s(1, true), { labelKey: 'treasure_map_entry_room', labelParams: { count: 1, max: 8 }, action: 'route' });
+    assert.ok(!read('tools/treasure-map-finder/index.html').includes('data-entry="hint"'));
+    ['zh', 'en', 'ja'].forEach((lang) => {
+        const keys = translationKeySet(TRANSLATIONS, lang);
+        for (const gone of ['treasure_map_entry_hint_one', 'treasure_map_no_maps_for_route']) assert.ok(!keys.has(gone), `${lang} ${gone}`);
+    });
 });
 
 test('操作列拿掉；組隊與隊伍狀態在清單面板裡；入口、步驟列、唸出區都在', () => {
@@ -645,7 +647,9 @@ test('操作列拿掉；組隊與隊伍狀態在清單面板裡；入口、步�
     assert.ok(!html.includes('top-action-bar') && !html.includes('id="myListToggle"'));
     const panel = sliceElementById(html, 'myListPanel');
     assert.ok(panel.includes('id="teamActions"') && panel.includes('id="roomSection"'));
-    assert.equal((panel.match(/class="[^"]*\bbtn-primary\b/g) || []).length, 1);
+    // 一個畫面最多一顆主要按鈕：清單頁（#listView）只有「生成路線」
+    const listView = sliceElementById(html, 'listView');
+    assert.equal((listView.match(/class="[^"]*\bbtn-primary\b/g) || []).length, 1);
     for (const id of ['stepHint', 'listEntryDesktop', 'listEntryMobile']) assert.ok(html.includes(`id="${id}"`), id);
     assert.match(html, /id="listAnnouncer"[^>]*aria-live="polite"/);
 });
@@ -680,28 +684,27 @@ test('頁面結構：步驟列與桌機入口在 main 最上面、手機底部�
         assert.match(item, new RegExp(`data-i18n="${STEP_KEYS[index]}"`));
     });
 
-    // 兩個入口內容相同：清單（文字按鈕＋標籤）、組隊、提示、生成路線；後三個先藏起來
+    // 兩個入口內容相同：清單（文字按鈕＋標籤）、組隊、生成路線；後兩個先藏起來
     for (const id of ENTRY_IDS) {
         const entry = sliceElementById(html, id);
         const parts = Object.fromEntries([...entry.matchAll(/<(button|span)\b[^>]*\sdata-entry="(\w+)"[^>]*>/g)].map((m) => [m[2], { tag: m[1], attrs: parseAttrs(m[0]) }]));
-        assert.deepEqual(Object.keys(parts), ['list', 'team', 'hint', 'route'], id);
+        assert.deepEqual(Object.keys(parts), ['list', 'team', 'route'], id);
         assert.deepEqual([parts.list.tag, classesOf(parts.list.attrs)], ['button', ['btn', 'btn-ghost']], id);
         assert.match(entry, /data-entry="list"[^>]*>\s*<span class="tm-entry-label">/, `${id} 的清單按鈕裡有標籤`);
         assert.doesNotMatch(entry, /class="tm-entry-label"[^>]*data-i18n/, '標籤帶 {count} 參數，由 JS 填入，不能用 data-i18n');
         assert.deepEqual([parts.team.tag, classesOf(parts.team.attrs), parts.team.attrs['data-i18n']], ['button', ['btn', 'hidden'], 'treasure_map_entry_team'], id);
-        assert.deepEqual([parts.hint.tag, classesOf(parts.hint.attrs), parts.hint.attrs['data-i18n']], ['span', ['tm-entry-hint', 'hidden'], 'treasure_map_entry_hint_one'], id);
         assert.deepEqual([parts.route.tag, classesOf(parts.route.attrs)], ['button', ['btn', 'btn-primary', 'hidden']], id);
         assert.match(entry, /data-entry="route"[\s\S]*data-i18n="treasure_map_generate_route"/, `${id} 的生成路線沿用原本的鍵值`);
     }
 
-    // 清單面板：組隊與隊伍狀態在標頭之後、頁籤之前；建立組隊改成次要按鈕（面板的主要按鈕留給生成路線）
+    // 清單面板：組隊與隊伍狀態在標頭之後、頁籤之前，動作列在清單下面；建立組隊改成次要按鈕（面板的主要按鈕留給生成路線）
     const panel = sliceElementById(html, 'myListPanel');
-    const order = ['class="panel-header"', 'id="teamActions"', 'id="roomSection"', 'id="panelTabs"', 'id="generateRouteBtn"'].map((s) => panel.indexOf(s));
+    const order = ['class="panel-header"', 'id="teamActions"', 'id="roomSection"', 'id="panelTabs"', 'id="listActions"', 'id="generateRouteBtn"'].map((s) => panel.indexOf(s));
     assert.ok(!order.includes(-1), `面板裡缺東西：${order}`);
     assert.deepEqual([...order].sort((a, b) => a - b), order, `面板裡的順序：${order}`);
     assert.deepEqual(classesOf(tagAttrs(html, 'createRoomBtn')), ['btn', 'btn-secondary']);
     assert.deepEqual(classesOf(tagAttrs(html, 'joinRoomBtn')), ['btn', 'btn-secondary']);
-    // 中間（組隊、隊伍狀態、頁籤、清單、歷史）包在一起捲動，標頭與底部的「生成路線」留在外面固定
+    // 中間（組隊、隊伍狀態、頁籤、清單、動作列、歷史）包在一起捲動，標頭與底部的「生成路線」留在外面固定
     const bodyStart = panel.indexOf('<div class="panel-body">');
     assert.notEqual(bodyStart, -1);
     const body = (() => {
@@ -714,7 +717,7 @@ test('頁面結構：步驟列與桌機入口在 main 最上面、手機底部�
         }
         return assert.fail('.panel-body 沒有結束標籤');
     })();
-    for (const id of ['teamActions', 'roomSection', 'panelTabs', 'listContent', 'historyContent']) assert.ok(body.includes(`id="${id}"`), `${id} 在 .panel-body 裡`);
+    for (const id of ['teamActions', 'roomSection', 'panelTabs', 'listContent', 'listActions', 'historyContent']) assert.ok(body.includes(`id="${id}"`), `${id} 在 .panel-body 裡`);
     for (const outside of ['class="panel-header"', 'class="panel-footer"', 'id="generateRouteBtn"']) assert.ok(!body.includes(outside), `${outside} 不在 .panel-body 裡`);
     const panelBody = declarations('.panel-body');
     for (const re of [/flex:\s*1/, /min-height:\s*0/, /overflow-y:\s*auto/]) assert.match(panelBody, re);
@@ -729,7 +732,7 @@ test('步驟列：還原出來的等級是第 2 步；選、取消等級時跟�
     assert.deepEqual(page.steps(), [['✓', 'done', null], ['2', 'current', 'step'], ['3', '', null]]);
 });
 
-test('清單入口：0 張「組隊」、1 張提示、2 張以上「生成路線」；隊伍裡顯示「隊伍清單 N/8」，0 張不放動作（Review Focus 1）', () => {
+test('清單入口：0 張「組隊」、1 張以上「生成路線」；隊伍裡顯示「隊伍清單 N/8」，0 張不放動作（Review Focus 1）', () => {
     const page = createFilterPage({ url: 'https://ff14.tw/tools/treasure-map-finder/?grade=g17' });
     const { finder, list, $ } = page;
     const both = () => ENTRY_IDS.map((id) => page.entryOf(id));
@@ -741,17 +744,18 @@ test('清單入口：0 張「組隊」、1 張提示、2 張以上「生成路�
 
     show(0);
     assert.deepEqual(both(), Array(2).fill({ label: '📋 清單', action: 'team' }));
-    assert.equal($('totalCount').textContent, '0');
+    assert.equal($('totalCount').textContent, '0 張寶圖');
     assert.equal($('generateRouteBtn').disabled, true);
 
+    // 1 張就能排路線：入口出現「生成路線」、面板裡的按鈕可以按、步驟列到第 3 步
     show(1);
-    assert.deepEqual(both(), Array(2).fill({ label: '📋 清單 1 張', action: 'hint' }));
-    assert.equal($('generateRouteBtn').disabled, true);
-    assert.deepEqual(page.steps(), [['✓', 'done', null], ['2', 'current', 'step'], ['3', '', null]]);
+    assert.deepEqual(both(), Array(2).fill({ label: '📋 清單 1 張', action: 'route' }));
+    assert.equal($('generateRouteBtn').disabled, false);
+    assert.deepEqual(page.steps(), [['✓', 'done', null], ['✓', 'done', null], ['3', 'current', 'step']]);
 
     show(3);
     assert.deepEqual(both(), Array(2).fill({ label: '📋 清單 3 張', action: 'route' }));
-    assert.equal($('totalCount').textContent, '3');
+    assert.equal($('totalCount').textContent, '3 張寶圖');
     assert.equal($('generateRouteBtn').disabled, false);
     assert.deepEqual(page.steps(), [['✓', 'done', null], ['✓', 'done', null], ['3', 'current', 'step']]);
 
@@ -759,13 +763,16 @@ test('清單入口：0 張「組隊」、1 張提示、2 張以上「生成路�
     show(0, { currentRoom: { roomCode: 'ABC123' } });
     assert.deepEqual(both(), Array(2).fill({ label: '👥 隊伍清單 0/8', action: null }));
     show(1, { currentRoom: { roomCode: 'ABC123' } });
-    assert.deepEqual(both(), Array(2).fill({ label: '👥 隊伍清單 1/8', action: 'hint' }));
+    assert.deepEqual(both(), Array(2).fill({ label: '👥 隊伍清單 1/8', action: 'route' }));
     show(5, { currentRoom: { roomCode: 'ABC123' } });
     assert.deepEqual(both(), Array(2).fill({ label: '👥 隊伍清單 5/8', action: 'route' }));
 
-    // 往回走：從第 3 步回到第 2 步時，第 3 步的號碼與狀態都還原
+    // 往回走：從 1 張回到 0 張（第 3 步回到第 2 步）時，第 3 步的號碼與狀態都還原，「生成路線」重新停用
     show(1);
+    assert.deepEqual(page.steps(), [['✓', 'done', null], ['✓', 'done', null], ['3', 'current', 'step']]);
+    show(0);
     assert.deepEqual(page.steps(), [['✓', 'done', null], ['2', 'current', 'step'], ['3', '', null]]);
+    assert.equal($('generateRouteBtn').disabled, true);
 });
 
 test('張數改變時唸出加入或移除，第一次只記下張數', () => {
@@ -806,12 +813,11 @@ test('加入、移除成功不跳 toast，改由清單入口與唸出區更新�
     assert.deepEqual(toasts, [{ message: '清單已滿', type: 'error' }]);
 });
 
-test('入口按鈕：清單打開面板；組隊打開面板並把焦點移到「建立組隊」；生成路線打開面板再排路線', () => {
+// 入口的「生成路線」（切到清單面板的路線頁）在 tests/treasure-list-panel.test.js：這裡沒有真的 zoneManager，openRoute() 會停在載入檢查
+test('入口按鈕：清單打開面板；組隊打開面板並把焦點移到「建立組隊」', () => {
     const page = createFilterPage();
-    const { finder, list, modalManager, $, dom } = page;
+    const { finder, modalManager, $, dom } = page;
     const panel = $('myListPanel');
-    const routeCalls = [];
-    finder.generateRoute = () => routeCalls.push(dom.document.activeElement.id);
     finder.setupListEntries();
     finder.updateListCount();
     const button = (id, action) => finder.elements[id].querySelector(`[data-entry="${action}"]`);
@@ -833,16 +839,6 @@ test('入口按鈕：清單打開面板；組隊打開面板並把焦點移到�
         assert.equal(dom.document.activeElement.id, 'createRoomBtn', `${id}：組隊後焦點在建立組隊`);
         finder.closeListPanel();
     }
-
-    list.count = 2;
-    finder.updateListCount();
-    for (const id of ENTRY_IDS) {
-        button(id, 'route').click();
-        assert.ok(modalManager.activeModal === panel, `${id}：按生成路線後面板應該開著`);
-        finder.closeListPanel();
-    }
-    // 排路線時焦點在面板裡的「生成路線」：關掉疊在上面的路線面板時焦點回到那裡
-    assert.deepEqual(routeCalls, ['generateRouteBtn', 'generateRouteBtn']);
 });
 
 test('打開面板的入口按鈕收起來時（例如按「組隊」後建了隊伍），關面板把焦點放回看得到的清單按鈕', () => {
@@ -907,7 +903,6 @@ test('步驟列與清單入口的三語鍵值照設計', () => {
         treasure_map_entry_count: ['📋 清單 {count} 張', '📋 List: {count}', '📋 リスト {count} 枚'],
         treasure_map_entry_room: ['👥 隊伍清單 {count}/{max}', '👥 Team list {count}/{max}', '👥 チームリスト {count}/{max}'],
         treasure_map_entry_team: ['組隊', 'Team up', 'チームを組む'],
-        treasure_map_entry_hint_one: ['再加 1 張就能排路線', 'Add 1 more map to plan a route', 'あと 1 枚でルートを作れます'],
         // 英文不帶單位：「(1 maps)」單複數不對，又不想為了它加複數規則
         treasure_map_announce_added: ['已加入清單，共 {count} 張', 'Added to the list. Total: {count}', 'リストに追加しました（{count} 枚）'],
         treasure_map_announce_removed: ['已從清單移除，剩 {count} 張', 'Removed from the list. Remaining: {count}', 'リストから削除しました（残り {count} 枚）']
@@ -1210,10 +1205,32 @@ test('複製失敗（剪貼簿拒絕寫入、或瀏覽器沒有剪貼簿 API）�
     }
 });
 
-test('卡片的複製不再產生 /pos：copyCoordinatesToClipboard 刪掉，路線複製用的 formatCoordinatesAsCommand 沒動', () => {
+test('路線與卡片都不再產生 /pos：formatCoordinatesAsCommand、formatCoordinatesShort 刪掉，工具的程式（不含註解）沒有 /pos', () => {
     assert.equal(CoordinateUtils.copyCoordinatesToClipboard, undefined);
-    assert.equal(CoordinateUtils.formatCoordinatesAsCommand({ x: 13.7, y: 14.2, z: 1.7 }), '/pos 13.7 14.2 1.7');
-    assert.doesNotMatch(read('tools/treasure-map-finder/script.js'), /copyCoordinatesToClipboard/);
+    assert.equal(CoordinateUtils.formatCoordinatesAsCommand, undefined);
+    assert.equal(CoordinateUtils.formatCoordinatesShort, undefined);
+    for (const file of fs.readdirSync(path.join(ROOT, 'tools/treasure-map-finder')).filter((name) => name.endsWith('.js'))) {
+        const code = read(`tools/treasure-map-finder/${file}`).replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+        assert.doesNotMatch(code, /\/pos\b/, file);
+    }
+});
+
+test('拿掉的路線面板、格式面板、匯出、檔案匯入與確認對話框的鍵值，三語都刪掉', () => {
+    const gone = ['treasure_map_entry_hint_one', 'treasure_map_no_maps_for_route', 'treasure_map_export', 'treasure_map_export_title',
+        'treasure_map_export_instruction', 'treasure_map_export_empty', 'treasure_map_export_success', 'treasure_map_copy_manual',
+        'treasure_map_copy_fallback_manual', 'treasure_map_copy_clipboard_success', 'treasure_map_read_file_failed', 'treasure_map_clear_all',
+        'treasure_map_clear_all_title', 'treasure_map_total', 'treasure_map_maps_unit', 'treasure_map_remove_confirm', 'treasure_map_clear_confirm',
+        'treasure_map_import_instruction', 'treasure_map_import_placeholder', 'treasure_map_import_text_required', 'treasure_map_import_file_format_error',
+        'treasure_map_import_failed', 'treasure_map_best_route', 'treasure_map_copy_route', 'treasure_map_custom_format', 'treasure_map_custom_output',
+        'treasure_map_quick_lang', 'treasure_map_teleport_format', 'treasure_map_map_format', 'treasure_map_available_vars', 'treasure_map_preview',
+        'treasure_map_format_switched_zh', 'treasure_map_format_switched_en', 'treasure_map_format_switched_ja', 'treasure_map_no_route_to_copy',
+        'treasure_map_route_copy_success', 'treasure_map_route_summary', 'treasure_map_route_regions', 'treasure_map_route_teleports',
+        'treasure_map_route_total_maps', 'treasure_map_route_teleport_to', 'treasure_map_route_step_copy_title', 'treasure_map_route_step_copy_success',
+        'treasure_map_route_generation_failed'];
+    ['zh', 'en', 'ja'].forEach((lang) => {
+        const keys = translationKeySet(TRANSLATIONS, lang);
+        for (const key of gone) assert.ok(!keys.has(key), `${lang} 的 ${key} 應已刪除`);
+    });
 });
 
 test('隊伍頻道句子的三語鍵值：句子範本、找不到傳送點的範本、複製成功的提示', () => {
@@ -1697,127 +1714,7 @@ test('詳細檢視的三語鍵值；只給舊座標文字用的鍵值刪掉', ()
 });
 
 // ---------- 瀏覽器封鎖儲存空間 ----------
-// 跑真正的建構函式與 init()：createFilterPage 直接呼叫 initFilters()，init() 在那之前的步驟（例如讀格式設定）都沒跑到。
-// fake-dom 裡載入頁面上寶圖搜尋器的腳本，照 index.html 的 id 做出建構函式與 init() 用到的元素（步驟列、兩個清單入口、等級與地區、
-// 結果區、唸出區、清單面板、格式設定的兩個欄位）；fetch 讀 /data 的真資料，傳送點圖示的 Image 替身一設定 src 就載入完成。
-// storageThrows 同 createFilterPage：光是讀 window.localStorage 就丟例外（Chrome 封鎖網站資料時是 SecurityError；
-// vm 裡直接寫 localStorage 的程式拿到的是 ReferenceError，一樣在同一個地方丟出）
-async function startPage({ storageThrows = false } = {}) {
-    const dom = createFakeDom({ url: 'https://ff14.tw/tools/treasure-map-finder/' });
-    const storage = new Map();
-    const toasts = [];
-    Object.assign(dom.window, {
-        URLSearchParams,
-        history: { state: null, replaceState(state, title, href) { dom.window.location = new URL(href); } },
-        // 封鎖儲存空間時 ListManager 讀不到清單會 console.error：測試輸出不要被洗版
-        console: { log() {}, warn() {}, error() {} },
-        fetch: async (url) => {
-            if (!Object.hasOwn(DATA_FILES, url)) throw new Error(`startPage 沒有準備 ${url}`);
-            return { ok: true, status: 200, json: async () => JSON.parse(DATA_FILES[url]) };
-        },
-        Image: class {
-            set src(value) {
-                this.url = value;
-                queueMicrotask(() => this.onload?.());
-            }
-        },
-        i18n: { getCurrentLanguage: () => 'zh', onLanguageChange() {} },
-        FF14Utils: {
-            getI18nText: (key, fallback, params = {}) => fallback.replace(/\{(\w+)\}/g, (_, name) => params[name]),
-            showToast: (message, type) => toasts.push({ message, type })
-        },
-        // 這裡不開對話框，建構函式建得起來就好
-        ModalManager: class { show() {} hide() {} },
-        RoomCollaboration: { CONSTANTS: { MAX_MAPS: 8 } }
-    });
-    if (storageThrows) {
-        Object.defineProperty(dom.window, 'localStorage', { get() { throw new Error('SecurityError'); } });
-    } else {
-        dom.window.localStorage = {
-            getItem: (key) => (storage.has(key) ? storage.get(key) : null),
-            setItem: (key, value) => storage.set(key, String(value))
-        };
-    }
-
-    const button = (id, text, className = 'btn') => dom.el('button', { type: 'button', id, class: className }, text);
-    const zoneTags = dom.el('div', { id: 'zoneTags', class: 'tm-chip-scroll', role: 'group' });
-    for (const element of [
-        createStepHint(dom),
-        createListEntry(dom, 'listEntryDesktop'),
-        dom.el('div', { id: 'levelTags', class: 'tm-chip-scroll', role: 'group' },
-            ...GRADES.map((level) => dom.el('button', { type: 'button', class: 'chip', 'data-level': level, 'aria-pressed': 'false' }, level.toUpperCase()))),
-        dom.el('div', { id: 'zoneFilterRow', class: 'tm-filter-row hidden' }, zoneTags),
-        dom.el('p', { id: 'resultCount', class: 'tm-count', tabindex: '-1', 'aria-live': 'polite' }),
-        button('clearZonesBtn', '清除地區', 'btn btn-ghost btn-sm hidden'),
-        dom.el('div', { id: 'treasureEmpty', class: 'empty-state hidden' }),
-        dom.el('div', { id: 'treasureGrid', class: 'treasure-grid' }),
-        createListEntry(dom, 'listEntryMobile'),
-        dom.el('p', { id: 'listAnnouncer', class: 'visually-hidden', 'aria-live': 'polite' }),
-        dom.el('div', { id: 'panelOverlay', class: 'panel-overlay' }),
-        dom.el('div', { id: 'myListPanel', class: 'my-list-panel', role: 'dialog', inert: true },
-            dom.el('div', { class: 'panel-header' },
-                button('exportListBtn', '匯出'), button('importListBtn', '匯入'), dom.el('input', { type: 'file', id: 'importFileInput', class: 'hidden' }),
-                button('clearAllBtn', '清空'), button('closePanelBtn', '×', 'btn btn-close')),
-            dom.el('div', { id: 'listContent' }),
-            dom.el('div', { class: 'panel-footer' }, dom.el('span', { id: 'totalCount' }, '0'), button('generateRouteBtn', '生成路線', 'btn btn-primary'))),
-        dom.el('textarea', { id: 'teleportFormat' }),
-        dom.el('textarea', { id: 'mapFormat' })
-    ]) {
-        dom.document.body.appendChild(element);
-    }
-
-    for (const file of ['assets/js/security-utils.js', 'tools/treasure-map-finder/coordinate-utils.js', 'tools/treasure-map-finder/zone-manager.js',
-        'tools/treasure-map-finder/list-manager.js', 'tools/treasure-map-finder/filter-manager.js', 'tools/treasure-map-finder/ui-dialog-manager.js',
-        'tools/treasure-map-finder/script.js']) {
-        dom.load(file);
-    }
-    const finder = vm.runInContext('new TreasureMapFinder()', dom.window);
-    await finder.ready;
-    const $ = (id) => dom.document.getElementById(id);
-    // 格式設定是在 vm 裡建出來的物件：轉成這邊的物件再比
-    const formats = () => JSON.parse(JSON.stringify(finder.formatSettings));
-    return { finder, toasts, storage, $, formats, level: (id) => $('levelTags').querySelector(`[data-level="${id}"]`) };
-}
-
-const DEFAULT_FORMATS = { teleport: '/p 傳送至 <傳送點> <座標>', map: '/p 下一個 <寶圖等級> - <地區> <座標>' };
-
-test('瀏覽器封鎖儲存空間：頁面照常載入，顯示「先選寶圖等級」，等級 chip 按得動；格式設定和第一次來一樣用預設值', async () => {
-    const page = await startPage({ storageThrows: true });
-    const { $ } = page;
-    assert.ok($('treasureGrid').querySelector('.error-message') === null, '不應該顯示「載入寶圖資料失敗」');
-    const empty = $('treasureEmpty');
-    assert.equal(empty.classList.contains('hidden'), false);
-    assert.equal(empty.querySelector('.empty-state-title').textContent, '先選寶圖等級');
-
-    page.level('g17').click();
-    assert.equal($('resultCount').textContent, '40 張 G17 寶圖');
-    assert.equal($('treasureGrid').querySelectorAll('.treasure-card').length, 40);
-    assert.equal(empty.classList.contains('hidden'), true);
-
-    // 讀不到自訂格式：用預設格式（語言切換時照常跟著語言換），格式設定的欄位也填上預設格式
-    assert.deepEqual(page.formats(), DEFAULT_FORMATS);
-    assert.equal(page.finder.formatSettingsAreDefault, true);
-    assert.equal($('teleportFormat').value, DEFAULT_FORMATS.teleport);
-});
-
-test('儲存自訂格式：存得起來就記住；瀏覽器封鎖儲存空間時這次照新的格式，並提示存不起來', async () => {
-    const custom = { teleport: '/p TP <傳送點> <座標>', map: '/p <寶圖等級> <地區> <座標>' };
-    for (const storageThrows of [false, true]) {
-        const page = await startPage({ storageThrows });
-        page.$('teleportFormat').value = custom.teleport;
-        page.$('mapFormat').value = custom.map;
-        assert.doesNotThrow(() => page.finder.saveFormatSettings(), `storageThrows: ${storageThrows}`);
-        assert.deepEqual(page.formats(), custom);
-        assert.equal(page.finder.formatSettingsAreDefault, false);
-        if (storageThrows) {
-            assert.deepEqual(page.toasts, [{ message: '無法儲存設定：瀏覽器不允許儲存資料', type: 'error' }]);
-        } else {
-            assert.equal(page.storage.get('treasureMapFormatSettings'), JSON.stringify(custom));
-            assert.deepEqual(page.toasts, [{ message: '格式設定已儲存', type: 'success' }]);
-        }
-    }
-});
-
+// 頁面載入、卡片與清單在封鎖儲存空間時的行為跑真正的建構函式，在 tests/treasure-list-panel.test.js
 test('存不起來的提示的三語鍵值', () => {
     const expected = [
         '無法儲存設定：瀏覽器不允許儲存資料',

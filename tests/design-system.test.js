@@ -190,9 +190,9 @@ function classTokens(tag) {
 const ROOT_PAGES = ['index.html', 'about.html', 'copyright.html', 'changelog.html', '404.html'];
 
 // 實際交給 ModalManager 的那一層元素的 class；
-// route-panel／format-panel／map-detail-modal 沒有獨立的遮罩層（直接把面板本身交給 ModalManager），
+// map-detail-modal／my-list-panel 沒有獨立的遮罩層（直接把面板本身交給 ModalManager），
 // 但一樣是鎖住畫面的對話框，所以也放進來，確保它們的 role="dialog" 不會在未來的修改中被靜默拿掉（規則 (b)）
-const OVERLAY_CLASSES = ['dialog-overlay', 'popup-overlay', 'route-panel', 'format-panel', 'map-detail-modal', 'my-list-panel'];
+const OVERLAY_CLASSES = ['dialog-overlay', 'popup-overlay', 'map-detail-modal', 'my-list-panel'];
 
 function allOpenTags(html) {
     return html.match(/<[a-zA-Z][^>]*>/g) || [];
@@ -246,14 +246,17 @@ test('對話框的 role="dialog" 放在遮罩層，且有 aria-labelledby 與 ar
     assert.ok(overlayCount > 0, '沒有找到任何遮罩層，測試可能失效');
     assert.ok(roleCount >= overlayCount, '沒有找到足夠的 role="dialog"，測試可能失效');
 
-    // 明確驗證 #formatPanel（treasure-map-finder 的自訂格式面板）：疊在路線面板上的堆疊 modal，
-    // 由 ModalManager 的共用堆疊處理 Escape 與焦點陷阱，因此和其他對話框一樣要宣告 aria-modal="true"
-    const formatPanelFile = 'tools/treasure-map-finder/index.html';
-    const formatPanelTag = allOpenTags(read(formatPanelFile)).find((tag) => /\sid="formatPanel"/.test(tag));
-    assert.ok(formatPanelTag, `${formatPanelFile} 找不到 id="formatPanel" 的元素`);
-    assert.match(formatPanelTag, /\srole="dialog"/, `${formatPanelFile} 的 #formatPanel 缺少 role="dialog"：${formatPanelTag}`);
-    assert.match(formatPanelTag, /\saria-modal="true"/, `${formatPanelFile} 的 #formatPanel 缺少 aria-modal="true"：${formatPanelTag}`);
-    assert.match(formatPanelTag, /\saria-labelledby="[^"]+"/, `${formatPanelFile} 的 #formatPanel 缺少 aria-labelledby：${formatPanelTag}`);
+    // 明確驗證寶圖搜尋器清單的三個頁內對話框（清空、匯入、分享連結）：疊在清單面板上的堆疊 modal，
+    // 由 ModalManager 的共用堆疊處理 Escape 與焦點陷阱，因此和其他對話框一樣要宣告 role="dialog"、aria-modal="true" 與 aria-labelledby
+    const treasureFile = 'tools/treasure-map-finder/index.html';
+    const treasureTags = allOpenTags(read(treasureFile));
+    for (const id of ['clearListModal', 'importListModal', 'shareMapsModal']) {
+        const tag = treasureTags.find((candidate) => new RegExp(`\\sid="${id}"`).test(candidate));
+        assert.ok(tag, `${treasureFile} 找不到 id="${id}" 的元素`);
+        assert.match(tag, /\srole="dialog"/, `${treasureFile} 的 #${id} 缺少 role="dialog"：${tag}`);
+        assert.match(tag, /\saria-modal="true"/, `${treasureFile} 的 #${id} 缺少 aria-modal="true"：${tag}`);
+        assert.match(tag, /\saria-labelledby="[^"]+"/, `${treasureFile} 的 #${id} 缺少 aria-labelledby：${tag}`);
+    }
 });
 
 // 交給 ModalManager 的面板／遮罩層，在沒有 .active 的狀態下必須真的隱藏
@@ -261,7 +264,7 @@ test('對話框的 role="dialog" 放在遮罩層，且有 aria-labelledby 與 ar
 // 內容仍留在 Tab 順序與 a11y tree 裡，ModalManager 會把焦點還給一顆看不見的按鈕。
 test('寶圖搜尋器的模態面板在未開啟時用 display:none 或 visibility:hidden 隱藏，不得只靠 transform／opacity', () => {
     const css = stripComments(read('tools/treasure-map-finder/style.css'));
-    const PANELS = ['.my-list-panel', '.route-panel', '.format-panel', '.map-detail-modal', '.ui-dialog-overlay'];
+    const PANELS = ['.my-list-panel', '.map-detail-modal'];
     // 把整份 CSS 拆成「選擇器清單 → 宣告區」；只看最外層規則的宣告區（@media 內的規則會被 split 拆開，一併掃到）
     const rules = [];
     for (const m of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {

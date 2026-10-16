@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const vm = require('node:vm');
 
 const { createFakeDom } = require('./helpers/fake-dom.js');
+const { mountFromHtml } = require('./helpers/html-fragment.js');
 
 // 守住 tests/helpers/fake-dom.js 的 API。導覽列、選單、首頁、404 的測試都建立在這個替身上，
 // 替身本身出錯，那些測試就可能在不該通過的時候通過。
@@ -804,4 +805,22 @@ test('window.setTimeout、clearTimeout 在呼叫時才取全域計時器，所�
     assert.deepEqual(fired, []);
     t.mock.timers.tick(1);
     assert.deepEqual(fired, ['a']);
+});
+
+test('html-fragment：照 index.html 的寫法建出節點（屬性、布林屬性、註解、空元素、實體、textarea、空白）', () => {
+    const dom = createFakeDom();
+    const html = '<div id="box" class="a b" data-x="1"><!-- 註解 --><span>🔗</span> <span>&lt;序號&gt;</span>\n    <input type="radio" id="r" checked><button id="b" disabled>按</button><textarea id="t">預設</textarea></div>';
+    mountFromHtml(dom, html, ['box']);
+    const box = dom.document.getElementById('box');
+    assert.deepEqual([box.className, box.dataset.x, box.textContent], ['a b', '1', '🔗 <序號>按預設']);
+    assert.equal(dom.document.getElementById('r').checked, true);
+    assert.equal(dom.document.getElementById('b').disabled, true);
+    assert.equal(dom.document.getElementById('t').value, '預設');
+    assert.throws(() => mountFromHtml(dom, html, ['nope']), /nope/);
+    // 認得的四個實體以外一律丟錯（文字、屬性值、textarea 的內容都一樣），不會悄悄留下 &nbsp; 這種字面文字；單獨的 & 不是實體
+    for (const unknown of ['<p id="e1">a&nbsp;b</p>', '<p id="e1" title="&copy;">x</p>', '<textarea id="e1">&#39;</textarea>']) {
+        assert.throws(() => mountFromHtml(dom, unknown, ['e1']), /實體/, unknown);
+    }
+    mountFromHtml(dom, '<p id="amp">A &amp; B &amp;lt; C & D</p>', ['amp']);
+    assert.equal(dom.document.getElementById('amp').textContent, 'A & B &lt; C & D');
 });

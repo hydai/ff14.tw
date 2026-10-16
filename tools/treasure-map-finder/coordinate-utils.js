@@ -34,16 +34,6 @@ class CoordinateUtils {
     }
 
     /**
-     * 格式化座標為遊戲指令
-     * @param {Object} coords - 座標物件 {x, y, z}
-     * @returns {string} 格式化的座標指令
-     */
-    static formatCoordinatesAsCommand(coords) {
-        const z = coords.z || this.CONSTANTS.DEFAULT_Z;
-        return `/pos ${coords.x} ${coords.y} ${z}`;
-    }
-
-    /**
      * 格式化座標為顯示文字
      * @param {Object} coords - 座標物件 {x, y, z}
      * @param {boolean} includeZ - 是否包含 Z 座標
@@ -58,16 +48,6 @@ class CoordinateUtils {
     }
 
     /**
-     * 格式化座標為簡短文字
-     * @param {Object} coords - 座標物件 {x, y, z}
-     * @returns {string} 簡短的座標文字
-     */
-    static formatCoordinatesShort(coords) {
-        const z = coords.z || this.CONSTANTS.DEFAULT_Z;
-        return `(${coords.x}, ${coords.y}, ${z})`;
-    }
-
-    /**
      * 卡片與詳細檢視顯示的座標：一律一位小數（17 → 17.0），預設不含 Z
      * @param {Object} coords - 座標物件 {x, y, z}
      * @param {Object} [options]
@@ -78,6 +58,16 @@ class CoordinateUtils {
         const format = value => Number(value).toFixed(1);
         const text = `X ${format(coords.x)}・Y ${format(coords.y)}`;
         return withZ ? `${text}・Z ${format(coords.z || this.CONSTANTS.DEFAULT_Z)}` : text;
+    }
+
+    /**
+     * 複製進遊戲聊天欄的座標：一律一位小數（20 → 20.0），不含 Z，和卡片顯示的數字一致
+     * @param {Object} coords - 座標物件 {x, y, z}
+     * @returns {string} 例如 '(21.6, 23.9)'
+     */
+    static formatPair(coords) {
+        const format = value => Number(value).toFixed(1);
+        return `(${format(coords.x)}, ${format(coords.y)})`;
     }
 
     /**

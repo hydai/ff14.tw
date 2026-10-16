@@ -32,7 +32,7 @@ function setup(respond) {
             return new Response(JSON.stringify(result.body), { status: result.status || 200 });
         }
     });
-    for (const file of ['assets/js/security-utils.js', 'tools/treasure-map-finder/coordinate-utils.js', 'tools/treasure-map-finder/list-manager.js', 'tools/treasure-map-finder/room-map-sync.js', 'tools/treasure-map-finder/room-collaboration.js', 'tools/treasure-map-finder/script.js']) {
+    for (const file of ['assets/js/security-utils.js', 'tools/treasure-map-finder/coordinate-utils.js', 'tools/treasure-map-finder/list-manager.js', 'tools/treasure-map-finder/room-map-sync.js', 'tools/treasure-map-finder/room-collaboration.js', 'tools/treasure-map-finder/list-share.js', 'tools/treasure-map-finder/script.js']) {
         vm.runInContext(fs.readFileSync(path.join(__dirname, '..', file), 'utf8'), context, { filename: file });
     }
     vm.runInContext(`
@@ -106,18 +106,19 @@ const importMaps = (count, prefix = 'import') => Array.from({ length: count }, (
 test('oversized room imports fail before changing maps, storage or sending operations', async () => {
     for (const [merge, initialCount, incomingCount] of [[false, 1, 9], [false, 8, 17], [true, 8, 1]]) {
         const state = setup(() => ({ status: 400, body: { code: 'MAP_LIMIT', error: 'Map limit' } }));
-        state.context.confirm = () => merge;
         const initial = importMaps(initialCount, 'initial');
         state.client.adoptSession(room(initial.map(map => state.finder.toRoomMap(map))), member, TOKEN);
         const before = JSON.stringify(state.finder.listManager.getList());
         const stored = [...state.storage];
-        await state.finder.importFromText(JSON.stringify({ maps: importMaps(incomingCount) }));
+        const result = await state.finder.importFromText(JSON.stringify({ maps: importMaps(incomingCount) }), { merge });
         assert.equal(state.requests.length, 0);
         assert.equal(JSON.stringify(state.finder.listManager.getList()), before);
         assert.deepEqual([...state.storage], stored);
         assert.equal(state.client.mapSync.pending.length, 0);
-        assert.equal(state.toasts.length, 1);
-        assert.match(state.toasts[0], /清單已滿/);
+        // 失敗的原因交給匯入對話框顯示，不跳 toast
+        assert.equal(result.success, false);
+        assert.match(result.message, /清單已滿/);
+        assert.equal(state.toasts.length, 0);
     }
 });
 
@@ -128,19 +129,19 @@ test('room-incompatible imports are rejected atomically before replacing or merg
             { level: 'g0' }, { level: 'g19' }, { level: 'G8' }, { zone: '   ' }
         ]) {
             const state = setup(() => ({ status: 400, body: { code: 'INVALID_REQUEST', error: 'Invalid map' } }));
-            state.context.confirm = () => merge;
             state.client.adoptSession(room([state.finder.toRoomMap(sample)]), member, TOKEN);
             const before = JSON.stringify(state.finder.listManager.getList());
             const stored = [...state.storage];
-            await state.finder.importFromText(JSON.stringify({ maps: [
+            const result = await state.finder.importFromText(JSON.stringify({ maps: [
                 ...importMaps(1), { ...sample, id: 'invalid', ...invalid }
-            ] }));
+            ] }), { merge });
             assert.equal(state.requests.length, 0, JSON.stringify(invalid));
             assert.equal(JSON.stringify(state.finder.listManager.getList()), before);
             assert.deepEqual([...state.storage], stored);
             assert.equal(state.client.mapSync.pending.length, 0);
-            assert.equal(state.toasts.length, 1);
-            assert.match(state.toasts[0], /不支援/);
+            assert.equal(result.success, false);
+            assert.match(result.message, /不支援/);
+            assert.equal(state.toasts.length, 0);
         }
     }
 });
@@ -150,9 +151,8 @@ test('room imports deduplicate before capacity checks and a full replacement use
         const initial = importMaps(8, 'initial');
         const incoming = merge ? initial : importMaps(8);
         const state = setup(() => ({ body: room(incoming.map(map => state.finder.toRoomMap(map)), [member], 1) }));
-        state.context.confirm = () => merge;
         state.client.adoptSession(room(initial.map(map => state.finder.toRoomMap(map))), member, TOKEN);
-        await state.finder.importFromText(JSON.stringify({ maps: [...incoming, incoming[0]] }));
+        await state.finder.importFromText(JSON.stringify({ maps: [...incoming, incoming[0]] }), { merge });
         assert.equal(state.finder.listManager.getLength(), 8);
         assert.deepEqual(Array.from(state.finder.listManager.getList(), map => map.id), incoming.map(map => map.id));
         assert.equal(state.requests.length, merge ? 0 : 1);
@@ -173,25 +173,27 @@ test('an import exceeding the operation limit leaves concurrent pending edits in
     state.client.adoptSession(room(initial.map(map => state.finder.toRoomMap(map))), member, TOKEN, pending);
     const before = JSON.stringify(state.finder.listManager.getList());
     const stored = [...state.storage];
-    await state.finder.importFromText(JSON.stringify({ maps: importMaps(8) }));
+    const result = await state.finder.importFromText(JSON.stringify({ maps: importMaps(8) }), { merge: false });
     assert.equal(state.requests.length, 0);
     assert.equal(JSON.stringify(state.finder.listManager.getList()), before);
     assert.deepEqual([...state.storage], stored);
     assert.deepEqual(state.client.mapSync.pending, pending);
-    assert.match(state.toasts.at(-1), /等待隊伍同步/);
+    assert.equal(result.success, false);
+    assert.match(result.message, /等待隊伍同步/);
+    assert.equal(state.toasts.length, 0);
 });
 
-test('personal imports can exceed the room limit and storage failure leaves the previous list intact', async () => {
+test('personal imports can exceed the room limit; when storage rejects the write the import still applies in memory', async () => {
     const state = setup(() => { throw new Error('Personal imports must not call the API'); });
-    await state.finder.importFromText(JSON.stringify({ maps: importMaps(17) }));
+    await state.finder.importFromText(JSON.stringify({ maps: importMaps(17) }), { merge: false });
     assert.equal(state.finder.listManager.getLength(), 17);
-    const before = state.finder.listManager.getList();
     const stored = [...state.storage];
     state.localStorage.setItem = () => { throw new Error('Quota exceeded'); };
-    await state.finder.importFromText(JSON.stringify({ maps: [sample] }));
-    assert.deepEqual(state.finder.listManager.getList(), before);
+    await state.finder.importFromText(JSON.stringify({ maps: [sample] }), { merge: false });
+    assert.deepEqual(Array.from(state.finder.listManager.getList(), map => map.id), [sample.id]);
     assert.deepEqual([...state.storage], stored);
     assert.equal(state.requests.length, 0);
+    assert.match(state.toasts.at(-1), /瀏覽器不允許儲存資料/);
 });
 
 test('failed room creation preserves the personal list and retries the same request ID', async () => {
@@ -245,6 +247,26 @@ test('restoration waits for the catalogue before reading the saved room', async 
     resolve();
     await init;
     assert.deepEqual(events, ['events', 'restore']);
+});
+
+test('ready settles only after the saved room is restored or auto-joined (the shared-link dialog waits for it)', async () => {
+    const state = setup(() => ({ body: room() }));
+    const RoomCollaboration = vm.runInContext('RoomCollaboration', state.context);
+    const events = [];
+    let finishRestore;
+    RoomCollaboration.prototype.init = state.originalInit;
+    RoomCollaboration.prototype.setupEventListeners = () => events.push('events');
+    RoomCollaboration.prototype.checkExistingRoom = () => new Promise(resolve => {
+        finishRestore = () => { events.push('restored'); resolve(); };
+    });
+    const client = new RoomCollaboration(state.finder);
+    let settled = false;
+    client.ready.then(() => { settled = true; });
+    await new Promise(resolve => setImmediate(resolve));
+    assert.deepEqual([events, settled], [['events'], false]);
+    finishRestore();
+    await client.ready;
+    assert.deepEqual([events, settled], [['events', 'restored'], true]);
 });
 
 test('editing is blocked during connection so the initial room response cannot erase a local edit', async () => {
@@ -556,18 +578,21 @@ test('離開隊伍後清單面板回到清單分頁，歷史內容隱藏', () =>
         button.setAttribute('aria-selected', active);
         return button;
     };
-    // 離開前停在「歷史」分頁：歷史鈕為作用中，清單內容被隱藏、歷史內容顯示
+    // 離開前停在「歷史」分頁：歷史鈕為作用中，清單內容與下面的動作列被隱藏、歷史內容顯示
     const listButton = tabButton('list', false), historyButton = tabButton('history', true);
     context.document.querySelectorAll = selector => selector === '.tab-btn' ? [listButton, historyButton] : [];
     const listContent = context.document.getElementById('listContent');
+    const listActions = context.document.getElementById('listActions');
     const historyContent = context.document.getElementById('historyContent');
     listContent.classList.add('hidden');
+    listActions.classList.add('hidden');
 
     client.currentRoom = null;
     client.elements = { roomSection: fakeElement(), roomStatus: fakeElement() };
     vm.runInContext('RoomCollaboration.prototype.updateRoomUI.call(client)', context);
 
     assert.equal(listContent.classList.contains('hidden'), false);
+    assert.equal(listActions.classList.contains('hidden'), false, '動作列跟著清單顯示');
     assert.equal(historyContent.classList.contains('hidden'), true);
     assert.equal(listButton.getAttribute('aria-selected'), 'true');
     assert.equal(historyButton.getAttribute('aria-selected'), 'false');
@@ -586,7 +611,7 @@ test('進出隊伍時清單入口跟著換：updateRoomUI() 最後更新清單�
 });
 
 // ---------- 清單面板裡的組隊：焦點（fake-dom） ----------
-// 照 index.html 做出清單面板（標頭的匯出…關閉、組隊按鈕、隊伍狀態、頁籤、清單）、三個隊伍對話框與面板外的一顆按鈕，
+// 照 index.html 做出清單面板（標頭的關閉、組隊按鈕、隊伍狀態、頁籤、清單與它下面的動作列）、三個隊伍對話框與面板外的一顆按鈕，
 // fake-dom 裡載入真正的 list-manager.js、room-map-sync.js、room-collaboration.js 與 script.js（清單面板的開關、隊伍同步）。
 // finder 不跑建構函式，清單張數、卡片按鈕、清單內容換成空函式（同上面的 setup()）；client.init() 由測試自己呼叫（掛事件、處理網址的 ?room=）。
 // request() 換成 respond(path, options)：回傳值就是伺服器的回應，丟出的錯誤就是失敗。
@@ -598,7 +623,7 @@ function createTeamPanel({ url = 'https://ff14.tw/tools/treasure-map-finder/', r
     const storage = new Map();
     const button = (id, text) => el('button', { type: 'button', id, class: 'btn' }, text);
     const panel = el('div', { id: 'myListPanel', class: 'my-list-panel', role: 'dialog', inert: true },
-        el('div', { class: 'panel-header' }, button('exportListBtn', '匯出'), button('importListBtn', '匯入'), button('clearAllBtn', '清空'), button('closePanelBtn', '×')),
+        el('div', { class: 'panel-header' }, button('closePanelBtn', '×')),
         el('div', { class: 'panel-body' },
             el('div', { id: 'teamActions', class: 'team-actions' }, button('createRoomBtn', '建立組隊'), button('joinRoomBtn', '加入隊伍')),
             el('div', { id: 'roomSection', class: 'room-section hidden' },
@@ -611,6 +636,7 @@ function createTeamPanel({ url = 'https://ff14.tw/tools/treasure-map-finder/', r
                 el('button', { type: 'button', class: 'tab-btn active', 'data-tab': 'list' }, '清單'),
                 el('button', { type: 'button', class: 'tab-btn', 'data-tab': 'history' }, '歷史')),
             el('div', { id: 'listContent' }),
+            el('div', { id: 'listActions', class: 'tm-list-actions' }, button('importListBtn', '匯入'), button('clearAllBtn', '清空清單')),
             el('div', { id: 'historyContent', class: 'hidden' })),
         el('div', { class: 'panel-footer' }, button('generateRouteBtn', '生成路線')));
     const dialog = (id, ...children) => el('div', { id, class: 'modal dialog-overlay hidden', role: 'dialog' }, ...children);
@@ -809,9 +835,9 @@ test('用網址 ?room= 在載入時自動加入：不移動焦點（面板關著
     const joining = opened.client.init();
     await new Promise(resolve => setImmediate(resolve));
     opened.finder.openListPanel();
-    assertFocusOn(opened, 'exportListBtn', '加入途中打開面板');
+    assertFocusOn(opened, 'closePanelBtn', '加入途中打開面板');
     release();
     await joining;
     assert.equal(opened.client.currentRoom.roomCode, 'ABC123');
-    assertFocusOn(opened, 'exportListBtn', '加入途中打開面板，加入完成後');
+    assertFocusOn(opened, 'closePanelBtn', '加入途中打開面板，加入完成後');
 });
