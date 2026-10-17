@@ -61,8 +61,9 @@ class PartyStatus {
         if (button.dataset.action === 'rename') {
             collaboration.showEditNicknameDialog();
         } else if (button.dataset.action === 'remove') {
+            // 移出要先問一次：開頁內的確認對話框（RoomDialogs），玩家按了確認才真的移出
             const target = collaboration.currentRoom?.members.find(member => member.id === button.dataset.memberId);
-            if (target) collaboration.removeMember(target);
+            if (target) collaboration.dialogs.openRemove(target);
         }
     }
 

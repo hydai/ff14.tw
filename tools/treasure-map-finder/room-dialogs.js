@@ -1,7 +1,7 @@
-// 組隊的頁內對話框：目前是「建立隊伍」與「加入隊伍」（邀請連結、離開、移出成員的對話框之後再加進來）。
-// 標記都在 index.html（#createPartyModal、#joinRoomModal）。開關照 ListDialogs#showModal()：拿掉 .hidden、交給 ModalManager 以 style.display 顯示，
-// 關閉時加回 .hidden。說明、迷你清單、選項與錯誤的字帶張數、代號、還要換語言，由這裡依狀態組出來、不掛 data-i18n：
-// I18nManager 切換語言時會把 [data-i18n] 的文字整個換掉。
+// 組隊的頁內對話框：「建立隊伍」、「加入隊伍」、「離開隊伍」與「移出成員」（邀請連結的對話框之後再加進來；改名對話框在 RoomCollaboration）。
+// 標記都在 index.html（#createPartyModal、#joinRoomModal、#leaveRoomModal、#removeMemberModal）。開關照 ListDialogs#showModal()：
+// 拿掉 .hidden、交給 ModalManager 以 style.display 顯示，關閉時加回 .hidden。說明、迷你清單、選項與錯誤的字帶張數、代號、名字、還要換語言，
+// 由這裡依狀態組出來、不掛 data-i18n：I18nManager 切換語言時會把 [data-i18n] 的文字整個換掉。
 // 由 RoomCollaboration 建立（this.dialogs）；建構時只抓元素，事件在 init() 才掛
 class RoomDialogs {
     // renderChoice() 的確認鈕：prefix → 按鈕的 id（邀請連結的對話框做的時候再加一筆）
@@ -25,8 +25,11 @@ class RoomDialogs {
         // 第幾次打開對話框（showModal() 每次打開、關閉都加一）。連線要等伺服器，這段時間玩家可能按 Escape 關掉：
         // 那一次的結果屬於已經關掉的對話框，不能再去關它、把錯誤寫進去
         this.opening = 0;
-        // 正在連線（建立或加入隊伍）的是哪一次打開的對話框（opening 的值），沒有是 null。連線中選項與確認鈕停用著，refresh() 不重畫
+        // 正在進行（連線：建立或加入隊伍；離開隊伍；移出成員）的是哪一次打開的對話框（opening 的值），沒有是 null。
+        // 進行中選項與確認鈕停用著，refresh() 不重畫
         this.connecting = null;
+        // 移出對話框現在要移出的是哪位成員（成員 id），對話框關著時是 null。名字與張數每次重畫都從隊伍資料裡查最新的
+        this.removing = null;
         // 迷你清單上一次畫的內容（語言與每一張的 id），依 renderChoice() 的 prefix 記：沒變就不重建，縮圖才不會一直重載
         this.listKeys = new Map();
 
@@ -42,14 +45,32 @@ class RoomDialogs {
             roomCode: byId('roomCodeInput'),
             roomCodeHint: byId('roomCodeHint'),
             roomCodeError: byId('roomCodeError'),
-            joinMaps: byId('joinPartyMaps')
+            joinMaps: byId('joinPartyMaps'),
+            leaveModal: byId('leaveRoomModal'),
+            closeLeave: byId('closeLeaveModalBtn'),
+            cancelLeave: byId('cancelLeaveBtn'),
+            confirmLeaveBtn: byId('confirmLeaveBtn'),
+            leaveLede: byId('leaveLede'),
+            leaveChoice: byId('leaveChoice'),
+            leaveKeep: byId('leaveModeKeep'),
+            leaveClear: byId('leaveModeClear'),
+            leaveLeaderNote: byId('leaveLeaderNote'),
+            leaveLastNote: byId('leaveLastNote'),
+            leaveError: byId('leaveError'),
+            removeModal: byId('removeMemberModal'),
+            removeTitle: byId('removeMemberModal-title'),
+            closeRemove: byId('closeRemoveModalBtn'),
+            cancelRemove: byId('cancelRemoveBtn'),
+            confirmRemoveBtn: byId('confirmRemoveBtn'),
+            removeBody: byId('removeMemberBody'),
+            removeError: byId('removeMemberError')
         };
         // renderChoice() 用到的元素，依 prefix 記起來（建立與加入的現在抓，其他的第一次用到時才抓）
         this.choices = {};
         this.choiceElements('create');
         this.choiceElements('join');
 
-        window.i18n.onLanguageChange(() => this.refresh());
+        window.i18n.onLanguageChange(() => this.handleLanguageChange());
     }
 
     // 「你的清單有 N 張寶圖」那一塊（說明、迷你清單、單選、提醒）與確認鈕的元素，id 都是 prefix 加固定的名字：
@@ -73,7 +94,7 @@ class RoomDialogs {
         return this.choices[prefix];
     }
 
-    // 由 RoomCollaboration#setupEventListeners() 呼叫：接上建立與加入隊伍對話框裡的按鈕、代號欄與兩個選項
+    // 由 RoomCollaboration#setupEventListeners() 呼叫：接上建立、加入、離開隊伍與移出成員對話框裡的按鈕、代號欄與選項
     init() {
         const { elements } = this;
         const create = this.choiceElements('create');
@@ -97,6 +118,14 @@ class RoomDialogs {
         elements.roomCode.addEventListener('keydown', event => {
             if (event.key === 'Enter' && !event.isComposing) this.confirmJoin();
         });
+
+        elements.closeLeave.addEventListener('click', () => this.close(elements.leaveModal));
+        elements.cancelLeave.addEventListener('click', () => this.close(elements.leaveModal));
+        elements.confirmLeaveBtn.addEventListener('click', () => this.confirmLeave());
+
+        elements.closeRemove.addEventListener('click', () => this.close(elements.removeModal));
+        elements.cancelRemove.addEventListener('click', () => this.close(elements.removeModal));
+        elements.confirmRemoveBtn.addEventListener('click', () => this.confirmRemove());
     }
 
     // 拿掉 .hidden 再交給 ModalManager 顯示；關閉時加回 .hidden、清掉 ModalManager 設的 display，最後呼叫 onClose
@@ -121,20 +150,63 @@ class RoomDialogs {
         if (this.modalManager.activeModal === element) this.modalManager.hide();
     }
 
-    // 開著的對話框裡由程式組的字重畫：切換語言（I18nManager 先換掉 [data-i18n] 的固定字，再來這裡）會來。
-    // 上一次失敗的錯誤是舊語言寫的，收起來（再按一次就用新語言重新產生）；玩家已經勾的選項不動。沒開著的下次打開時才畫。
-    // 連線中（建立或加入）不重畫：選項與確認鈕停用著，連上之後清單也會換成隊伍的清單
+    // 隊伍沒了（被移出、連線失效、隊伍過期、自己離開）：離開與移出的對話框只在隊伍裡才有意義，開著就關掉；回傳有沒有關。
+    // 建立、加入的對話框不動（之後的邀請連結對話框也一樣：切換隊伍時離開 A 之後，它還要留著加入 B）。
+    // RoomCollaboration#forceLeaveRoom() 呼叫，不看 connecting：離開自己的確認鈕還在進行中（離開成功時 forceLeaveRoom() 也會來到這裡）
+    closeInParty() {
+        const open = this.modalManager.activeModal;
+        if (open !== this.elements.leaveModal && open !== this.elements.removeModal) return false;
+        this.modalManager.hide();
+        return true;
+    }
+
+    // 切換語言（I18nManager 先換掉 [data-i18n] 的固定字，再來這裡）：上一次失敗的錯誤是舊語言寫的，收起來（再按一次就用新語言重新產生），
+    // 其餘由程式組的字照 refresh() 重畫；玩家已經勾的選項、打的代號不動。沒開著的下次打開時才畫。
+    // 進行中不動：連線中選項與確認鈕停用著，重畫會把它們解開
+    handleLanguageChange() {
+        if (this.connecting === this.opening) return;
+        const { elements } = this;
+        const open = this.modalManager.activeModal;
+        if (open === elements.createModal) this.hideCreateError();
+        else if (open === elements.joinModal) this.clearJoinError();
+        else if (open === elements.leaveModal) this.hideLeaveError();
+        else if (open === elements.removeModal) this.hideRemoveError();
+        this.refresh();
+    }
+
+    // 開著的對話框裡跟著狀態走的部分重畫：切換語言（handleLanguageChange()）、隊伍變了（RoomCollaboration 的 mapSync onChange：每兩秒的輪詢、
+    // 自己與隊友的變更）都會來。只重畫由程式組的字與顯示，玩家勾的選項與已經寫出來的錯誤不動（錯誤只在切換語言、再按一次確認時收起來）。
+    // 離開對話框跟著隊伍清單的張數與成員換說明；移出對話框的那個人已經不在隊伍裡就關掉。進行中（見 connecting）不重畫
     refresh() {
         if (this.connecting === this.opening) return;
+        const { elements } = this;
         const open = this.modalManager.activeModal;
-        if (open === this.elements.createModal) {
-            this.hideCreateError();
+        if (open === elements.createModal) {
             this.renderCreate(false);
-        } else if (open === this.elements.joinModal) {
-            // 加入也一樣：錯誤收起來，說明接著回來；玩家打的代號與勾的選項不動
-            this.clearJoinError();
+        } else if (open === elements.joinModal) {
             this.renderJoin(false);
+        } else if (open === elements.leaveModal) {
+            // 清單被隊友清空時整組選項藏起來，焦點正在選項上就移到取消，不能掉到 body
+            const active = document.activeElement;
+            this.renderLeave();
+            this.keepFocus(active, elements.cancelLeave);
+        } else if (open === elements.removeModal) {
+            const target = this.removalTarget();
+            if (target) {
+                this.renderRemove(target);
+            } else {
+                // 他已經不在隊伍裡了（自己離開、被別的路徑移出）：沒有東西可確認，關掉。他那一列的按鈕不在了，焦點到成員那一行
+                this.close(elements.removeModal);
+                this.focusMembersToggle();
+            }
         }
+    }
+
+    // 重畫之後，焦點原本所在的那顆藏起來（自己或外層有 .hidden）或停用了：焦點放到 fallback（同一個對話框裡一直都在的那顆）。
+    // 不然焦點會掉到 body：ModalManager 的焦點陷阱只在第一個與最後一個可聚焦的元素上循環，再按 Tab 會跑到對話框外面（同 ListDialogs#keepFocus()）
+    keepFocus(active, fallback) {
+        if (!active || !this.modalManager.activeModal?.contains(active)) return;
+        if (active.disabled || active.closest('.hidden')) fallback.focus();
     }
 
     /**
@@ -254,13 +326,17 @@ class RoomDialogs {
         }
     }
 
-    // 進行中要停用的控制項（選項）與轉圈的確認鈕，依對話框的 prefix：建立與加入是 choiceElements() 的兩個選項加確認鈕
+    // 進行中要停用的控制項（選項）與轉圈的確認鈕，依對話框的 prefix：建立與加入是 choiceElements() 的兩個選項加確認鈕，
+    // 離開是「留在我的清單」與「清空」加確認鈕，移出沒有選項、只有確認鈕
     busyControls(prefix) {
+        const { elements } = this;
+        if (prefix === 'leave') return { disable: [elements.leaveKeep, elements.leaveClear], confirm: elements.confirmLeaveBtn };
+        if (prefix === 'remove') return { disable: [], confirm: elements.confirmRemoveBtn };
         const { bring, clear, confirm } = this.choiceElements(prefix);
         return { disable: [bring, clear], confirm };
     }
 
-    // 連線中：選項與確認鈕停用，確認鈕轉圈（取消與 ✕ 不停用，玩家隨時可以關掉）。
+    // 進行中（連線、離開、移出）：選項與確認鈕停用，確認鈕轉圈（取消與 ✕ 不停用，玩家隨時可以關掉）。
     // 恢復時超過上限的停用由 renderChoice() 接回去（呼叫的人在失敗後重畫）
     setBusy(prefix, busy) {
         const { disable, confirm } = this.busyControls(prefix);
@@ -268,7 +344,7 @@ class RoomDialogs {
         confirm.classList.toggle('btn-loading', busy);
     }
 
-    // 連線：記下是哪一次打開的對話框在連線、停用選項與確認鈕，等 run()（建立或加入）回來，不論成功或失敗都恢復，回傳 run() 的結果。
+    // 進行中：記下是哪一次打開的對話框在進行、停用選項與確認鈕，等 run()（建立、加入、離開或移出）回來，不論成功或失敗都恢復，回傳 run() 的結果。
     // 焦點在要停用的控制項上（剛按下去的確認鈕）時，停用之前先移到 ✕（見 parkFocus()）；恢復時焦點還停在 ✕（玩家沒有移開）、
     // 對話框也還是同一次打開的，就放回那一顆，失敗之後可以直接再按一次
     async whileBusy(prefix, opening, run) {
@@ -409,6 +485,172 @@ class RoomDialogs {
         roomCodeHint.classList.remove('hidden');
         roomCode.classList.remove('is-invalid');
         roomCode.removeAttribute('aria-invalid');
+    }
+
+    // ---------- 離開隊伍 ----------
+    /**
+     * 「離開隊伍」鈕：開對話框，問隊伍清單的寶圖離開後要留在我的清單還是清空。每次打開都從頭開始：預設留在我的清單（所以主要按鈕不會清掉東西）、
+     * 沒有舊的錯誤。不在隊伍裡、離開已經在進行（連線中）、對話框已經開著時什麼都不做，也不重設玩家勾的選項
+     */
+    openLeave() {
+        const { collaboration, elements } = this;
+        if (!collaboration.currentRoom || collaboration.isConnecting || this.modalManager.activeModal === elements.leaveModal) return;
+        this.hideLeaveError();
+        // 兩顆都明確設成預設值，不靠同一組 radio 的互斥
+        elements.leaveKeep.checked = true;
+        elements.leaveClear.checked = false;
+        this.renderLeave();
+        this.showModal(elements.leaveModal);
+    }
+
+    /**
+     * 離開對話框裡由程式組的字與顯示：隊伍清單有幾張寶圖就寫幾張、顯示單選；清單是空的沒有東西可選，說明改成問要不要離開（帶代號）、整組單選藏起來。
+     * 自己是隊長而且隊裡還有別人，提醒離開後沒有人能移出成員（隊長不會轉給別人）；自己是最後一位成員，提醒隊伍會解散（這時不提隊長）。
+     * 隊長已經離開（creatorId 不在成員裡）時沒有誰是隊長，只剩最後一位成員的提醒可能出現。字一樣不重寫（輪詢每兩秒都會來）
+     */
+    renderLeave() {
+        const { collaboration, elements } = this;
+        const room = collaboration.currentRoom;
+        if (!room) return;
+        const count = this.finder.listManager.getLength();
+        const meId = collaboration.currentUser?.id;
+        const others = room.members.filter(member => member.id !== meId).length;
+        elements.leaveChoice.classList.toggle('hidden', count === 0);
+        RoomDialogs.setText(elements.leaveLede, count > 0
+            ? FF14Utils.getI18nText('treasure_map_leave_lede', '隊伍清單的 {count} 張寶圖：', { count })
+            : FF14Utils.getI18nText('treasure_map_leave_lede_empty', '確定要離開隊伍 {code}？', { code: room.roomCode }));
+        elements.leaveLeaderNote.classList.toggle('hidden', !(room.creatorId === meId && others > 0));
+        elements.leaveLastNote.classList.toggle('hidden', others > 0);
+    }
+
+    /**
+     * 對話框的「離開隊伍」：只看「清空」那顆有沒有勾決定要不要清空本機清單（keepList），進行中選項與確認鈕停用、確認鈕轉圈。
+     * 成功就關掉（RoomCollaboration#forceLeaveRoom() 可能已經先關了，這裡不再關第二次），焦點到又出現的「建立隊伍」，toast 是 leaveRoom() 跳的；
+     * 失敗（變更還沒送完、連不上）把原因寫在對話框裡、人還在隊伍裡，讓玩家再按一次；進行中玩家自己關掉了對話框，失敗改跳 toast。
+     * 結果是空訊息的失敗（隊伍在途中就被別的路徑結束了）什麼都不寫：那條路徑已經說過原因，對話框也已經被它關了
+     */
+    async confirmLeave() {
+        const { collaboration, elements } = this;
+        const confirm = elements.confirmLeaveBtn;
+        // 停用的確認鈕（進行中）不接受：程式直接呼叫也一樣
+        if (confirm.disabled) return;
+        const opening = this.opening;
+        const keepList = !elements.leaveClear.checked;
+        // 先收起上一次的錯誤：同樣的錯誤再來一次會重新寫過，role="alert" 才會再唸
+        this.hideLeaveError();
+        const result = await this.whileBusy('leave', opening, () => collaboration.leaveRoom(keepList));
+
+        if (result.success) {
+            this.close(elements.leaveModal);
+            collaboration.focusAfterLeaving();
+        } else if (opening !== this.opening) {
+            if (result.message) collaboration.showToast(result.message, 'error');
+        } else {
+            // 還在隊伍裡：說明照最新的隊伍畫，原因寫在對話框裡。焦點不在對話框裡就放回確認鈕（進行中停在 ✕ 的焦點 whileBusy() 已經放回去了），
+            // 玩家可以直接再按一次
+            this.renderLeave();
+            if (result.message) this.showLeaveError(result.message);
+            if (!elements.leaveModal.contains(document.activeElement)) confirm.focus();
+        }
+    }
+
+    showLeaveError(message) {
+        const { leaveError } = this.elements;
+        leaveError.textContent = message;
+        leaveError.classList.remove('hidden');
+    }
+
+    hideLeaveError() {
+        const { leaveError } = this.elements;
+        leaveError.textContent = '';
+        leaveError.classList.add('hidden');
+    }
+
+    // ---------- 移出成員 ----------
+    // 移出對話框現在要移出的那位成員：隊伍資料裡的那一筆（名字、張數跟著最新的）；對話框沒開著、或他已經不在隊伍裡是 undefined
+    removalTarget() {
+        return this.collaboration.currentRoom?.members.find(member => member.id === this.removing);
+    }
+
+    /**
+     * 隊長按成員列表裡的「移出」：開確認對話框（標題「把 X 移出隊伍？」、內文帶他加的張數）。他不在隊伍裡、對話框已經開著時什麼都不做。
+     * 初始焦點照 ModalManager 的預設（✕）：多按一下 Enter 只會關掉對話框，不會移出誰
+     * @param {{id: string}} member - 成員列表裡的那一位
+     */
+    openRemove(member) {
+        const { collaboration, elements } = this;
+        if (this.modalManager.activeModal === elements.removeModal) return;
+        const target = collaboration.currentRoom?.members.find(item => item.id === member.id);
+        if (!target) return;
+        this.removing = target.id;
+        this.hideRemoveError();
+        this.renderRemove(target);
+        this.showModal(elements.removeModal, () => { this.removing = null; });
+    }
+
+    /**
+     * 移出對話框裡由程式組的字：標題帶他現在的名字；內文寫他加的幾張寶圖會留在隊伍清單（張數是隊伍的寶圖裡 addedBy 是他的，
+     * 含還沒送出的變更，和成員列表上的一致），他一張都沒加就只寫之後還能重新加入。字一樣不重寫
+     * @param {{id: string, nickname: string}} target - removalTarget() 的結果
+     */
+    renderRemove(target) {
+        const { elements } = this;
+        const count = this.collaboration.mapSync.getMaps().filter(map => map.addedBy === target.id).length;
+        RoomDialogs.setText(elements.removeTitle, FF14Utils.getI18nText('treasure_map_remove_title', '把 {nickname} 移出隊伍？', { nickname: target.nickname }));
+        RoomDialogs.setText(elements.removeBody, count > 0
+            ? FF14Utils.getI18nText('treasure_map_remove_body', '對方加的 {count} 張寶圖會留在隊伍清單。對方之後還是可以用代號或邀請連結重新加入。', { count })
+            : FF14Utils.getI18nText('treasure_map_remove_body_none', '對方之後還是可以用代號或邀請連結重新加入。'));
+    }
+
+    /**
+     * 對話框的「移出」：進行中確認鈕停用、轉圈（取消與 ✕ 還能按）。成功就關掉（toast 是 removeMember() 跳的），焦點到「成員」那一行
+     * （被移出那一列的按鈕已經不在了）；失敗把原因寫在對話框裡、人還在隊伍裡，讓隊長再按一次；
+     * 進行中隊長自己關掉了對話框（Escape、✕），結果照常處理：成功照樣移出了，失敗改跳 toast
+     */
+    async confirmRemove() {
+        const { collaboration, elements } = this;
+        const confirm = elements.confirmRemoveBtn;
+        // 停用的確認鈕（進行中）不接受：程式直接呼叫也一樣
+        if (confirm.disabled) return;
+        const target = this.removalTarget();
+        if (!target) return;
+        const opening = this.opening;
+        // 先收起上一次的錯誤：同樣的錯誤再來一次會重新寫過，role="alert" 才會再唸
+        this.hideRemoveError();
+        const result = await this.whileBusy('remove', opening, () => collaboration.removeMember(target));
+
+        if (opening !== this.opening) {
+            // 對話框在進行中被關掉了（玩家自己，或隊伍沒了由 forceLeaveRoom() 關的）：成功照樣移出了，失敗沒有地方寫錯誤，改跳 toast。
+            // 不能再去關對話框：隊長可能已經開了另一位成員的
+            if (!result.success && result.message) collaboration.showToast(result.message, 'error');
+        } else if (result.success) {
+            this.close(elements.removeModal);
+            this.focusMembersToggle();
+        } else {
+            // 還在隊伍裡：標題與內文照最新的隊伍畫，原因寫在對話框裡。焦點不在對話框裡就放回確認鈕（進行中停在 ✕ 的焦點 whileBusy() 已經放回去了），
+            // 隊長可以直接再按一次
+            const latest = this.removalTarget();
+            if (latest) this.renderRemove(latest);
+            if (result.message) this.showRemoveError(result.message);
+            if (!elements.removeModal.contains(document.activeElement)) confirm.focus();
+        }
+    }
+
+    // 焦點到「成員」那一行（被移出的那一列的按鈕已經不在了）
+    focusMembersToggle() {
+        if (this.collaboration.isListPanelOpen()) this.collaboration.status.elements.toggle.focus();
+    }
+
+    showRemoveError(message) {
+        const { removeError } = this.elements;
+        removeError.textContent = message;
+        removeError.classList.remove('hidden');
+    }
+
+    hideRemoveError() {
+        const { removeError } = this.elements;
+        removeError.textContent = '';
+        removeError.classList.add('hidden');
     }
 }
 

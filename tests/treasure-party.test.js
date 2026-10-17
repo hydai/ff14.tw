@@ -94,6 +94,11 @@ function cssRules(css) {
     return { rules, bodyOf: (selector) => rules.filter((rule) => rule.selectors.includes(selector)).map((rule) => rule.body).join(';') };
 }
 
+// 一個對話框的按鈕列（那個 .dialog-actions 元素）的 class 清單：放不下就換行的按鈕列多一個共用的 .tm-dialog-actions-wrap
+function actionRowClasses(html, id) {
+    return classesOf({ class: sliceElementById(html, id).match(/<div class="([^"]*\bdialog-actions\b[^"]*)"/)[1] });
+}
+
 test('隊伍狀態的樣式：新規則寫在最後的 .hidden 前面，會被 .hidden 切換的元素 display 只設在單一 class 上；舊的 .room-*、.member-* 規則拿掉', () => {
     const css = stripComments(read(`${TOOL_DIR}/style.css`));
     const { rules, bodyOf } = cssRules(css);
@@ -119,7 +124,9 @@ test('隊伍狀態的樣式：新規則寫在最後的 .hidden 前面，會被 .
 
     const old = /\.(?:room-section|room-status|room-info|room-label|user-label|members-label|room-stat|room-code|room-stats|stat-icon|room-user|user-nickname|room-members|members-list|member-tag|member-remove-btn)(?![\w-])/;
     assert.doesNotMatch(css, old);
-    assert.match(css, /\.modal\.hidden\s*\{\s*display:\s*none/, '舊的 .modal 還在用，它的 .hidden 規則留著');
+    // 改名、離開也改寫成 .dialog-overlay > .dialog.tm-dialog 了，沒有對話框再用舊的 .modal 那一套：它的規則一起刪掉，只留代號欄用的 .input-uppercase
+    assert.doesNotMatch(css, /(?<![\w-])\.modal(?:-content|-body|-footer)?(?![\w-])|\.input-field/, '舊的 .modal、.modal-content、.modal-body、.modal-footer、.input-field 規則還在');
+    assert.match(bodyOf('.input-uppercase'), /text-transform:\s*uppercase/);
 });
 
 // ---------- 入口說明與建立隊伍對話框的標記與樣式（讀原始檔） ----------
@@ -324,9 +331,12 @@ test('入口說明的樣式：.tm-team-intro 是單一 class（display: grid）�
     assert.match(bodyOf('.tm-team-intro-actions .btn'), /flex:\s*1/);
     // 不寫 .team-actions.tm-team-intro：特異度比最後的 .hidden 高，進了隊伍就藏不起來
     assert.doesNotMatch(css, /\.team-actions/, '原本的 .team-actions、.team-actions .btn 規則換掉了');
-    // 建立隊伍對話框的按鈕列也一樣放不下就換行（日文「キャンセル」＋「パーティを作る」在 320px 會把取消鈕擠出左邊）；只動這個對話框，其他對話框照舊
-    assert.match(bodyOf('#createPartyModal .dialog-actions'), /flex-wrap:\s*wrap/);
-    assert.ok(css.indexOf('#createPartyModal .dialog-actions {') < css.lastIndexOf('\n.hidden {'));
+    // 建立隊伍對話框的按鈕列也一樣放不下就換行（日文「キャンセル」＋「パーティを作る」在 320px 會把取消鈕擠出左邊）：
+    // 用共用的 .tm-dialog-actions-wrap，加在那個 .dialog-actions 元素上，不寫 #createPartyModal .dialog-actions 這種 id 規則
+    // （離開隊伍對話框用同一個 class，沒有 id 規則的檢查在離開隊伍對話框那個樣式測試）；別的對話框的按鈕列不動
+    assert.match(bodyOf('.tm-dialog-actions-wrap'), /flex-wrap:\s*wrap/);
+    assert.ok(css.indexOf('.tm-dialog-actions-wrap {') < css.lastIndexOf('\n.hidden {'));
+    assert.deepEqual(actionRowClasses(read(`${TOOL_DIR}/index.html`), 'createPartyModal'), ['dialog-actions', 'tm-dialog-actions-wrap']);
     assert.equal(bodyOf('.tm-dialog .dialog-actions'), '', '別的對話框的按鈕列不動');
 });
 
@@ -361,6 +371,171 @@ test('加入隊伍對話框的樣式：代號欄的紅框用 id 規則（附原�
         assert.doesNotMatch(body, /#[0-9a-f]{3,8}\b|rgba?\(|hsla?\(|!important/i, selector);
         for (const [, name] of body.matchAll(/var\(\s*(--[a-z0-9-]+)/g)) assert.ok(tokens.has(name), `${selector} 用了 tokens.css 沒有的 ${name}`);
         assert.ok(css.indexOf(`${selector} {`) < css.lastIndexOf('\n.hidden {'), `${selector} 要寫在最後的 .hidden 前面`);
+    }
+});
+
+// ---------- 離開、移出、改名對話框的標記與腳本（讀原始檔） ----------
+test('離開隊伍對話框的標記：照頁內對話框的結構；說明由程式填，單選與兩段說明是固定的字（掛 data-i18n），錯誤 role=alert、先藏起來；只有一顆主要按鈕；不用 .modal 那一套，舊的兩顆離開鈕不在了', () => {
+    const html = read(`${TOOL_DIR}/index.html`);
+    const dialog = sliceElementById(html, 'leaveRoomModal');
+    const overlay = tagAttrs(html, 'leaveRoomModal');
+    assert.deepEqual([classesOf(overlay), overlay.role, overlay['aria-modal'], overlay['aria-labelledby']], [['dialog-overlay', 'hidden'], 'dialog', 'true', 'leaveRoomModal-title']);
+    assert.match(dialog, /<div class="dialog tm-dialog">/);
+    assert.doesNotMatch(dialog, /class="[^"]*\b(?:modal|modal-content|modal-body|modal-footer|input-field)\b/, '改寫的對話框不用舊的 .modal 那一套');
+    for (const gone of ['leaveKeepListBtn', 'leaveClearListBtn']) assert.ok(!html.includes(`id="${gone}"`), `#${gone} 還在`);
+
+    const title = tagAttrs(html, 'leaveRoomModal-title');
+    assert.match(dialog, /<h3\b[^>]*\sid="leaveRoomModal-title"/);
+    assert.deepEqual([classesOf(title), title['data-i18n']], [['dialog-title'], 'treasure_map_leave_title']);
+    const close = tagAttrs(html, 'closeLeaveModalBtn');
+    assert.deepEqual([close.type, classesOf(close), close['aria-label'], close['data-i18n'], close['data-i18n-attr']], ['button', ['btn', 'btn-close'], '關閉', 'treasure_map_close', 'aria-label']);
+
+    // 內文由上而下：說明、單選、隊長的說明、最後一位的說明、錯誤。說明帶張數與代號，由程式填，不掛 data-i18n；兩段說明是固定的字；錯誤是警示
+    const lede = tagAttrs(html, 'leaveLede');
+    assert.deepEqual([classesOf(lede), lede['data-i18n']], [['tm-dialog-lede'], undefined]);
+    assert.match(dialog, /<p\b[^>]*\sid="leaveLede"/);
+    const choice = tagAttrs(html, 'leaveChoice');
+    assert.deepEqual([classesOf(choice), choice['data-i18n']], [['tm-choice'], undefined]);
+    assert.match(dialog, /<fieldset\b[^>]*\sid="leaveChoice"/);
+    for (const [id, key] of [['leaveLeaderNote', 'treasure_map_leave_leader_note'], ['leaveLastNote', 'treasure_map_leave_last_note']]) {
+        const note = tagAttrs(html, id);
+        assert.deepEqual([classesOf(note), note['data-i18n']], [['form-text', 'hidden'], key], id);
+        assert.match(dialog, new RegExp(`<p\\b[^>]*\\sid="${id}"`), id);
+    }
+    const error = tagAttrs(html, 'leaveError');
+    assert.deepEqual([classesOf(error), error.role, error['data-i18n']], [['error-message', 'hidden'], 'alert', undefined]);
+    assert.match(dialog, /<p class="error-message hidden" id="leaveError" role="alert"><\/p>/, '先是空的');
+    const order = ['id="leaveLede"', 'id="leaveChoice"', 'id="leaveLeaderNote"', 'id="leaveLastNote"', 'id="leaveError"'].map((s) => dialog.indexOf(s));
+    assert.ok(!order.includes(-1) && order.every((at, index) => index === 0 || order[index - 1] < at), `內文的順序：${order}`);
+
+    // 單選：fieldset 有 legend（只給螢幕閱讀器看），兩個 radio 同一組，只有「留在我的清單」預設勾；選項的標題與說明是固定的字
+    const legend = parseAttrs(dialog.match(/<legend\b[^>]*>/)[0]);
+    assert.deepEqual([classesOf(legend), legend['data-i18n']], [['visually-hidden'], 'treasure_map_leave_choice']);
+    const choiceHtml = sliceElementById(html, 'leaveChoice');
+    assert.equal((choiceHtml.match(/class="form-check"/g) || []).length, 2);
+    const labels = [...choiceHtml.matchAll(/<label\b[^>]*>/g)].map((m) => parseAttrs(m[0]));
+    for (const [mode, value, checked, titleKey, hintKey] of [['Keep', 'keep', true, 'treasure_map_leave_keep', 'treasure_map_leave_keep_hint'],
+        ['Clear', 'clear', false, 'treasure_map_leave_clear', 'treasure_map_leave_clear_hint']]) {
+        const radio = tagAttrs(html, `leaveMode${mode}`);
+        assert.deepEqual([radio.type, radio.name, radio.value, classesOf(radio)], ['radio', 'leaveMode', value, ['form-check-input']], mode);
+        assert.equal(new RegExp(`<input\\b[^>]*id="leaveMode${mode}"[^>]*\\schecked[\\s>]`).test(choiceHtml), checked, `${mode} 的 checked`);
+        assert.deepEqual(classesOf(labels.find((attrs) => attrs.for === `leaveMode${mode}`)), ['form-check-label'], mode);
+        assert.match(choiceHtml, new RegExp(`<span class="tm-choice-title" data-i18n="${titleKey}">`), titleKey);
+        assert.match(choiceHtml, new RegExp(`<span class="tm-choice-hint" data-i18n="${hintKey}">`), hintKey);
+    }
+
+    // 取消與「離開隊伍」：這個對話框唯一的主要按鈕是「離開隊伍」（預設選的是保留，所以不會清掉東西）
+    const cancel = tagAttrs(html, 'cancelLeaveBtn');
+    const confirm = tagAttrs(html, 'confirmLeaveBtn');
+    assert.deepEqual([cancel.type, classesOf(cancel), cancel['data-i18n']], ['button', ['btn'], 'treasure_map_cancel']);
+    assert.deepEqual([confirm.type, classesOf(confirm), confirm['data-i18n']], ['button', ['btn', 'btn-primary'], 'treasure_map_leave_room']);
+    assert.equal((dialog.match(/\bbtn-primary\b/g) || []).length, 1);
+});
+
+test('移出成員對話框的標記：標題的字由程式填（帶名字）；內文與錯誤（role=alert、先藏起來）；取消與危險的「移出」，沒有主要按鈕；放在離開對話框後面、清空清單對話框前面，頁面替身照同一個順序掛', () => {
+    const html = read(`${TOOL_DIR}/index.html`);
+    const dialog = sliceElementById(html, 'removeMemberModal');
+    const overlay = tagAttrs(html, 'removeMemberModal');
+    assert.deepEqual([classesOf(overlay), overlay.role, overlay['aria-modal'], overlay['aria-labelledby']], [['dialog-overlay', 'hidden'], 'dialog', 'true', 'removeMemberModal-title']);
+    assert.match(dialog, /<div class="dialog tm-dialog">/);
+    assert.doesNotMatch(dialog, /class="[^"]*\b(?:modal|modal-content|modal-body|modal-footer|input-field)\b/, '新的對話框不用舊的 .modal 那一套');
+    const order = ['id="leaveRoomModal"', 'id="removeMemberModal"', 'id="clearListModal"'].map((s) => html.indexOf(s));
+    assert.ok(!order.includes(-1) && order.every((at, index) => index === 0 || order[index - 1] < at), `對話框的順序：${order}`);
+    assert.ok(PANEL_IDS.indexOf('leaveRoomModal') + 1 === PANEL_IDS.indexOf('removeMemberModal') && PANEL_IDS.indexOf('removeMemberModal') + 1 === PANEL_IDS.indexOf('clearListModal'),
+        'PANEL_IDS 少了 removeMemberModal，或順序和 index.html 不一樣');
+
+    // 標題帶名字、內文帶張數，都由程式填，不掛 data-i18n（I18nManager 切換語言時會把它整個換掉）；先是空的
+    const title = tagAttrs(html, 'removeMemberModal-title');
+    assert.deepEqual([classesOf(title), title['data-i18n']], [['dialog-title'], undefined]);
+    assert.match(dialog, /<h3 class="dialog-title" id="removeMemberModal-title"><\/h3>/);
+    const close = tagAttrs(html, 'closeRemoveModalBtn');
+    assert.deepEqual([close.type, classesOf(close), close['aria-label'], close['data-i18n'], close['data-i18n-attr']], ['button', ['btn', 'btn-close'], '關閉', 'treasure_map_close', 'aria-label']);
+    assert.deepEqual([tagAttrs(html, 'removeMemberBody')['data-i18n'], tagAttrs(html, 'removeMemberError')['data-i18n']], [undefined, undefined]);
+    assert.match(dialog, /<p id="removeMemberBody"><\/p>/);
+    const error = tagAttrs(html, 'removeMemberError');
+    assert.deepEqual([classesOf(error), error.role], [['error-message', 'hidden'], 'alert']);
+    assert.match(dialog, /<p class="error-message hidden" id="removeMemberError" role="alert"><\/p>/, '先是空的');
+    assert.ok(dialog.indexOf('id="removeMemberBody"') < dialog.indexOf('id="removeMemberError"'));
+
+    // 取消與「移出」：「移出」是危險按鈕，這個對話框沒有主要按鈕
+    const cancel = tagAttrs(html, 'cancelRemoveBtn');
+    const confirm = tagAttrs(html, 'confirmRemoveBtn');
+    assert.deepEqual([cancel.type, classesOf(cancel), cancel['data-i18n']], ['button', ['btn'], 'treasure_map_cancel']);
+    assert.deepEqual([confirm.type, classesOf(confirm), confirm['data-i18n']], ['button', ['btn', 'btn-danger'], 'treasure_map_remove_member']);
+    assert.doesNotMatch(dialog, /\bbtn-primary\b/);
+});
+
+test('改名對話框的標記：照頁內對話框的結構；label 對到欄位，欄位沒有 placeholder，說明接在欄下面並由 aria-describedby 指到；固定的字都掛 data-i18n；只有一顆主要按鈕；不用 .modal 那一套', () => {
+    const html = read(`${TOOL_DIR}/index.html`);
+    const dialog = sliceElementById(html, 'editNicknameModal');
+    const overlay = tagAttrs(html, 'editNicknameModal');
+    assert.deepEqual([classesOf(overlay), overlay.role, overlay['aria-modal'], overlay['aria-labelledby']], [['dialog-overlay', 'hidden'], 'dialog', 'true', 'editNicknameModal-title']);
+    assert.match(dialog, /<div class="dialog tm-dialog">/);
+    assert.doesNotMatch(dialog, /class="[^"]*\b(?:modal|modal-content|modal-body|modal-footer|input-field)\b/, '改寫的對話框不用舊的 .modal 那一套');
+
+    const title = tagAttrs(html, 'editNicknameModal-title');
+    assert.match(dialog, /<h3\b[^>]*\sid="editNicknameModal-title"/);
+    assert.deepEqual([classesOf(title), title['data-i18n']], [['dialog-title'], 'treasure_map_rename_title']);
+    const close = tagAttrs(html, 'closeNicknameModalBtn');
+    assert.deepEqual([close.type, classesOf(close), close['aria-label'], close['data-i18n'], close['data-i18n-attr']], ['button', ['btn', 'btn-close'], '關閉', 'treasure_map_close', 'aria-label']);
+
+    // 名字欄：label 用 for 對到它；一般的 .form-control，最多 20 字、不自動完成、說明用 aria-describedby 指到；不放 placeholder（欄裡本來就是目前的名字）
+    const label = parseAttrs(dialog.match(/<label\b[^>]*>/)[0]);
+    assert.deepEqual([classesOf(label), label.for, label['data-i18n']], [['form-label'], 'nicknameInput', 'treasure_map_nickname_label']);
+    const input = tagAttrs(html, 'nicknameInput');
+    assert.deepEqual([input.type, classesOf(input), input.maxlength, input.autocomplete, input['aria-describedby']], ['text', ['form-control'], '20', 'off', 'nicknameHint']);
+    for (const absent of ['placeholder', 'data-i18n', 'data-i18n-attr']) assert.equal(input[absent], undefined, `名字欄不該有 ${absent}`);
+    const hint = tagAttrs(html, 'nicknameHint');
+    assert.deepEqual([classesOf(hint), hint['data-i18n']], [['form-text'], 'treasure_map_nickname_hint']);
+    assert.match(dialog, /<p\b[^>]*\sid="nicknameHint"/);
+    const order = ['<label', 'id="nicknameInput"', 'id="nicknameHint"'].map((s) => dialog.indexOf(s));
+    assert.ok(!order.includes(-1) && order.every((at, index) => index === 0 || order[index - 1] < at), `內文的順序：${order}`);
+
+    const cancel = tagAttrs(html, 'cancelNicknameBtn');
+    const confirm = tagAttrs(html, 'confirmNicknameBtn');
+    assert.deepEqual([cancel.type, classesOf(cancel), cancel['data-i18n']], ['button', ['btn'], 'treasure_map_cancel']);
+    assert.deepEqual([confirm.type, classesOf(confirm), confirm['data-i18n']], ['button', ['btn', 'btn-primary'], 'treasure_map_confirm']);
+    assert.equal((dialog.match(/\bbtn-primary\b/g) || []).length, 1);
+    // 整頁不再有舊的 .modal 那一套（以 class 為單位比：map-detail-modal 是另一個 class）
+    assert.doesNotMatch(html, /class="(?:[^"]*\s)?(?:modal|modal-content|modal-body|modal-footer|input-field)(?:\s[^"]*)?"/);
+});
+
+test('離開與移出交給 RoomDialogs：離開鈕呼叫 dialogs.openLeave()、移出鈕呼叫 dialogs.openRemove(那位成員)；room-collaboration.js 不再有舊的離開對話框，modals 只剩 editNickname', () => {
+    const source = read(`${TOOL_DIR}/room-collaboration.js`);
+    assert.match(source, /showLeaveRoomDialog\(\) \{\s*this\.dialogs\.openLeave\(\);\s*\}/);
+    for (const gone of ['leaveKeepListBtn', 'leaveClearListBtn', 'closeLeaveModalBtn', 'cancelLeaveBtn', 'leaveRoomModal', "'leaveRoom'", 'leaveRoom:']) {
+        assert.ok(!source.includes(gone), `room-collaboration.js 還有 ${gone}`);
+    }
+    assert.match(source, /this\.modals = \{\s*editNickname: document\.getElementById\('editNicknameModal'\)\s*\};/);
+    const status = read(`${TOOL_DIR}/party-status.js`);
+    assert.match(status, /collaboration\.dialogs\.openRemove\(target\)/);
+    assert.ok(!status.includes('removeMember'), 'party-status.js 不再直接呼叫 removeMember');
+    // 離開與移出的對話框在 RoomDialogs
+    const dialogs = read(`${TOOL_DIR}/room-dialogs.js`);
+    for (const id of ['leaveRoomModal', 'removeMemberModal', 'confirmLeaveBtn', 'confirmRemoveBtn']) assert.match(dialogs, new RegExp(`'${id}'`), id);
+});
+
+test('離開隊伍對話框的按鈕列放不下就換行（日文「パーティを抜ける」比「キャンセル」還長，320px 會把取消鈕擠出左邊，瀏覽器實測）：和建立隊伍共用一個 .tm-dialog-actions-wrap，加在 .dialog-actions 上，不是每個對話框一條 #…Modal .dialog-actions 的 id 規則；清空、匯入、分享的按鈕列不加；也不替這三個對話框設 display（它們用 .hidden 切換）', () => {
+    const css = stripComments(read(`${TOOL_DIR}/style.css`));
+    const html = read(`${TOOL_DIR}/index.html`);
+    const { rules, bodyOf } = cssRules(css);
+    // 共用的 class：單一 class、只設 flex-wrap（不用 !important、色碼，也不碰 display），寫在最後的 .hidden 前面
+    assert.match(bodyOf('.tm-dialog-actions-wrap'), /flex-wrap:\s*wrap/);
+    assert.doesNotMatch(bodyOf('.tm-dialog-actions-wrap'), /!important|#[0-9a-f]{3,8}\b|display\s*:/i);
+    assert.ok(css.indexOf('.tm-dialog-actions-wrap {') < css.lastIndexOf('\n.hidden {'));
+    // 建立與離開隊伍對話框的按鈕列帶這個 class；清空、匯入、分享的按鈕字短、放得下，不加
+    for (const id of ['createPartyModal', 'leaveRoomModal']) assert.deepEqual(actionRowClasses(html, id), ['dialog-actions', 'tm-dialog-actions-wrap'], id);
+    for (const id of ['clearListModal', 'importListModal', 'shareMapsModal']) assert.deepEqual(actionRowClasses(html, id), ['dialog-actions'], id);
+    // 沒有 id 規則：樣式裡沒有任何 #…Modal …… .dialog-actions 的選擇器；整排 .tm-dialog 的按鈕列也不設規則（那會讓清單的對話框一起換行）
+    for (const rule of rules) {
+        for (const selector of rule.selectors) assert.doesNotMatch(selector, /#\w+Modal\b.*\.dialog-actions/, `${selector} 是 id 規則，改用 .tm-dialog-actions-wrap`);
+    }
+    assert.equal(bodyOf('.tm-dialog .dialog-actions'), '', '別的對話框的按鈕列不動');
+    // 離開、移出、改名對話框用 .hidden 切換：不能有比單一 class 更高特異度的 display
+    for (const rule of rules.filter((r) => /(?:^|[;\s])display\s*:/.test(r.body))) {
+        for (const selector of rule.selectors.filter((s) => /leaveRoomModal|removeMemberModal|editNicknameModal/.test(s))) {
+            assert.fail(`${selector} 設了 display，.hidden 會失效`);
+        }
     }
 });
 
@@ -480,13 +655,15 @@ test('離開隊伍（保留或清空清單）：焦點回到又出現的「建�
         await page.client.createRoom();
         page.$('leaveRoomBtn').focus();
         page.$('leaveRoomBtn').click();
-        const choice = keepList ? 'leaveKeepListBtn' : 'leaveClearListBtn';
-        page.$(choice).focus();
-        await page.client.leaveRoom(keepList);
+        // 對話框裡勾保留或清空（只看「清空」那顆），按確認鈕：它停用之前焦點先移到 ✕
+        page.$('leaveModeClear').checked = !keepList;
+        page.$('confirmLeaveBtn').focus();
+        page.$('confirmLeaveBtn').click();
+        await page.settle();
         assert.equal(page.client.currentRoom, null);
         assert.equal(page.$('leaveRoomModal').classList.contains('hidden'), true);
         assert.equal(page.$('roomSection').classList.contains('hidden'), true, '離開了：隊伍狀態藏起來');
-        assertFocusOn(page, 'createRoomBtn', choice);
+        assertFocusOn(page, 'createRoomBtn', keepList ? '留在我的清單' : '清空');
     }
 });
 
@@ -1002,8 +1179,9 @@ const serverChanges = (page, changes) => {
     const { currentRoom } = page.client;
     page.client.mapSync.receive({ ...currentRoom, ...changes, revision: currentRoom.revision + 1 });
 };
-const createdParty = async (options = {}) => {
-    const page = await createParty(creates, { stored: { ff14tw_nickname_tag: 'K7Q' }, ...options });
+// respond 是伺服器替身（預設只會建立）；其餘的選項交給 createParty()
+const createdParty = async ({ respond = creates, ...options } = {}) => {
+    const page = await createParty(respond, { stored: { ff14tw_nickname_tag: 'K7Q' }, ...options });
     const result = await page.client.createRoom();
     assert.equal(result.success, true);
     return page;
@@ -1113,13 +1291,13 @@ test('隊長已經離開（creatorId 不在成員裡）：沒有隊長標籤、�
     assert.deepEqual(rows(page).map((row) => row.dataset.memberId), ['me', 'm4x']);
 });
 
-test('按鈕接線：離開 → 離開對話框，改名 → 改名對話框，移出 → removeMember(那位成員)，邀請連結與代號各自複製；成員一行展開、收合', async () => {
+test('按鈕接線：離開 → 離開對話框，改名 → 改名對話框，移出 → 移出對話框 dialogs.openRemove(那位成員)，邀請連結與代號各自複製；成員一行展開、收合', async () => {
     const page = await crowdedParty();
     const calls = [];
     const { client } = page;
     client.showLeaveRoomDialog = () => calls.push('leave');
     client.showEditNicknameDialog = () => calls.push('rename');
-    client.removeMember = (target) => calls.push(`remove ${target.id} ${target.nickname}`);
+    client.dialogs.openRemove = (target) => calls.push(`remove ${target.id} ${target.nickname}`);
     client.copyInviteLink = () => calls.push('invite');
     client.copyRoomCode = () => calls.push('code');
     expand(page);
@@ -2013,6 +2191,730 @@ test('連線中切換語言：選項與「加入」還是停用（重畫不能�
     assert.deepEqual(joinDisabledOf(page), [false, false, false, false, false]);
 });
 
+// ---------- 離開隊伍：留在我的清單或清空，進行中、失敗與輪詢都寫在對話框裡 ----------
+const ISO = '2026-10-17T00:00:00.000Z';
+// 伺服器替身：建立隊伍（initialMaps 收進去，addedBy 是自己，隊長也是自己）、離開、移出成員、送出變更，並記下每一次的請求。
+// leave、removeMember、update 是函式（收到 options；回傳值是回應，丟出的錯誤是失敗），沒給的請求一律丟錯
+const partyServer = ({ leave = () => ({ message: 'Left' }), removeMember = () => { throw new Error('unexpected remove-member'); },
+    update = () => { throw new Error('unexpected PUT'); } } = {}) => {
+    const requests = [];
+    return {
+        requests,
+        respond: (path, options) => {
+            const method = options.method ?? 'GET';
+            requests.push({ method, path, body: options.body, authenticated: options.authenticated });
+            if (path === '/rooms' && method === 'POST') {
+                const me = { ...ME, nickname: options.body.memberNickname };
+                const maps = options.body.initialMaps.map((map) => ({ ...map, addedBy: me.id, addedAt: ISO }));
+                return { ...room(maps, [me]), creatorId: me.id, memberId: me.id, memberToken: TOKEN };
+            }
+            if (path === '/rooms/ABC123/leave' && method === 'POST') return leave(options);
+            if (path === '/rooms/ABC123/remove-member' && method === 'POST') return removeMember(options);
+            if (path === '/rooms/ABC123' && method === 'PUT') return update(options);
+            throw new Error(`unexpected ${method} ${path}`);
+        }
+    };
+};
+const leaveRequests = (server) => server.requests.filter((request) => request.path === '/rooms/ABC123/leave');
+// 隊伍清單裡放 count 張寶圖（自己加的，id 是 map_1、map_2…）：用輪詢收到新資料的方式放進去，不經過伺服器
+const putMaps = (page, count) => serverChanges(page, { treasureMaps: Array.from({ length: count }, (_, index) => serverMap(`map_${index + 1}`, 'me')) });
+// 離開對話框現在開著嗎（ModalManager 認得它，而且看得到）
+const leaveOpen = (page) => page.client.dialogs.modalManager.activeModal === page.$('leaveRoomModal') && !isHidden(page, 'leaveRoomModal');
+// 打開面板、焦點在「離開隊伍」上、按下去
+const pressLeave = (page) => {
+    page.finder.openListPanel();
+    page.$('leaveRoomBtn').focus();
+    page.$('leaveRoomBtn').click();
+};
+// 玩家按對話框的「離開隊伍」：焦點在那顆鈕上（進行中它停用，停用之前焦點先移到 ✕），等結束
+const pressLeaveConfirm = async (page) => {
+    page.$('confirmLeaveBtn').focus();
+    page.$('confirmLeaveBtn').click();
+    await page.settle();
+};
+// 對話框裡會因為進行中而停用的控制項，依序是 [留在我的清單, 清空, 離開隊伍, 取消, ✕]：取消與 ✕ 進行中還能按
+const LEAVE_CONTROLS = ['leaveModeKeep', 'leaveModeClear', 'confirmLeaveBtn', 'cancelLeaveBtn', 'closeLeaveModalBtn'];
+const leaveDisabledOf = (page) => LEAVE_CONTROLS.map((id) => page.$(id).disabled);
+const LEADER_NOTE = '你是隊長。離開後沒有人能移出成員（隊長不會轉給別人）。';
+const LAST_NOTE = '你是最後一位成員，離開後隊伍就解散了。';
+const LEAVE_FAILED = '離開失敗，請稍後再試。';
+const SYNC_FAILED = '你的變更還沒送出，請稍後再試。';
+// [隊長的說明, 解散的說明] 現在顯示著嗎
+const notesShown = (page) => [!isHidden(page, 'leaveLeaderNote'), !isHidden(page, 'leaveLastNote')];
+
+test('離開對話框：預設勾留在我的清單；確認 → POST leave、清單還在、對話框關掉、toast「已離開隊伍」、焦點到建立隊伍', async () => {
+    const server = partyServer();
+    const page = await createdParty({ respond: server.respond });
+    putMaps(page, 2);
+    pressLeave(page);
+
+    assert.ok(leaveOpen(page));
+    const text = (id) => page.$(id).textContent;
+    assert.equal(text('leaveRoomModal-title'), '離開隊伍');
+    assert.equal(text('leaveLede'), '隊伍清單的 2 張寶圖：');
+    assert.equal(isHidden(page, 'leaveChoice'), false);
+    assert.equal(page.$('leaveChoice').querySelector('legend').textContent, '隊伍清單的寶圖要怎麼處理');
+    assert.deepEqual(page.$('leaveChoice').querySelectorAll('.tm-choice-title').map((element) => element.textContent), ['留在我的清單', '清空']);
+    assert.deepEqual(page.$('leaveChoice').querySelectorAll('.tm-choice-hint').map((element) => element.textContent), ['離開後還是可以照這份清單跑', '清單從空的開始']);
+    assert.deepEqual([page.$('leaveModeKeep').checked, page.$('leaveModeClear').checked], [true, false], '預設留在我的清單');
+    assert.equal(isHidden(page, 'leaveError'), true);
+    assert.deepEqual(leaveDisabledOf(page), [false, false, false, false, false]);
+    assert.equal(text('confirmLeaveBtn'), '離開隊伍');
+    assert.deepEqual(leaveRequests(server), [], '還沒按確認，不送任何請求');
+
+    await pressLeaveConfirm(page);
+    assert.equal(leaveRequests(server).length, 1);
+    assert.equal(leaveRequests(server)[0].authenticated, true);
+    assert.match(leaveRequests(server)[0].body.clientRequestId, /^[a-f0-9-]{36}$/);
+    assert.equal(page.client.currentRoom, null);
+    assert.deepEqual(listIds(page), ['map_1', 'map_2'], '留在我的清單：離開之後清單還在');
+    assert.equal(leaveOpen(page), false);
+    assert.deepEqual([page.$('leaveRoomModal').classList.contains('hidden'), page.$('leaveRoomModal').style.display], [true, '']);
+    assert.equal(isHidden(page, 'roomSection'), true, '離開了：隊伍狀態藏起來');
+    assert.equal(isHidden(page, 'teamActions'), false);
+    assert.deepEqual(page.toasts.slice(1), [{ message: '已離開隊伍', type: 'success' }]);
+    assertFocusOn(page, 'createRoomBtn', '離開成功');
+    assert.deepEqual(leaveDisabledOf(page), [false, false, false, false, false], '下次打開不會卡在進行中');
+    assert.equal(page.$('confirmLeaveBtn').classList.contains('btn-loading'), false);
+    assert.equal(page.client.dialogs.opening, 2, '打開一次、關閉一次（隊伍沒了時的關閉也算）');
+});
+
+test('離開進行中：選項與離開鈕停用、離開鈕轉圈（取消與 ✕ 還能按）、對話框不關；再按只送一個請求；結束後恢復', async () => {
+    let release;
+    const gate = new Promise((resolve) => { release = resolve; });
+    const server = partyServer({ leave: async () => { await gate; return { message: 'Left' }; } });
+    const page = await createdParty({ respond: server.respond });
+    pressLeave(page);
+    page.$('confirmLeaveBtn').focus();
+    page.$('confirmLeaveBtn').click();
+    page.$('confirmLeaveBtn').click();
+    assert.deepEqual(leaveDisabledOf(page), [true, true, true, false, false]);
+    assert.equal(page.$('confirmLeaveBtn').classList.contains('btn-loading'), true);
+    assert.ok(leaveOpen(page), '成功之前對話框不關');
+    assertFocusOn(page, 'closeLeaveModalBtn', '離開鈕停用之前焦點先移到 ✕，不會掉到 body');
+
+    // 回應還沒回來：再按一次也不會讓它提早恢復、不會冒出錯誤（停用的確認鈕不接受，程式直接呼叫也一樣）
+    await page.client.dialogs.confirmLeave();
+    await page.settle();
+    assert.deepEqual(leaveDisabledOf(page), [true, true, true, false, false], '回應回來之前還是進行中');
+    assert.equal(isHidden(page, 'leaveError'), true);
+    assert.equal(leaveRequests(server).length, 1);
+
+    release();
+    await page.settle();
+    assert.equal(leaveRequests(server).length, 1, '進行中離開鈕停用，再按不會再送一次');
+    assert.equal(page.client.currentRoom, null);
+    assert.equal(leaveOpen(page), false);
+    assert.deepEqual(leaveDisabledOf(page), [false, false, false, false, false]);
+    assert.equal(page.$('confirmLeaveBtn').classList.contains('btn-loading'), false);
+    assertFocusOn(page, 'createRoomBtn', '離開成功');
+});
+
+test('選清空 → 清單是空的（決定只看「清空」那顆有沒有勾），隊伍沒了、焦點到建立隊伍', async () => {
+    const server = partyServer();
+    const page = await createdParty({ respond: server.respond });
+    putMaps(page, 2);
+    pressLeave(page);
+    // fake-dom 的 radio 不會互斥：只勾「清空」，「留在我的清單」那顆還勾著
+    page.$('leaveModeClear').checked = true;
+    await pressLeaveConfirm(page);
+
+    assert.equal(leaveRequests(server).length, 1);
+    assert.equal(page.client.currentRoom, null);
+    assert.equal(page.finder.listManager.getLength(), 0, '清空：離開之後清單是空的');
+    assert.equal(leaveOpen(page), false);
+    assert.equal(page.toasts.at(-1).message, '已離開隊伍');
+    assertFocusOn(page, 'createRoomBtn', '清空離開');
+});
+
+test('每次打開都從頭開始：預設留在我的清單、沒有舊的錯誤；取消、✕、Escape 都只關對話框（不送請求、不動清單），焦點回到「離開隊伍」', async () => {
+    const server = partyServer();
+    const page = await createdParty({ respond: server.respond });
+    putMaps(page, 2);
+    const closers = {
+        取消: () => page.$('cancelLeaveBtn').click(),
+        '✕': () => page.$('closeLeaveModalBtn').click(),
+        Escape: () => page.key('Escape')
+    };
+    for (const [label, close] of Object.entries(closers)) {
+        pressLeave(page);
+        assert.ok(leaveOpen(page), label);
+        // 勾了清空、寫上一個錯誤，關掉
+        page.$('leaveModeClear').checked = true;
+        page.$('leaveModeKeep').checked = false;
+        page.client.dialogs.showLeaveError('舊的錯誤');
+        close();
+        assert.equal(leaveOpen(page), false, `${label}：對話框關了`);
+        assert.deepEqual([page.$('leaveRoomModal').classList.contains('hidden'), page.$('leaveRoomModal').style.display], [true, ''], label);
+        assertFocusOn(page, 'leaveRoomBtn', `${label}：焦點還給按下去的「離開隊伍」`);
+        assert.equal(page.client.currentRoom.roomCode, 'ABC123', `${label}：還在隊伍裡`);
+        assert.equal(page.finder.listManager.getLength(), 2, `${label}：清單沒動`);
+    }
+    assert.deepEqual(leaveRequests(server), []);
+
+    // 再打開是乾淨的
+    pressLeave(page);
+    assert.deepEqual([page.$('leaveModeKeep').checked, page.$('leaveModeClear').checked], [true, false]);
+    assert.deepEqual([isHidden(page, 'leaveError'), page.$('leaveError').textContent], [true, '']);
+});
+
+test('自己是隊長而且還有別人：顯示隊長的說明；只剩自己：顯示解散的說明（這時不顯示隊長的說明）；隊友進出時跟著換', async () => {
+    const page = await crowdedParty({ respond: partyServer().respond });
+    pressLeave(page);
+    assert.deepEqual(notesShown(page), [true, false]);
+    assert.equal(page.$('leaveLeaderNote').textContent, LEADER_NOTE);
+
+    // 隊友都離開了（輪詢）：換成解散的說明，隊長的說明收起來
+    serverChanges(page, { members: [ME] });
+    assert.deepEqual(notesShown(page), [false, true]);
+    assert.equal(page.$('leaveLastNote').textContent, LAST_NOTE);
+
+    // 隊友又加入：換回來
+    serverChanges(page, { members: [ME, M4X] });
+    assert.deepEqual(notesShown(page), [true, false]);
+
+    // 不是隊長、隊裡還有別人：兩個說明都不顯示
+    const lead = { id: 'lead', nickname: '光之戰士T8W', joinedAt: '2026-10-17T00:00:30.000Z' };
+    const member = await createParty(joinsParty({ creatorId: 'lead', members: [lead, M4X] }), { stored: { ff14tw_nickname_tag: 'K7Q' } });
+    assert.equal((await member.client.joinRoom('ABC123')).success, true);
+    pressLeave(member);
+    assert.ok(leaveOpen(member));
+    assert.deepEqual(notesShown(member), [false, false]);
+});
+
+test('隊長已經離開（creatorId 不在成員裡）：兩個說明都不顯示，不丟例外（Review Focus 2）；只剩自己時才寫解散的說明', async () => {
+    const page = await createParty(joinsParty({ creatorId: 'gone', members: [M4X, R6V], treasureMaps: [serverMap('map_1', 'gone'), serverMap('map_2', 'm4x')] }),
+        { stored: { ff14tw_nickname_tag: 'K7Q' } });
+    const result = await page.client.joinRoom('ABC123');
+    assert.deepEqual(plain(result), { success: true });
+    pressLeave(page);
+    assert.ok(leaveOpen(page));
+    assert.deepEqual(notesShown(page), [false, false], '沒有隊長可以說，隊裡也還有別人');
+    assert.equal(page.$('leaveLede').textContent, '隊伍清單的 2 張寶圖：');
+
+    // 其他人也都離開了、隊長還是不在：只剩自己，寫解散的說明；輪詢的重畫不丟例外
+    serverChanges(page, { members: [ME] });
+    assert.deepEqual(notesShown(page), [false, true]);
+});
+
+test('隊伍清單是空的：沒有選項，寫「確定要離開隊伍 ABC123？」；按離開照樣離開；之後清單多了寶圖，選項回來', async () => {
+    const server = partyServer();
+    const page = await createdParty({ respond: server.respond });
+    pressLeave(page);
+    assert.equal(page.$('leaveLede').textContent, '確定要離開隊伍 ABC123？');
+    assert.equal(isHidden(page, 'leaveChoice'), true);
+    assert.equal(isHidden(page, 'leaveError'), true);
+
+    // 隊友加了一張圖：換成有選項的樣子
+    putMaps(page, 1);
+    assert.equal(page.$('leaveLede').textContent, '隊伍清單的 1 張寶圖：');
+    assert.equal(isHidden(page, 'leaveChoice'), false);
+    serverChanges(page, { treasureMaps: [] });
+    assert.equal(page.$('leaveLede').textContent, '確定要離開隊伍 ABC123？');
+    assert.equal(isHidden(page, 'leaveChoice'), true);
+
+    await pressLeaveConfirm(page);
+    assert.equal(leaveRequests(server).length, 1);
+    assert.equal(page.client.currentRoom, null);
+    assert.equal(leaveOpen(page), false);
+    assertFocusOn(page, 'createRoomBtn', '空清單離開');
+});
+
+test('對話框開著時輪詢改了張數：說明跟著換，沒變的字不重寫，玩家勾的選項不動；焦點在選項上而選項整組藏起來時，焦點移到取消', async () => {
+    const page = await createdParty({ respond: partyServer().respond });
+    putMaps(page, 2);
+    pressLeave(page);
+    page.$('leaveModeClear').checked = true;
+    assert.equal(page.$('leaveLede').textContent, '隊伍清單的 2 張寶圖：');
+
+    putMaps(page, 3);
+    assert.equal(page.$('leaveLede').textContent, '隊伍清單的 3 張寶圖：');
+    assert.equal(page.$('leaveModeClear').checked, true, '玩家勾的選項不動');
+
+    // 只有 revision 變：同樣的字不重寫（輪詢每兩秒來一次，螢幕閱讀器不該一直重唸）
+    const lede = page.$('leaveLede').firstChild;
+    const note = page.$('leaveLastNote').firstChild;
+    serverChanges(page, {});
+    serverChanges(page, {});
+    assert.ok(page.$('leaveLede').firstChild === lede && page.$('leaveLastNote').firstChild === note, '同樣的字不重寫');
+
+    // 焦點在選項上時，隊友把清單清空：整組選項藏起來，焦點不能掉到 body
+    page.$('leaveModeClear').focus();
+    assertFocusOn(page, 'leaveModeClear', '前提');
+    serverChanges(page, { treasureMaps: [] });
+    assert.equal(isHidden(page, 'leaveChoice'), true);
+    assertFocusOn(page, 'cancelLeaveBtn', '選項藏起來了，焦點移到取消');
+    assert.ok(leaveOpen(page));
+});
+
+test('變更還沒送完：錯誤寫在對話框裡（你的變更還沒送出…）、人還在隊伍裡、沒有送離開的請求、不跳離開失敗的 toast；送出去之後再按就離開了', async () => {
+    let sendable = false;
+    let page;
+    const server = partyServer({
+        update: ({ body }) => {
+            if (!sendable) throw new TypeError('Failed to fetch');
+            const current = page.client.currentRoom;
+            return { ...current, revision: current.revision + 1,
+                treasureMaps: [...current.treasureMaps, ...body.operations.filter((operation) => operation.type === 'add').map((operation) => ({ ...operation.map, addedBy: 'me', addedAt: ISO }))] };
+        }
+    });
+    page = await createdParty({ respond: server.respond });
+    // 一筆還沒送出的變更（隊友還看不到）
+    page.client.mapSync.pending.push({ clientRequestId: 'pending-1', operations: [{ type: 'add', map: serverMap('map_9', 'me') }] });
+    pressLeave(page);
+    await pressLeaveConfirm(page);
+
+    assert.ok(leaveOpen(page), '失敗：對話框不關');
+    assert.deepEqual([isHidden(page, 'leaveError'), page.$('leaveError').textContent], [false, SYNC_FAILED]);
+    assert.equal(page.client.currentRoom.roomCode, 'ABC123', '還在隊伍裡');
+    assert.deepEqual(leaveRequests(server), [], '變更沒送完，離開的請求還沒送');
+    assert.ok(messages(page).every((message) => !message.includes('還沒送出') && message !== '已離開隊伍'), `錯誤在對話框裡，不跳 toast：${messages(page)}`);
+    assert.deepEqual(leaveDisabledOf(page), [false, false, false, false, false]);
+    assert.equal(page.$('confirmLeaveBtn').classList.contains('btn-loading'), false);
+    assertFocusOn(page, 'confirmLeaveBtn', '進行中焦點在 ✕，失敗之後放回離開鈕');
+    assert.equal(page.client.mapSync.pending.length, 1, '那筆變更還在，等著重送');
+
+    // 網路好了：再按一次，先把變更送完，再離開
+    sendable = true;
+    await pressLeaveConfirm(page);
+    assert.deepEqual(server.requests.map(({ method, path }) => `${method} ${path}`).slice(-2), ['PUT /rooms/ABC123', 'POST /rooms/ABC123/leave']);
+    assert.equal(page.client.currentRoom, null);
+    assert.equal(leaveOpen(page), false);
+    assert.equal(page.toasts.at(-1).message, '已離開隊伍');
+    assertFocusOn(page, 'createRoomBtn', '重試成功');
+});
+
+test('離開請求失敗（連不上）：錯誤寫在對話框裡、不跳 toast、還在隊伍裡；輪詢重畫不會把錯誤收起來；再按一次錯誤先收起來，成功就離開了', async () => {
+    let failing = true;
+    const server = partyServer({ leave: () => { if (failing) throw roomError(503, 'UNAVAILABLE'); return { message: 'Left' }; } });
+    const page = await createdParty({ respond: server.respond });
+    putMaps(page, 2);
+    pressLeave(page);
+    await pressLeaveConfirm(page);
+
+    assert.ok(leaveOpen(page), '失敗：對話框不關');
+    assert.deepEqual([isHidden(page, 'leaveError'), page.$('leaveError').textContent], [false, LEAVE_FAILED]);
+    assert.equal(page.client.currentRoom.roomCode, 'ABC123');
+    assert.deepEqual(messages(page), ['隊伍 ABC123 建立成功！'], '錯誤寫在對話框裡，不跳 toast');
+    assert.deepEqual(leaveDisabledOf(page), [false, false, false, false, false]);
+    assertFocusOn(page, 'confirmLeaveBtn', '失敗之後放回離開鈕');
+    assert.equal(page.finder.listManager.getLength(), 2, '清單沒動');
+
+    // 輪詢每兩秒重畫一次：錯誤要留著，不然玩家還沒讀完就不見了
+    serverChanges(page, {});
+    assert.deepEqual([isHidden(page, 'leaveError'), page.$('leaveError').textContent], [false, LEAVE_FAILED]);
+
+    failing = false;
+    page.$('confirmLeaveBtn').focus();
+    page.$('confirmLeaveBtn').click();
+    assert.deepEqual([isHidden(page, 'leaveError'), page.$('leaveError').textContent], [true, ''], '再按一次先收起舊的錯誤');
+    await page.settle();
+    assert.equal(leaveRequests(server).length, 2);
+    assert.equal(page.client.currentRoom, null);
+    assert.equal(leaveOpen(page), false);
+    assertFocusOn(page, 'createRoomBtn', '重試成功');
+});
+
+test('離開時伺服器已經不認得我（401、403、404）：當作已經離開了，照常關對話框、跳「已離開隊伍」、焦點到建立隊伍', async () => {
+    for (const status of [401, 403, 404]) {
+        const server = partyServer({ leave: () => { throw roomError(status, 'GONE'); } });
+        const page = await createdParty({ respond: server.respond });
+        pressLeave(page);
+        await pressLeaveConfirm(page);
+        assert.equal(page.client.currentRoom, null, status);
+        assert.equal(leaveOpen(page), false, status);
+        assert.equal(page.toasts.at(-1).message, '已離開隊伍', status);
+        assertFocusOn(page, 'createRoomBtn', `${status}`);
+    }
+});
+
+test('離開途中自己按 Escape 關掉對話框：成功照樣離開（焦點到建立隊伍）；失敗改跳 toast，不寫進已經關掉的對話框', async () => {
+    for (const succeed of [true, false]) {
+        let release;
+        const gate = new Promise((resolve) => { release = resolve; });
+        const server = partyServer({ leave: async () => { await gate; if (!succeed) throw roomError(503, 'UNAVAILABLE'); return { message: 'Left' }; } });
+        const page = await createdParty({ respond: server.respond });
+        pressLeave(page);
+        page.$('confirmLeaveBtn').focus();
+        page.$('confirmLeaveBtn').click();
+        page.key('Escape');
+        assert.equal(leaveOpen(page), false, '進行中玩家自己關掉了');
+        assertFocusOn(page, 'leaveRoomBtn', 'Escape 把焦點還給按下去的「離開隊伍」');
+
+        release();
+        await page.settle();
+        if (succeed) {
+            assert.equal(page.client.currentRoom, null);
+            assert.equal(page.toasts.at(-1).message, '已離開隊伍');
+            assertFocusOn(page, 'createRoomBtn', '成功');
+        } else {
+            assert.equal(page.client.currentRoom.roomCode, 'ABC123', '失敗：還在隊伍裡');
+            assert.deepEqual(page.toasts.at(-1), { message: LEAVE_FAILED, type: 'error' });
+            assert.equal(isHidden(page, 'leaveError'), true, '沒有東西寫進已經關掉的對話框');
+            assert.equal(leaveOpen(page), false);
+        }
+    }
+});
+
+test('離開對話框開著時切到英文（Review Focus 5）：說明與隊長的說明換成英文，單選的固定字也是英文；顯示中的中文錯誤收起來，再按一次用英文重新產生', async () => {
+    let failing = true;
+    const server = partyServer({ leave: () => { if (failing) throw roomError(503, 'UNAVAILABLE'); return { message: 'Left' }; } });
+    const page = await crowdedParty({ respond: server.respond });
+    pressLeave(page);
+    page.$('leaveModeClear').checked = true;
+    await pressLeaveConfirm(page);
+    assert.equal(page.$('leaveError').textContent, LEAVE_FAILED);
+
+    page.setLang('en');
+    assert.equal(page.$('leaveRoomModal-title').textContent, 'Leave the party');
+    assert.equal(page.$('leaveLede').textContent, 'Maps in the party list: 4');
+    assert.equal(page.$('leaveLeaderNote').textContent, 'You\'re the leader. After you leave, no one can remove members (leadership isn\'t passed on).');
+    assert.equal(page.$('leaveChoice').querySelector('legend').textContent, 'What to do with the party list\'s maps');
+    assert.deepEqual(page.$('leaveChoice').querySelectorAll('.tm-choice-title').map((element) => element.textContent), ['Keep them in my list', 'Clear them']);
+    assert.equal(page.$('confirmLeaveBtn').textContent, 'Leave party');
+    assert.deepEqual([isHidden(page, 'leaveError'), page.$('leaveError').textContent], [true, ''], '舊語言的錯誤收起來');
+    assert.equal(page.$('leaveModeClear').checked, true, '玩家勾的選項不動');
+
+    await pressLeaveConfirm(page);
+    assert.equal(page.$('leaveError').textContent, 'Couldn\'t leave the party. Please try again later.', '再按一次，錯誤用英文重新產生');
+
+    // 日文，最後一位成員的說明
+    page.setLang('ja');
+    serverChanges(page, { members: [ME] });
+    assert.equal(page.$('leaveLede').textContent, 'パーティリストの地図 4 枚：');
+    assert.equal(page.$('leaveLastNote').textContent, 'あなたが最後のメンバーです。抜けるとパーティは解散します。');
+    assert.equal(page.$('leaveRoomModal-title').textContent, 'パーティを抜ける');
+});
+
+test('離開與移出的對話框關著時切換語言什麼都不做；openLeave() 不在隊伍裡、對話框已經開著時什麼都不做（不重設玩家勾的選項）', async () => {
+    const page = await createdParty({ respond: partyServer().respond });
+    page.setLang('en');
+    assert.deepEqual(['leaveLede', 'removeMemberModal-title', 'removeMemberBody'].map((id) => page.$(id).textContent), ['', '', ''], '關著的對話框不畫');
+    page.setLang('zh');
+
+    pressLeave(page);
+    page.$('leaveModeClear').checked = true;
+    page.$('leaveModeKeep').checked = false;
+    page.client.showLeaveRoomDialog();
+    assert.deepEqual([page.$('leaveModeKeep').checked, page.$('leaveModeClear').checked], [false, true], '已經開著：不重設');
+    assert.equal(page.client.dialogs.opening, 1, '沒有再開一次');
+
+    page.client.dialogs.close(page.$('leaveRoomModal'));
+    page.client.forceLeaveRoom();
+    page.client.showLeaveRoomDialog();
+    assert.equal(leaveOpen(page), false, '不在隊伍裡：沒有東西可開');
+});
+
+// ---------- 隊伍沒了：只在隊伍裡才有意義的對話框一起關掉 ----------
+test('隊伍沒了（輪詢發現自己不在成員裡）：開著的離開、移出、改名對話框一起關掉，不留一顆按了也沒用的確認鈕；toast 說得出原因，焦點到又出現的「建立隊伍」', async () => {
+    const SESSION_EXPIRED = '隊伍連線已失效，可能是被移出了隊伍。寶圖留在你的清單；要回去可以再點一次邀請連結，或輸入隊伍代號。';
+    const dialogs = {
+        離開: { modal: 'leaveRoomModal', open: (page) => pressLeave(page) },
+        移出: { modal: 'removeMemberModal', open: (page) => pressRemove(page, 'm4x') },
+        改名: { modal: 'editNicknameModal', open: (page) => { stubSelect(page); expand(page); const button = buttonOf(page, 'me', 'rename'); button.focus(); button.click(); } }
+    };
+    for (const [label, { modal, open }] of Object.entries(dialogs)) {
+        const page = await crowdedParty();
+        open(page);
+        assert.equal(isHidden(page, modal), false, `${label}：前提，對話框開著`);
+        const managers = [page.client.modalManager, page.client.dialogs.modalManager];
+        assert.ok(managers.some((manager) => manager.activeModal === page.$(modal)), `${label}：前提，ModalManager 認得它`);
+
+        // 隊長把自己移出了（成員裡沒有自己）
+        serverChanges(page, { members: [M4X, R6V] });
+        assert.equal(page.client.currentRoom, null, label);
+        assert.deepEqual([page.$(modal).classList.contains('hidden'), page.$(modal).style.display], [true, ''], `${label}：對話框關了`);
+        assert.ok(managers.every((manager) => manager.activeModal === null), `${label}：ModalManager 也放掉了`);
+        assert.deepEqual(page.toasts.at(-1), { message: SESSION_EXPIRED, type: 'warning' }, label);
+        assert.equal(isHidden(page, 'roomSection'), true, label);
+        assertFocusOn(page, 'createRoomBtn', `${label}：隊伍沒了，焦點到又出現的「建立隊伍」`);
+    }
+});
+
+test('forceLeaveRoom() 只關離開、移出、改名的對話框，不關建立與加入隊伍的（邀請連結的對話框也一樣：切換隊伍時離開 A 之後它還要留著）', async () => {
+    const joining = await createParty(creates);
+    pressJoin(joining);
+    assert.ok(joinOpen(joining));
+    joining.client.forceLeaveRoom();
+    assert.ok(joinOpen(joining), '加入隊伍的對話框還開著');
+
+    const creating = await createParty(creates);
+    creating.addMaps(TWO);
+    pressCreate(creating);
+    assert.ok(createOpen(creating));
+    creating.client.forceLeaveRoom();
+    assert.ok(createOpen(creating), '建立隊伍的對話框還開著');
+});
+
+// ---------- 移出成員 ----------
+// 移出對話框現在開著嗎（ModalManager 認得它，而且看得到）
+const removeOpen = (page) => page.client.dialogs.modalManager.activeModal === page.$('removeMemberModal') && !isHidden(page, 'removeMemberModal');
+// 展開成員列表（還沒展開的話）、焦點在那位成員的「移出」上、按下去
+const pressRemove = (page, id) => {
+    if (page.$('membersToggle').getAttribute('aria-expanded') !== 'true') expand(page);
+    const button = buttonOf(page, id, 'remove');
+    button.focus();
+    button.click();
+    return button;
+};
+// 對話框裡會因為進行中而停用的控制項，依序是 [移出, 取消, ✕]
+const REMOVE_CONTROLS = ['confirmRemoveBtn', 'cancelRemoveBtn', 'closeRemoveModalBtn'];
+const removeDisabledOf = (page) => REMOVE_CONTROLS.map((id) => page.$(id).disabled);
+const REMOVE_FAILED = '移出失敗，請稍後再試。';
+const REJOIN = '對方之後還是可以用代號或邀請連結重新加入。';
+// 伺服器收下移出：回傳少了那位成員的隊伍（revision 加一）。page 在建好之後才有，所以用函式拿
+const removing = (getPage) => ({ body }) => {
+    const current = getPage().client.currentRoom;
+    return { ...current, members: current.members.filter((item) => item.id !== body.targetMemberId), revision: current.revision + 1 };
+};
+
+test('隊長按移出：標題「把 光之戰士M4X 移出隊伍？」、內文帶他加的張數；確認 → POST remove-member、對話框關掉、toast、焦點到成員那一行', async () => {
+    let page;
+    const server = partyServer({ removeMember: removing(() => page) });
+    page = await crowdedParty({ respond: server.respond });
+    const removeRequests = () => server.requests.filter((request) => request.path === '/rooms/ABC123/remove-member');
+    pressRemove(page, 'm4x');
+
+    assert.ok(removeOpen(page));
+    assert.equal(page.$('removeMemberModal-title').textContent, '把 光之戰士M4X 移出隊伍？');
+    assert.equal(page.$('removeMemberBody').textContent, `對方加的 1 張寶圖會留在隊伍清單。${REJOIN}`);
+    assert.equal(page.client.dialogs.removing, 'm4x');
+    assert.deepEqual([isHidden(page, 'removeMemberError'), page.$('confirmRemoveBtn').textContent, page.$('cancelRemoveBtn').textContent], [true, '移出', '取消']);
+    assert.deepEqual(removeDisabledOf(page), [false, false, false]);
+    assert.deepEqual(removeRequests(), [], '還沒按確認，不送任何請求（也沒有跳瀏覽器的確認視窗：頁面替身的 confirm() 一被呼叫就丟錯）');
+
+    page.$('confirmRemoveBtn').focus();
+    page.$('confirmRemoveBtn').click();
+    page.$('confirmRemoveBtn').click();
+    // 進行中：移出鈕停用且轉圈，取消與 ✕ 還能按，成功之前對話框不關；停用的移出鈕不接受再按一次
+    assert.deepEqual(removeDisabledOf(page), [true, false, false]);
+    assert.equal(page.$('confirmRemoveBtn').classList.contains('btn-loading'), true);
+    assert.ok(removeOpen(page));
+    assertFocusOn(page, 'closeRemoveModalBtn', '移出鈕停用之前焦點先移到 ✕，不會掉到 body');
+    await page.settle();
+
+    assert.equal(removeRequests().length, 1, '只送一個請求');
+    assert.equal(messages(page).filter((message) => message.startsWith('已將')).length, 1, '只跳一次 toast');
+    assert.deepEqual([removeRequests()[0].body.targetMemberId, removeRequests()[0].authenticated], ['m4x', true]);
+    assert.match(removeRequests()[0].body.clientRequestId, /^[a-f0-9-]{36}$/);
+    assert.equal(removeOpen(page), false);
+    assert.deepEqual([page.$('removeMemberModal').classList.contains('hidden'), page.$('removeMemberModal').style.display], [true, '']);
+    assert.deepEqual(removeDisabledOf(page), [false, false, false], '下次打開不會卡在進行中');
+    assert.equal(page.$('confirmRemoveBtn').classList.contains('btn-loading'), false);
+    assert.equal(rowOf(page, 'm4x'), undefined, '那位成員不在了');
+    assert.equal(page.$('membersCount').textContent, '成員 2/8');
+    assert.deepEqual(page.toasts.at(-1), { message: '已將 光之戰士M4X 移出隊伍', type: 'success' });
+    assertFocusOn(page, 'membersToggle', '被移出那一列的按鈕已經不在了，焦點到成員那一行');
+    assert.equal(page.client.dialogs.removing, null);
+    assert.equal(page.client.dialogs.opening, 2, '打開一次、關閉一次');
+});
+
+test('移出失敗：錯誤寫在對話框裡（移出失敗，請稍後再試。）、不跳 toast、對話框不關、人還在隊伍裡、焦點回到「移出」；輪詢重畫不會把錯誤收起來；再按一次成功就移出了', async () => {
+    let failing = true;
+    let page;
+    const removeMember = removing(() => page);
+    const server = partyServer({ removeMember: (options) => { if (failing) throw roomError(503, 'UNAVAILABLE'); return removeMember(options); } });
+    page = await crowdedParty({ respond: server.respond });
+    pressRemove(page, 'm4x');
+    const toastsBefore = messages(page).length;
+    page.$('confirmRemoveBtn').focus();
+    page.$('confirmRemoveBtn').click();
+    await page.settle();
+
+    assert.ok(removeOpen(page), '失敗：對話框不關');
+    assert.deepEqual([isHidden(page, 'removeMemberError'), page.$('removeMemberError').textContent], [false, REMOVE_FAILED]);
+    assert.equal(messages(page).length, toastsBefore, '錯誤寫在對話框裡，不跳 toast');
+    assert.ok(rowOf(page, 'm4x'), '他還在隊伍裡');
+    assert.deepEqual(removeDisabledOf(page), [false, false, false]);
+    assert.equal(page.$('confirmRemoveBtn').classList.contains('btn-loading'), false);
+    assertFocusOn(page, 'confirmRemoveBtn', '進行中焦點在 ✕，失敗之後放回移出鈕');
+
+    // 輪詢每兩秒重畫一次：錯誤要留著
+    serverChanges(page, {});
+    assert.deepEqual([isHidden(page, 'removeMemberError'), page.$('removeMemberError').textContent], [false, REMOVE_FAILED]);
+
+    failing = false;
+    page.$('confirmRemoveBtn').focus();
+    page.$('confirmRemoveBtn').click();
+    assert.deepEqual([isHidden(page, 'removeMemberError'), page.$('removeMemberError').textContent], [true, ''], '再按一次先收起舊的錯誤');
+    await page.settle();
+    assert.equal(removeOpen(page), false);
+    assert.equal(rowOf(page, 'm4x'), undefined);
+    assert.equal(page.toasts.at(-1).message, '已將 光之戰士M4X 移出隊伍');
+    assertFocusOn(page, 'membersToggle', '重試成功');
+});
+
+test('對話框開著時那個人已經被輪詢拿掉（自己離開了）：對話框關掉、焦點到成員那一行，不送請求、不跳 toast', async () => {
+    const server = partyServer();
+    const page = await crowdedParty({ respond: server.respond });
+    pressRemove(page, 'm4x');
+    assert.ok(removeOpen(page));
+    const toastsBefore = messages(page).length;
+
+    serverChanges(page, { members: [ME, R6V] });
+    assert.equal(removeOpen(page), false);
+    assert.deepEqual([page.$('removeMemberModal').classList.contains('hidden'), page.$('removeMemberModal').style.display], [true, '']);
+    assertFocusOn(page, 'membersToggle', '那位成員的按鈕不在了');
+    assert.equal(messages(page).length, toastsBefore);
+    assert.deepEqual(server.requests.filter((request) => request.path.endsWith('/remove-member')), []);
+    assert.equal(page.client.dialogs.removing, null);
+    // 其他人還在，隊伍照常
+    assert.equal(page.client.currentRoom.roomCode, 'ABC123');
+    assert.ok(rowOf(page, 'r6v'));
+});
+
+test('他沒有加寶圖：內文用沒有張數的那一句；對話框開著時他改名、加了圖，標題與內文跟著換', async () => {
+    const page = await crowdedParty({ respond: partyServer().respond });
+    pressRemove(page, 'r6v');
+    assert.equal(page.$('removeMemberModal-title').textContent, '把 光之戰士R6V 移出隊伍？');
+    assert.equal(page.$('removeMemberBody').textContent, REJOIN);
+
+    // 輪詢：他改了名、加了 2 張圖
+    serverChanges(page, {
+        members: [ME, M4X, { ...R6V, nickname: '新名字' }],
+        treasureMaps: [serverMap('map_1', 'me'), serverMap('map_3', 'm4x'), serverMap('map_5', 'r6v'), serverMap('map_6', 'r6v')]
+    });
+    assert.equal(removeOpen(page), true);
+    assert.equal(page.$('removeMemberModal-title').textContent, '把 新名字 移出隊伍？');
+    assert.equal(page.$('removeMemberBody').textContent, `對方加的 2 張寶圖會留在隊伍清單。${REJOIN}`);
+
+    // 沒變的字不重寫
+    const title = page.$('removeMemberModal-title').firstChild;
+    const body = page.$('removeMemberBody').firstChild;
+    serverChanges(page, {});
+    assert.ok(page.$('removeMemberModal-title').firstChild === title && page.$('removeMemberBody').firstChild === body);
+});
+
+test('取消、✕、Escape 都只關對話框：不送請求，焦點回到那位成員的「移出」；再打開是乾淨的（沒有舊的錯誤）', async () => {
+    const server = partyServer();
+    const page = await crowdedParty({ respond: server.respond });
+    const closers = {
+        取消: () => page.$('cancelRemoveBtn').click(),
+        '✕': () => page.$('closeRemoveModalBtn').click(),
+        Escape: () => page.key('Escape')
+    };
+    for (const [label, close] of Object.entries(closers)) {
+        pressRemove(page, 'm4x');
+        assert.ok(removeOpen(page), label);
+        page.client.dialogs.showRemoveError('舊的錯誤');
+        close();
+        assert.equal(removeOpen(page), false, label);
+        assert.ok(page.focused() === buttonOf(page, 'm4x', 'remove'), `${label}：焦點還給 M4X 那一列的「移出」`);
+        assert.ok(rowOf(page, 'm4x'), `${label}：他還在隊伍裡`);
+    }
+    assert.deepEqual(server.requests.filter((request) => request.path.endsWith('/remove-member')), []);
+    pressRemove(page, 'm4x');
+    assert.deepEqual([isHidden(page, 'removeMemberError'), page.$('removeMemberError').textContent], [true, '']);
+});
+
+test('移出進行中隊長自己按 Escape 關掉對話框：成功照樣移出了（toast 照跳）；隊長接著開了另一位成員的對話框，舊的結果不會把它關掉；失敗改跳 toast，不寫進新開的對話框', async () => {
+    for (const succeed of [true, false]) {
+        let release;
+        const gate = new Promise((resolve) => { release = resolve; });
+        let page;
+        const removeMember = removing(() => page);
+        const server = partyServer({ removeMember: async (options) => { await gate; if (!succeed) throw roomError(503, 'UNAVAILABLE'); return removeMember(options); } });
+        page = await crowdedParty({ respond: server.respond });
+        pressRemove(page, 'm4x');
+        page.$('confirmRemoveBtn').focus();
+        page.$('confirmRemoveBtn').click();
+        page.key('Escape');
+        assert.equal(removeOpen(page), false, `${succeed}：進行中隊長自己關掉了`);
+
+        // 隊長接著開了 R6V 的對話框（M4X 那一次還沒回來）
+        pressRemove(page, 'r6v');
+        assert.ok(removeOpen(page));
+        assert.equal(page.client.dialogs.removing, 'r6v');
+        // 移出鈕是兩個人共用的那一顆，M4X 那一次還沒回來時它還停用著：R6V 的不能先按，不會有兩個移出疊在一起
+        const removeRequests = () => server.requests.filter((request) => request.path === '/rooms/ABC123/remove-member');
+        assert.deepEqual(removeDisabledOf(page), [true, false, false], `${succeed}：M4X 那一次還沒回來，移出鈕還停用著`);
+        page.$('confirmRemoveBtn').click();
+        await page.client.dialogs.confirmRemove();
+        assert.equal(removeRequests().length, 1, `${succeed}：還不能移出 R6V`);
+
+        release();
+        await page.settle();
+        assert.ok(removeOpen(page), `${succeed}：M4X 那一次的結果不會把新開的對話框關掉`);
+        assert.equal(page.client.dialogs.removing, 'r6v');
+        assert.deepEqual(removeDisabledOf(page), [false, false, false], `${succeed}：M4X 那一次結束了，確認鈕恢復`);
+        assert.equal(page.$('removeMemberModal-title').textContent, '把 光之戰士R6V 移出隊伍？');
+        if (succeed) {
+            assert.equal(rowOf(page, 'm4x'), undefined);
+            assert.equal(page.toasts.at(-1).message, '已將 光之戰士M4X 移出隊伍');
+        } else {
+            assert.ok(rowOf(page, 'm4x'), '失敗：他還在隊伍裡');
+            assert.deepEqual(page.toasts.at(-1), { message: REMOVE_FAILED, type: 'error' });
+            assert.equal(isHidden(page, 'removeMemberError'), true, '沒有東西寫進新開的對話框');
+        }
+
+        // M4X 那一次結束了才能移出 R6V；連按兩下只送一個請求（第一下就停用了）
+        page.$('confirmRemoveBtn').focus();
+        page.$('confirmRemoveBtn').click();
+        page.$('confirmRemoveBtn').click();
+        await page.settle();
+        assert.deepEqual(removeRequests().map((request) => request.body.targetMemberId), ['m4x', 'r6v'], `${succeed}：每個人只送一次`);
+    }
+});
+
+test('移出對話框開著時切到英文（Review Focus 5）：標題與內文換成英文，固定的按鈕字也是英文；顯示中的中文錯誤收起來', async () => {
+    const server = partyServer({ removeMember: () => { throw roomError(503, 'UNAVAILABLE'); } });
+    const page = await crowdedParty({ respond: server.respond });
+    pressRemove(page, 'm4x');
+    page.$('confirmRemoveBtn').focus();
+    page.$('confirmRemoveBtn').click();
+    await page.settle();
+    assert.equal(page.$('removeMemberError').textContent, REMOVE_FAILED);
+
+    page.setLang('en');
+    assert.equal(page.$('removeMemberModal-title').textContent, 'Remove 光之戰士M4X from the party?');
+    assert.equal(page.$('removeMemberBody').textContent, 'Their maps (1) stay in the party list. They can rejoin later with the code or the invite link.');
+    assert.deepEqual([page.$('confirmRemoveBtn').textContent, page.$('cancelRemoveBtn').textContent], ['Remove', 'Cancel']);
+    assert.deepEqual([isHidden(page, 'removeMemberError'), page.$('removeMemberError').textContent], [true, '']);
+
+    page.setLang('ja');
+    assert.equal(page.$('removeMemberModal-title').textContent, '光之戰士M4X をパーティから除名しますか？');
+    assert.equal(page.$('removeMemberBody').textContent, '相手が追加した地図 1 枚はパーティリストに残ります。相手は後からコードや招待リンクで再参加できます。');
+    assert.equal(removeOpen(page), true);
+});
+
+// ---------- 改名 ----------
+test('改名對話框：標題「改名」、欄位「名字」（欄裡是目前的名字，沒有 placeholder）、說明「隊友看到的名字」；改好按確認 → toast「已改名」；英文與日文也是新的字；不再有 .modal-content', async () => {
+    const page = await createParty(createsAndRenames(), { stored: { ff14tw_nickname_tag: 'K7Q' } });
+    assert.equal((await page.client.createRoom()).success, true);
+    stubSelect(page);
+    page.finder.openListPanel();
+    expand(page);
+    const rename = buttonOf(page, 'me', 'rename');
+    rename.focus();
+    rename.click();
+
+    const dialog = page.$('editNicknameModal');
+    assert.equal(isHidden(page, 'editNicknameModal'), false);
+    assert.equal(page.$('editNicknameModal-title').textContent, '改名');
+    assert.equal(dialog.querySelector('label').textContent, '名字');
+    assert.equal(page.$('nicknameHint').textContent, '隊友看到的名字');
+    assert.equal(page.$('nicknameInput').value, '光之戰士K7Q');
+    assert.equal(page.$('nicknameInput').getAttribute('placeholder'), null);
+    assert.equal(page.$('nicknameInput').getAttribute('aria-describedby'), 'nicknameHint');
+    assert.equal(dialog.querySelector('.modal-content'), null);
+    assert.equal(dialog.querySelector('.dialog.tm-dialog') !== null, true);
+    assert.deepEqual([page.$('cancelNicknameBtn').textContent, page.$('confirmNicknameBtn').textContent], ['取消', '確認']);
+
+    page.setLang('en');
+    assert.deepEqual([page.$('editNicknameModal-title'), dialog.querySelector('label'), page.$('nicknameHint')].map((element) => element.textContent), ['Rename', 'Name', 'The name your party sees']);
+    page.setLang('ja');
+    assert.deepEqual([page.$('editNicknameModal-title'), dialog.querySelector('label'), page.$('nicknameHint')].map((element) => element.textContent), ['名前を変更', '名前', 'パーティに表示される名前']);
+    page.setLang('zh');
+
+    page.$('nicknameInput').value = '新名字';
+    page.$('confirmNicknameBtn').click();
+    await page.settle();
+    assert.equal(isHidden(page, 'editNicknameModal'), true);
+    assert.deepEqual(page.toasts.at(-1), { message: '已改名', type: 'success' });
+    assert.equal(page.client.currentUser.nickname, '新名字');
+    assert.ok(page.focused() === buttonOf(page, 'me', 'rename'), '焦點回到新的那顆「改名」');
+});
+
 // ---------- 三語的字 ----------
 test('隊伍狀態的鍵值：新增與改寫的三語都照設計寫；舊的最後更新、剩餘時間、暱稱列的鍵值三語都刪掉，頁面與程式裡也不留；新字沒有舊用語', () => {
     // key → [zh, en, ja]
@@ -2124,4 +3026,74 @@ test('加入隊伍的鍵值：改寫與新增的三語都照設計寫；舊的 t
     }
     // 新的說明鍵值有人用：加入對話框的「不帶」說明
     assert.match(read(`${TOOL_DIR}/room-dialogs.js`), /'treasure_map_choice_clear_hint_join'/);
+});
+
+test('離開、移出、改名的鍵值：新增與改寫的三語都照設計寫；舊的 confirm、保留清單、暱稱欄鍵值三語都刪掉，頁面與程式裡也不留；程式裡的預設文字就是中文；新字沒有舊用語，英文帶張數的句子把數字放在最後', () => {
+    // key → [zh, en, ja]
+    const written = {
+        treasure_map_leave_title: ['離開隊伍', 'Leave the party', 'パーティを抜ける'],
+        treasure_map_leave_choice: ['隊伍清單的寶圖要怎麼處理', "What to do with the party list's maps", 'パーティリストの地図をどうするか'],
+        treasure_map_leave_lede: ['隊伍清單的 {count} 張寶圖：', 'Maps in the party list: {count}', 'パーティリストの地図 {count} 枚：'],
+        treasure_map_leave_lede_empty: ['確定要離開隊伍 {code}？', 'Leave party {code}?', 'パーティ {code} を抜けますか？'],
+        treasure_map_leave_keep: ['留在我的清單', 'Keep them in my list', '自分のリストに残す'],
+        treasure_map_leave_keep_hint: ['離開後還是可以照這份清單跑', 'You can still follow this list after leaving', '抜けた後もこのリストで回れます'],
+        treasure_map_leave_clear: ['清空', 'Clear them', '消す'],
+        treasure_map_leave_clear_hint: ['清單從空的開始', 'Your list starts empty', 'リストは空から始まります'],
+        treasure_map_leave_leader_note: ['你是隊長。離開後沒有人能移出成員（隊長不會轉給別人）。',
+            "You're the leader. After you leave, no one can remove members (leadership isn't passed on).",
+            'あなたはリーダーです。抜けると、誰もメンバーを除名できなくなります（リーダーは引き継がれません）。'],
+        treasure_map_leave_last_note: ['你是最後一位成員，離開後隊伍就解散了。', "You're the last member. The party ends when you leave.", 'あなたが最後のメンバーです。抜けるとパーティは解散します。'],
+        treasure_map_leave_room_sync_failed: ['你的變更還沒送出，請稍後再試。', "Your changes haven't been sent yet. Please try again shortly.",
+            '変更がまだ送信されていません。しばらくしてからもう一度お試しください。'],
+        treasure_map_leave_room_failed_retry: ['離開失敗，請稍後再試。', "Couldn't leave the party. Please try again later.", 'パーティを抜けられませんでした。しばらくしてからもう一度お試しください。'],
+        treasure_map_left_room: ['已離開隊伍', 'You left the party', 'パーティを抜けました'],
+        treasure_map_remove_title: ['把 {nickname} 移出隊伍？', 'Remove {nickname} from the party?', '{nickname} をパーティから除名しますか？'],
+        treasure_map_remove_body: ['對方加的 {count} 張寶圖會留在隊伍清單。對方之後還是可以用代號或邀請連結重新加入。',
+            'Their maps ({count}) stay in the party list. They can rejoin later with the code or the invite link.',
+            '相手が追加した地図 {count} 枚はパーティリストに残ります。相手は後からコードや招待リンクで再参加できます。'],
+        treasure_map_remove_body_none: ['對方之後還是可以用代號或邀請連結重新加入。', 'They can rejoin later with the code or the invite link.', '相手は後からコードや招待リンクで再参加できます。'],
+        treasure_map_remove_member_failed_retry: ['移出失敗，請稍後再試。', "Couldn't remove the member. Please try again later.", '除名できませんでした。しばらくしてからもう一度お試しください。'],
+        treasure_map_member_removed: ['已將 {nickname} 移出隊伍', 'Removed {nickname} from the party', '{nickname} をパーティから除名しました'],
+        treasure_map_rename_title: ['改名', 'Rename', '名前を変更'],
+        treasure_map_nickname_label: ['名字', 'Name', '名前'],
+        treasure_map_nickname_hint: ['隊友看到的名字', 'The name your party sees', 'パーティに表示される名前'],
+        treasure_map_nickname_updated: ['已改名', 'Name changed', '名前を変更しました'],
+        treasure_map_session_expired: ['隊伍連線已失效，可能是被移出了隊伍。寶圖留在你的清單；要回去可以再點一次邀請連結，或輸入隊伍代號。',
+            'Your party connection is no longer valid — you may have been removed. Your maps are kept in your list; to go back, open the invite link again or enter the party code.',
+            'パーティとの接続が無効になりました。除名された可能性があります。地図はあなたのリストに残っています。戻るには招待リンクをもう一度開くか、パーティコードを入力してください。']
+    };
+    const removed = ['treasure_map_leave_confirm', 'treasure_map_keep_list_question', 'treasure_map_keep_and_leave', 'treasure_map_clear_and_leave',
+        'treasure_map_remove_member_confirm', 'treasure_map_edit_nickname', 'treasure_map_nickname_placeholder'];
+    // {count}、{code}、{nickname} 這些是參數名稱，不是字：掃用語之前先拿掉 {…}
+    const oldWords = { zh: /房間/, en: /\b(?:room|team)\b/i, ja: /ルーム|チーム/ };
+    ['zh', 'en', 'ja'].forEach((lang, index) => {
+        const values = translationValues(TRANSLATIONS, lang);
+        for (const [key, texts] of Object.entries(written)) {
+            assert.equal(values.get(key), texts[index], `${lang} ${key}`);
+            assert.doesNotMatch(texts[index].replace(/\{\w+\}/g, ''), oldWords[lang], `${lang} ${key} 還有舊用語`);
+        }
+        const keys = translationKeySet(TRANSLATIONS, lang);
+        for (const key of removed) assert.equal(keys.has(key), false, `${lang} 還有 ${key}`);
+        // 沒有改寫的鍵值照用：取消、確認、關閉、離開隊伍（確認鈕）、移出（確認鈕）
+        for (const key of ['treasure_map_cancel', 'treasure_map_confirm', 'treasure_map_close', 'treasure_map_leave_room', 'treasure_map_remove_member']) {
+            assert.ok(keys.has(key), `${lang} 少了 ${key}`);
+        }
+    });
+    // 英文帶張數的句子：數字放在最後（Maps in the party list: {count}），不用 map(s)、is/are 這種會隨單複數變的寫法
+    const en = translationValues(TRANSLATIONS, 'en');
+    assert.match(en.get('treasure_map_leave_lede'), /\{count\}$/);
+    for (const key of ['treasure_map_leave_lede', 'treasure_map_remove_body']) assert.doesNotMatch(en.get(key), /\bmaps? (?:are|is)\b|\(s\)/i, key);
+
+    // 頁面與程式（含註解）裡不留舊的鍵值；每個新的鍵值都有人用；程式裡的預設文字（沒有翻譯時用）就是中文那一句
+    const sources = [`${TOOL_DIR}/index.html`, ...fs.readdirSync(path.join(ROOT, TOOL_DIR)).filter((name) => name.endsWith('.js')).map((name) => `${TOOL_DIR}/${name}`)];
+    const all = sources.map((file) => read(file)).join('\n');
+    for (const file of sources) {
+        for (const key of removed) assert.doesNotMatch(read(file), new RegExp(`\\b${key}\\b`), `${file} 還有 ${key}`);
+    }
+    for (const [key, texts] of Object.entries(written)) {
+        assert.ok(all.includes(`'${key}'`) || all.includes(`"${key}"`), `沒有人用 ${key}`);
+        for (const [, fallback] of all.matchAll(new RegExp(`getI18nText\\(\\s*'${key}',\\s*'((?:[^'\\\\]|\\\\.)*)'`, 'g'))) {
+            assert.equal(fallback.replace(/\\(.)/g, '$1'), texts[0], `${key} 的預設文字不是中文那一句`);
+        }
+    }
 });

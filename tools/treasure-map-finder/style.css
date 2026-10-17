@@ -982,28 +982,9 @@
     gap: var(--space-2);
 }
 
-/* 加入／暱稱／離開對話框：外觀由 .dialog-overlay / .dialog 提供，這裡只補內文版面 */
-.modal-content {
-    max-width: 400px;
-}
-
+/* 加入隊伍對話框的代號欄：輸入的英文字母顯示成大寫（對話框本身是 .tm-dialog，版面規則在下面） */
 .input-uppercase {
     text-transform: uppercase;
-}
-
-.modal-body label {
-    display: block;
-    margin-bottom: var(--space-2);
-    font-weight: var(--weight-medium);
-    color: var(--color-muted);
-}
-
-.modal-body p {
-    margin: var(--space-2) 0;
-}
-
-.modal-footer {
-    flex-wrap: wrap;
 }
 
 /* 地圖詳細檢視：遮罩層本身交給 ModalManager（.active 顯示）。疊在清單面板、它的遮罩與所有頁內對話框之上
@@ -1258,9 +1239,10 @@
     font-variant-numeric: tabular-nums;
 }
 
-/* 建立隊伍對話框（#createPartyModal）：說明、迷你清單與選項用上面共用的規則，只有按鈕列另外處理：放不下就換行。
-   日文的按鈕字比較長（「キャンセル」「パーティを作る」），320px 的對話框裡並排放不下，靠右排的取消鈕會超出左邊被切掉（瀏覽器實測） */
-#createPartyModal .dialog-actions {
+/* 按鈕列放不下就換行：加在 .dialog-actions 那個元素上（建立隊伍與離開隊伍對話框用，每個對話框不另外寫 id 規則）。
+   日文的按鈕字比較長（「キャンセル」「パーティを作る」「パーティを抜ける」），320px 的對話框裡並排放不下，
+   靠右排的取消鈕會超出左邊被切掉（瀏覽器實測）。其他對話框的按鈕字短、放得下，不加；.tm-dialog .dialog-actions 本身不設規則 */
+.tm-dialog-actions-wrap {
     flex-wrap: wrap;
 }
 
@@ -1537,9 +1519,5 @@
 
 /* 通用切換 class：放在最後，讓同特異度的規則靠順序勝出（沒有 !important） */
 .hidden {
-    display: none;
-}
-
-.modal.hidden {
     display: none;
 }

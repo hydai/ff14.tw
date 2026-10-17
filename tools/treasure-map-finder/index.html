@@ -262,7 +262,7 @@
                 <p class="warning-message hidden" id="createPartyNote" role="status"></p>
                 <p class="error-message hidden" id="createPartyError" role="alert"></p>
             </div>
-            <div class="dialog-actions">
+            <div class="dialog-actions tm-dialog-actions-wrap">
                 <button type="button" class="btn" id="cancelCreateBtn" data-i18n="treasure_map_cancel">取消</button>
                 <button type="button" class="btn btn-primary" id="confirmCreateBtn" data-i18n="treasure_map_create_room">建立隊伍</button>
             </div>
@@ -315,40 +315,81 @@
         </div>
     </div>
 
-    <!-- 編輯暱稱對話框 -->
-    <div class="modal dialog-overlay hidden" id="editNicknameModal" role="dialog" aria-modal="true" aria-labelledby="editNicknameModal-title">
-        <div class="modal-content dialog">
+    <!-- 改名對話框（RoomCollaboration#showEditNicknameDialog）：欄裡是目前的名字，所以不放 placeholder；標題、欄位名與說明都是固定的字，掛 data-i18n。
+         和清單面板同一個 z-index，靠排在面板後面疊在它上面（同上面的隊伍對話框） -->
+    <div class="dialog-overlay hidden" id="editNicknameModal" role="dialog" aria-modal="true" aria-labelledby="editNicknameModal-title">
+        <div class="dialog tm-dialog">
             <div class="dialog-header">
-                <h3 id="editNicknameModal-title" class="dialog-title" data-i18n="treasure_map_edit_nickname">編輯暱稱</h3>
-                <button class="btn btn-close" id="closeNicknameModalBtn" aria-label="關閉" data-i18n="treasure_map_close" data-i18n-attr="aria-label">×</button>
+                <h3 class="dialog-title" id="editNicknameModal-title" data-i18n="treasure_map_rename_title">改名</h3>
+                <button type="button" class="btn btn-close" id="closeNicknameModalBtn" aria-label="關閉" data-i18n="treasure_map_close" data-i18n-attr="aria-label">×</button>
             </div>
-            <div class="modal-body dialog-body">
-                <label for="nicknameInput" data-i18n="treasure_map_nickname_label">您的暱稱：</label>
-                <input type="text" id="nicknameInput" class="input-field form-control" placeholder="請輸入暱稱" maxlength="20" data-i18n="treasure_map_nickname_placeholder" data-i18n-attr="placeholder">
-                <div class="form-text" data-i18n="treasure_map_nickname_hint">其他成員將看到您的暱稱</div>
+            <div class="dialog-body">
+                <label class="form-label" for="nicknameInput" data-i18n="treasure_map_nickname_label">名字</label>
+                <input type="text" class="form-control" id="nicknameInput" maxlength="20" autocomplete="off" aria-describedby="nicknameHint">
+                <p class="form-text" id="nicknameHint" data-i18n="treasure_map_nickname_hint">隊友看到的名字</p>
             </div>
-            <div class="modal-footer dialog-actions">
-                <button class="btn btn-secondary" id="cancelNicknameBtn" data-i18n="treasure_map_cancel">取消</button>
-                <button class="btn btn-primary" id="confirmNicknameBtn" data-i18n="treasure_map_confirm">確認</button>
+            <div class="dialog-actions">
+                <button type="button" class="btn" id="cancelNicknameBtn" data-i18n="treasure_map_cancel">取消</button>
+                <button type="button" class="btn btn-primary" id="confirmNicknameBtn" data-i18n="treasure_map_confirm">確認</button>
             </div>
         </div>
     </div>
 
-    <!-- 離開隊伍確認對話框 -->
-    <div class="modal dialog-overlay hidden" id="leaveRoomModal" role="dialog" aria-modal="true" aria-labelledby="leaveRoomModal-title">
-        <div class="modal-content dialog">
+    <!-- 離開隊伍對話框（RoomDialogs#openLeave）：隊伍清單的寶圖離開後要留在我的清單還是清空；預設留著，所以主要按鈕「離開隊伍」不會清掉東西。
+         說明帶張數與代號，由 JavaScript 填入（不掛 data-i18n）；選項的標題與說明、隊長與最後一位成員的說明是固定的字，直接掛 data-i18n。
+         清單是空的時沒有東西可選，整組選項藏起來；隊長的說明（還有別人時）與最後一位成員的說明由 JavaScript 依隊伍的成員切換 .hidden；
+         失敗的原因寫在 #leaveError（role="alert"） -->
+    <div class="dialog-overlay hidden" id="leaveRoomModal" role="dialog" aria-modal="true" aria-labelledby="leaveRoomModal-title">
+        <div class="dialog tm-dialog">
             <div class="dialog-header">
-                <h3 id="leaveRoomModal-title" class="dialog-title" data-i18n="treasure_map_leave_title">離開隊伍</h3>
-                <button class="btn btn-close" id="closeLeaveModalBtn" aria-label="關閉" data-i18n="treasure_map_close" data-i18n-attr="aria-label">×</button>
+                <h3 class="dialog-title" id="leaveRoomModal-title" data-i18n="treasure_map_leave_title">離開隊伍</h3>
+                <button type="button" class="btn btn-close" id="closeLeaveModalBtn" aria-label="關閉" data-i18n="treasure_map_close" data-i18n-attr="aria-label">×</button>
             </div>
-            <div class="modal-body dialog-body">
-                <p data-i18n="treasure_map_leave_confirm">您確定要離開隊伍嗎？</p>
-                <p data-i18n="treasure_map_keep_list_question">是否保留本地寶圖清單？</p>
+            <div class="dialog-body">
+                <p class="tm-dialog-lede" id="leaveLede"></p>
+                <fieldset class="tm-choice" id="leaveChoice">
+                    <legend class="visually-hidden" data-i18n="treasure_map_leave_choice">隊伍清單的寶圖要怎麼處理</legend>
+                    <div class="form-check">
+                        <input type="radio" class="form-check-input" name="leaveMode" id="leaveModeKeep" value="keep" checked>
+                        <label class="form-check-label" for="leaveModeKeep">
+                            <span class="tm-choice-title" data-i18n="treasure_map_leave_keep">留在我的清單</span>
+                            <span class="tm-choice-hint" data-i18n="treasure_map_leave_keep_hint">離開後還是可以照這份清單跑</span>
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input type="radio" class="form-check-input" name="leaveMode" id="leaveModeClear" value="clear">
+                        <label class="form-check-label" for="leaveModeClear">
+                            <span class="tm-choice-title" data-i18n="treasure_map_leave_clear">清空</span>
+                            <span class="tm-choice-hint" data-i18n="treasure_map_leave_clear_hint">清單從空的開始</span>
+                        </label>
+                    </div>
+                </fieldset>
+                <p class="form-text hidden" id="leaveLeaderNote" data-i18n="treasure_map_leave_leader_note">你是隊長。離開後沒有人能移出成員（隊長不會轉給別人）。</p>
+                <p class="form-text hidden" id="leaveLastNote" data-i18n="treasure_map_leave_last_note">你是最後一位成員，離開後隊伍就解散了。</p>
+                <p class="error-message hidden" id="leaveError" role="alert"></p>
             </div>
-            <div class="modal-footer dialog-actions">
-                <button class="btn btn-secondary" id="leaveKeepListBtn" data-i18n="treasure_map_keep_and_leave">保留清單並離開</button>
-                <button class="btn btn-danger" id="leaveClearListBtn" data-i18n="treasure_map_clear_and_leave">清空清單並離開</button>
-                <button class="btn btn-primary" id="cancelLeaveBtn" data-i18n="treasure_map_cancel">取消</button>
+            <div class="dialog-actions tm-dialog-actions-wrap">
+                <button type="button" class="btn" id="cancelLeaveBtn" data-i18n="treasure_map_cancel">取消</button>
+                <button type="button" class="btn btn-primary" id="confirmLeaveBtn" data-i18n="treasure_map_leave_room">離開隊伍</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 移出成員對話框（RoomDialogs#openRemove，只有隊長按得到成員列表裡的「移出」）：標題帶名字、內文帶他加的張數，由 JavaScript 填入（不掛 data-i18n）。
+         失敗的原因寫在 #removeMemberError（role="alert"）；「移出」是危險按鈕，這個對話框沒有主要按鈕 -->
+    <div class="dialog-overlay hidden" id="removeMemberModal" role="dialog" aria-modal="true" aria-labelledby="removeMemberModal-title">
+        <div class="dialog tm-dialog">
+            <div class="dialog-header">
+                <h3 class="dialog-title" id="removeMemberModal-title"></h3>
+                <button type="button" class="btn btn-close" id="closeRemoveModalBtn" aria-label="關閉" data-i18n="treasure_map_close" data-i18n-attr="aria-label">×</button>
+            </div>
+            <div class="dialog-body">
+                <p id="removeMemberBody"></p>
+                <p class="error-message hidden" id="removeMemberError" role="alert"></p>
+            </div>
+            <div class="dialog-actions">
+                <button type="button" class="btn" id="cancelRemoveBtn" data-i18n="treasure_map_cancel">取消</button>
+                <button type="button" class="btn btn-danger" id="confirmRemoveBtn" data-i18n="treasure_map_remove_member">移出</button>
             </div>
         </div>
     </div>

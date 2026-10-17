@@ -165,7 +165,7 @@ class RoomCollaboration {
                 if (!member) {
                     if (this.isLeaving) return;
                     this.forceLeaveRoom();
-                    this.showToast(FF14Utils.getI18nText('treasure_map_session_expired', '隊伍連線已失效，寶圖已保留在本機，請重新加入或建立隊伍。'), 'warning');
+                    this.showSessionExpiredToast();
                     return;
                 }
                 this.currentUser = member;
@@ -174,17 +174,19 @@ class RoomCollaboration {
                 this.finder.syncFromRoom(maps);
                 this.updateRoomUI();
                 this.saveSession();
+                // 開著的離開、移出對話框跟著新的隊伍重畫（張數、成員有變；被移出的人已經不在了就關掉）
+                this.dialogs?.refresh();
             },
             onError: error => {
                 if (error.preserveLocal) {
                     this.forceLeaveRoom();
-                    this.showToast(FF14Utils.getI18nText('treasure_map_session_expired', '隊伍連線已失效，寶圖已保留在本機，請重新加入或建立隊伍。'), 'warning');
+                    this.showSessionExpiredToast();
                 } else if (error.code === 'ROOM_RECREATE_REQUIRED' && error.room) {
                     this.recoverLegacyRoom(error.room);
                 } else if (error.status === 401 || error.status === 403 || error.status === 404) {
                     if (this.isLeaving) return;
                     this.forceLeaveRoom();
-                    this.showToast(FF14Utils.getI18nText('treasure_map_session_expired', '隊伍連線已失效，寶圖已保留在本機，請重新加入或建立隊伍。'), 'warning');
+                    this.showSessionExpiredToast();
                 } else {
                     this.showToast(FF14Utils.getI18nText('treasure_map_sync_to_room_failed', '同步失敗，請稍後再試'), 'error');
                 }
@@ -197,14 +199,14 @@ class RoomCollaboration {
             copyInviteBtn: document.getElementById('copyInviteBtn')
         };
 
+        // 只剩改名對話框由這裡開關（RoomCollaboration 自己的 ModalManager）；建立、加入、離開與移出的對話框在 RoomDialogs
         this.modals = {
-            editNickname: document.getElementById('editNicknameModal'),
-            leaveRoom: document.getElementById('leaveRoomModal')
+            editNickname: document.getElementById('editNicknameModal')
         };
 
         // 隊伍狀態（代號、同步狀態、成員一行與成員列表）由 PartyStatus 畫，建構時只抓元素，事件在 setupEventListeners() 才掛
         this.status = new PartyStatus(this);
-        // 組隊的頁內對話框（目前是建立與加入隊伍）由 RoomDialogs 管，同樣建構時只抓元素，事件在 setupEventListeners() 才掛
+        // 組隊的頁內對話框（建立、加入、離開隊伍與移出成員）由 RoomDialogs 管，同樣建構時只抓元素，事件在 setupEventListeners() 才掛
         this.dialogs = new RoomDialogs(this);
 
         // 語言切換時重畫隊伍狀態（成員一行的字、每一列的標籤與按鈕都帶語言）
@@ -366,24 +368,19 @@ class RoomCollaboration {
     }
 
     setupEventListeners() {
-        // 隊伍操作：建立與加入隊伍由 RoomDialogs 處理（建立：清單是空的直接建立，不是空的先問帶不帶；加入：輸入隊伍代號）
+        // 隊伍操作：建立、加入、離開隊伍與移出成員由 RoomDialogs 處理（建立：清單是空的直接建立，不是空的先問帶不帶；加入：輸入隊伍代號；
+        // 離開：留在我的清單還是清空；移出：隊長按成員列表裡的「移出」）
         this.elements.createRoomBtn.addEventListener('click', () => this.dialogs.openCreate());
         this.elements.joinRoomBtn.addEventListener('click', () => this.dialogs.openJoin());
         // 隊伍狀態的按鈕：複製邀請連結、複製代號、離開、成員一行與成員列表裡的改名、移出
         this.status.init();
-        // 建立與加入隊伍對話框裡的按鈕、代號欄與選項
+        // 建立、加入、離開隊伍與移出成員對話框裡的按鈕、代號欄與選項
         this.dialogs.init();
 
-        // 編輯暱稱對話框
+        // 改名對話框
         document.getElementById('closeNicknameModalBtn').addEventListener('click', () => this.hideModal('editNickname'));
         document.getElementById('cancelNicknameBtn').addEventListener('click', () => this.hideModal('editNickname'));
         document.getElementById('confirmNicknameBtn').addEventListener('click', () => this.confirmEditNickname());
-
-        // 離開隊伍對話框
-        document.getElementById('closeLeaveModalBtn').addEventListener('click', () => this.hideModal('leaveRoom'));
-        document.getElementById('cancelLeaveBtn').addEventListener('click', () => this.hideModal('leaveRoom'));
-        document.getElementById('leaveKeepListBtn').addEventListener('click', () => this.leaveRoom(true));
-        document.getElementById('leaveClearListBtn').addEventListener('click', () => this.leaveRoom(false));
 
         // Enter 鍵確認
         document.getElementById('nicknameInput').addEventListener('keypress', (e) => {
@@ -412,7 +409,7 @@ class RoomCollaboration {
                 if (room.readOnly) this.recoverLegacyRoom(room);
                 else {
                     this.forceLeaveRoom();
-                    this.showToast(FF14Utils.getI18nText('treasure_map_session_expired', '隊伍連線已失效，寶圖已保留在本機，請重新加入或建立隊伍。'), 'warning');
+                    this.showSessionExpiredToast();
                 }
             } catch (error) {
                 if (error.status === 404) this.forceLeaveRoom();
@@ -535,7 +532,7 @@ class RoomCollaboration {
         }
     }
 
-    // 顯示編輯暱稱對話框
+    // 顯示改名對話框
     showEditNicknameDialog() {
         const input = document.getElementById('nicknameInput');
         input.value = this.currentUser.nickname;
@@ -544,7 +541,7 @@ class RoomCollaboration {
         input.select();
     }
 
-    // 確認編輯暱稱
+    // 確認改名
     async confirmEditNickname() {
         const newNickname = document.getElementById('nicknameInput').value.trim();
         if (!newNickname || newNickname.length > 20 || !this.currentRoom) return;
@@ -561,25 +558,38 @@ class RoomCollaboration {
             // 只有「改名」會寫 ff14tw_user_nickname：自訂的名字存起來，沒改就不寫，改成預設名字（或舊樣式）就刪掉
             PartyNames.rememberRename(RoomCollaboration.safeStorage(), newNickname, { previous, tag: this.nicknameTag() });
             this.hideModal('editNickname');
-            this.showToast(FF14Utils.getI18nText('treasure_map_nickname_updated', '暱稱已更新'));
+            this.showToast(FF14Utils.getI18nText('treasure_map_nickname_updated', '已改名'));
         } catch (error) {
             if (generation === this.sessionGeneration) this.showToast(FF14Utils.getI18nText('treasure_map_update_nickname_failed_retry', '更新暱稱失敗，請稍後再試'), 'error');
         }
     }
 
-    // 顯示離開隊伍對話框
+    // 離開隊伍：開 RoomDialogs 的離開對話框（留在我的清單還是清空），真正離開是對話框裡的確認鈕呼叫 leaveRoom()
     showLeaveRoomDialog() {
-        this.showModal('leaveRoom');
+        this.dialogs.openLeave();
     }
 
-    // 離開隊伍
-    async leaveRoom(keepList) {
-        if (!this.currentRoom || this.isConnecting) return;
+    /**
+     * 離開隊伍：先把還沒送出的變更送完，再送離開（401、403、404 是伺服器已經不認得我，當作已經離開了）。
+     * 回傳結果：{ success: true }，或 { success: false, message }。message 是要給玩家看的原因：變更還沒送完是 treasure_map_leave_room_sync_failed，
+     * 其他失敗是 treasure_map_leave_room_failed_retry；不在隊伍裡、正在連線時什麼都沒做，同樣回失敗；
+     * 離開途中隊伍就被別的路徑結束了（變更被拒絕、連線失效…），沒有東西可離開，message 是空字串（那條路徑已經說過原因了）。
+     * 這裡不關對話框、不移動焦點，失敗也不跳 toast：訊息寫在哪裡、焦點放哪，是呼叫的人（RoomDialogs#confirmLeave()）的事。
+     * 成功時 quiet 是 false 才跳「已離開隊伍」。失敗後人還在隊伍裡：quiet 是 false 就恢復輪詢；
+     * quiet 是 true 不恢復，由呼叫的人決定（切換隊伍時，要等玩家選了才輪詢）
+     * @param {boolean} keepList - false 就在離開之後清空本機清單
+     * @param {{quiet?: boolean}} [options]
+     * @returns {Promise<{success: true} | {success: false, message: string}>}
+     */
+    async leaveRoom(keepList, { quiet = false } = {}) {
+        if (!this.currentRoom || this.isConnecting) {
+            return { success: false, message: FF14Utils.getI18nText('treasure_map_leave_room_failed_retry', '離開失敗，請稍後再試。') };
+        }
         this.setConnecting(true);
         this.isLeaving = true;
         this.stopPolling();
         const generation = this.sessionGeneration;
-        let left = false;
+        const interrupted = { success: false, message: '' };
         const finish = () => {
             this.forceLeaveRoom();
             if (!keepList) {
@@ -588,34 +598,35 @@ class RoomCollaboration {
                 this.finder.updateCardButtons();
                 this.finder.renderMyList();
             }
-            this.hideModal('leaveRoom');
-            this.showToast(FF14Utils.getI18nText('treasure_map_left_room', '已離開隊伍'));
-            left = true;
+            if (!quiet) this.showToast(FF14Utils.getI18nText('treasure_map_left_room', '已離開隊伍'));
+            return { success: true };
         };
         try {
             const synced = await this.mapSync.flush();
-            if (generation !== this.sessionGeneration) return;
+            if (generation !== this.sessionGeneration) return interrupted;
             if (!synced) {
-                this.showToast(FF14Utils.getI18nText('treasure_map_leave_room_sync_failed', '寶圖尚未同步完成，請稍後再試離開隊伍。'), 'error');
-                return;
+                return { success: false, message: FF14Utils.getI18nText('treasure_map_leave_room_sync_failed', '你的變更還沒送出，請稍後再試。') };
             }
             await this.request(`/rooms/${this.currentRoom.roomCode}/leave`, {
                 method: 'POST', authenticated: true, body: { clientRequestId: crypto.randomUUID() }
             });
-            if (generation !== this.sessionGeneration) return;
-            finish();
+            if (generation !== this.sessionGeneration) return interrupted;
+            return finish();
         } catch (error) {
-            if (generation !== this.sessionGeneration) return;
-            if ([401, 403, 404].includes(error.status)) finish();
-            else this.showToast(FF14Utils.getI18nText('treasure_map_leave_room_failed_retry', '離開隊伍失敗，請稍後再試'), 'error');
+            if (generation !== this.sessionGeneration) return interrupted;
+            if ([401, 403, 404].includes(error.status)) return finish();
+            return { success: false, message: FF14Utils.getI18nText('treasure_map_leave_room_failed_retry', '離開失敗，請稍後再試。') };
         } finally {
             this.isLeaving = false;
             this.setConnecting(false);
-            if (this.currentRoom && generation === this.sessionGeneration) this.startPolling();
-            // 離開了：隊伍狀態連同離開鈕藏起來，關掉對話框時焦點還給離開鈕等於沒還；改放到又出現的「建立隊伍」
-            //（連線中它是停用的，所以等 setConnecting(false) 之後）
-            if (left && this.isListPanelOpen()) this.elements.createRoomBtn?.focus?.();
+            if (!quiet && this.currentRoom && generation === this.sessionGeneration) this.startPolling();
         }
+    }
+
+    // 離開隊伍之後、清單面板開著時的焦點，由呼叫 leaveRoom() 的人在拿到結果之後呼叫（那時 setConnecting(false) 已經執行）：
+    // 隊伍狀態連同離開鈕藏起來了，關掉對話框時焦點還給離開鈕等於沒還；改放到又出現的「建立隊伍」
+    focusAfterLeaving() {
+        if (this.isListPanelOpen()) this.elements.createRoomBtn?.focus?.();
     }
 
     /**
@@ -740,6 +751,12 @@ class RoomCollaboration {
         // 隊伍沒了：清單的每一列與開著的路線頁重畫，ownerOf() 回 null，畫面上的「誰的圖」就一起消失（保留清單離開時清單本身沒變，
         // 不重畫的話每一列會停在離開之前的樣子）。每一條離開隊伍的路都走到這裡。測試替身不一定有 renderMyList
         this.finder?.renderMyList?.();
+        // 改名、離開、移出的對話框只在隊伍裡才有意義（被移出、連線失效、隊伍過期、自己離開都會走到這裡）：隊伍沒了就關掉，
+        // 不留一顆按了也沒用的確認鈕。建立、加入與邀請連結的對話框不動：切換隊伍時離開 A 之後，邀請連結的對話框還要留著加入 B。
+        // 關掉時 ModalManager 把焦點還給開啟前的按鈕，那顆已經跟著隊伍狀態藏起來了：焦點放到又出現的「建立隊伍」
+        const renameClosed = this.hideModal('editNickname');
+        const partyDialogClosed = this.dialogs?.closeInParty() ?? false;
+        if (renameClosed || partyDialogClosed) this.focusAfterLeaving();
     }
 
     // 更新活動時間
@@ -763,17 +780,24 @@ class RoomCollaboration {
         }
     }
 
-    // 隱藏對話框（只在名字對應的對話框正是目前開著的那個時才關，避免關錯）
+    // 隱藏對話框（只在名字對應的對話框正是目前開著的那個時才關，避免關錯）；回傳有沒有關
     hideModal(modalName) {
         const modal = this.modals[modalName];
-        if (modal && this.modalManager.activeModal === modal) {
-            this.modalManager.hide();
-        }
+        if (!modal || this.modalManager.activeModal !== modal) return false;
+        this.modalManager.hide();
+        return true;
     }
 
     // 顯示提示訊息
     showToast(message, type = 'success') {
         FF14Utils.showToast(message, type);
+    }
+
+    // 隊伍連線失效（被移出、請求被拒絕、存著的紀錄已經不能用）的警告：寶圖留在玩家的清單，說出可能的原因和怎麼回去。
+    // 所有連線失效的情況都用這一句，所以原因寫「可能」是被移出了
+    showSessionExpiredToast() {
+        this.showToast(FF14Utils.getI18nText('treasure_map_session_expired',
+            '隊伍連線已失效，可能是被移出了隊伍。寶圖留在你的清單；要回去可以再點一次邀請連結，或輸入隊伍代號。'), 'warning');
     }
 
     // 更新隊伍 UI：清單面板裡的組隊按鈕（建立、加入）只在不在隊伍裡時顯示；隊伍狀態由 PartyStatus 畫
@@ -785,24 +809,30 @@ class RoomCollaboration {
         this.finder?.updateListCount?.();
     }
 
-    // 移除成員
+    /**
+     * 移出成員（只有隊長按得到）。要不要移出已經在呼叫的人（RoomDialogs 的移出對話框）那裡問過了：這裡不問，不移動焦點，失敗也不跳 toast。
+     * 回傳 { success: true }（跳「已將 X 移出隊伍」），或 { success: false, message }；
+     * 請求途中隊伍就沒了（連線失效…）時 message 是空字串（那條路徑已經說過原因了）
+     * @param {{id: string, nickname: string}} member - 隊伍成員裡的那一位
+     * @returns {Promise<{success: true} | {success: false, message: string}>}
+     */
     async removeMember(member) {
-        if (!this.currentRoom || !confirm(FF14Utils.getI18nText('treasure_map_remove_member_confirm', '確定要移除 {nickname} 嗎？', { nickname: member.nickname }))) return;
+        const failed = () => ({ success: false, message: FF14Utils.getI18nText('treasure_map_remove_member_failed_retry', '移出失敗，請稍後再試。') });
+        if (!this.currentRoom) return failed();
         const generation = this.sessionGeneration;
         try {
             const room = await this.request(`/rooms/${this.currentRoom.roomCode}/remove-member`, {
                 method: 'POST', authenticated: true,
                 body: { targetMemberId: member.id, clientRequestId: crypto.randomUUID() }
             });
-            if (generation !== this.sessionGeneration) return;
+            if (generation !== this.sessionGeneration) return { success: false, message: '' };
             this.mapSync.receive(room);
             this.showToast(FF14Utils.getI18nText('treasure_map_member_removed', '已將 {nickname} 移出隊伍', { nickname: member.nickname }));
+            return { success: true };
         } catch (error) {
-            if (generation === this.sessionGeneration) this.showToast(FF14Utils.getI18nText('treasure_map_remove_member_failed_retry', '移除成員失敗，請稍後再試'), 'error');
+            return generation === this.sessionGeneration ? failed() : { success: false, message: '' };
         }
     }
-
-
 }
 
 // 匯出給主程式使用

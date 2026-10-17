@@ -306,21 +306,18 @@ test('malformed pending session records are rejected without throwing or modifyi
     ]) assert.equal(state.client.isRoomValid(corrupted), false);
 });
 
-test('a leave acknowledgement racing a poll still clears the list and closes the dialog', async () => {
+test('a leave acknowledgement racing a poll still clears the list and resolves with success (closing the dialog is RoomDialogs\' job)', async () => {
     let resolve;
     const delayed = new Promise(done => { resolve = done; });
     const state = setup(() => delayed);
     state.client.adoptSession(room([{ id: sample.id, type: sample.level, zone: sample.zone, x: 10, y: 20 }]), member, TOKEN);
-    const closed = [];
-    state.client.hideModal = name => closed.push(name);
     const leaving = state.client.leaveRoom(false);
     await new Promise(done => setImmediate(done));
     // The server has removed this member, but POST's acknowledgement is still in transit.
     state.client.mapSync.receive(room([], [], 1));
     resolve({ body: { message: 'Room deleted' } });
-    await leaving;
+    assert.deepEqual(plain(await leaving), { success: true });
     assert.equal(state.finder.listManager.getLength(), 0);
-    assert.deepEqual(closed, ['leaveRoom']);
     assert.equal(state.client.currentRoom, null);
     assert.equal(state.client.isLeaving, false);
 });
@@ -343,30 +340,30 @@ test('leaving waits for pending edits to sync and retains the session for retry 
             });
             const pending = [{ clientRequestId: webcrypto.randomUUID(), operations: [{ type: 'add', map: state.finder.toRoomMap(sample) }] }];
             state.client.adoptSession(room(), member, TOKEN, pending);
-            const closed = [];
             let pollingRestarts = 0;
-            state.client.hideModal = name => closed.push(name);
             state.client.startPolling = () => { pollingRestarts++; };
-            await state.client.leaveRoom(keepList);
+            // 變更還沒送完：回傳失敗與原因，由呼叫的人顯示（leaveRoom 自己不跳 toast）
+            const first = await state.client.leaveRoom(keepList);
+            assert.deepEqual(plain(first), { success: false, message: '你的變更還沒送出，請稍後再試。' });
             assert.deepEqual(state.requests.map(request => request.method), ['PUT']);
             assert.equal(state.client.currentRoom.roomCode, 'ABC123');
             assert.equal(state.client.memberToken, TOKEN);
             assert.equal(state.client.mapSync.pending.length, 1);
             assert.equal(state.finder.listManager.getList()[0].id, sample.id);
             assert.equal(JSON.parse(state.storage.get('ff14tw_current_room')).pendingMapOperations[0].clientRequestId, pending[0].clientRequestId);
-            assert.deepEqual(closed, []);
             assert.equal(state.client.isLeaving, false);
             assert.equal(state.client.isConnecting, false);
             assert.equal(pollingRestarts, 1);
-            assert.match(state.toasts.at(-1), /尚未同步完成/);
+            assert.ok(state.toasts.every(toast => !toast.includes('離開') && !toast.includes('還沒送出')), `失敗不跳 toast：${state.toasts}`);
 
-            await state.client.leaveRoom(keepList);
+            const second = await state.client.leaveRoom(keepList);
+            assert.deepEqual(plain(second), { success: true });
             assert.deepEqual(state.requests.map(request => request.method), ['PUT', 'PUT', 'POST']);
             assert.equal(state.requests[1].body.clientRequestId, state.requests[0].body.clientRequestId);
             assert.equal(state.client.currentRoom, null);
             assert.equal(state.storage.has('ff14tw_current_room'), false);
             assert.equal(state.finder.listManager.getLength(), keepList ? 1 : 0);
-            assert.deepEqual(closed, ['leaveRoom']);
+            assert.equal(state.toasts.at(-1), '已離開隊伍');
         }
     }
 });
@@ -530,18 +527,17 @@ test('a delayed poll 404 cannot cancel the successful leave-and-clear flow', asy
         else resolveLeave = resolve;
     }));
     state.client.adoptSession(room([{ id: sample.id, type: sample.level, zone: sample.zone, x: 10, y: 20 }]), member, TOKEN);
-    const closed = [];
-    state.client.hideModal = name => closed.push(name);
     const polling = state.client.poll();
     const leaving = state.client.leaveRoom(false);
     await new Promise(done => setImmediate(done));
     resolveGet({ status: 404, body: { error: 'Room not found' } });
     await polling;
     resolveLeave({ body: { message: 'Room deleted' } });
-    await leaving;
+    assert.deepEqual(plain(await leaving), { success: true });
     assert.equal(state.finder.listManager.getLength(), 0);
-    assert.deepEqual(closed, ['leaveRoom']);
     assert.equal(state.client.currentRoom, null);
+    assert.equal(state.toasts.at(-1), '已離開隊伍', '輪詢那一邊沒有跳「隊伍已過期」');
+    assert.ok(!state.toasts.includes('隊伍已過期'));
 });
 
 test('進出隊伍時清單入口跟著換：updateRoomUI() 最後更新清單張數與入口', () => {
@@ -919,7 +915,7 @@ test('讀 localStorage 就丟例外時：建立照樣送光之戰士＋字串，
     state.document.getElementById = id => (id === 'nicknameInput' ? { value: 'Alice' } : getElementById(id));
     await state.client.confirmEditNickname();
     assert.equal(state.client.currentUser.nickname, 'Alice');
-    assert.deepEqual(state.toasts, ['隊伍 ABC123 建立成功！', '成功加入隊伍 XYZ789', '暱稱已更新']);
+    assert.deepEqual(state.toasts, ['隊伍 ABC123 建立成功！', '成功加入隊伍 XYZ789', '已改名']);
 
     // 沒有 localStorage 這個東西（typeof 是 'undefined'）也一樣
     vm.runInContext('delete globalThis.localStorage', state.context);
@@ -992,11 +988,149 @@ const CREATE_FAILED = '建立失敗，請再試一次。';
 const OVER_LIMIT = '隊伍清單最多 8 張：先把清單刪到 8 張以內，或選「不帶」。';
 const INVALID_MAPS = '你的清單裡有隊伍不支援的寶圖。選「不帶」，或先把它們刪掉。';
 
-test('room-collaboration.js 的建立與加入不再呼叫 confirm()（移出成員的確認還沒換成頁內對話框，掃的時候先排除它）', () => {
-    const source = fs.readFileSync(path.join(__dirname, '..', 'tools/treasure-map-finder/room-collaboration.js'), 'utf8');
-    const start = source.search(/^    async removeMember\(/m);
-    const rest = start === -1 ? source : source.slice(0, start) + source.slice(source.indexOf('\n    }\n', start));
-    assert.deepEqual(rest.split('\n').filter(line => /\bconfirm\(/.test(line)), []);
+test('room-collaboration.js 與 room-dialogs.js 都沒有 confirm(：建立、加入、離開、移出的確認都在頁內對話框裡', () => {
+    for (const file of ['room-collaboration.js', 'room-dialogs.js']) {
+        const source = fs.readFileSync(path.join(__dirname, '..', 'tools/treasure-map-finder', file), 'utf8');
+        assert.deepEqual(source.split('\n').filter(line => /\bconfirm\(/.test(line)), [], file);
+    }
+});
+
+// ---------- 離開、移出：回傳結果，訊息、對話框與焦點是呼叫的人（RoomDialogs）的事 ----------
+// leaveRoom()／removeMember() 回傳 { success: true } 或 { success: false, message }：自己不關對話框、不移動焦點，失敗也不跳 toast。
+// 結果是在 vm 裡建出來的物件，原型和測試端不同，assert.deepEqual 前先用 plain() 轉過
+const LEAVE_FAILED = '離開失敗，請稍後再試。';
+const SYNC_FAILED = '你的變更還沒送出，請稍後再試。';
+const REMOVE_FAILED = '移出失敗，請稍後再試。';
+// 已經在隊伍裡（自己是隊長、Mate 是隊友）。輪詢不真的開始，數一數被要求開始幾次
+const inParty = (respond, options) => {
+    const state = setup(respond, options);
+    const polls = { count: 0 };
+    state.client.startPolling = () => { polls.count++; };
+    state.client.adoptSession(room([], [member, mate]), member, TOKEN, [], { poll: false });
+    return { ...state, polls };
+};
+
+test('leaveRoom 成功：回傳 { success: true }，跳「已離開隊伍」；quiet 時不跳；清空要選才清，自己不關對話框', async () => {
+    for (const quiet of [false, true]) {
+        for (const keepList of [true, false]) {
+            const state = inParty(request => (request.method === 'POST' ? { body: { message: 'Left' } } : { body: room() }));
+            state.finder.listManager.add(sample);
+            const result = await state.client.leaveRoom(keepList, { quiet });
+            const label = `quiet=${quiet} keepList=${keepList}`;
+            assert.deepEqual(plain(result), { success: true }, label);
+            assert.equal(state.client.currentRoom, null, label);
+            assert.equal(state.finder.listManager.getLength(), keepList ? 1 : 0, label);
+            assert.deepEqual(state.toasts, quiet ? [] : ['已離開隊伍'], label);
+            assert.equal(state.polls.count, 0, `${label}：離開了，沒有輪詢可以開始`);
+        }
+    }
+});
+
+test('leaveRoom 失敗：回傳 { success: false, message }（連不上、429、5xx、其他 4xx 都是「離開失敗，請稍後再試。」），不跳 toast、清單不動、還在隊伍裡；quiet 是 false 恢復輪詢，true 不恢復（由呼叫的人決定）', async () => {
+    const failures = {
+        '連不上（沒有狀態）': () => { throw new TypeError('Failed to fetch'); },
+        503: () => ({ status: 503, body: { error: 'Unavailable' } }),
+        429: () => ({ status: 429, body: { error: 'Slow down' } }),
+        400: () => ({ status: 400, body: { error: 'Invalid request', code: 'INVALID_REQUEST' } })
+    };
+    for (const quiet of [false, true]) {
+        for (const [label, fail] of Object.entries(failures)) {
+            const state = inParty(request => (request.method === 'POST' ? fail() : { body: room() }));
+            state.finder.listManager.add(sample);
+            const result = await state.client.leaveRoom(false, { quiet });
+            const name = `${label} quiet=${quiet}`;
+            assert.deepEqual(plain(result), { success: false, message: LEAVE_FAILED }, name);
+            assert.equal(state.client.currentRoom.roomCode, 'ABC123', name);
+            assert.equal(state.client.memberToken, TOKEN, name);
+            assert.equal(state.finder.listManager.getLength(), 1, `${name}：選了清空，離開成功才清`);
+            assert.deepEqual(state.toasts, [], `${name}：不跳 toast`);
+            assert.deepEqual([state.client.isLeaving, state.client.isConnecting], [false, false], name);
+            assert.equal(state.polls.count, quiet ? 0 : 1, `${name}：輪詢`);
+        }
+    }
+});
+
+test('leaveRoom：變更還沒送完回傳 { success: false, message: 你的變更還沒送出… }，不送離開；quiet 時同樣不恢復輪詢', async () => {
+    for (const quiet of [false, true]) {
+        const state = setup(request => {
+            if (request.method === 'PUT') throw new TypeError('Failed to fetch');
+            throw new Error('變更沒送完，不該送離開');
+        });
+        let polls = 0;
+        state.client.startPolling = () => { polls++; };
+        const pending = [{ clientRequestId: webcrypto.randomUUID(), operations: [{ type: 'add', map: state.finder.toRoomMap(sample) }] }];
+        state.client.adoptSession(room(), member, TOKEN, pending, { poll: false });
+        assert.deepEqual(plain(await state.client.leaveRoom(true, { quiet })), { success: false, message: SYNC_FAILED }, `quiet=${quiet}`);
+        assert.deepEqual(state.requests.map(request => request.method), ['PUT'], `quiet=${quiet}`);
+        assert.equal(state.client.currentRoom.roomCode, 'ABC123', `quiet=${quiet}`);
+        assert.equal(polls, quiet ? 0 : 1, `quiet=${quiet}`);
+    }
+});
+
+test('leaveRoom：不在隊伍裡、或正在連線時什麼都不做（不送請求、不動清單），回傳失敗；途中隊伍就沒了（被移出）時也不多做事', async () => {
+    const outside = setup(() => { throw new Error('不該送請求'); });
+    outside.finder.listManager.add(sample);
+    assert.deepEqual(plain(await outside.client.leaveRoom(false)), { success: false, message: LEAVE_FAILED });
+    assert.equal(outside.finder.listManager.getLength(), 1);
+    assert.equal(outside.requests.length, 0);
+
+    const connecting = inParty(() => { throw new Error('不該送請求'); });
+    connecting.client.setConnecting(true);
+    assert.deepEqual(plain(await connecting.client.leaveRoom(true)), { success: false, message: LEAVE_FAILED });
+    assert.equal(connecting.requests.length, 0);
+    assert.equal(connecting.client.isConnecting, true, '別人的連線中不被這一次改掉');
+    assert.equal(connecting.client.isLeaving, false);
+
+    // 離開途中隊伍已經被別的路徑結束了（例如變更被伺服器拒絕、連線失效）：沒有東西可離開，回傳失敗但沒有訊息（原因已經由那條路徑說過了）
+    let resolve;
+    const delayed = new Promise(done => { resolve = done; });
+    const ended = inParty(() => delayed);
+    ended.finder.listManager.add(sample);
+    const leaving = ended.client.leaveRoom(false);
+    await new Promise(done => setImmediate(done));
+    ended.client.forceLeaveRoom();
+    resolve({ body: { message: 'Left' } });
+    assert.deepEqual(plain(await leaving), { success: false, message: '' });
+    assert.equal(ended.finder.listManager.getLength(), 1, '沒有走完離開，清單不動');
+    assert.deepEqual(ended.toasts, []);
+    assert.deepEqual([ended.client.isLeaving, ended.client.isConnecting], [false, false]);
+});
+
+test('removeMember：不問 confirm()（頁面替身的 confirm 一被呼叫就丟錯），帶隊長的憑證與 targetMemberId；成功回傳 { success: true } 並跳「已將 Mate 移出隊伍」', async () => {
+    const state = inParty(() => ({ body: room([], [member], 1) }));
+    const result = await state.client.removeMember(mate);
+    assert.deepEqual(plain(result), { success: true });
+    assert.equal(state.requests.length, 1);
+    const [request] = state.requests;
+    assert.equal(request.url.endsWith('/rooms/ABC123/remove-member'), true);
+    assert.equal(request.method, 'POST');
+    assert.equal(request.headers.Authorization, `Bearer ${TOKEN}`);
+    assert.equal(request.body.targetMemberId, 'mate');
+    assert.match(request.body.clientRequestId, /^[a-f0-9-]{36}$/);
+    assert.deepEqual(plain(state.client.currentRoom.members.map(item => item.id)), ['creator'], '伺服器回的隊伍已經換上了');
+    assert.deepEqual(state.toasts, ['已將 Mate 移出隊伍']);
+});
+
+test('removeMember 失敗：回傳 { success: false, message: 移出失敗，請稍後再試。 }，不跳 toast、隊伍不動；不在隊伍裡什麼都不做；途中隊伍沒了不回報、也不跳 toast', async () => {
+    const failing = inParty(() => ({ status: 503, body: { error: 'Unavailable' } }));
+    assert.deepEqual(plain(await failing.client.removeMember(mate)), { success: false, message: REMOVE_FAILED });
+    assert.deepEqual(failing.toasts, []);
+    assert.deepEqual(plain(failing.client.currentRoom.members.map(item => item.id)), ['creator', 'mate']);
+
+    const outside = setup(() => { throw new Error('不該送請求'); });
+    assert.deepEqual(plain(await outside.client.removeMember(mate)), { success: false, message: REMOVE_FAILED });
+    assert.equal(outside.requests.length, 0);
+
+    let resolve;
+    const delayed = new Promise(done => { resolve = done; });
+    const ended = inParty(() => delayed);
+    const removing = ended.client.removeMember(mate);
+    await new Promise(done => setImmediate(done));
+    ended.client.forceLeaveRoom();
+    resolve({ body: room([], [member], 1) });
+    assert.deepEqual(plain(await removing), { success: false, message: '' });
+    assert.deepEqual(ended.toasts, []);
+    assert.equal(ended.client.currentRoom, null, '舊的回應不會把隊伍接回來');
 });
 
 test('createRoom：預設把本機清單帶進隊伍；clearLocal 時 initialMaps 是空的，成功後本機清單是隊伍清單（空的）', async () => {
