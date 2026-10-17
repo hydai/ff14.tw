@@ -254,13 +254,17 @@ class RoomDialogs {
         }
     }
 
+    // 進行中要停用的控制項（選項）與轉圈的確認鈕，依對話框的 prefix：建立與加入是 choiceElements() 的兩個選項加確認鈕
+    busyControls(prefix) {
+        const { bring, clear, confirm } = this.choiceElements(prefix);
+        return { disable: [bring, clear], confirm };
+    }
+
     // 連線中：選項與確認鈕停用，確認鈕轉圈（取消與 ✕ 不停用，玩家隨時可以關掉）。
     // 恢復時超過上限的停用由 renderChoice() 接回去（呼叫的人在失敗後重畫）
     setBusy(prefix, busy) {
-        const { bring, clear, confirm } = this.choiceElements(prefix);
-        bring.disabled = busy;
-        clear.disabled = busy;
-        confirm.disabled = busy;
+        const { disable, confirm } = this.busyControls(prefix);
+        for (const control of [...disable, confirm]) control.disabled = busy;
         confirm.classList.toggle('btn-loading', busy);
     }
 
@@ -269,8 +273,8 @@ class RoomDialogs {
     // 對話框也還是同一次打開的，就放回那一顆，失敗之後可以直接再按一次
     async whileBusy(prefix, opening, run) {
         this.connecting = opening;
-        const { bring, clear, confirm } = this.choiceElements(prefix);
-        const parked = this.parkFocus([bring, clear, confirm]);
+        const { disable, confirm } = this.busyControls(prefix);
+        const parked = this.parkFocus([...disable, confirm]);
         this.setBusy(prefix, true);
         try {
             return await run();
