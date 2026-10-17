@@ -1,9 +1,15 @@
 /**
  * FF14 Weather Forecast - Weather Store
- * Reactive state management with URL hash synchronization
+ * Reactive state management with URL hash synchronization and a memory of the
+ * last selection (localStorage)
  */
 
 class WeatherStore {
+    // localStorage key of the last selection:
+    // { zoneId, desiredWeathers: string[], previousWeathers: string[], beginHour, endHour }
+    // The special event is never remembered, it only lives in the URL hash.
+    static STORAGE_KEY = 'ff14tw_weather_selection';
+
     /**
      * Create a new WeatherStore instance
      */
@@ -27,13 +33,27 @@ class WeatherStore {
 
     /**
      * Initialize the store and set up hash change listener
+     *
+     * Initial state, in order of priority:
+     * 1. a valid URL hash (a shared link), which is also remembered as the latest selection
+     * 2. the remembered selection when the hash is empty or invalid, written back to the URL
+     *    so the share link keeps working
+     * 3. nothing: the first-visit state
      */
     init() {
         // Listen for hash changes
         window.addEventListener('hashchange', this.handleHashChange);
 
-        // Load initial state from hash
-        this.loadFromHash();
+        if (this.loadFromHash()) {
+            return;
+        }
+
+        if (this.loadFromStorage()) {
+            this.saveToHash();
+            return;
+        }
+
+        this.reset();
     }
 
     /**
@@ -68,9 +88,13 @@ class WeatherStore {
 
     /**
      * Handle hash change event
+     * While the page stays open a valid hash is followed (and remembered); an invalid or
+     * emptied one resets the screen. The remembered selection is neither read nor cleared.
      */
     handleHashChange() {
-        this.loadFromHash();
+        if (!this.loadFromHash()) {
+            this.reset();
+        }
     }
 
     /**
@@ -78,18 +102,22 @@ class WeatherStore {
      * Format: #zone-id-w1-w2-p1-p2-b-e-event
      * Where w = desired weather indices, p = previous weather indices,
      * b = begin hour, e = end hour
+     *
+     * A valid hash becomes the state and is remembered as the latest selection.
+     * An empty hash or one that names no known zone changes nothing; the caller decides
+     * what happens then (init() falls back to the remembered selection, a hash change
+     * resets the screen).
+     * @returns {boolean} True if the hash named a known zone and was applied
      */
     loadFromHash() {
         const hash = window.location.hash.slice(1);
         if (!hash) {
-            this.reset();
-            return;
+            return false;
         }
 
         const parts = hash.split('-');
         if (parts.length === 0) {
-            this.reset();
-            return;
+            return false;
         }
 
         // Parse zone ID (may contain dashes)
@@ -106,8 +134,7 @@ class WeatherStore {
         }
 
         if (!zoneId) {
-            this.reset();
-            return;
+            return false;
         }
 
         // Parse remaining parameters
@@ -128,7 +155,8 @@ class WeatherStore {
                 endHour,
                 event
             });
-            return;
+            this.saveToStorage();
+            return true;
         }
 
         // Extended format: zone-dw-pw-begin-end-event
@@ -183,48 +211,129 @@ class WeatherStore {
             endHour,
             event
         });
+        this.saveToStorage();
+        return true;
+    }
+
+    /**
+     * Build the URL hash (without the leading #) for a state
+     *
+     * Same format as loadFromHash() reads. The weather indices are sorted ascending so the
+     * same selection always gives the same hash, wherever it comes from (a state, a stored
+     * reminder target). Static, so it works without a store instance.
+     * @param {object} state - { zoneId, desiredWeathers, previousWeathers, beginHour, endHour, event };
+     *     the two weather fields can be a Set or an array of weather names
+     * @returns {string} The hash, or '' when there is no zone
+     */
+    static hashOf(state) {
+        if (!state || !state.zoneId) {
+            return '';
+        }
+
+        const weatherTypes = window.WeatherZoneData ? Object.keys(window.WeatherZoneData.weatherTypes) : [];
+        const indicesOf = (weathers) => Array.from(weathers)
+            .map(w => weatherTypes.indexOf(w))
+            .filter(i => i !== -1)
+            .sort((a, b) => a - b)
+            .join(',');
+
+        const desiredWeathers = new Set(state.desiredWeathers);
+        const previousWeathers = new Set(state.previousWeathers);
+        let hash = state.zoneId;
+
+        // Only add parameters if there are filters
+        const hasFilters =
+            desiredWeathers.size > 0 ||
+            previousWeathers.size > 0 ||
+            state.beginHour !== 0 ||
+            state.endHour !== 24 ||
+            state.event;
+
+        if (hasFilters) {
+            hash += `-${indicesOf(desiredWeathers)}-${indicesOf(previousWeathers)}-${state.beginHour}-${state.endHour}`;
+
+            if (state.event) {
+                hash += `-${state.event}`;
+            }
+        }
+
+        return hash;
     }
 
     /**
      * Save current state to URL hash
      */
     saveToHash() {
+        const hash = WeatherStore.hashOf(this.state);
+        history.replaceState(null, '', hash ? `#${hash}` : window.location.pathname);
+    }
+
+    /**
+     * Load the last remembered selection from localStorage
+     *
+     * Unusable memory (nothing stored, broken JSON, an unknown zone, storage blocked by the
+     * browser) is ignored. Fixable memory is fixed: weathers the zone never has are dropped,
+     * and hours out of range fall back to the whole day (0-24). The special event is not
+     * remembered, so it is always cleared. The URL hash is not touched.
+     * @returns {boolean} True if a selection was restored
+     */
+    loadFromStorage() {
+        let saved;
+        try {
+            const raw = window.localStorage.getItem(WeatherStore.STORAGE_KEY);
+            if (!raw) return false;
+            saved = JSON.parse(raw);
+        } catch (error) {
+            // Blocked storage or broken JSON: behave as if nothing was remembered
+            return false;
+        }
+
+        if (!saved || typeof saved !== 'object') {
+            return false;
+        }
+
+        const zone = window.WeatherZoneData ? window.WeatherZoneData.getZone(saved.zoneId) : null;
+        if (!zone) {
+            return false;
+        }
+
+        // Weather table is [weather1, chance1, weather2, chance2, ..., weatherN]
+        const zoneWeathers = new Set(zone.weatherTable.filter((_, i) => i % 2 === 0));
+        const weathersOf = (names) => new Set(Array.isArray(names) ? names.filter(w => zoneWeathers.has(w)) : []);
+        const hourOr = (hour, max, fallback) => (Number.isInteger(hour) && hour >= 0 && hour <= max ? hour : fallback);
+
+        this.setState({
+            zoneId: zone.id,
+            desiredWeathers: weathersOf(saved.desiredWeathers),
+            previousWeathers: weathersOf(saved.previousWeathers),
+            beginHour: hourOr(saved.beginHour, 23, 0),
+            endHour: hourOr(saved.endHour, 24, 24),
+            event: null
+        });
+        return true;
+    }
+
+    /**
+     * Remember the current selection in localStorage (zone, weathers and time of day,
+     * not the special event). Nothing is written without a zone; a browser that blocks
+     * or refuses the write just means the selection is not remembered for next time.
+     */
+    saveToStorage() {
         if (!this.state.zoneId) {
-            history.replaceState(null, '', window.location.pathname);
             return;
         }
 
-        let hash = this.state.zoneId;
-
-        // Only add parameters if there are filters
-        const hasFilters =
-            this.state.desiredWeathers.size > 0 ||
-            this.state.previousWeathers.size > 0 ||
-            this.state.beginHour !== 0 ||
-            this.state.endHour !== 24 ||
-            this.state.event;
-
-        if (hasFilters) {
-            // Desired weathers
-            const dwIndices = Array.from(this.state.desiredWeathers)
-                .map(w => this.getWeatherIndex(w))
-                .filter(i => i !== -1)
-                .join(',');
-
-            // Previous weathers
-            const pwIndices = Array.from(this.state.previousWeathers)
-                .map(w => this.getWeatherIndex(w))
-                .filter(i => i !== -1)
-                .join(',');
-
-            hash += `-${dwIndices}-${pwIndices}-${this.state.beginHour}-${this.state.endHour}`;
-
-            if (this.state.event) {
-                hash += `-${this.state.event}`;
-            }
+        try {
+            window.localStorage.setItem(WeatherStore.STORAGE_KEY, JSON.stringify({
+                zoneId: this.state.zoneId,
+                desiredWeathers: Array.from(this.state.desiredWeathers),
+                previousWeathers: Array.from(this.state.previousWeathers),
+                beginHour: this.state.beginHour,
+                endHour: this.state.endHour
+            }));
+        } catch (error) {
+            // Blocked storage or no space left: carry on without remembering
         }
-
-        history.replaceState(null, '', `#${hash}`);
     }
 
     /**
@@ -252,12 +361,13 @@ class WeatherStore {
     /**
      * Set the entire state
      * @param {object} newState - New state object
-     * @param {boolean} updateHash - Whether to update URL hash
+     * @param {boolean} updateHash - Whether to update URL hash (and remember the selection)
      */
     setState(newState, updateHash = false) {
         this.state = { ...newState };
         if (updateHash) {
             this.saveToHash();
+            this.saveToStorage();
         }
         this.notify('state');
     }
@@ -289,6 +399,7 @@ class WeatherStore {
         this.state.endHour = 24;
         this.state.event = null;
         this.saveToHash();
+        this.saveToStorage();
         this.notify('zone');
     }
 
@@ -303,6 +414,7 @@ class WeatherStore {
             this.state.desiredWeathers.add(weatherName);
         }
         this.saveToHash();
+        this.saveToStorage();
         this.notify('desiredWeathers');
     }
 
@@ -317,6 +429,7 @@ class WeatherStore {
             this.state.previousWeathers.add(weatherName);
         }
         this.saveToHash();
+        this.saveToStorage();
         this.notify('previousWeathers');
     }
 
@@ -329,6 +442,7 @@ class WeatherStore {
         this.state.beginHour = beginHour;
         this.state.endHour = endHour;
         this.saveToHash();
+        this.saveToStorage();
         this.notify('timeRange');
     }
 
@@ -339,6 +453,7 @@ class WeatherStore {
     setEvent(event) {
         this.state.event = event;
         this.saveToHash();
+        this.saveToStorage();
         this.notify('event');
     }
 
@@ -352,7 +467,21 @@ class WeatherStore {
         this.state.endHour = 24;
         this.state.event = null;
         this.saveToHash();
+        this.saveToStorage();
         this.notify('clearFilters');
+    }
+
+    /**
+     * Clear the previous weathers and the time of day, but keep the zone, the desired
+     * weathers and the special event
+     */
+    clearConditions() {
+        this.state.previousWeathers = new Set();
+        this.state.beginHour = 0;
+        this.state.endHour = 24;
+        this.saveToHash();
+        this.saveToStorage();
+        this.notify('conditions');
     }
 
     /**
