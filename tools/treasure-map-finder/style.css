@@ -480,6 +480,11 @@
     flex: 1;
 }
 
+/* 窄螢幕才換上的短字（檔案後面的 @media (max-width: 389px)）：平常藏起來，畫面上只有完整的字 */
+.tm-card .btn-add-to-list .btn-text-short {
+    display: none;
+}
+
 .tm-copy {
     flex: none;
 }
@@ -1506,6 +1511,21 @@
     .tm-stop-actions {
         flex-direction: column;
         align-items: flex-end;
+    }
+}
+
+/* 窄螢幕（≤389px；寫在 768px、480px 的規則後面，同特異度靠順序勝出）：卡片的加入鈕改顯示短字
+   （「＋ 加入」「＋ Add」「＋ 追加」；已加入的短字和完整的字一樣）。兩欄的卡片裡，加入鈕能放字的寬度是 視窗寬 / 2 - 90：
+   最長的日文「＋ リストに追加」要 101px，視窗要到 382px 才放得下（320px 只有 70px、360px 90px、375px 98px），
+   所以界線畫在 390px 之前、390px 以上和原來一樣；中、英文放得下的寬度更小，但三種語言共用同一條界線。
+   畫面上看到的是短字，按鈕的無障礙名稱仍是完整的字（aria-label）。768px 裡的省略號規則留著當最後手段 */
+@media (max-width: 389px) {
+    .tm-card .btn-add-to-list .btn-text {
+        display: none;
+    }
+
+    .tm-card .btn-add-to-list .btn-text-short {
+        display: inline;
     }
 }
 

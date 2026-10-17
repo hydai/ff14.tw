@@ -324,7 +324,8 @@ class TreasureMapFinder {
 
         // 加入清單（次要按鈕；一個畫面最多一顆 .btn-primary，留給「生成路線」）。
         // 保留 .btn-add-to-list：隊伍連線中 RoomCollaboration.setConnecting() 用它停用畫面上的加入鈕；
-        // 連線中才畫出來的卡片（例如這時切換語言、改篩選）在這裡一樣停用
+        // 連線中才畫出來的卡片（例如這時切換語言、改篩選）在這裡一樣停用。
+        // 兩段字：完整的 .btn-text 平常顯示，窄螢幕放不下時（style.css 的 @media (max-width: 389px)）改顯示短字 .btn-text-short
         const addBtn = document.createElement('button');
         addBtn.type = 'button';
         addBtn.className = 'btn btn-sm btn-add-to-list';
@@ -332,6 +333,9 @@ class TreasureMapFinder {
         const addText = document.createElement('span');
         addText.className = 'btn-text';
         addBtn.appendChild(addText);
+        const addTextShort = document.createElement('span');
+        addTextShort.className = 'btn-text-short';
+        addBtn.appendChild(addTextShort);
         this.updateAddButton(addBtn, this.listManager.has(map.id));
         addBtn.addEventListener('click', () => this.toggleMapInList(map));
         actions.appendChild(addBtn);
@@ -407,13 +411,22 @@ class TreasureMapFinder {
     }
 
     // 卡片的「加入清單」：已加入時 data-state="added"、加上 .is-added（成功色調）、文字換成「✓ 已加入」，
-    // 再按一次就移除。只動這三樣，不改寫整個 className（停用等其他狀態不受影響）
+    // 再按一次就移除。只動這幾樣（兩段字、aria-label），不改寫整個 className（停用等其他狀態不受影響）。
+    // 窄螢幕畫面上只看得到短字（已加入時和完整的字一樣），所以 aria-label 固定帶完整的字：
+    // 無障礙名稱不隨視窗寬度變，短字也一定是它的一部分（WCAG 2.5.3，語音控制喊畫面上的字點得到）。
+    // 沒有 .btn-text-short 的按鈕照樣更新其他部分
     updateAddButton(button, isInList) {
-        button.dataset.state = isInList ? 'added' : 'default';
-        button.classList.toggle('is-added', isInList);
-        button.querySelector('.btn-text').textContent = isInList
+        const label = isInList
             ? FF14Utils.getI18nText('treasure_map_added_to_list', '✓ 已加入')
             : FF14Utils.getI18nText('treasure_map_add_to_list', '＋ 加入清單');
+        button.dataset.state = isInList ? 'added' : 'default';
+        button.classList.toggle('is-added', isInList);
+        button.querySelector('.btn-text').textContent = label;
+        const shortText = button.querySelector('.btn-text-short');
+        if (shortText) {
+            shortText.textContent = isInList ? label : FF14Utils.getI18nText('treasure_map_add_to_list_short', '＋ 加入');
+        }
+        button.setAttribute('aria-label', label);
     }
 
     // 複製這張寶圖的隊伍頻道句子（buildPartyMessage），不再是 /pos 指令。
