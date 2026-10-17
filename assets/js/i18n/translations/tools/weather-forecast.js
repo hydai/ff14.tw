@@ -10,38 +10,49 @@ const WeatherForecastTranslations = {
         // 頁面標題
         weather_header: '天氣預報',
 
-        // 地區選擇
-        weather_select_zone: '選擇地區',
-        weather_select_zone_hint: '點擊地區按鈕開始查看天氣',
+        // 選擇區
+        weather_first_prompt: '想查哪裡的什麼天氣？',
+        weather_zone_label: '地區',
+        weather_zone_placeholder: '選擇地區',
+        weather_zone_hint: '選了地區，這裡會列出那裡會出現的天氣。',
+        weather_weather_label: '天氣',
 
-        // 過濾器
-        weather_filter_title: '過濾條件',
-        weather_desired_weather: '目標天氣',
-        weather_previous_weather: '前置天氣',
-        weather_time_range: '艾歐澤亞時間範圍',
-        weather_clear_filters: '清除過濾',
+        // 更多條件
+        weather_more_conditions: '更多條件：時段、前置天氣',
+        weather_more_summary: '· 已設定 {items}',
+        weather_more_item_previous: '前置天氣 {count} 個',
+        weather_list_separator: '、',
+        weather_time_range: '時段（艾歐澤亞時間）',
+        weather_previous_weather: '前置天氣（釣魚用）',
+        weather_clear_filters: '清除條件',
 
         // 時間
         weather_time_all: '全天',
         weather_time_custom: '自訂',
 
-        // 結果
-        weather_results: '搜尋結果',
-        weather_timetable: '天氣時刻表',
-        weather_no_results: '沒有符合條件的結果',
+        // 還沒選地區
+        weather_empty_title: '先選地區和天氣',
+        weather_empty_text: '這裡會寫它下次什麼時候出現、還要等多久。下次打開會記得你選的。',
+
+        // 時刻表
+        weather_timetable_title: '{zone}的天氣時刻表',
         weather_show_more: '顯示更多',
-        weather_loading: '載入中...',
 
         // 表格標題
         weather_col_local_time: '本地時間',
-        weather_col_eorzea_time: 'ET 時間',
+        weather_col_eorzea_time: 'ET',
         weather_col_weather: '天氣',
-        weather_col_prev_weather: '前置天氣',
         weather_col_duration: '持續時間',
 
+        // 日期
+        weather_day_today: '今天',
+        weather_day_tomorrow: '明天',
+        weather_day_date: '{month}/{day}',
+        weather_day_time: '{day} {time}',
+
         // 當前時間
-        weather_current_et: '目前 ET',
-        weather_current_lt: '本地時間',
+        weather_current_et: 'ET',
+        weather_current_lt: '本地',
 
         // 特殊事件
         weather_events: '特殊事件',
@@ -95,38 +106,49 @@ const WeatherForecastTranslations = {
         // Page header
         weather_header: 'Weather Forecast',
 
-        // Zone selection
-        weather_select_zone: 'Select Zone',
-        weather_select_zone_hint: 'Click a zone button to view weather',
+        // Selection
+        weather_first_prompt: 'Which zone and weather are you after?',
+        weather_zone_label: 'Zone',
+        weather_zone_placeholder: 'Choose a zone',
+        weather_zone_hint: 'Pick a zone to see the weather it can have.',
+        weather_weather_label: 'Weather',
 
-        // Filters
-        weather_filter_title: 'Filters',
-        weather_desired_weather: 'Target Weather',
-        weather_previous_weather: 'Previous Weather',
-        weather_time_range: 'Eorzea Time Range',
-        weather_clear_filters: 'Clear Filters',
+        // More conditions
+        weather_more_conditions: 'More conditions: time of day, previous weather',
+        weather_more_summary: '· Set: {items}',
+        weather_more_item_previous: 'previous weather: {count}',
+        weather_list_separator: ', ',
+        weather_time_range: 'Time of day (Eorzea time)',
+        weather_previous_weather: 'Previous weather (for fishing)',
+        weather_clear_filters: 'Clear conditions',
 
         // Time
         weather_time_all: 'All Day',
         weather_time_custom: 'Custom',
 
-        // Results
-        weather_results: 'Search Results',
-        weather_timetable: 'Weather Timetable',
-        weather_no_results: 'No matching results',
+        // No zone yet
+        weather_empty_title: 'Pick a zone and a weather',
+        weather_empty_text: 'This is where you\'ll see when it comes next and how long to wait. Your choice is remembered for next time.',
+
+        // Timetable
+        weather_timetable_title: 'Weather in {zone}',
         weather_show_more: 'Show More',
-        weather_loading: 'Loading...',
 
         // Table headers
         weather_col_local_time: 'Local Time',
-        weather_col_eorzea_time: 'ET Time',
+        weather_col_eorzea_time: 'ET',
         weather_col_weather: 'Weather',
-        weather_col_prev_weather: 'Previous Weather',
         weather_col_duration: 'Duration',
 
+        // Dates
+        weather_day_today: 'Today',
+        weather_day_tomorrow: 'Tomorrow',
+        weather_day_date: '{month}/{day}',
+        weather_day_time: '{day} {time}',
+
         // Current time
-        weather_current_et: 'Current ET',
-        weather_current_lt: 'Local Time',
+        weather_current_et: 'ET',
+        weather_current_lt: 'Local',
 
         // Special events
         weather_events: 'Special Events',
@@ -180,38 +202,49 @@ const WeatherForecastTranslations = {
         // ページヘッダー
         weather_header: '天気予報',
 
-        // 地域選択
-        weather_select_zone: '地域を選択',
-        weather_select_zone_hint: '地域ボタンをクリックして天気を表示',
+        // 選択
+        weather_first_prompt: 'どのエリアのどの天気を調べますか？',
+        weather_zone_label: 'エリア',
+        weather_zone_placeholder: 'エリアを選択',
+        weather_zone_hint: 'エリアを選ぶと、そこで起きる天気が表示されます。',
+        weather_weather_label: '天気',
 
-        // フィルター
-        weather_filter_title: 'フィルター',
-        weather_desired_weather: '目標天気',
-        weather_previous_weather: '前の天気',
-        weather_time_range: 'エオルゼア時間範囲',
-        weather_clear_filters: 'フィルターをクリア',
+        // 詳細条件
+        weather_more_conditions: '詳細条件：時間帯・前の天気',
+        weather_more_summary: '・設定中：{items}',
+        weather_more_item_previous: '前の天気 {count} 件',
+        weather_list_separator: '、',
+        weather_time_range: '時間帯（エオルゼア時間）',
+        weather_previous_weather: '前の天気（釣り用）',
+        weather_clear_filters: '条件をクリア',
 
         // 時間
         weather_time_all: '全日',
         weather_time_custom: 'カスタム',
 
-        // 結果
-        weather_results: '検索結果',
-        weather_timetable: '天気時刻表',
-        weather_no_results: '条件に一致する結果がありません',
+        // エリア未選択
+        weather_empty_title: 'エリアと天気を選んでください',
+        weather_empty_text: '次にいつ来るか、あとどれくらい待つかがここに表示されます。選んだ内容は次回も覚えています。',
+
+        // 天気予報表
+        weather_timetable_title: '{zone}の天気',
         weather_show_more: 'もっと見る',
-        weather_loading: '読み込み中...',
 
         // テーブルヘッダー
         weather_col_local_time: 'ローカル時間',
-        weather_col_eorzea_time: 'ET 時間',
+        weather_col_eorzea_time: 'ET',
         weather_col_weather: '天気',
-        weather_col_prev_weather: '前の天気',
         weather_col_duration: '継続時間',
 
+        // 日付
+        weather_day_today: '今日',
+        weather_day_tomorrow: '明日',
+        weather_day_date: '{month}/{day}',
+        weather_day_time: '{day} {time}',
+
         // 現在時刻
-        weather_current_et: '現在 ET',
-        weather_current_lt: 'ローカル時間',
+        weather_current_et: 'ET',
+        weather_current_lt: 'ローカル',
 
         // 特別イベント
         weather_events: '特別イベント',

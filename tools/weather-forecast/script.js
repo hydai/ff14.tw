@@ -1,18 +1,17 @@
 /**
  * FF14 Weather Forecast - Main Controller
- * Orchestrates all modules and handles UI interactions
+ * The selection side (zone dropdown, weather chips, and "more conditions" with the
+ * time of day and the previous weather) and the zone's weather timetable
  */
 
 class WeatherForecast {
     // Constants
     static CONSTANTS = {
-        DEBOUNCE_DELAY: 300,
-        INITIAL_RESULTS: 24,
-        MAX_RESULTS: 200,
+        INITIAL_RESULTS: 24, // timetable rows at first
+        MAX_RESULTS: 200, // "show more" doubles the rows up to this many
         TIME_UPDATE_INTERVAL: 1000,
         CSS_CLASSES: {
             ACTIVE: 'active',
-            COLLAPSED: 'collapsed',
             CURRENT: 'current-weather',
             IN_RANGE: 'in-range',
             SELECTED: 'selected'
@@ -21,7 +20,8 @@ class WeatherForecast {
 
     constructor() {
         // State
-        this.resultCount = WeatherForecast.CONSTANTS.INITIAL_RESULTS;
+        this.timetableCount = WeatherForecast.CONSTANTS.INITIAL_RESULTS;
+        this.timetableZoneId = null; // the zone timetableCount belongs to
         this.timeUpdateInterval = null;
         this.currentPeriodStart = null;
         this.timeRangeStart = null;
@@ -33,33 +33,30 @@ class WeatherForecast {
 
         // DOM elements cache
         this.elements = {
-            // Time display
+            // Clock
             currentET: document.getElementById('currentET'),
             currentLT: document.getElementById('currentLT'),
 
-            // Zone selection
-            zoneList: document.getElementById('zoneList'),
-            noZoneSelected: document.getElementById('noZoneSelected'),
-            zoneContent: document.getElementById('zoneContent'),
-            selectedZoneName: document.getElementById('selectedZoneName'),
-
-            // Filters
+            // Selection side
+            firstVisitPrompt: document.getElementById('firstVisitPrompt'),
+            zoneSelect: document.getElementById('zoneSelect'),
+            zoneHint: document.getElementById('zoneHint'),
+            shareBtn: document.getElementById('shareBtn'),
+            weatherField: document.getElementById('weatherField'),
             desiredWeatherTags: document.getElementById('desiredWeatherTags'),
-            previousWeatherTags: document.getElementById('previousWeatherTags'),
+            moreConditions: document.getElementById('moreConditions'),
+            moreSummary: document.getElementById('moreSummary'),
             timeGrid: document.getElementById('timeGrid'),
             timeRangeText: document.getElementById('timeRangeText'),
+            previousWeatherTags: document.getElementById('previousWeatherTags'),
             clearFiltersBtn: document.getElementById('clearFiltersBtn'),
 
-            // Results
-            resultsTitle: document.getElementById('resultsTitle'),
-            resultsLoading: document.getElementById('resultsLoading'),
-            resultsContainer: document.getElementById('resultsContainer'),
+            // Main column
+            noZoneSelected: document.getElementById('noZoneSelected'),
+            zoneContent: document.getElementById('zoneContent'),
+            timetableTitle: document.getElementById('timetableTitle'),
             resultsBody: document.getElementById('resultsBody'),
-            noResults: document.getElementById('noResults'),
-            showMoreBtn: document.getElementById('showMoreBtn'),
-
-            // Actions
-            shareBtn: document.getElementById('shareBtn')
+            showMoreBtn: document.getElementById('showMoreBtn')
         };
 
         // Initialize
@@ -70,14 +67,14 @@ class WeatherForecast {
      * Initialize the weather forecast tool
      */
     init() {
-        // Initialize store
+        // The store notifies about the state it loads before it remembers it or rewrites the
+        // URL, so it is initialised before anything subscribes; the first render below reads
+        // store.state instead
         this.store.init();
-
-        // Subscribe to state changes
         this.store.subscribe((state, changeType) => this.handleStateChange(state, changeType));
 
         // Build UI
-        this.buildZoneList();
+        this.buildZoneSelect();
         this.buildTimeGrid();
 
         // Set up event listeners
@@ -86,22 +83,11 @@ class WeatherForecast {
         // Start time updates
         this.startTimeUpdates();
 
-        // Initial render based on URL hash
+        // Initial render from the loaded state (shared link, remembered selection or first visit)
         this.handleStateChange(this.store.state, 'state');
 
-        // 語言切換時重新渲染側邊欄地區/地點清單、地區名稱／天氣標籤／結果表格。
-        // 側邊欄無論有沒有選取地區都存在，所以 relabelZoneList() 要放在
-        // zoneId 判斷之前、一律執行；後三者都只從 this.store.state 取值，
-        // 不需要另外快取輸入，直接重放跟本函式開頭、handleStateChange('zone') 一樣的呼叫即可
         if (window.i18n) {
-            window.i18n.onLanguageChange(() => {
-                this.relabelZoneList();
-
-                if (!this.store.state.zoneId) return;
-                this.showZoneContent();
-                this.renderWeatherTags();
-                this.renderResults();
-            });
+            window.i18n.onLanguageChange(() => this.handleLanguageChange());
         }
     }
 
@@ -109,38 +95,24 @@ class WeatherForecast {
      * Bind event listeners
      */
     bindEvents() {
-        // Zone selection (delegated) - click and keyboard
-        this.elements.zoneList.addEventListener('click', (e) => this.handleZoneClick(e));
-        this.elements.zoneList.addEventListener('keydown', (e) => this.handleZoneKeydown(e));
+        // Zone dropdown
+        this.elements.zoneSelect.addEventListener('change', () => this.handleZoneChange());
 
-        // Filter controls
+        // Weather chips and conditions
         this.elements.desiredWeatherTags.addEventListener('click', (e) => this.handleWeatherTagClick(e, 'desired'));
         this.elements.previousWeatherTags.addEventListener('click', (e) => this.handleWeatherTagClick(e, 'previous'));
-        this.elements.clearFiltersBtn.addEventListener('click', () => this.handleClearFilters());
+        this.elements.clearFiltersBtn.addEventListener('click', () => this.store.clearConditions());
 
         // Time grid - click and keyboard
         this.elements.timeGrid.addEventListener('click', (e) => this.handleTimeGridClick(e));
         this.elements.timeGrid.addEventListener('keydown', (e) => this.handleTimeGridKeydown(e));
         this.elements.timeGrid.addEventListener('mouseenter', (e) => this.handleTimeGridHover(e), true);
 
-        // Results
+        // Timetable
         this.elements.showMoreBtn.addEventListener('click', () => this.handleShowMore());
 
         // Share
         this.elements.shareBtn.addEventListener('click', () => this.handleShare());
-    }
-
-    /**
-     * Handle keyboard events for zone list (region headers)
-     */
-    handleZoneKeydown(e) {
-        if (e.key === 'Enter' || e.key === ' ') {
-            const header = e.target.closest('.region-header');
-            if (header) {
-                e.preventDefault();
-                this.handleZoneClick(e);
-            }
-        }
     }
 
     /**
@@ -157,116 +129,74 @@ class WeatherForecast {
     }
 
     /**
-     * Build the zone list UI
+     * Fill the zone dropdown: one optgroup per region and one option per zone, named in the
+     * current language. The first option ("choose a zone") is in the markup.
      */
-    buildZoneList() {
-        const grouped = WeatherZoneData.getZonesGroupedByRegion();
-        const fragment = document.createDocumentFragment();
-        const lang = window.i18n ? window.i18n.currentLanguage : 'zh';
+    buildZoneSelect() {
+        const lang = this.getLanguage();
 
-        for (const [regionId, zones] of Object.entries(grouped)) {
+        for (const [regionId, zones] of Object.entries(WeatherZoneData.getZonesGroupedByRegion())) {
             const regionInfo = WeatherZoneData.regions[regionId];
             if (!regionInfo) continue;
 
-            const regionGroup = document.createElement('div');
-            regionGroup.className = 'region-group';
-
-            // Zone buttons container (created first for aria-controls)
-            const buttonsContainer = document.createElement('div');
-            buttonsContainer.className = 'zone-buttons';
-            buttonsContainer.id = `zone-buttons-${regionId}`;
-
-            // Region header with accessibility attributes
-            const header = document.createElement('div');
-            header.className = 'region-header';
-            header.dataset.region = regionId;
-            header.setAttribute('role', 'button');
-            header.setAttribute('tabindex', '0');
-            header.setAttribute('aria-expanded', 'true');
-            header.setAttribute('aria-controls', buttonsContainer.id);
-
-            const expandIcon = document.createElement('span');
-            expandIcon.className = 'expand-icon';
-            expandIcon.setAttribute('aria-hidden', 'true');
-            expandIcon.textContent = '▼';
-
-            const regionName = document.createElement('span');
-            regionName.className = 'region-name';
-            regionName.textContent = regionInfo[lang] || regionInfo.zh;
-
-            header.appendChild(expandIcon);
-            header.appendChild(regionName);
+            const group = document.createElement('optgroup');
+            group.dataset.region = regionId;
+            group.setAttribute('label', regionInfo[lang] || regionInfo.zh);
 
             for (const zone of zones) {
-                const btn = document.createElement('button');
-                btn.className = 'zone-btn';
-                btn.dataset.zone = zone.id;
-                btn.setAttribute('aria-pressed', 'false');
-                btn.textContent = zone[lang] || zone.zh;
-                buttonsContainer.appendChild(btn);
+                const option = document.createElement('option');
+                option.setAttribute('value', zone.id);
+                option.textContent = zone[lang] || zone.zh;
+                group.appendChild(option);
             }
 
-            regionGroup.appendChild(header);
-            regionGroup.appendChild(buttonsContainer);
-            fragment.appendChild(regionGroup);
+            this.elements.zoneSelect.appendChild(group);
         }
-
-        this.elements.zoneList.appendChild(fragment);
     }
 
     /**
-     * 語言切換時重新標記地區選單（地區標題＋地點按鈕）的文字。
-     * 直接改寫既有 DOM 節點的 textContent，不重新呼叫 buildZoneList()：
-     * 後者只會 append、不會先清空，重呼叫會整份選單重複；改用相同節點
-     * 也讓目前展開/收合的地區（.collapsed）與已選取的地點（.active）
-     * 完全不受影響，不需要額外重新套用。
+     * Rename the regions and zones in the dropdown after a language change. The same nodes
+     * are kept, so the selected zone stays selected.
      */
-    relabelZoneList() {
-        const lang = window.i18n ? window.i18n.currentLanguage : 'zh';
+    relabelZoneSelect() {
+        const lang = this.getLanguage();
 
-        const headers = this.elements.zoneList.querySelectorAll('.region-header');
-        headers.forEach(header => {
-            const regionInfo = WeatherZoneData.regions[header.dataset.region];
-            const nameSpan = header.querySelector('.region-name');
-            if (regionInfo && nameSpan) {
-                nameSpan.textContent = regionInfo[lang] || regionInfo.zh;
+        for (const group of this.elements.zoneSelect.querySelectorAll('optgroup')) {
+            const regionInfo = WeatherZoneData.regions[group.dataset.region];
+            if (regionInfo) {
+                group.setAttribute('label', regionInfo[lang] || regionInfo.zh);
             }
-        });
+        }
 
-        const zoneBtns = this.elements.zoneList.querySelectorAll('.zone-btn');
-        zoneBtns.forEach(btn => {
-            const zone = WeatherZoneData.getZone(btn.dataset.zone);
+        for (const option of this.elements.zoneSelect.querySelectorAll('option')) {
+            const zone = WeatherZoneData.getZone(option.getAttribute('value'));
             if (zone) {
-                btn.textContent = zone[lang] || zone.zh;
+                option.textContent = zone[lang] || zone.zh;
             }
-        });
+        }
     }
 
     /**
      * Build the time grid UI
      */
     buildTimeGrid() {
-        const fragment = document.createDocumentFragment();
-
-        for (let i = 0; i < 24; i++) {
+        for (let hour = 0; hour < 24; hour++) {
             const cell = document.createElement('div');
             cell.className = 'cell time-cell';
-            cell.dataset.hour = i;
+            cell.dataset.hour = hour;
             cell.setAttribute('role', 'button');
             cell.setAttribute('tabindex', '0');
-            cell.setAttribute('aria-label', `${String(i).padStart(2, '0')}:00`);
-            cell.textContent = String(i).padStart(2, '0');
-            fragment.appendChild(cell);
+            cell.setAttribute('aria-label', `${WeatherForecast.twoDigits(hour)}:00`);
+            cell.textContent = WeatherForecast.twoDigits(hour);
+            this.elements.timeGrid.appendChild(cell);
         }
-
-        this.elements.timeGrid.appendChild(fragment);
     }
 
     /**
      * Start time update interval
      */
     startTimeUpdates() {
-        // 先記下目前所在的天氣期，之後每秒比對，換期時由 refreshOnPeriodChange() 重畫結果表
+        // 先記下目前所在的天氣期，之後每秒比對，換期時由 refreshOnPeriodChange() 重畫時刻表
         this.currentPeriodStart = WeatherCalculator.getWeatherPeriodStart(Date.now());
         this.updateTimeDisplay();
         this.timeUpdateInterval = setInterval(() => {
@@ -285,17 +215,14 @@ class WeatherForecast {
         this.elements.currentET.textContent = WeatherCalculator.formatEorzeaTime(now);
 
         // Local time
-        const localTime = new Date(now);
-        const hours = String(localTime.getHours()).padStart(2, '0');
-        const minutes = String(localTime.getMinutes()).padStart(2, '0');
-        this.elements.currentLT.textContent = `${hours}:${minutes}`;
+        this.elements.currentLT.textContent = WeatherCalculator.formatLocalTime(now);
     }
 
     /**
-     * 天氣每 8 個艾歐澤亞小時（1,400 秒）換一期。結果表只在篩選條件改變時才重畫，
-     * 停在頁面上不動的話，「目前」那一列會一直停在已過期的天氣；這裡由每秒的計時器
-     * 呼叫，只在換期時重畫。以期別起點比對：分頁在背景時瀏覽器會降頻計時器並暫停 rAF，
-     * 回到前景時排隊中的重畫會依序執行，畫面最後一定停在最新的一期。
+     * 天氣每 8 個艾歐澤亞小時（1,400 秒）換一期。時刻表只在選擇改變時才重畫，停在頁面上不動的話，
+     * 「目前」那一列會一直停在已過期的天氣；這裡由每秒的計時器呼叫，只在換期時重畫（列數照舊）。
+     * 以期別起點比對：分頁在背景時瀏覽器會降頻計時器，電腦睡著時整段都沒跑，下一次執行時
+     * 一定畫成最新的一期。
      * @param {number} now - 目前的 Unix 毫秒時間戳
      * @returns {boolean} 是否已換期
      */
@@ -304,8 +231,8 @@ class WeatherForecast {
         if (periodStart === this.currentPeriodStart) return false;
 
         this.currentPeriodStart = periodStart;
-        // 沒選地區就沒有結果表可畫；之後選了地區會自己重畫
-        if (this.store.state.zoneId) this.renderResults();
+        // 沒選地區就沒有時刻表可畫；之後選了地區會自己重畫
+        if (this.store.state.zoneId) this.renderTimetable();
         return true;
     }
 
@@ -316,72 +243,74 @@ class WeatherForecast {
         switch (changeType) {
             case 'state':
             case 'zone':
-                this.isSelectingTimeRange = false;
-                this.timeRangeStart = null;
-                this.updateZoneSelection();
-                if (!state.zoneId) {
-                    this.hideZoneContent();
-                    break;
+            case 'reset':
+                // A new selection (first load, zone dropdown, hash navigation): a half-chosen
+                // time range is dropped and everything is drawn again
+                this.cancelTimeRangeSelection();
+                // The timetable starts again at 24 rows in another zone; a new period keeps its length
+                if (state.zoneId !== this.timetableZoneId) {
+                    this.timetableZoneId = state.zoneId;
+                    this.timetableCount = WeatherForecast.CONSTANTS.INITIAL_RESULTS;
                 }
-                this.showZoneContent();
-                this.renderWeatherTags();
-                this.updateTimeRangeUI();
-                this.resultCount = WeatherForecast.CONSTANTS.INITIAL_RESULTS;
-                this.renderResults();
+                this.render();
                 break;
             case 'desiredWeathers':
             case 'previousWeathers':
                 this.updateWeatherTagsUI();
-                this.resultCount = WeatherForecast.CONSTANTS.INITIAL_RESULTS;
-                this.renderResults();
+                this.updateMoreSummary();
                 break;
             case 'timeRange':
                 this.updateTimeRangeUI();
-                this.resultCount = WeatherForecast.CONSTANTS.INITIAL_RESULTS;
-                this.renderResults();
+                this.updateMoreSummary();
                 break;
+            case 'conditions':
             case 'clearFilters':
-                this.renderWeatherTags();
+                this.cancelTimeRangeSelection();
+                this.updateWeatherTagsUI();
                 this.updateTimeRangeUI();
-                this.resultCount = WeatherForecast.CONSTANTS.INITIAL_RESULTS;
-                this.renderResults();
-                break;
-            case 'reset':
-                this.isSelectingTimeRange = false;
-                this.timeRangeStart = null;
-                this.updateZoneSelection();
-                this.hideZoneContent();
+                this.updateMoreSummary();
                 break;
         }
-    }
-
-    updateZoneSelection() {
-        this.elements.zoneList.querySelectorAll('.zone-btn').forEach(btn => {
-            const active = btn.dataset.zone === this.store.state.zoneId;
-            btn.classList.toggle(WeatherForecast.CONSTANTS.CSS_CLASSES.ACTIVE, active);
-            btn.setAttribute('aria-pressed', String(active));
-        });
     }
 
     /**
-     * Handle zone button click
+     * Draw the page for the current state: without a zone only the dropdown and the
+     * explanations; with a zone its weathers, conditions and timetable
      */
-    handleZoneClick(e) {
-        // Handle region header click (collapse/expand)
-        const header = e.target.closest('.region-header');
-        if (header) {
-            const group = header.closest('.region-group');
-            const isCollapsed = group.classList.toggle(WeatherForecast.CONSTANTS.CSS_CLASSES.COLLAPSED);
-            header.setAttribute('aria-expanded', String(!isCollapsed));
-            return;
+    render() {
+        const hasZone = Boolean(this.store.getCurrentZone());
+        this.elements.zoneSelect.value = this.store.state.zoneId || '';
+
+        for (const element of [this.elements.firstVisitPrompt, this.elements.zoneHint, this.elements.noZoneSelected]) {
+            element.hidden = hasZone;
+        }
+        for (const element of [this.elements.weatherField, this.elements.moreConditions, this.elements.shareBtn, this.elements.zoneContent]) {
+            element.hidden = !hasZone;
         }
 
-        // Handle zone button click
-        const btn = e.target.closest('.zone-btn');
-        if (btn) {
-            const zoneId = btn.dataset.zone;
+        this.renderWeatherTags();
+        this.updateTimeRangeUI();
+        this.updateMoreSummary();
+        this.renderTimetable();
+    }
 
-            // Update store
+    /**
+     * After a language change: the names in the dropdown, on the chips, in the summary and
+     * in the timetable (elements with data-i18n are translated by the i18n manager)
+     */
+    handleLanguageChange() {
+        this.relabelZoneSelect();
+        this.renderWeatherTags();
+        this.updateMoreSummary();
+        this.renderTimetable();
+    }
+
+    /**
+     * Handle a zone picked in the dropdown
+     */
+    handleZoneChange() {
+        const zoneId = this.elements.zoneSelect.value;
+        if (zoneId) {
             this.store.setZone(zoneId);
         }
     }
@@ -462,21 +391,22 @@ class WeatherForecast {
     }
 
     /**
-     * Handle clear filters button
+     * Forget a time range that is half chosen (first cell clicked, second not yet)
      */
-    handleClearFilters() {
-        this.store.clearFilters();
+    cancelTimeRangeSelection() {
+        this.isSelectingTimeRange = false;
+        this.timeRangeStart = null;
     }
 
     /**
      * Handle show more button
      */
     handleShowMore() {
-        this.resultCount = Math.min(
-            this.resultCount * 2,
+        this.timetableCount = Math.min(
+            this.timetableCount * 2,
             WeatherForecast.CONSTANTS.MAX_RESULTS
         );
-        this.renderResults();
+        this.renderTimetable();
     }
 
     /**
@@ -492,38 +422,11 @@ class WeatherForecast {
     }
 
     /**
-     * Show zone content panel
-     */
-    showZoneContent() {
-        this.elements.noZoneSelected.style.display = 'none';
-        this.elements.zoneContent.style.display = 'block';
-
-        // Update zone name
-        const zone = this.store.getCurrentZone();
-        if (zone) {
-            const lang = window.i18n ? window.i18n.currentLanguage : 'zh';
-            this.elements.selectedZoneName.textContent = zone[lang] || zone.zh;
-        }
-    }
-
-    /**
-     * Hide zone content panel
-     */
-    hideZoneContent() {
-        this.elements.noZoneSelected.style.display = 'flex';
-        this.elements.zoneContent.style.display = 'none';
-
-        // Clear active zone button
-        const allBtns = this.elements.zoneList.querySelectorAll('.zone-btn');
-        allBtns.forEach(b => b.classList.remove(WeatherForecast.CONSTANTS.CSS_CLASSES.ACTIVE));
-    }
-
-    /**
-     * Render weather tags for the current zone
+     * Render weather tags for the current zone (none without a zone)
      */
     renderWeatherTags() {
         const weathers = this.store.getAvailableWeathers();
-        const lang = window.i18n ? window.i18n.currentLanguage : 'zh';
+        const lang = this.getLanguage();
 
         // Clear existing tags
         this.elements.desiredWeatherTags.textContent = '';
@@ -533,13 +436,8 @@ class WeatherForecast {
             const info = WeatherZoneData.getWeatherInfo(weather);
             if (!info) continue;
 
-            // Create tag for desired weathers
-            const desiredTag = this.createWeatherTag(weather, info, lang);
-            this.elements.desiredWeatherTags.appendChild(desiredTag);
-
-            // Create tag for previous weathers
-            const previousTag = this.createWeatherTag(weather, info, lang);
-            this.elements.previousWeatherTags.appendChild(previousTag);
+            this.elements.desiredWeatherTags.appendChild(this.createWeatherTag(weather, info, lang));
+            this.elements.previousWeatherTags.appendChild(this.createWeatherTag(weather, info, lang));
         }
 
         this.updateWeatherTagsUI();
@@ -593,175 +491,172 @@ class WeatherForecast {
     }
 
     /**
-     * Update time range UI
+     * Update time range UI: the hours inside the chosen time of day are marked (none when it
+     * is the whole day), and the text shows the range
      */
     updateTimeRangeUI() {
         const { beginHour, endHour } = this.store.state;
+        const hasRange = WeatherForecast.hasTimeRange(this.store.state);
 
-        // Update grid cells
         const cells = this.elements.timeGrid.querySelectorAll('.time-cell');
         cells.forEach((cell, i) => {
-            cell.classList.remove(
-                WeatherForecast.CONSTANTS.CSS_CLASSES.SELECTED,
-                WeatherForecast.CONSTANTS.CSS_CLASSES.IN_RANGE
+            cell.classList.remove(WeatherForecast.CONSTANTS.CSS_CLASSES.SELECTED);
+            cell.classList.toggle(
+                WeatherForecast.CONSTANTS.CSS_CLASSES.IN_RANGE,
+                hasRange && WeatherCalculator.isInTimeRange(i, beginHour, endHour)
             );
-
-            if (WeatherCalculator.isInTimeRange(i, beginHour, endHour)) {
-                cell.classList.add(WeatherForecast.CONSTANTS.CSS_CLASSES.IN_RANGE);
-            }
         });
 
-        // Update text display
-        const beginText = String(beginHour).padStart(2, '0') + ':00';
-        const endText = String(endHour).padStart(2, '0') + ':00';
+        const beginText = WeatherForecast.twoDigits(beginHour) + ':00';
+        const endText = WeatherForecast.twoDigits(endHour) + ':00';
         this.elements.timeRangeText.textContent = `${beginText} - ${endText}`;
     }
 
     /**
-     * Render search results
+     * The summary next to "more conditions": what is set inside it (time of day, number of
+     * previous weathers), or nothing
      */
-    renderResults() {
-        const zone = this.store.getCurrentZone();
-        if (!zone) return;
+    updateMoreSummary() {
+        const { beginHour, endHour, previousWeathers } = this.store.state;
+        const items = [];
 
-        // Show loading
-        this.elements.resultsLoading.style.display = 'block';
-        this.elements.resultsContainer.style.display = 'none';
-        this.elements.noResults.style.display = 'none';
-        this.elements.showMoreBtn.style.display = 'none';
+        if (WeatherForecast.hasTimeRange(this.store.state)) {
+            items.push(WeatherForecast.formatEtRange(beginHour, endHour));
+        }
+        if (previousWeathers.size > 0) {
+            items.push(this.getText('weather_more_item_previous', '前置天氣 {count} 個', { count: previousWeathers.size }));
+        }
 
-        // Use requestAnimationFrame to avoid blocking
-        requestAnimationFrame(() => {
-            let results;
-
-            if (this.store.hasActiveFilters()) {
-                // Search with filters
-                results = this.search.search(zone, {
-                    desiredWeathers: this.store.state.desiredWeathers,
-                    previousWeathers: this.store.state.previousWeathers,
-                    beginHour: this.store.state.beginHour,
-                    endHour: this.store.state.endHour,
-                    event: this.store.state.event
-                }, Date.now(), this.resultCount);
-
-                // Update title
-                this.elements.resultsTitle.textContent = window.i18n
-                    ? window.i18n.getText('weather_results')
-                    : '搜尋結果';
-                // 依目前是否有啟用篩選條件而定的兩個 key 之一，交給 i18n manager 在語言切換時
-                // 透過 [data-i18n] 全域重新翻譯；篩選狀態改變時（此函式重新執行）另外同步這個屬性
-                this.elements.resultsTitle.dataset.i18n = 'weather_results';
-            } else {
-                // Timetable view (no filters)
-                results = this.search.getUpcomingWeather(zone, Date.now(), this.resultCount);
-
-                // Update title
-                this.elements.resultsTitle.textContent = window.i18n
-                    ? window.i18n.getText('weather_timetable')
-                    : '天氣時刻表';
-                this.elements.resultsTitle.dataset.i18n = 'weather_timetable';
-            }
-
-            // Hide loading
-            this.elements.resultsLoading.style.display = 'none';
-
-            if (results.length === 0) {
-                this.elements.noResults.style.display = 'flex';
-                return;
-            }
-
-            // Render results
-            this.renderResultsTable(results);
-            this.elements.resultsContainer.style.display = 'block';
-
-            // Show "show more" button if there might be more results
-            if (results.length >= this.resultCount && this.resultCount < WeatherForecast.CONSTANTS.MAX_RESULTS) {
-                this.elements.showMoreBtn.style.display = 'block';
-            }
-        });
+        this.elements.moreSummary.textContent = items.length === 0
+            ? ''
+            : this.getText('weather_more_summary', '· 已設定 {items}', {
+                items: items.join(this.getText('weather_list_separator', '、'))
+            });
     }
 
     /**
-     * Render results table
+     * Render the zone's weather timetable: the next periods from the one under way, whatever
+     * the chosen weather and conditions, with the current one marked
      */
-    renderResultsTable(results) {
-        const lang = window.i18n ? window.i18n.currentLanguage : 'zh';
-        const fragment = document.createDocumentFragment();
-        const now = Date.now();
+    renderTimetable() {
+        const zone = this.store.getCurrentZone();
+        this.elements.resultsBody.textContent = '';
+        if (!zone) return;
 
-        for (const result of results) {
+        const lang = this.getLanguage();
+        const now = Date.now();
+        this.elements.timetableTitle.textContent = this.getText('weather_timetable_title', '{zone}的天氣時刻表', {
+            zone: zone[lang] || zone.zh
+        });
+
+        for (const period of this.search.getUpcomingWeather(zone, now, this.timetableCount)) {
             const row = document.createElement('tr');
 
-            // Check if this is the current weather period
-            if (result.start <= now && result.end > now) {
+            // The weather period under way
+            if (period.start <= now && period.end > now) {
                 row.classList.add(WeatherForecast.CONSTANTS.CSS_CLASSES.CURRENT);
             }
 
             // Local time
             const localTimeCell = document.createElement('td');
-            localTimeCell.textContent = WeatherCalculator.formatLocalTime(result.start, true);
+            localTimeCell.textContent = this.formatDayTime(period.start, now);
             row.appendChild(localTimeCell);
 
             // Eorzea time
             const etCell = document.createElement('td');
-            const etHours = String(result.eorzeaTime.hours).padStart(2, '0');
-            etCell.textContent = `${etHours}:00`;
+            etCell.textContent = `${WeatherForecast.twoDigits(period.eorzeaTime.hours)}:00`;
             row.appendChild(etCell);
 
-            // Current weather
-            const weatherCell = document.createElement('td');
-            const weatherInfo = WeatherZoneData.getWeatherInfo(result.weather);
-            if (weatherInfo) {
-                const weatherSpan = document.createElement('span');
-                weatherSpan.className = 'weather-cell';
+            // Weather
+            row.appendChild(this.createWeatherCell(period.weather, lang));
 
-                const icon = document.createElement('span');
-                icon.className = 'weather-icon';
-                icon.textContent = weatherInfo.icon;
-
-                const name = document.createElement('span');
-                name.textContent = weatherInfo[lang] || weatherInfo.zh;
-
-                weatherSpan.appendChild(icon);
-                weatherSpan.appendChild(name);
-                weatherCell.appendChild(weatherSpan);
-            } else {
-                weatherCell.textContent = result.weather;
-            }
-            row.appendChild(weatherCell);
-
-            // Previous weather
-            const prevWeatherCell = document.createElement('td');
-            if (result.previousWeather) {
-                const prevInfo = WeatherZoneData.getWeatherInfo(result.previousWeather);
-                if (prevInfo) {
-                    const prevSpan = document.createElement('span');
-                    prevSpan.className = 'weather-cell';
-
-                    const prevIcon = document.createElement('span');
-                    prevIcon.className = 'weather-icon';
-                    prevIcon.textContent = prevInfo.icon;
-
-                    const prevName = document.createElement('span');
-                    prevName.textContent = prevInfo[lang] || prevInfo.zh;
-
-                    prevSpan.appendChild(prevIcon);
-                    prevSpan.appendChild(prevName);
-                    prevWeatherCell.appendChild(prevSpan);
-                } else {
-                    prevWeatherCell.textContent = result.previousWeather;
-                }
-            } else {
-                prevWeatherCell.textContent = '-';
-            }
-            row.appendChild(prevWeatherCell);
-
-            fragment.appendChild(row);
+            this.elements.resultsBody.appendChild(row);
         }
 
-        // Clear and append
-        this.elements.resultsBody.textContent = '';
-        this.elements.resultsBody.appendChild(fragment);
+        this.elements.showMoreBtn.hidden = this.timetableCount >= WeatherForecast.CONSTANTS.MAX_RESULTS;
+    }
+
+    /**
+     * A timetable cell with the weather icon and name
+     */
+    createWeatherCell(weather, lang) {
+        const cell = document.createElement('td');
+        const info = WeatherZoneData.getWeatherInfo(weather);
+        if (!info) {
+            cell.textContent = weather;
+            return cell;
+        }
+
+        const weatherSpan = document.createElement('span');
+        weatherSpan.className = 'weather-cell';
+
+        const icon = document.createElement('span');
+        icon.className = 'weather-icon';
+        icon.setAttribute('aria-hidden', 'true');
+        icon.textContent = info.icon;
+
+        const name = document.createElement('span');
+        name.textContent = info[lang] || info.zh;
+
+        weatherSpan.appendChild(icon);
+        weatherSpan.appendChild(name);
+        cell.appendChild(weatherSpan);
+        return cell;
+    }
+
+    /**
+     * A local time with its day: "今天／明天／M/D HH:MM" in the current language
+     * @param {number} ts - Timestamp to describe
+     * @param {number} now - Current timestamp
+     * @returns {string}
+     */
+    formatDayTime(ts, now) {
+        const offset = WeatherAnswer.dayOffset(ts, now);
+        let day;
+        if (offset === 0) {
+            day = this.getText('weather_day_today', '今天');
+        } else if (offset === 1) {
+            day = this.getText('weather_day_tomorrow', '明天');
+        } else {
+            const date = new Date(ts);
+            day = this.getText('weather_day_date', '{month}/{day}', { month: date.getMonth() + 1, day: date.getDate() });
+        }
+        return this.getText('weather_day_time', '{day} {time}', { day, time: WeatherCalculator.formatLocalTime(ts) });
+    }
+
+    /**
+     * Current language code
+     */
+    getLanguage() {
+        return window.i18n ? window.i18n.currentLanguage : 'zh';
+    }
+
+    /**
+     * Text for a key in the current language, or the Chinese fallback; {name} placeholders
+     * are filled from params
+     */
+    getText(key, fallback, params) {
+        return params ? FF14Utils.getI18nText(key, fallback, params) : FF14Utils.getI18nText(key, fallback);
+    }
+
+    /**
+     * Whether a time of day is chosen: anything but the whole day, which is 0-24 or a range that
+     * ends where it begins (ET 8 then ET 7 picks 8-8, which WeatherCalculator.isInTimeRange() counts
+     * as every hour)
+     */
+    static hasTimeRange(state) {
+        return state.beginHour !== state.endHour && (state.beginHour !== 0 || state.endHour !== 24);
+    }
+
+    /**
+     * An Eorzea time span as "ET 08:00–16:00"
+     */
+    static formatEtRange(beginHour, endHour) {
+        return `ET ${WeatherForecast.twoDigits(beginHour)}:00–${WeatherForecast.twoDigits(endHour)}:00`;
+    }
+
+    static twoDigits(value) {
+        return String(value).padStart(2, '0');
     }
 
     /**
