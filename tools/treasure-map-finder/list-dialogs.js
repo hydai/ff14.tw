@@ -305,6 +305,10 @@ class ListDialogs {
         elements.shareModeMerge.checked = true;
         elements.shareModeReplace.checked = false;
         this.renderShare();
+        // 開著的寶圖詳細檢視先關掉：它疊得比頁內對話框高（style.css 的 .map-detail-modal），不關會蓋住這個對話框，
+        // Escape 與點遮罩卻作用在看不到的這個對話框上（同 RoomDialogs#openLink()）
+        const detail = finder.uiDialogManager;
+        if (detail?.activeDialog?.kind === 'mapDetail') detail.hideMapDetail();
         this.showModal(elements.shareModal, () => {
             finder.removeSharedParam();
             const below = ModalManager.topmost()?.activeModal;

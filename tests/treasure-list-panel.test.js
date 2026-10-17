@@ -1521,6 +1521,28 @@ test('分享對話框疊在開著的清單面板上（隊伍自動加入還沒�
     assert.ok(page.focused() === page.$('myListPanel-title'));
 });
 
+test('分享對話框要打開時開著寶圖的詳細檢視：先關掉它再打開分享對話框——詳細檢視疊得比對話框高，不關會蓋住分享對話框，Escape 卻關掉看不到的那一個；之後 Escape 關的就是看得到的分享對話框', async () => {
+    const page = await createPanelPage({ url: `${URL_BASE}?grade=g17&maps=tm_017` });
+    const detail = page.$('mapDetailModal');
+    const detailOpen = () => page.finder.uiDialogManager.modalManager.activeModal === detail;
+    page.$('treasureGrid').querySelector('.tm-thumb').click();
+    assert.ok(detailOpen(), '前提：詳細檢視開著');
+
+    page.finder.handleSharedMaps();
+    assert.equal(detailOpen(), false, '先關掉詳細檢視');
+    assert.deepEqual([detail.classList.contains('active'), page.finder.uiDialogManager.activeDialog], [false, null]);
+    assert.ok(page.finder.listDialogs.modalManager.activeModal === page.$('shareMapsModal') && !isHidden(page, 'shareMapsModal'), '分享對話框打開了');
+    assert.ok(page.dom.window.ModalManager.topmost() === page.finder.listDialogs.modalManager, '看得到的分享對話框就是最上層（收得到 Escape）');
+    assert.ok(page.$('shareMapsModal').contains(page.focused()), '焦點在分享對話框裡');
+
+    page.key('Escape');
+    assert.equal(isHidden(page, 'shareMapsModal'), true, 'Escape 關掉的是看得到的分享對話框');
+    assert.equal(detailOpen(), false, '詳細檢視沒有再出現');
+    assert.equal(page.dom.window.ModalManager.topmost(), null, '什麼都沒開著');
+    assert.equal(currentUrl(page), `${URL_BASE}?grade=g17`, '網址拿掉 maps');
+    assert.ok(page.focused() === page.$('resultCount'), '焦點照分享對話框的規則放到結果張數');
+});
+
 test('分享對話框的標記：說明、清單、缺少、選項、提醒、錯誤由程式填（不掛 data-i18n）；只有一顆主要按鈕；分享鈕在清單動作列最前面', () => {
     const html = read(`${TOOL_DIR}/index.html`);
     const share = sliceElementById(html, 'shareMapsModal');
