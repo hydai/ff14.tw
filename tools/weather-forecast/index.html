@@ -80,6 +80,13 @@
 
                 <!-- 右欄：還沒選地區時的說明；選了地區之後由上而下是答案卡、之後幾次、這個地區的天氣時刻表 -->
                 <section class="wx-main">
+                    <!-- 提醒中：有提醒、但答案卡顯示的不是它的目標時（沒選地區時也是），在答案卡上方提一行並可以取消 -->
+                    <div class="wx-notice" id="reminderNotice" hidden>
+                        <span aria-hidden="true">🔔</span>
+                        <span id="reminderNoticeText"></span>
+                        <button class="btn btn-sm btn-ghost" id="reminderNoticeCancel" type="button" data-i18n="weather_reminder_cancel">取消提醒</button>
+                    </div>
+
                     <div class="empty-state wx-empty" id="noZoneSelected">
                         <div class="empty-state-icon" aria-hidden="true">🌦️</div>
                         <p class="empty-state-title" data-i18n="weather_empty_title">先選地區和天氣</p>
@@ -95,6 +102,25 @@
                             <p class="wx-wait" id="answerWait"></p>
                             <p class="wx-meta" id="answerMeta"></p>
                             <p class="wx-meta" id="answerExtra" hidden></p>
+
+                            <!-- 提醒我：開始前幾分鐘提醒（選項由 JavaScript 依目前語言產生）；設好之後換成幾點提醒與取消，提早幾分鐘照樣可以改 -->
+                            <div class="wx-actions" id="answerActions" hidden>
+                                <button class="btn btn-primary" id="remindBtn" type="button">
+                                    <span class="btn-icon" aria-hidden="true">🔔</span>
+                                    <span data-i18n="weather_remind">提醒我</span>
+                                </button>
+                                <span class="wx-lead">
+                                    <label for="leadSelect" data-i18n="weather_lead_label">通知時間</label>
+                                    <select class="form-control form-control-sm" id="leadSelect"></select>
+                                </span>
+                                <span class="wx-hint" id="remindHint" data-i18n="weather_remind_hint">頁面要開著才會響</span>
+                            </div>
+                            <div class="wx-reminder" id="reminderSet" aria-live="polite" hidden>
+                                <span aria-hidden="true">🔔</span>
+                                <span id="reminderSetText"></span>
+                                <button class="btn btn-sm btn-ghost" id="reminderCancelBtn" type="button" aria-describedby="reminderSetText" data-i18n="weather_reminder_cancel">取消提醒</button>
+                            </div>
+                            <p class="wx-meta" id="notifyStatus" hidden></p>
                         </div>
 
                         <!-- 之後幾次：答案卡那一次之後的幾次，每一次一列，由 JavaScript 產生 -->
@@ -138,11 +164,13 @@
     <script src="../../assets/js/components/layout-loader.js"></script>
     <script src="../../assets/js/common.js"></script>
     <script src="../../assets/js/security-utils.js"></script>
+    <script src="../../assets/js/reminder-scheduler.js"></script>
     <script src="zone-data.js"></script>
     <script src="weather-calculator.js"></script>
     <script src="weather-store.js"></script>
     <script src="weather-search.js"></script>
     <script src="weather-answer.js"></script>
+    <script src="weather-reminder.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

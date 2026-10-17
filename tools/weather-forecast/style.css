@@ -24,7 +24,15 @@
 #answerExtra[hidden],
 #nextSection[hidden],
 #nextMoreBtn[hidden],
-#showMoreBtn[hidden] {
+#showMoreBtn[hidden],
+#reminderNotice[hidden],
+#reminderNoticeText[hidden],
+#answerActions[hidden],
+#remindBtn[hidden],
+#remindHint[hidden],
+#reminderSet[hidden],
+#reminderSetText[hidden],
+#notifyStatus[hidden] {
     display: none;
 }
 
@@ -191,6 +199,65 @@
     color: var(--color-muted);
 }
 
+/* 提醒我：按鈕、提早幾分鐘、說明排成一行，窄的時候換行 */
+.wx-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-3);
+}
+
+.wx-lead {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+}
+
+/* 共用的 .form-control 是整行寬，這裡跟著選項的寬度 */
+#leadSelect {
+    width: auto;
+}
+
+.wx-hint {
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+}
+
+/* 設好的提醒（答案卡裡）與提醒中那一行（答案卡上方）：成功色的框，取消在最右邊 */
+.wx-reminder,
+.wx-notice {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
+    border: 1px solid var(--color-success-border);
+    border-radius: var(--radius-md);
+    color: var(--color-success-text);
+    font-size: var(--text-sm);
+}
+
+.wx-reminder {
+    background: var(--color-surface);
+}
+
+.wx-notice {
+    background: var(--color-success-tint);
+}
+
+/* 文字跟鈴鐺同一行、佔掉剩下的寬度；取消放在最後，擠不下時自己換到下一行靠右 */
+#reminderSetText,
+#reminderNoticeText {
+    flex: 1 1 12rem;
+}
+
+.wx-reminder .btn,
+.wx-notice .btn {
+    margin-left: auto;
+}
+
 /* 之後幾次：每列三欄（日期時間、還要多久、ET 與到幾點）；欄寬由清單決定，每一列的欄對齊 */
 .wx-next {
     display: grid;
@@ -273,8 +340,9 @@
         gap: var(--space-4);
     }
 
+    /* 上下留白縮一點：390px 的手機上連同提醒那一列，答案卡整張在第一個畫面裡 */
     .wx-answer {
-        padding: var(--space-5);
+        padding: var(--space-4) var(--space-5);
     }
 
     .wx-when {

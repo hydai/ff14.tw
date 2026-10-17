@@ -66,6 +66,24 @@ const WeatherForecastTranslations = {
         weather_next_row_wait: '還要 {wait}',
         weather_next_row_meta: '{et} · 到 {end}',
 
+        // 提醒
+        weather_remind: '提醒我',
+        weather_lead_label: '通知時間',
+        weather_lead_option: '開始前 {n} 分鐘',
+        weather_remind_hint: '頁面要開著才會響',
+        weather_remind_when_today: '{time}',
+        weather_remind_when_tomorrow: '明天 {time}',
+        weather_remind_when_date: '{month}/{day} {time}',
+        weather_reminder_set: '{time} 提醒你（開始前 {n} 分鐘）。頁面要開著才會響。',
+        weather_reminder_set_start: '{time} 開始時提醒你。頁面要開著才會響。',
+        weather_reminder_cancel: '取消提醒',
+        weather_reminder_notice: '提醒中：{zone}・{weather}，下次 {time} 提醒你',
+        weather_notify_title: '{zone} {n} 分鐘後{weather}',
+        weather_notify_title_now: '{zone}{weather}開始了',
+        weather_notify_body: '{start} 開始，到 {end}（{et}）',
+        weather_notify_denied: '瀏覽器封鎖了這個網站的通知，到時間只會在頁面上提示和發出聲音。可以從網址列左邊的網站設定打開。',
+        weather_notify_unsupported: '這個瀏覽器不能跳通知，到時間只會在頁面上提示和發出聲音。',
+
         // 時刻表
         weather_timetable_title: '{zone}的天氣時刻表',
         weather_show_more: '顯示更多',
@@ -194,6 +212,24 @@ const WeatherForecastTranslations = {
         weather_next_row_wait: 'in {wait}',
         weather_next_row_meta: '{et} · until {end}',
 
+        // Reminder
+        weather_remind: 'Remind me',
+        weather_lead_label: 'Notify',
+        weather_lead_option: '{n} min before',
+        weather_remind_hint: 'Keep this page open to get it',
+        weather_remind_when_today: 'at {time}',
+        weather_remind_when_tomorrow: 'tomorrow at {time}',
+        weather_remind_when_date: 'on {month}/{day} at {time}',
+        weather_reminder_set: "I'll remind you {time} ({n} min before). Keep this page open.",
+        weather_reminder_set_start: "I'll remind you when it starts {time}. Keep this page open.",
+        weather_reminder_cancel: 'Cancel reminder',
+        weather_reminder_notice: 'Reminder on: {zone} · {weather}, next {time}',
+        weather_notify_title: '{weather} in {zone} in {n} min',
+        weather_notify_title_now: '{weather} in {zone} now',
+        weather_notify_body: '{start}–{end} ({et})',
+        weather_notify_denied: "Your browser blocks notifications from this site, so you'll only get an on-page alert and a sound. You can allow them in the site settings next to the address bar.",
+        weather_notify_unsupported: "This browser can't show notifications, so you'll only get an on-page alert and a sound.",
+
         // Timetable
         weather_timetable_title: 'Weather in {zone}',
         weather_show_more: 'Show More',
@@ -321,6 +357,24 @@ const WeatherForecastTranslations = {
         weather_next_title: 'この後',
         weather_next_row_wait: 'あと{wait}',
         weather_next_row_meta: '{et} ・ {end}まで',
+
+        // 通知
+        weather_remind: '通知する',
+        weather_lead_label: '通知',
+        weather_lead_option: '{n}分前',
+        weather_remind_hint: 'このページを開いたままにしてください',
+        weather_remind_when_today: '{time}',
+        weather_remind_when_tomorrow: '明日 {time}',
+        weather_remind_when_date: '{month}/{day} {time}',
+        weather_reminder_set: '{time}にお知らせします（{n}分前）。このページを開いたままにしてください。',
+        weather_reminder_set_start: '{time}の開始時にお知らせします。このページを開いたままにしてください。',
+        weather_reminder_cancel: '通知を取り消す',
+        weather_reminder_notice: '通知中：{zone}・{weather}、次は{time}',
+        weather_notify_title: '{zone}で{n}分後に{weather}',
+        weather_notify_title_now: '{zone}で{weather}が始まりました',
+        weather_notify_body: '{start}開始、{end}まで（{et}）',
+        weather_notify_denied: 'このサイトの通知はブラウザでブロックされています。時間になるとページ上の表示と音でお知らせします。アドレスバー左のサイト設定から許可できます。',
+        weather_notify_unsupported: 'このブラウザは通知を表示できません。時間になるとページ上の表示と音でお知らせします。',
 
         // 天気予報表
         weather_timetable_title: '{zone}の天気',

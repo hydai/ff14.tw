@@ -2,8 +2,8 @@
  * FF14 Weather Forecast - Main Controller
  * The selection side (zone dropdown, weather chips, and "more conditions" with the
  * time of day and the previous weather), the answer card (when the chosen weather comes
- * next, how long to wait and until when), the occurrences after it, and the zone's
- * weather timetable
+ * next, how long to wait and until when, and "remind me"), the reminder line above it,
+ * the occurrences after it, and the zone's weather timetable
  */
 
 class WeatherForecast {
@@ -15,6 +15,10 @@ class WeatherForecast {
         MAX_NEXT: 50, // "show more" doubles them up to this many
         TIME_UPDATE_INTERVAL: 1000,
         MINUTE_MS: 60000,
+        NOTIFIED_KEY: 'ff14tw_weather_notified', // localStorage: reminders that already went off, one item each named after this (ReminderScheduler)
+        // A user action on the page lets the reminder sound play later (ReminderScheduler.unlockSound()).
+        // A touch only counts as one at pointerup, a mouse at pointerdown, so both are listened to.
+        UNLOCK_SOUND_EVENTS: ['pointerdown', 'pointerup', 'keydown'],
         CSS_CLASSES: {
             ACTIVE: 'active',
             CURRENT: 'current-weather',
@@ -33,6 +37,7 @@ class WeatherForecast {
         this.nextTarget = null; // the target (as its URL hash) nextCount belongs to
         this.answerMinute = null; // the minute the answer card was drawn in
         this.answerChangesAt = Infinity; // when the occurrence on the answer card starts or ends (see refreshOnMinuteChange())
+        this.answerHasResult = false; // the answer card shows an occurrence of a chosen target, so it can be reminded
         this.timeUpdateInterval = null;
         this.currentPeriodStart = null;
         this.timeRangeStart = null;
@@ -41,6 +46,12 @@ class WeatherForecast {
         // Modules
         this.store = new WeatherStore();
         this.search = new WeatherSearch();
+        this.reminder = new WeatherReminder();
+        this.scheduler = new ReminderScheduler({
+            notifiedKey: WeatherForecast.CONSTANTS.NOTIFIED_KEY,
+            getAlerts: (now) => this.reminder.alerts(now),
+            onDue: (alert) => this.handleReminderDue(alert)
+        });
 
         // DOM elements cache
         this.elements = {
@@ -63,6 +74,9 @@ class WeatherForecast {
             clearFiltersBtn: document.getElementById('clearFiltersBtn'),
 
             // Main column
+            reminderNotice: document.getElementById('reminderNotice'),
+            reminderNoticeText: document.getElementById('reminderNoticeText'),
+            reminderNoticeCancel: document.getElementById('reminderNoticeCancel'),
             noZoneSelected: document.getElementById('noZoneSelected'),
             zoneContent: document.getElementById('zoneContent'),
             answerCard: document.getElementById('answerCard'),
@@ -71,6 +85,14 @@ class WeatherForecast {
             answerWait: document.getElementById('answerWait'),
             answerMeta: document.getElementById('answerMeta'),
             answerExtra: document.getElementById('answerExtra'),
+            answerActions: document.getElementById('answerActions'),
+            remindBtn: document.getElementById('remindBtn'),
+            leadSelect: document.getElementById('leadSelect'),
+            remindHint: document.getElementById('remindHint'),
+            reminderSet: document.getElementById('reminderSet'),
+            reminderSetText: document.getElementById('reminderSetText'),
+            reminderCancelBtn: document.getElementById('reminderCancelBtn'),
+            notifyStatus: document.getElementById('notifyStatus'),
             nextSection: document.getElementById('nextSection'),
             nextTitle: document.getElementById('nextTitle'),
             nextList: document.getElementById('nextList'),
@@ -97,6 +119,7 @@ class WeatherForecast {
         // Build UI
         this.buildZoneSelect();
         this.buildTimeGrid();
+        this.buildLeadSelect();
 
         // Set up event listeners
         this.bindEvents();
@@ -110,6 +133,9 @@ class WeatherForecast {
         if (window.i18n) {
             window.i18n.onLanguageChange(() => this.handleLanguageChange());
         }
+
+        // Check the reminder every second from now on
+        this.scheduler.start();
     }
 
     /**
@@ -135,6 +161,39 @@ class WeatherForecast {
 
         // Share
         this.elements.shareBtn.addEventListener('click', () => this.handleShare());
+
+        // Reminder
+        this.elements.remindBtn.addEventListener('click', () => this.handleRemind());
+        this.elements.leadSelect.addEventListener('change', () => this.handleLeadChange());
+        this.elements.reminderCancelBtn.addEventListener('click', () => this.handleReminderCancel());
+        this.elements.reminderNoticeCancel.addEventListener('click', () => this.handleReminderNoticeCancel());
+
+        // Another tab set or cancelled the reminder; key null: it cleared this site's storage.
+        // A reminder that went off in another tab: the time shown moves on to the next one now,
+        // not at the next minute
+        this.handleStorage = (e) => {
+            if (e.key === WeatherReminder.STORAGE_KEY || e.key === null) {
+                this.reminder.reload();
+                this.renderReminder();
+            } else if (this.scheduler.isRecordKey(e.key)) {
+                this.renderReminder();
+            }
+        };
+        window.addEventListener('storage', this.handleStorage);
+
+        // A browser only lets an AudioContext created or resumed during a user action play, so a
+        // reminder restored after a reload needs one before it can be heard, even without "remind me".
+        // Only while a reminder is set, so a visitor who never sets one gets no AudioContext ("remind me"
+        // unlocks by itself). Every action unlocks again: it costs nothing once the sound is on, and a
+        // phone can suspend it again.
+        this.handleUnlockSound = () => {
+            if (this.reminder.active) {
+                ReminderScheduler.unlockSound();
+            }
+        };
+        for (const type of WeatherForecast.CONSTANTS.UNLOCK_SOUND_EVENTS) {
+            document.addEventListener(type, this.handleUnlockSound, { capture: true, passive: true });
+        }
     }
 
     /**
@@ -215,6 +274,28 @@ class WeatherForecast {
     }
 
     /**
+     * Fill the "notify" dropdown with the minutes before the start a reminder can go off.
+     * The option text has the number in it, so it is written here rather than by data-i18n.
+     */
+    buildLeadSelect() {
+        for (const minutes of WeatherReminder.LEAD_OPTIONS) {
+            const option = document.createElement('option');
+            option.setAttribute('value', String(minutes));
+            this.elements.leadSelect.appendChild(option);
+        }
+        this.relabelLeadSelect();
+    }
+
+    /**
+     * Write the "notify" options in the current language; the same nodes stay, so does the choice
+     */
+    relabelLeadSelect() {
+        for (const option of this.elements.leadSelect.querySelectorAll('option')) {
+            option.textContent = this.getText('weather_lead_option', '開始前 {n} 分鐘', { n: option.getAttribute('value') });
+        }
+    }
+
+    /**
      * Start time update interval
      */
     startTimeUpdates() {
@@ -266,18 +347,17 @@ class WeatherForecast {
     }
 
     /**
-     * 同一期裡由每秒的計時器呼叫。分鐘一變就重畫答案卡與之後幾次（還要多久、還剩多久）。答案卡上那一次開始或結束時
-     * 也馬上重畫：有時段時頭尾落在艾歐澤亞的整點（每 175 秒一個），可能在期中、一分鐘的中間，等到下一分鐘才換的話，
-     * 開始之後還會寫「下次」最多一分鐘。本地日期一變（過了午夜）就重畫時刻表，它的今天／明天是相對畫的那一天。
+     * 同一期裡由每秒的計時器呼叫。分鐘一變就重畫答案卡與之後幾次（還要多久、還剩多久）與提醒（下次幾點提醒）；
+     * 沒選地區時只有提醒中那一行要重畫。答案卡上那一次開始或結束時也馬上重畫：有時段時頭尾落在艾歐澤亞的整點
+     * （每 175 秒一個），可能在期中、一分鐘的中間，等到下一分鐘才換的話，開始之後還會寫「下次」最多一分鐘。
+     * 本地日期一變（過了午夜）就重畫時刻表，它的今天／明天是相對畫的那一天。
      * @param {number} now - 目前的 Unix 毫秒時間戳
      */
     refreshOnMinuteChange(now) {
-        if (!this.store.state.zoneId) return;
-
         if (Math.floor(now / WeatherForecast.CONSTANTS.MINUTE_MS) !== this.answerMinute || now >= this.answerChangesAt) {
             this.renderAnswer();
         }
-        if (WeatherAnswer.dayOffset(now, this.timetableDrawnAt) !== 0) {
+        if (this.store.state.zoneId && WeatherAnswer.dayOffset(now, this.timetableDrawnAt) !== 0) {
             this.renderTimetable();
         }
     }
@@ -345,11 +425,13 @@ class WeatherForecast {
     }
 
     /**
-     * After a language change: the names in the dropdown, on the chips, in the summary, on the
-     * answer card and in the timetable (elements with data-i18n are translated by the i18n manager)
+     * After a language change: the names in the dropdowns, on the chips, in the summary, on the
+     * answer card with its reminder, and in the timetable (elements with data-i18n are translated
+     * by the i18n manager). A reminder that goes off later is worded when it does, so in the new language.
      */
     handleLanguageChange() {
         this.relabelZoneSelect();
+        this.relabelLeadSelect();
         this.renderWeatherTags();
         this.updateMoreSummary();
         this.renderAnswer();
@@ -484,6 +566,90 @@ class WeatherForecast {
     }
 
     /**
+     * "Remind me": set the reminder on the target shown on the card, replacing any other. The sound
+     * is unlocked and notifications are asked for here, during the click, since browsers refuse both
+     * otherwise. The reminder is set at once, without waiting for the answer: a prompt the player
+     * leaves unanswered (back in the game) must not leave nothing set, and an on-page alert and a
+     * sound come whatever the answer. Once the answer is in, the line about notifications follows it.
+     */
+    async handleRemind() {
+        ReminderScheduler.unlockSound();
+        // Started now, inside the click, so the browser shows its prompt; answered whenever the player does
+        const permission = ReminderScheduler.requestPermission();
+        this.reminder.arm(this.store.state, Date.now());
+        this.renderReminder();
+        if (!this.elements.reminderSet.hidden) {
+            this.elements.reminderCancelBtn.focus();
+        }
+        await permission;
+        this.renderReminder();
+    }
+
+    /**
+     * A new lead picked in the "notify" dropdown
+     */
+    handleLeadChange() {
+        this.reminder.setLead(Number(this.elements.leadSelect.value));
+        this.renderReminder();
+    }
+
+    /**
+     * "Cancel reminder" on the card: the focus goes back to "remind me", which takes its place
+     */
+    handleReminderCancel() {
+        this.reminder.cancel();
+        this.renderReminder();
+        this.elements.remindBtn.focus();
+    }
+
+    /**
+     * "Cancel reminder" in the line above the card. The line goes away with its button, so a
+     * focused button hands the focus on to "remind me" on the card, or to the zone dropdown
+     * when the card has none.
+     */
+    handleReminderNoticeCancel() {
+        const hadFocus = document.activeElement === this.elements.reminderNoticeCancel;
+        this.reminder.cancel();
+        this.renderReminder();
+        if (hadFocus) {
+            (this.answerHasResult ? this.elements.remindBtn : this.elements.zoneSelect).focus();
+        }
+    }
+
+    /**
+     * A reminder went off (ReminderScheduler): an on-page alert, a sound and, when allowed, a system
+     * notification, worded now in the current language. The title says how many minutes are really
+     * left (rounded up, at least 1), which is less than the lead when it goes off late (the computer
+     * slept), or that it has started when it goes off at the start or after it (set too late for the
+     * lead, or late); the times are the part inside the time of day.
+     * @param {object} alert - From WeatherReminder.alerts()
+     */
+    handleReminderDue(alert) {
+        const reminder = this.reminder.active;
+        if (!reminder) return;
+
+        const { target } = reminder;
+        const left = alert.start - Date.now();
+        const params = {
+            zone: this.reminderTargetNames(target).zone,
+            // This time's weather, or the special event when that is the target
+            weather: target.desiredWeathers.length > 0 ? this.weatherName(alert.data.weather) : this.eventName(target.event),
+            n: Math.max(1, Math.ceil(left / WeatherForecast.CONSTANTS.MINUTE_MS))
+        };
+        const title = left <= 0
+            ? this.getText('weather_notify_title_now', '{zone}{weather}開始了', params)
+            : this.getText('weather_notify_title', '{zone} {n} 分鐘後{weather}', params);
+        const body = this.getText('weather_notify_body', '{start} 開始，到 {end}（{et}）', {
+            start: WeatherCalculator.formatLocalTime(alert.start),
+            end: WeatherCalculator.formatLocalTime(alert.end),
+            et: this.formatEtSpan(alert.start, alert.end)
+        });
+
+        ReminderScheduler.deliver({ title, body, tag: ReminderScheduler.idOf(alert) });
+        this.renderReminder();
+    }
+
+    /**
      * Render weather tags for the current zone (none without a zone)
      */
     renderWeatherTags() {
@@ -597,14 +763,24 @@ class WeatherForecast {
     }
 
     /**
-     * Render the answer card and the occurrences after it for the current state. Only the text
+     * Render the answer card with its reminder, the reminder line above it and the occurrences
+     * after the card for the current state (see drawAnswer() and renderReminder())
+     */
+    renderAnswer() {
+        this.answerHasResult = this.drawAnswer();
+        this.renderReminder();
+    }
+
+    /**
+     * Draw the answer card and the occurrences after it for the current state. Only the text
      * of the card's lines and its class change; the card itself is never rebuilt.
      * - no weather and no special event chosen: the zone's weather right now
      * - a target with nothing in the next 60 days: say so
      * - the first occurrence under way: the green card (until when, time left, the next one)
      * - otherwise: when it comes next, how long to wait and until when
+     * @returns {boolean} Whether the card shows an occurrence of a chosen target, which can be reminded
      */
-    renderAnswer() {
+    drawAnswer() {
         const zone = this.store.getCurrentZone();
         const state = this.store.state;
         const now = Date.now();
@@ -618,12 +794,12 @@ class WeatherForecast {
             this.nextTarget = target;
             this.nextCount = WeatherForecast.CONSTANTS.INITIAL_NEXT;
         }
-        if (!zone) return;
+        if (!zone) return false;
 
         if (state.desiredWeathers.size === 0 && !state.event) {
             this.writeZoneNow(zone, now);
             this.renderNext([], now, true);
-            return;
+            return false;
         }
 
         const found = WeatherAnswer.occurrences(zone, state, now, 1 + this.nextCount);
@@ -642,6 +818,7 @@ class WeatherForecast {
         }
         // Fewer than asked for: every occurrence in the 60 days is already listed
         this.renderNext(rest, now, found.length < 1 + this.nextCount);
+        return Boolean(first);
     }
 
     /**
@@ -745,6 +922,92 @@ class WeatherForecast {
         for (const [element, text] of [[answerWhen, when], [answerWait, wait], [answerMeta, meta], [answerExtra, extra]]) {
             element.textContent = text;
             element.hidden = !text;
+        }
+    }
+
+    /**
+     * Draw the reminder for the current state and time; called whenever the answer card is drawn
+     * (so every minute too) and when the reminder changes or goes off.
+     * - On the card, when it shows an occurrence of a target: "remind me", the lead and the hint.
+     *   When the reminder is this target's, the button and the hint give way to when it goes off (with
+     *   its day, see formatRemindWhen()) and "cancel reminder"; the lead can still be changed.
+     * - Above the card: a reminder the card does not show (another target, no zone, nothing found),
+     *   so it can always be seen and cancelled. Changing the selection never cancels it.
+     * - Last on the card, while a reminder is set and the card has the reminder controls: a line when the
+     *   browser blocks or has no notifications.
+     * When none of the occurrences will go off (nothing left in the 60 days), the time is left out.
+     */
+    renderReminder() {
+        const {
+            answerActions, remindBtn, leadSelect, remindHint, reminderSet, reminderSetText,
+            notifyStatus, reminderNotice, reminderNoticeText
+        } = this.elements;
+        const now = Date.now();
+        const reminder = this.reminder.active;
+        const lead = this.reminder.leadMinutes;
+        const next = reminder ? this.reminder.nextAlert(now, this.scheduler.notifiedIds()) : null;
+        const fireAt = next ? ReminderScheduler.fireAt(next) : null;
+        const time = fireAt === null ? '' : this.formatRemindWhen(fireAt, now);
+        // Set too late to go off the lead before the start: it goes off at the start, so the sentence
+        // must not say "N minutes before" (it would read as starting N minutes after that time)
+        const atStart = next !== null && fireAt === next.start;
+        const onCard = this.answerHasResult && this.reminder.isFor(this.store.state);
+
+        answerActions.hidden = !this.answerHasResult;
+        remindBtn.hidden = onCard;
+        // Only when another tab changed it: the card is drawn every minute, maybe while the dropdown is open
+        if (leadSelect.value !== String(lead)) {
+            leadSelect.value = String(lead);
+        }
+        reminderSet.hidden = !onCard;
+        let setText = '';
+        if (onCard && time) {
+            setText = atStart
+                ? this.getText('weather_reminder_set_start', '{time} 開始時提醒你。頁面要開著才會響。', { time })
+                : this.getText('weather_reminder_set', '{time} 提醒你（開始前 {n} 分鐘）。頁面要開著才會響。', { time, n: lead });
+        }
+        WeatherForecast.writeLine(reminderSetText, setText);
+        // The line saying when it goes off already says the page has to stay open
+        remindHint.hidden = Boolean(setText);
+
+        reminderNotice.hidden = !reminder || onCard;
+        WeatherForecast.writeLine(reminderNoticeText, reminder && !onCard && time
+            ? this.getText('weather_reminder_notice', '提醒中：{zone}・{weather}，下次 {time} 提醒你', {
+                ...this.reminderTargetNames(reminder.target),
+                time
+            })
+            : '');
+
+        // Next to the reminder controls only: a card without them (just the zone's weather) has nothing it explains
+        WeatherForecast.writeLine(notifyStatus, reminder && this.answerHasResult ? this.notifyStatusText() : '');
+    }
+
+    /**
+     * The reminder's target in words: its zone, and its weathers (names only, joined) or, without
+     * any, its special event
+     */
+    reminderTargetNames(target) {
+        const zone = WeatherZoneData.getZone(target.zoneId);
+        return {
+            zone: zone[this.getLanguage()] || zone.zh,
+            weather: target.desiredWeathers.length > 0
+                ? target.desiredWeathers.map(weather => this.weatherName(weather)).join(this.getText('weather_list_separator', '、'))
+                : this.eventName(target.event)
+        };
+    }
+
+    /**
+     * What a reminder will not do in this browser: no system notification when they are blocked
+     * or not supported (an on-page alert and a sound still come); otherwise nothing to say
+     */
+    notifyStatusText() {
+        switch (ReminderScheduler.permission()) {
+            case 'denied':
+                return this.getText('weather_notify_denied', '瀏覽器封鎖了這個網站的通知，到時間只會在頁面上提示和發出聲音。可以從網址列左邊的網站設定打開。');
+            case 'unsupported':
+                return this.getText('weather_notify_unsupported', '這個瀏覽器不能跳通知，到時間只會在頁面上提示和發出聲音。');
+            default:
+                return '';
         }
     }
 
@@ -903,6 +1166,27 @@ class WeatherForecast {
     }
 
     /**
+     * When a reminder goes off, as the {time} of the reminder sentences: "HH:MM" today, "明天 HH:MM"
+     * tomorrow, "M/D HH:MM" on a later day (it can be days away). In English the phrase carries its
+     * preposition: "at HH:MM", "tomorrow at HH:MM", "on M/D at HH:MM".
+     * @param {number} ts - When it goes off
+     * @param {number} now - Current timestamp
+     * @returns {string}
+     */
+    formatRemindWhen(ts, now) {
+        const time = WeatherCalculator.formatLocalTime(ts);
+        const offset = WeatherAnswer.dayOffset(ts, now);
+        if (offset === 0) {
+            return this.getText('weather_remind_when_today', '{time}', { time });
+        }
+        if (offset === 1) {
+            return this.getText('weather_remind_when_tomorrow', '明天 {time}', { time });
+        }
+        const date = new Date(ts);
+        return this.getText('weather_remind_when_date', '{month}/{day} {time}', { month: date.getMonth() + 1, day: date.getDate(), time });
+    }
+
+    /**
      * A wait as "N 分", "N 小時 M 分", "N 天 M 小時" and so on in the current language, rounded up
      * to a whole minute (WeatherAnswer.waitParts())
      * @param {number} ms - Wait in milliseconds
@@ -955,14 +1239,14 @@ class WeatherForecast {
     }
 
     /**
-     * The special event's name in the current language
+     * A special event's name in the current language (the chosen one unless given)
      */
-    eventName() {
+    eventName(event = this.store.state.event) {
         const names = {
             garlok: this.getText('weather_event_garlok', '哥布林首領'),
             laideronnette: this.getText('weather_event_laideronnette', '湖中女妖')
         };
-        return names[this.store.state.event] || this.store.state.event;
+        return names[event] || event;
     }
 
     /**
@@ -1001,11 +1285,27 @@ class WeatherForecast {
     }
 
     /**
+     * Write a line that is hidden when empty. The text is only replaced when it changes, so a line
+     * inside an aria-live region is not read out again every time the card is drawn.
+     */
+    static writeLine(element, text) {
+        if (element.textContent !== text) {
+            element.textContent = text;
+        }
+        element.hidden = !text;
+    }
+
+    /**
      * Cleanup
      */
     destroy() {
         if (this.timeUpdateInterval) {
             clearInterval(this.timeUpdateInterval);
+        }
+        this.scheduler.stop();
+        window.removeEventListener('storage', this.handleStorage);
+        for (const type of WeatherForecast.CONSTANTS.UNLOCK_SOUND_EVENTS) {
+            document.removeEventListener(type, this.handleUnlockSound, { capture: true });
         }
         this.store.destroy();
     }

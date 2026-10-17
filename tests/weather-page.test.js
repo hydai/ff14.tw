@@ -491,10 +491,22 @@ test('等待時間：分、小時、小時加分、天、天加小時', () => {
     });
 });
 
-test('用 hidden 切換的答案卡元素在 style.css 都有 display: none', () => {
+test('頁面上每一個用 hidden 切換的元素在 style.css 都有 display: none', () => {
     // fake-dom 看不出「設了 hidden 卻沒藏起來」：.card、.btn 等共用樣式設了 display，會蓋過瀏覽器內建的 [hidden]
     const css = fs.readFileSync(path.join(__dirname, '../tools/weather-forecast/style.css'), 'utf8');
-    for (const id of ['answerWhen', 'answerWait', 'answerMeta', 'answerExtra', 'nextSection', 'nextMoreBtn']) {
+    const html = fs.readFileSync(path.join(__dirname, '../tools/weather-forecast/index.html'), 'utf8');
+    const toggled = [
+        // 選擇區與右欄（沒選地區／選了地區）
+        'firstVisitPrompt', 'zoneHint', 'shareBtn', 'weatherField', 'moreConditions', 'noZoneSelected', 'zoneContent',
+        // 時刻表的「顯示更多」
+        'showMoreBtn',
+        // 答案卡的幾行與之後幾次
+        'answerWhen', 'answerWait', 'answerMeta', 'answerExtra', 'nextSection', 'nextMoreBtn',
+        // 提醒：答案卡上方的提醒中那一行、答案卡裡的提醒我與設好的提醒、通知的說明
+        'reminderNotice', 'reminderNoticeText', 'answerActions', 'remindBtn', 'remindHint', 'reminderSet', 'reminderSetText', 'notifyStatus'
+    ];
+    for (const id of toggled) {
+        assert.ok(html.includes(` id="${id}"`), `index.html 要有 #${id}`);
         assert.match(css, new RegExp(`#${id}\\[hidden\\][^{]*\\{\\s*display:\\s*none;`), `style.css 要有 #${id}[hidden] { display: none; }`);
     }
 });
