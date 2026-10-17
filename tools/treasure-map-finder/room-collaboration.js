@@ -355,6 +355,18 @@ class RoomCollaboration {
         if (poll) this.startPolling();
     }
 
+    /**
+     * 用存著的連線紀錄（ff14tw_current_room）接回隊伍：載入時的情況 a，以及邀請連結的對話框（RoomDialogs#openLink()）接回原本的隊伍 A。
+     * knownMembers 是存檔裡的欄位，不屬於隊伍資料：拿出來驗證（存值壞掉就當作空的），不交給 mapSync.connect()。poll 同 adoptSession()
+     * @param {Object} saved - isRoomValid() 檢查過的紀錄
+     * @param {{poll?: boolean}} [options]
+     */
+    restoreSession(saved, { poll = true } = {}) {
+        const { currentUser, memberToken, pendingMapOperations, lastSyncAt, knownMembers, ...room } = saved;
+        this.knownMembers = PartyNames.validKnownMembers(knownMembers);
+        this.adoptSession(room, currentUser, memberToken, pendingMapOperations || [], { poll });
+    }
+
     recoverLegacyRoom(room) {
         // Keep both the personal list and the former shared list available for export/new rooms.
         const maps = new Map(this.finder.listManager.getList().map(map => [map.id, this.finder.toRoomMap(map)]));
@@ -392,15 +404,26 @@ class RoomCollaboration {
         document.addEventListener('keypress', () => this.updateActivity());
     }
 
-    // 檢查是否已有隊伍（從 URL 或 localStorage）
+    /**
+     * 載入時依網址的 ?room= 與這台裝置存的連線紀錄（ff14tw_current_room）接回或加入隊伍（設計 6.5）。代號先轉大寫（邀請連結被改成小寫也認得）；
+     * 格式不對的代號不用讀隊伍就知道加不進去：提示、從網址拿掉 room，之後當作網址沒有 room。接著分四種：
+     * a. 有這一隊、還有效的紀錄（或網址沒有 room）：直接接回去，不問；
+     * b. 舊格式紀錄（沒有 token）：唯讀就保留寶圖，否則提示失效；
+     * c. 沒有紀錄，或紀錄已失效（先清掉，網址的 room 留著）：讀隊伍，問要不要加入（RoomDialogs#openLink()）；
+     * d. 有另一隊 A 的有效紀錄：先不接回 A，同樣讀隊伍、問要不要加入（對話框多一行「加入會先離開 A」，「不用了」才接回 A）。
+     * c、d 等對話框有答案才結束，所以 ready（見 init()）也一樣：分享寶圖的對話框（?maps=）排在加入的對話框之後
+     */
     async checkExistingRoom() {
-        const requestedCode = new URLSearchParams(window.location.search).get('room');
+        let requestedCode = new URLSearchParams(window.location.search).get('room')?.toUpperCase() || null;
+        if (requestedCode && !/^[A-Z0-9]{6}$/.test(requestedCode)) {
+            this.showToast(RoomCollaboration.errorMessage('format'), 'error');
+            window.history.replaceState(window.history.state, '', RoomCollaboration.withRoom(window.location.href, null));
+            requestedCode = null;
+        }
         const saved = SecurityUtils.getValidatedStorageData('ff14tw_current_room');
-        if (saved && (!requestedCode || saved.roomCode === requestedCode) && this.isRoomValid(saved)) {
-            // knownMembers 是存檔裡的欄位，不屬於房間資料：拿出來驗證（存值壞掉就當作空的），不交給 mapSync.connect()
-            const { currentUser, memberToken, pendingMapOperations, lastSyncAt, knownMembers, ...room } = saved;
-            this.knownMembers = PartyNames.validKnownMembers(knownMembers);
-            this.adoptSession(room, currentUser, memberToken, pendingMapOperations || []);
+        const valid = Boolean(saved) && this.isRoomValid(saved);
+        if (valid && (!requestedCode || saved.roomCode === requestedCode)) {
+            this.restoreSession(saved);
             return;
         }
         if (saved?.roomCode && !saved.memberToken && (!requestedCode || requestedCode === saved.roomCode)) {
@@ -417,12 +440,8 @@ class RoomCollaboration {
             }
             return;
         }
-        if (saved && !this.isRoomValid(saved)) this.forceLeaveRoom();
-        if (requestedCode) {
-            // 載入時自動加入沒有按鈕可以還焦點：失敗只跳訊息
-            const result = await this.joinRoom(requestedCode.toUpperCase());
-            if (!result.success && result.message) this.showToast(result.message, 'error');
-        }
+        if (saved && !valid) this.forceLeaveRoom({ keepRoomParam: true });
+        if (requestedCode) await this.dialogs.openLink({ code: requestedCode, current: valid ? saved : null });
     }
 
     // 檢查隊伍是否有效（未過期且格式正確）
@@ -477,9 +496,32 @@ class RoomCollaboration {
     }
 
     /**
+     * 讀隊伍目前的樣子（GET /rooms/:code），給邀請連結的對話框（RoomDialogs#openLink()）用：讀得到回 { room }；
+     * 舊的唯讀隊伍回 { kind: 'legacy', room }（寶圖怎麼留由呼叫的人決定）；成員已經 8 人回 { kind: 'full', message, room }；
+     * 請求失敗照 errorKind()／errorMessage() 回 { kind, message }（not_found、network、failed）。只讀：不跳 toast，不動隊伍與清單
+     * @param {string} code - 隊伍代號（6 碼大寫英數字）
+     * @returns {Promise<{room: Object} | {kind: string, message: string, room?: Object}>}
+     */
+    async previewRoom(code) {
+        try {
+            const room = await this.request(`/rooms/${code}`);
+            if (room.readOnly) return { kind: 'legacy', room };
+            if (room.members.length >= RoomCollaboration.CONSTANTS.MAX_MEMBERS) {
+                return { kind: 'full', message: RoomCollaboration.errorMessage('full', { code }), room };
+            }
+            return { room };
+        } catch (error) {
+            let kind = RoomCollaboration.errorKind(error);
+            // 讀取不會回 ROOM_RECREATE_REQUIRED（舊的唯讀隊伍是上面的 readOnly）：萬一回了也沒有隊伍可以留，當作一般的失敗
+            if (kind === 'legacy') kind = 'failed';
+            return { kind, message: RoomCollaboration.errorMessage(kind, { code }) };
+        }
+    }
+
+    /**
      * 加入隊伍。clearLocal 同 createRoom()；nickname 有給就原樣送出（邀請連結的對話框裡寫的名字），沒給用這台機器的預設名字。
      * 回傳結果（見 failure()）；這裡只跳成功的 toast，焦點與錯誤訊息是呼叫的人
-     * （RoomDialogs#confirmJoin()、載入時網址的 ?room=）的事
+     * （RoomDialogs#confirmJoin()、#confirmLink()）的事
      * @param {string} roomCode
      * @param {{clearLocal?: boolean, nickname?: ?string}} [options]
      */
@@ -733,7 +775,7 @@ class RoomCollaboration {
         this.mapSync.notify();
     }
 
-    forceLeaveRoom() {
+    forceLeaveRoom({ keepRoomParam = false } = {}) {
         this.sessionGeneration++;
         this.stopPolling();
         this.mapSync.disconnect();
@@ -745,8 +787,9 @@ class RoomCollaboration {
             localStorage.removeItem('ff14tw_current_room');
             localStorage.removeItem('ff14tw_room_created');
         } catch { /* keep the current page usable when storage is unavailable */ }
-        // 同 adoptSession()：不新增瀏覽紀錄，網址只拿掉 room
-        window.history.replaceState(window.history.state, '', RoomCollaboration.withRoom(window.location.href, null));
+        // 同 adoptSession()：不新增瀏覽紀錄，網址只拿掉 room。載入時清掉失效的紀錄（keepRoomParam）不拿：網址的 room 是接著要問的邀請，
+        // 留到對話框有答案（RoomDialogs#finishLink()），對話框開著時重新整理還是同一個邀請
+        if (!keepRoomParam) window.history.replaceState(window.history.state, '', RoomCollaboration.withRoom(window.location.href, null));
         this.updateRoomUI();
         // 隊伍沒了：清單的每一列與開著的路線頁重畫，ownerOf() 回 null，畫面上的「誰的圖」就一起消失（保留清單離開時清單本身沒變，
         // 不重畫的話每一列會停在離開之前的樣子）。每一條離開隊伍的路都走到這裡。測試替身不一定有 renderMyList

@@ -1,13 +1,14 @@
-// 組隊的頁內對話框：「建立隊伍」、「加入隊伍」、「離開隊伍」與「移出成員」（邀請連結的對話框之後再加進來；改名對話框在 RoomCollaboration）。
-// 標記都在 index.html（#createPartyModal、#joinRoomModal、#leaveRoomModal、#removeMemberModal）。開關照 ListDialogs#showModal()：
+// 組隊的頁內對話框：「建立隊伍」、「加入隊伍」、邀請連結的「加入隊伍 X？」、「離開隊伍」與「移出成員」（改名對話框在 RoomCollaboration）。
+// 標記都在 index.html（#createPartyModal、#joinRoomModal、#joinLinkModal、#leaveRoomModal、#removeMemberModal）。開關照 ListDialogs#showModal()：
 // 拿掉 .hidden、交給 ModalManager 以 style.display 顯示，關閉時加回 .hidden。說明、迷你清單、選項與錯誤的字帶張數、代號、名字、還要換語言，
 // 由這裡依狀態組出來、不掛 data-i18n：I18nManager 切換語言時會把 [data-i18n] 的文字整個換掉。
 // 由 RoomCollaboration 建立（this.dialogs）；建構時只抓元素，事件在 init() 才掛
 class RoomDialogs {
-    // renderChoice() 的確認鈕：prefix → 按鈕的 id（邀請連結的對話框做的時候再加一筆）
+    // renderChoice() 的確認鈕：prefix → 按鈕的 id
     static CONFIRM_BUTTONS = {
         create: 'confirmCreateBtn',
-        join: 'confirmJoinBtn'
+        join: 'confirmJoinBtn',
+        link: 'confirmLinkBtn'
     };
 
     // 字不一樣才寫：textContent 一寫就會換掉整個文字節點，螢幕閱讀器的閱讀位置可能跟著跑掉（同 ListDialogs.setText）
@@ -32,6 +33,13 @@ class RoomDialogs {
         this.removing = null;
         // 迷你清單上一次畫的內容（語言與每一張的 id），依 renderChoice() 的 prefix 記：沒變就不重建，縮圖才不會一直重載
         this.listKeys = new Map();
+        // 邀請連結對話框這一次打開的狀態（openLink() 設定，finishLink() 收尾時清掉），沒有是 null：
+        // { code, current（另一隊 A 的紀錄，沒有或已經離開 A 是 null）, room（讀到的隊伍）, failure（讀隊伍就失敗的種類，讀得到是 null）,
+        //   running（「加入」正在進行）, joined（已經加入了）, resolve（讓 openLink() 回傳的 Promise 完成）}
+        this.link = null;
+        // 邀請連結對話框裡寫的名字（renderLink() 每次重畫時用 RoomCollaboration#defaultNickname() 重算；上一次加入連不上、請求還留著時是那次請求的名字）：
+        // 按「加入」送出去的就是這個字串
+        this.linkNickname = '';
 
         const byId = id => document.getElementById(id);
         this.elements = {
@@ -46,6 +54,15 @@ class RoomDialogs {
             roomCodeHint: byId('roomCodeHint'),
             roomCodeError: byId('roomCodeError'),
             joinMaps: byId('joinPartyMaps'),
+            linkModal: byId('joinLinkModal'),
+            linkTitle: byId('joinLinkModal-title'),
+            closeLink: byId('closeLinkModalBtn'),
+            linkSummary: byId('joinLinkSummary'),
+            linkName: byId('joinLinkName'),
+            linkLeave: byId('joinLinkLeave'),
+            linkMaps: byId('linkPartyMaps'),
+            linkError: byId('joinLinkError'),
+            dismissLink: byId('dismissLinkBtn'),
             leaveModal: byId('leaveRoomModal'),
             closeLeave: byId('closeLeaveModalBtn'),
             cancelLeave: byId('cancelLeaveBtn'),
@@ -94,7 +111,7 @@ class RoomDialogs {
         return this.choices[prefix];
     }
 
-    // 由 RoomCollaboration#setupEventListeners() 呼叫：接上建立、加入、離開隊伍與移出成員對話框裡的按鈕、代號欄與選項
+    // 由 RoomCollaboration#setupEventListeners() 呼叫：接上建立、加入、邀請連結、離開隊伍與移出成員對話框裡的按鈕、代號欄與選項
     init() {
         const { elements } = this;
         const create = this.choiceElements('create');
@@ -118,6 +135,15 @@ class RoomDialogs {
         elements.roomCode.addEventListener('keydown', event => {
             if (event.key === 'Enter' && !event.isComposing) this.confirmJoin();
         });
+
+        // 邀請連結：「不用了」（只剩錯誤時是「關閉」）與 ✕ 只關對話框，怎麼收尾由關閉時的 handleLinkClose() 決定
+        const link = this.choiceElements('link');
+        elements.closeLink.addEventListener('click', () => this.close(elements.linkModal));
+        elements.dismissLink.addEventListener('click', () => this.close(elements.linkModal));
+        link.confirm.addEventListener('click', () => this.confirmLink());
+        for (const radio of [link.bring, link.clear]) {
+            radio.addEventListener('change', () => this.handleLinkModeChange());
+        }
 
         elements.closeLeave.addEventListener('click', () => this.close(elements.leaveModal));
         elements.cancelLeave.addEventListener('click', () => this.close(elements.leaveModal));
@@ -151,7 +177,7 @@ class RoomDialogs {
     }
 
     // 隊伍沒了（被移出、連線失效、隊伍過期、自己離開）：離開與移出的對話框只在隊伍裡才有意義，開著就關掉；回傳有沒有關。
-    // 建立、加入的對話框不動（之後的邀請連結對話框也一樣：切換隊伍時離開 A 之後，它還要留著加入 B）。
+    // 建立、加入與邀請連結的對話框不動（邀請連結切換隊伍時，離開 A 之後它還要留著加入 B）。
     // RoomCollaboration#forceLeaveRoom() 呼叫，不看 connecting：離開自己的確認鈕還在進行中（離開成功時 forceLeaveRoom() 也會來到這裡）
     closeInParty() {
         const open = this.modalManager.activeModal;
@@ -162,6 +188,7 @@ class RoomDialogs {
 
     // 切換語言（I18nManager 先換掉 [data-i18n] 的固定字，再來這裡）：上一次失敗的錯誤是舊語言寫的，收起來（再按一次就用新語言重新產生），
     // 其餘由程式組的字照 refresh() 重畫；玩家已經勾的選項、打的代號不動。沒開著的下次打開時才畫。
+    // 邀請連結對話框「只剩錯誤」的樣子例外：錯誤就是全部的內容，renderLink() 用新語言重寫，不收起來。
     // 進行中不動：連線中選項與確認鈕停用著，重畫會把它們解開
     handleLanguageChange() {
         if (this.connecting === this.opening) return;
@@ -169,6 +196,7 @@ class RoomDialogs {
         const open = this.modalManager.activeModal;
         if (open === elements.createModal) this.hideCreateError();
         else if (open === elements.joinModal) this.clearJoinError();
+        else if (open === elements.linkModal) this.hideLinkError();
         else if (open === elements.leaveModal) this.hideLeaveError();
         else if (open === elements.removeModal) this.hideRemoveError();
         this.refresh();
@@ -185,6 +213,8 @@ class RoomDialogs {
             this.renderCreate(false);
         } else if (open === elements.joinModal) {
             this.renderJoin(false);
+        } else if (open === elements.linkModal) {
+            this.renderLink(false);
         } else if (open === elements.leaveModal) {
             // 清單被隊友清空時整組選項藏起來，焦點正在選項上就移到取消，不能掉到 body
             const active = document.activeElement;
@@ -363,7 +393,8 @@ class RoomDialogs {
 
     // 進行中要停用的控制項（controls）正拿著焦點：先把焦點移到開著的對話框的 ✕（進行中不停用），回傳 { control, close }；焦點不在它們身上回傳 null。
     // 停用拿著焦點的按鈕，Chrome 當場把焦點退回 body，而 ModalManager 的焦點陷阱只在第一個與最後一個可聚焦的元素上循環：
-    // 等回應的這段時間按 Tab 就會跑到對話框外面（同 ListDialogs#keepFocus()）。用 ✕ 不用「取消」：每個對話框都有一顆 .btn-close
+    // 等回應的這段時間按 Tab 就會跑到對話框外面（同 ListDialogs#keepFocus()）。用 ✕ 不用「取消」：每個對話框都有一顆 .btn-close，
+    // 而且邀請連結對話框的「取消」是「不用了」，剛按下「加入」就唸出它容易誤會
     parkFocus(controls) {
         const control = document.activeElement;
         const close = this.modalManager.activeModal?.querySelector('.btn-close');
@@ -485,6 +516,229 @@ class RoomDialogs {
         roomCodeHint.classList.remove('hidden');
         roomCode.classList.remove('is-invalid');
         roomCode.removeAttribute('aria-invalid');
+    }
+
+    // ---------- 邀請連結 ----------
+    /**
+     * 打開邀請連結（載入時網址的 ?room=，RoomCollaboration#checkExistingRoom() 的情況 c、d）：先讀隊伍，讀完才打開「加入隊伍 X？」。
+     * current 是另一隊 A 的有效紀錄（情況 d，A 還沒接回），沒有是 null（情況 c）。舊的唯讀隊伍不開對話框：c 照 recoverLegacyRoom() 把寶圖留在本機，
+     * d 接回 A。讀隊伍就失敗（找不到、滿了、連不上）時對話框只寫原因、只有「關閉」。
+     * 回傳的 Promise 在對話框關掉（任何方式）、收好尾之後 resolve（見 finishLink()）；「加入」還在進行時被關掉，要等它結束才收尾（見 confirmLink()）
+     * @param {{code: string, current: ?Object}} options
+     * @returns {Promise<void>}
+     */
+    async openLink({ code, current }) {
+        const { collaboration, elements } = this;
+        const preview = await this.readParty(code);
+        if (preview.kind === 'legacy') {
+            if (current) collaboration.restoreSession(current);
+            else collaboration.recoverLegacyRoom(preview.room);
+            return;
+        }
+        await new Promise(resolve => {
+            this.link = { code, current, room: preview.room ?? null, failure: preview.kind ?? null, running: false, joined: false, resolve };
+            this.hideLinkError();
+            this.renderLink(true);
+            // 讀隊伍的這段時間卡片的縮圖照樣按得到：開著的寶圖詳細檢視先關掉。它疊得比頁內對話框高（style.css 的 .map-detail-modal），
+            // 不關會蓋住這個對話框，Escape 與點遮罩卻作用在看不到的這個對話框上，悄悄把邀請丟掉
+            const detail = this.finder.uiDialogManager;
+            if (detail?.activeDialog?.kind === 'mapDetail') detail.hideMapDetail();
+            this.showModal(elements.linkModal, () => this.handleLinkClose());
+        });
+    }
+
+    /**
+     * 讀隊伍（RoomCollaboration#previewRoom()），這段時間當作連線中（setConnecting()，同以前載入時自動加入）：建立、加入隊伍與清單的按鈕停用，
+     * openCreate()／openJoin() 不開、清單改不了。還沒問完要不要加入，不能先建立或加入別的隊伍（之後接回 A 或加入 B 會把它丟掉）；
+     * 清單的變更也會被接回 A 時的同步蓋掉。載入時、與情況 d 按「加入」後再讀一次 B 時用（對話框在加入途中被關掉時，頁面又能操作了）
+     * @param {string} code
+     */
+    async readParty(code) {
+        const { collaboration } = this;
+        collaboration.setConnecting(true);
+        try {
+            return await collaboration.previewRoom(code);
+        } finally {
+            collaboration.setConnecting(false);
+        }
+    }
+
+    /**
+     * 邀請連結對話框裡由程式組的字與顯示。讀隊伍就失敗（failure）時只剩錯誤（依失敗的種類用目前的語言寫）與「關閉」，沒有「加入」。
+     * 否則：標題、摘要（隊長——creatorId——已經不在成員裡時不寫是誰的隊伍）、名字（就是「加入」送出去的那一個，見 linkNickname）、
+     * 情況 d 的「你目前在隊伍 A」，以及清單不是空的時的「你的清單」那一塊（帶進去的合計以 id 去重）。reset 是剛打開（見 renderChoice）
+     * @param {boolean} reset
+     */
+    renderLink(reset) {
+        const { collaboration, elements } = this;
+        const { code, current, room, failure } = this.link;
+        const { confirm } = this.choiceElements('link');
+        RoomDialogs.setText(elements.linkTitle, FF14Utils.getI18nText('treasure_map_link_title', '加入隊伍 {code}？', { code }));
+        for (const element of [elements.linkSummary, elements.linkName, confirm]) element.classList.toggle('hidden', Boolean(failure));
+        elements.linkLeave.classList.toggle('hidden', Boolean(failure) || !current);
+        RoomDialogs.setText(elements.dismissLink, failure
+            ? FF14Utils.getI18nText('treasure_map_close', '關閉')
+            : FF14Utils.getI18nText('treasure_map_share_dismiss', '不用了'));
+        if (failure) {
+            elements.linkMaps.classList.add('hidden');
+            RoomDialogs.setText(elements.linkError, RoomCollaboration.errorMessage(failure, { code }));
+            elements.linkError.classList.remove('hidden');
+            return;
+        }
+
+        // 人數與張數的上限都是 8，句子裡共用一個 {max}
+        const counts = { members: room.members.length, maps: room.treasureMaps.length, max: RoomCollaboration.CONSTANTS.MAX_MEMBERS };
+        const leader = room.members.find(member => member.id === room.creatorId);
+        RoomDialogs.setText(elements.linkSummary, leader
+            ? FF14Utils.getI18nText('treasure_map_link_summary', '{leader} 的隊伍 · {members}/{max} 人 · 隊伍清單 {maps}/{max} 張', { ...counts, leader: leader.nickname })
+            : FF14Utils.getI18nText('treasure_map_link_summary_no_leader', '{members}/{max} 人 · 隊伍清單 {maps}/{max} 張', counts));
+        // 名字照 6.6：自己改過的優先，沒有就是目前介面語言的開頭接上這台機器的字串（換語言就跟著換開頭）。
+        // 例外：上一次「加入」連不上、請求還留著（connectionAttempt 是 join:代號）時，重試送出去的是那次請求的名字（見 connectionRequest()），寫那一個
+        const attempt = collaboration.connectionAttempt;
+        this.linkNickname = attempt?.key === `join:${code}` ? attempt.body.memberNickname : collaboration.defaultNickname();
+        RoomDialogs.setText(elements.linkName, FF14Utils.getI18nText('treasure_map_link_name', '你會叫「{name}」，加入後可以改名。', { name: this.linkNickname }));
+        RoomDialogs.setText(elements.linkLeave, current
+            ? FF14Utils.getI18nText('treasure_map_link_leave_current', '你目前在隊伍 {current}。加入 {code} 會先離開 {current}，{current} 的寶圖會留在你的清單。', { current: current.roomCode, code })
+            : '');
+
+        // 帶進去之後的隊伍清單：隊伍現有的加上這台裝置的清單（情況 d 就是上次同步下來的 A 隊清單），同一張只算一次
+        const list = this.finder.listManager.getList();
+        const total = new Set([...room.treasureMaps, ...list].map(map => map.id)).size;
+        elements.linkMaps.classList.toggle('hidden', list.length === 0);
+        this.renderChoice('link', {
+            count: list.length,
+            overLimit: total > RoomCollaboration.CONSTANTS.MAX_MAPS,
+            bringHint: FF14Utils.getI18nText('treasure_map_choice_bring_hint_total', '隊伍清單會變成 {total}/{max} 張', { total, max: RoomCollaboration.CONSTANTS.MAX_MAPS }),
+            clearHint: FF14Utils.getI18nText('treasure_map_choice_clear_hint_join', '只用隊伍清單'),
+            reset
+        });
+    }
+
+    // 改了選項：上一次失敗的錯誤是對上一個選項說的（例如「選『不帶』，或先刪掉幾張」），收起來；超過上限時「加入」要等選了「不帶」才能按
+    handleLinkModeChange() {
+        this.hideLinkError();
+        this.renderLink(false);
+    }
+
+    /**
+     * 對話框的「加入」：「不帶」那顆勾著就清空本機清單（clearLocal），否則把清單帶進隊伍；名字用對話框裡寫的那一個（linkNickname）。
+     * 進行中選項與「加入」停用、「加入」轉圈（「不用了」與 ✕ 還能按），對話框不關。成功就關掉、打開清單面板（照面板自己的焦點規則）；
+     * 失敗把原因寫在對話框裡，讓玩家改選項或再按一次。舊的唯讀隊伍（legacy）沒有東西可寫，關掉。
+     * 進行中玩家自己關掉了對話框：同建立、加入隊伍，結果照常處理——成功就在新的隊伍裡（不再打開面板），失敗改跳 toast——之後才收尾
+     */
+    async confirmLink() {
+        const { collaboration, elements } = this;
+        const link = this.link;
+        const { clear, confirm } = this.choiceElements('link');
+        // 只剩錯誤的樣子沒有「加入」；停用的「加入」（進行中、超過上限又沒選「不帶」）不接受：程式直接呼叫也一樣
+        if (!link || link.failure || confirm.disabled) return;
+        const opening = this.opening;
+        const clearLocal = clear.checked;
+        // 先收起上一次的錯誤：同樣的錯誤再來一次會重新寫過，role="alert" 才會再唸
+        this.hideLinkError();
+        link.running = true;
+        let result;
+        try {
+            result = await this.whileBusy('link', opening, () => this.joinFromLink(link, clearLocal));
+        } catch (error) {
+            // 預期之外的錯誤（例如清單裡壞掉的存值）：當作一般的失敗，不讓對話框卡在進行中、ready 一直不完成
+            console.error('從邀請連結加入失敗:', error);
+            result = RoomCollaboration.failure('failed');
+        }
+        link.running = false;
+        link.joined = result.success;
+
+        if (opening !== this.opening) {
+            if (!result.success && result.message) collaboration.showToast(result.message, 'error');
+            this.finishLink();
+        } else if (result.success || result.kind === 'legacy') {
+            this.close(elements.linkModal);
+            if (result.success) this.finder.openListPanel();
+        } else {
+            // 選項與「加入」恢復（超過上限的停用接回去）；已經離開 A（情況 d 的最後一步失敗）就換成情況 c 的樣子。
+            // 焦點不在對話框裡就放回「加入」（進行中停在 ✕ 的焦點 whileBusy() 已經放回去了），玩家可以直接再按一次
+            this.renderLink(false);
+            if (result.message) this.showLinkError(result.message);
+            if (!elements.linkModal.contains(document.activeElement)) confirm.focus();
+        }
+    }
+
+    /**
+     * 「加入」的連線。情況 c 直接加入。情況 d 先再讀一次 B：找不到、滿了、照玩家的選擇帶進去會超過 8 張（或有隊伍收不下的寶圖），就到此為止，A 完全沒動；
+     * B 可以加入，才離開 A——用存著的紀錄接回 A（還沒接回的話）但不輪詢，先送完 A 還沒送出的變更再送離開，清單一律保留；
+     * 離開失敗時人還在 A（沒有輪詢，收尾時才開始），離開了（或離開途中 A 就被別的路徑結束了）才加入 B，之後同情況 c。回傳結果同 joinRoom()
+     * @param {Object} link - this.link
+     * @param {boolean} clearLocal
+     */
+    async joinFromLink(link, clearLocal) {
+        const { collaboration, finder } = this;
+        if (link.current) {
+            const preview = await this.readParty(link.code);
+            if (preview.room && preview.kind !== 'legacy') link.room = preview.room;
+            if (preview.kind) return { success: false, kind: preview.kind, message: preview.message ?? '' };
+            const retained = clearLocal ? [] : finder.listManager.getList();
+            if (!RoomCollaboration.mapsFitParty(retained.map(map => finder.toRoomMap(map)))) return RoomCollaboration.failure('invalid_maps');
+            if (new Set([...preview.room.treasureMaps, ...retained].map(map => map.id)).size > RoomCollaboration.CONSTANTS.MAX_MAPS) {
+                return RoomCollaboration.failure('map_limit', { room: preview.room.treasureMaps.length, mine: retained.length });
+            }
+            // 防呆：已經在別的隊伍裡（讀 B 時入口都停用了，正常不會發生）就不切換：不接回 A、不離開 A，也不動那個隊伍
+            if (collaboration.currentRoom && collaboration.currentRoom.roomCode !== link.current.roomCode) return RoomCollaboration.failure('busy');
+            if (!collaboration.currentRoom) collaboration.restoreSession(link.current, { poll: false });
+            const left = await collaboration.leaveRoom(true, { quiet: true });
+            if (!left.success && left.message) {
+                return {
+                    success: false,
+                    kind: 'leave',
+                    message: FF14Utils.getI18nText('treasure_map_link_leave_failed', '還沒離開隊伍 {current}：{reason}', { current: link.current.roomCode, reason: left.message })
+                };
+            }
+            link.current = null;
+        }
+        return collaboration.joinRoom(link.code, { clearLocal, nickname: this.linkNickname });
+    }
+
+    // 對話框關掉（「不用了」「關閉」、✕、Escape、點遮罩，或加入成功、唯讀隊伍時由程式關）：「加入」還在進行就等它結束再收尾（confirmLink()），否則現在收尾。
+    // 已經收過尾（this.link 是 null）就沒有事要做：五個對話框共用一個 ModalManager，打開別的對話框也會先關掉這一個
+    handleLinkClose() {
+        if (this.link && !this.link.running) this.finishLink();
+    }
+
+    /**
+     * 邀請連結的收尾，然後 resolve openLink()（RoomCollaboration#ready 跟著完成）。加入了就沒有事要做；沒加入照現在的狀態（設計 6.5）：
+     * 還沒離開 A——A 還沒接回就接回（開始輪詢、網址換成 ?room=A），已經接回（離開 A 失敗）就開始輪詢；
+     * 沒有 A（情況 c，或已經離開 A）——網址只拿掉 room（分享的 maps 留給 handleSharedMaps()），留在個人清單。
+     * 防呆：已經在別的隊伍裡（讀隊伍時入口都停用了，正常不會發生）就什麼都不動：不接回 A，網址的 room 是那個隊伍的，也不拿掉
+     */
+    finishLink() {
+        const { collaboration } = this;
+        const link = this.link;
+        this.link = null;
+        try {
+            const live = collaboration.currentRoom;
+            if (link.joined || (live && live.roomCode !== link.current?.roomCode)) return;
+            if (live) {
+                collaboration.startPolling();
+            } else if (link.current) {
+                collaboration.restoreSession(link.current);
+            } else {
+                window.history.replaceState(window.history.state, '', RoomCollaboration.withRoom(window.location.href, null));
+            }
+        } finally {
+            // 接回 A 時出了預期之外的錯也一樣：ready 不能一直不完成（分享寶圖的對話框在等它）
+            link.resolve();
+        }
+    }
+
+    showLinkError(message) {
+        const { linkError } = this.elements;
+        linkError.textContent = message;
+        linkError.classList.remove('hidden');
+    }
+
+    hideLinkError() {
+        const { linkError } = this.elements;
+        linkError.textContent = '';
+        linkError.classList.add('hidden');
     }
 
     // ---------- 離開隊伍 ----------

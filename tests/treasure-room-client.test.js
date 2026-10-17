@@ -262,24 +262,31 @@ test('restoration waits for the catalogue before reading the saved room', async 
     assert.deepEqual(events, ['events', 'restore']);
 });
 
-test('ready settles only after the saved room is restored or auto-joined (the shared-link dialog waits for it)', async () => {
+test('ready settles only after checkExistingRoom() is done: an invite link (?room=) is done only once its dialog has an answer (the shared-maps dialog waits for it)', async () => {
     const state = setup(() => ({ body: room() }));
     const RoomCollaboration = vm.runInContext('RoomCollaboration', state.context);
+    const RoomDialogs = vm.runInContext('RoomDialogs', state.context);
+    // No saved room and a lower-case code in the address: checkExistingRoom() hands the code (upper-cased) to the invite-link dialog
+    state.window.location.href = 'http://localhost:8765/tools/treasure-map-finder/?room=abc123';
     const events = [];
-    let finishRestore;
+    let answer;
     RoomCollaboration.prototype.init = state.originalInit;
     RoomCollaboration.prototype.setupEventListeners = () => events.push('events');
-    RoomCollaboration.prototype.checkExistingRoom = () => new Promise(resolve => {
-        finishRestore = () => { events.push('restored'); resolve(); };
+    // The real dialog needs a DOM (tests/treasure-party.test.js drives it on the real page): here openLink() only records its
+    // arguments and stays unanswered until answer() is called
+    RoomDialogs.prototype.openLink = options => new Promise(resolve => {
+        events.push(`openLink ${JSON.stringify(options)}`);
+        answer = () => { events.push('answered'); resolve(); };
     });
     const client = new RoomCollaboration(state.finder);
     let settled = false;
     client.ready.then(() => { settled = true; });
     await new Promise(resolve => setImmediate(resolve));
-    assert.deepEqual([events, settled], [['events'], false]);
-    finishRestore();
+    assert.deepEqual([events, settled], [['events', 'openLink {"code":"ABC123","current":null}'], false]);
+    assert.equal(state.requests.length, 0, 'checkExistingRoom() itself neither reads nor joins the party');
+    answer();
     await client.ready;
-    assert.deepEqual([events, settled], [['events', 'restored'], true]);
+    assert.deepEqual([events, settled], [['events', 'openLink {"code":"ABC123","current":null}', 'answered'], true]);
 });
 
 test('editing is blocked during connection so the initial room response cannot erase a local edit', async () => {
@@ -1441,7 +1448,7 @@ test('RoomCollaboration.errorMessage：每種 kind 的字；map_limit 有 room �
     assert.equal(errorMessage('legacy'), '');
 });
 
-test('入口把結果接起來：建立鈕（清單是空的）失敗時跳回傳的訊息；成功只有成功的 toast；busy 不多跳；網址的 ?room= 自動加入失敗時也跳訊息（加入的對話框把失敗寫在代號欄下面，由 treasure-party.test.js 用真的頁面測）', async () => {
+test('入口把結果接起來：建立鈕（清單是空的）失敗時跳回傳的訊息；成功只有成功的 toast；busy 不多跳（加入的對話框把失敗寫在代號欄下面、網址的 ?room= 先問「加入隊伍 X？」，都由 treasure-party.test.js 用真的頁面測）', async () => {
     const failing = setup(() => ({ status: 503, body: { error: 'Service unavailable' } }));
     await failing.client.dialogs.openCreate();
     assert.deepEqual(failing.toasts, [NETWORK]);
@@ -1451,18 +1458,6 @@ test('入口把結果接起來：建立鈕（清單是空的）失敗時跳回�
     assert.deepEqual(creating.toasts, ['隊伍 ABC123 建立成功！']);
     await creating.client.dialogs.openCreate();
     assert.deepEqual(creating.toasts, ['隊伍 ABC123 建立成功！'], '已經在隊伍裡：busy 沒有訊息，不多跳');
-
-    // 網址的 ?room=：載入時自動加入，失敗跳訊息，成功只有成功的 toast
-    const link = 'http://localhost:8765/tools/treasure-map-finder/?room=abc123';
-    const linkedFailure = setup(() => ({ status: 404, body: { error: 'Room not found', code: 'ROOM_NOT_FOUND' } }));
-    linkedFailure.window.location.href = link;
-    await linkedFailure.client.checkExistingRoom();
-    assert.deepEqual(linkedFailure.toasts, [NOT_FOUND]);
-
-    const linkedSuccess = setup(joinsRoom());
-    linkedSuccess.window.location.href = link;
-    await linkedSuccess.client.checkExistingRoom();
-    assert.deepEqual(linkedSuccess.toasts, ['成功加入隊伍 ABC123']);
 });
 
 test('建立、加入的新字串：十個新鍵值三語都照設計寫；舊的 confirm 與錯誤字串三語都刪掉了；新字沒有舊用語', () => {

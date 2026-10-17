@@ -138,6 +138,15 @@ const TreasureMapTranslations = {
         treasure_map_code_hint: '6 碼英文和數字，向隊長要。打開隊長貼的邀請連結就不用輸入。',
         treasure_map_choice_clear_hint_join: '只用隊伍清單',
 
+        // 邀請連結對話框（打開帶 ?room= 的連結時問要不要加入；「不用了」「關閉」「加入」與「不帶」的說明照用上面的鍵值）
+        treasure_map_link_title: '加入隊伍 {code}？',
+        treasure_map_link_summary: '{leader} 的隊伍 · {members}/{max} 人 · 隊伍清單 {maps}/{max} 張',
+        treasure_map_link_summary_no_leader: '{members}/{max} 人 · 隊伍清單 {maps}/{max} 張',
+        treasure_map_link_name: '你會叫「{name}」，加入後可以改名。',
+        treasure_map_link_leave_current: '你目前在隊伍 {current}。加入 {code} 會先離開 {current}，{current} 的寶圖會留在你的清單。',
+        treasure_map_link_leave_failed: '還沒離開隊伍 {current}：{reason}',
+        treasure_map_choice_bring_hint_total: '隊伍清單會變成 {total}/{max} 張',
+
         // 改名對話框
         treasure_map_rename_title: '改名',
         treasure_map_nickname_label: '名字',
@@ -426,6 +435,15 @@ const TreasureMapTranslations = {
         treasure_map_code_hint: '6 letters and numbers — ask your party leader. No need to type it if you open the leader\'s invite link.',
         treasure_map_choice_clear_hint_join: 'Use only the party list',
 
+        // Invite link dialog (asks whether to join when a ?room= link is opened; reuses the dismiss/close/join keys and the "don't bring" hint above)
+        treasure_map_link_title: 'Join party {code}?',
+        treasure_map_link_summary: '{leader}\'s party · Members {members}/{max} · Party list {maps}/{max}',
+        treasure_map_link_summary_no_leader: 'Members {members}/{max} · Party list {maps}/{max}',
+        treasure_map_link_name: 'You\'ll appear as "{name}". You can rename after joining.',
+        treasure_map_link_leave_current: 'You\'re in party {current}. Joining {code} leaves {current} first; its maps stay in your list.',
+        treasure_map_link_leave_failed: 'You\'re still in party {current}: {reason}',
+        treasure_map_choice_bring_hint_total: 'The party list becomes {total}/{max}',
+
         // Rename dialog
         treasure_map_rename_title: 'Rename',
         treasure_map_nickname_label: 'Name',
@@ -713,6 +731,15 @@ const TreasureMapTranslations = {
         treasure_map_code_placeholder: '例：A3B7K9',
         treasure_map_code_hint: '英数字 6 文字。リーダーに聞いてください。リーダーの招待リンクを開けば入力は不要です。',
         treasure_map_choice_clear_hint_join: 'パーティリストだけを使う',
+
+        // 招待リンクのダイアログ（?room= のリンクを開いたときに参加するか尋ねる。「追加しない」「閉じる」「参加」と「持ち込まない」の説明は上のキーを使う）
+        treasure_map_link_title: 'パーティ {code} に参加しますか？',
+        treasure_map_link_summary: '{leader} のパーティ · {members}/{max} 人 · パーティリスト {maps}/{max} 枚',
+        treasure_map_link_summary_no_leader: '{members}/{max} 人 · パーティリスト {maps}/{max} 枚',
+        treasure_map_link_name: 'あなたの名前は「{name}」になります。参加後に変更できます。',
+        treasure_map_link_leave_current: '現在パーティ {current} に参加中です。{code} に参加すると先に {current} を抜けます。{current} の地図はあなたのリストに残ります。',
+        treasure_map_link_leave_failed: 'まだパーティ {current} を抜けていません：{reason}',
+        treasure_map_choice_bring_hint_total: 'パーティリストは {total}/{max} 枚になります',
 
         // 名前変更ダイアログ
         treasure_map_rename_title: '名前を変更',

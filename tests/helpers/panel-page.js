@@ -30,8 +30,8 @@ function scriptSources(html) {
 // 照 index.html 建出這些元素（mountFromHtml），跑真正的建構函式與 init()。隊伍與清單的對話框 id 加在 myListPanel 後面、mapDetailModal 前面，
 // 順序同 index.html（後面的疊在前面的上面）；之後的任務在 index.html 加了新的對話框，也要加進來
 const PANEL_IDS = ['stepHint', 'listEntryDesktop', 'levelTags', 'zoneFilterRow', 'resultCount', 'clearZonesBtn', 'treasureEmpty', 'treasureGrid',
-    'listEntryMobile', 'listAnnouncer', 'panelOverlay', 'myListPanel', 'createPartyModal', 'joinRoomModal', 'editNicknameModal', 'leaveRoomModal',
-    'removeMemberModal', 'clearListModal', 'importListModal', 'shareMapsModal', 'mapDetailModal'];
+    'listEntryMobile', 'listAnnouncer', 'panelOverlay', 'myListPanel', 'createPartyModal', 'joinRoomModal', 'joinLinkModal', 'editNicknameModal',
+    'leaveRoomModal', 'removeMemberModal', 'clearListModal', 'importListModal', 'shareMapsModal', 'mapDetailModal'];
 const PAGE_HTML = read(`${TOOL_DIR}/index.html`);
 // 照 index.html 的順序載入：這個工具的翻譯檔、共用的 security-utils.js，以及工具目錄自己的每一個 <script src>（src 不含 /）。
 // 之後的任務在 index.html 加了新模組，這裡會自動載入；modal-manager.js 的 src 含 /，不載入，改用下面的替身
@@ -93,7 +93,7 @@ function allowSelectorLists(document) {
 //   team({ meId, members, knownMembers, creatorId }) 決定隊伍裡有誰（預設只有自己：id 'me'、光之戰士K7Q）、看過哪些已離開的人的名字；
 //   替身的 ownerOf() 用真正的 PartyNames.ownerOf()，所以 addedBy 對得上 members／knownMembers 的圖就會寫是誰的
 // - party：{ respond, polling = false }。給了就在寶圖搜尋器 ready 之後建立真的 RoomCollaboration，接上 finder，init() 照常在背景跑
-//   （不等 client.ready：之後的邀請連結對話框會讓它一直不結束，測試用 settle() 讓已經排好的工作跑完）。
+//   （不等 client.ready：網址有 ?room= 時，邀請連結的對話框沒有答案之前它不會結束；測試用 settle() 讓已經排好的工作跑完）。
 //   request() 換成 respond(path, { method, body, authenticated })：回傳值就是伺服器的回應，丟出的錯誤就是失敗；polling 是 false 時不輪詢。
 //   回傳的物件多 client 與 settle()。team() 與 party 不要混用（兩個都會換掉 finder.roomCollaboration）
 // - realisticFocus：掛載時存在的每個 button、input 照 Chrome 的行為處理停用與隱藏（見 makeFocusRealistic）

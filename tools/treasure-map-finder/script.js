@@ -1014,7 +1014,7 @@ class TreasureMapFinder {
     }
 
     // 打開帶 ?maps= 的分享連結：讀出連結裡的寶圖，問玩家要不要加進清單（ListDialogs#openShare）。載入時呼叫一次，
-    // 等寶圖資料載入、隊伍還原或自動加入都結束（見檔案最後的 DOMContentLoaded），這樣「已在清單」與隊伍的上限都是最後的結果。
+    // 等寶圖資料載入、隊伍還原或邀請連結的對話框有答案都結束（見檔案最後的 DOMContentLoaded），這樣「已在清單」與隊伍的上限都是最後的結果。
     // 網址沒有 maps 就什麼都不做；目錄是空的（資料沒載入成功）也不做、網址不動，重新整理還能再試。
     // 一張都找不到：提示並把 maps 拿掉，不開對話框。這裡不檢查隊伍連線中（canEditList() 會跳 toast）：連線中照樣開，
     // 對話框裡寫原因並停用「加入清單」
@@ -1116,6 +1116,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // 連接協作功能
     treasureMapFinder.setRoomCollaboration(roomCollaboration);
 
-    // 分享連結（網址有 ?maps=）：寶圖資料載入、隊伍還原或自動加入都結束後才處理（任何一邊失敗也照樣處理，所以用 allSettled）
+    // 分享連結（網址有 ?maps=）：寶圖資料載入、隊伍還原或邀請連結的對話框有答案（網址有 ?room=）都結束後才處理（任何一邊失敗也照樣處理，所以用 allSettled）
     Promise.allSettled([treasureMapFinder.ready, roomCollaboration.ready]).then(() => treasureMapFinder.handleSharedMaps());
 });

@@ -315,6 +315,52 @@
         </div>
     </div>
 
+    <!-- 邀請連結對話框（RoomDialogs#openLink）：打開帶 ?room= 的連結時，先讀隊伍，讀完才問「加入隊伍 X？」（沒有紀錄，或有另一隊 A 的紀錄時）。
+         標題、摘要、名字、「你目前在隊伍 A」那一行、選項、錯誤與「不用了」（只剩錯誤時寫「關閉」）的字都帶代號、人數、名字或跟著狀態換，
+         由 JavaScript 填入（不掛 data-i18n）。讀隊伍就失敗時只剩錯誤與「關閉」，沒有「加入」；清單不是空的才有「你的清單」那一塊（#linkPartyMaps）。
+         帶進去合計（以 id 去重）超過 8 張時「帶進」停用、兩個選項都不預先勾，選了「不帶」才能按「加入」（這個對話框唯一的主要按鈕）。
+         和清單面板同一個 z-index，靠排在面板後面疊在它上面（同上面的隊伍對話框） -->
+    <div class="dialog-overlay hidden" id="joinLinkModal" role="dialog" aria-modal="true" aria-labelledby="joinLinkModal-title">
+        <div class="dialog tm-dialog">
+            <div class="dialog-header">
+                <h3 class="dialog-title" id="joinLinkModal-title"></h3>
+                <button type="button" class="btn btn-close" id="closeLinkModalBtn" aria-label="關閉" data-i18n="treasure_map_close" data-i18n-attr="aria-label">×</button>
+            </div>
+            <div class="dialog-body">
+                <p class="tm-dialog-lede" id="joinLinkSummary"></p>
+                <p id="joinLinkName"></p>
+                <p class="warning-message hidden" id="joinLinkLeave"></p>
+                <div class="tm-dialog-group hidden" id="linkPartyMaps">
+                    <p class="tm-dialog-lede" id="linkPartyLede"></p>
+                    <ul class="tm-mini-list" id="linkPartyList"></ul>
+                    <fieldset class="tm-choice" id="linkPartyChoice">
+                        <legend class="visually-hidden" data-i18n="treasure_map_choice_legend">你的寶圖要怎麼處理</legend>
+                        <div class="form-check">
+                            <input type="radio" class="form-check-input" name="linkMode" id="linkModeBring" value="bring" checked>
+                            <label class="form-check-label" for="linkModeBring">
+                                <span class="tm-choice-title" id="linkModeBringTitle"></span>
+                                <span class="tm-choice-hint" id="linkModeBringHint"></span>
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input type="radio" class="form-check-input" name="linkMode" id="linkModeClear" value="clear">
+                            <label class="form-check-label" for="linkModeClear">
+                                <span class="tm-choice-title" id="linkModeClearTitle"></span>
+                                <span class="tm-choice-hint" id="linkModeClearHint"></span>
+                            </label>
+                        </div>
+                    </fieldset>
+                    <p class="warning-message hidden" id="linkPartyNote" role="status"></p>
+                </div>
+                <p class="error-message hidden" id="joinLinkError" role="alert"></p>
+            </div>
+            <div class="dialog-actions">
+                <button type="button" class="btn" id="dismissLinkBtn"></button>
+                <button type="button" class="btn btn-primary" id="confirmLinkBtn" data-i18n="treasure_map_join">加入</button>
+            </div>
+        </div>
+    </div>
+
     <!-- 改名對話框（RoomCollaboration#showEditNicknameDialog）：欄裡是目前的名字，所以不放 placeholder；標題、欄位名與說明都是固定的字，掛 data-i18n。
          和清單面板同一個 z-index，靠排在面板後面疊在它上面（同上面的隊伍對話框） -->
     <div class="dialog-overlay hidden" id="editNicknameModal" role="dialog" aria-modal="true" aria-labelledby="editNicknameModal-title">
