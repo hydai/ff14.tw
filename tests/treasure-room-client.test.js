@@ -1505,3 +1505,277 @@ test('建立、加入的新字串：十個新鍵值三語都照設計寫；舊�
         for (const key of removed) assert.equal(keys.has(key), false, `${lang} 還有 ${key}`);
     });
 });
+
+// ---------- 同步狀態：連續的傳輸失敗才算連不上 ----------
+// syncState 是 'ok' 或 'failing'，transportFailures 是連續失敗的次數；狀態真的改變時才叫 status.setSync()。
+// 有一次成功才歸零：一筆變更送出去了，或一次輪詢讀得到隊伍、排著的變更也送完了（只讀得到不算，不然變更一直送不出去時永遠不會是 failing）。
+// 畫面（「連不上，重試中」、警告色、警告那一行）在 tests/treasure-party.test.js 用真的頁面測
+const syncOf = state => [state.client.syncState, state.client.transportFailures];
+// status.setSync() 的呼叫記下來（每次呼叫帶的狀態）
+const recordSync = state => {
+    const calls = [];
+    state.client.status.setSync = value => calls.push(value);
+    return calls;
+};
+
+test('RoomCollaboration.isTransportError：沒有 status（fetch 失敗）、5xx、429 是連不上；伺服器回得出答案的 4xx 不是；errorKind() 的 network 就是它', () => {
+    const { context } = setup(() => ({ body: room() }));
+    const RoomCollaboration = vm.runInContext('RoomCollaboration', context);
+    const cases = [
+        ['fetch 失敗（沒有 status）', new TypeError('Failed to fetch'), true], ['沒有錯誤物件', undefined, true], ['status 是 0', { status: 0 }, true],
+        ['500', { status: 500 }, true], ['503', { status: 503 }, true], ['429', { status: 429 }, true],
+        ['400', { status: 400 }, false], ['400 MAP_LIMIT', { status: 400, code: 'MAP_LIMIT' }, false], ['401', { status: 401 }, false],
+        ['403', { status: 403 }, false], ['404', { status: 404 }, false], ['409', { status: 409, code: 'REQUEST_ID_REUSED' }, false]
+    ];
+    for (const [label, error, expected] of cases) {
+        assert.equal(RoomCollaboration.isTransportError(error), expected, label);
+        // errorKind() 先看 code（MAP_LIMIT、ROOM_NOT_FOUND 這些不論 status 都不是 network），其餘的 network 與它一致
+        if (!error?.code && error?.status !== 404) assert.equal(RoomCollaboration.errorKind(error) === 'network', expected, `${label}：errorKind`);
+    }
+});
+
+test('noteTransportFailure、noteSyncSuccess：連續 3 次（CONSTANTS.RETRY_ATTEMPTS）才是 failing，之後繼續累計；只在 ok 與 failing 互換的那一次叫 status.setSync()；一次成功就歸零', () => {
+    const state = setup(() => ({ body: room() }));
+    assert.equal(vm.runInContext('RoomCollaboration.CONSTANTS.RETRY_ATTEMPTS', state.context), 3);
+    assert.deepEqual(syncOf(state), ['ok', 0], '建構時');
+    const calls = recordSync(state);
+
+    state.client.noteTransportFailure();
+    state.client.noteTransportFailure();
+    assert.deepEqual([syncOf(state), calls], [['ok', 2], []], '失敗 2 次還不算');
+    state.client.noteTransportFailure();
+    assert.deepEqual([syncOf(state), calls], [['failing', 3], ['failing']], '連續第 3 次');
+    state.client.noteTransportFailure();
+    state.client.noteTransportFailure();
+    assert.deepEqual([syncOf(state), calls], [['failing', 5], ['failing']], '已經是 failing：繼續累計，不再叫 setSync（同步狀態的字不重寫）');
+    state.client.noteSyncSuccess();
+    assert.deepEqual([syncOf(state), calls], [['ok', 0], ['failing', 'ok']], '一次成功：歸零、回到 ok');
+    state.client.noteSyncSuccess();
+    assert.deepEqual([syncOf(state), calls], [['ok', 0], ['failing', 'ok']], '本來就是 ok：不叫 setSync');
+
+    // 沒到 3 次就成功：歸零之後重新數
+    state.client.noteTransportFailure();
+    state.client.noteTransportFailure();
+    state.client.noteSyncSuccess();
+    state.client.noteTransportFailure();
+    state.client.noteTransportFailure();
+    assert.deepEqual([syncOf(state), calls], [['ok', 2], ['failing', 'ok']], '失敗要連續才算');
+});
+
+test('poll：連續 3 次讀不到隊伍（fetch 失敗、5xx、429、其他 4xx 都算）才是 failing，不跳 toast；讀得到隊伍（而且沒有送不出去的變更）就回到 ok、次數歸零；404 照舊是隊伍過期', async () => {
+    const failures = [
+        ['fetch 失敗', () => { throw new TypeError('Failed to fetch'); }],
+        ['503', () => ({ status: 503, body: { error: 'Unavailable' } })],
+        ['429', () => ({ status: 429, body: { error: 'Slow down' } })],
+        ['403（讀隊伍一直被拒絕也算連不上）', () => ({ status: 403, body: { error: 'Forbidden', code: 'FORBIDDEN' } })],
+        ['400', () => ({ status: 400, body: { error: 'Bad request', code: 'INVALID_REQUEST' } })]
+    ];
+    for (const [label, fail] of failures) {
+        let reachable = false;
+        const state = setup(() => (reachable ? { body: room([], [member], 1) } : fail()));
+        state.client.adoptSession(room(), member, TOKEN);
+        await state.client.poll();
+        await state.client.poll();
+        assert.deepEqual(syncOf(state), ['ok', 2], `${label}：失敗 2 次還不算`);
+        await state.client.poll();
+        assert.deepEqual(syncOf(state), ['failing', 3], `${label}：連續第 3 次`);
+        await state.client.poll();
+        assert.deepEqual(syncOf(state), ['failing', 4], `${label}：繼續累計`);
+        assert.deepEqual(state.toasts, [], `${label}：連不上由同步狀態說，不跳 toast`);
+        assert.equal(state.client.currentRoom.roomCode, 'ABC123', `${label}：人還在隊伍裡`);
+        reachable = true;
+        await state.client.poll();
+        assert.deepEqual(syncOf(state), ['ok', 0], `${label}：讀到了`);
+        assert.deepEqual(state.toasts, [], label);
+    }
+
+    // 404 照舊：隊伍過期，離開隊伍、跳「隊伍已過期」；同步狀態回到 ok、次數歸零
+    const expired = setup(() => ({ status: 404, body: { error: 'Room not found' } }));
+    expired.client.adoptSession(room(), member, TOKEN);
+    expired.client.noteTransportFailure();
+    expired.client.noteTransportFailure();
+    await expired.client.poll();
+    assert.equal(expired.client.currentRoom, null);
+    assert.deepEqual(expired.toasts, ['隊伍已過期']);
+    assert.deepEqual(syncOf(expired), ['ok', 0]);
+});
+
+// 輪詢的一輪是：GET 讀隊伍、收下、再把排著的變更重送（flush）。GET 讀得到不代表同步成功：變更一直送不出去時每一輪的 GET 都成功，
+// 一讀到就歸零的話，送出失敗的次數永遠累計不到 3，卡片會一直寫「已同步」。所以要 GET 讀得到、而且 flush 把排著的變更送完才算這一輪成功
+test('poll 讀得到隊伍、但排著的變更一直送不出去（fetch 失敗、5xx、429）：失敗次數跨輪詢累計（不被「讀得到」洗掉），連續 3 次輪詢才是 failing，沒有 toast；一次輪詢把變更送出去才回到 ok', async () => {
+    const failures = [
+        ['fetch 失敗', () => { throw new TypeError('Failed to fetch'); }],
+        ['503', () => ({ status: 503, body: { error: 'Unavailable' } })],
+        ['429', () => ({ status: 429, body: { error: 'Slow down' } })]
+    ];
+    for (const [label, fail] of failures) {
+        let putUp = false;
+        const state = setup(request => {
+            if (request.method === 'GET') return { body: room([], [member], 1) };
+            return putUp ? { body: room([state.finder.toRoomMap(sample)], [member], 2) } : fail();
+        });
+        const pending = [{ clientRequestId: webcrypto.randomUUID(), operations: [{ type: 'add', map: state.finder.toRoomMap(sample) }] }];
+        state.client.adoptSession(room(), member, TOKEN, pending);
+        for (const [index, expected] of [['ok', 1], ['ok', 2], ['failing', 3], ['failing', 4]].entries()) {
+            await state.client.poll();
+            assert.deepEqual(syncOf(state), expected, `${label}：第 ${index + 1} 次輪詢（GET 讀得到、PUT 送不出去）`);
+        }
+        assert.deepEqual(state.toasts, [], `${label}：連不上由同步狀態說，不跳 toast`);
+        assert.equal(state.client.mapSync.pending.length, 1, `${label}：那一筆還留著，等著重送`);
+        assert.equal(state.requests.filter(request => request.method === 'GET').length, 4, `${label}：每次輪詢都讀得到隊伍`);
+
+        putUp = true;
+        await state.client.poll();
+        assert.deepEqual(syncOf(state), ['ok', 0], `${label}：這次輪詢讀得到、變更也送出去了`);
+        assert.equal(state.client.mapSync.pending.length, 0, label);
+        assert.deepEqual(state.toasts, [], label);
+    }
+});
+
+test('poll 把排著的變更送出去、但伺服器拒絕了它（那一筆丟掉、佇列清空）：讀得到隊伍、佇列也清空了，這次輪詢算成功，歸零回到 ok；拒絕的 toast 照跳', async () => {
+    const state = setup(request => (request.method === 'GET'
+        ? { body: room([], [member], 1) }
+        : { status: 400, body: { code: 'INVALID_REQUEST', error: 'Invalid map' } }));
+    const pending = [{ clientRequestId: webcrypto.randomUUID(), operations: [{ type: 'add', map: state.finder.toRoomMap(sample) }] }];
+    state.client.adoptSession(room(), member, TOKEN, pending);
+    for (let index = 0; index < 3; index += 1) state.client.noteTransportFailure();
+    assert.deepEqual(syncOf(state), ['failing', 3], '前提：連不上');
+
+    await state.client.poll();
+    assert.deepEqual(syncOf(state), ['ok', 0]);
+    assert.equal(state.client.mapSync.pending.length, 0, '那一筆已經丟掉');
+    assert.deepEqual(state.toasts, ['有一筆變更沒有送進隊伍，清單已換成隊伍目前的樣子。']);
+});
+
+test('輪詢的 flush 回 true 的時候隊伍已經換了（送變更的回覆裡已經沒有自己，離開之後馬上進了另一個隊伍）：過期的輪詢不動新隊伍的失敗次數', async () => {
+    // 伺服器收下那一筆，回來的隊伍裡沒有自己（被移出了）。flush() 在 onChange 離開隊伍之後看到佇列空了，回 true
+    const state = setup(request => (request.method === 'GET'
+        ? { body: room([], [member], 1) }
+        : { body: room([state.finder.toRoomMap(sample)], [mate], 2) }));
+    const pending = [{ clientRequestId: webcrypto.randomUUID(), operations: [{ type: 'add', map: state.finder.toRoomMap(sample) }] }];
+    state.client.adoptSession(room(), member, TOKEN, pending);
+    // 離開的當下就進了另一個隊伍，那個隊伍已經失敗 2 次
+    const forceLeaveRoom = state.client.forceLeaveRoom.bind(state.client);
+    state.client.forceLeaveRoom = () => {
+        forceLeaveRoom();
+        state.client.adoptSession(room([], [member], 5), member, TOKEN);
+        state.client.noteTransportFailure();
+        state.client.noteTransportFailure();
+    };
+    await state.client.poll();
+    assert.equal(state.client.currentRoom.revision, 5, '前提：現在在新的隊伍裡');
+    assert.deepEqual(syncOf(state), ['ok', 2], '舊隊伍那一次輪詢不洗掉新隊伍的失敗次數');
+});
+
+test('送出變更（PUT）：fetch 失敗、5xx、429 各算一次傳輸失敗，連續 3 次才是 failing，沒有 toast；送出成功就歸零；伺服器拒絕（回得出答案的 4xx）不算連不上，各有一句 toast', async () => {
+    const failures = [
+        ['fetch 失敗', () => { throw new TypeError('Failed to fetch'); }],
+        ['503', () => ({ status: 503, body: { error: 'Unavailable' } })],
+        ['429', () => ({ status: 429, body: { error: 'Slow down' } })]
+    ];
+    for (const [label, fail] of failures) {
+        let toFail = 3;
+        const state = setup(request => (request.method === 'PUT' && toFail-- > 0 ? fail() : { body: room([state.finder.toRoomMap(sample)], [member], 1) }));
+        state.client.adoptSession(room(), member, TOKEN);
+        state.finder.listManager.add(sample);
+        await state.finder.syncToRoom();
+        assert.deepEqual(syncOf(state), ['ok', 1], `${label}：第 1 次送不出去`);
+        await state.client.mapSync.flush();
+        assert.deepEqual(syncOf(state), ['ok', 2], `${label}：第 2 次`);
+        await state.client.mapSync.flush();
+        assert.deepEqual(syncOf(state), ['failing', 3], `${label}：第 3 次`);
+        assert.deepEqual(state.toasts, [], `${label}：沒有 toast`);
+        assert.equal(state.client.mapSync.pending.length, 1, `${label}：那一筆還留著，等著重送`);
+        await state.client.mapSync.flush();
+        assert.deepEqual(syncOf(state), ['ok', 0], `${label}：送出成功，歸零`);
+        assert.equal(state.client.mapSync.pending.length, 0, label);
+        assert.deepEqual(state.toasts, [], label);
+    }
+
+    // 伺服器拒絕那一筆（那一筆丟掉、清單換成隊伍目前的樣子）：回得出答案，不算連不上，連續 3 次拒絕也不會是 failing
+    const rejections = [
+        ['MAP_LIMIT', { status: 400, body: { code: 'MAP_LIMIT', error: 'Room can contain at most 8 treasure maps' } }, '隊伍清單最多 8 張，剛剛加的寶圖沒有加進去。'],
+        ['INVALID_REQUEST', { status: 400, body: { code: 'INVALID_REQUEST', error: 'Invalid map' } }, '有一筆變更沒有送進隊伍，清單已換成隊伍目前的樣子。']
+    ];
+    for (const [label, response, message] of rejections) {
+        const state = setup(() => response);
+        state.client.adoptSession(room(), member, TOKEN);
+        for (let attempt = 0; attempt < 3; attempt += 1) {
+            state.finder.listManager.add(sample);
+            await state.finder.syncToRoom();
+        }
+        assert.deepEqual(state.toasts, [message, message, message], label);
+        assert.deepEqual(syncOf(state), ['ok', 0], `${label}：伺服器回得出答案，不算連不上`);
+        assert.equal(state.client.mapSync.pending.length, 0, `${label}：那一筆已經丟掉`);
+        assert.equal(state.finder.listManager.getLength(), 0, `${label}：清單換成隊伍目前的樣子`);
+    }
+});
+
+test('adoptSession 與 forceLeaveRoom 把同步狀態歸零（ok、次數 0）：上一個隊伍的連線問題不帶進下一個；從 failing 回到 ok 時叫 status.setSync()', () => {
+    const state = setup(() => ({ body: room() }));
+    state.client.adoptSession(room(), member, TOKEN);
+    const calls = recordSync(state);
+    for (let index = 0; index < 3; index += 1) state.client.noteTransportFailure();
+    assert.deepEqual([syncOf(state), calls], [['failing', 3], ['failing']]);
+
+    state.client.forceLeaveRoom();
+    assert.deepEqual([syncOf(state), calls], [['ok', 0], ['failing', 'ok']], '離開：回到 ok、次數歸零');
+
+    // 累計到一半就離開：下一個隊伍從 0 開始
+    state.client.adoptSession(room(), member, TOKEN);
+    state.client.noteTransportFailure();
+    state.client.noteTransportFailure();
+    state.client.forceLeaveRoom();
+    assert.deepEqual(syncOf(state), ['ok', 0], '累計到一半就離開');
+
+    // 被迫離開（輪詢回來的成員裡沒有自己）一樣
+    state.client.adoptSession(room([], [member, mate]), member, TOKEN);
+    for (let index = 0; index < 3; index += 1) state.client.noteTransportFailure();
+    assert.equal(state.client.syncState, 'failing');
+    state.client.mapSync.receive(room([], [mate], 1));
+    assert.equal(state.client.currentRoom, null);
+    assert.deepEqual(syncOf(state), ['ok', 0], '被迫離開');
+
+    // adoptSession() 自己也歸零（不經過 forceLeaveRoom() 直接接上另一個隊伍的路）
+    state.client.adoptSession(room(), member, TOKEN);
+    for (let index = 0; index < 3; index += 1) state.client.noteTransportFailure();
+    state.client.noteTransportFailure();
+    assert.deepEqual(syncOf(state), ['failing', 4]);
+    state.client.adoptSession(room(), member, TOKEN);
+    assert.deepEqual(syncOf(state), ['ok', 0], '接上另一個隊伍');
+});
+
+test('過期的回應不算：離開再進另一個隊伍之後，舊隊伍那一次輪詢的失敗、那一筆變更的成功，都不動新隊伍的失敗次數', async () => {
+    // 輪詢：GET 還沒回來就換了隊伍，之後才失敗
+    let failGet;
+    const polled = setup(() => new Promise((resolve, reject) => { failGet = () => reject(new TypeError('Failed to fetch')); }));
+    polled.client.adoptSession(room(), member, TOKEN);
+    const polling = polled.client.poll();
+    polled.client.forceLeaveRoom();
+    polled.client.adoptSession(room(), member, TOKEN);
+    polled.client.noteTransportFailure();
+    polled.client.noteTransportFailure();
+    failGet();
+    await polling;
+    assert.deepEqual(syncOf(polled), ['ok', 2], '舊隊伍的輪詢失敗不算在新隊伍頭上');
+
+    // 送出變更：PUT 還沒回來就換了隊伍，之後才成功
+    let okPut;
+    const put = setup(() => new Promise(resolve => { okPut = () => resolve({ body: room([put.finder.toRoomMap(sample)], [member], 1) }); }));
+    put.client.adoptSession(room(), member, TOKEN);
+    put.finder.listManager.add(sample);
+    const syncing = put.finder.syncToRoom();
+    await new Promise(done => setImmediate(done));
+    put.client.forceLeaveRoom();
+    put.client.adoptSession(room(), member, TOKEN);
+    put.client.noteTransportFailure();
+    put.client.noteTransportFailure();
+    okPut();
+    await syncing;
+    assert.deepEqual(syncOf(put), ['ok', 2], '舊隊伍的送出成功不洗掉新隊伍的失敗次數');
+});
+
+test('失敗次數只有 transportFailures 一份：room-collaboration.js 不再有 retryCount（輪詢失敗改由同步狀態說，不再每失敗 3 次跳一次 toast）', () => {
+    const source = fs.readFileSync(path.join(__dirname, '..', 'tools/treasure-map-finder/room-collaboration.js'), 'utf8');
+    assert.equal(source.includes('retryCount'), false, 'room-collaboration.js 還有 retryCount');
+});

@@ -43,6 +43,7 @@ const TreasureMapTranslations = {
         treasure_map_party_label: '隊伍',
         treasure_map_party_code: '隊伍代號',
         treasure_map_sync_ok: '已同步',
+        treasure_map_sync_failing: '連不上，重試中',
         treasure_map_sync_note: '清單可能不是最新的。你的變更會在連上之後送出。',
         treasure_map_copy_invite: '複製邀請連結',
         // 隊伍狀態的離開鈕：英日是短字，三顆按鈕才排得進一行
@@ -263,7 +264,8 @@ const TreasureMapTranslations = {
         treasure_map_import_invalid_json: '無效的 JSON 格式',
         treasure_map_import_invalid_format: '無效的匯入格式',
         treasure_map_import_no_valid_maps: '沒有有效的地圖資料',
-        treasure_map_sync_to_room_failed: '同步失敗，請稍後再試',
+        treasure_map_sync_rejected_limit: '隊伍清單最多 8 張，剛剛加的寶圖沒有加進去。',
+        treasure_map_sync_rejected: '有一筆變更沒有送進隊伍，清單已換成隊伍目前的樣子。',
 
         // 組隊協作（room-collaboration.js）
         treasure_map_already_in_room: '您已在隊伍中，請先離開現有隊伍',
@@ -341,6 +343,7 @@ const TreasureMapTranslations = {
         treasure_map_party_label: 'Party',
         treasure_map_party_code: 'Party code',
         treasure_map_sync_ok: 'Synced',
+        treasure_map_sync_failing: 'Can\'t connect — retrying',
         treasure_map_sync_note: 'The list may be out of date. Your changes will be sent once you\'re connected.',
         treasure_map_copy_invite: 'Invite link',
         treasure_map_party_leave: 'Leave',
@@ -560,7 +563,8 @@ const TreasureMapTranslations = {
         treasure_map_import_invalid_json: 'Invalid JSON format',
         treasure_map_import_invalid_format: 'Invalid import format',
         treasure_map_import_no_valid_maps: 'No valid map data',
-        treasure_map_sync_to_room_failed: 'Sync failed. Please try again later.',
+        treasure_map_sync_rejected_limit: 'A party list holds up to 8 maps; the map you just added wasn\'t added.',
+        treasure_map_sync_rejected: 'A change couldn\'t be saved to the party; your list now matches the party\'s.',
 
         // Room collaboration (room-collaboration.js)
         treasure_map_already_in_room: 'You are already in a room. Leave it first.',
@@ -638,6 +642,7 @@ const TreasureMapTranslations = {
         treasure_map_party_label: 'パーティ',
         treasure_map_party_code: 'パーティコード',
         treasure_map_sync_ok: '同期済み',
+        treasure_map_sync_failing: '接続できません・再試行中',
         treasure_map_sync_note: 'リストが最新でない可能性があります。変更は接続後に送信されます。',
         treasure_map_copy_invite: '招待',
         treasure_map_party_leave: '抜ける',
@@ -857,7 +862,8 @@ const TreasureMapTranslations = {
         treasure_map_import_invalid_json: 'JSON 形式が正しくありません',
         treasure_map_import_invalid_format: 'インポート形式が正しくありません',
         treasure_map_import_no_valid_maps: '有効な地図データがありません',
-        treasure_map_sync_to_room_failed: '同期に失敗しました。しばらくしてからもう一度お試しください',
+        treasure_map_sync_rejected_limit: 'パーティリストは 8 枚までです。追加した地図は登録されませんでした。',
+        treasure_map_sync_rejected: '変更の 1 つがパーティに反映されませんでした。リストはパーティの現在の内容に戻りました。',
 
         // ルーム協働機能（room-collaboration.js）
         treasure_map_already_in_room: 'すでにルームに参加しています。先に現在のルームを離れてください',

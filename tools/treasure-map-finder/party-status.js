@@ -84,15 +84,21 @@ class PartyStatus {
         }
         elements.section.classList.remove('hidden');
         PartyStatus.setText(elements.code, room.roomCode);
-        this.setSync('ok');
+        // 每次重畫都帶 RoomCollaboration 現在的同步狀態：連不上時（'failing'）每兩秒的重畫也不會把它蓋回「已同步」
+        this.setSync(collaboration.syncState);
         this.renderMembers(room);
     }
 
-    // 同步狀態（#partySync，role="status"）：這一版只有 'ok'（已同步）。文字只在真的變了才寫
+    // 同步狀態（#partySync，role="status"）：'ok' 是「已同步」；'failing' 是「連不上，重試中」，換成警告色（is-warn）並顯示警告那一行。
+    // 文字只在真的變了才寫（切換語言也算變了）：已經是連不上時再失敗、再重畫都不重寫，螢幕閱讀器不重唸
     setSync(state) {
-        if (state !== 'ok') return;
-        PartyStatus.setText(this.elements.syncText, FF14Utils.getI18nText('treasure_map_sync_ok', '已同步'));
-        this.elements.syncNote.classList.add('hidden');
+        const failing = state === 'failing';
+        const { sync, syncText, syncNote } = this.elements;
+        sync.classList.toggle('is-warn', failing);
+        PartyStatus.setText(syncText, failing
+            ? FF14Utils.getI18nText('treasure_map_sync_failing', '連不上，重試中')
+            : FF14Utils.getI18nText('treasure_map_sync_ok', '已同步'));
+        syncNote.classList.toggle('hidden', !failing);
     }
 
     // 成員一行（「成員 3/8」與收合時的名字）與展開後的列表。每個人的張數算隊伍的寶圖（mapSync.getMaps()，

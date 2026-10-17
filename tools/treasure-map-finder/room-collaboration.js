@@ -88,14 +88,19 @@ class RoomCollaboration {
         return { success: false, kind, message: RoomCollaboration.errorMessage(kind, options) };
     }
 
-    // 請求失敗的種類（failure() 的 kind）：先看 code 再看 status；沒有 status（fetch 失敗）、5xx、429 都當作連不上
+    // 連不上（傳輸失敗）：沒有 status（fetch 失敗、回應不是 JSON）、5xx、429。伺服器沒有給出明確的答案，同一個請求之後再送可能就成功；
+    // 其他的 4xx 是伺服器看過、明確拒絕。同步狀態只算連不上的失敗（noteTransportFailure()），拒絕的有各自的提示（onError）
+    static isTransportError(error) {
+        return !error?.status || error.status >= 500 || error.status === 429;
+    }
+
+    // 請求失敗的種類（failure() 的 kind）：先看 code 再看 status；連不上（isTransportError()）是 network
     static errorKind(error) {
         if (error?.code === 'ROOM_NOT_FOUND' || error?.status === 404) return 'not_found';
         if (error?.code === 'ROOM_FULL') return 'full';
         if (error?.code === 'MAP_LIMIT') return 'map_limit';
         if (error?.code === 'ROOM_RECREATE_REQUIRED') return 'legacy';
-        if (!error?.status || error.status >= 500 || error.status === 429) return 'network';
-        return 'failed';
+        return RoomCollaboration.isTransportError(error) ? 'network' : 'failed';
     }
 
     /**
@@ -151,14 +156,22 @@ class RoomCollaboration {
         this.pollingTimer = null;
         this.lastActivity = Date.now();
         this.isPolling = false;
-        this.retryCount = 0;
+        // 同步狀態：'ok'，或連續 RETRY_ATTEMPTS 次傳輸失敗之後的 'failing'（noteTransportFailure()、noteSyncSuccess()）；PartyStatus 照它畫
+        this.syncState = 'ok';
+        this.transportFailures = 0;   // 連續傳輸失敗的次數，有一次成功就歸零
         this.tag = null;          // 這台機器的預設名字字串；第一次需要時才讀或產生（nicknameTag()）
         this.knownMembers = {};   // 看過的成員 id → 名字；離開隊伍的人之後還寫得出名字（rememberMembers()）
         this.modalManager = new ModalManager();
         this.mapSync = new RoomMapSync({
-            send: (roomCode, batch) => this.request(`/rooms/${roomCode}`, {
-                method: 'PUT', body: batch, authenticated: true
-            }),
+            // 送出成功就是連得上，失敗次數歸零；送出時的隊伍已經換了（離開、換隊伍）的過期回應不算
+            send: async (roomCode, batch) => {
+                const generation = this.sessionGeneration;
+                const room = await this.request(`/rooms/${roomCode}`, {
+                    method: 'PUT', body: batch, authenticated: true
+                });
+                if (generation === this.sessionGeneration) this.noteSyncSuccess();
+                return room;
+            },
             onChange: (room, maps) => {
                 this.currentRoom = room;
                 const member = room.members.find(item => item.id === this.currentUser?.id);
@@ -187,8 +200,16 @@ class RoomCollaboration {
                     if (this.isLeaving) return;
                     this.forceLeaveRoom();
                     this.showSessionExpiredToast();
+                } else if (RoomCollaboration.isTransportError(error)) {
+                    // 連不上：那一筆留著之後重送，不跳 toast，由同步狀態說（連續失敗到一定次數才顯示，不會每失敗一次就跳一次）
+                    this.noteTransportFailure();
                 } else {
-                    this.showToast(FF14Utils.getI18nText('treasure_map_sync_to_room_failed', '同步失敗，請稍後再試'), 'error');
+                    // 伺服器明確拒絕了這一筆變更：RoomMapSync 已經把它丟掉、清單換成隊伍目前的樣子，告訴玩家剛剛的變更沒有進去。
+                    // 伺服器回得出答案就是連得上：失敗次數歸零（之前送不出去的那幾次不和之後的連起來算），已經是連不上就回到已同步
+                    this.noteSyncSuccess();
+                    this.showToast(error.code === 'MAP_LIMIT'
+                        ? FF14Utils.getI18nText('treasure_map_sync_rejected_limit', '隊伍清單最多 8 張，剛剛加的寶圖沒有加進去。')
+                        : FF14Utils.getI18nText('treasure_map_sync_rejected', '有一筆變更沒有送進隊伍，清單已換成隊伍目前的樣子。'), 'error');
                 }
             }
         });
@@ -347,6 +368,8 @@ class RoomCollaboration {
         this.sessionGeneration++;
         this.currentUser = member;
         this.memberToken = memberToken;
+        // 新的隊伍從「已同步」、失敗 0 次開始，上一個隊伍的連線問題不帶過來。要在 connect() 之前：connect() 會重畫隊伍狀態，畫的就是 syncState
+        this.noteSyncSuccess();
         this.rememberMembers(room);
         this.mapSync.connect(room, pending);
         this.connectionAttempt = null;
@@ -755,20 +778,46 @@ class RoomCollaboration {
             }
             this.mapSync.receive(room);
             if (generation !== this.sessionGeneration) return;
-            await this.mapSync.flush();
-            this.retryCount = 0;
+            // 這一輪成功＝讀得到隊伍、而且排著的變更也送完了（flush() 回 true）。不能一讀到隊伍就歸零：變更一直送不出去（PUT 回 5xx、429）
+            // 而讀取沒問題時，每一輪的 GET 都成功，歸零會把送出失敗的次數洗掉，永遠累計不到 3，卡片一直寫「已同步」。
+            // 還要看 generation：隊伍沒了（送變更的回覆裡已經沒有自己）flush() 也回 true，過期的輪詢不能動到新隊伍的狀態
+            if (await this.mapSync.flush() && generation === this.sessionGeneration) this.noteSyncSuccess();
         } catch (error) {
             if (generation !== this.sessionGeneration || this.isLeaving) return;
             if (error.status === 404) {
                 this.forceLeaveRoom();
                 this.showToast(FF14Utils.getI18nText('treasure_map_room_expired', '隊伍已過期'), 'error');
-            } else if (++this.retryCount >= RoomCollaboration.CONSTANTS.RETRY_ATTEMPTS) {
-                this.showToast(FF14Utils.getI18nText('treasure_map_room_sync_failed_network', '同步失敗，請檢查網路連線'), 'error');
-                this.retryCount = 0;
+            } else {
+                // 讀不到隊伍：不跳 toast，由同步狀態說。讀取不會有「伺服器拒絕一筆變更」的情況，所以連續被拒絕的 403 之類也算連不上
+                this.noteTransportFailure();
             }
         } finally {
             if (generation === this.sessionGeneration) this.isPolling = false;
         }
+    }
+
+    /**
+     * 同步狀態：連續 RETRY_ATTEMPTS（3）次傳輸失敗（輪詢讀不到隊伍、送不出變更，見 isTransportError()）才是 'failing'；
+     * 有一次成功就歸零、回到 'ok'：一筆變更送出去了（mapSync 的 send）、伺服器明確拒絕了一筆變更（mapSync 的 onError：回得出答案就是連得上），
+     * 或一次輪詢讀得到隊伍、排著的變更也送完了（poll()）。
+     * 只讀得到隊伍不算成功：變更一直送不出去時，每次輪詢的 GET 都成功，不能把送出失敗的次數洗掉。
+     * 失敗次數一直累計（不在 3 次時歸零）：狀態只在 ok 與 failing 互換的那一次才通知 PartyStatus，
+     * 已經是 failing 時再失敗什麼都不重畫，同步狀態的字不會被重寫
+     */
+    noteTransportFailure() {
+        this.transportFailures += 1;
+        if (this.transportFailures >= RoomCollaboration.CONSTANTS.RETRY_ATTEMPTS) this.setSyncState('failing');
+    }
+
+    noteSyncSuccess() {
+        this.transportFailures = 0;
+        this.setSyncState('ok');
+    }
+
+    setSyncState(state) {
+        if (this.syncState === state) return;
+        this.syncState = state;
+        this.status?.setSync(state);
     }
 
     syncTreasureMaps() {
@@ -783,6 +832,8 @@ class RoomCollaboration {
         this.currentUser = null;
         this.memberToken = null;
         this.knownMembers = {};
+        // 離開了：同步狀態回到 ok、失敗次數歸零，下一個隊伍從頭開始（同 adoptSession()）
+        this.noteSyncSuccess();
         try {
             localStorage.removeItem('ff14tw_current_room');
             localStorage.removeItem('ff14tw_room_created');

@@ -2237,9 +2237,9 @@ test('連線中切換語言：選項與「加入」還是停用（重畫不能�
 // ---------- 離開隊伍：留在我的清單或清空，進行中、失敗與輪詢都寫在對話框裡 ----------
 const ISO = '2026-10-17T00:00:00.000Z';
 // 伺服器替身：建立隊伍（initialMaps 收進去，addedBy 是自己，隊長也是自己）、離開、移出成員、送出變更，並記下每一次的請求。
-// leave、removeMember、update 是函式（收到 options；回傳值是回應，丟出的錯誤是失敗），沒給的請求一律丟錯
+// leave、removeMember、update、read（輪詢讀隊伍）是函式（收到 options；回傳值是回應，丟出的錯誤是失敗），沒給的請求一律丟錯
 const partyServer = ({ leave = () => ({ message: 'Left' }), removeMember = () => { throw new Error('unexpected remove-member'); },
-    update = () => { throw new Error('unexpected PUT'); } } = {}) => {
+    update = () => { throw new Error('unexpected PUT'); }, read = null } = {}) => {
     const requests = [];
     return {
         requests,
@@ -2254,6 +2254,7 @@ const partyServer = ({ leave = () => ({ message: 'Left' }), removeMember = () =>
             if (path === '/rooms/ABC123/leave' && method === 'POST') return leave(options);
             if (path === '/rooms/ABC123/remove-member' && method === 'POST') return removeMember(options);
             if (path === '/rooms/ABC123' && method === 'PUT') return update(options);
+            if (path === '/rooms/ABC123' && method === 'GET' && read) return read(options);
             throw new Error(`unexpected ${method} ${path}`);
         }
     };
@@ -3732,6 +3733,324 @@ test('防呆：問完之前已經在別的隊伍 XYZ789 裡（讀隊伍時入口
     }
 });
 
+// ---------- 同步狀態：連不上時一直顯示，不重複跳 toast ----------
+// 連續 3 次傳輸失敗（讀不到隊伍、送不出變更；沒有 status、5xx、429）#partySync 才換成「連不上，重試中」：
+// 警告色（is-warn）、警告那一行出現，沒有 toast；有一次成功才回到「已同步」：一筆變更送出去了，或一次輪詢讀得到隊伍、排著的變更也送完了
+// （只讀得到隊伍不算：變更一直送不出去時每次輪詢的 GET 都成功，不能把送出失敗的次數洗掉）。伺服器拒絕一筆變更（其他 4xx）不是連不上，各有一句 toast
+// #partySync 現在顯示的：[文字, 警告色（is-warn）, 警告那一行有沒有顯示]
+const syncShown = (page) => [page.$('partySyncText').textContent, page.$('partySync').classList.contains('is-warn'), !isHidden(page, 'partySyncNote')];
+const SYNCED = ['已同步', false, false];
+const FAILING = ['連不上，重試中', true, true];
+const CREATED_TOAST = ['隊伍 ABC123 建立成功！'];
+const REJECTED_LIMIT = '隊伍清單最多 8 張，剛剛加的寶圖沒有加進去。';
+const REJECTED = '有一筆變更沒有送進隊伍，清單已換成隊伍目前的樣子。';
+const SESSION_EXPIRED_TOAST = '隊伍連線已失效，可能是被移出了隊伍。寶圖留在你的清單；要回去可以再點一次邀請連結，或輸入隊伍代號。';
+const offline = () => new TypeError('Failed to fetch');
+// 輪詢讀到隊伍：目前的隊伍（revision 加一）
+const reads = (page) => () => ({ ...page.client.currentRoom, revision: page.client.currentRoom.revision + 1 });
+// 伺服器收下送出的變更：add 的寶圖進隊伍清單（addedBy 是自己），revision 加一
+const acknowledges = (page) => ({ body }) => {
+    const current = page.client.currentRoom;
+    return { ...current, revision: current.revision + 1,
+        treasureMaps: [...current.treasureMaps, ...body.operations.filter((operation) => operation.type === 'add').map((operation) => ({ ...operation.map, addedBy: 'me', addedAt: ISO }))] };
+};
+// 連續輪詢 times 次（每一次等結束）
+const pollTimes = async (page, times) => {
+    for (let index = 0; index < times; index += 1) await page.client.poll();
+};
+// 這個元素的 textContent 被寫了幾次：在元素自己身上包一層 setter，getter 照原本的（PartyStatus.setText() 靠它判斷字有沒有變）
+const countTextWrites = (element) => {
+    let prototype = Object.getPrototypeOf(element);
+    while (!Object.getOwnPropertyDescriptor(prototype, 'textContent')) prototype = Object.getPrototypeOf(prototype);
+    const original = Object.getOwnPropertyDescriptor(prototype, 'textContent');
+    const counter = { writes: 0 };
+    Object.defineProperty(element, 'textContent', {
+        configurable: true,
+        get() { return original.get.call(this); },
+        set(value) { counter.writes += 1; original.set.call(this, value); }
+    });
+    return counter;
+};
+
+test('連續 3 次輪詢失敗：「連不上，重試中」、警告色、警告那一行出現，沒有 toast；下一次讀得到：「已同步」、警告那一行藏起來；失敗要連續才算', async () => {
+    let up = false;
+    let page;
+    const server = partyServer({ read: () => { if (!up) throw offline(); return reads(page)(); } });
+    page = await createdParty({ respond: server.respond });
+    assert.deepEqual(syncShown(page), SYNCED, '建立之後');
+    assert.equal(page.$('partySync').getAttribute('role'), 'status');
+
+    // 連續才算：失敗兩次、讀到一次、再失敗兩次，一直是已同步
+    await pollTimes(page, 2);
+    assert.deepEqual(syncShown(page), SYNCED, '失敗 2 次還不算');
+    up = true;
+    await pollTimes(page, 1);
+    up = false;
+    await pollTimes(page, 2);
+    assert.deepEqual(syncShown(page), SYNCED, '讀到一次之後重新數：再失敗 2 次還不算');
+
+    await pollTimes(page, 1);
+    assert.deepEqual(syncShown(page), FAILING, '連續第 3 次');
+    assert.deepEqual(messages(page), CREATED_TOAST, '連不上由同步狀態說，不跳 toast');
+
+    // 還是讀不到：維持連不上，照樣沒有 toast（以前每失敗 3 次就跳一次「同步失敗」）
+    await pollTimes(page, 6);
+    assert.deepEqual([syncShown(page), messages(page)], [FAILING, CREATED_TOAST]);
+
+    up = true;
+    await pollTimes(page, 1);
+    assert.deepEqual(syncShown(page), SYNCED, '讀得到了');
+    assert.deepEqual(messages(page), CREATED_TOAST);
+    assert.deepEqual([page.client.syncState, page.client.transportFailures], ['ok', 0]);
+});
+
+test('送出變更的傳輸失敗也算（fetch 失敗、5xx、429 都一樣）：連續 3 次送不出去才是「連不上」，沒有 toast；連不上時再改清單，重畫不把它蓋回「已同步」；送出成功就歸零，要再連續 3 次才又是「連不上」', async () => {
+    const queue = [];   // 接下來送出的變更依序丟出這些錯誤；用完了就成功
+    let page;
+    const server = partyServer({ update: (options) => { if (queue.length) throw queue.shift(); return acknowledges(page)(options); } });
+    page = await createdParty({ respond: server.respond });
+    const puts = () => server.requests.filter((request) => request.method === 'PUT');
+    // 這個測試直接呼叫 mapSync.flush() 重送；每次輪詢先讀隊伍再重送的節奏，在下一個測試
+    queue.push(offline(), roomError(503, 'UNAVAILABLE'), roomError(429, 'TOO_MANY_REQUESTS'));
+
+    page.addMaps(['tm_017']);
+    await page.settle();
+    assert.deepEqual([page.client.transportFailures, syncShown(page)], [1, SYNCED], '第 1 次送不出去（fetch 失敗）');
+    await page.client.mapSync.flush();
+    assert.deepEqual([page.client.transportFailures, syncShown(page)], [2, SYNCED], '第 2 次（503）');
+    await page.client.mapSync.flush();
+    assert.deepEqual([page.client.transportFailures, syncShown(page)], [3, FAILING], '第 3 次（429）');
+    assert.deepEqual(messages(page), CREATED_TOAST, '沒有 toast');
+    assert.equal(page.client.mapSync.pending.length, 1, '那一筆還留著，等著重送');
+    assert.equal(puts().length, 3);
+
+    // 連不上時再改清單：這筆排進佇列、清單與入口重畫，同步狀態不能被蓋回「已同步」；這一次也送不出去
+    queue.push(roomError(503, 'UNAVAILABLE'));
+    page.addMaps(['tm_007']);
+    await page.settle();
+    assert.deepEqual(syncShown(page), FAILING, '重畫之後還是連不上');
+    assert.equal(page.client.mapSync.pending.length, 2);
+
+    // 連上了：送出成功就歸零，兩筆都送完
+    await page.client.mapSync.flush();
+    assert.deepEqual(syncShown(page), SYNCED, '送出成功');
+    assert.deepEqual([page.client.syncState, page.client.transportFailures, page.client.mapSync.pending.length], ['ok', 0, 0]);
+    assert.deepEqual(messages(page), CREATED_TOAST);
+
+    // 歸零之後重新數：只失敗 2 次，還是已同步
+    queue.push(roomError(503, 'UNAVAILABLE'), roomError(503, 'UNAVAILABLE'));
+    page.addMaps(['tm_007']);
+    await page.settle();
+    await page.client.mapSync.flush();
+    assert.deepEqual([page.client.transportFailures, syncShown(page)], [2, SYNCED], '歸零之後只失敗 2 次');
+});
+
+test('真的輪詢的節奏（每次輪詢先讀隊伍、再重送排著的變更）：讀得到、但變更一直送不出去，連續 3 次輪詢之後是「連不上，重試中」，不能一直停在「已同步」；之後一次輪詢送得出去才回到「已同步」', async () => {
+    let putUp = false;
+    let page;
+    const server = partyServer({
+        read: () => reads(page)(),
+        update: (options) => { if (!putUp) throw roomError(503, 'UNAVAILABLE'); return acknowledges(page)(options); }
+    });
+    page = await createdParty({ respond: server.respond });
+    const sent = (method) => server.requests.filter((request) => request.method === method);
+    // 一筆排著、還沒送出去的變更（隊友還看不到）：之後每次輪詢 GET 都讀得到、PUT 都回 503
+    page.client.mapSync.pending.push({ clientRequestId: 'pending-1', operations: [{ type: 'add', map: serverMap('map_9', 'me') }] });
+
+    await pollTimes(page, 2);
+    assert.deepEqual([page.client.transportFailures, syncShown(page)], [2, SYNCED], '輪詢 2 次：讀得到、變更送不出去，還不算');
+    await pollTimes(page, 1);
+    assert.deepEqual([page.client.transportFailures, syncShown(page)], [3, FAILING], '連續第 3 次輪詢：變更一直送不出去，不能停在已同步');
+    assert.deepEqual(messages(page), CREATED_TOAST, '不跳 toast');
+    assert.equal(page.client.mapSync.pending.length, 1, '那一筆還留著，等著重送');
+    assert.equal(sent('GET').length, 3, '三次輪詢都讀得到隊伍');
+    assert.deepEqual(sent('PUT').map((request) => request.body.clientRequestId), ['pending-1', 'pending-1', 'pending-1'], '每次輪詢重送的都是同一筆');
+
+    // 還是送不出去：維持連不上，照樣沒有 toast
+    await pollTimes(page, 3);
+    assert.deepEqual([syncShown(page), messages(page)], [FAILING, CREATED_TOAST]);
+
+    // 送得出去了：這次輪詢讀得到隊伍、排著的變更也送完，才回到已同步
+    putUp = true;
+    await pollTimes(page, 1);
+    assert.deepEqual(syncShown(page), SYNCED);
+    assert.deepEqual([page.client.syncState, page.client.transportFailures, page.client.mapSync.pending.length], ['ok', 0, 0]);
+    assert.deepEqual(messages(page), CREATED_TOAST);
+});
+
+test('已經是連不上時再失敗、再重畫：#partySyncText 不再被寫入，焦點留在成員列的按鈕上；重畫也不把「連不上」蓋回「已同步」（Review Focus 1）', async () => {
+    let up = false;
+    let page;
+    const server = partyServer({
+        read: () => { if (!up) throw offline(); return reads(page)(); },
+        update: (options) => { if (!up) throw roomError(503, 'UNAVAILABLE'); return acknowledges(page)(options); }
+    });
+    page = await createdParty({ respond: server.respond });
+    const text = countTextWrites(page.$('partySyncText'));
+
+    await pollTimes(page, 3);
+    assert.deepEqual(syncShown(page), FAILING);
+    assert.equal(text.writes, 1, '變成連不上的那一次寫一次');
+
+    // 再失敗幾次、隊伍資料的各種重畫（輪詢帶回資料、展開再收合、本機改清單又送不出去）：一個字都不再寫
+    await pollTimes(page, 2);
+    serverChanges(page, {});
+    expand(page);
+    expand(page);
+    page.addMaps(['tm_017']);
+    await page.settle();
+    await page.client.mapSync.flush();
+    assert.deepEqual(syncShown(page), FAILING, '重畫之後還是連不上');
+    assert.equal(text.writes, 1, '已經是連不上：再失敗、再重畫都不重寫（螢幕閱讀器不重唸）');
+
+    // 焦點在成員列的改名鈕上時（面板關著的時候整個面板是 inert，拿不到焦點，所以先打開），隊友加入又改名、成員列表重建：
+    // 焦點跟到同一個人的新鈕，同步狀態的字一樣不重寫
+    page.finder.openListPanel();
+    expand(page);
+    const rename = buttonOf(page, 'me', 'rename');
+    rename.focus();
+    assert.ok(page.focused() === rename, '先確認前提：焦點在改名鈕上');
+    serverChanges(page, { members: [ME, M4X] });
+    serverChanges(page, { members: [ME, { ...M4X, nickname: '新名字' }] });
+    serverChanges(page, {});
+    await pollTimes(page, 2);
+    assert.ok(page.focused() === buttonOf(page, 'me', 'rename'), '焦點留在同一個人的改名鈕');
+    assert.deepEqual(syncShown(page), FAILING);
+    assert.equal(text.writes, 1, '成員列表重建、再失敗，同步狀態的字還是沒重寫');
+    assert.deepEqual(messages(page), CREATED_TOAST);
+
+    // 連上了（讀得到、送得出去）：「已同步」寫一次；之後的重畫也不重寫
+    up = true;
+    await pollTimes(page, 1);
+    assert.deepEqual(syncShown(page), SYNCED);
+    assert.equal(text.writes, 2, '回到已同步那一次寫一次');
+    serverChanges(page, {});
+    await pollTimes(page, 2);
+    assert.equal(text.writes, 2, '已同步之後再重畫也不重寫');
+});
+
+test('連不上時切換語言：文字與警告那一行換成新語言，照樣是連不上；切回來也一樣', async () => {
+    const server = partyServer({ read: () => { throw offline(); } });
+    const page = await createdParty({ respond: server.respond });
+    await pollTimes(page, 3);
+    assert.deepEqual(syncShown(page), FAILING);
+
+    page.setLang('en');
+    assert.deepEqual(syncShown(page), ["Can't connect — retrying", true, true]);
+    assert.equal(page.$('partySyncNote').textContent, "The list may be out of date. Your changes will be sent once you're connected.");
+    page.setLang('ja');
+    assert.deepEqual(syncShown(page), ['接続できません・再試行中', true, true]);
+    assert.equal(page.$('partySyncNote').textContent, 'リストが最新でない可能性があります。変更は接続後に送信されます。');
+    page.setLang('zh');
+    assert.deepEqual(syncShown(page), FAILING);
+    assert.equal(page.$('partySyncNote').textContent, '清單可能不是最新的。你的變更會在連上之後送出。');
+});
+
+test('伺服器拒絕一筆變更（4xx）：MAP_LIMIT 跳「隊伍清單最多 8 張，剛剛加的寶圖沒有加進去。」，其他 4xx 跳通用的字；那一筆丟掉、清單換成隊伍目前的樣子、不重送；這不是連不上，同步狀態不變', async () => {
+    const cases = [
+        ['MAP_LIMIT', roomError(400, 'MAP_LIMIT'), REJECTED_LIMIT],
+        ['INVALID_REQUEST', roomError(400, 'INVALID_REQUEST'), REJECTED],
+        ['REQUEST_ID_REUSED（409）', roomError(409, 'REQUEST_ID_REUSED'), REJECTED]
+    ];
+    for (const [label, rejection, message] of cases) {
+        const server = partyServer({ update: () => { throw rejection; } });
+        const page = await createdParty({ respond: server.respond });
+        page.addMaps(['tm_017']);
+        await page.settle();
+        assert.deepEqual(page.toasts.at(-1), { message, type: 'error' }, label);
+        assert.equal(page.toasts.length, 2, `${label}：建立隊伍一個、拒絕一個`);
+        assert.equal(page.client.mapSync.pending.length, 0, `${label}：那一筆已經丟掉`);
+        assert.equal(page.finder.listManager.getLength(), 0, `${label}：清單換成隊伍目前的樣子`);
+        await page.client.mapSync.flush();
+        assert.equal(server.requests.filter((request) => request.method === 'PUT').length, 1, `${label}：不重送`);
+        assert.deepEqual(syncShown(page), SYNCED, `${label}：伺服器回得出答案，不是連不上`);
+        assert.deepEqual([page.client.syncState, page.client.transportFailures], ['ok', 0], label);
+    }
+});
+
+test('被拒絕之前已經失敗過：伺服器回得出答案（明確拒絕）就是連得上，失敗次數歸零——失敗 2 次再被拒絕，之後只失敗 1 次不算連不上；已經是連不上時被拒絕，馬上回到「已同步」，不用等下一次輪詢', async () => {
+    const queue = [];   // 接下來送出的變更依序丟出這些錯誤；用完了就成功
+    let page;
+    const server = partyServer({ update: (options) => { if (queue.length) throw queue.shift(); return acknowledges(page)(options); } });
+    page = await createdParty({ respond: server.respond });
+
+    // 送不出去 2 次（還不算連不上），第 3 次伺服器明確拒絕：那一筆丟掉、跳拒絕的 toast，失敗次數歸零
+    queue.push(offline(), roomError(503, 'UNAVAILABLE'), roomError(400, 'INVALID_REQUEST'));
+    page.addMaps(['tm_017']);
+    await page.settle();
+    await page.client.mapSync.flush();
+    assert.deepEqual([page.client.transportFailures, syncShown(page)], [2, SYNCED], '先確認前提：失敗 2 次');
+    await page.client.mapSync.flush();
+    assert.deepEqual(page.toasts.at(-1), { message: REJECTED, type: 'error' });
+    assert.deepEqual([page.client.transportFailures, syncShown(page)], [0, SYNCED], '被拒絕：伺服器回得出答案，失敗次數歸零');
+
+    // 之後只失敗 1 次：不是連不上
+    queue.push(offline());
+    page.addMaps(['tm_007']);
+    await page.settle();
+    assert.deepEqual([page.client.transportFailures, syncShown(page)], [1, SYNCED], '歸零之後只失敗 1 次');
+
+    // 再失敗 2 次（連續 3 次，連不上），下一次被拒絕：馬上回到已同步
+    queue.push(offline(), offline(), roomError(400, 'MAP_LIMIT'));
+    await page.client.mapSync.flush();
+    await page.client.mapSync.flush();
+    assert.deepEqual([page.client.transportFailures, syncShown(page)], [3, FAILING], '先確認前提：連續 3 次');
+    await page.client.mapSync.flush();
+    assert.deepEqual(page.toasts.at(-1), { message: REJECTED_LIMIT, type: 'error' });
+    assert.deepEqual([page.client.transportFailures, syncShown(page), page.client.mapSync.pending.length], [0, SYNCED, 0], '被拒絕：馬上回到已同步');
+});
+
+test('送出變更時伺服器不認得我（401、403、404）：照舊走連線失效——離開隊伍、跳連線失效的提示，不是拒絕的 toast，也不算連不上', async () => {
+    for (const status of [401, 403, 404]) {
+        const server = partyServer({ update: () => { throw roomError(status, 'UNAUTHORIZED'); } });
+        const page = await createdParty({ respond: server.respond });
+        page.addMaps(['tm_017']);
+        await page.settle();
+        assert.equal(page.client.currentRoom, null, `${status}：離開隊伍`);
+        assert.deepEqual(page.toasts.slice(1), [{ message: SESSION_EXPIRED_TOAST, type: 'warning' }], `${status}：只有連線失效的提示`);
+        assert.deepEqual([page.client.syncState, page.client.transportFailures], ['ok', 0], status);
+    }
+});
+
+test('離開或被迫離開後回到 ok、失敗次數歸零：連不上的隊伍離開（自己離開、被移出、隊伍過期）之後，下一個隊伍從「已同步」開始', async () => {
+    let mode = 'offline';
+    let page;
+    const server = partyServer({ read: () => { throw mode === 'offline' ? offline() : roomError(404, 'ROOM_NOT_FOUND'); } });
+    const leaves = {
+        自己離開: async () => { assert.deepEqual(plain(await page.client.leaveRoom(true)), { success: true }); },
+        被移出: async () => { serverChanges(page, { members: [M4X, R6V] }); },
+        隊伍過期: async () => { mode = 'gone'; await pollTimes(page, 1); }
+    };
+    for (const [label, leave] of Object.entries(leaves)) {
+        mode = 'offline';
+        page = await createdParty({ respond: server.respond });
+        await pollTimes(page, 3);
+        assert.deepEqual(syncShown(page), FAILING, `${label}：前提，連不上`);
+
+        await leave();
+        assert.equal(page.client.currentRoom, null, label);
+        assert.deepEqual([page.client.syncState, page.client.transportFailures], ['ok', 0], `${label}：回到 ok、次數歸零`);
+
+        // 再建立一個隊伍：從「已同步」開始，不帶著上一個隊伍的連不上；再失敗 2 次也還不算（次數真的歸零了）
+        assert.equal((await page.client.createRoom()).success, true, label);
+        assert.deepEqual(syncShown(page), SYNCED, `${label}：下一個隊伍`);
+        mode = 'offline';
+        await pollTimes(page, 2);
+        assert.deepEqual([page.client.transportFailures, syncShown(page)], [2, SYNCED], `${label}：失敗次數重新數`);
+    }
+});
+
+test('同步狀態的樣式：連不上時 #partySync 加的 is-warn 有規則（文字與圓點換成警告色），只用 token，寫在最後的 .hidden 前面', () => {
+    const css = stripComments(read(`${TOOL_DIR}/style.css`));
+    const { bodyOf } = cssRules(css);
+    assert.match(bodyOf('.tm-sync.is-warn'), /color:\s*var\(--color-warning-text\)/);
+    assert.match(bodyOf('.tm-sync.is-warn .tm-sync-dot'), /background:\s*var\(--color-warning\)/);
+    for (const selector of ['.tm-sync.is-warn', '.tm-sync.is-warn .tm-sync-dot']) {
+        assert.ok(css.indexOf(`${selector} {`) < css.lastIndexOf('\n.hidden {'), `${selector} 要寫在最後的 .hidden 前面`);
+    }
+    assert.ok(read(`${TOOL_DIR}/party-status.js`).includes("'is-warn'"), 'PartyStatus 真的會加 is-warn');
+});
+
 // ---------- 三語的字 ----------
 test('隊伍狀態的鍵值：新增與改寫的三語都照設計寫；舊的最後更新、剩餘時間、暱稱列的鍵值三語都刪掉，頁面與程式裡也不留；新字沒有舊用語', () => {
     // key → [zh, en, ja]
@@ -3955,4 +4274,45 @@ test('邀請連結的鍵值：七個新鍵值三語都照設計寫；新字沒�
         assert.ok(fallbacks.length > 0, `${key} 沒有預設文字`);
         for (const [, fallback] of fallbacks) assert.equal(fallback.replace(/\\(.)/g, '$1'), texts[0], `${key} 的預設文字不是中文那一句`);
     }
+});
+
+test('同步狀態的鍵值：三個新鍵值三語都照設計寫；沒人用了的 treasure_map_sync_to_room_failed 三語都刪掉，頁面與程式裡也不留；舊紀錄（沒有 token）的分支還在用的 treasure_map_room_sync_failed_network 留著；程式裡的預設文字就是中文；新字沒有舊用語', () => {
+    // key → [zh, en, ja]
+    const written = {
+        treasure_map_sync_failing: ['連不上，重試中', "Can't connect — retrying", '接続できません・再試行中'],
+        treasure_map_sync_rejected_limit: ['隊伍清單最多 8 張，剛剛加的寶圖沒有加進去。', "A party list holds up to 8 maps; the map you just added wasn't added.",
+            'パーティリストは 8 枚までです。追加した地図は登録されませんでした。'],
+        treasure_map_sync_rejected: ['有一筆變更沒有送進隊伍，清單已換成隊伍目前的樣子。', "A change couldn't be saved to the party; your list now matches the party's.",
+            '変更の 1 つがパーティに反映されませんでした。リストはパーティの現在の内容に戻りました。']
+    };
+    const removed = ['treasure_map_sync_to_room_failed'];
+    const oldWords = { zh: /房間/, en: /\b(?:room|team)\b/i, ja: /ルーム|チーム/ };
+    ['zh', 'en', 'ja'].forEach((lang, index) => {
+        const values = translationValues(TRANSLATIONS, lang);
+        for (const [key, texts] of Object.entries(written)) {
+            assert.equal(values.get(key), texts[index], `${lang} ${key}`);
+            assert.doesNotMatch(texts[index], oldWords[lang], `${lang} ${key} 還有舊用語`);
+        }
+        const keys = translationKeySet(TRANSLATIONS, lang);
+        for (const key of removed) assert.equal(keys.has(key), false, `${lang} 還有 ${key}`);
+        // 舊紀錄的分支（checkExistingRoom() 讀不到隊伍）還用它，字由之後的任務改寫
+        assert.ok(keys.has('treasure_map_room_sync_failed_network'), `${lang} 少了 treasure_map_room_sync_failed_network`);
+    });
+    // 英文帶張數的句子不受單複數影響（8 是固定的上限）
+    const en = translationValues(TRANSLATIONS, 'en');
+    for (const key of ['treasure_map_sync_rejected_limit', 'treasure_map_sync_rejected']) assert.doesNotMatch(en.get(key), /\bmaps? (?:are|is)\b|\(s\)/i, key);
+
+    // 頁面與程式（含註解）裡不留舊的鍵值；每個新的鍵值都有人用，程式裡的預設文字（沒有翻譯時用）就是中文那一句
+    const sources = [`${TOOL_DIR}/index.html`, ...fs.readdirSync(path.join(ROOT, TOOL_DIR)).filter((name) => name.endsWith('.js')).map((name) => `${TOOL_DIR}/${name}`)];
+    const all = sources.map((file) => read(file)).join('\n');
+    for (const file of sources) {
+        for (const key of removed) assert.doesNotMatch(read(file), new RegExp(`\\b${key}\\b`), `${file} 還有 ${key}`);
+    }
+    for (const [key, texts] of Object.entries(written)) {
+        assert.ok(all.includes(`'${key}'`), `沒有人用 ${key}`);
+        const fallbacks = [...all.matchAll(new RegExp(`getI18nText\\(\\s*'${key}',\\s*'((?:[^'\\\\]|\\\\.)*)'`, 'g'))];
+        assert.ok(fallbacks.length > 0, `${key} 沒有預設文字`);
+        for (const [, fallback] of fallbacks) assert.equal(fallback.replace(/\\(.)/g, '$1'), texts[0], `${key} 的預設文字不是中文那一句`);
+    }
+    assert.ok(read(`${TOOL_DIR}/room-collaboration.js`).includes("'treasure_map_room_sync_failed_network'"), '舊紀錄的分支還在用它');
 });
