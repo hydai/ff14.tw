@@ -391,7 +391,7 @@ class RoomCollaboration {
     }
 
     recoverLegacyRoom(room) {
-        // Keep both the personal list and the former shared list available for export/new rooms.
+        // Keep both the personal list and the former shared list available in the personal list and for new rooms.
         const maps = new Map(this.finder.listManager.getList().map(map => [map.id, this.finder.toRoomMap(map)]));
         for (const map of room.treasureMaps || []) if (!maps.has(map.id)) maps.set(map.id, map);
         this.finder.listManager.syncFromRoom([...maps.values()], this.finder.maps);
@@ -929,5 +929,5 @@ class RoomCollaboration {
     }
 }
 
-// 匯出給主程式使用
+// 給主程式使用
 window.RoomCollaboration = RoomCollaboration;
