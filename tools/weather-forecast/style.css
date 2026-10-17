@@ -2,7 +2,7 @@
    天氣預報 — 只寫版面；顏色、圓角、字級一律來自 tokens.css 與共用元件
    ========================================================================== */
 
-/* 兩欄：左邊選擇區、右邊時刻表；767px 以下排成一欄，選擇區在上 */
+/* 兩欄：左邊選擇區、右邊答案卡、之後幾次與時刻表；767px 以下排成一欄，選擇區在上 */
 .wx-layout {
     display: grid;
     grid-template-columns: 320px minmax(0, 1fr);
@@ -18,6 +18,12 @@
 #moreConditions[hidden],
 #noZoneSelected[hidden],
 #zoneContent[hidden],
+#answerWhen[hidden],
+#answerWait[hidden],
+#answerMeta[hidden],
+#answerExtra[hidden],
+#nextSection[hidden],
+#nextMoreBtn[hidden],
 #showMoreBtn[hidden] {
     display: none;
 }
@@ -142,11 +148,93 @@
     padding: var(--space-8) var(--space-6);
 }
 
-/* 時刻表：外觀由 .card 與 .table / .table-wrap 提供 */
+/* 答案卡：主色框＋淡主色底，正在下（.is-now）換成成功色；圓角與陰影由 .card 提供 */
+.wx-answer {
+    display: grid;
+    gap: var(--space-2);
+    padding: var(--space-6);
+    border: 2px solid var(--color-primary);
+    background: var(--color-primary-tint);
+}
+
+.wx-answer.is-now {
+    border-color: var(--color-success);
+    background: var(--color-success-tint);
+}
+
+/* 答案卡的第一行是 h2（用標題跳著讀時讀得到答案），外觀照一般段落：拿掉 h2 的下邊距與行高 */
+.wx-eyebrow {
+    margin-bottom: 0;
+    font-size: var(--text-md);
+    font-weight: var(--weight-semibold);
+    line-height: var(--leading-normal);
+    color: var(--color-heading);
+}
+
+/* 大字：什麼時候出現，正在下時是到幾點 */
+.wx-when {
+    font-size: var(--text-4xl);
+    font-weight: var(--weight-bold);
+    line-height: var(--leading-tight);
+    color: var(--color-heading);
+    font-variant-numeric: tabular-nums;
+}
+
+.wx-wait {
+    font-size: var(--text-lg);
+    color: var(--color-text);
+    font-variant-numeric: tabular-nums;
+}
+
+.wx-meta {
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+}
+
+/* 之後幾次：每列三欄（日期時間、還要多久、ET 與到幾點）；欄寬由清單決定，每一列的欄對齊 */
+.wx-next {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr) auto;
+    column-gap: var(--space-3);
+    list-style: none;
+}
+
+.wx-next li {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
+    align-items: baseline;
+    padding: var(--space-3) 0;
+    border-top: 1px solid var(--color-border);
+}
+
+.wx-next li:first-child {
+    border-top: 0;
+}
+
+.wx-n-when {
+    font-weight: var(--weight-semibold);
+    color: var(--color-heading);
+    font-variant-numeric: tabular-nums;
+}
+
+.wx-n-wait {
+    font-variant-numeric: tabular-nums;
+}
+
+.wx-n-et {
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+/* 之後幾次與時刻表：外觀由 .card（時刻表另有 .table / .table-wrap）提供 */
 .wx-section {
     padding: var(--space-5);
 }
 
+/* 兩段的標題都是 h2（頁面的 h1 是隱藏的），字級照區塊標題 */
 .wx-section-title {
     margin-bottom: var(--space-3);
     font-size: var(--text-lg);
@@ -173,6 +261,7 @@
     gap: var(--space-2);
 }
 
+#nextMoreBtn,
 #showMoreBtn {
     margin-top: var(--space-4);
 }
@@ -184,6 +273,14 @@
         gap: var(--space-4);
     }
 
+    .wx-answer {
+        padding: var(--space-5);
+    }
+
+    .wx-when {
+        font-size: var(--text-3xl);
+    }
+
     .wx-section {
         padding: var(--space-4);
     }
@@ -191,5 +288,21 @@
     .results-table th,
     .results-table td {
         padding: var(--space-2);
+    }
+}
+
+/* 很窄的手機：之後幾次的 ET 那一段換到第二行 */
+@media (max-width: 479px) {
+    .wx-next {
+        grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .wx-next li {
+        row-gap: var(--space-1);
+    }
+
+    .wx-n-et {
+        grid-column: 1 / -1;
+        text-align: left;
     }
 }

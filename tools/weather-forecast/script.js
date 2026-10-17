@@ -1,7 +1,9 @@
 /**
  * FF14 Weather Forecast - Main Controller
  * The selection side (zone dropdown, weather chips, and "more conditions" with the
- * time of day and the previous weather) and the zone's weather timetable
+ * time of day and the previous weather), the answer card (when the chosen weather comes
+ * next, how long to wait and until when), the occurrences after it, and the zone's
+ * weather timetable
  */
 
 class WeatherForecast {
@@ -9,11 +11,15 @@ class WeatherForecast {
     static CONSTANTS = {
         INITIAL_RESULTS: 24, // timetable rows at first
         MAX_RESULTS: 200, // "show more" doubles the rows up to this many
+        INITIAL_NEXT: 5, // occurrences listed after the answer card at first
+        MAX_NEXT: 50, // "show more" doubles them up to this many
         TIME_UPDATE_INTERVAL: 1000,
+        MINUTE_MS: 60000,
         CSS_CLASSES: {
             ACTIVE: 'active',
             CURRENT: 'current-weather',
             IN_RANGE: 'in-range',
+            NOW: 'is-now',
             SELECTED: 'selected'
         }
     };
@@ -22,6 +28,11 @@ class WeatherForecast {
         // State
         this.timetableCount = WeatherForecast.CONSTANTS.INITIAL_RESULTS;
         this.timetableZoneId = null; // the zone timetableCount belongs to
+        this.timetableDrawnAt = null; // when the timetable was drawn: its 今天／明天 are relative to that day
+        this.nextCount = WeatherForecast.CONSTANTS.INITIAL_NEXT;
+        this.nextTarget = null; // the target (as its URL hash) nextCount belongs to
+        this.answerMinute = null; // the minute the answer card was drawn in
+        this.answerChangesAt = Infinity; // when the occurrence on the answer card starts or ends (see refreshOnMinuteChange())
         this.timeUpdateInterval = null;
         this.currentPeriodStart = null;
         this.timeRangeStart = null;
@@ -54,6 +65,16 @@ class WeatherForecast {
             // Main column
             noZoneSelected: document.getElementById('noZoneSelected'),
             zoneContent: document.getElementById('zoneContent'),
+            answerCard: document.getElementById('answerCard'),
+            answerEyebrow: document.getElementById('answerEyebrow'),
+            answerWhen: document.getElementById('answerWhen'),
+            answerWait: document.getElementById('answerWait'),
+            answerMeta: document.getElementById('answerMeta'),
+            answerExtra: document.getElementById('answerExtra'),
+            nextSection: document.getElementById('nextSection'),
+            nextTitle: document.getElementById('nextTitle'),
+            nextList: document.getElementById('nextList'),
+            nextMoreBtn: document.getElementById('nextMoreBtn'),
             timetableTitle: document.getElementById('timetableTitle'),
             resultsBody: document.getElementById('resultsBody'),
             showMoreBtn: document.getElementById('showMoreBtn')
@@ -108,7 +129,8 @@ class WeatherForecast {
         this.elements.timeGrid.addEventListener('keydown', (e) => this.handleTimeGridKeydown(e));
         this.elements.timeGrid.addEventListener('mouseenter', (e) => this.handleTimeGridHover(e), true);
 
-        // Timetable
+        // Occurrences after the answer card, and the timetable
+        this.elements.nextMoreBtn.addEventListener('click', () => this.handleNextMore());
         this.elements.showMoreBtn.addEventListener('click', () => this.handleShowMore());
 
         // Share
@@ -196,12 +218,16 @@ class WeatherForecast {
      * Start time update interval
      */
     startTimeUpdates() {
-        // 先記下目前所在的天氣期，之後每秒比對，換期時由 refreshOnPeriodChange() 重畫時刻表
+        // 先記下目前所在的天氣期，之後每秒比對：換期時由 refreshOnPeriodChange() 重畫答案與時刻表，
+        // 同一期裡由 refreshOnMinuteChange() 每分鐘更新答案、過了午夜重畫時刻表
         this.currentPeriodStart = WeatherCalculator.getWeatherPeriodStart(Date.now());
         this.updateTimeDisplay();
         this.timeUpdateInterval = setInterval(() => {
+            const now = Date.now();
             this.updateTimeDisplay();
-            this.refreshOnPeriodChange(Date.now());
+            if (!this.refreshOnPeriodChange(now)) {
+                this.refreshOnMinuteChange(now);
+            }
         }, WeatherForecast.CONSTANTS.TIME_UPDATE_INTERVAL);
     }
 
@@ -219,10 +245,10 @@ class WeatherForecast {
     }
 
     /**
-     * 天氣每 8 個艾歐澤亞小時（1,400 秒）換一期。時刻表只在選擇改變時才重畫，停在頁面上不動的話，
-     * 「目前」那一列會一直停在已過期的天氣；這裡由每秒的計時器呼叫，只在換期時重畫（列數照舊）。
-     * 以期別起點比對：分頁在背景時瀏覽器會降頻計時器，電腦睡著時整段都沒跑，下一次執行時
-     * 一定畫成最新的一期。
+     * 天氣每 8 個艾歐澤亞小時（1,400 秒）換一期。答案卡、之後幾次與時刻表只在選擇改變時才重畫，停在頁面上
+     * 不動的話，答案與「目前」那一列會一直停在已過期的天氣；這裡由每秒的計時器呼叫，只在換期時全部重算
+     * （之後幾次與時刻表的列數照舊）。以期別起點比對：分頁在背景時瀏覽器會降頻計時器，電腦睡著時整段都沒跑，
+     * 下一次執行時一定畫成最新的一期。
      * @param {number} now - 目前的 Unix 毫秒時間戳
      * @returns {boolean} 是否已換期
      */
@@ -231,9 +257,29 @@ class WeatherForecast {
         if (periodStart === this.currentPeriodStart) return false;
 
         this.currentPeriodStart = periodStart;
-        // 沒選地區就沒有時刻表可畫；之後選了地區會自己重畫
-        if (this.store.state.zoneId) this.renderTimetable();
+        // 沒選地區就沒有答案與時刻表可畫；之後選了地區會自己重畫
+        if (this.store.state.zoneId) {
+            this.renderAnswer();
+            this.renderTimetable();
+        }
         return true;
+    }
+
+    /**
+     * 同一期裡由每秒的計時器呼叫。分鐘一變就重畫答案卡與之後幾次（還要多久、還剩多久）。答案卡上那一次開始或結束時
+     * 也馬上重畫：有時段時頭尾落在艾歐澤亞的整點（每 175 秒一個），可能在期中、一分鐘的中間，等到下一分鐘才換的話，
+     * 開始之後還會寫「下次」最多一分鐘。本地日期一變（過了午夜）就重畫時刻表，它的今天／明天是相對畫的那一天。
+     * @param {number} now - 目前的 Unix 毫秒時間戳
+     */
+    refreshOnMinuteChange(now) {
+        if (!this.store.state.zoneId) return;
+
+        if (Math.floor(now / WeatherForecast.CONSTANTS.MINUTE_MS) !== this.answerMinute || now >= this.answerChangesAt) {
+            this.renderAnswer();
+        }
+        if (WeatherAnswer.dayOffset(now, this.timetableDrawnAt) !== 0) {
+            this.renderTimetable();
+        }
     }
 
     /**
@@ -258,10 +304,12 @@ class WeatherForecast {
             case 'previousWeathers':
                 this.updateWeatherTagsUI();
                 this.updateMoreSummary();
+                this.renderAnswer();
                 break;
             case 'timeRange':
                 this.updateTimeRangeUI();
                 this.updateMoreSummary();
+                this.renderAnswer();
                 break;
             case 'conditions':
             case 'clearFilters':
@@ -269,13 +317,14 @@ class WeatherForecast {
                 this.updateWeatherTagsUI();
                 this.updateTimeRangeUI();
                 this.updateMoreSummary();
+                this.renderAnswer();
                 break;
         }
     }
 
     /**
      * Draw the page for the current state: without a zone only the dropdown and the
-     * explanations; with a zone its weathers, conditions and timetable
+     * explanations; with a zone its weathers, conditions, answer card and timetable
      */
     render() {
         const hasZone = Boolean(this.store.getCurrentZone());
@@ -291,17 +340,19 @@ class WeatherForecast {
         this.renderWeatherTags();
         this.updateTimeRangeUI();
         this.updateMoreSummary();
+        this.renderAnswer();
         this.renderTimetable();
     }
 
     /**
-     * After a language change: the names in the dropdown, on the chips, in the summary and
-     * in the timetable (elements with data-i18n are translated by the i18n manager)
+     * After a language change: the names in the dropdown, on the chips, in the summary, on the
+     * answer card and in the timetable (elements with data-i18n are translated by the i18n manager)
      */
     handleLanguageChange() {
         this.relabelZoneSelect();
         this.renderWeatherTags();
         this.updateMoreSummary();
+        this.renderAnswer();
         this.renderTimetable();
     }
 
@@ -399,7 +450,18 @@ class WeatherForecast {
     }
 
     /**
-     * Handle show more button
+     * Handle the "show more" button under the occurrences after the answer card
+     */
+    handleNextMore() {
+        this.nextCount = Math.min(
+            this.nextCount * 2,
+            WeatherForecast.CONSTANTS.MAX_NEXT
+        );
+        this.renderAnswer();
+    }
+
+    /**
+     * Handle the timetable's "show more" button
      */
     handleShowMore() {
         this.timetableCount = Math.min(
@@ -535,6 +597,217 @@ class WeatherForecast {
     }
 
     /**
+     * Render the answer card and the occurrences after it for the current state. Only the text
+     * of the card's lines and its class change; the card itself is never rebuilt.
+     * - no weather and no special event chosen: the zone's weather right now
+     * - a target with nothing in the next 60 days: say so
+     * - the first occurrence under way: the green card (until when, time left, the next one)
+     * - otherwise: when it comes next, how long to wait and until when
+     */
+    renderAnswer() {
+        const zone = this.store.getCurrentZone();
+        const state = this.store.state;
+        const now = Date.now();
+        this.answerMinute = Math.floor(now / WeatherForecast.CONSTANTS.MINUTE_MS);
+        this.answerChangesAt = Infinity;
+
+        // The list after the card starts again at 5 for another target or zone, also after the
+        // first-visit screen (no zone, hash ''); a new period or language keeps its length
+        const target = WeatherStore.hashOf(state);
+        if (target !== this.nextTarget) {
+            this.nextTarget = target;
+            this.nextCount = WeatherForecast.CONSTANTS.INITIAL_NEXT;
+        }
+        if (!zone) return;
+
+        if (state.desiredWeathers.size === 0 && !state.event) {
+            this.writeZoneNow(zone, now);
+            this.renderNext([], now, true);
+            return;
+        }
+
+        const found = WeatherAnswer.occurrences(zone, state, now, 1 + this.nextCount);
+        const [first, ...rest] = found;
+        if (!first) {
+            this.writeAnswer({
+                eyebrow: this.getText('weather_answer_none', '60 天內沒有符合的時段'),
+                meta: this.getText('weather_answer_none_hint', '試試放寬條件。')
+            });
+        } else if (first.start <= now) {
+            this.answerChangesAt = first.end;
+            this.writeAnswerNow(first, rest[0], now);
+        } else {
+            this.answerChangesAt = first.start;
+            this.writeAnswerNext(first, now);
+        }
+        // Fewer than asked for: every occurrence in the 60 days is already listed
+        this.renderNext(rest, now, found.length < 1 + this.nextCount);
+    }
+
+    /**
+     * The answer card without a target: the zone's weather right now and how long it lasts.
+     * A time of day or a previous weather only applies to a chosen weather, which an extra line says.
+     */
+    writeZoneNow(zone, now) {
+        const state = this.store.state;
+        const weather = WeatherCalculator.getWeatherForZone(zone, now);
+        // The weather under way as one run, so it lasts until the weather really changes
+        const run = WeatherAnswer.occurrences(zone, { desiredWeathers: [weather] }, now, 1)[0];
+        const hasConditions = WeatherForecast.hasTimeRange(state) || state.previousWeathers.size > 0;
+
+        this.writeAnswer({
+            eyebrow: this.getText('weather_answer_zone_now', '{zone}現在', { zone: zone[this.getLanguage()] || zone.zh }),
+            when: this.weatherLabel(weather),
+            wait: this.getText('weather_answer_zone_left', '還剩 {wait}，到 {end}', {
+                wait: this.formatWait(run.end - now),
+                end: WeatherCalculator.formatLocalTime(run.end)
+            }),
+            meta: this.getText('weather_answer_zone_hint', '選一個天氣，這裡會寫它下次什麼時候出現。'),
+            extra: hasConditions ? this.getText('weather_answer_conditions_hint', '選了天氣，時段和前置天氣才會用上。') : ''
+        });
+    }
+
+    /**
+     * The answer card while the first occurrence is under way (green): until when, how long is
+     * left, its Eorzea hours and when the next one starts
+     */
+    writeAnswerNow(occurrence, next, now) {
+        const et = this.formatEtSpan(occurrence.start, occurrence.end);
+
+        this.writeAnswer({
+            isNow: true,
+            eyebrow: this.isEventOnly()
+                ? this.getText('weather_answer_now_event', '現在符合 {event} 的條件', { event: this.eventName() })
+                : this.getText('weather_answer_now', '現在就是 {weather}', { weather: this.weatherLabel(occurrence.weather) }),
+            when: this.getText('weather_answer_until', '到 {time}', { time: WeatherCalculator.formatLocalTime(occurrence.end) }),
+            wait: this.getText('weather_answer_left', '還剩 {wait}', { wait: this.formatWait(occurrence.end - now) }),
+            // Nothing after this one in the 60 days: only its Eorzea hours
+            meta: next
+                ? this.getText('weather_answer_meta_now', '{et} · 下一次：{next}', { et, next: this.formatDayTime(next.start, now) })
+                : et
+        });
+    }
+
+    /**
+     * The answer card for an occurrence still to come: when, how long to wait, until when, and its
+     * Eorzea hours with the weather before it. With a time of day the times are the part inside it,
+     * and the small print gives the whole run and which part of it is inside.
+     */
+    writeAnswerNext(occurrence, now) {
+        const state = this.store.state;
+        const hasRange = WeatherForecast.hasTimeRange(state);
+        const weather = this.weatherLabel(occurrence.weather);
+        const wait = this.formatWait(occurrence.start - now);
+        const end = WeatherCalculator.formatLocalTime(occurrence.end);
+
+        let eyebrow;
+        if (this.isEventOnly()) {
+            eyebrow = this.getText('weather_answer_next_event', '下次符合 {event} 的條件', { event: this.eventName() });
+        } else if (hasRange) {
+            eyebrow = this.getText('weather_answer_next_range', '下次 {weather}（你選的時段 {range}）', {
+                weather,
+                range: WeatherForecast.formatEtRange(state.beginHour, state.endHour)
+            });
+        } else {
+            eyebrow = this.getText('weather_answer_next', '下次 {weather}', { weather });
+        }
+
+        this.writeAnswer({
+            eyebrow,
+            when: this.formatDayTime(occurrence.start, now),
+            wait: hasRange
+                ? this.getText('weather_answer_wait_range', '還要 {wait}，可以拍到 {end}', { wait, end })
+                : this.getText('weather_answer_wait', '還要 {wait}，到 {end} 結束', { wait, end }),
+            meta: hasRange
+                // Inside this sentence the weather is its name only, without the icon
+                ? this.getText('weather_answer_meta_range', '這段{weather}是 {start}–{end}（{et}），其中 {clip} 在你選的時段內', {
+                    weather: this.weatherName(occurrence.weather),
+                    start: WeatherCalculator.formatLocalTime(occurrence.periodStart),
+                    end: WeatherCalculator.formatLocalTime(occurrence.periodEnd),
+                    et: this.formatEtSpan(occurrence.periodStart, occurrence.periodEnd),
+                    clip: this.formatEtSpan(occurrence.start, occurrence.end)
+                })
+                : this.getText('weather_answer_meta', '{et} · 前一段是 {previous}', {
+                    et: this.formatEtSpan(occurrence.start, occurrence.end),
+                    previous: this.weatherLabel(occurrence.previousWeather)
+                })
+        });
+    }
+
+    /**
+     * Write the answer card's lines; an empty line is hidden. The card and its lines stay the same
+     * elements, since the card is redrawn every minute and holds more than these lines.
+     */
+    writeAnswer({ isNow = false, eyebrow, when = '', wait = '', meta = '', extra = '' }) {
+        const { answerCard, answerEyebrow, answerWhen, answerWait, answerMeta, answerExtra } = this.elements;
+        answerCard.classList.toggle(WeatherForecast.CONSTANTS.CSS_CLASSES.NOW, isNow);
+        answerEyebrow.textContent = eyebrow;
+        for (const [element, text] of [[answerWhen, when], [answerWait, wait], [answerMeta, meta], [answerExtra, extra]]) {
+            element.textContent = text;
+            element.hidden = !text;
+        }
+    }
+
+    /**
+     * The occurrences after the one on the answer card, one row each: day and time, how long to
+     * wait, the Eorzea hours and until when. Rows are reused, so the update every minute only
+     * changes text. The section is hidden when there is nothing to list.
+     * @param {array} occurrences - From WeatherAnswer.occurrences(), after the one on the card
+     * @param {number} now - Current timestamp
+     * @param {boolean} complete - Every occurrence there is has been listed, so "show more" would add nothing
+     */
+    renderNext(occurrences, now, complete) {
+        const list = this.elements.nextList;
+
+        occurrences.forEach((occurrence, i) => {
+            const [when, wait, et] = (list.children[i] || this.createNextRow()).children;
+            when.textContent = this.formatDayTime(occurrence.start, now);
+            wait.textContent = this.getText('weather_next_row_wait', '還要 {wait}', { wait: this.formatWait(occurrence.start - now) });
+            et.textContent = this.getText('weather_next_row_meta', '{et} · 到 {end}', {
+                et: this.formatEtSpan(occurrence.start, occurrence.end),
+                end: WeatherCalculator.formatLocalTime(occurrence.end)
+            });
+        });
+        for (const row of Array.from(list.children).slice(occurrences.length)) {
+            row.remove();
+        }
+
+        this.elements.nextSection.hidden = occurrences.length === 0;
+        this.toggleShowMore(
+            this.elements.nextMoreBtn,
+            this.elements.nextTitle,
+            complete || this.nextCount >= WeatherForecast.CONSTANTS.MAX_NEXT
+        );
+    }
+
+    /**
+     * A new, empty row at the end of the list after the answer card
+     */
+    createNextRow() {
+        const row = document.createElement('li');
+        for (const className of ['wx-n-when', 'wx-n-wait', 'wx-n-et']) {
+            const part = document.createElement('span');
+            part.className = className;
+            row.appendChild(part);
+        }
+        this.elements.nextList.appendChild(row);
+        return row;
+    }
+
+    /**
+     * Show or hide a "show more" button. When the focused button goes away because its list is
+     * complete, the focus moves to the section heading instead of falling to the page body.
+     * The page does not scroll there: a mouse click focuses the button too, and the heading can
+     * be a whole list above it.
+     */
+    toggleShowMore(button, heading, hidden) {
+        if (hidden && document.activeElement === button) {
+            heading.focus({ preventScroll: true });
+        }
+        button.hidden = hidden;
+    }
+
+    /**
      * Render the zone's weather timetable: the next periods from the one under way, whatever
      * the chosen weather and conditions, with the current one marked
      */
@@ -545,6 +818,7 @@ class WeatherForecast {
 
         const lang = this.getLanguage();
         const now = Date.now();
+        this.timetableDrawnAt = now;
         this.elements.timetableTitle.textContent = this.getText('weather_timetable_title', '{zone}的天氣時刻表', {
             zone: zone[lang] || zone.zh
         });
@@ -573,7 +847,11 @@ class WeatherForecast {
             this.elements.resultsBody.appendChild(row);
         }
 
-        this.elements.showMoreBtn.hidden = this.timetableCount >= WeatherForecast.CONSTANTS.MAX_RESULTS;
+        this.toggleShowMore(
+            this.elements.showMoreBtn,
+            this.elements.timetableTitle,
+            this.timetableCount >= WeatherForecast.CONSTANTS.MAX_RESULTS
+        );
     }
 
     /**
@@ -622,6 +900,69 @@ class WeatherForecast {
             day = this.getText('weather_day_date', '{month}/{day}', { month: date.getMonth() + 1, day: date.getDate() });
         }
         return this.getText('weather_day_time', '{day} {time}', { day, time: WeatherCalculator.formatLocalTime(ts) });
+    }
+
+    /**
+     * A wait as "N 分", "N 小時 M 分", "N 天 M 小時" and so on in the current language, rounded up
+     * to a whole minute (WeatherAnswer.waitParts())
+     * @param {number} ms - Wait in milliseconds
+     * @returns {string}
+     */
+    formatWait(ms) {
+        const { days, hours, minutes } = WeatherAnswer.waitParts(ms);
+        if (days > 0) {
+            return hours > 0
+                ? this.getText('weather_wait_days_hours', '{d} 天 {h} 小時', { d: days, h: hours })
+                : this.getText('weather_wait_days', '{d} 天', { d: days });
+        }
+        if (hours > 0) {
+            return minutes > 0
+                ? this.getText('weather_wait_hours_minutes', '{h} 小時 {m} 分', { h: hours, m: minutes })
+                : this.getText('weather_wait_hours', '{h} 小時', { h: hours });
+        }
+        return this.getText('weather_wait_minutes', '{m} 分', { m: minutes });
+    }
+
+    /**
+     * The Eorzea hours a span of time covers, as "ET 16:00–08:00"
+     */
+    formatEtSpan(start, end) {
+        const { from, to } = WeatherAnswer.etHours(start, end);
+        return WeatherForecast.formatEtRange(from, to);
+    }
+
+    /**
+     * A weather's name in the current language
+     */
+    weatherName(weather) {
+        const info = WeatherZoneData.getWeatherInfo(weather);
+        return info ? info[this.getLanguage()] || info.zh : weather;
+    }
+
+    /**
+     * A weather as its icon, a space and its name in the current language
+     */
+    weatherLabel(weather) {
+        const info = WeatherZoneData.getWeatherInfo(weather);
+        return info ? `${info.icon} ${this.weatherName(weather)}` : weather;
+    }
+
+    /**
+     * Whether the special event is the target: an event in the URL and no weather chosen
+     */
+    isEventOnly() {
+        return Boolean(this.store.state.event) && this.store.state.desiredWeathers.size === 0;
+    }
+
+    /**
+     * The special event's name in the current language
+     */
+    eventName() {
+        const names = {
+            garlok: this.getText('weather_event_garlok', '哥布林首領'),
+            laideronnette: this.getText('weather_event_laideronnette', '湖中女妖')
+        };
+        return names[this.store.state.event] || this.store.state.event;
     }
 
     /**

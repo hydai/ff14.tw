@@ -34,6 +34,38 @@ const WeatherForecastTranslations = {
         weather_empty_title: '先選地區和天氣',
         weather_empty_text: '這裡會寫它下次什麼時候出現、還要等多久。下次打開會記得你選的。',
 
+        // 答案卡
+        weather_answer_next: '下次 {weather}',
+        weather_answer_next_range: '下次 {weather}（你選的時段 {range}）',
+        weather_answer_next_event: '下次符合 {event} 的條件',
+        weather_answer_now: '現在就是 {weather}',
+        weather_answer_now_event: '現在符合 {event} 的條件',
+        weather_answer_until: '到 {time}',
+        weather_answer_left: '還剩 {wait}',
+        weather_answer_wait: '還要 {wait}，到 {end} 結束',
+        weather_answer_wait_range: '還要 {wait}，可以拍到 {end}',
+        weather_answer_meta: '{et} · 前一段是 {previous}',
+        weather_answer_meta_now: '{et} · 下一次：{next}',
+        weather_answer_meta_range: '這段{weather}是 {start}–{end}（{et}），其中 {clip} 在你選的時段內',
+        weather_answer_none: '60 天內沒有符合的時段',
+        weather_answer_none_hint: '試試放寬條件。',
+        weather_answer_zone_now: '{zone}現在',
+        weather_answer_zone_left: '還剩 {wait}，到 {end}',
+        weather_answer_zone_hint: '選一個天氣，這裡會寫它下次什麼時候出現。',
+        weather_answer_conditions_hint: '選了天氣，時段和前置天氣才會用上。',
+
+        // 等待時間
+        weather_wait_minutes: '{m} 分',
+        weather_wait_hours: '{h} 小時',
+        weather_wait_hours_minutes: '{h} 小時 {m} 分',
+        weather_wait_days: '{d} 天',
+        weather_wait_days_hours: '{d} 天 {h} 小時',
+
+        // 之後幾次
+        weather_next_title: '之後幾次',
+        weather_next_row_wait: '還要 {wait}',
+        weather_next_row_meta: '{et} · 到 {end}',
+
         // 時刻表
         weather_timetable_title: '{zone}的天氣時刻表',
         weather_show_more: '顯示更多',
@@ -130,6 +162,38 @@ const WeatherForecastTranslations = {
         weather_empty_title: 'Pick a zone and a weather',
         weather_empty_text: 'This is where you\'ll see when it comes next and how long to wait. Your choice is remembered for next time.',
 
+        // Answer card
+        weather_answer_next: 'Next {weather}',
+        weather_answer_next_range: 'Next {weather} (your time of day {range})',
+        weather_answer_next_event: 'Next {event} window',
+        weather_answer_now: '{weather} right now',
+        weather_answer_now_event: '{event} window now',
+        weather_answer_until: 'Until {time}',
+        weather_answer_left: '{wait} left',
+        weather_answer_wait: 'In {wait}, until {end}',
+        weather_answer_wait_range: 'In {wait}, shootable until {end}',
+        weather_answer_meta: '{et} · after {previous}',
+        weather_answer_meta_now: '{et} · next: {next}',
+        weather_answer_meta_range: 'This {weather} runs {start}–{end} ({et}); {clip} is in your time of day',
+        weather_answer_none: 'Nothing matches in the next 60 days',
+        weather_answer_none_hint: 'Try loosening the conditions.',
+        weather_answer_zone_now: '{zone} right now',
+        weather_answer_zone_left: '{wait} left, until {end}',
+        weather_answer_zone_hint: 'Pick a weather to see when it comes next.',
+        weather_answer_conditions_hint: 'Time of day and previous weather apply once you pick a weather.',
+
+        // Wait times
+        weather_wait_minutes: '{m} min',
+        weather_wait_hours: '{h} h',
+        weather_wait_hours_minutes: '{h} h {m} min',
+        weather_wait_days: '{d} d',
+        weather_wait_days_hours: '{d} d {h} h',
+
+        // Coming up
+        weather_next_title: 'Coming up',
+        weather_next_row_wait: 'in {wait}',
+        weather_next_row_meta: '{et} · until {end}',
+
         // Timetable
         weather_timetable_title: 'Weather in {zone}',
         weather_show_more: 'Show More',
@@ -225,6 +289,38 @@ const WeatherForecastTranslations = {
         // エリア未選択
         weather_empty_title: 'エリアと天気を選んでください',
         weather_empty_text: '次にいつ来るか、あとどれくらい待つかがここに表示されます。選んだ内容は次回も覚えています。',
+
+        // 答えのカード
+        weather_answer_next: '次の{weather}',
+        weather_answer_next_range: '次の{weather}（指定の時間帯 {range}）',
+        weather_answer_next_event: '次の{event}の条件',
+        weather_answer_now: 'ただいま{weather}',
+        weather_answer_now_event: 'ただいま{event}の条件',
+        weather_answer_until: '{time}まで',
+        weather_answer_left: '残り{wait}',
+        weather_answer_wait: 'あと{wait}、{end}まで',
+        weather_answer_wait_range: 'あと{wait}、{end}まで撮影可',
+        weather_answer_meta: '{et} ・ 前は{previous}',
+        weather_answer_meta_now: '{et} ・ 次回：{next}',
+        weather_answer_meta_range: 'この{weather}は {start}–{end}（{et}）、うち{clip}が指定の時間帯',
+        weather_answer_none: '60日以内に条件に合う時間帯はありません',
+        weather_answer_none_hint: '条件をゆるめてみてください。',
+        weather_answer_zone_now: '{zone}の今の天気',
+        weather_answer_zone_left: '残り{wait}、{end}まで',
+        weather_answer_zone_hint: '天気を選ぶと、次にいつ来るかがここに表示されます。',
+        weather_answer_conditions_hint: '時間帯と前の天気は、天気を選ぶと使われます。',
+
+        // 待ち時間
+        weather_wait_minutes: '{m}分',
+        weather_wait_hours: '{h}時間',
+        weather_wait_hours_minutes: '{h}時間{m}分',
+        weather_wait_days: '{d}日',
+        weather_wait_days_hours: '{d}日{h}時間',
+
+        // この後
+        weather_next_title: 'この後',
+        weather_next_row_wait: 'あと{wait}',
+        weather_next_row_meta: '{et} ・ {end}まで',
 
         // 天気予報表
         weather_timetable_title: '{zone}の天気',

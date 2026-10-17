@@ -78,7 +78,7 @@
                     </details>
                 </aside>
 
-                <!-- 右欄：還沒選地區時的說明；選了地區之後是這個地區的天氣時刻表 -->
+                <!-- 右欄：還沒選地區時的說明；選了地區之後由上而下是答案卡、之後幾次、這個地區的天氣時刻表 -->
                 <section class="wx-main">
                     <div class="empty-state wx-empty" id="noZoneSelected">
                         <div class="empty-state-icon" aria-hidden="true">🌦️</div>
@@ -87,8 +87,25 @@
                     </div>
 
                     <div class="wx-zone" id="zoneContent" hidden>
+                        <!-- 答案卡：選的天氣下次什麼時候出現、還要多久、到幾點（沒選天氣時是這個地區現在的天氣）。
+                             文字由 JavaScript 寫入、每分鐘更新，所以不放 aria-live -->
+                        <div class="card wx-answer" id="answerCard">
+                            <h2 class="wx-eyebrow" id="answerEyebrow"></h2>
+                            <p class="wx-when" id="answerWhen"></p>
+                            <p class="wx-wait" id="answerWait"></p>
+                            <p class="wx-meta" id="answerMeta"></p>
+                            <p class="wx-meta" id="answerExtra" hidden></p>
+                        </div>
+
+                        <!-- 之後幾次：答案卡那一次之後的幾次，每一次一列，由 JavaScript 產生 -->
+                        <div class="card wx-section" id="nextSection" hidden>
+                            <h2 class="wx-section-title" id="nextTitle" tabindex="-1" data-i18n="weather_next_title">之後幾次</h2>
+                            <ol class="wx-next" id="nextList"></ol>
+                            <button class="btn btn-outline btn-block" id="nextMoreBtn" type="button" data-i18n="weather_show_more">顯示更多</button>
+                        </div>
+
                         <div class="card wx-section" id="timetableSection">
-                            <h3 class="wx-section-title" id="timetableTitle"></h3>
+                            <h2 class="wx-section-title" id="timetableTitle" tabindex="-1"></h2>
                             <div class="table-wrap">
                                 <table class="table results-table">
                                     <thead>
