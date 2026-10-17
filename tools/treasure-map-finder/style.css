@@ -1344,7 +1344,7 @@
         border-top: 1px solid var(--color-border);
     }
 
-    /* 底部列的按鈕縮小左右內距、不放圖示：英文的「Team list 3/8」加「Generate Route」在 360px 寬也排得下；
+    /* 底部列的按鈕縮小左右內距、不放圖示：英文的「Party 3/8」加「Generate Route」在 360px 寬也排得下；
        再窄就截短清單按鈕的標籤，不讓右邊的按鈕跑出畫面 */
     .tm-bottom-bar .btn {
         padding-inline: var(--space-3);

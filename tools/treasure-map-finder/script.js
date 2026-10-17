@@ -431,7 +431,7 @@ class TreasureMapFinder {
 
     // 隊伍連線中不能改清單（RoomCollaboration.setConnecting() 也停用了按鈕）：canEditList() 的 toast 與匯入、清空的回傳值共用這句話
     getConnectingMessage() {
-        return FF14Utils.getI18nText('treasure_map_room_connecting', '隊伍連線中，請稍候再修改清單。');
+        return FF14Utils.getI18nText('treasure_map_room_connecting', '正在連上隊伍，請稍候再修改清單。');
     }
 
     canEditList() {
@@ -469,7 +469,7 @@ class TreasureMapFinder {
         this.renderMyList();
         this.notifyIfUnsaved(result);
         
-        // 同步到房間
+        // 同步到隊伍
         if (this.roomCollaboration?.currentRoom) {
             this.syncToRoom();
         }
@@ -555,7 +555,7 @@ class TreasureMapFinder {
         }
     }
 
-    // 左邊的清單按鈕只打開面板；「組隊」打開後把焦點移到面板裡的「建立組隊」；「生成路線」打開後切到路線頁（openRoute）
+    // 左邊的清單按鈕只打開面板；「組隊」打開後把焦點移到面板裡的「建立隊伍」；「生成路線」打開後切到路線頁（openRoute）
     handleListEntry(action) {
         this.openListPanel();
         if (action === 'team') {
@@ -769,7 +769,7 @@ class TreasureMapFinder {
         this.renderMyList();
         this.focusListRow(position);
 
-        // 同步到房間
+        // 同步到隊伍
         if (this.roomCollaboration?.currentRoom) {
             this.syncToRoom();
         }
@@ -789,7 +789,7 @@ class TreasureMapFinder {
         this.updateCardButtons();
         this.renderMyList();
 
-        // 同步到房間
+        // 同步到隊伍
         if (this.roomCollaboration?.currentRoom) {
             this.syncToRoom();
         }
@@ -818,11 +818,11 @@ class TreasureMapFinder {
     static ENTRY_LABELS = {
         treasure_map_entry_empty: '📋 清單',
         treasure_map_entry_count: '📋 清單 {count} 張',
-        treasure_map_entry_room: '👥 隊伍清單 {count}/{max}'
+        treasure_map_entry_room: '👥 隊伍 {count}/{max}'
     };
 
     // 清單入口：左邊的標籤與右邊的動作。0 張「組隊」、1 張以上「生成路線」（1 張也排得出路線）；
-    // 在隊伍裡時標籤是「隊伍清單 N/上限」，0 張時右邊不放動作（已經在隊伍裡，不再顯示「組隊」）
+    // 在隊伍裡時標籤是「隊伍 N/上限」，0 張時右邊不放動作（已經在隊伍裡，不再顯示「組隊」）
     static getListEntryState({ count, inRoom, maxMaps }) {
         let action = 'team';
         if (count >= 1) action = 'route';
@@ -1090,7 +1090,7 @@ class TreasureMapFinder {
         return this.roomCollaboration.mapSync.replaceLocal(this.listManager.getList().map(item => this.toRoomMap(item)));
     }
 
-    // 從房間同步寶圖
+    // 從隊伍同步寶圖
     syncFromRoom(maps) {
         if (!this.roomCollaboration?.currentRoom) return;
 

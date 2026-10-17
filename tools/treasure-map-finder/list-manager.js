@@ -336,8 +336,8 @@ class ListManager {
     }
 
     /**
-     * 從房間資料同步
-     * @param {Array} roomMaps - 房間的地圖列表
+     * 從隊伍資料同步
+     * @param {Array} roomMaps - 隊伍的地圖列表
      * @param {Array} allMaps - 所有可用的地圖資料
      */
     syncFromRoom(roomMaps, allMaps) {

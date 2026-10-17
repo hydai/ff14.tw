@@ -399,7 +399,7 @@ class RoomCollaboration {
         this.finder.updateCardButtons();
         this.finder.renderMyList();
         this.forceLeaveRoom();
-        this.showToast(FF14Utils.getI18nText('treasure_map_legacy_room', '此隊伍已轉為唯讀，寶圖已保留在本機，請建立新隊伍。'), 'warning');
+        this.showToast(FF14Utils.getI18nText('treasure_map_legacy_room', '這個隊伍已轉為唯讀，寶圖已保留在你的清單，請建立新的隊伍。'), 'warning');
     }
 
     setupEventListeners() {
@@ -459,7 +459,7 @@ class RoomCollaboration {
                 }
             } catch (error) {
                 if (error.status === 404) this.forceLeaveRoom();
-                else this.showToast(FF14Utils.getI18nText('treasure_map_room_sync_failed_network', '同步失敗，請檢查網路連線'), 'error');
+                else this.showToast(FF14Utils.getI18nText('treasure_map_room_sync_failed_network', '連不上隊伍伺服器，請檢查網路連線。'), 'error');
             }
             return;
         }
@@ -576,7 +576,7 @@ class RoomCollaboration {
             });
             const connected = this.completeConnection(room, newMember, memberToken, retained);
             if (!connected.success) return connected;
-            this.showToast(FF14Utils.getI18nText('treasure_map_join_room_success', '成功加入隊伍 {code}', { code: roomCode }));
+            this.showToast(FF14Utils.getI18nText('treasure_map_join_room_success', '已加入隊伍 {code}', { code: roomCode }));
             await this.mapSync.flush();
             return { success: true };
         } catch (error) {
@@ -786,7 +786,7 @@ class RoomCollaboration {
             if (generation !== this.sessionGeneration || this.isLeaving) return;
             if (error.status === 404) {
                 this.forceLeaveRoom();
-                this.showToast(FF14Utils.getI18nText('treasure_map_room_expired', '隊伍已過期'), 'error');
+                this.showToast(FF14Utils.getI18nText('treasure_map_room_expired', '隊伍已經解散，寶圖留在你的清單。'), 'error');
             } else {
                 // 讀不到隊伍：不跳 toast，由同步狀態說。讀取不會有「伺服器拒絕一筆變更」的情況，所以連續被拒絕的 403 之類也算連不上
                 this.noteTransportFailure();
@@ -899,7 +899,7 @@ class RoomCollaboration {
         document.getElementById('teamActions')?.classList.toggle('hidden', Boolean(this.currentRoom));
         this.status.render();
 
-        // 進出隊伍時清單入口跟著換（「隊伍清單 N/8」或「清單 N 張」）
+        // 進出隊伍時清單入口跟著換（「隊伍 N/8」或「清單 N 張」）
         this.finder?.updateListCount?.();
     }
 

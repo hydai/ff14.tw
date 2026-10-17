@@ -191,7 +191,9 @@ test('標題與張數：個人清單「我的清單／6 張／6 張寶圖」，�
     page.team();
     assert.deepEqual(labels(), ['隊伍清單', '3/8', '3/8 張']);
     page.setLang('en');
-    assert.deepEqual(labels(), ['Team list', '3/8', 'Total: 3/8']);
+    assert.deepEqual(labels(), ['Party list', '3/8', 'Total: 3/8']);
+    page.setLang('ja');
+    assert.deepEqual(labels(), ['パーティリスト', '3/8', '3/8 枚']);
 });
 
 test('✕ 直接移除：不確認、不跳 toast、唸出剩幾張；焦點移到下一列，最後一列移到上一列，清單空了移到標題', async () => {
@@ -390,7 +392,7 @@ test('清空：「取消」、✕、點遮罩都不動清單，焦點回到「�
     page.$('clearAllBtn').click();
     page.$('confirmClearBtn').click();
     assert.deepEqual(page.toasts, [{ message: '已清空清單', type: 'success' }]);
-    assert.equal(page.$('listEntryDesktop').querySelector('.tm-entry-label').textContent, '👥 隊伍清單 0/8');
+    assert.equal(page.$('listEntryDesktop').querySelector('.tm-entry-label').textContent, '👥 隊伍 0/8');
     assert.ok(page.$('listContent').querySelector('.empty-state') !== null, '清單頁換成空狀態');
     assert.equal(sent.length, 1);
     assert.equal(sent[0].length, 0);
@@ -403,7 +405,7 @@ test('沒有東西可清、或隊伍連線中：不開清空與匯入對話框�
     assert.equal(isHidden(page, 'clearListModal'), true, '清單是空的');
     page.addMaps(['tm_017']);
     page.team({ connecting: true });
-    const connecting = { message: '隊伍連線中，請稍候再修改清單。', type: 'info' };
+    const connecting = { message: '正在連上隊伍，請稍候再修改清單。', type: 'info' };
     page.$('clearAllBtn').click();
     page.$('importListBtn').click();
     assert.equal(isHidden(page, 'clearListModal'), true);
@@ -412,7 +414,7 @@ test('沒有東西可清、或隊伍連線中：不開清空與匯入對話框�
     page.toasts.length = 0;
     // 匯入的函式不跳 toast：訊息交給匯入對話框顯示
     const imported = await page.finder.importFromText('?maps=tm_007', { merge: true });
-    assert.deepEqual([imported.success, imported.message], [false, '隊伍連線中，請稍候再修改清單。']);
+    assert.deepEqual([imported.success, imported.message], [false, '正在連上隊伍，請稍候再修改清單。']);
     assert.deepEqual(page.toasts, []);
     assert.deepEqual([page.finder.clearList().success, mapIds(page)], [false, ['tm_017']]);
 });
@@ -965,8 +967,8 @@ test('清空與匯入對話框的三語鍵值照設計；舊的確認、說明�
         treasure_map_clear_body: ['清單裡的 {count} 張寶圖都會移除。', 'All maps in the list will be removed ({count}).', 'リストの地図 {count} 枚がすべて削除されます。'],
         treasure_map_clear_body_room: [
             '隊伍清單裡的 {count} 張寶圖都會移除，隊友的清單也會跟著清空。',
-            "All maps in the team list will be removed ({count}), and your teammates' lists will be cleared too.",
-            'チームリストの地図 {count} 枚がすべて削除され、メンバーのリストも空になります。'
+            "All maps in the party list will be removed ({count}), and your party's lists will be cleared too.",
+            'パーティリストの地図 {count} 枚がすべて削除され、メンバーのリストも空になります。'
         ],
         treasure_map_clear_confirm_button: ['清空 {count} 張', 'Clear all ({count})', '{count} 枚を削除'],
         treasure_map_import_label: [
@@ -988,7 +990,7 @@ test('清空與匯入對話框的三語鍵值照設計；舊的確認、說明�
         treasure_map_import_merge_hint: ['重複的只留一張', 'Duplicates are kept once', '重複は 1 枚にまとめます'],
         treasure_map_import_replace_hint: ['原本的寶圖會移除', 'Your current maps will be removed', '今ある地図は削除されます'],
         treasure_map_share_replace: ['取代我的清單', 'Replace my list', 'マイリストを置き換える'],
-        treasure_map_share_replace_room: ['取代隊伍清單', 'Replace the team list', 'チームリストを置き換える'],
+        treasure_map_share_replace_room: ['取代隊伍清單', 'Replace the party list', 'パーティリストを置き換える'],
         treasure_map_share_none_found: ['分享連結裡沒有找得到的寶圖', 'None of the maps in this share link could be found', '共有リンクの地図が見つかりませんでした']
     };
     const gone = ['treasure_map_clear_confirm', 'treasure_map_import_instruction', 'treasure_map_import_placeholder', 'treasure_map_import_text_required',
@@ -1128,7 +1130,7 @@ test('隊伍裡：選項寫隊伍清單；超過 8 張或連線中時說明並�
     const connecting = await createPanelPage({ url: `${URL_BASE}?maps=tm_008` });
     connecting.team({ connecting: true });
     connecting.finder.handleSharedMaps();
-    assert.equal(connecting.$('shareMapsNote').textContent, '隊伍連線中，請稍候再修改清單。');
+    assert.equal(connecting.$('shareMapsNote').textContent, '正在連上隊伍，請稍候再修改清單。');
     assert.equal(connecting.$('confirmShareBtn').disabled, true);
 });
 
@@ -1233,7 +1235,7 @@ test('加入分享的寶圖之後：清單入口與卡片的按鈕更新，隊�
     page.finder.handleSharedMaps();
     page.$('confirmShareBtn').click();
     await settle();
-    assert.equal(page.$('listEntryDesktop').querySelector('.tm-entry-label').textContent, '👥 隊伍清單 2/8');
+    assert.equal(page.$('listEntryDesktop').querySelector('.tm-entry-label').textContent, '👥 隊伍 2/8');
     assert.equal(page.$('treasureGrid').querySelector('[data-map-id="tm_017"] .btn-add-to-list').dataset.state, 'added');
     assert.deepEqual(sent.map((maps) => Array.from(maps, (map) => map.id)), [['tm_017', 'tm_007']]);
 });
@@ -1269,7 +1271,7 @@ test('隊伍連線中又超過上限：提醒只寫連線中；不在隊伍裡�
     connecting.addMaps(SIX_MAPS);
     connecting.team({ connecting: true });
     connecting.finder.handleSharedMaps();
-    assert.deepEqual([connecting.$('shareMapsNote').textContent, connecting.$('confirmShareBtn').disabled], ['隊伍連線中，請稍候再修改清單。', true]);
+    assert.deepEqual([connecting.$('shareMapsNote').textContent, connecting.$('confirmShareBtn').disabled], ['正在連上隊伍，請稍候再修改清單。', true]);
 
     const personal = await createPanelPage({ url: `${URL_BASE}?maps=tm_008,tm_009,tm_011` });
     personal.addMaps(SIX_MAPS);
@@ -1388,7 +1390,7 @@ test('分享對話框開著時切換語言：標題、說明、清單的地名�
     assert.match(page.$('shareMapsList').textContent, /リストにあります/);
     assert.deepEqual([isHidden(page, 'shareMapsError'), page.$('shareMapsError').textContent], [true, '']);
     page.team();
-    assert.deepEqual(textsOf(page, ['shareModeMergeTitle', 'shareModeReplaceTitle']), ['チームリストに追加', 'チームリストを置き換える']);
+    assert.deepEqual(textsOf(page, ['shareModeMergeTitle', 'shareModeReplaceTitle']), ['パーティリストに追加', 'パーティリストを置き換える']);
 });
 
 test('加入失敗：原因寫在對話框裡、對話框不關、網址還沒動；改選項就收起錯誤；關起來之後網址才拿掉', async () => {
@@ -1588,7 +1590,7 @@ test('分享連結的三語鍵值照設計', () => {
         treasure_map_share_missing: ['另外 {count} 張找不到，已略過', 'Not found and skipped: {count}', 'ほかの {count} 枚は見つからなかったので省きました'],
         treasure_map_share_choice: ['要怎麼加入', 'How to add them', '追加のしかた'],
         treasure_map_share_merge: ['加進我的清單', 'Add to my list', 'マイリストに追加'],
-        treasure_map_share_merge_room: ['加進隊伍清單', 'Add to the team list', 'チームリストに追加'],
+        treasure_map_share_merge_room: ['加進隊伍清單', 'Add to the party list', 'パーティリストに追加'],
         treasure_map_share_merge_hint: [
             '重複的 {duplicates} 張只留一張，共 {total} 張',
             'Duplicates kept once: {duplicates} · Total: {total}',
@@ -1598,13 +1600,13 @@ test('分享連結的三語鍵值照設計', () => {
         treasure_map_share_replace_hint: ['只留這 {count} 張', 'Keep only the maps from this link ({count})', 'この {count} 枚だけにする'],
         treasure_map_share_over_limit_merge: [
             '隊伍清單最多 {max} 張，加進去會變成 {total} 張',
-            'A team list holds up to {max} maps; adding these would make {total}',
-            'チームリストは {max} 枚までです。追加すると {total} 枚になります'
+            'A party list holds up to {max} maps; adding these would make {total}',
+            'パーティリストは {max} 枚までです。追加すると {total} 枚になります'
         ],
         treasure_map_share_over_limit_replace: [
             '隊伍清單最多 {max} 張，這個連結有 {total} 張',
-            'A team list holds up to {max} maps; this link has {total}',
-            'チームリストは {max} 枚までです。このリンクには {total} 枚あります'
+            'A party list holds up to {max} maps; this link has {total}',
+            'パーティリストは {max} 枚までです。このリンクには {total} 枚あります'
         ],
         treasure_map_share_dismiss: ['不用了', 'No thanks', '追加しない'],
         treasure_map_share_confirm: ['加入清單', 'Add to list', 'リストに追加']

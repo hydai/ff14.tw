@@ -3,9 +3,9 @@
  */
 const TreasureMapTranslations = {
     zh: {
-        treasure_map_room_connecting: '隊伍連線中，請稍候再修改清單。',
+        treasure_map_room_connecting: '正在連上隊伍，請稍候再修改清單。',
         treasure_map_session_expired: '隊伍連線已失效，可能是被移出了隊伍。寶圖留在你的清單；要回去可以再點一次邀請連結，或輸入隊伍代號。',
-        treasure_map_legacy_room: '此隊伍已轉為唯讀，寶圖已保留在本機，請建立新隊伍。',
+        treasure_map_legacy_room: '這個隊伍已轉為唯讀，寶圖已保留在你的清單，請建立新的隊伍。',
         // 頁面資訊
         treasure_map_title: '寶圖搜尋器 - FF14.tw',
         treasure_map_description: 'FF14 寶圖位置快速查詢工具，支援多條件篩選與個人清單管理',
@@ -13,7 +13,7 @@ const TreasureMapTranslations = {
         // 頁面標題
         treasure_map_header: '寶圖搜尋器',
 
-        // 清單面板的標題、張數與組隊按鈕
+        // 清單面板的標題、張數與建立、加入隊伍的按鈕
         treasure_map_my_list: '我的清單',
         treasure_map_team_list: '隊伍清單',
         treasure_map_panel_count: '{count} 張',
@@ -34,7 +34,7 @@ const TreasureMapTranslations = {
         treasure_map_step_route: '生成路線',
         treasure_map_entry_empty: '📋 清單',
         treasure_map_entry_count: '📋 清單 {count} 張',
-        treasure_map_entry_room: '👥 隊伍清單 {count}/{max}',
+        treasure_map_entry_room: '👥 隊伍 {count}/{max}',
         treasure_map_entry_team: '組隊',
         treasure_map_announce_added: '已加入清單，共 {count} 張',
         treasure_map_announce_removed: '已從清單移除，剩 {count} 張',
@@ -139,7 +139,7 @@ const TreasureMapTranslations = {
         treasure_map_code_hint: '6 碼英文和數字，向隊長要。打開隊長貼的邀請連結就不用輸入。',
         treasure_map_choice_clear_hint_join: '只用隊伍清單',
 
-        // 邀請連結對話框（打開帶 ?room= 的連結時問要不要加入；「不用了」「關閉」「加入」與「不帶」的說明照用上面的鍵值）
+        // 邀請連結對話框（打開帶 ?room= 的連結時問要不要加入；「關閉」「加入」與「不帶」的說明照用上面的鍵值）
         treasure_map_link_title: '加入隊伍 {code}？',
         treasure_map_link_summary: '{leader} 的隊伍 · {members}/{max} 人 · 隊伍清單 {maps}/{max} 張',
         treasure_map_link_summary_no_leader: '{members}/{max} 人 · 隊伍清單 {maps}/{max} 張',
@@ -147,6 +147,7 @@ const TreasureMapTranslations = {
         treasure_map_link_leave_current: '你目前在隊伍 {current}。加入 {code} 會先離開 {current}，{current} 的寶圖會留在你的清單。',
         treasure_map_link_leave_failed: '還沒離開隊伍 {current}：{reason}',
         treasure_map_choice_bring_hint_total: '隊伍清單會變成 {total}/{max} 張',
+        treasure_map_link_dismiss: '不用了',
 
         // 改名對話框
         treasure_map_rename_title: '改名',
@@ -267,10 +268,10 @@ const TreasureMapTranslations = {
         treasure_map_sync_rejected_limit: '隊伍清單最多 8 張，剛剛加的寶圖沒有加進去。',
         treasure_map_sync_rejected: '有一筆變更沒有送進隊伍，清單已換成隊伍目前的樣子。',
 
-        // 組隊協作（room-collaboration.js）
-        treasure_map_already_in_room: '您已在隊伍中，請先離開現有隊伍',
+        // 隊伍協作（room-collaboration.js）
+        treasure_map_already_in_room: '你已經在隊伍裡了，請先離開目前的隊伍。',
         treasure_map_create_room_success: '隊伍 {code} 建立成功！',
-        treasure_map_join_room_success: '成功加入隊伍 {code}',
+        treasure_map_join_room_success: '已加入隊伍 {code}',
         treasure_map_join_error_format: '代號是 6 碼英文和數字。',
         treasure_map_join_error_not_found: '找不到隊伍 {code}。可能打錯了，或隊伍已經解散（24 小時沒有動靜就會解散）。',
         treasure_map_join_error_full: '隊伍 {code} 已經滿 8 人了。',
@@ -282,17 +283,14 @@ const TreasureMapTranslations = {
         treasure_map_party_invalid_maps: '你的清單裡有隊伍不支援的寶圖。選「不帶」，或先把它們刪掉。',
         treasure_map_party_over_limit: '隊伍清單最多 8 張：先把清單刪到 8 張以內，或選「不帶」。',
         treasure_map_nickname_too_long: '暱稱不能超過 20 個字元',
-        treasure_map_update_nickname_failed: '更新暱稱失敗',
         treasure_map_update_nickname_failed_retry: '更新暱稱失敗，請稍後再試',
         treasure_map_nickname_updated: '已改名',
-        treasure_map_leave_room_failed: '離開房間失敗',
         treasure_map_leave_room_failed_retry: '離開失敗，請稍後再試。',
         treasure_map_left_room: '已離開隊伍',
         treasure_map_room_code_copied: '已複製隊伍代號',
         treasure_map_invite_copied: '已複製邀請連結',
-        treasure_map_room_expired: '隊伍已過期',
-        treasure_map_room_sync_failed_network: '同步失敗，請檢查網路連線',
-        treasure_map_remove_member_failed: '移除成員失敗',
+        treasure_map_room_expired: '隊伍已經解散，寶圖留在你的清單。',
+        treasure_map_room_sync_failed_network: '連不上隊伍伺服器，請檢查網路連線。',
         treasure_map_remove_member_failed_retry: '移出失敗，請稍後再試。',
         treasure_map_member_removed: '已將 {nickname} 移出隊伍',
         treasure_map_room_leader: '隊長',
@@ -303,9 +301,9 @@ const TreasureMapTranslations = {
         treasure_map_owner_former: '已離開隊員'
     },
     en: {
-        treasure_map_room_connecting: 'Connecting to the room. Please wait before editing the list.',
+        treasure_map_room_connecting: 'Connecting to the party. Please wait before editing the list.',
         treasure_map_session_expired: 'Your party connection is no longer valid — you may have been removed. Your maps are kept in your list; to go back, open the invite link again or enter the party code.',
-        treasure_map_legacy_room: 'This room is now read-only. Maps have been kept locally; please create a new room.',
+        treasure_map_legacy_room: 'This party is now read-only. Your maps are kept in your list; please create a new party.',
         // Page info
         treasure_map_title: 'Treasure Map Finder - FF14.tw',
         treasure_map_description: 'FF14 treasure map location finder with filters and personal list management',
@@ -313,9 +311,9 @@ const TreasureMapTranslations = {
         // Page header
         treasure_map_header: 'Treasure Map Finder',
 
-        // List panel title and team buttons
+        // List panel title and party buttons
         treasure_map_my_list: 'My List',
-        treasure_map_team_list: 'Team list',
+        treasure_map_team_list: 'Party list',
         treasure_map_panel_count: 'Maps: {count}',
         treasure_map_panel_count_room: '{count}/{max}',
         treasure_map_footer_count: 'Total: {count}',
@@ -334,8 +332,8 @@ const TreasureMapTranslations = {
         treasure_map_step_route: 'Plan a route',
         treasure_map_entry_empty: '📋 List',
         treasure_map_entry_count: '📋 List: {count}',
-        treasure_map_entry_room: '👥 Team list {count}/{max}',
-        treasure_map_entry_team: 'Team up',
+        treasure_map_entry_room: '👥 Party {count}/{max}',
+        treasure_map_entry_team: 'Party up',
         treasure_map_announce_added: 'Added to the list. Total: {count}',
         treasure_map_announce_removed: 'Removed from the list. Remaining: {count}',
 
@@ -438,7 +436,7 @@ const TreasureMapTranslations = {
         treasure_map_code_hint: '6 letters and numbers — ask your party leader. No need to type it if you open the leader\'s invite link.',
         treasure_map_choice_clear_hint_join: 'Use only the party list',
 
-        // Invite link dialog (asks whether to join when a ?room= link is opened; reuses the dismiss/close/join keys and the "don't bring" hint above)
+        // Invite link dialog (asks whether to join when a ?room= link is opened; reuses the close/join keys and the "don't bring" hint above)
         treasure_map_link_title: 'Join party {code}?',
         treasure_map_link_summary: '{leader}\'s party · Members {members}/{max} · Party list {maps}/{max}',
         treasure_map_link_summary_no_leader: 'Members {members}/{max} · Party list {maps}/{max}',
@@ -446,6 +444,7 @@ const TreasureMapTranslations = {
         treasure_map_link_leave_current: 'You\'re in party {current}. Joining {code} leaves {current} first; its maps stay in your list.',
         treasure_map_link_leave_failed: 'You\'re still in party {current}: {reason}',
         treasure_map_choice_bring_hint_total: 'The party list becomes {total}/{max}',
+        treasure_map_link_dismiss: 'No thanks',
 
         // Rename dialog
         treasure_map_rename_title: 'Rename',
@@ -472,7 +471,7 @@ const TreasureMapTranslations = {
         // Clear and import dialogs (treasure_map_share_* are shared with the share-link dialog)
         treasure_map_clear_title: 'Clear the list?',
         treasure_map_clear_body: 'All maps in the list will be removed ({count}).',
-        treasure_map_clear_body_room: 'All maps in the team list will be removed ({count}), and your teammates\' lists will be cleared too.',
+        treasure_map_clear_body_room: 'All maps in the party list will be removed ({count}), and your party\'s lists will be cleared too.',
         treasure_map_clear_confirm_button: 'Clear all ({count})',
         treasure_map_import_label: 'Paste a share link, or the text you copied with “Export” before',
         treasure_map_import_found_link: 'Maps in the link: {count}',
@@ -483,7 +482,7 @@ const TreasureMapTranslations = {
         treasure_map_import_merge_hint: 'Duplicates are kept once',
         treasure_map_import_replace_hint: 'Your current maps will be removed',
         treasure_map_share_replace: 'Replace my list',
-        treasure_map_share_replace_room: 'Replace the team list',
+        treasure_map_share_replace_room: 'Replace the party list',
         treasure_map_share_none_found: 'None of the maps in this share link could be found',
 
         // Share link: the button in the list actions, the dialog shown when a link is opened
@@ -495,12 +494,12 @@ const TreasureMapTranslations = {
         treasure_map_share_missing: 'Not found and skipped: {count}',
         treasure_map_share_choice: 'How to add them',
         treasure_map_share_merge: 'Add to my list',
-        treasure_map_share_merge_room: 'Add to the team list',
+        treasure_map_share_merge_room: 'Add to the party list',
         treasure_map_share_merge_hint: 'Duplicates kept once: {duplicates} · Total: {total}',
         treasure_map_share_merge_hint_new: 'Total: {total}',
         treasure_map_share_replace_hint: 'Keep only the maps from this link ({count})',
-        treasure_map_share_over_limit_merge: 'A team list holds up to {max} maps; adding these would make {total}',
-        treasure_map_share_over_limit_replace: 'A team list holds up to {max} maps; this link has {total}',
+        treasure_map_share_over_limit_merge: 'A party list holds up to {max} maps; adding these would make {total}',
+        treasure_map_share_over_limit_replace: 'A party list holds up to {max} maps; this link has {total}',
         treasure_map_share_dismiss: 'No thanks',
         treasure_map_share_confirm: 'Add to list',
 
@@ -566,10 +565,10 @@ const TreasureMapTranslations = {
         treasure_map_sync_rejected_limit: 'A party list holds up to 8 maps; the map you just added wasn\'t added.',
         treasure_map_sync_rejected: 'A change couldn\'t be saved to the party; your list now matches the party\'s.',
 
-        // Room collaboration (room-collaboration.js)
-        treasure_map_already_in_room: 'You are already in a room. Leave it first.',
-        treasure_map_create_room_success: 'Room {code} created!',
-        treasure_map_join_room_success: 'Joined room {code}',
+        // Party collaboration (room-collaboration.js)
+        treasure_map_already_in_room: 'You\'re already in a party. Leave it first.',
+        treasure_map_create_room_success: 'Party {code} created!',
+        treasure_map_join_room_success: 'Joined party {code}',
         treasure_map_join_error_format: 'The code is 6 letters and numbers.',
         treasure_map_join_error_not_found: 'Party {code} wasn\'t found. The code may be mistyped, or the party has ended (parties end after 24 hours without activity).',
         treasure_map_join_error_full: 'Party {code} is full (8 members).',
@@ -581,17 +580,14 @@ const TreasureMapTranslations = {
         treasure_map_party_invalid_maps: 'Your list has maps a party can\'t hold. Choose "Don\'t bring them", or remove those maps first.',
         treasure_map_party_over_limit: 'A party list holds up to 8 maps: shorten your list to 8 or fewer, or choose "Don\'t bring them".',
         treasure_map_nickname_too_long: 'Nickname must be 20 characters or fewer',
-        treasure_map_update_nickname_failed: 'Failed to update the nickname',
         treasure_map_update_nickname_failed_retry: 'Failed to update the nickname. Please try again later.',
         treasure_map_nickname_updated: 'Name changed',
-        treasure_map_leave_room_failed: 'Failed to leave the room',
         treasure_map_leave_room_failed_retry: 'Couldn\'t leave the party. Please try again later.',
         treasure_map_left_room: 'You left the party',
         treasure_map_room_code_copied: 'Party code copied',
         treasure_map_invite_copied: 'Invite link copied',
-        treasure_map_room_expired: 'The room has expired',
-        treasure_map_room_sync_failed_network: 'Sync failed. Check your network connection.',
-        treasure_map_remove_member_failed: 'Failed to remove the member',
+        treasure_map_room_expired: 'The party has ended. Your maps are kept in your list.',
+        treasure_map_room_sync_failed_network: 'Can\'t reach the party server. Check your connection.',
         treasure_map_remove_member_failed_retry: 'Couldn\'t remove the member. Please try again later.',
         treasure_map_member_removed: 'Removed {nickname} from the party',
         treasure_map_room_leader: 'Leader',
@@ -602,9 +598,9 @@ const TreasureMapTranslations = {
         treasure_map_owner_former: 'a former member'
     },
     ja: {
-        treasure_map_room_connecting: 'ルームに接続しています。リストの編集は接続完了までお待ちください。',
+        treasure_map_room_connecting: 'パーティに接続しています。リストの編集は接続完了までお待ちください。',
         treasure_map_session_expired: 'パーティとの接続が無効になりました。除名された可能性があります。地図はあなたのリストに残っています。戻るには招待リンクをもう一度開くか、パーティコードを入力してください。',
-        treasure_map_legacy_room: 'このルームは読み取り専用です。地図はローカルに保存されています。新しいルームを作成してください。',
+        treasure_map_legacy_room: 'このパーティは読み取り専用になりました。地図はあなたのリストに残っています。新しいパーティを作成してください。',
         // ページ情報
         treasure_map_title: '宝の地図検索 - FF14.tw',
         treasure_map_description: 'FF14 宝の地図位置検索ツール、フィルターと個人リスト管理をサポート',
@@ -612,9 +608,9 @@ const TreasureMapTranslations = {
         // ページヘッダー
         treasure_map_header: '宝の地図検索',
 
-        // リストパネルのタイトルとチームボタン
+        // リストパネルのタイトルとパーティボタン
         treasure_map_my_list: 'マイリスト',
-        treasure_map_team_list: 'チームリスト',
+        treasure_map_team_list: 'パーティリスト',
         treasure_map_panel_count: '{count} 枚',
         treasure_map_panel_count_room: '{count}/{max}',
         treasure_map_footer_count: '地図 {count} 枚',
@@ -633,8 +629,8 @@ const TreasureMapTranslations = {
         treasure_map_step_route: 'ルートを作成',
         treasure_map_entry_empty: '📋 リスト',
         treasure_map_entry_count: '📋 リスト {count} 枚',
-        treasure_map_entry_room: '👥 チームリスト {count}/{max}',
-        treasure_map_entry_team: 'チームを組む',
+        treasure_map_entry_room: '👥 パーティ {count}/{max}',
+        treasure_map_entry_team: 'パーティを組む',
         treasure_map_announce_added: 'リストに追加しました（{count} 枚）',
         treasure_map_announce_removed: 'リストから削除しました（残り {count} 枚）',
 
@@ -737,7 +733,7 @@ const TreasureMapTranslations = {
         treasure_map_code_hint: '英数字 6 文字。リーダーに聞いてください。リーダーの招待リンクを開けば入力は不要です。',
         treasure_map_choice_clear_hint_join: 'パーティリストだけを使う',
 
-        // 招待リンクのダイアログ（?room= のリンクを開いたときに参加するか尋ねる。「追加しない」「閉じる」「参加」と「持ち込まない」の説明は上のキーを使う）
+        // 招待リンクのダイアログ（?room= のリンクを開いたときに参加するか尋ねる。「閉じる」「参加」と「持ち込まない」の説明は上のキーを使う）
         treasure_map_link_title: 'パーティ {code} に参加しますか？',
         treasure_map_link_summary: '{leader} のパーティ · {members}/{max} 人 · パーティリスト {maps}/{max} 枚',
         treasure_map_link_summary_no_leader: '{members}/{max} 人 · パーティリスト {maps}/{max} 枚',
@@ -745,6 +741,7 @@ const TreasureMapTranslations = {
         treasure_map_link_leave_current: '現在パーティ {current} に参加中です。{code} に参加すると先に {current} を抜けます。{current} の地図はあなたのリストに残ります。',
         treasure_map_link_leave_failed: 'まだパーティ {current} を抜けていません：{reason}',
         treasure_map_choice_bring_hint_total: 'パーティリストは {total}/{max} 枚になります',
+        treasure_map_link_dismiss: '参加しない',
 
         // 名前変更ダイアログ
         treasure_map_rename_title: '名前を変更',
@@ -771,7 +768,7 @@ const TreasureMapTranslations = {
         // 空にする・インポートのダイアログ（treasure_map_share_* は共有リンクでも使う）
         treasure_map_clear_title: 'リストを空にしますか？',
         treasure_map_clear_body: 'リストの地図 {count} 枚がすべて削除されます。',
-        treasure_map_clear_body_room: 'チームリストの地図 {count} 枚がすべて削除され、メンバーのリストも空になります。',
+        treasure_map_clear_body_room: 'パーティリストの地図 {count} 枚がすべて削除され、メンバーのリストも空になります。',
         treasure_map_clear_confirm_button: '{count} 枚を削除',
         treasure_map_import_label: '共有リンク、または以前「エクスポート」でコピーした内容を貼り付けてください',
         treasure_map_import_found_link: 'リンクに地図が {count} 枚あります',
@@ -782,7 +779,7 @@ const TreasureMapTranslations = {
         treasure_map_import_merge_hint: '重複は 1 枚にまとめます',
         treasure_map_import_replace_hint: '今ある地図は削除されます',
         treasure_map_share_replace: 'マイリストを置き換える',
-        treasure_map_share_replace_room: 'チームリストを置き換える',
+        treasure_map_share_replace_room: 'パーティリストを置き換える',
         treasure_map_share_none_found: '共有リンクの地図が見つかりませんでした',
 
         // 共有リンク：リストの操作ボタン、リンクを開いたときのダイアログ
@@ -794,12 +791,12 @@ const TreasureMapTranslations = {
         treasure_map_share_missing: 'ほかの {count} 枚は見つからなかったので省きました',
         treasure_map_share_choice: '追加のしかた',
         treasure_map_share_merge: 'マイリストに追加',
-        treasure_map_share_merge_room: 'チームリストに追加',
+        treasure_map_share_merge_room: 'パーティリストに追加',
         treasure_map_share_merge_hint: '重複の {duplicates} 枚は 1 枚にまとめ、合計 {total} 枚',
         treasure_map_share_merge_hint_new: '合計 {total} 枚',
         treasure_map_share_replace_hint: 'この {count} 枚だけにする',
-        treasure_map_share_over_limit_merge: 'チームリストは {max} 枚までです。追加すると {total} 枚になります',
-        treasure_map_share_over_limit_replace: 'チームリストは {max} 枚までです。このリンクには {total} 枚あります',
+        treasure_map_share_over_limit_merge: 'パーティリストは {max} 枚までです。追加すると {total} 枚になります',
+        treasure_map_share_over_limit_replace: 'パーティリストは {max} 枚までです。このリンクには {total} 枚あります',
         treasure_map_share_dismiss: '追加しない',
         treasure_map_share_confirm: 'リストに追加',
 
@@ -865,10 +862,10 @@ const TreasureMapTranslations = {
         treasure_map_sync_rejected_limit: 'パーティリストは 8 枚までです。追加した地図は登録されませんでした。',
         treasure_map_sync_rejected: '変更の 1 つがパーティに反映されませんでした。リストはパーティの現在の内容に戻りました。',
 
-        // ルーム協働機能（room-collaboration.js）
-        treasure_map_already_in_room: 'すでにルームに参加しています。先に現在のルームを離れてください',
-        treasure_map_create_room_success: 'ルーム {code} を作成しました！',
-        treasure_map_join_room_success: 'ルーム {code} に参加しました',
+        // パーティ協働機能（room-collaboration.js）
+        treasure_map_already_in_room: 'すでにパーティに参加しています。先に今のパーティを抜けてください。',
+        treasure_map_create_room_success: 'パーティ {code} を作成しました！',
+        treasure_map_join_room_success: 'パーティ {code} に参加しました',
         treasure_map_join_error_format: 'コードは英数字 6 文字です。',
         treasure_map_join_error_not_found: 'パーティ {code} が見つかりません。コードの入力ミスか、パーティが解散した可能性があります（24 時間動きがないと解散します）。',
         treasure_map_join_error_full: 'パーティ {code} は満員です（8 人）。',
@@ -880,17 +877,14 @@ const TreasureMapTranslations = {
         treasure_map_party_invalid_maps: 'あなたのリストにはパーティで扱えない地図があります。「持ち込まない」を選ぶか、先に削除してください。',
         treasure_map_party_over_limit: 'パーティリストは 8 枚までです：リストを 8 枚以下にするか、「持ち込まない」を選んでください。',
         treasure_map_nickname_too_long: 'ニックネームは20文字以内で入力してください',
-        treasure_map_update_nickname_failed: 'ニックネームの更新に失敗しました',
         treasure_map_update_nickname_failed_retry: 'ニックネームの更新に失敗しました。しばらくしてからもう一度お試しください',
         treasure_map_nickname_updated: '名前を変更しました',
-        treasure_map_leave_room_failed: 'ルームからの退出に失敗しました',
         treasure_map_leave_room_failed_retry: 'パーティを抜けられませんでした。しばらくしてからもう一度お試しください。',
         treasure_map_left_room: 'パーティを抜けました',
         treasure_map_room_code_copied: 'パーティコードをコピーしました',
         treasure_map_invite_copied: '招待リンクをコピーしました',
-        treasure_map_room_expired: 'ルームの期限が切れました',
-        treasure_map_room_sync_failed_network: '同期に失敗しました。ネットワーク接続を確認してください',
-        treasure_map_remove_member_failed: 'メンバーの削除に失敗しました',
+        treasure_map_room_expired: 'パーティは解散しました。地図はあなたのリストに残っています。',
+        treasure_map_room_sync_failed_network: 'パーティのサーバーに接続できません。ネットワークを確認してください。',
         treasure_map_remove_member_failed_retry: '除名できませんでした。しばらくしてからもう一度お試しください。',
         treasure_map_member_removed: '{nickname} をパーティから除名しました',
         treasure_map_room_leader: 'リーダー',

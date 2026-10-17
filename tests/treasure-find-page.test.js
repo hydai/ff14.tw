@@ -169,7 +169,7 @@ function createFilterPage({ url = 'https://ff14.tw/tools/treasure-map-finder/', 
     elements.myListPanel = dom.el('div', { id: 'myListPanel', class: 'my-list-panel', role: 'dialog', inert: true },
         dom.el('div', { class: 'panel-header' }, dom.el('button', { id: 'closePanelBtn', class: 'btn btn-close' }, '×')),
         dom.el('div', { id: 'teamActions', class: 'team-actions' },
-            dom.el('button', { id: 'createRoomBtn', class: 'btn btn-secondary' }, '建立組隊'),
+            dom.el('button', { id: 'createRoomBtn', class: 'btn btn-secondary' }, '建立隊伍'),
             dom.el('button', { id: 'joinRoomBtn', class: 'btn btn-secondary' }, '加入隊伍')),
         dom.el('div', { class: 'panel-footer' }, elements.totalCount, dom.el('button', { id: 'generateRouteBtn', class: 'btn btn-primary' }, '生成路線')));
     for (const id of ['stepHint', 'listEntryDesktop', 'levelTags', 'zoneFilterRow', 'clearZonesBtn', 'resultCount', 'treasureEmpty', 'treasureGrid', 'listEntryMobile', 'listAnnouncer']) {
@@ -732,7 +732,7 @@ test('步驟列：還原出來的等級是第 2 步；選、取消等級時跟�
     assert.deepEqual(page.steps(), [['✓', 'done', null], ['2', 'current', 'step'], ['3', '', null]]);
 });
 
-test('清單入口：0 張「組隊」、1 張以上「生成路線」；隊伍裡顯示「隊伍清單 N/8」，0 張不放動作（Review Focus 1）', () => {
+test('清單入口：0 張「組隊」、1 張以上「生成路線」；隊伍裡顯示「隊伍 N/8」，0 張不放動作（Review Focus 1）', () => {
     const page = createFilterPage({ url: 'https://ff14.tw/tools/treasure-map-finder/?grade=g17' });
     const { finder, list, $ } = page;
     const both = () => ENTRY_IDS.map((id) => page.entryOf(id));
@@ -761,11 +761,11 @@ test('清單入口：0 張「組隊」、1 張以上「生成路線」；隊伍�
 
     // 用 ?room= 加入隊伍、清單是空的：入口就是「你在隊伍裡」的提示，沒有「組隊」
     show(0, { currentRoom: { roomCode: 'ABC123' } });
-    assert.deepEqual(both(), Array(2).fill({ label: '👥 隊伍清單 0/8', action: null }));
+    assert.deepEqual(both(), Array(2).fill({ label: '👥 隊伍 0/8', action: null }));
     show(1, { currentRoom: { roomCode: 'ABC123' } });
-    assert.deepEqual(both(), Array(2).fill({ label: '👥 隊伍清單 1/8', action: 'route' }));
+    assert.deepEqual(both(), Array(2).fill({ label: '👥 隊伍 1/8', action: 'route' }));
     show(5, { currentRoom: { roomCode: 'ABC123' } });
-    assert.deepEqual(both(), Array(2).fill({ label: '👥 隊伍清單 5/8', action: 'route' }));
+    assert.deepEqual(both(), Array(2).fill({ label: '👥 隊伍 5/8', action: 'route' }));
 
     // 往回走：從 1 張回到 0 張（第 3 步回到第 2 步）時，第 3 步的號碼與狀態都還原，「生成路線」重新停用
     show(1);
@@ -814,7 +814,7 @@ test('加入、移除成功不跳 toast，改由清單入口與唸出區更新�
 });
 
 // 入口的「生成路線」（切到清單面板的路線頁）在 tests/treasure-list-panel.test.js：這裡沒有真的 zoneManager，openRoute() 會停在載入檢查
-test('入口按鈕：清單打開面板；組隊打開面板並把焦點移到「建立組隊」', () => {
+test('入口按鈕：清單打開面板；組隊打開面板並把焦點移到「建立隊伍」', () => {
     const page = createFilterPage();
     const { finder, modalManager, $, dom } = page;
     const panel = $('myListPanel');
@@ -836,7 +836,7 @@ test('入口按鈕：清單打開面板；組隊打開面板並把焦點移到�
 
         button(id, 'team').click();
         assert.ok(modalManager.activeModal === panel, `${id}：按組隊後面板應該開著`);
-        assert.equal(dom.document.activeElement.id, 'createRoomBtn', `${id}：組隊後焦點在建立組隊`);
+        assert.equal(dom.document.activeElement.id, 'createRoomBtn', `${id}：組隊後焦點在建立隊伍`);
         finder.closeListPanel();
     }
 });
@@ -901,8 +901,8 @@ test('步驟列與清單入口的三語鍵值照設計', () => {
         treasure_map_step_route: ['生成路線', 'Plan a route', 'ルートを作成'],
         treasure_map_entry_empty: ['📋 清單', '📋 List', '📋 リスト'],
         treasure_map_entry_count: ['📋 清單 {count} 張', '📋 List: {count}', '📋 リスト {count} 枚'],
-        treasure_map_entry_room: ['👥 隊伍清單 {count}/{max}', '👥 Team list {count}/{max}', '👥 チームリスト {count}/{max}'],
-        treasure_map_entry_team: ['組隊', 'Team up', 'チームを組む'],
+        treasure_map_entry_room: ['👥 隊伍 {count}/{max}', '👥 Party {count}/{max}', '👥 パーティ {count}/{max}'],
+        treasure_map_entry_team: ['組隊', 'Party up', 'パーティを組む'],
         // 英文不帶單位：「(1 maps)」單複數不對，又不想為了它加複數規則
         treasure_map_announce_added: ['已加入清單，共 {count} 張', 'Added to the list. Total: {count}', 'リストに追加しました（{count} 枚）'],
         treasure_map_announce_removed: ['已從清單移除，剩 {count} 張', 'Removed from the list. Remaining: {count}', 'リストから削除しました（残り {count} 枚）']
@@ -1062,6 +1062,23 @@ test('切換語言：卡片的地名、最近傳送點、按鈕文字與無障�
     assert.equal(card('tm_007').querySelector('.tm-thumb').getAttribute('aria-label'), 'G17 オルコ・パチャ #1 を拡大');
     assert.equal(card('tm_007').querySelector('.tm-copy').getAttribute('aria-label'), '座標をコピー');
     assert.deepEqual(labels(), ['📋 リスト 1 枚', '📋 リスト 1 枚']);
+});
+
+test('清單入口在隊伍裡：標籤的預設字與三語都是「隊伍 3/8」（Party、パーティ），切換語言時跟著換；不寫「清單」、Team、チーム', async () => {
+    // 預設字（翻譯沒載入時用）：程式裡的中文預設文字就是翻譯檔的 zh
+    assert.match(read('tools/treasure-map-finder/script.js'), /ENTRY_LABELS = \{[\s\S]*?treasure_map_entry_room: '👥 隊伍 \{count\}\/\{max\}'\n\s*\};/);
+    const { finder, setLang } = await createFinder('zh');
+    for (const id of ['tm_007', 'tm_008', 'tm_017']) finder.listManager.add(finder.maps.find((m) => m.id === id));
+    finder.roomCollaboration = { currentRoom: { roomCode: 'ABC123' } };
+    finder.updateListCount();
+    const labels = () => ['listEntryDesktop', 'listEntryMobile'].map((id) => finder.elements[id].querySelector('.tm-entry-label').textContent);
+    assert.deepEqual(labels(), Array(2).fill('👥 隊伍 3/8'));
+    setLang('en');
+    assert.deepEqual(labels(), Array(2).fill('👥 Party 3/8'));
+    setLang('ja');
+    assert.deepEqual(labels(), Array(2).fill('👥 パーティ 3/8'));
+    setLang('zh');
+    assert.deepEqual(labels(), Array(2).fill('👥 隊伍 3/8'));
 });
 
 test('資料沒載入成功時切換語言，錯誤訊息留著，不會被換成空狀態', async () => {

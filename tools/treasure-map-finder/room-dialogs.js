@@ -424,7 +424,7 @@ class RoomDialogs {
     openJoin() {
         const { collaboration, elements } = this;
         if (collaboration.currentRoom) {
-            collaboration.showToast(FF14Utils.getI18nText('treasure_map_already_in_room', '您已在隊伍中，請先離開現有隊伍'), 'warning');
+            collaboration.showToast(FF14Utils.getI18nText('treasure_map_already_in_room', '你已經在隊伍裡了，請先離開目前的隊伍。'), 'warning');
             return;
         }
         // 正在連線（按鈕本來就停用了），或對話框已經開著：沒有東西可開，也不重設玩家打的代號與勾的選項
@@ -578,7 +578,7 @@ class RoomDialogs {
         elements.linkLeave.classList.toggle('hidden', Boolean(failure) || !current);
         RoomDialogs.setText(elements.dismissLink, failure
             ? FF14Utils.getI18nText('treasure_map_close', '關閉')
-            : FF14Utils.getI18nText('treasure_map_share_dismiss', '不用了'));
+            : FF14Utils.getI18nText('treasure_map_link_dismiss', '不用了'));
         if (failure) {
             elements.linkMaps.classList.add('hidden');
             RoomDialogs.setText(elements.linkError, RoomCollaboration.errorMessage(failure, { code }));

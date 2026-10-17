@@ -543,8 +543,8 @@ test('a delayed poll 404 cannot cancel the successful leave-and-clear flow', asy
     assert.deepEqual(plain(await leaving), { success: true });
     assert.equal(state.finder.listManager.getLength(), 0);
     assert.equal(state.client.currentRoom, null);
-    assert.equal(state.toasts.at(-1), '已離開隊伍', '輪詢那一邊沒有跳「隊伍已過期」');
-    assert.ok(!state.toasts.includes('隊伍已過期'));
+    assert.equal(state.toasts.at(-1), '已離開隊伍', '輪詢那一邊沒有跳「隊伍已經解散」');
+    assert.ok(!state.toasts.includes('隊伍已經解散，寶圖留在你的清單。'));
 });
 
 test('進出隊伍時清單入口跟著換：updateRoomUI() 最後更新清單張數與入口', () => {
@@ -922,7 +922,7 @@ test('讀 localStorage 就丟例外時：建立照樣送光之戰士＋字串，
     state.document.getElementById = id => (id === 'nicknameInput' ? { value: 'Alice' } : getElementById(id));
     await state.client.confirmEditNickname();
     assert.equal(state.client.currentUser.nickname, 'Alice');
-    assert.deepEqual(state.toasts, ['隊伍 ABC123 建立成功！', '成功加入隊伍 XYZ789', '已改名']);
+    assert.deepEqual(state.toasts, ['隊伍 ABC123 建立成功！', '已加入隊伍 XYZ789', '已改名']);
 
     // 沒有 localStorage 這個東西（typeof 是 'undefined'）也一樣
     vm.runInContext('delete globalThis.localStorage', state.context);
@@ -1263,7 +1263,7 @@ test('joinRoom：預設把本機清單帶進隊伍；clearLocal 時 initialMaps 
     assert.deepEqual(plain(await clear.client.joinRoom('ABC123', { clearLocal: true })), { success: true });
     assert.deepEqual(clear.requests[1].body.initialMaps, []);
     assert.deepEqual(localIds(clear), ['room_0', 'room_1', 'room_2'], '本機清單變成隊伍清單');
-    assert.deepEqual(clear.toasts, ['成功加入隊伍 ABC123']);
+    assert.deepEqual(clear.toasts, ['已加入隊伍 ABC123']);
 });
 
 test('清單裡有 id 帶空白（或其他隊伍不收）的自訂寶圖：帶進時 create 與 join 都回 invalid_maps、不送請求；clearLocal 時照常進行', async () => {
@@ -1394,7 +1394,7 @@ test('重試途中新加的圖：接上隊伍時排進佇列的那一筆記成�
 test('舊的唯讀隊伍：讀到 readOnly、加入時 ROOM_RECREATE_REQUIRED 都由 recoverLegacyRoom() 提示一次，回 legacy 與空字串；沒附隊伍的當作一般失敗', async () => {
     const shared = { id: 'unknown_old_map', type: 'g8', x: 20, y: 25, zone: 'Old zone' };
     const legacy = { ...room([shared]), readOnly: true, legacy: true };
-    const notice = '此隊伍已轉為唯讀，寶圖已保留在本機，請建立新隊伍。';
+    const notice = '這個隊伍已轉為唯讀，寶圖已保留在你的清單，請建立新的隊伍。';
 
     const preview = setup(() => ({ body: legacy }));
     preview.finder.listManager.add(sample);
@@ -1589,14 +1589,14 @@ test('poll：連續 3 次讀不到隊伍（fetch 失敗、5xx、429、其他 4xx
         assert.deepEqual(state.toasts, [], label);
     }
 
-    // 404 照舊：隊伍過期，離開隊伍、跳「隊伍已過期」；同步狀態回到 ok、次數歸零
+    // 404 照舊：隊伍過期，離開隊伍、跳「隊伍已經解散」；同步狀態回到 ok、次數歸零
     const expired = setup(() => ({ status: 404, body: { error: 'Room not found' } }));
     expired.client.adoptSession(room(), member, TOKEN);
     expired.client.noteTransportFailure();
     expired.client.noteTransportFailure();
     await expired.client.poll();
     assert.equal(expired.client.currentRoom, null);
-    assert.deepEqual(expired.toasts, ['隊伍已過期']);
+    assert.deepEqual(expired.toasts, ['隊伍已經解散，寶圖留在你的清單。']);
     assert.deepEqual(syncOf(expired), ['ok', 0]);
 });
 

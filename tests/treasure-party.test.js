@@ -690,7 +690,7 @@ test('加入隊伍成功：焦點移到「複製邀請連結」；失敗（找�
         const joined = expected === 'copyInviteBtn';
         assert.equal(page.client.currentRoom?.roomCode ?? null, joined ? 'ABC123' : null);
         assertFocusOn(page, expected, joined ? '加入成功' : '加入失敗');
-        assert.deepEqual(messages(page), joined ? ['成功加入隊伍 ABC123'] : []);
+        assert.deepEqual(messages(page), joined ? ['已加入隊伍 ABC123'] : []);
         assert.equal(page.client.dialogs.modalManager.activeModal === page.$('joinRoomModal'), !joined, joined ? '加入成功：對話框關掉' : '加入失敗：對話框還開著');
         assert.equal(page.$('roomCodeError').textContent, joined ? '' : notFound);
     }
@@ -1920,7 +1920,7 @@ test('連不上：訊息寫在代號欄下面、焦點留在原處；再按一�
     assert.equal(joinOpen(page), false);
     assert.deepEqual(codeState(page), NO_ERROR, '成功之後沒有舊的錯誤留著');
     assert.equal(page.client.currentRoom.roomCode, 'ABC123');
-    assert.deepEqual(messages(page), ['成功加入隊伍 ABC123']);
+    assert.deepEqual(messages(page), ['已加入隊伍 ABC123']);
     assertFocusOn(page, 'copyInviteBtn', '重試成功');
 });
 
@@ -1943,7 +1943,7 @@ test('其他錯誤（伺服器回 4xx）：「加入失敗，請再試一次。�
     assert.equal(page.client.currentRoom, null);
 });
 
-test('成功：對話框關掉（加回 .hidden、清掉 display）、toast「成功加入隊伍 ABC123」、焦點到複製邀請連結；控制項恢復，下次打開不會卡在連線中', async () => {
+test('成功：對話框關掉（加回 .hidden、清掉 display）、toast「已加入隊伍 ABC123」、焦點到複製邀請連結；控制項恢復，下次打開不會卡在連線中', async () => {
     const page = await createParty(joiningServer().respond);
     pressJoin(page);
     typeCode(page, 'abc123');
@@ -1952,7 +1952,7 @@ test('成功：對話框關掉（加回 .hidden、清掉 display）、toast「�
     assert.equal(page.client.currentRoom.roomCode, 'ABC123');
     assert.equal(joinOpen(page), false);
     assert.deepEqual([page.$('joinRoomModal').classList.contains('hidden'), page.$('joinRoomModal').style.display], [true, '']);
-    assert.deepEqual(page.toasts, [{ message: '成功加入隊伍 ABC123', type: 'success' }]);
+    assert.deepEqual(page.toasts, [{ message: '已加入隊伍 ABC123', type: 'success' }]);
     assertFocusOn(page, 'copyInviteBtn', '加入成功');
     assert.equal(page.$('teamActions').classList.contains('hidden'), true);
     assert.deepEqual(joinDisabledOf(page), [false, false, false, false, false]);
@@ -1984,7 +1984,7 @@ test('在代號欄按 Enter 等於按「加入」；輸入法選字中的 Enter 
     await page.settle();
     assert.equal(page.client.currentRoom.roomCode, 'ABC123');
     assert.equal(joinOpen(page), false);
-    assert.deepEqual(messages(page), ['成功加入隊伍 ABC123']);
+    assert.deepEqual(messages(page), ['已加入隊伍 ABC123']);
     assertFocusOn(page, 'copyInviteBtn', 'Enter 加入成功');
 });
 
@@ -2093,7 +2093,7 @@ test('取消、✕、Escape 都關掉對話框：不加入、不動清單，焦�
     }
 });
 
-test('已經在隊伍裡：按加入隊伍只跳「您已在隊伍中，請先離開現有隊伍」、不開對話框；連線中、對話框已經開著時 openJoin() 什麼都不做，開著的對話框不會被重設', async () => {
+test('已經在隊伍裡：按加入隊伍只跳「你已經在隊伍裡了，請先離開目前的隊伍。」、不開對話框；連線中、對話框已經開著時 openJoin() 什麼都不做，開著的對話框不會被重設', async () => {
     const page = await createParty(joiningServer().respond);
     page.addMaps(TWO);
     pressJoin(page);
@@ -2113,8 +2113,8 @@ test('已經在隊伍裡：按加入隊伍只跳「您已在隊伍中，請先�
     page.client.dialogs.openJoin();
     assert.deepEqual([joinOpen(page), page.client.dialogs.opening], [false, opening], '已經在隊伍裡不開');
     assert.deepEqual(page.toasts, [
-        { message: '成功加入隊伍 ABC123', type: 'success' },
-        { message: '您已在隊伍中，請先離開現有隊伍', type: 'warning' }
+        { message: '已加入隊伍 ABC123', type: 'success' },
+        { message: '你已經在隊伍裡了，請先離開目前的隊伍。', type: 'warning' }
     ]);
 });
 
@@ -2127,7 +2127,7 @@ test('舊的唯讀隊伍：對話框關掉，寶圖留在本機，只有 recover
 
     assert.equal(joinOpen(page), false);
     assert.equal(page.client.currentRoom, null);
-    assert.deepEqual(page.toasts, [{ message: '此隊伍已轉為唯讀，寶圖已保留在本機，請建立新隊伍。', type: 'warning' }]);
+    assert.deepEqual(page.toasts, [{ message: '這個隊伍已轉為唯讀，寶圖已保留在你的清單，請建立新的隊伍。', type: 'warning' }]);
     assert.deepEqual(codeState(page), NO_ERROR);
     assert.deepEqual(listIds(page).sort(), ['old_0', 'tm_017'], '自己的和唯讀隊伍的寶圖都留在本機');
     assertFocusOn(page, 'joinRoomBtn', '舊隊伍：焦點回到「加入隊伍」');
@@ -2148,7 +2148,7 @@ test('連線途中自己關掉對話框：成功照樣進隊伍（不用再關�
     held.release();
     await succeeded.settle();
     assert.equal(succeeded.client.currentRoom.roomCode, 'ABC123');
-    assert.deepEqual(messages(succeeded), ['成功加入隊伍 ABC123']);
+    assert.deepEqual(messages(succeeded), ['已加入隊伍 ABC123']);
     assertFocusOn(succeeded, 'copyInviteBtn', '連線途中關掉對話框，成功之後');
     assert.deepEqual(joinDisabledOf(succeeded), [false, false, false, false, false], '關掉的對話框也恢復了');
 
@@ -3095,7 +3095,7 @@ test('沒有紀錄打開 ?room=ABC123：讀完隊伍才打開對話框，寫「�
     assert.equal(linkOpen(page), false);
     assert.deepEqual([isHidden(page, 'joinLinkModal'), page.$('joinLinkModal').style.display], [true, '']);
     assert.ok(page.finder.modalManager.activeModal === page.$('myListPanel'), '加入成功：打開清單面板');
-    assert.deepEqual(messages(page), ['成功加入隊伍 ABC123']);
+    assert.deepEqual(messages(page), ['已加入隊伍 ABC123']);
     assert.equal(currentUrl(page), LINK_URL);
     assert.deepEqual(linkDisabledOf(page), [false, false, false, false, false]);
     assert.equal(page.$('confirmLinkBtn').classList.contains('btn-loading'), false);
@@ -3289,7 +3289,7 @@ test('情況 d 按加入：先再讀一次 B，再 POST /rooms/AAA111/leave（�
     assert.equal(currentUrl(page), LINK_URL);
     assert.equal(linkOpen(page), false);
     assert.ok(page.finder.modalManager.activeModal === page.$('myListPanel'), '加入成功：打開清單面板');
-    assert.deepEqual(messages(page), ['成功加入隊伍 ABC123'], '離開 A 是安靜的');
+    assert.deepEqual(messages(page), ['已加入隊伍 ABC123'], '離開 A 是安靜的');
     assert.equal(polls.count, 1, '只有加入 B 之後開始輪詢');
     assert.equal(ready.settled, true);
 });
@@ -3374,7 +3374,7 @@ test('情況 d 離開 A 途中 A 的連線就失效了（A 還沒送出的變更
     assert.equal(linkOpen(page), false);
     assert.equal(savedRoom(page).roomCode, 'ABC123');
     assert.ok(!messages(page).some((message) => message.startsWith('還沒離開隊伍')), '不寫沒有原因的「還沒離開隊伍 A：」');
-    assert.equal(messages(page).at(-1), '成功加入隊伍 ABC123');
+    assert.equal(messages(page).at(-1), '已加入隊伍 ABC123');
     assert.equal(ready.settled, true);
 });
 
@@ -3385,7 +3385,7 @@ test('舊的唯讀隊伍不開對話框：沒有紀錄照 recoverLegacyRoom() �
     assert.equal(linkOpen(page), false);
     assert.equal(page.client.dialogs.opening, 0, '對話框一次都沒打開過');
     assert.deepEqual(listIds(page), ['old_1'], '唯讀隊伍的寶圖留在本機');
-    assert.deepEqual(page.toasts, [{ message: '此隊伍已轉為唯讀，寶圖已保留在本機，請建立新隊伍。', type: 'warning' }]);
+    assert.deepEqual(page.toasts, [{ message: '這個隊伍已轉為唯讀，寶圖已保留在你的清單，請建立新的隊伍。', type: 'warning' }]);
     assert.equal(page.client.currentRoom, null);
     assert.equal(currentUrl(page), PAGE_URL);
     await page.settle();
@@ -3622,7 +3622,7 @@ test('加入進行中自己關掉對話框（不用了、Escape）：結果照�
         if (label.startsWith('成功')) {
             assert.equal(page.client.currentRoom.roomCode, 'ABC123', label);
             assert.equal(currentUrl(page), LINK_URL, label);
-            assert.deepEqual(messages(page), ['成功加入隊伍 ABC123'], label);
+            assert.deepEqual(messages(page), ['已加入隊伍 ABC123'], label);
             assert.equal(page.finder.modalManager.activeModal, null, `${label}：對話框早就關了，不再打開面板`);
         } else {
             assert.equal(page.client.currentRoom, null, label);
@@ -3665,7 +3665,7 @@ test('讀隊伍（打開對話框之前）的這段時間當作連線中（同�
         assert.equal(joinOpen(page), false, `${label}：加入隊伍的對話框沒開`);
         assert.deepEqual(listIds(page), [], `${label}：清單沒變`);
         assert.deepEqual(requestsOf(server), [], `${label}：沒有送建立隊伍的請求`);
-        assert.deepEqual(page.toasts, [{ message: '隊伍連線中，請稍候再修改清單。', type: 'info' }], label);
+        assert.deepEqual(page.toasts, [{ message: '正在連上隊伍，請稍候再修改清單。', type: 'info' }], label);
 
         release();
         await page.settle();
@@ -4234,7 +4234,7 @@ test('離開、移出、改名的鍵值：新增與改寫的三語都照設計�
     }
 });
 
-test('邀請連結的鍵值：七個新鍵值三語都照設計寫；新字沒有舊用語，英文帶張數的句子寫成「x/8」不受單複數影響；程式裡的預設文字就是中文；每個都由 room-dialogs.js 用到', () => {
+test('邀請連結的鍵值：八個新鍵值三語都照設計寫；新字沒有舊用語，英文帶張數的句子寫成「x/8」不受單複數影響；程式裡的預設文字就是中文；每個都由 room-dialogs.js 用到', () => {
     // key → [zh, en, ja]
     const written = {
         treasure_map_link_title: ['加入隊伍 {code}？', 'Join party {code}?', 'パーティ {code} に参加しますか？'],
@@ -4246,7 +4246,9 @@ test('邀請連結的鍵值：七個新鍵值三語都照設計寫；新字沒�
             "You're in party {current}. Joining {code} leaves {current} first; its maps stay in your list.",
             '現在パーティ {current} に参加中です。{code} に参加すると先に {current} を抜けます。{current} の地図はあなたのリストに残ります。'],
         treasure_map_link_leave_failed: ['還沒離開隊伍 {current}：{reason}', "You're still in party {current}: {reason}", 'まだパーティ {current} を抜けていません：{reason}'],
-        treasure_map_choice_bring_hint_total: ['隊伍清單會變成 {total}/{max} 張', 'The party list becomes {total}/{max}', 'パーティリストは {total}/{max} 枚になります']
+        treasure_map_choice_bring_hint_total: ['隊伍清單會變成 {total}/{max} 張', 'The party list becomes {total}/{max}', 'パーティリストは {total}/{max} 枚になります'],
+        // 「不用了」自己一個鍵值：不借分享對話框的 treasure_map_share_dismiss（它的日文「追加しない」是「不加入寶圖」）
+        treasure_map_link_dismiss: ['不用了', 'No thanks', '参加しない']
     };
     // {code}、{current} 這些是參數名稱，不是字：掃用語之前先拿掉 {…}
     const oldWords = { zh: /房間/, en: /\b(?:room|team)\b/i, ja: /ルーム|チーム/ };
@@ -4256,9 +4258,9 @@ test('邀請連結的鍵值：七個新鍵值三語都照設計寫；新字沒�
             assert.equal(values.get(key), texts[index], `${lang} ${key}`);
             assert.doesNotMatch(texts[index].replace(/\{\w+\}/g, ''), oldWords[lang], `${lang} ${key} 還有舊用語`);
         }
-        // 照用的鍵值：「不用了」、「關閉」、「加入」、「不帶」的說明
+        // 照用的鍵值：「關閉」（只剩錯誤時）、「加入」、「不帶」的說明
         const keys = translationKeySet(TRANSLATIONS, lang);
-        for (const key of ['treasure_map_share_dismiss', 'treasure_map_close', 'treasure_map_join', 'treasure_map_choice_clear_hint_join']) assert.ok(keys.has(key), `${lang} 少了 ${key}`);
+        for (const key of ['treasure_map_close', 'treasure_map_join', 'treasure_map_choice_clear_hint_join']) assert.ok(keys.has(key), `${lang} 少了 ${key}`);
     });
     // 英文帶人數、張數的句子：數字寫成「x/8」，不用 map(s)、is/are 這種會隨單複數變的寫法
     const en = translationValues(TRANSLATIONS, 'en');
@@ -4315,4 +4317,124 @@ test('同步狀態的鍵值：三個新鍵值三語都照設計寫；沒人用�
         for (const [, fallback] of fallbacks) assert.equal(fallback.replace(/\\(.)/g, '$1'), texts[0], `${key} 的預設文字不是中文那一句`);
     }
     assert.ok(read(`${TOOL_DIR}/room-collaboration.js`).includes("'treasure_map_room_sync_failed_network'"), '舊紀錄的分支還在用它');
+});
+
+// ---------- 用語統一（設計 6.1、目標 11） ----------
+const toolSources = () => [`${TOOL_DIR}/index.html`, ...fs.readdirSync(path.join(ROOT, TOOL_DIR)).filter((name) => name.endsWith('.js')).map((name) => `${TOOL_DIR}/${name}`)];
+
+test('用語：寶圖搜尋器翻譯檔的 en 值沒有 Room、Team（不分大小寫），ja 值沒有ルーム、チーム，zh 值沒有房間；工具目錄的 JS 與 index.html 沒有「房間」「建立組隊」', () => {
+    // {room}、{mine}、{count} 這些是參數名稱，不是玩家看得到的字：掃用語之前先拿掉 {…}
+    const oldWords = { zh: /房間/, en: /\b(?:room|team)\b/i, ja: /ルーム|チーム/ };
+    const offenders = [];
+    for (const lang of ['zh', 'en', 'ja']) {
+        const values = translationValues(TRANSLATIONS, lang);
+        // 解析器真的讀到了整份翻譯：讀不到東西的話，什麼都掃不出來
+        assert.ok(values.size >= 200 && values.has('treasure_map_entry_room'), `${lang} 只讀到 ${values.size} 個鍵值`);
+        for (const [key, text] of values) {
+            if (oldWords[lang].test(text.replace(/\{\w+\}/g, ''))) offenders.push(`${lang} ${key}: ${text}`);
+        }
+    }
+
+    // 程式與頁面（含註解）：中文一律「隊伍」，「組隊」只剩主頁面入口那顆按鈕（動詞），沒有「房間」「建立組隊」
+    const leftovers = [];
+    for (const file of toolSources()) {
+        read(file).split('\n').forEach((line, index) => {
+            for (const word of ['房間', '建立組隊']) if (line.includes(word)) leftovers.push(`${file}:${index + 1} ${word}`);
+        });
+    }
+    // 兩邊合在一起報：一次看完所有還沒改的地方
+    const found = [...offenders.map((entry) => `翻譯檔 ${entry}`), ...leftovers.map((entry) => `程式與頁面 ${entry}`)];
+    assert.deepEqual(found, [], `還有舊用語：\n${found.join('\n')}`);
+});
+
+test('用語統一的鍵值：入口、清單標題、清空與分享的清單用字、各種 toast 與提示三語都照設計寫；程式裡的預設文字就是中文那一句；沒人用了的三個 *_failed 三語都刪掉；英文帶張數的句子不受單複數影響', () => {
+    // key → [zh, en, ja]
+    const written = {
+        treasure_map_entry_room: ['👥 隊伍 {count}/{max}', '👥 Party {count}/{max}', '👥 パーティ {count}/{max}'],
+        treasure_map_entry_team: ['組隊', 'Party up', 'パーティを組む'],
+        treasure_map_team_list: ['隊伍清單', 'Party list', 'パーティリスト'],
+        treasure_map_create_room_success: ['隊伍 {code} 建立成功！', 'Party {code} created!', 'パーティ {code} を作成しました！'],
+        treasure_map_join_room_success: ['已加入隊伍 {code}', 'Joined party {code}', 'パーティ {code} に参加しました'],
+        treasure_map_already_in_room: ['你已經在隊伍裡了，請先離開目前的隊伍。', "You're already in a party. Leave it first.",
+            'すでにパーティに参加しています。先に今のパーティを抜けてください。'],
+        treasure_map_room_connecting: ['正在連上隊伍，請稍候再修改清單。', 'Connecting to the party. Please wait before editing the list.',
+            'パーティに接続しています。リストの編集は接続完了までお待ちください。'],
+        treasure_map_room_expired: ['隊伍已經解散，寶圖留在你的清單。', 'The party has ended. Your maps are kept in your list.', 'パーティは解散しました。地図はあなたのリストに残っています。'],
+        treasure_map_legacy_room: ['這個隊伍已轉為唯讀，寶圖已保留在你的清單，請建立新的隊伍。',
+            'This party is now read-only. Your maps are kept in your list; please create a new party.',
+            'このパーティは読み取り専用になりました。地図はあなたのリストに残っています。新しいパーティを作成してください。'],
+        treasure_map_room_sync_failed_network: ['連不上隊伍伺服器，請檢查網路連線。', "Can't reach the party server. Check your connection.",
+            'パーティのサーバーに接続できません。ネットワークを確認してください。'],
+        treasure_map_clear_body_room: ['隊伍清單裡的 {count} 張寶圖都會移除，隊友的清單也會跟著清空。',
+            "All maps in the party list will be removed ({count}), and your party's lists will be cleared too.",
+            'パーティリストの地図 {count} 枚がすべて削除され、メンバーのリストも空になります。'],
+        treasure_map_share_merge_room: ['加進隊伍清單', 'Add to the party list', 'パーティリストに追加'],
+        treasure_map_share_replace_room: ['取代隊伍清單', 'Replace the party list', 'パーティリストを置き換える'],
+        treasure_map_share_over_limit_merge: ['隊伍清單最多 {max} 張，加進去會變成 {total} 張', 'A party list holds up to {max} maps; adding these would make {total}',
+            'パーティリストは {max} 枚までです。追加すると {total} 枚になります'],
+        treasure_map_share_over_limit_replace: ['隊伍清單最多 {max} 張，這個連結有 {total} 張', 'A party list holds up to {max} maps; this link has {total}',
+            'パーティリストは {max} 枚までです。このリンクには {total} 枚あります']
+    };
+    // 這三個鍵值的使用處在改成頁內對話框時就拿掉了（只剩 *_retry 的版本），其中離開那個還寫著「房間」
+    const removed = ['treasure_map_update_nickname_failed', 'treasure_map_leave_room_failed', 'treasure_map_remove_member_failed'];
+    const oldWords = { zh: /房間/, en: /\b(?:room|team)\b/i, ja: /ルーム|チーム/ };
+    ['zh', 'en', 'ja'].forEach((lang, index) => {
+        const values = translationValues(TRANSLATIONS, lang);
+        for (const [key, texts] of Object.entries(written)) {
+            assert.equal(values.get(key), texts[index], `${lang} ${key}`);
+            assert.doesNotMatch(texts[index].replace(/\{\w+\}/g, ''), oldWords[lang], `${lang} ${key} 還有舊用語`);
+        }
+        const keys = translationKeySet(TRANSLATIONS, lang);
+        for (const key of removed) assert.equal(keys.has(key), false, `${lang} 還有 ${key}`);
+        // *_retry 的版本還在用
+        for (const key of ['treasure_map_update_nickname_failed_retry', 'treasure_map_leave_room_failed_retry', 'treasure_map_remove_member_failed_retry']) assert.ok(keys.has(key), `${lang} 少了 ${key}`);
+    });
+    // 英文帶張數的句子不用 map(s)、is/are 這種會隨單複數變的寫法：數字放在括號裡或最後，1 張時也讀得通
+    const en = translationValues(TRANSLATIONS, 'en');
+    for (const key of ['treasure_map_clear_body_room', 'treasure_map_share_over_limit_merge', 'treasure_map_share_over_limit_replace']) {
+        assert.doesNotMatch(en.get(key), /\bmaps? (?:are|is)\b|\(s\)/i, key);
+    }
+
+    // 頁面與程式（含註解）裡不留舊的鍵值（以整個詞比對：*_retry 的版本不算）；每個鍵值都有人用，程式裡的預設文字（沒有翻譯時用）就是中文那一句
+    const all = toolSources().map((file) => read(file)).join('\n');
+    for (const key of removed) assert.doesNotMatch(all, new RegExp(`\\b${key}\\b`), `程式或頁面還有 ${key}`);
+    const fallbacksOf = (key) => [
+        // getI18nText('key', '預設文字', …)、setText(元素, 'key', '預設文字')
+        ...all.matchAll(new RegExp(`'${key}',\\s*'((?:[^'\\\\]|\\\\.)*)'`, 'g')),
+        // ENTRY_LABELS 這種 key: '預設文字'
+        ...all.matchAll(new RegExp(`^\\s*${key}:\\s*'((?:[^'\\\\]|\\\\.)*)'`, 'gm')),
+        // 頁面上掛 data-i18n 的元素，裡面寫的預設文字
+        ...all.matchAll(new RegExp(`data-i18n="${key}"[^>]*>([^<]*)<`, 'g'))
+    ].map((m) => m[1].replace(/\\(.)/g, '$1'));
+    for (const [key, texts] of Object.entries(written)) {
+        assert.ok(all.includes(`'${key}'`) || all.includes(`"${key}"`) || all.includes(`${key}:`), `沒有人用 ${key}`);
+        const fallbacks = fallbacksOf(key);
+        assert.ok(fallbacks.length > 0, `${key} 沒有預設文字`);
+        for (const fallback of fallbacks) assert.equal(fallback, texts[0], `${key} 的預設文字不是中文那一句`);
+    }
+});
+
+test('邀請連結對話框的「不用了」三語是 不用了／No thanks／参加しない：不借分享對話框的 treasure_map_share_dismiss（它的日文「追加しない」是「不加入寶圖」，用在加入隊伍上意思不對）；只剩錯誤時是「關閉」', async () => {
+    const page = await openLinkPage(linkServer().respond);
+    assert.ok(linkOpen(page));
+    assert.equal(text(page, 'dismissLinkBtn'), '不用了');
+    page.setLang('en');
+    assert.equal(text(page, 'dismissLinkBtn'), 'No thanks');
+    page.setLang('ja');
+    assert.equal(text(page, 'dismissLinkBtn'), '参加しない');
+    page.setLang('zh');
+    assert.equal(text(page, 'dismissLinkBtn'), '不用了');
+
+    // 只剩錯誤（讀隊伍就失敗）的樣子沒有「加入」，按鈕寫「關閉」（三語都是）
+    const missing = linkServer({ reads: [() => { throw roomError(404, 'ROOM_NOT_FOUND'); }] });
+    const failed = await openLinkPage(missing.respond);
+    assert.equal(text(failed, 'dismissLinkBtn'), '關閉');
+    failed.setLang('en');
+    assert.equal(text(failed, 'dismissLinkBtn'), 'Close');
+    failed.setLang('ja');
+    assert.equal(text(failed, 'dismissLinkBtn'), '閉じる');
+
+    // 分享寶圖的對話框（treasure_map_share_dismiss）不變：日文還是「追加しない」，連結對話框的程式不再用它
+    assert.equal(translationValues(TRANSLATIONS, 'ja').get('treasure_map_share_dismiss'), '追加しない');
+    assert.doesNotMatch(read(`${TOOL_DIR}/room-dialogs.js`), /treasure_map_share_dismiss/);
 });
