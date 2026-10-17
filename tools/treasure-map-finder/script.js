@@ -324,7 +324,8 @@ class TreasureMapFinder {
 
         // 加入清單（次要按鈕；一個畫面最多一顆 .btn-primary，留給「生成路線」）。
         // 保留 .btn-add-to-list：隊伍連線中 RoomCollaboration.setConnecting() 用它停用畫面上的加入鈕；
-        // 連線中才畫出來的卡片（例如這時切換語言、改篩選）在這裡一樣停用
+        // 連線中才畫出來的卡片（例如這時切換語言、改篩選）在這裡一樣停用。
+        // 兩段字：完整的 .btn-text 平常顯示，窄螢幕放不下時（style.css 的 @media (max-width: 389px)）改顯示短字 .btn-text-short
         const addBtn = document.createElement('button');
         addBtn.type = 'button';
         addBtn.className = 'btn btn-sm btn-add-to-list';
@@ -332,6 +333,9 @@ class TreasureMapFinder {
         const addText = document.createElement('span');
         addText.className = 'btn-text';
         addBtn.appendChild(addText);
+        const addTextShort = document.createElement('span');
+        addTextShort.className = 'btn-text-short';
+        addBtn.appendChild(addTextShort);
         this.updateAddButton(addBtn, this.listManager.has(map.id));
         addBtn.addEventListener('click', () => this.toggleMapInList(map));
         actions.appendChild(addBtn);
@@ -407,13 +411,22 @@ class TreasureMapFinder {
     }
 
     // 卡片的「加入清單」：已加入時 data-state="added"、加上 .is-added（成功色調）、文字換成「✓ 已加入」，
-    // 再按一次就移除。只動這三樣，不改寫整個 className（停用等其他狀態不受影響）
+    // 再按一次就移除。只動這幾樣（兩段字、aria-label），不改寫整個 className（停用等其他狀態不受影響）。
+    // 窄螢幕畫面上只看得到短字（已加入時和完整的字一樣），所以 aria-label 固定帶完整的字：
+    // 無障礙名稱不隨視窗寬度變，短字也一定是它的一部分（WCAG 2.5.3，語音控制喊畫面上的字點得到）。
+    // 沒有 .btn-text-short 的按鈕照樣更新其他部分
     updateAddButton(button, isInList) {
-        button.dataset.state = isInList ? 'added' : 'default';
-        button.classList.toggle('is-added', isInList);
-        button.querySelector('.btn-text').textContent = isInList
+        const label = isInList
             ? FF14Utils.getI18nText('treasure_map_added_to_list', '✓ 已加入')
             : FF14Utils.getI18nText('treasure_map_add_to_list', '＋ 加入清單');
+        button.dataset.state = isInList ? 'added' : 'default';
+        button.classList.toggle('is-added', isInList);
+        button.querySelector('.btn-text').textContent = label;
+        const shortText = button.querySelector('.btn-text-short');
+        if (shortText) {
+            shortText.textContent = isInList ? label : FF14Utils.getI18nText('treasure_map_add_to_list_short', '＋ 加入');
+        }
+        button.setAttribute('aria-label', label);
     }
 
     // 複製這張寶圖的隊伍頻道句子（buildPartyMessage），不再是 /pos 指令。
@@ -431,7 +444,7 @@ class TreasureMapFinder {
 
     // 隊伍連線中不能改清單（RoomCollaboration.setConnecting() 也停用了按鈕）：canEditList() 的 toast 與匯入、清空的回傳值共用這句話
     getConnectingMessage() {
-        return FF14Utils.getI18nText('treasure_map_room_connecting', '隊伍連線中，請稍候再修改清單。');
+        return FF14Utils.getI18nText('treasure_map_room_connecting', '正在連上隊伍，請稍候再修改清單。');
     }
 
     canEditList() {
@@ -458,24 +471,18 @@ class TreasureMapFinder {
         
         const result = this.listManager.toggle(map, options);
 
-        if (result.success) {
-            // 加入、移除成功不跳 toast：清單入口的張數會更新，#listAnnouncer 也會唸出來（見 updateListCount）
-
-            // 記錄操作歷史
-            if (this.roomCollaboration?.currentRoom && result.action === 'add') {
-                this.roomCollaboration.recordMapOperation('add', map, this.roomCollaboration.currentUser);
-            }
-        } else {
+        // 加入、移除成功不跳 toast：清單入口的張數會更新，#listAnnouncer 也會唸出來（見 updateListCount）
+        if (!result.success) {
             FF14Utils.showToast(result.message, 'error');
             return;
         }
-        
+
         this.updateListCount();
         this.updateCardButtons();
         this.renderMyList();
         this.notifyIfUnsaved(result);
         
-        // 同步到房間
+        // 同步到隊伍
         if (this.roomCollaboration?.currentRoom) {
             this.syncToRoom();
         }
@@ -561,7 +568,7 @@ class TreasureMapFinder {
         }
     }
 
-    // 左邊的清單按鈕只打開面板；「組隊」打開後把焦點移到面板裡的「建立組隊」；「生成路線」打開後切到路線頁（openRoute）
+    // 左邊的清單按鈕只打開面板；「組隊」打開後把焦點移到面板裡的「建立隊伍」；「生成路線」打開後切到路線頁（openRoute）
     handleListEntry(action) {
         this.openListPanel();
         if (action === 'team') {
@@ -623,6 +630,24 @@ class TreasureMapFinder {
         return zoneManager.getZoneById(byName) ? byName : null;
     }
 
+    // 這張清單項目是誰加的（RoomCollaboration#ownerOf，見 PartyNames.ownerOf）。只在隊伍裡才有：不在隊伍裡、addedBy 是空的都是 null。
+    // 清單的每一列、路線的每一站、複製的句子都問這裡，所以離開隊伍之後重畫，畫面上的「誰的圖」就一起消失。測試替身不一定有 ownerOf
+    ownerOf(item) {
+        return this.roomCollaboration?.currentRoom ? (this.roomCollaboration.ownerOf?.(item) ?? null) : null;
+    }
+
+    // 「誰的圖」那一行（清單的每一列與路線的每一站共用）：className 是這一行的 class（item-owner、tm-stop-owner），自己的圖多一個 is-me。
+    // 帶了動態文字（名字、語言），每次重畫時用當下語言組出來，不掛 data-i18n。沒有要顯示的（不在隊伍裡、沒有主人）回 null，由呼叫的人不加這一行
+    createOwnerLine(item, className) {
+        const owner = this.ownerOf(item);
+        const label = PartyNames.ownerLabel(owner, FF14Utils.getI18nText.bind(FF14Utils));
+        if (!label) return null;
+        const line = document.createElement('p');
+        line.className = owner.kind === 'me' ? `${className} is-me` : className;
+        line.textContent = label;
+        return line;
+    }
+
     // 清單頁的清單：一張寶圖一列（見 createListItem）。列裡的字跟著語言與清單變，由程式組出來、不掛 data-i18n：
     // 切換語言、清單變了（加入、移除、清空、匯入、隊伍同步）都整份重畫
     renderMyList() {
@@ -678,7 +703,8 @@ class TreasureMapFinder {
         (removeButtons[position] || removeButtons[position - 1] || this.elements.listTitle)?.focus();
     }
 
-    // 清單的一列：縮圖（裝飾，alt 空白）；第一行是等級、目前語言的地名與編號，第二行是座標與最近傳送點；右邊的 ✕
+    // 清單的一列：縮圖（裝飾，alt 空白）；第一行是等級、目前語言的地名與編號，第二行是座標與最近傳送點，
+    // 在隊伍裡再多一行是誰的圖（createOwnerLine）；右邊的 ✕
     createListItem(item) {
         const info = this.describeListItem(item);
         const listItem = document.createElement('li');
@@ -721,6 +747,10 @@ class TreasureMapFinder {
             sub.textContent += ` · ${FF14Utils.getI18nText('treasure_map_nearest', '最近：{name}', { name: nearestName })}`;
         }
         itemInfo.appendChild(sub);
+
+        // 第三行（只在隊伍裡）：這張圖是誰加的，在座標那一行下面
+        const ownerLine = this.createOwnerLine(item, 'item-owner');
+        if (ownerLine) itemInfo.appendChild(ownerLine);
         listItem.appendChild(itemInfo);
 
         // ✕：每一列都有一顆，名稱要帶上等級、地名與編號才分得出來；帶了動態文字，不能用 data-i18n，每次重畫時用當下語言組出來。
@@ -752,19 +782,14 @@ class TreasureMapFinder {
         this.renderMyList();
         this.focusListRow(position);
 
-        // 記錄操作歷史
-        if (this.roomCollaboration?.currentRoom && result.removedItem) {
-            this.roomCollaboration.recordMapOperation('remove', result.removedItem, this.roomCollaboration.currentUser);
-        }
-
-        // 同步到房間
+        // 同步到隊伍
         if (this.roomCollaboration?.currentRoom) {
             this.syncToRoom();
         }
     }
     
     // 清空整份清單。要不要清已經由 ListDialogs 的清空對話框問過了，這裡不再確認。
-    // 成功有 toast（路線進度由 updateListCount() 在清單變成 0 張時整份清掉）；隊伍裡記進操作歷史、同步給隊友。
+    // 成功有 toast（路線進度由 updateListCount() 在清單變成 0 張時整份清掉）；隊伍裡同步給隊友。
     // 回傳 ListManager 的結果 { success, message, count }
     clearList() {
         if (!this.canEditList()) return { success: false, message: this.getConnectingMessage(), count: 0 };
@@ -777,16 +802,7 @@ class TreasureMapFinder {
         this.updateCardButtons();
         this.renderMyList();
 
-        // 記錄操作歷史
-        if (this.roomCollaboration?.currentRoom) {
-            this.roomCollaboration.addOperationHistory({
-                type: 'clear_all',
-                message: `${this.roomCollaboration.currentUser.nickname} 清空了所有寶圖`,
-                timestamp: new Date().toISOString()
-            });
-        }
-
-        // 同步到房間
+        // 同步到隊伍
         if (this.roomCollaboration?.currentRoom) {
             this.syncToRoom();
         }
@@ -815,11 +831,11 @@ class TreasureMapFinder {
     static ENTRY_LABELS = {
         treasure_map_entry_empty: '📋 清單',
         treasure_map_entry_count: '📋 清單 {count} 張',
-        treasure_map_entry_room: '👥 隊伍清單 {count}/{max}'
+        treasure_map_entry_room: '👥 隊伍 {count}/{max}'
     };
 
     // 清單入口：左邊的標籤與右邊的動作。0 張「組隊」、1 張以上「生成路線」（1 張也排得出路線）；
-    // 在隊伍裡時標籤是「隊伍清單 N/上限」，0 張時右邊不放動作（已經在隊伍裡，不再顯示「組隊」）
+    // 在隊伍裡時標籤是「隊伍 N/上限」，0 張時右邊不放動作（已經在隊伍裡，不再顯示「組隊」）
     static getListEntryState({ count, inRoom, maxMaps }) {
         let action = 'team';
         if (count >= 1) action = 'route';
@@ -1011,7 +1027,7 @@ class TreasureMapFinder {
     }
 
     // 打開帶 ?maps= 的分享連結：讀出連結裡的寶圖，問玩家要不要加進清單（ListDialogs#openShare）。載入時呼叫一次，
-    // 等寶圖資料載入、隊伍還原或自動加入都結束（見檔案最後的 DOMContentLoaded），這樣「已在清單」與隊伍的上限都是最後的結果。
+    // 等寶圖資料載入、隊伍還原或邀請連結的對話框有答案都結束（見檔案最後的 DOMContentLoaded），這樣「已在清單」與隊伍的上限都是最後的結果。
     // 網址沒有 maps 就什麼都不做；目錄是空的（資料沒載入成功）也不做、網址不動，重新整理還能再試。
     // 一張都找不到：提示並把 maps 拿掉，不開對話框。這裡不檢查隊伍連線中（canEditList() 會跳 toast）：連線中照樣開，
     // 對話框裡寫原因並停用「加入清單」
@@ -1040,6 +1056,8 @@ class TreasureMapFinder {
         const collaboration = this.roomCollaboration?.currentRoom ? this.roomCollaboration : null;
         const result = this.listManager.import({ maps }, merge, {
             maxItems: collaboration ? RoomCollaboration.CONSTANTS.MAX_MAPS : Infinity,
+            // 在隊伍裡：這次加進來的寶圖記成自己的（同 toggleMapInList()，伺服器收到之後也會這樣記），還沒同步回來時「誰的圖」就是對的
+            ...(collaboration ? { addedBy: collaboration.currentUser?.id ?? null } : {}),
             validate: list => {
                 if (!collaboration) return;
                 const operations = collaboration.mapSync.getOperations(list.map(map => this.toRoomMap(map)));
@@ -1085,7 +1103,7 @@ class TreasureMapFinder {
         return this.roomCollaboration.mapSync.replaceLocal(this.listManager.getList().map(item => this.toRoomMap(item)));
     }
 
-    // 從房間同步寶圖
+    // 從隊伍同步寶圖
     syncFromRoom(maps) {
         if (!this.roomCollaboration?.currentRoom) return;
 
@@ -1111,6 +1129,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // 連接協作功能
     treasureMapFinder.setRoomCollaboration(roomCollaboration);
 
-    // 分享連結（網址有 ?maps=）：寶圖資料載入、隊伍還原或自動加入都結束後才處理（任何一邊失敗也照樣處理，所以用 allSettled）
+    // 分享連結（網址有 ?maps=）：寶圖資料載入、隊伍還原或邀請連結的對話框有答案（網址有 ?room=）都結束後才處理（任何一邊失敗也照樣處理，所以用 allSettled）
     Promise.allSettled([treasureMapFinder.ready, roomCollaboration.ready]).then(() => treasureMapFinder.handleSharedMaps());
 });

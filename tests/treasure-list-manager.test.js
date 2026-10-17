@@ -12,7 +12,9 @@ const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
 // FF14Utils.getI18nText 只回傳中文預設文字（代入 {參數}），所以訊息就是程式裡寫的字；console 換成空函式，輸出不被洗版。
 // localStorage 是一個 Map：
 //   setItemThrows  寫入時丟例外（空間滿了、寫入被拒絕）
-//   storageThrows  連讀 localStorage 都丟例外（Chrome 封鎖網站資料時是 SecurityError）
+//   storageThrows  連讀 localStorage 都丟例外（Chrome 封鎖網站資料時是 SecurityError）。存取器要在 context 裡面定義：
+//                  主機端對 sandbox 定義的存取器在 context 裡不會丟例外（typeof 變成 'undefined'、直接讀變成 ReferenceError），
+//                  程式走不到它的 catch。所以先確認這個 context 裡讀 localStorage 真的會丟例外，測試的前提才成立
 function createListManager({ setItemThrows = false, storageThrows = false } = {}) {
     const storage = new Map();
     const sandbox = {
@@ -20,8 +22,10 @@ function createListManager({ setItemThrows = false, storageThrows = false } = {}
         console: { log() {}, warn() {}, error() {} },
         FF14Utils: { getI18nText: (key, fallback, params = {}) => fallback.replace(/\{(\w+)\}/g, (_, name) => params[name]) }
     };
+    const context = vm.createContext(sandbox);
     if (storageThrows) {
-        Object.defineProperty(sandbox, 'localStorage', { get() { throw new Error('SecurityError'); } });
+        vm.runInContext("Object.defineProperty(globalThis, 'localStorage', { get() { throw new Error('SecurityError'); }, configurable: true })", context);
+        assert.throws(() => vm.runInContext('typeof localStorage', context), /SecurityError/);
     } else {
         sandbox.localStorage = {
             getItem: (key) => (storage.has(key) ? storage.get(key) : null),
@@ -31,7 +35,6 @@ function createListManager({ setItemThrows = false, storageThrows = false } = {}
             }
         };
     }
-    const context = vm.createContext(sandbox);
     for (const file of ['assets/js/security-utils.js', 'tools/treasure-map-finder/coordinate-utils.js', 'tools/treasure-map-finder/list-manager.js']) {
         vm.runInContext(read(file), context, { filename: file });
     }
@@ -67,4 +70,23 @@ test('連 localStorage 都拿不到：一開始是空清單，之後的操作只
     const { manager } = createListManager({ storageThrows: true });
     assert.equal(manager.getLength(), 0);
     assert.deepEqual([manager.add(tm007).success, manager.getLength()], [true, 1]);
+});
+
+test('匯入時給了 addedBy（在隊伍裡匯入）：這次加進來的寶圖主人是 addedBy，原本就在清單裡的照舊是原本的主人；匯入的資料自己帶的 addedBy 不算數', () => {
+    const { manager } = createListManager();
+    manager.add(tm007, { addedBy: 'm4x' });
+    const tm013 = { ...tm010, id: 'tm_013', addedBy: 'stranger' };
+    // 合併：tm_007 原本就在（m4x 的），tm_010、tm_013 是新加的
+    assert.equal(manager.import({ maps: [{ ...tm007, addedBy: null }, tm010, tm013] }, true, { addedBy: 'me' }).success, true);
+    assert.deepEqual(Array.from(manager.getList(), (map) => [map.id, map.addedBy]), [['tm_007', 'm4x'], ['tm_010', 'me'], ['tm_013', 'me']]);
+    // 取代：還在的 tm_007 照舊是 m4x 的（匯入的資料寫別人也一樣），新的 tm_022 是自己的
+    const tm022 = { ...tm010, id: 'tm_022' };
+    assert.equal(manager.import({ maps: [{ ...tm007, addedBy: 'stranger' }, tm022] }, false, { addedBy: 'me' }).success, true);
+    assert.deepEqual(Array.from(manager.getList(), (map) => [map.id, map.addedBy]), [['tm_007', 'm4x'], ['tm_022', 'me']]);
+});
+
+test('匯入時沒給 addedBy（個人清單）：addedBy 照匯入的資料，和以前一樣', () => {
+    const { manager } = createListManager();
+    manager.import({ maps: [{ ...tm007, addedBy: 'someone' }, tm010] }, true);
+    assert.deepEqual(Array.from(manager.getList(), (map) => [map.id, map.addedBy]), [['tm_007', 'someone'], ['tm_010', null]]);
 });

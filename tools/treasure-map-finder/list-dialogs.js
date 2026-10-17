@@ -295,7 +295,7 @@ class ListDialogs {
     // maps 是目錄裡找得到的那幾張，missing 是找不到而略過的張數。隊伍連線中、結果超過隊伍上限時不能加入，原因寫在對話框裡。
     // 不管怎麼關（加入成功、「不用了」、✕、Escape、點遮罩）：網址裡的 maps 拿掉，焦點放到結果張數
     // （這個對話框是載入時自動打開的，不是按哪顆按鈕打開的，沒有按鈕可以還焦點）。
-    // 下面還開著別的視窗時（隊伍自動加入還沒結束，玩家先打開了清單面板），焦點留給 ModalManager 還原到那個視窗裡：結果張數在它外面，
+    // 下面還開著別的視窗時（用邀請連結加入隊伍之後打開了清單面板，或玩家自己先打開了它），焦點留給 ModalManager 還原到那個視窗裡：結果張數在它外面，
     // 放過去再按 Tab 會跑出開著的視窗。加入的寶圖讓面板重畫、原本有焦點的那顆換掉了（還原不了）時，放到面板正在顯示的那一頁的標題
     openShare(maps, missing) {
         const { finder, elements } = this;
@@ -305,6 +305,10 @@ class ListDialogs {
         elements.shareModeMerge.checked = true;
         elements.shareModeReplace.checked = false;
         this.renderShare();
+        // 開著的寶圖詳細檢視先關掉：它疊得比頁內對話框高（style.css 的 .map-detail-modal），不關會蓋住這個對話框，
+        // Escape 與點遮罩卻作用在看不到的這個對話框上（同 RoomDialogs#openLink()）
+        const detail = finder.uiDialogManager;
+        if (detail?.activeDialog?.kind === 'mapDetail') detail.hideMapDetail();
         this.showModal(elements.shareModal, () => {
             finder.removeSharedParam();
             const below = ModalManager.topmost()?.activeModal;
@@ -335,9 +339,9 @@ class ListDialogs {
         this.renderShareChoice();
     }
 
-    // 連結裡的一張寶圖：縮圖（裝飾，alt 空白）、等級＋目前語言的地名＋座標；已經在清單裡的多一個小標籤
-    createSharedItem(map) {
-        const { finder } = this;
+    // 一張寶圖的迷你列（<li>）：縮圖（裝飾，alt 空白）、等級＋目前語言的地名＋座標。分享連結的對話框，以及建立、加入隊伍時
+    // 列出「你的清單」的對話框（RoomDialogs）共用；列出的是清單裡的項目或目錄裡的寶圖都行（describeListItem 兩種都看得懂）
+    static createMiniItem(finder, map) {
         const info = finder.describeListItem(map);
         const item = document.createElement('li');
         item.className = 'tm-mini';
@@ -346,6 +350,13 @@ class ListDialogs {
         text.className = 'tm-mini-text';
         text.textContent = `${info.grade} ${info.zoneName} ${info.coordsText}`;
         item.appendChild(text);
+        return item;
+    }
+
+    // 連結裡的一張寶圖：迷你列，已經在清單裡的多一個小標籤
+    createSharedItem(map) {
+        const { finder } = this;
+        const item = ListDialogs.createMiniItem(finder, map);
         if (finder.listManager.has(map.id)) {
             // 標籤前面留一個空白：讀出來、複製下來都是「G17 烏爾科帕恰 (13.7, 14.2) 已在清單」（flex 裡只有空白的文字不畫出來，版面不變）
             item.appendChild(document.createTextNode(' '));

@@ -247,12 +247,14 @@ class ListManager {
      * 匯入清單資料
      * @param {Object|string} data - 匯入的資料或 JSON 字串
      * @param {boolean} merge - 是否合併（true）或取代（false）
-     * @param {Object} options - 選項 {maxItems, validate}；validate 在套用前驗證完整結果
+     * @param {Object} options - 選項 {maxItems, validate, addedBy}；validate 在套用前驗證完整結果；
+     *   給了 addedBy（在隊伍裡匯入時是自己的成員 id）：這次加進來的寶圖主人記成 addedBy，原本就在清單裡的照舊是原本的主人，
+     *   匯入的資料自己帶的 addedBy 不算數；沒給就照匯入的資料
      * @returns {{success: boolean, message: string, imported: number, skipped: number, saved?: boolean}}
      *   失敗（格式、重複、上限、validate 不通過）時不動清單也不動儲存，沒有 saved；
      *   成功時 saved: false 表示清單已經換成新的、但瀏覽器沒讓寫入
      */
-    import(data, merge = false, { maxItems = Infinity, validate } = {}) {
+    import(data, merge = false, { maxItems = Infinity, validate, addedBy } = {}) {
         try {
             // 如果是字串，嘗試解析
             let importData;
@@ -290,10 +292,12 @@ class ListManager {
 
             // Stage and deduplicate the projected list, and let it pass every check, before touching the current list.
             const next = new Map((merge ? this.list : []).map(map => [map.id, map]));
+            // 給了 addedBy：主人照目前的清單（取代時還在的寶圖也一樣），沒在清單裡的才是 addedBy
+            const owners = addedBy === undefined ? null : new Map(this.list.map(map => [map.id, map.addedBy]));
             let importedCount = 0;
             for (const map of validatedMaps) {
                 if (!next.has(map.id)) {
-                    next.set(map.id, map);
+                    next.set(map.id, owners ? { ...map, addedBy: owners.has(map.id) ? owners.get(map.id) : addedBy } : map);
                     importedCount++;
                 }
             }
@@ -332,8 +336,8 @@ class ListManager {
     }
 
     /**
-     * 從房間資料同步
-     * @param {Array} roomMaps - 房間的地圖列表
+     * 從隊伍資料同步
+     * @param {Array} roomMaps - 隊伍的地圖列表
      * @param {Array} allMaps - 所有可用的地圖資料
      */
     syncFromRoom(roomMaps, allMaps) {

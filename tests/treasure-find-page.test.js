@@ -137,8 +137,13 @@ function createFilterPage({ url = 'https://ff14.tw/tools/treasure-map-finder/', 
         // updateListEntry() 讀隊伍的寶圖上限；不載入 room-collaboration.js
         RoomCollaboration: { CONSTANTS: { MAX_MAPS: 8 } }
     });
+    // 瀏覽器封鎖網站資料：光是讀 localStorage（裸的全域或 window.localStorage）就丟例外。dom.window 就是 vm 的 context：
+    // 存取器要在 context 裡面定義（主機端定義的在 context 裡不會丟例外，FilterManager.safeStorage() 走不到它的 catch），
+    // 而且先確認這個 context 裡讀 localStorage 真的會丟例外，測試的前提才成立
     if (storageThrows) {
-        Object.defineProperty(dom.window, 'localStorage', { get() { throw new Error('SecurityError'); } });
+        vm.runInContext("Object.defineProperty(globalThis, 'localStorage', { get() { throw new Error('SecurityError'); }, configurable: true })", dom.window);
+        assert.throws(() => vm.runInContext('typeof localStorage', dom.window), /SecurityError/);
+        assert.throws(() => vm.runInContext('window.localStorage', dom.window), /SecurityError/);
     } else {
         dom.window.localStorage = {
             getItem: (key) => (storage.has(key) ? storage.get(key) : null),
@@ -169,7 +174,7 @@ function createFilterPage({ url = 'https://ff14.tw/tools/treasure-map-finder/', 
     elements.myListPanel = dom.el('div', { id: 'myListPanel', class: 'my-list-panel', role: 'dialog', inert: true },
         dom.el('div', { class: 'panel-header' }, dom.el('button', { id: 'closePanelBtn', class: 'btn btn-close' }, '×')),
         dom.el('div', { id: 'teamActions', class: 'team-actions' },
-            dom.el('button', { id: 'createRoomBtn', class: 'btn btn-secondary' }, '建立組隊'),
+            dom.el('button', { id: 'createRoomBtn', class: 'btn btn-secondary' }, '建立隊伍'),
             dom.el('button', { id: 'joinRoomBtn', class: 'btn btn-secondary' }, '加入隊伍')),
         dom.el('div', { class: 'panel-footer' }, elements.totalCount, dom.el('button', { id: 'generateRouteBtn', class: 'btn btn-primary' }, '生成路線')));
     for (const id of ['stepHint', 'listEntryDesktop', 'levelTags', 'zoneFilterRow', 'clearZonesBtn', 'resultCount', 'treasureEmpty', 'treasureGrid', 'listEntryMobile', 'listAnnouncer']) {
@@ -658,7 +663,7 @@ test('手機版把回到頂端按鈕移到底部列上方', () => {
     assert.match(declarations('.back-to-top', '(max-width: 768px)'), /bottom:/);
 });
 
-test('頁面結構：步驟列與桌機入口在 main 最上面、手機底部列在 main 之後；組隊在面板標頭之後、頁籤之前', () => {
+test('頁面結構：步驟列與桌機入口在 main 最上面、手機底部列在 main 之後；組隊在面板標頭之後、清單之前', () => {
     const html = read('tools/treasure-map-finder/index.html');
     const main = html.slice(html.indexOf('<main'), html.indexOf('</main>'));
     // main 裡第一個看得到的東西就是最上面那一列（前面只有視覺隱藏的 h1），裡面左邊步驟列、右邊桌機入口
@@ -697,14 +702,14 @@ test('頁面結構：步驟列與桌機入口在 main 最上面、手機底部�
         assert.match(entry, /data-entry="route"[\s\S]*data-i18n="treasure_map_generate_route"/, `${id} 的生成路線沿用原本的鍵值`);
     }
 
-    // 清單面板：組隊與隊伍狀態在標頭之後、頁籤之前，動作列在清單下面；建立組隊改成次要按鈕（面板的主要按鈕留給生成路線）
+    // 清單面板：組隊與隊伍狀態在標頭之後、清單之前，動作列在清單下面；建立隊伍與加入隊伍是一般按鈕（面板的主要按鈕留給生成路線）
     const panel = sliceElementById(html, 'myListPanel');
-    const order = ['class="panel-header"', 'id="teamActions"', 'id="roomSection"', 'id="panelTabs"', 'id="listActions"', 'id="generateRouteBtn"'].map((s) => panel.indexOf(s));
+    const order = ['class="panel-header"', 'id="teamActions"', 'id="roomSection"', 'id="listActions"', 'id="generateRouteBtn"'].map((s) => panel.indexOf(s));
     assert.ok(!order.includes(-1), `面板裡缺東西：${order}`);
     assert.deepEqual([...order].sort((a, b) => a - b), order, `面板裡的順序：${order}`);
-    assert.deepEqual(classesOf(tagAttrs(html, 'createRoomBtn')), ['btn', 'btn-secondary']);
-    assert.deepEqual(classesOf(tagAttrs(html, 'joinRoomBtn')), ['btn', 'btn-secondary']);
-    // 中間（組隊、隊伍狀態、頁籤、清單、動作列、歷史）包在一起捲動，標頭與底部的「生成路線」留在外面固定
+    assert.deepEqual(classesOf(tagAttrs(html, 'createRoomBtn')), ['btn']);
+    assert.deepEqual(classesOf(tagAttrs(html, 'joinRoomBtn')), ['btn']);
+    // 中間（組隊、隊伍狀態、清單、動作列）包在一起捲動，標頭與底部的「生成路線」留在外面固定
     const bodyStart = panel.indexOf('<div class="panel-body">');
     assert.notEqual(bodyStart, -1);
     const body = (() => {
@@ -717,7 +722,7 @@ test('頁面結構：步驟列與桌機入口在 main 最上面、手機底部�
         }
         return assert.fail('.panel-body 沒有結束標籤');
     })();
-    for (const id of ['teamActions', 'roomSection', 'panelTabs', 'listContent', 'listActions', 'historyContent']) assert.ok(body.includes(`id="${id}"`), `${id} 在 .panel-body 裡`);
+    for (const id of ['teamActions', 'roomSection', 'listContent', 'listActions']) assert.ok(body.includes(`id="${id}"`), `${id} 在 .panel-body 裡`);
     for (const outside of ['class="panel-header"', 'class="panel-footer"', 'id="generateRouteBtn"']) assert.ok(!body.includes(outside), `${outside} 不在 .panel-body 裡`);
     const panelBody = declarations('.panel-body');
     for (const re of [/flex:\s*1/, /min-height:\s*0/, /overflow-y:\s*auto/]) assert.match(panelBody, re);
@@ -732,7 +737,7 @@ test('步驟列：還原出來的等級是第 2 步；選、取消等級時跟�
     assert.deepEqual(page.steps(), [['✓', 'done', null], ['2', 'current', 'step'], ['3', '', null]]);
 });
 
-test('清單入口：0 張「組隊」、1 張以上「生成路線」；隊伍裡顯示「隊伍清單 N/8」，0 張不放動作（Review Focus 1）', () => {
+test('清單入口：0 張「組隊」、1 張以上「生成路線」；隊伍裡顯示「隊伍 N/8」，0 張不放動作（Review Focus 1）', () => {
     const page = createFilterPage({ url: 'https://ff14.tw/tools/treasure-map-finder/?grade=g17' });
     const { finder, list, $ } = page;
     const both = () => ENTRY_IDS.map((id) => page.entryOf(id));
@@ -761,11 +766,11 @@ test('清單入口：0 張「組隊」、1 張以上「生成路線」；隊伍�
 
     // 用 ?room= 加入隊伍、清單是空的：入口就是「你在隊伍裡」的提示，沒有「組隊」
     show(0, { currentRoom: { roomCode: 'ABC123' } });
-    assert.deepEqual(both(), Array(2).fill({ label: '👥 隊伍清單 0/8', action: null }));
+    assert.deepEqual(both(), Array(2).fill({ label: '👥 隊伍 0/8', action: null }));
     show(1, { currentRoom: { roomCode: 'ABC123' } });
-    assert.deepEqual(both(), Array(2).fill({ label: '👥 隊伍清單 1/8', action: 'route' }));
+    assert.deepEqual(both(), Array(2).fill({ label: '👥 隊伍 1/8', action: 'route' }));
     show(5, { currentRoom: { roomCode: 'ABC123' } });
-    assert.deepEqual(both(), Array(2).fill({ label: '👥 隊伍清單 5/8', action: 'route' }));
+    assert.deepEqual(both(), Array(2).fill({ label: '👥 隊伍 5/8', action: 'route' }));
 
     // 往回走：從 1 張回到 0 張（第 3 步回到第 2 步）時，第 3 步的號碼與狀態都還原，「生成路線」重新停用
     show(1);
@@ -814,7 +819,7 @@ test('加入、移除成功不跳 toast，改由清單入口與唸出區更新�
 });
 
 // 入口的「生成路線」（切到清單面板的路線頁）在 tests/treasure-list-panel.test.js：這裡沒有真的 zoneManager，openRoute() 會停在載入檢查
-test('入口按鈕：清單打開面板；組隊打開面板並把焦點移到「建立組隊」', () => {
+test('入口按鈕：清單打開面板；組隊打開面板並把焦點移到「建立隊伍」', () => {
     const page = createFilterPage();
     const { finder, modalManager, $, dom } = page;
     const panel = $('myListPanel');
@@ -836,7 +841,7 @@ test('入口按鈕：清單打開面板；組隊打開面板並把焦點移到�
 
         button(id, 'team').click();
         assert.ok(modalManager.activeModal === panel, `${id}：按組隊後面板應該開著`);
-        assert.equal(dom.document.activeElement.id, 'createRoomBtn', `${id}：組隊後焦點在建立組隊`);
+        assert.equal(dom.document.activeElement.id, 'createRoomBtn', `${id}：組隊後焦點在建立隊伍`);
         finder.closeListPanel();
     }
 });
@@ -901,8 +906,8 @@ test('步驟列與清單入口的三語鍵值照設計', () => {
         treasure_map_step_route: ['生成路線', 'Plan a route', 'ルートを作成'],
         treasure_map_entry_empty: ['📋 清單', '📋 List', '📋 リスト'],
         treasure_map_entry_count: ['📋 清單 {count} 張', '📋 List: {count}', '📋 リスト {count} 枚'],
-        treasure_map_entry_room: ['👥 隊伍清單 {count}/{max}', '👥 Team list {count}/{max}', '👥 チームリスト {count}/{max}'],
-        treasure_map_entry_team: ['組隊', 'Team up', 'チームを組む'],
+        treasure_map_entry_room: ['👥 隊伍 {count}/{max}', '👥 Party {count}/{max}', '👥 パーティ {count}/{max}'],
+        treasure_map_entry_team: ['組隊', 'Party up', 'パーティを組む'],
         // 英文不帶單位：「(1 maps)」單複數不對，又不想為了它加複數規則
         treasure_map_announce_added: ['已加入清單，共 {count} 張', 'Added to the list. Total: {count}', 'リストに追加しました（{count} 枚）'],
         treasure_map_announce_removed: ['已從清單移除，剩 {count} 張', 'Removed from the list. Remaining: {count}', 'リストから削除しました（残り {count} 枚）']
@@ -972,7 +977,7 @@ test('卡片結構：article、縮圖按鈕（lazy 圖片、等級、放大鏡�
 
     const add = card.querySelector('.tm-card-actions .btn-add-to-list');
     assert.deepEqual(classes(add), ['btn', 'btn-add-to-list', 'btn-sm']);
-    assert.deepEqual([add.type, add.dataset.state, add.textContent, add.disabled], ['button', 'default', '＋ 加入清單', false]);
+    assert.deepEqual([add.type, add.dataset.state, add.querySelector('.btn-text').textContent, add.disabled], ['button', 'default', '＋ 加入清單', false]);
     const copy = card.querySelector('.tm-card-actions .tm-copy');
     assert.deepEqual(classes(copy), ['btn', 'btn-copy-coords', 'btn-icon-only', 'btn-sm', 'tm-copy']);
     assert.deepEqual([copy.type, copy.getAttribute('aria-label'), copy.getAttribute('title'), copy.textContent], ['button', '複製座標', '複製座標', '📋']);
@@ -990,7 +995,7 @@ test('加入清單鈕：已在清單裡的卡片畫出來就是「✓ 已加入�
     finder.filterManager.restoreState({ levels: ['g17'], zones: ['urqopacha'] });
     finder.updateFilteredMaps();
     const button = (id) => finder.elements.treasureGrid.querySelector(`[data-map-id="${id}"] .btn-add-to-list`);
-    const look = (id) => [button(id).dataset.state, button(id).className, button(id).textContent];
+    const look = (id) => [button(id).dataset.state, button(id).className, button(id).querySelector('.btn-text').textContent];
 
     assert.deepEqual(look('tm_008'), ['added', 'btn btn-sm btn-add-to-list is-added', '✓ 已加入']);
     assert.deepEqual(look('tm_007'), ['default', 'btn btn-sm btn-add-to-list', '＋ 加入清單']);
@@ -1006,6 +1011,68 @@ test('加入清單鈕：已在清單裡的卡片畫出來就是「✓ 已加入�
     button('tm_007').click();
     assert.equal(finder.listManager.has('tm_007'), false);
     assert.deepEqual(look('tm_007'), ['default', 'btn btn-sm btn-add-to-list marker', '＋ 加入清單']);
+});
+
+// ---------- 窄螢幕的加入鈕（設計 6.14） ----------
+test('卡片的加入鈕有完整與短的兩段字，aria-label 是完整的字並跟著狀態換（加入 → 已加入 → 移除）', async () => {
+    const { finder, setLang } = await createFinder('zh');
+    finder.filterManager.restoreState({ levels: ['g17'], zones: ['urqopacha'] });
+    finder.updateFilteredMaps();
+    const button = () => finder.elements.treasureGrid.querySelector('[data-map-id="tm_007"] .btn-add-to-list');
+    // [完整的字, 短字, 無障礙名稱]：窄螢幕藏起完整的字、畫面上看到的是短字，但名稱一直是完整的字
+    const look = () => [button().querySelector('.btn-text').textContent, button().querySelector('.btn-text-short').textContent, button().getAttribute('aria-label')];
+
+    // 兩段字是按鈕裡僅有的子元素：完整的在前、短的在後
+    assert.deepEqual(button().children.map((child) => child.className), ['btn-text', 'btn-text-short']);
+    assert.deepEqual(look(), ['＋ 加入清單', '＋ 加入', '＋ 加入清單']);
+
+    button().click();
+    assert.equal(finder.listManager.has('tm_007'), true);
+    assert.deepEqual(look(), ['✓ 已加入', '✓ 已加入', '✓ 已加入']);
+
+    button().click();
+    assert.equal(finder.listManager.has('tm_007'), false);
+    assert.deepEqual(look(), ['＋ 加入清單', '＋ 加入', '＋ 加入清單']);
+
+    // 清單在別處改變（隊伍同步、詳細檢視）走 updateCardButtons()：兩段字與名稱一樣跟著換
+    finder.listManager.add(finder.maps.find((m) => m.id === 'tm_007'));
+    finder.updateCardButtons();
+    assert.deepEqual(look(), ['✓ 已加入', '✓ 已加入', '✓ 已加入']);
+
+    // 換語言整格重畫：兩段字與名稱都換成新語言，清單狀態保留；再按一次移除
+    setLang('en');
+    assert.deepEqual(look(), ['✓ Added', '✓ Added', '✓ Added']);
+    button().click();
+    assert.deepEqual(look(), ['＋ Add to List', '＋ Add', '＋ Add to List']);
+    setLang('ja');
+    assert.deepEqual(look(), ['＋ リストに追加', '＋ 追加', '＋ リストに追加']);
+});
+
+test('短字是完整名稱的一部分（三語，去掉「＋ 」比對）', async () => {
+    const expectedShort = { zh: '＋ 加入', en: '＋ Add', ja: '＋ 追加' };
+    for (const lang of ['zh', 'en', 'ja']) {
+        const values = translationValues(TRANSLATIONS, lang);
+        assert.equal(values.get('treasure_map_add_to_list_short'), expectedShort[lang], `${lang} treasure_map_add_to_list_short`);
+
+        const { finder } = await createFinder(lang);
+        const map = finder.maps.find((m) => m.id === 'tm_007');
+        const addButton = () => finder.createMapCard(map).querySelector('.btn-add-to-list');
+
+        // 還沒加入：名稱是完整的字；短字去掉「＋ 」之後要出現在名稱裡（語音控制喊出畫面上的字也點得到，WCAG 2.5.3），而且比完整的字短
+        const add = addButton();
+        const name = add.getAttribute('aria-label');
+        const short = add.querySelector('.btn-text-short').textContent;
+        assert.equal(name, values.get('treasure_map_add_to_list'), `${lang} 名稱`);
+        assert.ok(short.startsWith('＋ ') && short.length > '＋ '.length, `${lang}: 短字「${short}」要是「＋ 」加上字`);
+        assert.ok(name.includes(short.replace('＋ ', '')), `${lang}: 短字「${short}」要是名稱「${name}」的一部分`);
+        assert.ok(short.length < name.length, `${lang}: 短字「${short}」要比完整的字「${name}」短`);
+
+        // 已加入：短字就是完整的字，名稱也是
+        finder.listManager.add(map);
+        const added = addButton();
+        const addedText = values.get('treasure_map_added_to_list');
+        assert.deepEqual([added.querySelector('.btn-text').textContent, added.querySelector('.btn-text-short').textContent, added.getAttribute('aria-label')], [addedText, addedText, addedText], `${lang} 已加入`);
+    }
 });
 
 test('地區找不到傳送點時，卡片不放「最近」那一行', async () => {
@@ -1052,8 +1119,8 @@ test('切換語言：卡片的地名、最近傳送點、按鈕文字與無障�
     assert.deepEqual(labels(), ['📋 List: 1', '📋 List: 1']);
     assert.equal(finder.elements.resultCount.textContent, '8 G17 maps');
     assert.equal(grid.querySelectorAll('.treasure-card').length, 8);
-    assert.equal(card('tm_007').querySelector('.btn-add-to-list').textContent, '✓ Added');
-    assert.equal(card('tm_008').querySelector('.btn-add-to-list').textContent, '＋ Add to List');
+    assert.equal(card('tm_007').querySelector('.btn-add-to-list .btn-text').textContent, '✓ Added');
+    assert.equal(card('tm_008').querySelector('.btn-add-to-list .btn-text').textContent, '＋ Add to List');
     assert.equal(card('tm_007').querySelector('.tm-thumb').getAttribute('aria-label'), 'Enlarge G17 Urqopacha #1');
     assert.equal(card('tm_007').querySelector('.tm-copy').getAttribute('title'), 'Copy coordinates');
 
@@ -1062,6 +1129,23 @@ test('切換語言：卡片的地名、最近傳送點、按鈕文字與無障�
     assert.equal(card('tm_007').querySelector('.tm-thumb').getAttribute('aria-label'), 'G17 オルコ・パチャ #1 を拡大');
     assert.equal(card('tm_007').querySelector('.tm-copy').getAttribute('aria-label'), '座標をコピー');
     assert.deepEqual(labels(), ['📋 リスト 1 枚', '📋 リスト 1 枚']);
+});
+
+test('清單入口在隊伍裡：標籤的預設字與三語都是「隊伍 3/8」（Party、パーティ），切換語言時跟著換；不寫「清單」、Team、チーム', async () => {
+    // 預設字（翻譯沒載入時用）：程式裡的中文預設文字就是翻譯檔的 zh
+    assert.match(read('tools/treasure-map-finder/script.js'), /ENTRY_LABELS = \{[\s\S]*?treasure_map_entry_room: '👥 隊伍 \{count\}\/\{max\}'\n\s*\};/);
+    const { finder, setLang } = await createFinder('zh');
+    for (const id of ['tm_007', 'tm_008', 'tm_017']) finder.listManager.add(finder.maps.find((m) => m.id === id));
+    finder.roomCollaboration = { currentRoom: { roomCode: 'ABC123' } };
+    finder.updateListCount();
+    const labels = () => ['listEntryDesktop', 'listEntryMobile'].map((id) => finder.elements[id].querySelector('.tm-entry-label').textContent);
+    assert.deepEqual(labels(), Array(2).fill('👥 隊伍 3/8'));
+    setLang('en');
+    assert.deepEqual(labels(), Array(2).fill('👥 Party 3/8'));
+    setLang('ja');
+    assert.deepEqual(labels(), Array(2).fill('👥 パーティ 3/8'));
+    setLang('zh');
+    assert.deepEqual(labels(), Array(2).fill('👥 隊伍 3/8'));
 });
 
 test('資料沒載入成功時切換語言，錯誤訊息留著，不會被換成空狀態', async () => {
@@ -1090,9 +1174,9 @@ test('卡片的三語鍵值：新增放大與最近傳送點；「加入清單�
         const keys = translationKeySet(TRANSLATIONS, lang);
         for (const gone of ['treasure_map_view_detail_tooltip', 'treasure_map_added_state']) assert.ok(!keys.has(gone), `${lang} 不應有 ${gone}`);
     });
-    // 「＋ 」寫在翻譯裡，程式不自己拼：script.js 裡的「＋」只出現在中文預設文字
+    // 「＋ 」寫在翻譯裡，程式不自己拼：script.js 裡的「＋」只出現在兩個中文預設文字（完整的「＋ 加入清單」與窄螢幕的短字「＋ 加入」）
     const script = read('tools/treasure-map-finder/script.js');
-    assert.equal((script.match(/＋/g) || []).length, (script.match(/'＋ 加入清單'/g) || []).length);
+    assert.equal((script.match(/＋/g) || []).length, (script.match(/'＋ 加入清單'|'＋ 加入'/g) || []).length);
 });
 
 test('卡片樣式：769–1023px 改成 3 欄；已加入是成功色調（滑過去也是）；縮圖的焦點框畫在裡面；舊卡片的樣式拿掉', () => {
@@ -1125,6 +1209,28 @@ test('卡片樣式：769–1023px 改成 3 欄；已加入是成功色調（滑�
     for (const gone of ['treasure-card', 'card-image-wrapper', 'card-content', 'map-zone', 'zone-zh', 'zone-en', 'zone-ja', 'map-coords', 'treasure-card-actions']) {
         const re = new RegExp(`\\.${gone}(?![\\w-])`);
         assert.ok(!styleRules.some((r) => r.selectors.some((s) => re.test(s))), `.${gone} 應已刪除`);
+    }
+});
+
+test('style.css：短字平常藏起來；389px 以下藏完整的字、顯示短字，而且這個 @media 在 768px、480px 那兩段之後', () => {
+    // 設計 6.14：320px 與 360px 都不能有省略號，390px 以上維持原樣。兩欄的卡片裡，加入鈕能放字的寬度是 視窗寬 / 2 - 90：
+    // 日文完整的字（「＋ リストに追加」）要 101px，視窗要到 382px 才放得下（360px 只剩 90px、375px 只剩 98px），所以分界是 390px 之前
+    const NARROW = '(max-width: 389px)';
+    const SHORT = '.tm-card .btn-add-to-list .btn-text-short';
+    const FULL = '.tm-card .btn-add-to-list .btn-text';
+
+    // 平常（不在 @media 裡）短字藏起來；窄螢幕才換成短字
+    assert.match(declarations(SHORT), /display:\s*none/);
+    assert.match(declarations(FULL, NARROW), /display:\s*none/);
+    assert.match(declarations(SHORT, NARROW), /display:\s*inline/);
+
+    // 特異度相同，靠順序勝出：窄螢幕的規則要排在平常那條，以及 768px、480px 兩段之後
+    const indexes = (media, selector) => styleRules.flatMap((r, index) => (r.media === media && r.selectors.includes(selector) ? [index] : []));
+    const firstNarrow = Math.min(...indexes(NARROW, SHORT), ...indexes(NARROW, FULL));
+    assert.ok(Math.max(...indexes(null, SHORT)) < firstNarrow, '平常的規則要在窄螢幕的規則前面');
+    for (const media of [MOBILE, '(max-width: 480px)']) {
+        const lastIndex = styleRules.reduce((last, r, index) => (r.media === media ? index : last), -1);
+        assert.ok(lastIndex !== -1 && lastIndex < firstNarrow, `窄螢幕的 @media 要在 ${media} 那一段之後`);
     }
 });
 
@@ -1442,15 +1548,15 @@ test('上一張／下一張：照結果順序、到頭停用、← → 也能切
 test('在詳細檢視裡加入、移除：背後的卡片與清單入口同步；清單在別處改變時（例如隊伍同步）加入鈕也跟著換', async () => {
     const { finder, $ } = await openDetail();
     finder.updateListCount();
-    const cardButton = () => finder.elements.treasureGrid.querySelector('[data-map-id="tm_007"] .btn-add-to-list');
+    const cardButtonText = () => finder.elements.treasureGrid.querySelector('[data-map-id="tm_007"] .btn-add-to-list .btn-text');
     const entryLabel = () => finder.elements.listEntryMobile.querySelector('.tm-entry-label').textContent;
 
     $('mapDetailAdd').click();
-    assert.deepEqual([$('mapDetailAdd').textContent, cardButton().textContent, entryLabel()], ['✓ 已加入', '✓ 已加入', '📋 清單 1 張']);
+    assert.deepEqual([$('mapDetailAdd').textContent, cardButtonText().textContent, entryLabel()], ['✓ 已加入', '✓ 已加入', '📋 清單 1 張']);
     assert.equal($('listAnnouncer').textContent, '已加入清單，共 1 張');
     $('mapDetailAdd').click();
     assert.equal(finder.listManager.has('tm_007'), false);
-    assert.deepEqual([$('mapDetailAdd').textContent, cardButton().textContent, entryLabel()], ['＋ 加入清單', '＋ 加入清單', '📋 清單']);
+    assert.deepEqual([$('mapDetailAdd').textContent, cardButtonText().textContent, entryLabel()], ['＋ 加入清單', '＋ 加入清單', '📋 清單']);
 
     // 別處改了清單（隊伍同步也走 updateCardButtons）：加入鈕不能停在舊狀態，不然按「加入」反而會移除
     finder.listManager.add(finder.maps.find((m) => m.id === 'tm_007'));

@@ -57,7 +57,7 @@
 - 路線規劃：清單有 1 張以上就能生成，路線顯示在清單面板的第二頁，一站一張寶圖，寶圖多的地區先跑；標出目前這一站、可以標記完成（進度記在這台裝置、保留 12 小時），「複製下一站」一次複製一站，「全部複製」一站一行
 - 複製格式：預設和卡片的隊伍頻道句子相同、前面加站號（例如 `/p 1/6 G17 烏爾科帕恰 (21.6, 23.9) 最近：瓦群佩洛`），可以換成中文、English、日本語範本或自訂，點變數就能插入，預覽用目前這一站的真實資料
 - 瀏覽器封鎖網站資料時，清單與路線照常運作（只是記不住）
-- 隊伍協作：私人操作憑證、多人同步、斷線重試與個人清單帶入
+- 隊伍協作：最多 8 人、8 張寶圖，多人同步、斷線重試與私人操作憑證；建立或加入時在頁面裡選要不要帶自己的寶圖（預設帶進）；預設名字是「光之戰士＋3 碼字串」（例如光之戰士K7Q），同一台裝置每次都一樣；可以複製邀請連結，打開時先問「加入隊伍 X？」；清單和路線每張圖都寫是誰的，路線複製到隊伍頻道的句子也帶上主人的名字；連不上時顯示「連不上，重試中」
 
 ### Lodestone 角色查詢 (`lodestone-lookup/`)
 - 使用 Lodestone ID 查詢角色資訊
@@ -135,7 +135,7 @@ node --test
 
 測試涵蓋 UI／資料契約、非同步競爭與真實 Miniflare/workerd 的 SQLite Durable Object；需允許本機連接埠。GitHub Actions 會在 push／Pull Request 執行相同測試及 Worker 環境 dry-run。
 
-寶圖協作另開一個終端執行 `npm --prefix api run dev`（本機 API 為 `localhost:8787`），靜態頁面使用 `localhost:8000` 或 `8080`。部署與舊房間過渡方式見 [API 文件](api/README.md)。
+寶圖協作另開一個終端執行 `npm --prefix api run dev`（本機 API 為 `localhost:8787`），靜態頁面使用 `localhost:8000` 或 `8080`。部署與舊隊伍過渡方式見 [API 文件](api/README.md)。
 
 ### 專案結構
 ```
@@ -149,7 +149,7 @@ ff14.tw/
 ├── changelog.html          # 修改紀錄頁面
 ├── copyright.html          # 版權聲明頁
 ├── 404.html                # 404 頁（GitHub Pages 對不存在的網址顯示它）
-├── api/                    # Cloudflare Workers API（寶圖房間協作，含自己的 package.json / wrangler.toml）
+├── api/                    # Cloudflare Workers API（寶圖隊伍協作，含自己的 package.json / wrangler.toml）
 │   └── treasure-room-worker.js
 ├── data/                   # 資料檔案
 │   ├── dungeons.json       # 副本資料庫 (803 筆)
@@ -202,7 +202,7 @@ ff14.tw/
 │   ├── add-design-links.mjs
 │   ├── remove-dark-mode-links.mjs
 │   └── replace-noscript-nav.mjs
-├── tests/                  # 34 份 node --test 測試（下列為部分範例）
+├── tests/                  # 36 份 node --test 測試（下列為部分範例）
 │   ├── design-system.test.js
 │   ├── docs.test.js
 │   ├── modal-manager-stack.test.js

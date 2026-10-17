@@ -97,145 +97,203 @@
     display: none;
 }
 
-/* 清單面板裡、標頭下面的組隊按鈕（不在隊伍裡時），兩顆平分一列 */
-.team-actions {
-    display: flex;
-    gap: var(--space-2);
-    padding: var(--space-4) var(--space-6);
+/* 清單面板裡、標頭下面的組隊入口（不在隊伍裡時）：一行標題、一行說明，下面兩顆按鈕平分一列。
+   #teamActions 進了隊伍用 .hidden 藏起來，所以 display 只設在單一 class（.tm-team-intro）上，才輸給最後的 .hidden；
+   底下的分隔線原本也在 .team-actions，一起搬過來。
+   欄寬固定是容器的寬度（minmax(0, 1fr)），按鈕列放不下時換行（flex-wrap）：按鈕是 nowrap 的，日文「パーティを作る」「パーティに参加」
+   在 320px 的面板裡兩顆並排放不下，不限制的話欄會被撐到兩顆按鈕的寬度，面板出現橫向捲軸、右邊的按鈕與說明被切掉（瀏覽器實測）；
+   現在放不下就上下各一顆、各佔滿一列 */
+.tm-team-intro {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-3);
+    padding: var(--space-4);
     border-bottom: 1px solid var(--color-border);
 }
 
-.team-actions .btn {
-    flex: 1;
+.tm-team-intro-text p {
+    margin: 0;
 }
 
-/* 隊伍協作：清單面板裡、標頭下面的隊伍狀態（已加入隊伍時） */
-.room-section {
-    padding: var(--space-4) var(--space-6);
-    background: var(--color-surface);
-    border-bottom: 1px solid var(--color-border);
-}
-
-.room-status {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-4);
-}
-
-.room-info {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    font-size: var(--text-lg);
-}
-
-.room-label,
-.user-label,
-.members-label,
-.room-stat {
-    color: var(--color-muted);
-}
-
-.room-code {
-    padding: var(--space-1) var(--space-3);
-    border-radius: var(--radius-sm);
-    background: var(--color-surface-2);
-    color: var(--color-primary);
-    font-family: var(--font-mono);
-    font-size: var(--text-xl);
-    font-weight: var(--weight-semibold);
-}
-
-.room-stats {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-6);
-}
-
-.room-stat {
-    display: flex;
-    align-items: center;
-    gap: var(--space-1);
-}
-
-.stat-icon {
-    font-size: var(--text-lg);
-}
-
-.room-user {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    padding-top: var(--space-4);
-    border-top: 1px solid var(--color-border);
-}
-
-.user-nickname {
+.tm-team-intro-title {
     font-weight: var(--weight-semibold);
     color: var(--color-heading);
 }
 
-.room-members {
-    margin-top: var(--space-4);
-    padding-top: var(--space-4);
-    border-top: 1px solid var(--color-border);
-}
-
-.members-label {
-    margin-bottom: var(--space-2);
+.tm-team-intro-hint {
     font-size: var(--text-sm);
+    color: var(--color-muted);
 }
 
-.members-list {
+.tm-team-intro-actions {
     display: flex;
     flex-wrap: wrap;
     gap: var(--space-2);
 }
 
-.member-tag {
-    display: inline-flex;
+.tm-team-intro-actions .btn {
+    flex: 1;
+}
+
+/* 隊伍狀態（PartyStatus）：清單面板裡、標頭下面，在隊伍裡時顯示。三行：隊伍代號與同步狀態；複製邀請連結、複製代號與離開隊伍；
+   成員一行（按鈕），展開後每人一列。#roomSection（.tm-team）與 #membersPanel（.tm-members）用 .hidden 切換，
+   所以這兩個 class 的 display 只設在單一 class 的選擇器上，才輸給最後的 .hidden。
+   欄寬固定是容器的寬度（minmax(0, 1fr)）：成員一行的名字不換行，不限制的話欄會被撐到名字的整行寬，面板就出現橫向捲軸、右邊的按鈕被切掉 */
+.tm-team {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-3);
+    padding: var(--space-4) var(--space-4) var(--space-3);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.tm-team p {
+    margin: 0;
+}
+
+.tm-team-row {
+    display: flex;
+    flex-wrap: wrap;
     align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2) var(--space-3);
+}
+
+.tm-team-code {
+    display: flex;
+    align-items: baseline;
     gap: var(--space-2);
-    padding: var(--space-1) var(--space-3);
-    border-radius: var(--radius-full);
-    background: var(--color-surface-2);
-    color: var(--color-text);
+    color: var(--color-muted);
     font-size: var(--text-sm);
 }
 
-.member-tag.current-user {
-    background: var(--color-primary);
-    color: var(--color-on-primary);
+/* 代號用等寬大字，主要色 */
+.tm-team-code strong {
+    font-family: var(--font-mono);
+    font-size: var(--text-xl);
+    font-weight: var(--weight-semibold);
+    letter-spacing: 0.06em;
+    color: var(--color-primary);
 }
 
-.member-remove-btn {
+/* 同步狀態：綠點加文字；連不上時換成警告色（is-warn）。警告那一行 .tm-sync-note 用 .hidden 切換，這裡不設它的 display */
+.tm-sync {
     display: inline-flex;
     align-items: center;
-    justify-content: center;
-    width: 20px;
-    height: 20px;
-    padding: 0;
-    margin-left: var(--space-1);
-    border: 1px solid var(--color-danger-border);
+    gap: var(--space-2);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    color: var(--color-success-text);
+}
+
+.tm-sync-dot {
+    width: 8px;
+    height: 8px;
     border-radius: var(--radius-full);
-    background: var(--color-danger-tint);
-    color: var(--color-danger-text);
-    font-size: var(--text-md);
-    font-weight: var(--weight-bold);
-    line-height: 1;
+    background: var(--color-success);
+}
+
+.tm-sync.is-warn {
+    color: var(--color-warning-text);
+}
+
+.tm-sync.is-warn .tm-sync-dot {
+    background: var(--color-warning);
+}
+
+.tm-sync-note {
+    font-size: var(--text-sm);
+}
+
+/* 三顆按鈕：放不下時換行，「離開隊伍」靠右 */
+.tm-team-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+.tm-team-actions .tm-leave {
+    margin-left: auto;
+}
+
+/* 成員一行：「成員 3/8」加名字（放不下就省略），最右邊是展開用的小箭頭；整行是一顆按鈕 */
+.tm-members-toggle {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    width: 100%;
+    min-height: var(--control-sm);
+    padding: var(--space-2) 0 0;
+    border: 0;
+    border-top: 1px solid var(--color-border);
+    background: none;
+    color: var(--color-text);
+    font: inherit;
+    font-size: var(--text-sm);
+    text-align: left;
     cursor: pointer;
-    transition: background-color var(--duration-base) var(--ease), color var(--duration-base) var(--ease), transform var(--duration-base) var(--ease);
 }
 
-.member-remove-btn:hover {
-    background: var(--color-danger);
-    border-color: var(--color-danger);
-    color: var(--color-on-danger);
-    transform: translateY(-1px);
+.tm-members-toggle b {
+    flex: none;
+    color: var(--color-heading);
+    font-weight: var(--weight-semibold);
 }
 
-.member-tag.current-user .member-remove-btn {
-    display: none;
+.tm-members-names {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--color-muted);
+}
+
+.tm-chevron {
+    flex: none;
+    color: var(--color-muted);
+}
+
+/* 展開後：每人一列（名字、隊長與你的標籤、張數，右邊「改名」或「移出」），最後一行小字說明隊伍多久沒動靜會解散 */
+.tm-members {
+    display: grid;
+    gap: var(--space-2);
+}
+
+.tm-member-list {
+    display: grid;
+    gap: var(--space-1);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.tm-member {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: var(--control-sm);
+}
+
+.tm-member-name {
+    font-weight: var(--weight-semibold);
+    color: var(--color-heading);
+}
+
+.tm-member-meta {
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+.tm-member .btn {
+    margin-left: auto;
+}
+
+.tm-team-note {
+    font-size: var(--text-xs);
+    color: var(--color-muted);
 }
 
 /* 篩選：等級一列、地區一列（選了等級才出現）。兩欄 grid：標籤欄取兩列標籤裡較寬的那個，兩列的 chip 就會對齊 */
@@ -422,6 +480,11 @@
     flex: 1;
 }
 
+/* 窄螢幕才換上的短字（檔案後面的 @media (max-width: 389px)）：平常藏起來，畫面上只有完整的字 */
+.tm-card .btn-add-to-list .btn-text-short {
+    display: none;
+}
+
 .tm-copy {
     flex: none;
 }
@@ -522,7 +585,7 @@
     font-variant-numeric: tabular-nums;
 }
 
-/* 面板中間：組隊、隊伍狀態、頁籤、清單與動作列一起捲動，標頭與底部的「生成路線」固定在面板上下緣
+/* 面板中間：組隊、隊伍狀態、清單與動作列一起捲動，標頭與底部的「生成路線」固定在面板上下緣
    （手機的面板沒有整個畫面高，隊伍狀態加上清單放不下，「生成路線」會被擠出畫面） */
 .panel-body {
     flex: 1;
@@ -530,8 +593,7 @@
     overflow-y: auto;
 }
 
-.list-content,
-.history-content {
+.list-content {
     padding: var(--space-4);
 }
 
@@ -597,6 +659,20 @@
     font-variant-numeric: tabular-nums;
 }
 
+/* 誰的圖：只在隊伍裡才有的一行（清單的每一列在座標下面，路線的每一站在名稱下面）；自己的圖用主要色 */
+.item-owner,
+.tm-stop-owner {
+    margin: 0;
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+}
+
+.item-owner.is-me,
+.tm-stop-owner.is-me {
+    color: var(--color-primary);
+    font-weight: var(--weight-semibold);
+}
+
 .list-item .btn-remove {
     flex: none;
 }
@@ -615,35 +691,6 @@
 
 #clearAllBtn {
     margin-left: auto;
-}
-
-/* 清單／歷史頁籤：外觀由 .tabs / .tab 提供 */
-.panel-tabs {
-    background: var(--color-surface-2);
-}
-
-.panel-tabs .tab {
-    flex: 1;
-}
-
-.history-item {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    padding: var(--space-3);
-    margin-bottom: var(--space-2);
-    background: var(--color-surface-2);
-    border-radius: var(--radius-md);
-    font-size: var(--text-sm);
-}
-
-.history-time {
-    font-size: var(--text-xs);
-    color: var(--color-muted);
-}
-
-.history-message {
-    flex: 1;
 }
 
 /* 兩頁的底部：一列，右邊是那一頁唯一的主要按鈕（清單頁：左邊張數、右邊「生成路線」；路線頁：左邊「全部複製」、右邊「複製下一站」） */
@@ -940,28 +987,9 @@
     gap: var(--space-2);
 }
 
-/* 加入／暱稱／離開對話框：外觀由 .dialog-overlay / .dialog 提供，這裡只補內文版面 */
-.modal-content {
-    max-width: 400px;
-}
-
+/* 加入隊伍對話框的代號欄：輸入的英文字母顯示成大寫（對話框本身是 .tm-dialog，版面規則在下面） */
 .input-uppercase {
     text-transform: uppercase;
-}
-
-.modal-body label {
-    display: block;
-    margin-bottom: var(--space-2);
-    font-weight: var(--weight-medium);
-    color: var(--color-muted);
-}
-
-.modal-body p {
-    margin: var(--space-2) 0;
-}
-
-.modal-footer {
-    flex-wrap: wrap;
 }
 
 /* 地圖詳細檢視：遮罩層本身交給 ModalManager（.active 顯示）。疊在清單面板、它的遮罩與所有頁內對話框之上
@@ -1216,6 +1244,42 @@
     font-variant-numeric: tabular-nums;
 }
 
+/* 按鈕列放不下就換行：加在 .dialog-actions 那個元素上（建立隊伍與離開隊伍對話框用，每個對話框不另外寫 id 規則）。
+   日文的按鈕字比較長（「キャンセル」「パーティを作る」「パーティを抜ける」），320px 的對話框裡並排放不下，
+   靠右排的取消鈕會超出左邊被切掉（瀏覽器實測）。其他對話框的按鈕字短、放得下，不加；.tm-dialog .dialog-actions 本身不設規則 */
+.tm-dialog-actions-wrap {
+    flex-wrap: wrap;
+}
+
+/* 加入隊伍對話框（#joinRoomModal）：代號欄、說明與選項用上面共用的規則。
+   「你的清單」那一塊（#joinPartyMaps）清單是空的時整塊用 .hidden 藏起來，所以 display 只設在單一 class 上，才輸給最後的 .hidden。
+   它不是 .dialog-body 的直接子元素，內文的間距規則（.tm-dialog .dialog-body 底下一層）碰不到它的小孩：
+   間距同樣由 gap 決定，小孩各自的上下邊界（例如 .warning-message 的 margin）清掉 */
+.tm-dialog-group {
+    display: grid;
+    gap: var(--space-3);
+}
+
+.tm-dialog-group > * {
+    margin: 0;
+}
+
+/* 錯誤寫在代號欄下面，取代那一行說明（紅字） */
+.tm-field-error {
+    color: var(--color-danger-text);
+}
+
+/* 代號欄的紅框與紅色聚焦光圈用 id 規則：common.css 的 input:not(…) 規則特異度是 (0,7,1)，聚焦時的 input:not(…):focus 是 (0,8,1)，
+   蓋過 .form-control.is-invalid 的 (0,2,0) 與 .form-control.is-invalid:focus 的 (0,3,0)，class 的寫法出不來。
+   格式不對、找不到時焦點正好回到這個欄位，紅框和光圈要一起紅 */
+#roomCodeInput.is-invalid {
+    border-color: var(--color-danger);
+}
+
+#roomCodeInput.is-invalid:focus {
+    box-shadow: var(--ring-danger);
+}
+
 /* 資料來源：外觀由 .card 提供 */
 .source-section {
     margin-top: var(--space-9);
@@ -1285,7 +1349,7 @@
         border-top: 1px solid var(--color-border);
     }
 
-    /* 底部列的按鈕縮小左右內距、不放圖示：英文的「Team list 3/8」加「Generate Route」在 360px 寬也排得下；
+    /* 底部列的按鈕縮小左右內距、不放圖示：英文的「Party 3/8」加「Generate Route」在 360px 寬也排得下；
        再窄就截短清單按鈕的標籤，不讓右邊的按鈕跑出畫面 */
     .tm-bottom-bar .btn {
         padding-inline: var(--space-3);
@@ -1326,16 +1390,6 @@
     /* 共用的「回到頂端」按鈕移到底部列上方 */
     .back-to-top {
         bottom: calc(var(--control-md) + 2 * var(--space-2) + env(safe-area-inset-bottom) + var(--space-3));
-    }
-
-    .room-stats {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: var(--space-2);
-    }
-
-    .room-user {
-        flex-wrap: wrap;
     }
 
     /* 等級與地區兩列不換行、橫向捲動，捲軸隱藏。捲動容器會裁掉超出邊界的部分，
@@ -1460,6 +1514,21 @@
     }
 }
 
+/* 窄螢幕（≤389px；寫在 768px、480px 的規則後面，同特異度靠順序勝出）：卡片的加入鈕改顯示短字
+   （「＋ 加入」「＋ Add」「＋ 追加」；已加入的短字和完整的字一樣）。兩欄的卡片裡，加入鈕能放字的寬度是 視窗寬 / 2 - 90：
+   最長的日文「＋ リストに追加」要 101px，視窗要到 382px 才放得下（320px 只有 70px、360px 90px、375px 98px），
+   所以界線畫在 390px 之前、390px 以上和原來一樣；中、英文放得下的寬度更小，但三種語言共用同一條界線。
+   畫面上看到的是短字，按鈕的無障礙名稱仍是完整的字（aria-label）。768px 裡的省略號規則留著當最後手段 */
+@media (max-width: 389px) {
+    .tm-card .btn-add-to-list .btn-text {
+        display: none;
+    }
+
+    .tm-card .btn-add-to-list .btn-text-short {
+        display: inline;
+    }
+}
+
 @media (prefers-reduced-motion: reduce) {
     .my-list-panel,
     .my-list-panel.active,
@@ -1470,10 +1539,5 @@
 
 /* 通用切換 class：放在最後，讓同特異度的規則靠順序勝出（沒有 !important） */
 .hidden {
-    display: none;
-}
-
-.modal.hidden,
-.room-section.hidden {
     display: none;
 }

@@ -50,6 +50,31 @@
 
                     <article class="changelog-entry">
                         <div class="changelog-header">
+                            <h3 class="changelog-version">v2.21.0</h3>
+                            <time class="changelog-date" datetime="2026-10-17">2026年10月17日</time>
+                        </div>
+                        <div class="changelog-content">
+                            <ul>
+                                <li><span class="tag tag-success">新增</span> 寶圖搜尋器的隊伍新增「複製邀請連結」，隊友打開連結就能加入，不用輸入代號</li>
+                                <li><span class="tag tag-success">新增</span> 打開邀請連結、而且這台裝置還沒在這個隊伍裡時，會先問「加入隊伍 X？」，寫出是誰的隊伍、幾個人、幾張寶圖，以及你會叫什麼名字</li>
+                                <li><span class="tag tag-success">新增</span> 隊伍裡的清單與路線，每一張寶圖都寫是誰的（例如「你的圖」「光之戰士K7Q 的圖」）；在隊伍裡，路線複製到隊伍頻道的句子也會帶上主人的名字，自訂格式可以用新的變數「&lt;寶圖主人&gt;」</li>
+                                <li><span class="tag tag-success">新增</span> 預設名字改成「光之戰士＋3 碼字串」（例如光之戰士K7Q），同一台機器每次組隊都一樣（以前建立的人固定叫「光之戰士1」，其他人都叫「光之戰士」，分不出誰是誰）</li>
+                                <li><span class="tag tag-info">改善</span> 建立、加入隊伍時，如果清單裡有寶圖，會在頁面裡問要不要帶進隊伍清單，預設帶進（以前是瀏覽器的確認視窗，按預設的「確定」會清掉自己的清單）</li>
+                                <li><span class="tag tag-info">改善</span> 輸入代號加入失敗時（代號打錯、隊伍滿了、寶圖會超過 8 張、連不上），錯誤直接寫在代號欄下面，對話框不會關掉，代號也不用重打</li>
+                                <li><span class="tag tag-info">改善</span> 隊伍狀態縮成三行：代號與同步狀態、複製邀請連結／複製代號／離開隊伍、成員（點開看每個人）</li>
+                                <li><span class="tag tag-info">改善</span> 移出成員改成頁面裡的確認對話框，不再跳瀏覽器的確認視窗；離開隊伍的對話框重新做過，先選「留在我的清單」（預設）或「清空」，再按「離開隊伍」</li>
+                                <li><span class="tag tag-info">改善</span> 連不上伺服器時，隊伍狀態會一直顯示「連不上，重試中」，連回來就變回「已同步」，不再每隔幾秒跳出提示</li>
+                                <li><span class="tag tag-info">改善</span> 用語統一：中文寫「隊伍」，英文寫 Party、日文寫 パーティ（以前混用房間、Room、Team、ルーム、チーム）</li>
+                                <li><span class="tag tag-info">改善</span> 拿掉隊伍的「歷史」頁籤（它只記得這台裝置自己做過的事，看不到隊友的變動）</li>
+                                <li><span class="tag tag-warning">修正</span> 窄螢幕的手機（畫面寬度 389px 以下）上，寶圖卡片的「加入清單」按鈕不再被截掉，改顯示短一點的字（「＋ 加入」「＋ Add」「＋ 追加」）</li>
+                                <li><span class="tag tag-warning">修正</span> 英文、日文的底部列在隊伍裡改寫「👥 Party N/8」「👥 パーティ N/8」，窄螢幕也看得到張數</li>
+                                <li><span class="tag tag-warning">修正</span> 網址同時有隊伍與分享的寶圖時，先問要不要加入隊伍、再問分享的寶圖；按「上一頁」再重新整理，不會再問一次</li>
+                            </ul>
+                        </div>
+                    </article>
+
+                    <article class="changelog-entry">
+                        <div class="changelog-header">
                             <h3 class="changelog-version">v2.20.0</h3>
                             <time class="changelog-date" datetime="2026-10-16">2026年10月16日</time>
                         </div>

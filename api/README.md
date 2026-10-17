@@ -51,4 +51,4 @@ Workers Builds 預設對非正式分支執行 `versions upload`；含 Durable Ob
 
 `room` 包含 `roomCode`、`createdAt`、`lastActivityAt`、`creatorId`、`members`、`treasureMaps`、單調遞增的 `revision`。一間房間最多 8 人／8 張寶圖；PUT 每批最多 16 個操作。
 
-錯誤回覆為 `{error, code}`。常見狀態：400 輸入／容量錯誤、401 token 缺少／失效、403 權限不足、404 房間不存在／過期、409 request ID 已完成或舊房需重建、413 body 超過 16 KiB。舊房 `409 ROOM_RECREATE_REQUIRED` 另附完整唯讀 `room`，供前端保留或匯出清單。
+錯誤回覆為 `{error, code}`。常見狀態：400 輸入／容量錯誤、401 token 缺少／失效、403 權限不足、404 房間不存在／過期、409 request ID 已完成或舊房需重建、413 body 超過 16 KiB。舊房 `409 ROOM_RECREATE_REQUIRED` 另附完整唯讀 `room`，供前端保留在個人清單。
