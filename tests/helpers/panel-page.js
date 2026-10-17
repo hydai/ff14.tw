@@ -86,7 +86,9 @@ function allowSelectorLists(document) {
 //   const page = await createPanelPage({ url, lang: 'en', stored: { key: '字串' }, storageThrows: true, clipboard: 'reject' });
 // - i18n 替身從真正的翻譯檔取字（en、ja 找不到時退回 zh，同 I18nManager）並代入 {參數}；setLang(next) 照 I18nManager.setLanguage()
 //   先依 [data-i18n] 重新翻譯頁面，再依序呼叫登記的語言監聽。建立寶圖搜尋器之前先照 lang 翻譯一次（同 DOMContentLoaded 時的順序）
-// - storageThrows：光是讀 window.localStorage 就丟例外（Chrome 封鎖網站資料時是 SecurityError）；否則 localStorage 是 storage 這個 Map
+// - storageThrows：光是讀 localStorage（裸的全域或 window.localStorage）就丟例外（Chrome 封鎖網站資料時是 SecurityError）；否則 localStorage 是 storage 這個 Map。
+//   存取器在 vm 的 context（dom.window）裡面定義：主機端定義的存取器在 context 裡不會丟例外（typeof 變成 'undefined'），
+//   程式走不到它的 catch。建立頁面時先確認讀 localStorage 真的會丟例外，測試的前提才成立
 // - confirm() 一被呼叫就丟錯：清單的操作不再跳瀏覽器的確認視窗
 // - init() 出錯時只會 console.error 並在結果格顯示錯誤：console 的內容先記下來不印，載入失敗時直接丟出（附上記下來的訊息）
 // - addMaps(ids) 對每個 id 用目錄裡那張呼叫真正的 toggleMapInList()；team() 換上隊伍替身（不連伺服器），回傳每次同步送出的清單。
@@ -230,7 +232,9 @@ async function createPanelPage({ url = 'https://ff14.tw/tools/treasure-map-finde
         ModalManager: FakeModalManager
     });
     if (storageThrows) {
-        Object.defineProperty(dom.window, 'localStorage', { get() { throw new Error('SecurityError'); } });
+        vm.runInContext("Object.defineProperty(globalThis, 'localStorage', { get() { throw new Error('SecurityError'); }, configurable: true })", dom.window);
+        assert.throws(() => vm.runInContext('typeof localStorage', dom.window), /SecurityError/);
+        assert.throws(() => vm.runInContext('window.localStorage', dom.window), /SecurityError/);
     } else {
         dom.window.localStorage = {
             getItem: (key) => (storage.has(key) ? storage.get(key) : null),

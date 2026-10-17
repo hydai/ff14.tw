@@ -137,8 +137,13 @@ function createFilterPage({ url = 'https://ff14.tw/tools/treasure-map-finder/', 
         // updateListEntry() 讀隊伍的寶圖上限；不載入 room-collaboration.js
         RoomCollaboration: { CONSTANTS: { MAX_MAPS: 8 } }
     });
+    // 瀏覽器封鎖網站資料：光是讀 localStorage（裸的全域或 window.localStorage）就丟例外。dom.window 就是 vm 的 context：
+    // 存取器要在 context 裡面定義（主機端定義的在 context 裡不會丟例外，FilterManager.safeStorage() 走不到它的 catch），
+    // 而且先確認這個 context 裡讀 localStorage 真的會丟例外，測試的前提才成立
     if (storageThrows) {
-        Object.defineProperty(dom.window, 'localStorage', { get() { throw new Error('SecurityError'); } });
+        vm.runInContext("Object.defineProperty(globalThis, 'localStorage', { get() { throw new Error('SecurityError'); }, configurable: true })", dom.window);
+        assert.throws(() => vm.runInContext('typeof localStorage', dom.window), /SecurityError/);
+        assert.throws(() => vm.runInContext('window.localStorage', dom.window), /SecurityError/);
     } else {
         dom.window.localStorage = {
             getItem: (key) => (storage.has(key) ? storage.get(key) : null),

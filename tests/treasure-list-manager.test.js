@@ -12,7 +12,9 @@ const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
 // FF14Utils.getI18nText 只回傳中文預設文字（代入 {參數}），所以訊息就是程式裡寫的字；console 換成空函式，輸出不被洗版。
 // localStorage 是一個 Map：
 //   setItemThrows  寫入時丟例外（空間滿了、寫入被拒絕）
-//   storageThrows  連讀 localStorage 都丟例外（Chrome 封鎖網站資料時是 SecurityError）
+//   storageThrows  連讀 localStorage 都丟例外（Chrome 封鎖網站資料時是 SecurityError）。存取器要在 context 裡面定義：
+//                  主機端對 sandbox 定義的存取器在 context 裡不會丟例外（typeof 變成 'undefined'、直接讀變成 ReferenceError），
+//                  程式走不到它的 catch。所以先確認這個 context 裡讀 localStorage 真的會丟例外，測試的前提才成立
 function createListManager({ setItemThrows = false, storageThrows = false } = {}) {
     const storage = new Map();
     const sandbox = {
@@ -20,8 +22,10 @@ function createListManager({ setItemThrows = false, storageThrows = false } = {}
         console: { log() {}, warn() {}, error() {} },
         FF14Utils: { getI18nText: (key, fallback, params = {}) => fallback.replace(/\{(\w+)\}/g, (_, name) => params[name]) }
     };
+    const context = vm.createContext(sandbox);
     if (storageThrows) {
-        Object.defineProperty(sandbox, 'localStorage', { get() { throw new Error('SecurityError'); } });
+        vm.runInContext("Object.defineProperty(globalThis, 'localStorage', { get() { throw new Error('SecurityError'); }, configurable: true })", context);
+        assert.throws(() => vm.runInContext('typeof localStorage', context), /SecurityError/);
     } else {
         sandbox.localStorage = {
             getItem: (key) => (storage.has(key) ? storage.get(key) : null),
@@ -31,7 +35,6 @@ function createListManager({ setItemThrows = false, storageThrows = false } = {}
             }
         };
     }
-    const context = vm.createContext(sandbox);
     for (const file of ['assets/js/security-utils.js', 'tools/treasure-map-finder/coordinate-utils.js', 'tools/treasure-map-finder/list-manager.js']) {
         vm.runInContext(read(file), context, { filename: file });
     }
