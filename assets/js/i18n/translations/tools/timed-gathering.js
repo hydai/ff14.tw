@@ -162,6 +162,13 @@ window.TimedGatheringTranslations = {
         notifyDenied: '瀏覽器封鎖了這個網站的通知，到時間只會在頁面上提示和發出聲音。可以從網址列左邊的網站設定打開，或改用遊戲鬧鐘。',
         notifyUnsupported: '這個瀏覽器不能跳通知，到時間只會在頁面上提示和發出聲音，或改用遊戲鬧鐘。',
 
+        // 複製鬧鐘
+        copyAlarmButton: '複製鬧鐘',
+        copyAlarmLabel: '複製鬧鐘：{name}',
+        alarmCopiedToast: '已複製鬧鐘指令',
+        alarmCopiedNote: '已複製下一次（ET {time}）的遊戲鬧鐘，貼到遊戲的聊天輸入框就設好：',
+        alarmCopyFailedNote: '沒辦法自動複製。下一次（ET {time}）的遊戲鬧鐘在下面，請自己選取複製，貼到遊戲的聊天輸入框：',
+
         // 測試通知
         notificationTitle: 'FF14 採集提醒',
         testNotificationButtonShort: '測試通知',
@@ -327,6 +334,13 @@ window.TimedGatheringTranslations = {
         notifyDenied: 'このサイトの通知はブラウザでブロックされています。時間になるとページ上の表示と音でお知らせします。アドレスバー左のサイト設定から許可するか、ゲーム内アラームを使ってください。',
         notifyUnsupported: 'このブラウザは通知を表示できません。時間になるとページ上の表示と音でお知らせします。ゲーム内アラームも使えます。',
 
+        // アラームのコピー
+        copyAlarmButton: 'アラームをコピー',
+        copyAlarmLabel: 'アラームをコピー：{name}',
+        alarmCopiedToast: 'アラームのコマンドをコピーしました',
+        alarmCopiedNote: '次回（ET {time}）のゲーム内アラームをコピーしました。ゲームのチャット欄に貼り付ければ設定できます：',
+        alarmCopyFailedNote: '自動でコピーできませんでした。次回（ET {time}）のゲーム内アラームは下にあります。選択してコピーし、ゲームのチャット欄に貼り付けてください：',
+
         // テスト通知
         notificationTitle: 'FF14 採集リマインダー',
         testNotificationButtonShort: '通知テスト',
@@ -491,6 +505,13 @@ window.TimedGatheringTranslations = {
         notifyBody: '{start}–{end} ({et}) · {place}',
         notifyDenied: "Your browser blocks notifications from this site, so you'll only get an on-page alert and a sound. You can allow them in the site settings next to the address bar, or use the in-game alarm.",
         notifyUnsupported: "This browser can't show notifications, so you'll only get an on-page alert and a sound, or use the in-game alarm.",
+
+        // Copy alarm
+        copyAlarmButton: 'Copy alarm',
+        copyAlarmLabel: 'Copy alarm: {name}',
+        alarmCopiedToast: 'Alarm command copied',
+        alarmCopiedNote: "Copied the in-game alarm for the next one (ET {time}). Paste it into the game's chat box to set it:",
+        alarmCopyFailedNote: "Couldn't copy it automatically. Here is the in-game alarm for the next one (ET {time}); select and copy it, then paste it into the game's chat box:",
 
         // Test notification
         notificationTitle: 'FF14 Gathering Reminder',

@@ -38,12 +38,14 @@ class TimedGatheringManager {
         // 我的提醒：GatheringReminders 與 ReminderScheduler，資料載入了才建立（見 initialize()），之前都是 null
         this.reminders = null;
         this.scheduler = null;
-        // 我的提醒畫面上的列：key -> { row, name, status, where, cancelBtn }，只有列出來的那幾個
+        // 我的提醒畫面上的列：key -> { row, name, status, where, alarmBtn, cancelBtn }，只有列出來的那幾個
         this.reminderRows = new Map();
         // 我的提醒列的重排（同卡片）；initializeReminders() 建立
         this.reminderOrder = null;
         // 我的提醒按了「顯示全部」
         this.remindersExpanded = false;
+        // 複製鬧鐘：每個說明（div.gx-copied）最近一次的複製，剪貼簿的結果晚到時只有它能改說明、跳 toast（見 copyAlarm()）
+        this.copyAttempts = new WeakMap();
         this.tickInterval = null;
         this.listManager = null;
         this.macroExporter = null;
@@ -523,6 +525,129 @@ class TimedGatheringManager {
         }
     }
 
+    /**
+     * 複製鬧鐘鈕（卡片與提醒列共用，全天的素材沒有）：按下時複製這種素材下一次出現的遊戲鬧鐘，說明寫在 host 裡。
+     * 外觀是 .btn-outline（卡片與提醒列上都不用 .btn-primary），不用 disabled：按過之後焦點還在這顆按鈕上
+     * @param {Object} material - GatheringMaterials.group() 的結果
+     * @param {HTMLElement} host - 按鈕所在的卡片或提醒列
+     * @returns {HTMLElement}
+     */
+    createAlarmButton(material, host) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'btn btn-sm btn-outline gx-alarm-btn';
+        this.writeAlarmButton(button);
+        button.addEventListener('click', () => {
+            this.copyAlarm(material, host);
+        });
+        return button;
+    }
+
+    /**
+     * 複製鬧鐘鈕的字：📋 加目前語言的字（建鈕與提醒列換語言時寫）。字放在 .gx-btn-label 裡：
+     * 480px 以下提醒列的按鈕只顯示 📋（style.css），名稱在 aria-label
+     */
+    writeAlarmButton(button) {
+        SecurityUtils.clearElement(button);
+        const icon = document.createElement('span');
+        icon.className = 'btn-icon';
+        icon.textContent = '📋';
+        const label = document.createElement('span');
+        label.className = 'gx-btn-label';
+        label.textContent = FF14Utils.getI18nText('copyAlarmButton', '複製鬧鐘');
+        button.appendChild(icon);
+        button.appendChild(document.createTextNode(' '));
+        button.appendChild(label);
+    }
+
+    /**
+     * 複製鬧鐘：把這種素材下一次出現的遊戲鬧鐘（一行不帶 rp 的 /alarm 指令，見 MacroExporter.generateOneTimeAlarm()）
+     * 放進剪貼簿；正在可採時複製的是再下一段。要在使用者的點擊裡呼叫（瀏覽器只在這時讓網頁寫剪貼簿）。
+     * 說明先寫好、不等寫入的結果：指令馬上看得到，剪貼簿一直沒回應也不會什麼都沒有。
+     * 寫入失敗（被拒絕、沒有 navigator.clipboard）時，結果來的時候把這個說明改寫成沒辦法自動複製、換警告的配色，
+     * 指令留著讓使用者自己選取複製。同一張卡片（提醒列）再按一次時說明是同一個元素：比較早的那一次結果晚到時，
+     * 說明和 toast 都照最近一次，不改（原因照樣用 console.warn 記下）。按鈕不動、焦點不動
+     * @param {Object} material - GatheringMaterials.group() 的結果
+     * @param {HTMLElement} host - 按鈕所在的卡片或提醒列，說明寫在這裡面
+     */
+    copyAlarm(material, host) {
+        const next = GatheringMaterials.nextAlarm(material, Date.now());
+        const command = next && this.macroExporter.generateOneTimeAlarm(next.record);
+        if (!command) return;
+
+        const time = GatheringMaterials.etTime(next.schedule.startMinutes);
+        const note = this.showCopiedNote(host, time, command);
+        const attempt = {};
+        this.copyAttempts.set(note, attempt);
+        const latest = () => this.copyAttempts.get(note) === attempt;
+
+        let written;
+        try {
+            written = navigator.clipboard.writeText(command);
+        } catch (error) {
+            // 沒有 navigator.clipboard（不是安全的連線、很舊的瀏覽器）或同步丟錯：當成複製失敗
+            written = Promise.reject(error);
+        }
+        written.then(
+            () => {
+                if (latest()) FF14Utils.showToast(FF14Utils.getI18nText('alarmCopiedToast', '已複製鬧鐘指令'), 'success');
+            },
+            (error) => {
+                console.warn('複製鬧鐘失敗:', error);
+                if (!latest()) return;
+                // 結果來的時候，可能已經複製了別的（別張的說明正在顯示）、或卡片已經重畫：只改這一次寫的說明（拿在手上的那個，
+                // 不是再去 host 裡找），不動誰顯示誰收起；說明已經不在畫面上時改了也沒有影響
+                this.writeNote(note, time, false);
+                FF14Utils.showToast(FF14Utils.getI18nText('copyFailedError', '複製失敗，請手動選取複製'), 'error');
+            }
+        );
+    }
+
+    /**
+     * 在 host（卡片或提醒列）裡寫出複製了什麼：「已複製下一次（ET 12:00）的遊戲鬧鐘，貼到遊戲的聊天輸入框就設好：」加上指令本身。
+     * 一次只留一個：頁面上其他的說明收起來（hidden），這個 host 已經有就重用。說明裡沒有可以聚焦的元素，焦點不動。
+     * 卡片重畫（換語言、篩選、搜尋）時說明跟著消失；提醒列換語言時不重建，由 relabelReminderRows() 收掉
+     * @param {HTMLElement} host - 卡片或提醒列
+     * @param {string} time - 下一次的 ET 開始時間（HH:MM）
+     * @param {string} command - 複製的指令
+     * @returns {HTMLElement} 寫好的說明（div.gx-copied）
+     */
+    showCopiedNote(host, time, command) {
+        document.querySelectorAll('.gx-copied').forEach(other => {
+            if (!host.contains(other)) other.hidden = true;
+        });
+
+        let note = host.querySelector('.gx-copied');
+        if (!note) {
+            note = document.createElement('div');
+            note.className = 'gx-copied';
+            note.appendChild(document.createElement('span'));
+            note.appendChild(document.createElement('code'));
+            host.appendChild(note);
+        }
+        note.hidden = false;
+        this.writeNote(note, time, true);
+        TimedGatheringManager.writeText(note.querySelector('code'), command);
+        return note;
+    }
+
+    /**
+     * 說明的字與外觀：複製成功寫 alarmCopiedNote（「已複製下一次…」，成功的配色）；沒成功寫 alarmCopyFailedNote
+     * （「沒辦法自動複製。…在下面，請自己選取複製…」）並加上 .is-failed（警告的配色）。只改這個說明，不動顯示或收起
+     * @param {HTMLElement} note - div.gx-copied
+     * @param {string} time - 下一次的 ET 開始時間（HH:MM）
+     * @param {boolean} copied - 剪貼簿有沒有寫成功
+     */
+    writeNote(note, time, copied) {
+        TimedGatheringManager.writeText(
+            note.querySelector('span'),
+            copied
+                ? FF14Utils.getI18nText('alarmCopiedNote', '已複製下一次（ET {time}）的遊戲鬧鐘，貼到遊戲的聊天輸入框就設好：', { time })
+                : FF14Utils.getI18nText('alarmCopyFailedNote', '沒辦法自動複製。下一次（ET {time}）的遊戲鬧鐘在下面，請自己選取複製，貼到遊戲的聊天輸入框：', { time })
+        );
+        note.classList.toggle('is-failed', !copied);
+    }
+
     /** 測試通知：和到時間的提醒一樣（頁內提示、提示音，允許時加系統通知），不問權限 */
     testNotification() {
         ReminderScheduler.unlockSound();
@@ -791,7 +916,7 @@ class TimedGatheringManager {
         const actions = document.createElement('div');
         actions.className = 'gx-actions';
 
-        // 提醒我：全天的素材一直都能採，沒有「出現」可以提醒，不放
+        // 提醒我與複製鬧鐘：全天的素材一直都能採，沒有「出現」可以提醒、也沒有鬧鐘可設，都不放
         let remindBtn = null;
         if (!material.allDay) {
             remindBtn = document.createElement('button');
@@ -800,6 +925,7 @@ class TimedGatheringManager {
                 this.toggleReminder(material);
             });
             actions.appendChild(remindBtn);
+            actions.appendChild(this.createAlarmButton(material, card));
         }
 
         const addBtn = document.createElement('button');
@@ -1037,10 +1163,10 @@ class TimedGatheringManager {
     }
 
     /**
-     * 我的提醒的一列：圖示、名稱、狀態行（同卡片）、「地區 · 地點　座標」與取消鈕；登記在 this.reminderRows
+     * 我的提醒的一列：圖示、名稱、狀態行（同卡片）、「地區 · 地點　座標」、複製鬧鐘鈕與取消鈕；登記在 this.reminderRows
      * @param {string} key - 素材的 key
      * @param {number} now - 毫秒時間戳
-     * @returns {{row: HTMLElement, name: HTMLElement, status: HTMLElement, where: HTMLElement, cancelBtn: HTMLElement}}
+     * @returns {{row: HTMLElement, name: HTMLElement, status: HTMLElement, where: HTMLElement, alarmBtn: HTMLElement, cancelBtn: HTMLElement}}
      */
     createReminderRow(key, now) {
         const material = this.materialByKey.get(key);
@@ -1068,6 +1194,9 @@ class TimedGatheringManager {
 
         const actions = document.createElement('div');
         actions.className = 'gx-r-actions';
+        // 我的提醒裡的素材都有時段（全天的不能設提醒），所以每一列都有複製鬧鐘
+        const alarmBtn = this.createAlarmButton(material, row);
+        actions.appendChild(alarmBtn);
         const cancelBtn = document.createElement('button');
         cancelBtn.type = 'button';
         cancelBtn.className = 'btn btn-sm btn-ghost btn-icon-only gx-cancel-btn';
@@ -1078,28 +1207,39 @@ class TimedGatheringManager {
         actions.appendChild(cancelBtn);
         row.appendChild(actions);
 
-        const entry = { row, name, status, where, cancelBtn };
+        const entry = { row, name, status, where, alarmBtn, cancelBtn };
         this.reminderRows.set(key, entry);
         this.writeReminderRow(key, entry, now);
         return entry;
     }
 
-    /** 一列上跟語言或時間有關的字：名稱、狀態行、地點行與取消鈕的 aria-label「取消提醒：名稱」（建列與換語言時寫） */
+    /**
+     * 一列上跟語言或時間有關的字：名稱、狀態行、地點行，複製鬧鐘鈕的字與 aria-label「複製鬧鐘：名稱」，
+     * 取消鈕的 aria-label「取消提醒：名稱」（建列與換語言時寫）。每一列的按鈕字都一樣，加上名稱才分得出是哪一列；
+     * 卡片上的複製鬧鐘鈕在素材自己的卡片裡，不加
+     */
     writeReminderRow(key, entry, now) {
         const material = this.materialByKey.get(key);
         const lang = this.currentLanguage;
         const name = this.nameOf(material, lang);
         TimedGatheringManager.writeText(entry.name, name);
         TimedGatheringManager.writeText(entry.where, this.placeOf(material, lang));
+        this.writeAlarmButton(entry.alarmBtn);
+        entry.alarmBtn.setAttribute('aria-label', FF14Utils.getI18nText('copyAlarmLabel', '複製鬧鐘：{name}', { name }));
         entry.cancelBtn.setAttribute('aria-label', FF14Utils.getI18nText('cancelReminderLabel', '取消提醒：{name}', { name }));
         this.writeStatus(entry.status, GatheringMaterials.state(material, now), now);
     }
 
-    /** 換語言：每一列就地改字，不重建（焦點不動） */
+    /**
+     * 換語言：每一列就地改字，不重建（焦點不動）。列裡複製鬧鐘的說明是舊語言寫的，列不重畫就收不掉，
+     * 所以在這裡拿掉（和重畫的卡片一樣，說明跟著消失）
+     */
     relabelReminderRows() {
         const now = Date.now();
         for (const [key, entry] of this.reminderRows) {
             this.writeReminderRow(key, entry, now);
+            const note = entry.row.querySelector('.gx-copied');
+            if (note) note.remove();
         }
     }
 

@@ -188,3 +188,39 @@ test('ranged and all-day schedules agree across gathering windows, sorting and a
     for (const time of ['25:00', '12:60', '22:00-24:01', 'bad']) assert.equal(env.TimeCalculator.parseSchedule(time), null);
     assert.equal(new env.SearchFilter().parseTime('16:00-20:00'), 960);
 });
+
+test('generateOneTimeAlarm: the list-export line minus rp; null for all-day and invalid times; the description when there is no macroFormat', () => {
+    const env = createEnvironment();
+    const exporter = new env.MacroExporter();
+    const byId = id => items.find(item => item.id === id);
+    const cordia = byId('botany_cordia_resin_2');
+
+    // 兩個時段的素材各自一行，開始時間寫在 et 後面；沒有 rp
+    assert.equal(exporter.generateOneTimeAlarm(cordia), '/alarm "園/樹液/マムーク/コーディア樹液塊" et 1200 1 se04 mute');
+    assert.equal(exporter.generateOneTimeAlarm(byId('botany_cordia_resin_1')), '/alarm "園/樹液/マムーク/コーディア樹液塊" et 0000 1 se04 mute');
+    // 區間（00:00-04:00）用開始時間
+    assert.equal(
+        exporter.generateOneTimeAlarm(byId('mining_lightning_quartz')),
+        '/alarm "採/石/レイノード・ウィンド/ライトニングクォーツ" et 0000 1 se04 mute'
+    );
+    assert.equal(exporter.generateOneTimeAlarm(cordia, 'se02'), '/alarm "園/樹液/マムーク/コーディア樹液塊" et 1200 1 se02 mute');
+
+    // 全天與時間無效：沒有鬧鐘可設
+    assert.equal(exporter.generateOneTimeAlarm(byId('fishing_purple_tongue')), null);
+    for (const time of ['99:00', '12:60', 'bad']) assert.equal(exporter.generateOneTimeAlarm({ ...cordia, time }), null, time);
+
+    // 沒有 macroFormat 時用描述（類型/等級/地點/名稱），和 generateAlarmCommand() 拿掉 rp 的結果一樣
+    const plain = { ...cordia, macroFormat: undefined };
+    assert.equal(exporter.generateOneTimeAlarm(plain), '/alarm "園/Lv110/瑪姆克/科迪亞樹液塊" et 1200 1 se04 mute');
+    assert.equal(exporter.generateOneTimeAlarm(plain), exporter.generateAlarmCommand(plain).replace(' et rp ', ' et '));
+    // 資料裡的每一筆都是：和 generateAlarmCommand() 只差一個 rp（全天的兩邊都是 null）
+    for (const item of items) {
+        const repeating = exporter.generateAlarmCommand(item);
+        assert.equal(exporter.generateOneTimeAlarm(item), repeating && repeating.replace(' et rp ', ' et '), item.id);
+    }
+
+    // 整份清單的巨集匯出沒有改：每一行鬧鐘仍然有 et rp（超過 15 行時分組的標題行不算）
+    const alarms = exporter.generate(items).split('\n').filter(line => line.startsWith('/alarm "'));
+    assert.equal(alarms.length, items.filter(item => item.time !== '全天').length);
+    assert.ok(alarms.every(line => line.includes(' et rp ')), '每一行都有 et rp');
+});

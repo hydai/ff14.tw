@@ -1012,7 +1012,9 @@ test('按「提醒我」：加進我的提醒，網頁提醒順便打開（只�
     assert.equal(button.textContent, '🔔 提醒我');
     assert.equal(button.getAttribute('aria-pressed'), 'false');
     isSame(button.parentNode, card.querySelector('.gx-actions'), '提醒鈕在卡片的按鈕列');
-    isSame(button.nextElementSibling, card.querySelector('.gx-add-btn'), '提醒鈕在加入清單前面');
+    // 卡片的按鈕列：提醒我 → 複製鬧鐘（Task 8）→ 加入清單
+    isSame(button.nextElementSibling, card.querySelector('.gx-alarm-btn'), '提醒鈕後面是複製鬧鐘');
+    isSame(card.querySelector('.gx-alarm-btn').nextElementSibling, card.querySelector('.gx-add-btn'), '提醒鈕在加入清單前面');
     assert.equal(page.$('notificationToggle').checked, false);
     assert.equal(page.permissionRequests, 0, '打開頁面時不問權限');
 
@@ -1952,6 +1954,9 @@ test('頁面上每一個用 hidden 切換的元素在 style.css 都有 display: 
         assert.ok(html.includes(` id="${id}"`), `index.html 要有 #${id}`);
         assert.match(css, new RegExp(`#${id}\\[hidden\\][^{]*\\{\\s*display:\\s*none;`), `style.css 要有 #${id}[hidden] { display: none; }`);
     }
+    // 複製鬧鐘的說明是頁面程式建的 div.gx-copied（沒有 id），複製另一張時前一個設成 hidden；.gx-copied 自己設了 display: grid
+    assert.match(css, /\.gx-copied\s*\{[^}]*display:\s*grid;/, '.gx-copied 設了 display，蓋過內建的 [hidden]');
+    assert.match(css, /\.gx-copied\[hidden\][^{]*\{\s*display:\s*none;/, 'style.css 要有 .gx-copied[hidden] { display: none; }');
 });
 
 test('我的提醒與通知的文字三語都有；舊的時鐘與通知文字拿掉', () => {
@@ -2000,4 +2005,474 @@ test('我的提醒與通知的文字三語都有；舊的時鐘與通知文字�
         assert.ok(values.has('testNotificationBody'), `${lang} testNotificationBody 留著`);
         for (const key of removed) assert.ok(!values.has(key), `${lang} ${key} 要拿掉`);
     });
+});
+
+// ---------- 複製鬧鐘 ----------
+// 複製的是一行不帶 rp 的 /alarm 指令：資料的 macroFormat，ET 開始時間，提前 1 分鐘，se04，mute（格式見 generateOneTimeAlarm）
+const CORDIA_ALARM = (hhmm) => `/alarm "園/樹液/マムーク/コーディア樹液塊" et ${hhmm} 1 se04 mute`;
+const OCTA_ALARM = (hhmm) => `/alarm "採/鉱/マムーク/オクタヘドライト鉱石" et ${hhmm} 1 se04 mute`;
+const QUARTZ_ALARM = (hhmm) => `/alarm "採/石/レイノード・ウィンド/ライトニングクォーツ" et ${hhmm} 1 se04 mute`;
+const NOTE_ZH = (time) => `已複製下一次（ET ${time}）的遊戲鬧鐘，貼到遊戲的聊天輸入框就設好：`;
+// 剪貼簿沒寫成功時說明改寫成這個（不再寫已複製），並加上 .is-failed
+const NOTE_FAILED_ZH = (time) => `沒辦法自動複製。下一次（ET ${time}）的遊戲鬧鐘在下面，請自己選取複製，貼到遊戲的聊天輸入框：`;
+const NOTE_FAILED_EN = (time) => `Couldn't copy it automatically. Here is the in-game alarm for the next one (ET ${time}); select and copy it, then paste it into the game's chat box:`;
+const alarmBtnOf = (page, key) => page.cardOf(key).querySelector('.gx-alarm-btn');
+const rowAlarmBtnOf = (page, key) => rowOf(page, key).querySelector('.gx-alarm-btn');
+// 頁面上所有複製鬧鐘的說明（含收起來的）與沒有收起來的
+const notesOn = (page) => page.document.querySelectorAll('.gx-copied');
+const visibleNotes = (page) => notesOn(page).filter((note) => !note.hidden);
+
+test('複製鬧鐘：正在可採時複製再下一段；toast 與卡片下方的說明寫出複製了什麼', async () => {
+    // ET 12:30：科迪亞樹液塊正在可採（12:00–14:00），下一次是隔天 ET 00:00，不是正在進行的這一段
+    const page = await createGatheringPage({ now: at(0, 12, 30) });
+    const card = page.cardOf(CORDIA);
+    const button = alarmBtnOf(page, CORDIA);
+    assert.equal(button.type, 'button');
+    assert.equal(button.className, 'btn btn-sm btn-outline gx-alarm-btn');
+    assert.equal(button.textContent, '📋 複製鬧鐘');
+    assert.ok(!button.disabled && !button.hasAttribute('disabled'), '複製鬧鐘鈕不用 disabled');
+    isSame(button.parentNode, card.querySelector('.gx-actions'), '複製鬧鐘鈕在卡片的按鈕列');
+    isSame(button.previousElementSibling, remindBtnOf(page, CORDIA), '接在提醒鈕後面');
+    isSame(button.nextElementSibling, card.querySelector('.gx-add-btn'), '加入清單鈕在最後');
+    assert.equal(notesOn(page).length, 0, '還沒複製就沒有說明');
+    assert.deepEqual(page.clipboard, []);
+
+    button.focus();
+    button.click();
+    await page.settle();
+    assert.deepEqual(page.clipboard, [CORDIA_ALARM('0000')]);
+    assert.deepEqual(page.toasts.at(-1), { message: '已複製鬧鐘指令', type: 'success' });
+    // 說明在卡片裡、按鈕列下面：一句話加上指令本身（指令是文字，剪貼簿不能用時可以自己選取）
+    const note = card.querySelector('.gx-copied');
+    assert.equal(note.tagName, 'DIV');
+    assert.equal(note.hidden, false);
+    isSame(note.parentNode, card, '說明在卡片裡');
+    isSame(note.previousElementSibling, card.querySelector('.gx-actions'), '緊接在按鈕列下面');
+    assert.deepEqual(note.children.map((child) => child.tagName), ['SPAN', 'CODE']);
+    assert.equal(textOf(note, 'span'), NOTE_ZH('00:00'));
+    assert.equal(textOf(note, 'code'), CORDIA_ALARM('0000'));
+    assert.ok(!note.classList.contains('is-failed'), '複製成功：沒有失敗的樣子');
+    // 按鈕還是同一顆、焦點不動
+    isSame(alarmBtnOf(page, CORDIA), button, '還是同一顆按鈕');
+    isSame(page.document.activeElement, button, '焦點還在按鈕上');
+    assert.deepEqual(page.consoleErrors, []);
+
+    // 再按一次：重用同一個說明，不會一張卡片出現兩個
+    button.click();
+    await page.settle();
+    assert.equal(page.clipboard.length, 2);
+    isSame(card.querySelector('.gx-copied'), note, '重用同一個說明');
+    assert.equal(card.querySelectorAll('.gx-copied').length, 1);
+    isSame(page.document.activeElement, button);
+});
+
+test('複製鬧鐘：每次按的時候才算下一次，兩個時段選最近的，區間用開始時間', async () => {
+    // ET 11:00：科迪亞樹液塊下一次是 ET 12:00；八面體隕鐵礦石 10:00–12:00 正在可採，下一段是 ET 22:00；雷電石英（00:00–04:00）是隔天 ET 00:00
+    const page = await createGatheringPage({ now: at(0, 11) });
+    const cases = [
+        [CORDIA, CORDIA_ALARM('1200'), '12:00'],
+        [OCTA, OCTA_ALARM('2200'), '22:00'],
+        ['mining_lightning_quartz', QUARTZ_ALARM('0000'), '00:00']
+    ];
+    for (const [key, command, time] of cases) {
+        alarmBtnOf(page, key).click();
+        await page.settle();
+        assert.equal(page.clipboard.at(-1), command, key);
+        assert.equal(textOf(page.cardOf(key), '.gx-copied span'), NOTE_ZH(time), key);
+        assert.equal(textOf(page.cardOf(key), '.gx-copied code'), command, key);
+    }
+
+    // 卡片還沒重畫，但時間已經走到 ET 12:30：12:00 那一段開始了，再按複製的就是隔天 ET 00:00
+    const note = page.cardOf(CORDIA).querySelector('.gx-copied');
+    page.tick(at(0, 12, 30) - page.now);
+    alarmBtnOf(page, CORDIA).click();
+    await page.settle();
+    assert.equal(page.clipboard.at(-1), CORDIA_ALARM('0000'));
+    isSame(page.cardOf(CORDIA).querySelector('.gx-copied'), note, '同一個說明改寫成新的');
+    assert.equal(textOf(note, 'span'), NOTE_ZH('00:00'));
+    assert.equal(textOf(note, 'code'), CORDIA_ALARM('0000'));
+});
+
+test('一次只留一個說明：複製另一張時前一個收起，再複製回來時重用', async () => {
+    const page = await createGatheringPage({ now: at(0, 11) });
+    alarmBtnOf(page, CORDIA).click();
+    await page.settle();
+    const first = page.cardOf(CORDIA).querySelector('.gx-copied');
+    assert.equal(visibleNotes(page).length, 1);
+
+    alarmBtnOf(page, OCTA).click();
+    await page.settle();
+    const second = page.cardOf(OCTA).querySelector('.gx-copied');
+    assert.equal(first.hidden, true, '前一個收起來（hidden），不是拿掉');
+    assert.equal(second.hidden, false);
+    assert.equal(notesOn(page).length, 2);
+    assert.equal(visibleNotes(page).length, 1);
+    assert.equal(textOf(second, 'code'), OCTA_ALARM('2200'));
+
+    alarmBtnOf(page, CORDIA).click();
+    await page.settle();
+    isSame(page.cardOf(CORDIA).querySelector('.gx-copied'), first, '重用收起來的那一個');
+    assert.equal(first.hidden, false);
+    assert.equal(second.hidden, true);
+    assert.equal(notesOn(page).length, 2);
+    assert.equal(visibleNotes(page).length, 1);
+    assert.equal(textOf(first, 'code'), CORDIA_ALARM('1200'));
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('剪貼簿不能用：toast 寫複製失敗，說明改寫成沒辦法自動複製、換警告的配色，照樣顯示指令讓人自己選取', async () => {
+    // 剪貼簿拒絕寫入（writeText() 的 Promise 被拒絕）
+    const rejected = await createGatheringPage({ now: at(0, 12, 30), clipboard: 'reject' });
+    const button = alarmBtnOf(rejected, CORDIA);
+    button.focus();
+    button.click();
+    await rejected.settle();
+    assert.deepEqual(rejected.clipboard, []);
+    assert.deepEqual(rejected.toasts, [{ message: '複製失敗，請手動選取複製', type: 'error' }]);
+    const note = rejected.cardOf(CORDIA).querySelector('.gx-copied');
+    assert.equal(note.hidden, false, '說明照樣顯示');
+    assert.ok(note.classList.contains('is-failed'), '失敗的樣子：不用成功的配色');
+    assert.equal(textOf(note, 'span'), NOTE_FAILED_ZH('00:00'), '不再寫已複製');
+    assert.equal(textOf(note, 'code'), CORDIA_ALARM('0000'), '指令在說明裡，使用者可以自己選取');
+    isSame(rejected.document.activeElement, button, '焦點還在按鈕上');
+    // 失敗的原因用 console.warn 記下，剛好一則
+    assert.equal(rejected.consoleErrors.length, 1, rejected.consoleErrors.join('\n'));
+    assert.ok(rejected.consoleErrors[0].startsWith('複製鬧鐘失敗: '), rejected.consoleErrors[0]);
+    assert.ok(rejected.consoleErrors[0].includes('NotAllowedError'), rejected.consoleErrors[0]);
+
+    // 之後剪貼簿又能用了：再按一次，同一個說明改回已複製，失敗的樣子拿掉
+    rejected.window.navigator.clipboard.writeText = async (text) => { rejected.clipboard.push(text); };
+    button.click();
+    await rejected.settle();
+    isSame(rejected.cardOf(CORDIA).querySelector('.gx-copied'), note, '還是同一個說明');
+    assert.ok(!note.classList.contains('is-failed'));
+    assert.equal(textOf(note, 'span'), NOTE_ZH('00:00'));
+    assert.deepEqual(rejected.clipboard, [CORDIA_ALARM('0000')]);
+    assert.deepEqual(rejected.toasts.at(-1), { message: '已複製鬧鐘指令', type: 'success' });
+
+    // 沒有 navigator.clipboard（不是安全的連線）：英文介面，同樣是複製失敗，頁面不丟錯
+    const missing = await createGatheringPage({ now: at(0, 12, 30), lang: 'en' });
+    delete missing.window.navigator.clipboard;
+    assert.equal(missing.window.navigator.clipboard, undefined);
+    assert.doesNotThrow(() => alarmBtnOf(missing, CORDIA).click());
+    await missing.settle();
+    assert.deepEqual(missing.clipboard, []);
+    assert.deepEqual(missing.toasts, [{ message: 'Copy failed, please select and copy manually', type: 'error' }]);
+    const missingNote = missing.cardOf(CORDIA).querySelector('.gx-copied');
+    assert.equal(missingNote.hidden, false);
+    assert.ok(missingNote.classList.contains('is-failed'));
+    assert.equal(textOf(missingNote, 'span'), NOTE_FAILED_EN('00:00'));
+    assert.equal(textOf(missingNote, 'code'), CORDIA_ALARM('0000'));
+    assert.equal(missing.consoleErrors.length, 1, missing.consoleErrors.join('\n'));
+    assert.ok(missing.consoleErrors[0].startsWith('複製鬧鐘失敗: '), missing.consoleErrors[0]);
+    assert.ok(missing.consoleErrors[0].includes('TypeError'), missing.consoleErrors[0]);
+});
+
+test('剪貼簿的結果晚到：失敗只改按下去的那個說明，正在顯示的別張不動；卡片已經重畫就什麼都不改', async () => {
+    const page = await createGatheringPage({ now: at(0, 11) });
+    // 寫入的結果由測試決定什麼時候來
+    const writes = [];
+    page.window.navigator.clipboard.writeText = (text) => new Promise((resolve, reject) => { writes.push({ text, resolve, reject }); });
+
+    alarmBtnOf(page, CORDIA).click();
+    alarmBtnOf(page, OCTA).click();
+    assert.deepEqual(writes.map((write) => write.text), [CORDIA_ALARM('1200'), OCTA_ALARM('2200')]);
+    const first = page.cardOf(CORDIA).querySelector('.gx-copied');
+    const second = page.cardOf(OCTA).querySelector('.gx-copied');
+    // 結果還不知道：說明先照成功寫好（指令馬上看得到），只顯示最後複製的那一個
+    assert.deepEqual([first.hidden, second.hidden], [true, false]);
+    assert.ok(!first.classList.contains('is-failed') && !second.classList.contains('is-failed'));
+    assert.equal(textOf(second, 'span'), NOTE_ZH('22:00'));
+    assert.equal(page.toasts.length, 0, '結果來之前沒有 toast');
+
+    // 第一張的寫入被拒絕，結果晚到：只改它自己的說明（還是收起的）；別張正在顯示的說明不動、不被收起
+    writes[0].reject(new Error('NotAllowedError'));
+    await page.settle();
+    assert.ok(first.classList.contains('is-failed'));
+    assert.equal(textOf(first, 'span'), NOTE_FAILED_ZH('12:00'));
+    assert.equal(first.hidden, true, '改寫不動誰顯示誰收起');
+    assert.deepEqual([second.hidden, second.classList.contains('is-failed')], [false, false]);
+    assert.equal(textOf(second, 'span'), NOTE_ZH('22:00'));
+    assert.deepEqual(visibleNotes(page).map((note) => note === second), [true]);
+    assert.deepEqual(page.toasts, [{ message: '複製失敗，請手動選取複製', type: 'error' }]);
+
+    // 第二張成功：toast 成功，說明還是成功的樣子
+    writes[1].resolve();
+    await page.settle();
+    assert.deepEqual(page.toasts.at(-1), { message: '已複製鬧鐘指令', type: 'success' });
+    assert.ok(!second.classList.contains('is-failed'));
+
+    // 結果來之前卡片已經重畫（換語言）：說明跟著舊卡片不在了；晚到的失敗什麼都不改，也不丟錯
+    alarmBtnOf(page, CORDIA).click();
+    assert.equal(writes.length, 3);
+    page.setLang('en');
+    assert.equal(notesOn(page).length, 0);
+    writes[2].reject(new Error('NotAllowedError'));
+    await page.settle();
+    assert.equal(notesOn(page).length, 0);
+    assert.deepEqual(page.toasts.at(-1), { message: 'Copy failed, please select and copy manually', type: 'error' });
+    // 每一次失敗各用 console.warn 記下原因，其他都沒有
+    assert.equal(page.consoleErrors.length, 2, page.consoleErrors.join('\n'));
+    assert.ok(page.consoleErrors.every((entry) => entry.startsWith('複製鬧鐘失敗: ')), page.consoleErrors.join('\n'));
+});
+
+test('同一張卡片連按兩次：前一次的結果比後一次晚到時不改說明、不跳 toast，說明照後一次', async () => {
+    const page = await createGatheringPage({ now: at(0, 11) });
+    const writes = [];
+    page.window.navigator.clipboard.writeText = (text) => new Promise((resolve, reject) => { writes.push({ text, resolve, reject }); });
+
+    // ET 11:00 按一次（下一次是 ET 12:00）；走到 ET 12:30 再按一次（12:00 那一段開始了，下一次是隔天 ET 00:00）
+    alarmBtnOf(page, CORDIA).click();
+    page.tick(at(0, 12, 30) - page.now);
+    alarmBtnOf(page, CORDIA).click();
+    assert.deepEqual(writes.map((write) => write.text), [CORDIA_ALARM('1200'), CORDIA_ALARM('0000')]);
+    const note = page.cardOf(CORDIA).querySelector('.gx-copied');
+    assert.equal(textOf(note, 'span'), NOTE_ZH('00:00'));
+
+    // 後一次先成功，前一次才被拒絕：說明還是後一次的成功，不改成前一次的時間或失敗的樣子，也不跳失敗的 toast
+    writes[1].resolve();
+    await page.settle();
+    writes[0].reject(new Error('NotAllowedError'));
+    await page.settle();
+    assert.ok(!note.classList.contains('is-failed'));
+    assert.equal(textOf(note, 'span'), NOTE_ZH('00:00'));
+    assert.equal(textOf(note, 'code'), CORDIA_ALARM('0000'));
+    assert.deepEqual(page.toasts, [{ message: '已複製鬧鐘指令', type: 'success' }]);
+
+    // 反過來：後一次先失敗，前一次才成功：說明維持失敗（請自己選取），不跳成功的 toast
+    alarmBtnOf(page, CORDIA).click();
+    alarmBtnOf(page, CORDIA).click();
+    writes[3].reject(new Error('NotAllowedError'));
+    await page.settle();
+    writes[2].resolve();
+    await page.settle();
+    assert.ok(note.classList.contains('is-failed'));
+    assert.equal(textOf(note, 'span'), NOTE_FAILED_ZH('00:00'));
+    assert.deepEqual(page.toasts.slice(1), [{ message: '複製失敗，請手動選取複製', type: 'error' }]);
+    // 失敗的原因照樣每一次都記下（被取代的那一次也是）
+    assert.equal(page.consoleErrors.length, 2, page.consoleErrors.join('\n'));
+    assert.ok(page.consoleErrors.every((entry) => entry.startsWith('複製鬧鐘失敗: ')), page.consoleErrors.join('\n'));
+});
+
+test('全天的素材沒有複製鬧鐘；提醒列也能複製鬧鐘', async () => {
+    // ET 12:30：科迪亞樹液塊正在可採；八面體隕鐵礦石下一次 ET 22:00
+    const now = at(0, 12, 30);
+    const page = await createGatheringPage({ now, stored: storedReminders([CORDIA, OCTA], { armedAt: now - MINUTE }) });
+    isSame(alarmBtnOf(page, 'fishing_purple_tongue'), null, '紫色舌尖全天都能採，沒有鬧鐘可設');
+    assert.equal(page.cards().filter((card) => card.querySelector('.gx-alarm-btn')).length, 33, '其他 33 種都有');
+
+    // 提醒列：複製鬧鐘在取消鈕前面，一樣是 btn-sm btn-outline、不是 btn-primary
+    const row = rowOf(page, CORDIA);
+    const button = rowAlarmBtnOf(page, CORDIA);
+    isSame(button.parentNode, row.querySelector('.gx-r-actions'));
+    isSame(button.nextElementSibling, cancelBtnOf(page, CORDIA), '複製鬧鐘在取消鈕前面');
+    assert.equal(button.type, 'button');
+    assert.equal(button.className, 'btn btn-sm btn-outline gx-alarm-btn');
+    assert.equal(button.textContent, '📋 複製鬧鐘');
+    // 480px 以下提醒列的按鈕只顯示 📋：字放在 .gx-btn-label 裡由 style.css 藏起來，按鈕的名稱照樣在 aria-label
+    assert.equal(textOf(button, '.btn-icon'), '📋');
+    assert.equal(textOf(button, '.gx-btn-label'), '複製鬧鐘');
+    assert.ok(!button.disabled && !button.hasAttribute('disabled'));
+    // 每一列的按鈕字都一樣，aria-label 加上素材名稱才分得出是哪一列（同取消鈕）；卡片上的按鈕在素材自己的卡片裡，不加
+    assert.equal(button.getAttribute('aria-label'), '複製鬧鐘：科迪亞樹液塊');
+    assert.equal(rowAlarmBtnOf(page, OCTA).getAttribute('aria-label'), '複製鬧鐘：八面體隕鐵礦石');
+    assert.equal(alarmBtnOf(page, CORDIA).hasAttribute('aria-label'), false, '卡片上的複製鬧鐘鈕沒有 aria-label');
+    assert.equal(page.$('reminders').querySelectorAll('.btn-primary').length, 0, '我的提醒裡沒有 .btn-primary');
+
+    button.focus();
+    button.click();
+    await page.settle();
+    assert.deepEqual(page.clipboard, [CORDIA_ALARM('0000')]);
+    assert.deepEqual(page.toasts.at(-1), { message: '已複製鬧鐘指令', type: 'success' });
+    const note = row.querySelector('.gx-copied');
+    isSame(note.parentNode, row, '說明在提醒列裡');
+    assert.equal(note.hidden, false);
+    assert.deepEqual(note.children.map((child) => child.tagName), ['SPAN', 'CODE']);
+    assert.equal(textOf(note, 'span'), NOTE_ZH('00:00'));
+    assert.equal(textOf(note, 'code'), CORDIA_ALARM('0000'));
+    isSame(rowAlarmBtnOf(page, CORDIA), button, '還是同一顆按鈕');
+    isSame(page.document.activeElement, button, '焦點還在按鈕上');
+    assert.equal(notesOn(page).length, 1, '卡片上沒有說明');
+    // 每秒的倒數與重排都不動說明：列還是同一列，說明還在
+    page.tick(1000);
+    isSame(rowOf(page, CORDIA).querySelector('.gx-copied'), note);
+
+    // 一次只留一個：在卡片上複製另一種，提醒列的說明收起來
+    alarmBtnOf(page, OCTA).click();
+    await page.settle();
+    assert.equal(note.hidden, true);
+    assert.equal(visibleNotes(page).length, 1);
+    assert.equal(textOf(page.cardOf(OCTA), '.gx-copied code'), OCTA_ALARM('2200'));
+    // 同一種素材的卡片與提醒列各有自己的說明，一樣只留一個
+    rowAlarmBtnOf(page, OCTA).click();
+    await page.settle();
+    assert.equal(page.cardOf(OCTA).querySelector('.gx-copied').hidden, true);
+    assert.equal(textOf(rowOf(page, OCTA), '.gx-copied code'), OCTA_ALARM('2200'));
+    assert.equal(visibleNotes(page).length, 1);
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('說明跟著重排：卡片與提醒列切換順序時搬動原本的元素，說明還在原本的卡片與列裡，顯示或收起不變', async () => {
+    // ET 12:00 前 1 秒：八面體隕鐵礦石還能採（到 12:00），科迪亞樹液塊 1 秒後出現；12:00 兩邊對調，14:00 又對調
+    const now = at(0, 12) - 1000;
+    const page = await createGatheringPage({ now, stored: storedReminders([CORDIA, OCTA], { armedAt: now - MINUTE }) });
+    assert.deepEqual(rowKeys(page), [OCTA, CORDIA]);
+    assert.equal(keysOf(page)[0], OCTA, '最前面的卡片是還在採的八面體隕鐵礦石');
+    const rows = { [CORDIA]: rowOf(page, CORDIA), [OCTA]: rowOf(page, OCTA) };
+    const cards = { [CORDIA]: page.cardOf(CORDIA), [OCTA]: page.cardOf(OCTA) };
+
+    // 在提醒列上複製（顯示）。焦點不在清單裡，12:00 到了馬上重排：提醒列與卡片都對調
+    rowAlarmBtnOf(page, OCTA).click();
+    await page.settle();
+    const rowNote = rows[OCTA].querySelector('.gx-copied');
+    assert.equal(rowNote.hidden, false);
+    page.tick(1000);
+    assert.deepEqual(rowKeys(page), [CORDIA, OCTA], '提醒列對調了');
+    assert.deepEqual(keysOf(page), expectedKeys(page), '卡片照現在的時間排好了');
+    assert.equal(keysOf(page)[0], CORDIA, '最前面換成剛出現的科迪亞樹液塊');
+    isSame(rowOf(page, OCTA), rows[OCTA], '搬動的是原本的列');
+    isSame(rowOf(page, CORDIA), rows[CORDIA]);
+    isSame(page.cardOf(OCTA), cards[OCTA], '搬動的是原本的卡片');
+    isSame(page.cardOf(CORDIA), cards[CORDIA]);
+    isSame(rows[OCTA].querySelector('.gx-copied'), rowNote, '說明還在原本的列裡');
+    isSame(rowNote.parentNode, rows[OCTA]);
+    assert.equal(rowNote.hidden, false, '還是顯示');
+    assert.equal(textOf(rowNote, 'code'), OCTA_ALARM('2200'));
+    assert.equal(visibleNotes(page).length, 1);
+
+    // 在卡片上複製（顯示，提醒列的收起）。14:00 到了又重排：科迪亞樹液塊結束，卡片排到後面，提醒列又對調
+    alarmBtnOf(page, CORDIA).click();
+    await page.settle();
+    const cardNote = cards[CORDIA].querySelector('.gx-copied');
+    assert.deepEqual([cardNote.hidden, rowNote.hidden], [false, true]);
+    page.tick(at(0, 14) - page.now);
+    assert.deepEqual(rowKeys(page), [OCTA, CORDIA], '提醒列又對調了');
+    assert.deepEqual(keysOf(page), expectedKeys(page));
+    assert.notEqual(keysOf(page)[0], CORDIA, '科迪亞樹液塊的卡片排到後面了');
+    isSame(page.cardOf(CORDIA), cards[CORDIA], '搬動的是原本的卡片');
+    isSame(rowOf(page, OCTA), rows[OCTA]);
+    isSame(cards[CORDIA].querySelector('.gx-copied'), cardNote, '說明還在原本的卡片裡');
+    isSame(cardNote.parentNode, cards[CORDIA]);
+    isSame(rows[OCTA].querySelector('.gx-copied'), rowNote, '提醒列的說明也還在');
+    assert.deepEqual([cardNote.hidden, rowNote.hidden], [false, true], '顯示的還是顯示，收起的還是收起');
+    assert.equal(visibleNotes(page).length, 1);
+    assert.equal(textOf(cardNote, 'code'), CORDIA_ALARM('0000'));
+    assert.equal(textOf(rowNote, 'code'), OCTA_ALARM('2200'));
+});
+
+test('切換語言：複製鬧鐘的按鈕與之後的 toast、說明換字；舊語言寫的說明收掉', async () => {
+    const now = at(0, 11);
+    const page = await createGatheringPage({ now, stored: storedReminders([CORDIA], { armedAt: now - MINUTE }) });
+    const rowButton = rowAlarmBtnOf(page, CORDIA);
+    assert.equal(rowButton.getAttribute('aria-label'), '複製鬧鐘：科迪亞樹液塊');
+    rowButton.click();
+    await page.settle();
+    alarmBtnOf(page, CORDIA).click();
+    await page.settle();
+    assert.equal(notesOn(page).length, 2, '提醒列與卡片各有一個說明');
+    assert.equal(visibleNotes(page).length, 1, '但只留一個');
+
+    // 提醒列就地改字（還是同一顆按鈕，焦點不會掉），卡片整個重畫；兩邊舊語言的說明（含收起來的）都收掉
+    rowButton.focus();
+    page.setLang('en');
+    isSame(rowAlarmBtnOf(page, CORDIA), rowButton, '換語言不重建提醒列的按鈕');
+    isSame(page.document.activeElement, rowButton, '焦點還在按鈕上');
+    assert.equal(rowButton.textContent, '📋 Copy alarm');
+    assert.equal(alarmBtnOf(page, CORDIA).textContent, '📋 Copy alarm');
+    assert.equal(rowButton.getAttribute('aria-label'), 'Copy alarm: Cordia Resin', '提醒列按鈕的 aria-label 跟著換語言，和取消鈕一樣');
+    assert.equal(alarmBtnOf(page, CORDIA).hasAttribute('aria-label'), false, '卡片上的按鈕沒有 aria-label');
+    assert.equal(notesOn(page).length, 0, '舊語言寫的說明都收掉了');
+
+    alarmBtnOf(page, CORDIA).click();
+    await page.settle();
+    assert.deepEqual(page.toasts.at(-1), { message: 'Alarm command copied', type: 'success' });
+    assert.equal(
+        textOf(page.cardOf(CORDIA), '.gx-copied span'),
+        "Copied the in-game alarm for the next one (ET 12:00). Paste it into the game's chat box to set it:"
+    );
+    assert.equal(textOf(page.cardOf(CORDIA), '.gx-copied code'), CORDIA_ALARM('1200'), '指令不分語言');
+
+    // 日文；這次在提醒列上複製，卡片重畫之前先搜尋：搜尋重畫卡片，卡片上的說明跟著消失
+    page.setLang('ja');
+    assert.equal(rowButton.textContent, '📋 アラームをコピー');
+    assert.equal(alarmBtnOf(page, CORDIA).textContent, '📋 アラームをコピー');
+    assert.equal(rowButton.getAttribute('aria-label'), 'アラームをコピー：コーディア樹液塊');
+    rowButton.click();
+    await page.settle();
+    assert.deepEqual(page.toasts.at(-1), { message: 'アラームのコマンドをコピーしました', type: 'success' });
+    assert.equal(
+        textOf(rowOf(page, CORDIA), '.gx-copied span'),
+        '次回（ET 12:00）のゲーム内アラームをコピーしました。ゲームのチャット欄に貼り付ければ設定できます：'
+    );
+    alarmBtnOf(page, OCTA).click();
+    await page.settle();
+    assert.equal(visibleNotes(page).length, 1);
+    search(page, 'octa');
+    assert.equal(page.cards().length, 1);
+    isSame(page.cardOf(OCTA).querySelector('.gx-copied'), null, '重畫的卡片沒有舊的說明');
+    assert.deepEqual(page.consoleErrors, []);
+
+    // 取消提醒：這一列連同它（已經收起來）的說明拿掉
+    assert.equal(notesOn(page).length, 1, '只剩提醒列裡收起來的那一個');
+    cancelBtnOf(page, CORDIA).click();
+    assert.equal(notesOn(page).length, 0);
+});
+
+test('複製鬧鐘的文字三語都有；說明可以選取、失敗時換警告的配色、提醒列的說明橫跨整列、提醒列的按鈕可以換行', () => {
+    const expected = {
+        copyAlarmButton: ['複製鬧鐘', 'Copy alarm', 'アラームをコピー'],
+        copyAlarmLabel: ['複製鬧鐘：{name}', 'Copy alarm: {name}', 'アラームをコピー：{name}'],
+        alarmCopiedToast: ['已複製鬧鐘指令', 'Alarm command copied', 'アラームのコマンドをコピーしました'],
+        alarmCopiedNote: [
+            '已複製下一次（ET {time}）的遊戲鬧鐘，貼到遊戲的聊天輸入框就設好：',
+            "Copied the in-game alarm for the next one (ET {time}). Paste it into the game's chat box to set it:",
+            '次回（ET {time}）のゲーム内アラームをコピーしました。ゲームのチャット欄に貼り付ければ設定できます：'
+        ],
+        alarmCopyFailedNote: [
+            '沒辦法自動複製。下一次（ET {time}）的遊戲鬧鐘在下面，請自己選取複製，貼到遊戲的聊天輸入框：',
+            "Couldn't copy it automatically. Here is the in-game alarm for the next one (ET {time}); select and copy it, then paste it into the game's chat box:",
+            '自動でコピーできませんでした。次回（ET {time}）のゲーム内アラームは下にあります。選択してコピーし、ゲームのチャット欄に貼り付けてください：'
+        ],
+        // 已有的鍵：複製失敗的 toast
+        copyFailedError: ['複製失敗，請手動選取複製', 'Copy failed, please select and copy manually', 'コピーに失敗しました。手動で選択してコピーしてください']
+    };
+    ['zh', 'en', 'ja'].forEach((lang, index) => {
+        const values = translationValues(TRANSLATIONS, lang);
+        for (const [key, texts] of Object.entries(expected)) assert.equal(values.get(key), texts[index], `${lang} ${key}`);
+    });
+
+    const css = read('tools/timed-gathering/style.css');
+    // 最外層（行首）的規則內容；@media 裡縮排的同名規則不算
+    const escapeRegExp = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const ruleOf = (selector) => {
+        const found = css.match(new RegExp(`(?:^|\\n)${escapeRegExp(selector)}\\s*\\{([^}]*)\\}`));
+        assert.ok(found, `style.css 要有 ${selector} 的規則`);
+        return found[1];
+    };
+    // 指令是 <code> 裡的文字：等寬字，長的指令在窄螢幕換行；點一下就選取整行指令（剪貼簿不能用時要自己選取），沒有任何地方設成不能選取
+    const code = ruleOf('.gx-copied code');
+    assert.match(code, /font-family:\s*var\(--font-mono\);/);
+    assert.match(code, /overflow-wrap:\s*anywhere;/);
+    assert.match(code, /(?:^|[\s;])user-select:\s*all;/, '點一下選取整行指令');
+    const noteRules = [...css.matchAll(/\.gx-copied[^{]*\{[^}]*\}/g)].map((match) => match[0]).join('\n');
+    assert.ok(noteRules.length > 0 && !/user-select:\s*none/.test(noteRules), '.gx-copied 的規則沒有 user-select: none');
+    // 複製沒成功：說明換警告的配色（邊框、底、字），不用成功的
+    const failed = ruleOf('.gx-copied.is-failed');
+    for (const token of ['border-color: var(--color-warning-border)', 'background: var(--color-warning-tint)', 'color: var(--color-warning-text)']) {
+        assert.ok(failed.includes(token), `.gx-copied.is-failed 要有 ${token}`);
+    }
+    assert.ok(!/color-success/.test(failed), '失敗的說明不用成功的配色');
+    // 提醒列是 3 欄的 grid（手機也是）：說明自己一整列，不是擠進第一欄
+    assert.match(ruleOf('.gx-reminder > .gx-copied'), /grid-column:\s*1\s*\/\s*-1;/);
+    // 提醒列的按鈕在窄螢幕（日文的「アラームをコピー」加 ✕）放不下時換行，不超出
+    assert.match(ruleOf('.gx-r-actions'), /flex-wrap:\s*wrap;/);
+    // 480px 以下提醒列的複製鬧鐘鈕只顯示 📋：寬度同共用的 .btn-icon-only.btn-sm（正方形），字藏起來，名稱那一行才有寬度
+    const start = css.indexOf('@media (max-width: 480px) {');
+    assert.ok(start !== -1, 'style.css 要有 @media (max-width: 480px)');
+    const narrow = css.slice(start, css.indexOf('\n}', start));
+    const alarm = narrow.match(/\n\s+\.gx-reminder \.gx-alarm-btn\s*\{([^}]*)\}/);
+    assert.ok(alarm, '@media (max-width: 480px) 裡要有 .gx-reminder .gx-alarm-btn 的規則');
+    assert.match(alarm[1], /width:\s*var\(--control-sm\);/);
+    assert.match(alarm[1], /padding:\s*0;/);
+    assert.match(narrow, /\n\s+\.gx-reminder \.gx-btn-label\s*\{\s*display:\s*none;\s*\}/);
 });

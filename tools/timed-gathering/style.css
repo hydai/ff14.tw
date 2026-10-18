@@ -6,7 +6,8 @@
    會蓋過瀏覽器內建的 [hidden] { display: none }，所以要自己寫 */
 #reminders[hidden],
 #reminderMoreBtn[hidden],
-#notifyStatus[hidden] {
+#notifyStatus[hidden],
+.gx-copied[hidden] {
     display: none;
 }
 
@@ -110,7 +111,13 @@
 
 .gx-r-actions {
     display: flex;
+    flex-wrap: wrap;
     gap: var(--space-2);
+}
+
+/* 複製鬧鐘的說明放在提醒列裡：列是 3 欄的 grid（手機也是），說明獨佔下面一整列，不擠進第一欄 */
+.gx-reminder > .gx-copied {
+    grid-column: 1 / -1;
 }
 
 /* 「顯示全部」靠左，不撐滿整行 */
@@ -300,6 +307,35 @@
     flex-wrap: wrap;
     gap: var(--space-2);
     margin-top: var(--space-1);
+}
+
+/* 複製鬧鐘之後，卡片（或提醒列）下方寫出複製了什麼：一句話加上指令本身。
+   一次只留一個（其餘 hidden）；指令是文字，剪貼簿不能用時可以自己選取 */
+.gx-copied {
+    display: grid;
+    gap: var(--space-1);
+    padding: var(--space-3);
+    border: 1px solid var(--color-success-border);
+    border-radius: var(--radius-md);
+    background: var(--color-success-tint);
+    color: var(--color-success-text);
+    font-size: var(--text-sm);
+}
+
+/* 點一下（手機點一下）就選取整行指令，剪貼簿不能用時直接複製 */
+.gx-copied code {
+    font-family: var(--font-mono);
+    color: var(--color-heading);
+    overflow-wrap: anywhere;
+    -webkit-user-select: all;
+    user-select: all;
+}
+
+/* 剪貼簿沒寫成功（被拒絕或不能用）：說明改用警告的配色，不再像複製成功 */
+.gx-copied.is-failed {
+    border-color: var(--color-warning-border);
+    background: var(--color-warning-tint);
+    color: var(--color-warning-text);
 }
 
 /* 已加入：外觀照 .btn:disabled，但用 aria-disabled，按過之後焦點還在按鈕上 */
@@ -526,5 +562,15 @@
     .list-item {
         flex-direction: column;
         align-items: stretch;
+    }
+
+    /* 提醒列的複製鬧鐘鈕只顯示 📋（寬度同共用的 .btn-icon-only.btn-sm），名稱那一行才有寬度；按鈕的名稱在 aria-label */
+    .gx-reminder .gx-alarm-btn {
+        width: var(--control-sm);
+        padding: 0;
+    }
+
+    .gx-reminder .gx-btn-label {
+        display: none;
     }
 }
