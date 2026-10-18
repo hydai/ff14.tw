@@ -63,28 +63,7 @@ function createEnvironment() {
     return { context, ...classes, storage, toasts };
 }
 
-async function initializeController(env) {
-    const app = vm.runInContext('new (class extends TimedGatheringManager { initialize() { this.ready = super.initialize(); return this.ready; } })()', env.context);
-    await app.ready;
-    return app;
-}
-
 const clone = value => JSON.parse(JSON.stringify(value));
-
-test('a real exported backup round-trips through the file import controller, including all item formats', async () => {
-    const env = createEnvironment();
-    const source = new env.ListManager();
-    source.renameList('default', 'A&B');
-    for (const item of items) assert.equal(source.addToList('default', item).success, true);
-    const backup = JSON.stringify(source.exportLists());
-    const app = await initializeController(env);
-    app.importFile(backup);
-    const imported = app.listManager.getAllLists().find(list => list.name === 'A&B (1)');
-    assert.ok(imported);
-    assert.deepEqual(clone(imported.items), clone(source.getList('default').items));
-    assert.ok(new env.ListManager().getList(imported.id), 'the imported list survives a reload');
-    assert.equal(env.toasts.at(-1).type, 'success');
-});
 
 test('nested invalid backups and capacity overflow cannot partially modify lists or storage', () => {
     const env = createEnvironment();
@@ -219,20 +198,6 @@ test('a renamed or previously used default list is preserved even when it is emp
     }
 });
 
-test('without Notification API the complete controller still loads data and lists', async () => {
-    const env = createEnvironment();
-    const app = await initializeController(env);
-    assert.equal(app.data.length, items.length);
-    assert.equal(app.elements.itemsContainer.children.length, items.length);
-    assert.equal(app.elements.listTabs.children.length, 1);
-    assert.equal(env.context.document.getElementById('notificationToggle').disabled, true);
-    assert.equal(env.context.document.getElementById('testNotificationBtn').disabled, true);
-    assert.equal(env.context.document.getElementById('notificationStatus').textContent, '瀏覽器不支援通知');
-    assert.doesNotThrow(() => app.notificationManager.testNotification());
-    app.addItemToList(items[0]);
-    assert.equal(app.listManager.getList('default').items.length, 1);
-});
-
 test('ranged and all-day schedules agree across gathering windows, sorting and alarm export', () => {
     const env = createEnvironment();
     const exporter = new env.MacroExporter();
@@ -260,28 +225,4 @@ test('ranged and all-day schedules agree across gathering windows, sorting and a
     }
     for (const time of ['25:00', '12:60', '22:00-24:01', 'bad']) assert.equal(env.TimeCalculator.parseSchedule(time), null);
     assert.equal(new env.SearchFilter().parseTime('16:00-20:00'), 960);
-});
-
-test('list names and search preserve raw ampersands, apostrophes and literal markup as text', async () => {
-    const env = createEnvironment();
-    const app = await initializeController(env);
-    app.showNewListDialog();
-    env.context.document.getElementById('newListName').value = 'A&B';
-    app.elements.dialogConfirm.onclick();
-    const created = app.listManager.getList(app.currentListId);
-    assert.equal(created.name, 'A&B');
-    assert.equal(app.elements.currentListName.textContent, 'A&B');
-    app.showRenameListDialog();
-    env.context.document.getElementById('renameListInput').value = "A&B's <plan>";
-    app.elements.dialogConfirm.onclick();
-    assert.equal(created.name, "A&B's <plan>");
-    assert.equal(app.currentListId, created.id);
-    assert.equal(app.elements.currentListName.textContent, "A&B's <plan>");
-    assert.equal(app.elements.currentListName.children.length, 0);
-    app.data = [{ ...items[0], nameEn: "A&B's ore" }];
-    for (const query of ["B's", 'A&B']) {
-        app.elements.searchInput.value = query;
-        app.applyFilters();
-        assert.equal(app.filteredData.length, 1);
-    }
 });

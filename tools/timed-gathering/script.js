@@ -65,7 +65,7 @@ class TimedGatheringManager {
             languageButtons: document.querySelectorAll('.language-btn')
         };
 
-        this.initialize();
+        this.ready = this.initialize();
     }
 
     async initialize() {
