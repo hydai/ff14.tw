@@ -14,7 +14,7 @@ window.TimedGatheringTranslations = {
         nightTime: '夜晚',
         
         // 搜尋和篩選
-        searchPlaceholder: '搜尋採集物名稱、地點...', 
+        searchPlaceholder: '用中文、日文或英文搜尋',
         clearButton: '清除',
         filterType: '類型：',
         filterExpansion: '資料片：',
@@ -29,9 +29,11 @@ window.TimedGatheringTranslations = {
         exportButton: '匯出',
         
         // 面板標題
-        itemsListTitle: '採集物列表',
+        itemsListTitle: '採集物',
         loadingItems: '載入採集物資料中...',
         noItemsFound: '沒有符合條件的採集物',
+        resultsCount: '{count} 種 · 照出現時間排序',
+        resultsFound: '找到 {count} 種',
         
         // 清單管理
         defaultListName: '預設清單',
@@ -45,6 +47,13 @@ window.TimedGatheringTranslations = {
         addToListButton: '加入清單',
         addedToListButton: '已加入',
         removeFromList: '移除',
+        statusNow: '現在可採 · 還剩 {left}（到 {end}）',
+        statusNext: '{time} 出現 · 還要 {wait}',
+        statusAllDay: '全天都可以採',
+        waitMinutes: '{m} 分',
+        scheduleDaily: '每天 {slots}，每次約 {minutes} 分鐘',
+        scheduleAllDay: '全天',
+        listSeparator: '、',
         
         // 巨集匯出
         macroSectionTitle: '巨集匯出',
@@ -78,6 +87,7 @@ window.TimedGatheringTranslations = {
 
         // 通知訊息
         addedToListNotification: '已加入清單',
+        listAddedNotSaved: '已加入清單，但瀏覽器不讓這個網站存資料，重新整理後就不見了',
         removedFromListNotification: '已從清單移除',
         listCreatedNotification: '清單已建立',
         listRenamedNotification: '清單已重新命名',
@@ -170,7 +180,7 @@ window.TimedGatheringTranslations = {
         nightTime: '夜',
         
         // 搜尋和篩選
-        searchPlaceholder: 'アイテム名、場所を検索...', 
+        searchPlaceholder: '日・英・中国語で検索',
         clearButton: 'クリア',
         filterType: 'タイプ：',
         filterExpansion: 'パッチ：',
@@ -185,9 +195,11 @@ window.TimedGatheringTranslations = {
         exportButton: 'エクスポート',
         
         // 面板標題
-        itemsListTitle: 'アイテムリスト',
+        itemsListTitle: '採集物',
         loadingItems: 'アイテムデータを読み込み中...',
         noItemsFound: '条件に一致するアイテムがありません',
+        resultsCount: '{count}種 ・ 出現が近い順',
+        resultsFound: '{count}種見つかりました',
         
         // 清單管理
         defaultListName: 'デフォルトリスト',
@@ -201,6 +213,13 @@ window.TimedGatheringTranslations = {
         addToListButton: 'リストに追加',
         addedToListButton: '追加済み',
         removeFromList: '削除',
+        statusNow: '採集可能 ・ 残り{left}（{end}まで）',
+        statusNext: '{time}に出現 ・ あと{wait}',
+        statusAllDay: '終日採集できます',
+        waitMinutes: '{m}分',
+        scheduleDaily: '毎日 {slots}、1回約{minutes}分',
+        scheduleAllDay: '終日',
+        listSeparator: '、',
         
         // 巨集匯出
         macroSectionTitle: 'マクロエクスポート',
@@ -234,6 +253,7 @@ window.TimedGatheringTranslations = {
         
         // 通知訊息
         addedToListNotification: 'リストに追加しました',
+        listAddedNotSaved: 'リストに追加しましたが、ブラウザがこのサイトのデータ保存を許可していないため、再読み込みすると消えます',
         removedFromListNotification: 'リストから削除しました',
         listCreatedNotification: 'リストを作成しました',
         listRenamedNotification: 'リスト名を変更しました',
@@ -289,7 +309,7 @@ window.TimedGatheringTranslations = {
         sourceListNotExist: 'ソースリストが存在しません',
         listCopiedSuccess: 'リストをコピーしました',
         addedItemsToList: '追加しました：{0} 個のアイテム',
-        listMaxItems: 'リストには最大 {0} 個のアイテムまで',
+        listMaxItems: 'リストには最大 {max} 個のアイテムまで',
         itemAlreadyInListSimple: 'このアイテムは既にリストに存在します',
         
         // 通知機能
@@ -326,7 +346,7 @@ window.TimedGatheringTranslations = {
         nightTime: 'Night',
 
         // Search and filter
-        searchPlaceholder: 'Search item name, location...', 
+        searchPlaceholder: 'Search in EN, JP or ZH-TW',
         clearButton: 'Clear',
         filterType: 'Type:',
         filterExpansion: 'Expansion:',
@@ -341,9 +361,11 @@ window.TimedGatheringTranslations = {
         exportButton: 'Export',
 
         // Panel titles
-        itemsListTitle: 'Item List',
-        loadingItems: 'Loading item data...', 
+        itemsListTitle: 'Gatherables',
+        loadingItems: 'Loading item data...',
         noItemsFound: 'No items match the criteria',
+        resultsCount: '{count} items · soonest first',
+        resultsFound: '{count} found',
 
         // List management
         defaultListName: 'Default List',
@@ -357,6 +379,13 @@ window.TimedGatheringTranslations = {
         addToListButton: 'Add to List',
         addedToListButton: 'Added',
         removeFromList: 'Remove',
+        statusNow: 'Up now · {left} left (until {end})',
+        statusNext: 'Appears at {time} · in {wait}',
+        statusAllDay: 'Available all day',
+        waitMinutes: '{m} min',
+        scheduleDaily: 'Daily at {slots}, about {minutes} min each',
+        scheduleAllDay: 'All day',
+        listSeparator: ', ',
 
         // Macro export
         macroSectionTitle: 'Macro Export',
@@ -390,6 +419,7 @@ window.TimedGatheringTranslations = {
 
         // Notifications
         addedToListNotification: 'Added to list',
+        listAddedNotSaved: "Added to the list, but your browser won't let this site save data, so it will be gone after a reload",
         removedFromListNotification: 'Removed from list',
         listCreatedNotification: 'List created',
         listRenamedNotification: 'List renamed',
@@ -445,7 +475,7 @@ window.TimedGatheringTranslations = {
         sourceListNotExist: 'Source list does not exist',
         listCopiedSuccess: 'List copied successfully',
         addedItemsToList: 'Added {0} items to target list',
-        listMaxItems: 'List can contain maximum of {0} items',
+        listMaxItems: 'List can contain maximum of {max} items',
         itemAlreadyInListSimple: 'This item is already in the list',
 
         // Notification function

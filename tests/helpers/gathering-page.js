@@ -28,7 +28,8 @@
 // - 匯出用的 Blob 與 URL.createObjectURL／revokeObjectURL 是 Node 自己的（fake-dom 的 window.URL 就是 Node 的 URL），不用替身
 // - 頁面的 console 只有 log、error、warn（載入的腳本只用到這三個），都不印到真的 console：console.log 不輸出
 //   （NotificationManager 的除錯訊息，每次畫清單都會印）；console.error、console.warn 記在 consoleErrors
-//   （每一筆是參數用空白接起來的字串，Error 寫成「Error: 訊息」；例如 storageThrows 時 ListManager 讀不到清單的那一行）
+//   （每一筆是 util.format(...參數) 的結果，同 Node 的 console：物件與 Symbol 照 util.inspect 寫，Error 寫成它的 stack，
+//   第一行是「Error: 訊息」；例如 storageThrows 時 ListManager 讀不到清單的那一筆）
 // - fake-dom 的元素少了幾樣頁面會用到的東西，這份 document 建出來的每個元素（mountFromHtml 建的與頁面自己建的）都補上：
 //   input、textarea、select 的 value（沒設過是 value 屬性，textarea 是裡面的文字，都沒有就是 ''；設過之後以設的為準，同瀏覽器）、
 //   input、textarea 的 select()（重新命名清單的對話框一打開就會呼叫）、每個元素的 scrollIntoView()（生成巨集之後會呼叫），後兩個什麼都不做
@@ -37,6 +38,7 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const util = require('node:util');
 const vm = require('node:vm');
 
 const { createFakeDom } = require('./fake-dom.js');
@@ -138,8 +140,9 @@ async function createGatheringPage({
     const createElement = dom.document.createElement.bind(dom.document);
     dom.document.createElement = (tag) => addBrowserParts(createElement(tag));
 
-    // 頁面的 console 不印到真的 console：log 不輸出（NotificationManager 的除錯訊息，每次畫清單都會印），error、warn 記下來
-    const record = (...args) => { consoleErrors.push(args.join(' ')); };
+    // 頁面的 console 不印到真的 console：log 不輸出（NotificationManager 的除錯訊息，每次畫清單都會印），
+    // error、warn 照 Node 的 console 用 util.format() 寫成一筆字串記下來（參數是物件或 Symbol 時 join() 寫不出來或會丟錯）
+    const record = (...args) => { consoleErrors.push(util.format(...args)); };
     Object.assign(win, {
         console: { log: () => {}, error: record, warn: record },
         setInterval: (callback) => { intervals.push({ callback, cleared: false }); return intervals.length; },

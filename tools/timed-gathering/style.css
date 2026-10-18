@@ -77,12 +77,6 @@
     flex: 1;
 }
 
-.toolbar-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-2);
-}
-
 /* 篩選 */
 .filter-section {
     display: flex;
@@ -147,39 +141,6 @@
     color: var(--color-muted);
 }
 
-.items-container {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-3);
-}
-
-/* 採集物卡片：外觀由 .card 提供 */
-.item-card {
-    padding: var(--space-4);
-    transition: border-color var(--duration-base) var(--ease), box-shadow var(--duration-base) var(--ease);
-}
-
-.item-card:hover {
-    border-color: var(--color-primary);
-    box-shadow: var(--shadow-md);
-}
-
-.item-header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: var(--space-3);
-    margin-bottom: var(--space-2);
-}
-
-.item-title-section {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    min-width: 0;
-}
-
-.item-type,
 .list-item-type,
 .tag-icon,
 .notification-icon {
@@ -187,47 +148,119 @@
     line-height: 1;
 }
 
-.item-name {
+/* 採集物卡片：一種素材一張，外觀由 .card 提供 */
+.gx-cards {
+    display: grid;
+    gap: var(--space-3);
+}
+
+.gx-card {
+    padding: var(--space-4);
+    display: grid;
+    gap: var(--space-2);
+}
+
+.gx-card.is-now {
+    border-color: var(--color-success-border);
+}
+
+.gx-head {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: var(--space-2);
+    align-items: start;
+}
+
+.gx-icon {
+    font-size: var(--text-xl);
+}
+
+.gx-name {
     margin: 0;
-    font-size: var(--text-md);
-    font-weight: var(--weight-semibold);
-    color: var(--color-heading);
+    font-size: var(--text-lg);
 }
 
-.item-body {
-    margin-bottom: var(--space-3);
-}
-
-.item-info {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-2) var(--space-4);
+.gx-alt {
+    margin: 0;
     font-size: var(--text-sm);
     color: var(--color-muted);
 }
 
-.item-version {
+/* 搜尋命中的字：字一律用標題色，跟著周圍的話，淡色的小字（另外兩種語言的名稱）在底色上對比不夠 */
+.gx-name mark,
+.gx-alt mark,
+.gx-where mark {
+    background: var(--color-mark);
+    color: var(--color-heading);
+    border-radius: var(--radius-sm);
+}
+
+.gx-status {
+    margin: 0;
     font-weight: var(--weight-semibold);
     color: var(--color-primary);
+    font-variant-numeric: tabular-nums;
 }
 
-.item-description {
-    margin-top: var(--space-2);
+.gx-status.now {
+    color: var(--color-success-text);
+}
+
+/* ● 只是裝飾：第二行把替代文字設成空的，螢幕閱讀器不念；不認得這種寫法的瀏覽器略過第二行，用第一行 */
+.gx-status.now::before {
+    content: '● ';
+    content: '● ' / '';
+}
+
+.gx-where,
+.gx-sched {
+    margin: 0;
     font-size: var(--text-sm);
-    line-height: var(--leading-normal);
+    color: var(--color-text);
+}
+
+.gx-sched {
     color: var(--color-muted);
 }
 
-.item-footer {
+.gx-actions {
     display: flex;
-    justify-content: flex-end;
+    flex-wrap: wrap;
     gap: var(--space-2);
+    margin-top: var(--space-1);
+}
+
+/* 已加入：外觀照 .btn:disabled，但用 aria-disabled，按過之後焦點還在按鈕上 */
+.gx-add-btn[aria-disabled="true"] {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+/* .btn 的 hover／active 只排除 :disabled：這裡拿掉它們的底色、浮起與陰影 */
+.gx-add-btn[aria-disabled="true"]:hover,
+.gx-add-btn[aria-disabled="true"]:active {
+    background: transparent;
+    transform: none;
+    box-shadow: none;
+}
+
+/* 焦點還在這顆按鈕上，鍵盤焦點的外框照樣看得到 */
+.gx-add-btn[aria-disabled="true"]:focus-visible {
+    box-shadow: var(--ring-primary);
 }
 
 /* 清單面板 */
 .lists-panel {
     display: flex;
     flex-direction: column;
+}
+
+/* 新增清單、匯入、匯出：清單那一欄的最上面 */
+.lists-panel .toolbar-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-bottom: var(--space-4);
 }
 
 .list-tabs {
@@ -394,10 +427,6 @@
 @media (max-width: 480px) {
     .time-display-card {
         flex-basis: 100%;
-    }
-
-    .item-header {
-        flex-direction: column;
     }
 
     .list-item {

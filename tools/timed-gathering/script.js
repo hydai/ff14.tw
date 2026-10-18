@@ -5,12 +5,22 @@ class TimedGatheringManager {
         STORAGE_KEY_PREFIX: 'ff14tw_timed_gathering_',
         DEFAULT_LIST_NAME: '預設清單',
         MAX_LIST_NAME_LENGTH: 50,
-        MAX_LISTS: 10
+        MAX_LISTS: 10,
+        // 下一次出現還不到這麼久時，狀態行的「還要」寫 m:ss，否則寫幾分
+        SHORT_WAIT_MS: 10 * 60 * 1000
     };
 
     constructor() {
         this.data = [];
-        this.filteredData = [];
+        // 素材：資料裡同一種採集物的幾筆（不同時段）合成一種，一種素材一張卡片
+        this.materials = [];
+        this.materialByKey = new Map();
+        // 目前顯示的素材（已排序）、搜尋時每種素材的分數（key -> 分數；沒有搜尋時是空的）與搜尋字
+        this.shown = [];
+        this.scores = new Map();
+        this.searchWords = [];
+        // 畫面上的卡片：key -> { card, status, addBtn }
+        this.cards = new Map();
         this.listManager = null;
         this.macroExporter = null;
         this.searchFilter = null;
@@ -93,8 +103,8 @@ class TimedGatheringManager {
             // 載入清單
             this.loadLists();
 
-            // 初始顯示
-            this.updateDisplay();
+            // 初始顯示：照目前的篩選與搜尋框畫出卡片
+            this.applyFilters();
 
         } catch (error) {
             console.error('初始化失敗:', error);
@@ -142,10 +152,9 @@ class TimedGatheringManager {
                     typeof item.zone === 'string';
             });
 
-            this.filteredData = [...this.data];
-
-            // 更新項目計數
-            this.updateItemCount();
+            // 同一種素材的幾筆資料合成一張卡片
+            this.materials = GatheringMaterials.group(this.data);
+            this.materialByKey = new Map(this.materials.map(material => [material.key, material]));
 
         } catch (error) {
             console.error('載入資料失敗:', error);
@@ -168,12 +177,12 @@ class TimedGatheringManager {
         // 還是其他呼叫 window.i18n.setLanguage() 的地方觸發，都只會重繪一次；observer 本身不會呼叫
         // setLanguage()／switchLanguage()，所以不會有「setLanguage → 通知 observer → 又呼叫
         // setLanguage」的遞迴風險。
-        // 語言切換時重新以目前語言重繪：按鈕狀態、右側顯示、清單畫面與通知狀態文字
+        // 語言切換時重新以目前語言重繪：按鈕狀態、採集物卡片（名稱、狀態行、計數）、清單畫面與通知狀態文字
         // （呼叫的方法與順序沿用原本 switchLanguage() 的重繪部分，只是不再由這裡呼叫 setLanguage()）
         window.i18n.onLanguageChange((lang) => {
             this.currentLanguage = lang;
             this.updateLanguageButtons();
-            this.updateDisplay();
+            this.renderItems();
             this.updateListDisplay();
             this.updateNotificationStatus();
         });
@@ -355,133 +364,248 @@ class TimedGatheringManager {
         const activeExpansions = Array.from(this.elements.expansionFilters.querySelectorAll('.chip.active'))
             .map(tag => tag.dataset.expansion);
 
-        this.filteredData = this.searchFilter.filter(this.data, {
+        // 符合的資料（有搜尋時已照分數排過；這是 SearchFilter 快取裡的陣列，不要改它）
+        const matched = this.searchFilter.filter(this.data, {
             searchTerm,
             types: activeTypes,
             expansions: activeExpansions
         });
 
-        this.updateDisplay();
-    }
+        // 依素材收起來：素材的分數＝它符合的資料裡最高的分數（沒有搜尋時不算）
+        this.searchWords = SearchFilter.words(searchTerm);
+        this.scores = new Map();
+        const matchedKeys = new Set();
+        matched.forEach(record => {
+            const key = GatheringMaterials.keyOf(record);
+            matchedKeys.add(key);
+            if (this.searchWords.length > 0) {
+                const score = this.searchFilter.scoreItem(record, this.searchWords);
+                this.scores.set(key, Math.max(this.scores.get(key) || 0, score));
+            }
+        });
 
-    updateDisplay() {
+        // 照資料的順序取出符合的素材，再排序
+        const materials = this.materials.filter(material => matchedKeys.has(material.key));
+        this.shown = this.sortMaterials(materials, Date.now());
         this.renderItems();
-        this.updateItemCount();
     }
 
+    /**
+     * 卡片的順序：有搜尋時照分數由高到低，同分照出現時間（GatheringMaterials.compare）；沒有搜尋時只照出現時間。
+     * 都同分時照資料的順序（不看傳進來的順序，所以拿畫面上的順序來重排也一樣）
+     * @param {Object[]} materials - 要排的素材
+     * @param {number} now - 毫秒時間戳
+     * @returns {Object[]} 排好的新陣列（不改傳進來的陣列）
+     */
+    sortMaterials(materials, now) {
+        const order = new Map(this.materials.map((material, index) => [material.key, index]));
+        // 沒有搜尋時 this.scores 是空的，分數都當成 0
+        const scoreOf = (material) => this.scores.get(material.key) || 0;
+        return materials
+            .map(material => ({ material, state: GatheringMaterials.state(material, now) }))
+            .sort((a, b) => (scoreOf(b.material) - scoreOf(a.material)) ||
+                GatheringMaterials.compare(a.state, b.state) ||
+                (order.get(a.material.key) - order.get(b.material.key)))
+            .map(entry => entry.material);
+    }
+
+    /** 照 this.shown 重建卡片，並寫上計數；沒有符合的素材時顯示空狀態 */
     renderItems() {
         const container = this.elements.itemsContainer;
         SecurityUtils.clearElement(container);
+        this.cards.clear();
 
-        if (this.filteredData.length === 0) {
+        const count = this.shown.length;
+        this.elements.itemCount.textContent = this.searchWords.length > 0
+            ? FF14Utils.getI18nText('resultsFound', '找到 {count} 種', { count })
+            : FF14Utils.getI18nText('resultsCount', '{count} 種 · 照出現時間排序', { count });
+
+        if (count === 0) {
             const emptyMessage = document.createElement('div');
             emptyMessage.className = 'empty-state';
-            emptyMessage.textContent = FF14Utils.getI18nText('noItemsFound', 'No items match the criteria');
+            emptyMessage.textContent = FF14Utils.getI18nText('noItemsFound', '沒有符合條件的採集物');
             container.appendChild(emptyMessage);
             return;
         }
 
-        this.filteredData.forEach(item => {
-            const card = this.createItemCard(item);
-            container.appendChild(card);
+        const now = Date.now();
+        this.shown.forEach(material => {
+            container.appendChild(this.createMaterialCard(material, now));
         });
     }
 
-    createItemCard(item) {
-        const card = document.createElement('div');
-        card.className = 'item-card card';
-        card.dataset.itemId = item.id;
+    /**
+     * 一種素材的卡片：標題是目前語言的名稱，下面小字是另外兩種語言的名稱；狀態行、地點行、時段行與按鈕。
+     * 搜尋命中的字（名稱、另外兩種語言的名稱、地區、地點）用 <mark> 標出來。卡片登記在 this.cards
+     * @param {Object} material - GatheringMaterials.group() 的結果
+     * @param {number} now - 毫秒時間戳
+     * @returns {HTMLElement}
+     */
+    createMaterialCard(material, now) {
+        const lang = this.currentLanguage;
+        const state = GatheringMaterials.state(material, now);
+        const isNow = state.kind === 'now';
 
-        const typeIcon = this.getTypeIcon(item.type);
-        const isInList = this.listManager.hasInCurrentList(this.currentListId, item.id);
+        const card = document.createElement('article');
+        card.className = isNow ? 'card gx-card is-now' : 'card gx-card';
+        card.dataset.material = material.key;
 
-        const header = document.createElement('div');
-        header.className = 'item-header';
+        const head = document.createElement('div');
+        head.className = 'gx-head';
 
-        const titleSection = document.createElement('div');
-        titleSection.className = 'item-title-section';
+        const icon = document.createElement('span');
+        icon.className = 'gx-icon';
+        icon.setAttribute('aria-hidden', 'true');
+        icon.textContent = this.getTypeIcon(material.type);
+        head.appendChild(icon);
 
-        const typeSpan = document.createElement('span');
-        typeSpan.className = 'item-type';
-        typeSpan.textContent = typeIcon;
-        titleSection.appendChild(typeSpan);
+        const names = document.createElement('div');
+        names.className = 'gx-names';
 
         const title = document.createElement('h3');
-        title.className = 'item-name';
-        // 根據當前語言顯示名稱
-        const displayName = this.currentLanguage === 'ja' && item.nameJp ? item.nameJp : item.name;
-        title.textContent = displayName;
-        titleSection.appendChild(title);
+        title.className = 'gx-name';
+        this.appendMarked(title, this.nameOf(material, lang));
+        names.appendChild(title);
 
-        header.appendChild(titleSection);
+        const alt = document.createElement('p');
+        alt.className = 'gx-alt';
+        this.otherNames(material, lang).forEach((name, index) => {
+            if (index > 0) alt.appendChild(document.createTextNode(' · '));
+            this.appendMarked(alt, name);
+        });
+        names.appendChild(alt);
+        head.appendChild(names);
 
-        const timeSpan = document.createElement('span');
-        timeSpan.className = 'item-time tag tag-solid tag-primary';
-        timeSpan.textContent = item.time;
-        header.appendChild(timeSpan);
+        const version = document.createElement('span');
+        version.className = 'tag';
+        version.textContent = `v${material.expansion}`;
+        head.appendChild(version);
+        card.appendChild(head);
 
-        card.appendChild(header);
+        const status = document.createElement('p');
+        status.className = isNow ? 'gx-status now' : 'gx-status';
+        status.textContent = this.statusText(state, now);
+        card.appendChild(status);
 
-        const body = document.createElement('div');
-        body.className = 'item-body';
-
-        const info = document.createElement('div');
-        info.className = 'item-info';
-
-        const zoneDiv = document.createElement('div');
-        zoneDiv.className = 'item-zone';
-        // 根據當前語言顯示地區和位置
-        const displayZone = this.currentLanguage === 'ja' && item.zoneJp ? item.zoneJp : item.zone;
-        const displayLocation = this.currentLanguage === 'ja' && item.locationJp ? item.locationJp : item.location;
-        zoneDiv.textContent = `📍 ${displayZone} - ${displayLocation}`;
-        info.appendChild(zoneDiv);
-
-        const coordsDiv = document.createElement('div');
-        coordsDiv.className = 'item-coords';
-        coordsDiv.textContent = `📐 ${item.coordinates}`;
-        info.appendChild(coordsDiv);
-
-        const versionDiv = document.createElement('div');
-        versionDiv.className = 'item-version';
-        versionDiv.textContent = `v${item.expansion}`;
-        info.appendChild(versionDiv);
-
-        body.appendChild(info);
-
-        if (item.description) {
-            const desc = document.createElement('p');
-            desc.className = 'item-description';
-            desc.textContent = item.description;
-            body.appendChild(desc);
+        // 地點行：「📍 地區 · 地點　座標」（地點和地區同名時只寫地區），地區與地點各自標出命中的字
+        const place = this.placeParts(material, lang);
+        const where = document.createElement('p');
+        where.className = 'gx-where';
+        where.appendChild(document.createTextNode('📍 '));
+        this.appendMarked(where, place.zone);
+        if (place.location) {
+            where.appendChild(document.createTextNode(' · '));
+            this.appendMarked(where, place.location);
         }
+        where.appendChild(document.createTextNode(`　${place.coordinates}`));
+        card.appendChild(where);
 
-        card.appendChild(body);
+        const schedule = document.createElement('p');
+        schedule.className = 'gx-sched';
+        schedule.textContent = this.scheduleText(material);
+        card.appendChild(schedule);
 
-        const footer = document.createElement('div');
-        footer.className = 'item-footer';
+        const actions = document.createElement('div');
+        actions.className = 'gx-actions';
 
         const addBtn = document.createElement('button');
-        addBtn.className = isInList ? 'btn btn-success btn-sm' : 'btn btn-primary btn-sm';
-        // Use safe DOM manipulation instead of innerHTML
-        SecurityUtils.updateButtonContent(
-            addBtn,
-            isInList ? '✔️' : '➕',
-            isInList ? FF14Utils.getI18nText('addedToListButton', 'Added') : FF14Utils.getI18nText('addToListButton', 'Add to List')
-        );
-        addBtn.disabled = isInList;
-
+        addBtn.type = 'button';
         addBtn.addEventListener('click', () => {
-            this.addItemToList(item);
-            addBtn.className = 'btn btn-success btn-sm';
-            // Use safe DOM manipulation instead of innerHTML
-            SecurityUtils.updateButtonContent(addBtn, '✔️', FF14Utils.getI18nText('addedToListButton', 'Added'));
-            addBtn.disabled = true;
+            this.addMaterialToList(material);
         });
+        actions.appendChild(addBtn);
+        card.appendChild(actions);
 
-        footer.appendChild(addBtn);
-        card.appendChild(footer);
+        this.cards.set(material.key, { card, status, addBtn });
+        this.updateCardButtons(material);
 
         return card;
+    }
+
+    /** 把文字依目前的搜尋字切段接到 parent 後面：命中的段落包在 <mark> 裡，其餘是文字節點 */
+    appendMarked(parent, text) {
+        SearchFilter.segments(text, this.searchWords).forEach(segment => {
+            if (segment.mark) {
+                const mark = document.createElement('mark');
+                mark.textContent = segment.text;
+                parent.appendChild(mark);
+            } else {
+                parent.appendChild(document.createTextNode(segment.text));
+            }
+        });
+    }
+
+    /** 素材（或清單裡的一筆）在某個語言的名稱：zh 是 name，en、ja 沒有自己的名稱時用 name */
+    nameOf(material, lang) {
+        if (lang === 'en') return material.nameEn || material.name;
+        if (lang === 'ja') return material.nameJp || material.name;
+        return material.name;
+    }
+
+    /** 卡片標題下面的另外兩種語言的名稱：照 zh、en、ja 的順序，去掉目前語言、空的和重複的 */
+    otherNames(material, lang) {
+        const title = this.nameOf(material, lang);
+        const names = [];
+        ['zh', 'en', 'ja'].forEach(other => {
+            const name = this.nameOf(material, other);
+            if (other !== lang && name && name !== title && !names.includes(name)) names.push(name);
+        });
+        return names;
+    }
+
+    /**
+     * 地點行的三段：地區（zh zone、en zoneEn、ja zoneJp，沒有時用 zone）、地點（zh location、en locationEn、ja locationJp，
+     * 沒有時用 location）、座標。資料裡很多地點就是地區本身（location 和 zone 相同），這時地點是空字串，地區只寫一次
+     */
+    placeParts(material, lang) {
+        const zone = (lang === 'en' && material.zoneEn) || (lang === 'ja' && material.zoneJp) || material.zone;
+        const location = (lang === 'en' && material.locationEn) || (lang === 'ja' && material.locationJp) || material.location;
+        return { zone, location: location === zone ? '' : location, coordinates: material.coordinates };
+    }
+
+    /** 地點行的文字（不含 📍）：「地區 · 地點　座標」（地點是空的就是「地區　座標」），座標前面是全形空白 */
+    placeOf(material, lang) {
+        const { zone, location, coordinates } = this.placeParts(material, lang);
+        return location ? `${zone} · ${location}　${coordinates}` : `${zone}　${coordinates}`;
+    }
+
+    /**
+     * 狀態行：現在可採寫還剩多久、到幾點；不能採寫幾點出現、還要多久（不到 10 分鐘寫 m:ss，否則寫幾分）；全天寫全天都可以採
+     * @param {Object} state - GatheringMaterials.state() 的結果
+     * @param {number} now - 毫秒時間戳
+     * @returns {string} 沒有有效時段（none）時是空字串
+     */
+    statusText(state, now) {
+        if (state.kind === 'now') {
+            return FF14Utils.getI18nText('statusNow', '現在可採 · 還剩 {left}（到 {end}）', {
+                left: GatheringMaterials.countdown(state.end - now),
+                end: GatheringMaterials.localTime(state.end)
+            });
+        }
+        if (state.kind === 'next') {
+            const wait = state.start - now;
+            return FF14Utils.getI18nText('statusNext', '{time} 出現 · 還要 {wait}', {
+                time: GatheringMaterials.localTime(state.start),
+                wait: wait < TimedGatheringManager.CONSTANTS.SHORT_WAIT_MS
+                    ? GatheringMaterials.countdown(wait)
+                    : FF14Utils.getI18nText('waitMinutes', '{m} 分', { m: GatheringMaterials.minutesCeil(wait) })
+            });
+        }
+        if (state.kind === 'allday') {
+            return FF14Utils.getI18nText('statusAllDay', '全天都可以採');
+        }
+        return '';
+    }
+
+    /** 時段行：「每天 ET 00:00、ET 12:00，每次約 6 分鐘」；全天的素材寫「全天」 */
+    scheduleText(material) {
+        if (material.allDay) {
+            return FF14Utils.getI18nText('scheduleAllDay', '全天');
+        }
+        return FF14Utils.getI18nText('scheduleDaily', '每天 {slots}，每次約 {minutes} 分鐘', {
+            slots: GatheringMaterials.slots(material).join(FF14Utils.getI18nText('listSeparator', '、')),
+            minutes: GatheringMaterials.realMinutes(material)
+        });
     }
 
     getTypeIcon(type) {
@@ -493,13 +617,74 @@ class TimedGatheringManager {
         return icons[type] || '❓';
     }
 
-    addItemToList(item) {
-        const result = this.listManager.addToList(this.currentListId, item);
-        if (result.success) {
-            this.updateListDisplay();
-            FF14Utils.showToast(FF14Utils.getI18nText('addedToListNotification', 'Added to list'), 'success');
+    /**
+     * 把素材的每一個時段（資料的每一筆）加進目前的清單；已經在清單裡的不重複加。
+     * 放不下全部的時段時一筆都不加（清單最多 ListManager.CONSTANTS.MAX_ITEMS_PER_LIST 筆）。
+     * 瀏覽器封鎖網站資料時 addToList() 先把這一筆放進記憶體裡的清單、存的時候才丟例外：每一筆各自接住，
+     * 所有時段照樣加進這次的清單、畫面照樣重畫，改跳警告說重新整理後就不見了
+     * @param {Object} material - GatheringMaterials.group() 的結果
+     */
+    addMaterialToList(material) {
+        const list = this.listManager.getList(this.currentListId);
+        if (!list) return;
+
+        const missing = material.records.filter(record => !this.listManager.hasInCurrentList(this.currentListId, record.id));
+        if (missing.length === 0) return;
+
+        const max = ListManager.CONSTANTS.MAX_ITEMS_PER_LIST;
+        if (list.items.length + missing.length > max) {
+            FF14Utils.showToast(FF14Utils.getI18nText('listMaxItems', '清單最多只能包含 {max} 個項目', { max }), 'warning');
+            return;
+        }
+
+        let saved = true;
+        missing.forEach(record => {
+            try {
+                this.listManager.addToList(this.currentListId, record);
+            } catch (error) {
+                // 存不起來（ListManager 已經記在 console）：這一筆已經在記憶體裡的清單，接著加下一筆
+                saved = false;
+            }
+        });
+        this.updateListDisplay();
+        this.refreshCardButtons();
+        if (saved) {
+            FF14Utils.showToast(FF14Utils.getI18nText('addedToListNotification', '已加入清單'), 'success');
         } else {
-            FF14Utils.showToast(result.message, 'warning');
+            FF14Utils.showToast(
+                FF14Utils.getI18nText('listAddedNotSaved', '已加入清單，但瀏覽器不讓這個網站存資料，重新整理後就不見了'),
+                'warning'
+            );
+        }
+    }
+
+    /** 照目前的清單就地更新每張卡片的按鈕（不重建卡片，焦點不動）；換清單、清空、加入或移除之後呼叫 */
+    refreshCardButtons() {
+        for (const key of this.cards.keys()) {
+            this.updateCardButtons(this.materialByKey.get(key));
+        }
+    }
+
+    /**
+     * 一張卡片的加入鈕：素材的每一筆都在目前的清單裡才寫已加入，否則寫加入清單。
+     * 已加入用 aria-disabled 而不是 disabled：剛按過的按鈕還拿著焦點，停用的按鈕拿不住焦點，焦點會掉到 body；
+     * 再按一次也沒事（addMaterialToList() 沒有要加的就什麼都不做）
+     */
+    updateCardButtons(material) {
+        const { addBtn } = this.cards.get(material.key);
+        const added = material.records.every(record => this.listManager.hasInCurrentList(this.currentListId, record.id));
+        addBtn.className = 'btn btn-sm btn-ghost gx-add-btn';
+        SecurityUtils.updateButtonContent(
+            addBtn,
+            added ? '✔️' : '➕',
+            added
+                ? FF14Utils.getI18nText('addedToListButton', '已加入')
+                : FF14Utils.getI18nText('addToListButton', '加入清單')
+        );
+        if (added) {
+            addBtn.setAttribute('aria-disabled', 'true');
+        } else {
+            addBtn.removeAttribute('aria-disabled');
         }
     }
 
@@ -549,9 +734,8 @@ class TimedGatheringManager {
 
         const name = document.createElement('span');
         name.className = 'list-item-name';
-        // 根據當前語言顯示名稱
-        const displayName = this.currentLanguage === 'ja' && item.nameJp ? item.nameJp : item.name;
-        name.textContent = displayName;
+        // 目前語言的名稱（同卡片的標題）
+        name.textContent = this.nameOf(item, this.currentLanguage);
         info.appendChild(name);
 
         const version = document.createElement('span');
@@ -582,7 +766,7 @@ class TimedGatheringManager {
     removeItemFromList(itemId) {
         this.listManager.removeFromList(this.currentListId, itemId);
         this.updateListDisplay();
-        this.updateDisplay(); // 更新左側顯示
+        this.refreshCardButtons(); // 更新卡片上的加入鈕
         FF14Utils.showToast(FF14Utils.getI18nText('removedFromListNotification', 'Removed from list'), 'info');
     }
 
@@ -643,8 +827,8 @@ class TimedGatheringManager {
             // 更新清單顯示
             this.updateListDisplay();
 
-            // 更新左側項目顯示
-            this.updateDisplay();
+            // 更新卡片上的加入鈕
+            this.refreshCardButtons();
         }
     }
 
@@ -834,7 +1018,7 @@ class TimedGatheringManager {
         this.elements.dialogConfirm.onclick = () => {
             this.listManager.clearList(this.currentListId);
             this.updateListDisplay();
-            this.updateDisplay();
+            this.refreshCardButtons();
             this.hideDialog();
             FF14Utils.showToast(FF14Utils.getI18nText('listClearedNotification', 'List cleared'), 'success');
         };
@@ -990,10 +1174,6 @@ class TimedGatheringManager {
         FF14Utils.showToast(FF14Utils.getI18nText('listsExportedNotification', 'Lists exported'), 'success');
     }
 
-    updateItemCount() {
-        this.elements.itemCount.textContent = `(${this.filteredData.length} / ${this.data.length})`;
-    }
-
     showDialog(onClose = null) {
         this.modalManager.show(this.elements.dialogOverlay, {
             onClose: onClose,
@@ -1007,7 +1187,8 @@ class TimedGatheringManager {
 
     showLoading(show) {
         this.elements.loadingIndicator.style.display = show ? 'flex' : 'none';
-        this.elements.itemsContainer.style.display = show ? 'none' : 'block';
+        // 載入完拿掉行內的 display，讓 .gx-cards 的 grid 生效
+        this.elements.itemsContainer.style.display = show ? 'none' : '';
     }
 
     showError(message) {
