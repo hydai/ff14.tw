@@ -405,7 +405,8 @@
     margin-bottom: var(--space-4);
 }
 
-/* 清單項目：.card 是 flex column，這裡要明確改回橫排 */
+/* 清單項目：.card 是 flex column，這裡要明確改回橫排。
+   .card 的 overflow: hidden 讓 flex 項目能縮到 0 高：.list-items 超過 300px 要捲動，每一列不收縮，不然會被壓扁 */
 .list-item {
     display: flex;
     flex-direction: row;
@@ -413,6 +414,7 @@
     justify-content: space-between;
     gap: var(--space-3);
     padding: var(--space-2) var(--space-3);
+    flex-shrink: 0;
 }
 
 .list-item-info {

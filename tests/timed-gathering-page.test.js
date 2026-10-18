@@ -583,6 +583,23 @@ test('新增清單、匯入、匯出在清單那一欄；卡片上沒有 .btn-pr
     assert.equal(scripts.indexOf('gathering-materials.js'), scripts.indexOf('time-calculator.js') + 1);
 });
 
+test('清單超過 300px 就捲動，每一列 .list-item 維持原高度，不被壓扁', () => {
+    // .list-items 是有 max-height 的 flex 直排，.list-item 是 .card（overflow: hidden，flex 項目的最小高度因此是 0）：
+    // 沒設 flex-shrink: 0 時，清單一超過 300px 每一列就被壓成約 18px（內容要 32px），刪除鈕被切掉，而不是捲動
+    const css = read('tools/timed-gathering/style.css');
+    // 最外層（行首）的規則內容：@media 裡縮排的同名規則不算，.list-items、.list-item-info 也不是 .list-item
+    const ruleOf = (selector) => css.match(new RegExp(`(?:^|\\n)${selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\{([^}]*)\\}`))?.[1];
+    const list = ruleOf('.list-items');
+    assert.ok(list, 'style.css 要有 .list-items 的規則');
+    assert.match(list, /display:\s*flex;/);
+    assert.match(list, /flex-direction:\s*column;/);
+    assert.match(list, /max-height:\s*300px;/);
+    assert.match(list, /overflow-y:\s*auto;/);
+    const item = ruleOf('.list-item');
+    assert.ok(item, 'style.css 要有 .list-item 的規則');
+    assert.match(item, /(?:^|[\s;])flex-shrink:\s*0;/, '.list-item 要有 flex-shrink: 0');
+});
+
 test('卡片與搜尋結果的文字三語都有；index.html 的預設文字是中文', () => {
     const expected = {
         // 英文、日文寫短一點：手機（360px）的搜尋框放得下，不被切掉
