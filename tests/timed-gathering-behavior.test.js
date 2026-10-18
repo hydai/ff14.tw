@@ -56,10 +56,10 @@ function createEnvironment() {
         setInterval: () => 1, clearInterval() {}, setTimeout() {}, clearTimeout() {}
     });
     context.window = context;
-    for (const file of ['assets/js/security-utils.js', ...['time-calculator', 'list-manager', 'notification-manager', 'macro-exporter', 'search-filter', 'script'].map(name => `tools/timed-gathering/${name}.js`)]) {
+    for (const file of ['assets/js/security-utils.js', ...['time-calculator', 'gathering-materials', 'list-manager', 'notification-manager', 'macro-exporter', 'search-filter', 'script'].map(name => `tools/timed-gathering/${name}.js`)]) {
         vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file });
     }
-    const classes = vm.runInContext('({ TimeCalculator, ListManager, NotificationManager, MacroExporter, SearchFilter, TimedGatheringManager })', context);
+    const classes = vm.runInContext('({ TimeCalculator, GatheringMaterials, ListManager, NotificationManager, MacroExporter, SearchFilter, TimedGatheringManager })', context);
     return { context, ...classes, storage, toasts };
 }
 
@@ -233,17 +233,21 @@ test('without Notification API the complete controller still loads data and list
     assert.equal(app.listManager.getList('default').items.length, 1);
 });
 
-test('ranged and all-day schedules agree across notification windows, sorting and alarm export', () => {
+test('ranged and all-day schedules agree across gathering windows, sorting and alarm export', () => {
     const env = createEnvironment();
     const exporter = new env.MacroExporter();
-    const notification = new env.NotificationManager();
-    const at = (hours, minutes = 0) => ({ hours, minutes, seconds: 0 });
-    const crossMidnight = { time: '22:00-00:00', duration: 55 };
-    assert.equal(notification.isInGatheringWindow(crossMidnight, at(23, 59)), true);
-    assert.equal(notification.isInGatheringWindow(crossMidnight, at(0)), false);
-    assert.equal(notification.isInGatheringWindow({ time: '22:00-02:00' }, at(1)), true);
-    assert.equal(notification.isInGatheringWindow({ time: '全天', duration: 1440 }, at(13)), true);
-    assert.equal(notification.getTimeUntilGathering({ time: '全天', duration: 1440 }, at(13)), -1);
+    // ET times are written as "offset ET days from the day containing T, at hours:minutes"
+    const T = 1_760_000_000_000;
+    const day = Math.floor(T / 4_200_000);
+    const at = (offset, hours, minutes = 0) => Math.round(((day + offset) * 1440 + hours * 60 + minutes) * (175000 / 60));
+    // The duration field is ignored when time is a range, so 55 must not shorten these windows
+    const kindAt = (time, duration, now) => env.GatheringMaterials.state(
+        env.GatheringMaterials.group([{ ...items[0], id: 'x_1', time, duration }])[0], now
+    ).kind;
+    assert.equal(kindAt('22:00-00:00', 55, at(0, 23, 59)), 'now');
+    assert.equal(kindAt('22:00-00:00', 55, at(1, 0)), 'next');
+    assert.equal(kindAt('22:00-02:00', 55, at(0, 1)), 'now');
+    assert.equal(kindAt('全天', 1440, at(0, 13)), 'allday');
     const selected = items.filter(item => ['mining_lightning_quartz', 'botany_iris_root', 'fishing_purple_tongue'].includes(item.id));
     const macro = exporter.generate([...selected].reverse());
     assert.equal(macro.split('\n')[0], '/alarm clear');
