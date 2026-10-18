@@ -50,6 +50,26 @@
 
                     <article class="changelog-entry">
                         <div class="changelog-header">
+                            <h3 class="changelog-version">v2.22.0</h3>
+                            <time class="changelog-date" datetime="2026-10-18">2026年10月18日</time>
+                        </div>
+                        <div class="changelog-content">
+                            <ul>
+                                <li><span class="tag tag-success">新增</span> 天氣預報改成答案優先：選好地區和天氣，第一張卡就寫它下次什麼時候出現、還要等多久、到幾點結束；正在下的時候，改寫到幾點、還剩多久，以及下一次什麼時候</li>
+                                <li><span class="tag tag-success">新增</span> 天氣預報會記住上次選的地區和天氣（連同前置天氣與時段），下次打開直接接著看；別人給的分享連結一樣能用，打開時以連結裡的選擇為準</li>
+                                <li><span class="tag tag-success">新增</span> 答案卡下面列出「之後幾次」，先列 5 次，按「顯示更多」最多看到 50 次</li>
+                                <li><span class="tag tag-success">新增</span> 「提醒我」：在你選的天氣開始前幾分鐘提醒你，預設 5 分鐘，可以改成 1、3、5、10、15 或 30 分鐘；設定的時候離開始已經不到這麼久，就在開始時提醒。每次出現都會提醒，直到你取消。頁面要開著才會響</li>
+                                <li><span class="tag tag-success">新增</span> 提醒到時間時，頁面上會跳出提示並發出提示音，瀏覽器允許的話再加系統通知；通知被封鎖，或瀏覽器不支援、不讓網頁跳通知時，仍然有頁面上的提示和提示音。重新整理或重新打開頁面後，要先在頁面上點一下或按任一個鍵，提示音才會響（瀏覽器的限制）</li>
+                                <li><span class="tag tag-success">新增</span> 提醒有自己的地區和天氣：換地區、換天氣或打開別人的分享連結都不會取消它；答案卡顯示的不是提醒的目標時，上方會多一行「提醒中」，寫出是哪個地區和天氣、下次幾點提醒你，可以直接取消</li>
+                                <li><span class="tag tag-info">改善</span> 地區改成依區域分組的下拉選單，手機上不用再捲過 73 個地區；時段和前置天氣（釣魚用）收進預設收起的「更多條件」</li>
+                                <li><span class="tag tag-info">改善</span> 設了時段（艾歐澤亞時間）時，答案只算時段裡的部分（例如只要夜晚）；連在一起的同一種天氣合成一段，不再算成好幾次</li>
+                                <li><span class="tag tag-info">改善</span> 天氣時刻表放在最下面，拿掉前置天氣欄；「顯示更多」展開後，天氣換期也不會收回去</li>
+                            </ul>
+                        </div>
+                    </article>
+
+                    <article class="changelog-entry">
+                        <div class="changelog-header">
                             <h3 class="changelog-version">v2.21.0</h3>
                             <time class="changelog-date" datetime="2026-10-17">2026年10月17日</time>
                         </div>
