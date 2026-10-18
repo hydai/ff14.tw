@@ -2,58 +2,131 @@
    特殊採集時間管理器 — 只寫版面；顏色、圓角、字級一律來自 tokens.css 與共用元件
    ========================================================================== */
 
-/* 時間與通知：卡片外觀由 .card 提供 */
-.time-display-container {
+/* 用 hidden 切換的元素：.card、.btn、.warning-message 等共用樣式（與下面的規則）設了 display，
+   會蓋過瀏覽器內建的 [hidden] { display: none }，所以要自己寫 */
+#reminders[hidden],
+#reminderMoreBtn[hidden],
+#notifyStatus[hidden] {
+    display: none;
+}
+
+/* 我的提醒：頁面最上面，外觀由 .card 提供；和搜尋框之間的距離由共用的 .tool-content 上方留白提供（同沒有提醒時的時鐘一行） */
+.gx-reminders {
+    padding: var(--space-5);
+    margin-bottom: 0;
+    display: grid;
+    gap: var(--space-3);
+}
+
+/* 標題列：我的提醒 N、網頁提醒開關、通知時間、測試通知，有提醒時時鐘一行也在這裡（最右邊） */
+.gx-reminders-head {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--space-4);
-    margin-bottom: var(--space-6);
-}
-
-.time-display-card {
-    flex: 1 1 220px;
-    padding: var(--space-4) var(--space-5);
-    text-align: center;
-}
-
-.time-label {
-    display: flex;
     align-items: center;
-    justify-content: center;
-    gap: var(--space-1);
-    margin-bottom: var(--space-2);
-    font-size: var(--text-xs);
-    font-weight: var(--weight-semibold);
-    letter-spacing: 0.04em;
+    gap: var(--space-2) var(--space-4);
+}
+
+.gx-reminders-head h2 {
+    margin: 0;
+    font-size: var(--text-xl);
+    color: var(--color-heading);
+}
+
+.gx-count {
     color: var(--color-muted);
+    font-weight: var(--weight-normal);
+    font-size: var(--text-md);
 }
 
-.time-value {
-    font-family: var(--font-mono);
-    font-size: var(--text-2xl);
-    font-weight: var(--weight-bold);
-    line-height: 1;
-    color: var(--color-primary);
-}
-
-.time-value-wrapper {
-    display: flex;
-    align-items: baseline;
-    justify-content: center;
+.gx-lead {
+    display: inline-flex;
+    align-items: center;
     gap: var(--space-2);
-}
-
-.time-period {
     font-size: var(--text-sm);
     color: var(--color-muted);
 }
 
-.notification-compact {
+/* 共用的 .form-control 是整行寬，這裡跟著選項的寬度 */
+#leadSelect {
+    width: auto;
+}
+
+/* 時鐘一行（ET、本地）：有提醒時在標題列最右邊，沒有時在搜尋框上面靠右 */
+.gx-clock {
+    margin-left: auto;
     display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: center;
     gap: var(--space-3);
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+}
+
+.gx-clock b {
+    color: var(--color-heading);
+    font-family: var(--font-mono);
+    font-weight: var(--weight-semibold);
+}
+
+/* 沒有提醒時時鐘一行在這裡；和搜尋框之間的距離由共用的 .tool-content 上方留白提供，
+   時鐘搬進我的提醒之後，空的 #clockSlot 不佔位置 */
+.gx-clock-slot {
+    display: flex;
+}
+
+/* 提醒列：圖示、名稱與狀態行、按鈕 */
+.gx-reminder-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+}
+
+.gx-reminder-list > li {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: var(--space-3);
+    align-items: center;
+    padding: var(--space-3) 0;
+    border-top: 1px solid var(--color-border);
+}
+
+.gx-reminder-list > li:first-child {
+    border-top: 0;
+}
+
+.gx-r-main {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+}
+
+.gx-r-main b {
+    color: var(--color-heading);
+}
+
+.gx-r-where {
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+}
+
+.gx-r-actions {
+    display: flex;
+    gap: var(--space-2);
+}
+
+/* 「顯示全部」靠左，不撐滿整行 */
+#reminderMoreBtn {
+    justify-self: start;
+}
+
+.gx-note {
+    margin: 0;
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+}
+
+/* 通知被封鎖或不支援時的說明：.warning-message 自帶的上下外距由 .gx-reminders 的 gap 取代 */
+#notifyStatus {
+    margin: 0;
 }
 
 /* 工具列 */
@@ -142,8 +215,7 @@
 }
 
 .list-item-type,
-.tag-icon,
-.notification-icon {
+.tag-icon {
     font-size: var(--text-md);
     line-height: 1;
 }
@@ -369,12 +441,6 @@
     margin-top: var(--space-3);
 }
 
-/* 頁面內提醒：共用 .toast 預設不吃滑鼠事件，這裡要能點擊關閉 */
-.gathering-alert {
-    pointer-events: auto;
-    cursor: pointer;
-}
-
 /* 對話框：外觀由 .dialog-overlay / .dialog 提供，這裡只管 ModalManager 的顯示切換 */
 .dialog-overlay {
     display: none;
@@ -422,13 +488,41 @@
     .lists-panel {
         padding: var(--space-4);
     }
+
+    .gx-reminders {
+        margin-bottom: 0;
+        padding: var(--space-4);
+    }
+
+    /* 時鐘一行自己一行、靠左 */
+    .gx-clock {
+        margin-left: 0;
+        width: 100%;
+    }
+
+    /* 提醒列：按鈕和名稱放同一行，狀態行與地點行用名稱以下的整個寬度。
+       名稱、狀態行與地點行的外框（.gx-r-main）不佔格子，三行直接排進列的 grid，行距照原本的 2px */
+    .gx-reminder-list > li {
+        row-gap: 2px;
+    }
+
+    .gx-r-main {
+        display: contents;
+    }
+
+    .gx-reminder > .gx-icon,
+    .gx-r-main > b,
+    .gx-r-actions {
+        grid-row: 1;
+    }
+
+    .gx-r-main > .gx-status,
+    .gx-r-where {
+        grid-column: 2 / -1;
+    }
 }
 
 @media (max-width: 480px) {
-    .time-display-card {
-        flex-basis: 100%;
-    }
-
     .list-item {
         flex-direction: column;
         align-items: stretch;

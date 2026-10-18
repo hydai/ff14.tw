@@ -8,20 +8,22 @@
 //   win.AudioContext = fakeAudioContext(audioLog);
 //
 // - NOTIFICATION_MODES：'default'（requestPermission() 回傳並改成 'granted'）、'granted'、'denied'、'unsupported'（沒有 Notification）、
-//   'throws'（'granted'，但建構時丟錯，同 Android 的 Chrome）
+//   'throws'（'granted'，但建構時丟錯，同 Android 的 Chrome）、'dismissed'（'default'，詢問每次都被關掉：
+//   requestPermission() 回傳 'default'，權限一直是 'default'）
 // - fakeNotification(mode, log)：log.created 記下每則送出的 { title, body, tag }，log.requests 是 requestPermission() 被呼叫幾次
 // - fakeAudioContext(log)：建出來是 suspended、resume() 之後 running；log.beeps 是排了幾聲提示音（oscillator.start() 幾次）
 
-const NOTIFICATION_MODES = ['default', 'granted', 'denied', 'unsupported', 'throws'];
+const NOTIFICATION_MODES = ['default', 'granted', 'denied', 'unsupported', 'throws', 'dismissed'];
 
 // Notification 替身（同 tests/reminder-scheduler.test.js 的 fakeNotification）：permission 和真的一樣，使用者回答之後才改變
 function fakeNotification(mode, log) {
     class FakeNotification {
-        static permission = mode === 'throws' ? 'granted' : mode;
+        static permission = { throws: 'granted', dismissed: 'default' }[mode] ?? mode;
 
         static requestPermission() {
             log.requests += 1;
-            if (FakeNotification.permission === 'default') FakeNotification.permission = 'granted';
+            // 'dismissed'：使用者關掉詢問（沒按允許也沒按封鎖），權限還是 'default'，下次還能再問
+            if (FakeNotification.permission === 'default' && mode !== 'dismissed') FakeNotification.permission = 'granted';
             return Promise.resolve(FakeNotification.permission);
         }
 

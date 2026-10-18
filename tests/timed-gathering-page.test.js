@@ -83,12 +83,21 @@ test('without Notification API the complete controller still loads data and list
     assert.equal(app.data.length, items.length);
     assert.equal(page.cards().length, 34);
     assert.equal(app.elements.listTabs.children.length, 1);
-    assert.equal(page.$('notificationToggle').disabled, true);
-    assert.equal(page.$('testNotificationBtn').disabled, true);
-    assert.equal(page.$('notificationStatus').textContent, '瀏覽器不支援通知');
-    assert.doesNotThrow(() => app.notificationManager.testNotification());
+    // 網頁提醒的開關與測試鈕照樣能用（設計 6.1：不變灰），舊的通知狀態徽章拿掉了
+    for (const id of ['notificationToggle', 'testNotificationBtn']) {
+        assert.ok(!page.$(id).disabled && !page.$(id).hasAttribute('disabled'), `#${id} 不停用`);
+    }
+    isSame(page.$('notificationStatus'), null, '沒有 #notificationStatus');
     page.cardOf('botany_cordia_resin').querySelector('.gx-add-btn').click();
     assert.equal(app.listManager.getList('default').items.length, 2);
+    // 設了提醒：下方寫出這個瀏覽器不能跳通知（到時間只有頁內提示和提示音）
+    page.cardOf('botany_cordia_resin').querySelector('.gx-remind-btn').click();
+    assert.equal(page.$('notificationToggle').checked, true);
+    assert.equal(page.$('notifyStatus').hidden, false);
+    assert.equal(page.$('notifyStatus').textContent, '這個瀏覽器不能跳通知，到時間只會在頁面上提示和發出聲音，或改用遊戲鬧鐘。');
+    assert.doesNotThrow(() => page.$('testNotificationBtn').click());
+    assert.equal(page.document.body.querySelectorAll('.reminder-alert').length, 1, '測試通知照樣有頁內提示');
+    assert.deepEqual(page.consoleErrors, []);
 });
 
 test('list names and search preserve raw ampersands, apostrophes and literal markup as text', async () => {
@@ -154,7 +163,7 @@ test('an input the page creates starts empty: confirming the new-list dialog wit
     assert.ok(page.$('dialogOverlay').classList.contains('active'), 'the dialog stays open');
 });
 
-test('elements on the stand-in have what the page relies on: string values, select() and scrollIntoView()', async () => {
+test('elements on the stand-in have what the page relies on: string values, select(), scrollIntoView() and getBoundingClientRect()', async () => {
     const page = await createGatheringPage();
     // index.html 裡的：沒有 value 屬性是空字串，textarea 沒有文字也是
     assert.equal(page.$('searchInput').value, '');
@@ -176,6 +185,14 @@ test('elements on the stand-in have what the page relies on: string values, sele
         page.document.createElement('div').scrollIntoView();
         page.$('macroOutput').scrollIntoView();
     });
+    // 沒有排版：每個元素量出來的位置都是 0（頁面不會補捲動）；window.scrollBy() 只記下每一次呼叫，不真的捲動
+    for (const element of [page.$('macroOutput'), page.document.createElement('div')]) {
+        const rect = element.getBoundingClientRect();
+        assert.deepEqual([rect.top, rect.bottom, rect.left, rect.right, rect.width, rect.height], [0, 0, 0, 0, 0, 0]);
+    }
+    assert.deepEqual(page.scrolls, []);
+    page.window.scrollBy(0, 5);
+    assert.deepEqual(page.scrolls, [[0, 5]]);
 });
 
 test('with localStorage blocked the page still loads, and what it logs is recorded instead of printed', async t => {
@@ -184,11 +201,12 @@ test('with localStorage blocked the page still loads, and what it logs is record
     assert.equal(page.cards().length, 34);
     assert.ok(page.consoleErrors.length > 0);
     assert.ok(page.consoleErrors.every(entry => entry.includes('SecurityError')), page.consoleErrors.join('\n'));
-    // console.error 與 console.warn 記下 util.format(...參數) 的結果（同 Node 的 console：物件、Symbol 照樣寫得出來）；console.log 什麼都不留
+    // console.error、console.warn 與 console.log 都記下 util.format(...參數) 的結果（同 Node 的 console：物件、Symbol 照樣寫得出來）。
+    // 頁面不該在 console 留下任何東西，所以 console.log 也記：期待 consoleErrors 是空的測試也擋得住多出來的除錯訊息
     page.window.console.warn('careful', 1);
     page.window.console.error('obj', { a: 1 }, Symbol('s'));
-    page.window.console.log('quiet');
-    assert.deepEqual(page.consoleErrors.slice(-2), ['careful 1', 'obj { a: 1 } Symbol(s)']);
+    page.window.console.log('debug', 2);
+    assert.deepEqual(page.consoleErrors.slice(-3), ['careful 1', 'obj { a: 1 } Symbol(s)', 'debug 2']);
     assert.deepEqual(printed.map(spy => spy.mock.callCount()), [0, 0, 0]);
 });
 
@@ -522,11 +540,10 @@ test('清單快滿時一筆都不加：99 筆再加兩個時段的素材', async
 
 test('瀏覽器封鎖網站資料：加入清單照樣把每個時段加進這次的清單，按鈕變成已加入，改跳記不住的警告', async () => {
     const page = await createGatheringPage({ storageThrows: true });
-    // 打開頁面時 ListManager 與 NotificationManager 讀不到存的資料，各記下一筆
+    // 打開頁面時 ListManager 讀不到清單，記下一筆
     const loadErrors = [...page.consoleErrors];
-    assert.equal(loadErrors.length, 2, loadErrors.join('\n'));
+    assert.equal(loadErrors.length, 1, loadErrors.join('\n'));
     assert.match(loadErrors[0], /^載入清單失敗: Error: SecurityError/);
-    assert.match(loadErrors[1], /^載入通知設定失敗: Error: SecurityError/);
     const toastCount = page.toasts.length;
 
     const button = page.cardOf('botany_cordia_resin').querySelector('.gx-add-btn');
@@ -538,10 +555,10 @@ test('瀏覽器封鎖網站資料：加入清單照樣把每個時段加進這�
     assertAdded(button, true);
     assert.equal(page.toasts.length, toastCount + 1, '只跳一個 toast：警告取代「已加入清單」');
     assert.deepEqual(page.toasts.at(-1), { message: '已加入清單，但瀏覽器不讓這個網站存資料，重新整理後就不見了', type: 'warning' });
-    // console 只有打開時讀不到的那兩筆，加上每個時段存不起來各一筆（ListManager 的 saveToStorage() 先記下再丟出來）
-    assert.equal(page.consoleErrors.length, 4, page.consoleErrors.join('\n'));
-    assert.deepEqual(page.consoleErrors.slice(0, 2), loadErrors);
-    for (const entry of page.consoleErrors.slice(2)) assert.match(entry, /^儲存清單失敗: Error: SecurityError/);
+    // console 只有 ListManager 自己記的：打開時讀不到的那一筆，加上每個時段存不起來各一筆（saveToStorage() 先記下再丟出來）
+    assert.equal(page.consoleErrors.length, 3, page.consoleErrors.join('\n'));
+    assert.equal(page.consoleErrors[0], loadErrors[0]);
+    for (const entry of page.consoleErrors.slice(1)) assert.match(entry, /^儲存清單失敗: Error: SecurityError/);
 
     // 再按一次：都在清單裡了，什麼都不做
     button.click();
@@ -904,4 +921,1083 @@ test('篩選時計數是篩選後的種數，倒數只走畫面上的卡片', as
     assert.equal(page.$('itemCount').textContent, '34 種 · 照出現時間排序');
     assert.deepEqual(keysOf(page), expectedKeys(page));
     assert.deepEqual(page.consoleErrors, []);
+});
+
+// ---------- 我的提醒與「提醒我」 ----------
+const KEY = 'ff14tw_timed_gathering_reminders';
+const NOTIFIED_KEY = 'ff14tw_timed_gathering_notified';
+const LEGACY_KEY = 'ff14tw_timed_gathering_notifications';
+const MINUTE = 60_000;
+// 科迪亞樹液塊：ET 00:00、12:00，每次 2 個艾歐澤亞小時（約 6 分鐘）；八面體隕鐵礦石：ET 10:00、22:00
+const CORDIA = 'botany_cordia_resin';
+const OCTA = 'mining_octahedrite_72';
+const CORDIA_PLACE = '雅克特爾樹海 · 瑪姆克　X:35.7, Y:22.3';
+const DENIED_TEXT = '瀏覽器封鎖了這個網站的通知，到時間只會在頁面上提示和發出聲音。可以從網址列左邊的網站設定打開，或改用遊戲鬧鐘。';
+const UNSUPPORTED_TEXT = '這個瀏覽器不能跳通知，到時間只會在頁面上提示和發出聲音，或改用遊戲鬧鐘。';
+
+// localStorage 裡的我的提醒（GatheringReminders 的格式）：keys 照加入的順序，都在 armedAt 設定，網頁提醒也在 armedAt 打開
+const storedReminders = (keys, { enabled = true, lead = 1, armedAt }) => ({
+    [KEY]: JSON.stringify({ enabled, enabledAt: armedAt, leadMinutes: lead, entries: keys.map((key) => ({ key, armedAt })) })
+});
+const savedReminders = (page) => JSON.parse(page.storage.get(KEY));
+// 我的提醒每一列的素材 key，照畫面上的順序
+const rowKeys = (page) => page.$('reminderList').children.map((row) => row.dataset.material);
+const rowOf = (page, key) => page.$('reminderList').querySelector(`[data-material="${key}"]`);
+const cancelBtnOf = (page, key) => rowOf(page, key).querySelector('.gx-cancel-btn');
+const remindBtnOf = (page, key) => page.cardOf(key).querySelector('.gx-remind-btn');
+// 頁內提示：ReminderScheduler.deliver() 加在 body 上的 .reminder-alert（測試裡的 setTimeout 不會自己跑，所以不會收起）
+const alertsOn = (page) => page.document.body.querySelectorAll('.reminder-alert');
+// 元素在、而且本身和祖先都沒有 hidden（fake-dom 看不出 CSS，只看屬性）
+function shown(page, id) {
+    const element = page.$(id);
+    assert.ok(element, `#${id} 不存在`);
+    for (let node = element; node && node.nodeType === 1; node = node.parentNode) {
+        if (node.hidden) return false;
+    }
+    return true;
+}
+// fake-dom 的 click() 不會切換核取方塊，也不會換下拉選單的值：直接設好，再派送 change（同使用者操作後瀏覽器做的）
+function setToggle(page, on) {
+    const toggle = page.$('notificationToggle');
+    toggle.checked = on;
+    toggle.dispatchEvent(new page.window.Event('change', { bubbles: true }));
+}
+function setLead(page, minutes) {
+    const select = page.$('leadSelect');
+    select.value = String(minutes);
+    select.dispatchEvent(new page.window.Event('change', { bubbles: true }));
+}
+
+test('沒有提醒時「我的提醒」不顯示，時鐘一行在搜尋框上面；有提醒時時鐘搬進標題列', async () => {
+    // ET 12:30 再過 1 秒（不落在整分鐘的邊界上）
+    const page = await createGatheringPage({ now: at(0, 12, 30) + 1000 });
+    const M = page.window.GatheringMaterials;
+    assert.equal(shown(page, 'reminders'), false);
+    isSame(page.$('clockLine').parentNode, page.$('clockSlot'), '沒有提醒：時鐘一行在 #clockSlot');
+    isSame(page.$('reminders').nextElementSibling, page.$('clockSlot'), '我的提醒在時鐘的位置上面');
+    isSame(page.$('clockSlot').nextElementSibling, page.document.querySelector('.tool-content'), '時鐘一行緊接在搜尋框那一區前面');
+    assert.equal(page.$('clockEt').textContent, '12:30');
+    assert.equal(page.$('clockLocal').textContent, M.localTime(page.now));
+    // 艾歐澤亞的一分鐘約 2.9 秒：時鐘跟著走
+    page.tick(3000);
+    assert.equal(page.$('clockEt').textContent, '12:31');
+    assert.equal(page.$('clockLocal').textContent, M.localTime(page.now));
+
+    remindBtnOf(page, CORDIA).click();
+    assert.equal(shown(page, 'reminders'), true);
+    isSame(page.$('clockLine').parentNode, page.$('remindersHead'), '有提醒：時鐘一行在我的提醒的標題列');
+    assert.equal(page.$('reminderCount').textContent, '1');
+    page.tick(3000);
+    assert.equal(page.$('clockEt').textContent, '12:32', '搬過去照樣走');
+
+    remindBtnOf(page, CORDIA).click();
+    assert.equal(shown(page, 'reminders'), false);
+    isSame(page.$('clockLine').parentNode, page.$('clockSlot'), '沒有提醒了：搬回搜尋框上面');
+    assert.deepEqual(page.consoleErrors, []);
+
+    // 我的提醒到搜尋框的距離和沒有提醒時時鐘一行到搜尋框一樣，只有共用的 .tool-content 上方留白：
+    // .gx-reminders 的 margin-bottom 是 0（桌機與 ≤768px 的規則都是）
+    const css = read('tools/timed-gathering/style.css');
+    const margins = Array.from(css.matchAll(/\.gx-reminders\s*\{([^}]*)\}/g), (rule) => rule[1].match(/margin-bottom:\s*([^;]+);/)?.[1]);
+    assert.deepEqual(margins, ['0', '0']);
+});
+
+test('按「提醒我」：加進我的提醒，網頁提醒順便打開（只問一次權限、不等回答），按鈕改成已設提醒；再按取消', async () => {
+    // ET 11:00：科迪亞樹液塊與科迪亞原木下一次都是 ET 12:00
+    const page = await createGatheringPage({ now: at(0, 11) });
+    const card = page.cardOf(CORDIA);
+    const button = remindBtnOf(page, CORDIA);
+    assert.equal(button.type, 'button');
+    assert.equal(button.className, 'btn btn-sm btn-outline gx-remind-btn');
+    assert.equal(button.textContent, '🔔 提醒我');
+    assert.equal(button.getAttribute('aria-pressed'), 'false');
+    isSame(button.parentNode, card.querySelector('.gx-actions'), '提醒鈕在卡片的按鈕列');
+    isSame(button.nextElementSibling, card.querySelector('.gx-add-btn'), '提醒鈕在加入清單前面');
+    assert.equal(page.$('notificationToggle').checked, false);
+    assert.equal(page.permissionRequests, 0, '打開頁面時不問權限');
+
+    button.focus();
+    button.click();
+    assert.equal(page.permissionRequests, 1, '在點擊裡問一次權限');
+    assert.equal(page.$('notificationToggle').checked, true, '網頁提醒順便打開');
+    assert.deepEqual(rowKeys(page), [CORDIA]);
+    assert.deepEqual(page.toasts.at(-1), { message: '已設提醒：科迪亞樹液塊', type: 'success' });
+    assert.deepEqual(savedReminders(page), { enabled: true, enabledAt: page.now, leadMinutes: 1, entries: [{ key: CORDIA, armedAt: page.now }] });
+    // 就地更新：還是同一個按鈕、焦點不動、不停用
+    isSame(remindBtnOf(page, CORDIA), button, '還是同一個按鈕');
+    isSame(page.document.activeElement, button, '焦點還在按鈕上');
+    assert.equal(button.textContent, '🔔 已設提醒');
+    assert.equal(button.className, 'btn btn-sm btn-success gx-remind-btn');
+    assert.equal(button.getAttribute('aria-pressed'), 'true');
+    assert.ok(!button.disabled && !button.hasAttribute('disabled'), '提醒鈕不用 disabled');
+    await page.settle();
+
+    // 網頁提醒已經開著、也允許了：再設一個不再問
+    remindBtnOf(page, 'botany_cordia_log_72').click();
+    await page.settle();
+    assert.equal(page.permissionRequests, 1);
+    assert.deepEqual(rowKeys(page), [CORDIA, 'botany_cordia_log_72']);
+
+    // 再按一次：取消
+    button.click();
+    assert.deepEqual(rowKeys(page), ['botany_cordia_log_72']);
+    assert.deepEqual(page.toasts.at(-1), { message: '已取消提醒：科迪亞樹液塊', type: 'info' });
+    isSame(remindBtnOf(page, CORDIA), button, '還是同一個按鈕');
+    isSame(page.document.activeElement, button, '取消之後焦點也不動');
+    assert.equal(button.textContent, '🔔 提醒我');
+    assert.equal(button.className, 'btn btn-sm btn-outline gx-remind-btn');
+    assert.equal(button.getAttribute('aria-pressed'), 'false');
+    remindBtnOf(page, 'botany_cordia_log_72').click();
+    assert.deepEqual(rowKeys(page), []);
+    assert.equal(shown(page, 'reminders'), false);
+    assert.deepEqual(savedReminders(page).entries, []);
+    assert.deepEqual(page.consoleErrors, []);
+
+    // 不等回答：問題一直沒有回答（玩家回到遊戲裡）也已經設好、網頁提醒已經打開
+    const waiting = await createGatheringPage({ now: at(0, 11) });
+    let asked = 0;
+    waiting.window.Notification.requestPermission = () => {
+        asked += 1;
+        return new Promise(() => {});
+    };
+    remindBtnOf(waiting, CORDIA).click();
+    assert.equal(asked, 1, '在點擊裡問');
+    assert.deepEqual(rowKeys(waiting), [CORDIA]);
+    assert.equal(waiting.$('notificationToggle').checked, true);
+    assert.equal(savedReminders(waiting).enabled, true);
+    await waiting.settle();
+    assert.deepEqual(rowKeys(waiting), [CORDIA]);
+});
+
+// 按卡片上的「提醒我」時，頁面最上面的我的提醒冒出來、收起來或多一列少一列，下面的內容整個被推開或拉回，剛按下的按鈕就跑到別處：
+// 捲動位置是 0 時 Chrome 不會自己錨定，Safari 完全沒有，390×844 的手機上按鈕從 y=557 掉到 y=858，掉出畫面。
+// 所以頁面更新前後各量一次按鈕的位置，差了就把頁面捲回去。fake-dom 沒有排版，由測試讓按鈕自己回報畫面上的位置：
+// 它在文件裡的位置（top），加上上面我的提醒的高度（藏著是 0；顯示時 237 加每一列 64，一列就是手機上量到的 301），
+// 再減掉已經捲動的距離（page.scrolls 累加，捲不到負的）。回傳一個函式，讀出按鈕現在在畫面上的位置
+const REMINDERS_BASE_HEIGHT = 237;
+const REMINDER_ROW_HEIGHT = 64;
+function layOutAt(page, button, top) {
+    const scrolledBy = () => page.scrolls.reduce((sum, [, y]) => Math.max(0, sum + y), 0);
+    button.getBoundingClientRect = () => {
+        const rows = page.$('reminderList').children.length;
+        const above = page.$('reminders').hidden ? 0 : REMINDERS_BASE_HEIGHT + REMINDER_ROW_HEIGHT * rows;
+        return { top: top + above - scrolledBy() };
+    };
+    return () => button.getBoundingClientRect().top;
+}
+
+test('按卡片上的「提醒我」：我的提醒把下面的內容推開，頁面捲動同樣的量，按下的按鈕留在畫面上原來的位置；取消、多一列、少一列也一樣', async () => {
+    // ET 11:00：科迪亞樹液塊與科迪亞原木下一次都是 ET 12:00
+    const page = await createGatheringPage({ now: at(0, 11) });
+    const first = remindBtnOf(page, CORDIA);
+    const second = remindBtnOf(page, 'botany_cordia_log_72');
+    const firstTop = layOutAt(page, first, 557);
+    const secondTop = layOutAt(page, second, 700);
+    assert.equal(firstTop(), 557);
+    assert.deepEqual(page.scrolls, [], '還沒按就沒有捲動');
+
+    // 第一個提醒：我的提醒從沒有變成有，下面整個往下 301，頁面往下捲 301，按鈕又在 557
+    first.click();
+    await page.settle();
+    assert.equal(page.$('reminders').hidden, false);
+    assert.deepEqual(page.scrolls, [[0, 301]]);
+    assert.equal(firstTop(), 557, '按下的按鈕留在原位');
+    assert.equal(secondTop(), 700, '頁面整個捲回去，別的按鈕也一樣');
+
+    // 我的提醒已經顯示，再設一個：多一列（64）
+    second.click();
+    await page.settle();
+    assert.equal(page.$('reminderList').children.length, 2);
+    assert.deepEqual(page.scrolls, [[0, 301], [0, 64]]);
+    assert.equal(secondTop(), 700);
+
+    // 取消其中一個：少一列
+    second.click();
+    await page.settle();
+    assert.equal(page.$('reminderList').children.length, 1);
+    assert.deepEqual(page.scrolls, [[0, 301], [0, 64], [0, -64]]);
+    assert.equal(secondTop(), 700);
+
+    // 取消最後一個：我的提醒收起來，下面整個往上 301
+    first.click();
+    await page.settle();
+    assert.equal(page.$('reminders').hidden, true);
+    assert.deepEqual(page.scrolls, [[0, 301], [0, 64], [0, -64], [0, -301]]);
+    assert.equal(firstTop(), 557);
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('按下的按鈕沒有被推開（Chrome 在捲動過的頁面上自己錨定了）或只差 1px 以內：不捲動，超過 1px 才補', async () => {
+    // 位置不跟著我的提醒走：量前量後都是 557，設提醒與取消都不捲動，提醒照樣設好、取消
+    const page = await createGatheringPage({ now: at(0, 11) });
+    const button = remindBtnOf(page, CORDIA);
+    button.getBoundingClientRect = () => ({ top: 557 });
+    button.click();
+    assert.deepEqual(rowKeys(page), [CORDIA]);
+    assert.equal(page.$('reminders').hidden, false);
+    button.click();
+    assert.deepEqual(rowKeys(page), []);
+    assert.equal(page.$('reminders').hidden, true);
+    await page.settle();
+    assert.deepEqual(page.scrolls, []);
+
+    // 我的提醒顯示時按鈕偏了 moved：1px 以內（小數的進位）不動，超過才補，偏多少補多少
+    for (const [moved, expected] of [[0.5, []], [1, []], [-1, []], [1.5, [[0, 1.5]]], [2, [[0, 2]]], [-2, [[0, -2]]]]) {
+        const shifted = await createGatheringPage({ now: at(0, 11) });
+        const target = remindBtnOf(shifted, CORDIA);
+        target.getBoundingClientRect = () => ({ top: 557 + (shifted.$('reminders').hidden ? 0 : moved) });
+        target.click();
+        assert.deepEqual(rowKeys(shifted), [CORDIA], `按鈕偏了 ${moved}px，提醒照樣設好`);
+        assert.deepEqual(shifted.scrolls, expected, `按鈕偏了 ${moved}px`);
+    }
+});
+
+test('提醒列的 ✕ 不補捲動：只有卡片上的「提醒我」會（取消後焦點交給補上來的那一列，不是留在按鈕上）', async () => {
+    const page = await createGatheringPage({ now: at(0, 11) });
+    const button = remindBtnOf(page, CORDIA);
+    const top = layOutAt(page, button, 557);
+    button.click();
+    await page.settle();
+    assert.deepEqual(page.scrolls, [[0, 301]]);
+
+    // 從提醒列取消最後一個：我的提醒收起來，卡片上的按鈕被往上拉了 301，沒有人把頁面捲回去
+    cancelBtnOf(page, CORDIA).click();
+    await page.settle();
+    assert.equal(page.$('reminders').hidden, true);
+    assert.deepEqual(page.scrolls, [[0, 301]], '✕ 沒有捲動');
+    assert.equal(top(), 256, '按鈕確實被拉走了（要是 ✕ 也補捲動，上面就會多一筆 -301）');
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('量不到位置或不能捲動的環境（沒有 getBoundingClientRect() 或 window.scrollBy()）：提醒照樣設好，只是不補捲動', async () => {
+    const page = await createGatheringPage({ now: at(0, 11) });
+    // 按鈕沒有 getBoundingClientRect()
+    const first = remindBtnOf(page, CORDIA);
+    first.getBoundingClientRect = undefined;
+    first.click();
+    assert.deepEqual(rowKeys(page), [CORDIA]);
+    assert.equal(first.getAttribute('aria-pressed'), 'true');
+
+    // window 沒有 scrollBy()：按鈕量得到、也被推開了（多一列），只是沒辦法捲回去
+    const second = remindBtnOf(page, OCTA);
+    const secondTop = layOutAt(page, second, 700);
+    const topBefore = secondTop();
+    page.window.scrollBy = undefined;
+    second.click();
+    await page.settle();
+    assert.deepEqual([...rowKeys(page)].sort(), [CORDIA, OCTA].sort());
+    assert.equal(second.getAttribute('aria-pressed'), 'true');
+    assert.equal(secondTop(), topBefore + REMINDER_ROW_HEIGHT, '被推開了一列，沒有補');
+    assert.deepEqual(page.scrolls, []);
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('詢問被關掉（權限還是 default）：網頁提醒開著時，每按一次「提醒我」都在點擊裡再問；取消不問；到時間照樣有頁內提示和提示音', async () => {
+    // ET 11:00：科迪亞樹液塊、科迪亞原木下一次都是 ET 12:00；八面體隕鐵礦石正在可採（到 ET 12:00）
+    const page = await createGatheringPage({ now: at(0, 11), notification: 'dismissed' });
+    remindBtnOf(page, CORDIA).click();
+    await page.settle();
+    assert.equal(page.permissionRequests, 1, '第一個提醒：網頁提醒順便打開，問一次');
+    assert.equal(page.$('notificationToggle').checked, true);
+    assert.equal(page.window.Notification.permission, 'default', '詢問被關掉：沒有允許也沒有封鎖');
+
+    // 網頁提醒已經開著，權限還是 default：再設一個就再問（允許或封鎖了就不會再跳出詢問，見上一個測試與通知被拒的測試）
+    remindBtnOf(page, 'botany_cordia_log_72').click();
+    assert.equal(page.permissionRequests, 2, '在點擊裡問，不等前一次的回答');
+    await page.settle();
+    remindBtnOf(page, OCTA).click();
+    await page.settle();
+    assert.equal(page.permissionRequests, 3, '三個提醒問三次');
+    assert.deepEqual([...rowKeys(page)].sort(), [CORDIA, OCTA, 'botany_cordia_log_72'].sort());
+
+    // 取消不問：卡片上再按一次、提醒列的取消鈕
+    remindBtnOf(page, OCTA).click();
+    cancelBtnOf(page, 'botany_cordia_log_72').click();
+    await page.settle();
+    assert.equal(page.permissionRequests, 3, '取消不問');
+    assert.deepEqual(rowKeys(page), [CORDIA]);
+
+    // 到時間：頁內提示與提示音照樣有，沒有系統通知
+    page.tick(at(0, 12) - MINUTE - page.now);
+    assert.equal(alertsOn(page).length, 1);
+    assert.equal(page.beeps, 2);
+    assert.equal(page.notifications.length, 0);
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('全天的素材沒有提醒鈕', async () => {
+    const page = await createGatheringPage();
+    isSame(remindBtnOf(page, 'fishing_purple_tongue'), null, '紫色舌尖全天都能採，提醒沒有意義');
+    assert.equal(page.cards().filter((card) => card.querySelector('.gx-remind-btn')).length, 33, '其他 33 種都有');
+});
+
+test('我的提醒先出現的在前，最多先列 5 個，「顯示全部 7 個」，再按收起', async () => {
+    // ET 01:00：雷電石英（00:00–04:00）與科迪亞樹液塊（00:00–02:00）正在可採，剩比較久的在前；其餘照出現時間
+    const now = at(0, 1);
+    const order = ['mining_lightning_quartz', CORDIA, 'mining_fulgrite', 'botany_shaaloani_coffee_72', 'botany_cochineal', 'mining_rhodochrosite_72', OCTA];
+    // 存的順序（加入的順序）打亂
+    const added = [OCTA, CORDIA, 'botany_cochineal', 'mining_lightning_quartz', 'botany_shaaloani_coffee_72', 'mining_rhodochrosite_72', 'mining_fulgrite'];
+    const page = await createGatheringPage({ now, stored: storedReminders(added, { armedAt: now - MINUTE }) });
+    const M = page.window.GatheringMaterials;
+    // 對照：自己用 state 與 compare 排（同卡片），都同分時照資料的順序
+    const expected = Array.from(M.group(items), (material, index) => ({ key: material.key, state: M.state(material, now), index }))
+        .filter((entry) => added.includes(entry.key))
+        .sort((a, b) => M.compare(a.state, b.state) || a.index - b.index)
+        .map((entry) => entry.key);
+    assert.deepEqual(expected, order);
+    assert.equal(page.$('reminderCount').textContent, '7');
+    assert.deepEqual(rowKeys(page), order.slice(0, 5));
+
+    const more = page.$('reminderMoreBtn');
+    assert.equal(more.type, 'button');
+    assert.equal(more.className, 'btn btn-sm btn-ghost');
+    assert.equal(shown(page, 'reminderMoreBtn'), true);
+    assert.equal(more.textContent, '顯示全部 7 個');
+    // 「顯示全部」控制提醒列：aria-controls 指向它，aria-expanded 跟著展開或收起
+    assert.equal(more.getAttribute('aria-controls'), 'reminderList');
+    assert.equal(more.getAttribute('aria-expanded'), 'false', '收起時是 false');
+    const firstFive = page.$('reminderList').children;
+    more.focus();
+    more.click();
+    assert.deepEqual(rowKeys(page), order);
+    assert.equal(more.textContent, '收起');
+    assert.equal(more.getAttribute('aria-expanded'), 'true', '展開時是 true');
+    assert.ok(firstFive.every((row, index) => row === page.$('reminderList').children[index]), '原本的 5 列還是同樣的元素');
+    isSame(page.document.activeElement, more, '焦點還在按鈕上');
+    more.click();
+    assert.deepEqual(rowKeys(page), order.slice(0, 5));
+    assert.equal(more.textContent, '顯示全部 7 個');
+    assert.equal(more.getAttribute('aria-expanded'), 'false', '再按收起又是 false');
+
+    // 剩 5 個：用不到「顯示全部」（展開著也一樣，下次超過時從收起開始）
+    more.click();
+    assert.equal(more.getAttribute('aria-expanded'), 'true');
+    remindBtnOf(page, OCTA).click();
+    remindBtnOf(page, 'mining_rhodochrosite_72').click();
+    assert.equal(page.$('reminderCount').textContent, '5');
+    assert.deepEqual(rowKeys(page), order.slice(0, 5));
+    assert.equal(shown(page, 'reminderMoreBtn'), false);
+    // 又變成 6 個：又是只列前 5 個
+    remindBtnOf(page, 'mining_rhodochrosite_72').click();
+    assert.deepEqual(rowKeys(page), order.slice(0, 5));
+    assert.equal(shown(page, 'reminderMoreBtn'), true);
+    assert.equal(more.textContent, '顯示全部 6 個');
+    assert.equal(more.getAttribute('aria-expanded'), 'false', '從收起開始');
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('手機（480px 以下）我的提醒先列 3 個；視窗跨過 480px 時跟著改，展開著的不收起', async () => {
+    const now = at(0, 1);
+    const order = ['mining_lightning_quartz', CORDIA, 'mining_fulgrite', 'botany_shaaloani_coffee_72', 'botany_cochineal', 'mining_rhodochrosite_72', OCTA];
+    const page = await createGatheringPage({ now, narrow: true, stored: storedReminders(order, { armedAt: now - MINUTE }) });
+    const more = page.$('reminderMoreBtn');
+    assert.deepEqual(rowKeys(page), order.slice(0, 3));
+    assert.equal(more.textContent, '顯示全部 7 個');
+
+    // 放寬：先列 5 個（原本的 3 列是同樣的元素）；再變窄又是 3 個
+    const firstThree = page.$('reminderList').children;
+    page.setNarrow(false);
+    assert.deepEqual(rowKeys(page), order.slice(0, 5));
+    assert.ok(firstThree.every((row, index) => row === page.$('reminderList').children[index]), '原本的 3 列還是同樣的元素');
+    page.setNarrow(true);
+    assert.deepEqual(rowKeys(page), order.slice(0, 3));
+
+    // 展開著的：跨過 480px 也不收起
+    more.click();
+    assert.deepEqual(rowKeys(page), order);
+    page.setNarrow(false);
+    assert.deepEqual(rowKeys(page), order);
+    assert.equal(more.textContent, '收起');
+    page.setNarrow(true);
+    assert.deepEqual(rowKeys(page), order);
+    more.click();
+    assert.deepEqual(rowKeys(page), order.slice(0, 3));
+
+    // 剩 4 個：手機上還是要「顯示全部 4 個」，寬的畫面用不到
+    for (const key of order.slice(4)) remindBtnOf(page, key).click();
+    assert.deepEqual(rowKeys(page), order.slice(0, 3));
+    assert.equal(shown(page, 'reminderMoreBtn'), true);
+    assert.equal(more.textContent, '顯示全部 4 個');
+    page.setNarrow(false);
+    assert.deepEqual(rowKeys(page), order.slice(0, 4));
+    assert.equal(shown(page, 'reminderMoreBtn'), false);
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('768px 以下提醒列的按鈕和名稱放同一行，狀態行與地點行用名稱以下的整個寬度', () => {
+    const css = read('tools/timed-gathering/style.css');
+    const start = css.indexOf('@media (max-width: 768px) {');
+    assert.ok(start !== -1, 'style.css 要有 @media (max-width: 768px)');
+    // @media 裡的規則都有縮排：到下一個在行首的 } 為止
+    const block = css.slice(start, css.indexOf('\n}', start));
+    const ruleIn = (selector) => {
+        const found = block.match(new RegExp(`\\n\\s+${selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\{([^}]*)\\}`));
+        assert.ok(found, `@media (max-width: 768px) 裡要有 ${selector} 的規則`);
+        return found[1];
+    };
+    // 名稱、狀態行與地點行的外框不佔格子，三行直接排進列的 grid
+    assert.match(ruleIn('.gx-r-main'), /display:\s*contents;/);
+    assert.match(ruleIn('.gx-reminder-list > li'), /row-gap:\s*2px;/);
+    assert.match(ruleIn('.gx-reminder > .gx-icon,\n    .gx-r-main > b,\n    .gx-r-actions'), /grid-row:\s*1;/);
+    assert.match(ruleIn('.gx-r-main > .gx-status,\n    .gx-r-where'), /grid-column:\s*2\s*\/\s*-1;/);
+    // 以前把按鈕排到名稱下面的規則拿掉了
+    assert.doesNotMatch(block, /grid-template-columns:\s*auto minmax\(0, 1fr\);/);
+    assert.doesNotMatch(block, /\.gx-r-actions\s*\{\s*grid-column:\s*2;/);
+});
+
+test('每一列：名稱、狀態每秒走、地區 · 地點　座標、取消鈕的 aria-label 有名稱；取消後焦點到下一列的取消鈕', async () => {
+    // ET 12:30：科迪亞樹液塊正在可採（到 ET 14:00）；陽風岩下一次 ET 20:00；八面體隕鐵礦石下一次 ET 22:00
+    const now = at(0, 12, 30);
+    const SUNWIND = 'mining_sunwind_rock_70';
+    const page = await createGatheringPage({ now, stored: storedReminders([OCTA, CORDIA, SUNWIND], { armedAt: now - MINUTE }) });
+    const M = page.window.GatheringMaterials;
+    assert.equal(page.$('reminderList').tagName, 'UL');
+    assert.deepEqual(rowKeys(page), [CORDIA, SUNWIND, OCTA]);
+
+    const row = rowOf(page, CORDIA);
+    assert.equal(row.tagName, 'LI');
+    assert.equal(row.className, 'gx-reminder');
+    const icon = row.querySelector('.gx-icon');
+    assert.equal(icon.textContent, '🌿');
+    assert.equal(icon.getAttribute('aria-hidden'), 'true');
+    assert.equal(textOf(row, '.gx-r-main > b'), '科迪亞樹液塊');
+    const status = row.querySelector('.gx-r-main > .gx-status');
+    const upNow = () => `現在可採 · 還剩 ${M.countdown(at(0, 14) - page.now)}（到 ${M.localTime(at(0, 14))}）`;
+    assert.equal(status.textContent, upNow());
+    assert.ok(status.classList.contains('now'));
+    assert.equal(textOf(row, '.gx-r-main > .gx-r-where'), CORDIA_PLACE);
+    const cancel = row.querySelector('.gx-r-actions > button.gx-cancel-btn');
+    assert.equal(cancel.type, 'button');
+    // 只有 ✕ 的按鈕用共用的 .btn-icon-only（正方形），名稱那一行多一點寬度
+    assert.equal(cancel.className, 'btn btn-sm btn-ghost btn-icon-only gx-cancel-btn');
+    assert.equal(cancel.textContent, '✕');
+    assert.equal(cancel.getAttribute('aria-label'), '取消提醒：科迪亞樹液塊');
+    // 還沒出現的：狀態行同卡片
+    assert.equal(textOf(rowOf(page, OCTA), '.gx-status'), textOf(page.cardOf(OCTA), '.gx-status'));
+    assert.ok(!rowOf(page, OCTA).querySelector('.gx-status').classList.contains('now'));
+    assert.equal(textOf(rowOf(page, SUNWIND), '.gx-r-where'), '永生記憶 · 雷諾德之風　X:10.4, Y:11.0');
+    assert.equal(page.$('reminders').querySelectorAll('.btn-primary').length, 0, '我的提醒裡沒有 .btn-primary');
+
+    // 每秒只換狀態行的文字，列與狀態行都是同一個元素
+    for (let second = 1; second <= 3; second += 1) {
+        const written = status.textContent;
+        page.tick(1000);
+        assert.notEqual(status.textContent, written, `第 ${second} 秒倒數變了`);
+        assert.equal(status.textContent, upNow());
+    }
+    isSame(rowOf(page, CORDIA), row, '還是同一列');
+    isSame(row.querySelector('.gx-status'), status, '還是同一個狀態行');
+
+    // 取消第一列：焦點交給補上這個位置的列（陽風岩）的取消鈕
+    cancel.focus();
+    cancel.click();
+    assert.deepEqual(rowKeys(page), [SUNWIND, OCTA]);
+    assert.equal(page.$('reminderCount').textContent, '2');
+    assert.deepEqual(page.toasts.at(-1), { message: '已取消提醒：科迪亞樹液塊', type: 'info' });
+    assert.equal(remindBtnOf(page, CORDIA).getAttribute('aria-pressed'), 'false', '卡片上的提醒鈕跟著變');
+    assert.deepEqual(savedReminders(page).entries.map((entry) => entry.key), [OCTA, SUNWIND]);
+    isSame(page.document.activeElement, cancelBtnOf(page, SUNWIND), '焦點到下一列的取消鈕');
+    // 取消最後一列：沒有下一列，焦點到上一列
+    cancelBtnOf(page, OCTA).focus();
+    cancelBtnOf(page, OCTA).click();
+    assert.deepEqual(rowKeys(page), [SUNWIND]);
+    isSame(page.document.activeElement, cancelBtnOf(page, SUNWIND), '沒有下一列時到上一列');
+    // 取消剩下的一個：我的提醒收起，焦點到搜尋框
+    cancelBtnOf(page, SUNWIND).click();
+    assert.deepEqual(rowKeys(page), []);
+    assert.equal(shown(page, 'reminders'), false);
+    isSame(page.document.activeElement, page.$('searchInput'), '沒有列了就到搜尋框');
+    assert.deepEqual(savedReminders(page).entries, []);
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('到時間：頁內提示、提示音，允許時加系統通知；同一次只響一次；提早 0 分時寫出現了', async () => {
+    // ET 11:00：科迪亞樹液塊下一次是 ET 12:00（175 秒後）；預設出現前 1 分鐘通知
+    const page = await createGatheringPage({ now: at(0, 11), notification: 'granted' });
+    const M = page.window.GatheringMaterials;
+    remindBtnOf(page, CORDIA).click();
+    await page.settle();
+    const start = at(0, 12);
+    const fireAt = start - MINUTE;
+    const body = `${M.localTime(start)} 開始，到 ${M.localTime(at(0, 14))}（ET 12:00–14:00）· ${CORDIA_PLACE}`;
+
+    page.tick(fireAt - 1000 - page.now);
+    assert.equal(alertsOn(page).length, 0, '還沒到');
+    page.tick(1000);
+    const alerts = alertsOn(page);
+    assert.equal(alerts.length, 1);
+    assert.ok(alerts[0].textContent.startsWith('科迪亞樹液塊 1 分鐘後出現\n'));
+    assert.equal(alerts[0].textContent, `科迪亞樹液塊 1 分鐘後出現\n${body}`);
+    assert.equal(page.beeps, 2);
+    assert.deepEqual(clone(page.notifications), [{ title: '科迪亞樹液塊 1 分鐘後出現', body, tag: `gathering:${CORDIA}|${start}` }]);
+    // 記在 localStorage（這一次自己的項目）：重新整理、另一個分頁都不會再響這一次
+    assert.deepEqual(
+        Array.from(page.storage).filter(([name]) => name.startsWith(`${NOTIFIED_KEY}|`)),
+        [[`${NOTIFIED_KEY}|gathering:${CORDIA}|${start}`, String(start)]]
+    );
+
+    page.tick(1000);
+    assert.equal(alertsOn(page).length, 1, '下一秒不重複');
+    assert.equal(page.beeps, 2);
+    assert.equal(page.notifications.length, 1);
+    assert.deepEqual(rowKeys(page), [CORDIA], '提醒照樣在（一直提醒到取消）');
+
+    // 用選單改成出現時：下一段（隔天 ET 00:00）在開始的那一刻響，標題寫出現了
+    setLead(page, 0);
+    const next = at(1, 0);
+    page.tick(next - 1000 - page.now);
+    assert.equal(alertsOn(page).length, 1, '開始前不響');
+    page.tick(1000);
+    assert.equal(alertsOn(page).length, 2);
+    assert.ok(alertsOn(page)[1].textContent.startsWith('科迪亞樹液塊出現了\n'));
+    assert.equal(page.notifications[1].title, '科迪亞樹液塊出現了');
+    assert.equal(page.notifications[1].body, `${M.localTime(next)} 開始，到 ${M.localTime(at(1, 2))}（ET 00:00–02:00）· ${CORDIA_PLACE}`);
+    assert.equal(page.beeps, 4);
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('背景分頁晚到（電腦睡著）：那一段結束前補一次，標題寫實際還剩幾分鐘，已經開始就寫出現了；整段都過了就不補', async () => {
+    // 出現前 5 分鐘通知，ET 10:00 設的；科迪亞樹液塊下一次是 ET 12:00（約 5 分 50 秒後）
+    const now = at(0, 10);
+    const page = await createGatheringPage({ now, notification: 'granted', stored: storedReminders([CORDIA], { lead: 5, armedAt: now }) });
+    // 睡過提早 5 分鐘的那一刻，開始前 2 分鐘才醒來：補一次，寫 2 分鐘後
+    page.tick(at(0, 12) - 2 * MINUTE - page.now);
+    assert.equal(alertsOn(page).length, 1);
+    assert.equal(page.notifications[0].title, '科迪亞樹液塊 2 分鐘後出現');
+    assert.ok(alertsOn(page)[0].textContent.startsWith('科迪亞樹液塊 2 分鐘後出現\n'));
+    // 醒來後提醒列的倒數直接是現在的（同卡片）
+    assert.equal(textOf(rowOf(page, CORDIA), '.gx-status'), textOf(page.cardOf(CORDIA), '.gx-status'));
+
+    // 下一段（隔天 ET 00:00）開始以後、結束以前才醒來：寫出現了
+    page.tick(at(1, 0) + MINUTE - page.now);
+    assert.equal(alertsOn(page).length, 2);
+    assert.equal(page.notifications[1].title, '科迪亞樹液塊出現了');
+    assert.ok(alertsOn(page)[1].textContent.startsWith('科迪亞樹液塊出現了\n'));
+    assert.ok(rowOf(page, CORDIA).querySelector('.gx-status').classList.contains('now'));
+
+    // 隔天 ET 12:00 那一段整段都睡過去：不補
+    page.tick(at(1, 14) + 1000 - page.now);
+    assert.equal(alertsOn(page).length, 2, '整段都過了就不補');
+    assert.equal(page.notifications.length, 2);
+    // 再下一段照常提早 5 分鐘
+    page.tick(at(2, 0) - 5 * MINUTE - page.now);
+    assert.equal(alertsOn(page).length, 3);
+    assert.equal(page.notifications[2].title, '科迪亞樹液塊 5 分鐘後出現');
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('網頁提醒關掉時到時間什麼都不做；在時段裡才打開，正在進行的那一次不補，下一段照常', async () => {
+    const page = await createGatheringPage({ now: at(0, 10), notification: 'granted' });
+    remindBtnOf(page, CORDIA).click();
+    await page.settle();
+    assert.equal(page.$('notificationToggle').checked, true);
+
+    // 關掉：存起來；提醒清單、卡片上的按鈕與倒數照樣留著
+    setToggle(page, false);
+    assert.equal(savedReminders(page).enabled, false);
+    assert.deepEqual(rowKeys(page), [CORDIA]);
+    assert.equal(remindBtnOf(page, CORDIA).getAttribute('aria-pressed'), 'true');
+    page.tick(at(0, 12) - MINUTE - page.now);
+    page.tick(2 * MINUTE);
+    assert.equal(alertsOn(page).length, 0, '關著：不提示');
+    assert.equal(page.beeps, 0, '關著：不出聲');
+    assert.equal(page.notifications.length, 0, '關著：不跳通知');
+    assert.ok(rowOf(page, CORDIA).querySelector('.gx-status').classList.contains('now'), '倒數照樣走');
+
+    // 在時段裡打開：正在進行的這一次不補
+    setToggle(page, true);
+    await page.settle();
+    assert.equal(savedReminders(page).enabled, true);
+    assert.equal(savedReminders(page).enabledAt, page.now);
+    page.tick(at(0, 14) - 1000 - page.now);
+    assert.equal(alertsOn(page).length, 0, '正在進行的那一次不補');
+    // 下一段照常提早 1 分鐘
+    page.tick(at(1, 0) - MINUTE - page.now);
+    assert.equal(alertsOn(page).length, 1);
+    assert.equal(page.notifications[0].title, '科迪亞樹液塊 1 分鐘後出現');
+    assert.equal(page.permissionRequests, 0, '已經允許了，打開開關也不再問');
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('提醒列切換時重排；焦點在提醒列裡時延後，焦點離開才排，按鈕還是同一個元素', async () => {
+    // ET 12:00 前 1 秒：八面體隕鐵礦石還能採（到 12:00），科迪亞樹液塊 1 秒後出現
+    const now = at(0, 12) - 1000;
+    const page = await createGatheringPage({ now, stored: storedReminders([CORDIA, OCTA], { armedAt: now - MINUTE }) });
+    assert.deepEqual(rowKeys(page), [OCTA, CORDIA]);
+    const rows = page.$('reminderList').children;
+    const button = cancelBtnOf(page, OCTA);
+    button.focus();
+
+    page.tick(1000);
+    // 倒數與標示照樣更新、到時間的提示照樣有（提示之後重畫我的提醒），只是順序先不動，焦點也不動
+    assert.ok(rowOf(page, CORDIA).querySelector('.gx-status').classList.contains('now'));
+    assert.ok(!rowOf(page, OCTA).querySelector('.gx-status').classList.contains('now'));
+    assert.equal(alertsOn(page).length, 1);
+    assert.deepEqual(rowKeys(page), [OCTA, CORDIA], '焦點在提醒列裡：先不排');
+    isSame(page.document.activeElement, button, '焦點還在按鈕上');
+    // 焦點在提醒列裡移動：還在裡面，先不排；沒有切換的下一秒也不排
+    const other = cancelBtnOf(page, CORDIA);
+    other.focus();
+    assert.deepEqual(rowKeys(page), [OCTA, CORDIA]);
+    page.tick(1000);
+    assert.deepEqual(rowKeys(page), [OCTA, CORDIA]);
+    isSame(page.document.activeElement, other);
+
+    // 焦點離開提醒列：照現在的時間排
+    page.$('searchInput').focus();
+    assert.deepEqual(rowKeys(page), [CORDIA, OCTA]);
+    isSame(page.document.activeElement, page.$('searchInput'), '焦點在搜尋框，沒被搶走');
+    assert.ok(page.$('reminderList').children.every((row) => rows.includes(row)), '搬動的是原本的列');
+    isSame(cancelBtnOf(page, OCTA), button, '還是同一顆按鈕');
+
+    // 焦點不在提醒列裡：切換時馬上排（ET 14:00 科迪亞樹液塊結束，下一次是隔天 ET 00:00，排到 ET 22:00 的八面體後面）
+    page.tick(at(0, 14) - page.now);
+    assert.deepEqual(rowKeys(page), [OCTA, CORDIA]);
+    assert.ok(page.$('reminderList').children.every((row) => rows.includes(row)), '搬動的是原本的列');
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('通知被拒或不支援：開關照樣能用，下方寫說明（含「或改用遊戲鬧鐘」）；Android 的 Chrome 丟錯後改寫不支援', async () => {
+    const denied = await createGatheringPage({ now: at(0, 11), notification: 'denied' });
+    assert.equal(shown(denied, 'notifyStatus'), false, '還沒有提醒');
+    remindBtnOf(denied, CORDIA).click();
+    await denied.settle();
+    assert.equal(denied.permissionRequests, 0, '被拒了就不再問');
+    const toggle = denied.$('notificationToggle');
+    assert.equal(toggle.checked, true, '網頁提醒照樣打開');
+    assert.ok(!toggle.disabled && !toggle.hasAttribute('disabled'), '開關不停用');
+    assert.equal(shown(denied, 'notifyStatus'), true);
+    assert.equal(denied.$('notifyStatus').className, 'warning-message');
+    assert.equal(denied.$('notifyStatus').textContent, DENIED_TEXT);
+    assert.ok(denied.$('notifyStatus').textContent.includes('或改用遊戲鬧鐘'));
+    // 開關照樣能關、能開
+    setToggle(denied, false);
+    assert.equal(savedReminders(denied).enabled, false);
+    setToggle(denied, true);
+    await denied.settle();
+    assert.equal(savedReminders(denied).enabled, true);
+    // 到時間：頁內提示與提示音照樣有，沒有系統通知
+    denied.tick(at(0, 12) - MINUTE - denied.now);
+    assert.equal(alertsOn(denied).length, 1);
+    assert.equal(denied.beeps, 2);
+    assert.equal(denied.notifications.length, 0);
+    assert.equal(denied.$('notifyStatus').textContent, DENIED_TEXT);
+
+    // 允許了但跳不出來（Android 的 Chrome）：設好時看不出來；第一次到時間跳不出來之後改寫不支援
+    const android = await createGatheringPage({ now: at(0, 11), notification: 'throws' });
+    remindBtnOf(android, CORDIA).click();
+    await android.settle();
+    assert.equal(shown(android, 'notifyStatus'), false, '還沒試過跳通知');
+    android.tick(at(0, 12) - MINUTE - android.now);
+    assert.equal(alertsOn(android).length, 1);
+    assert.equal(android.beeps, 2);
+    assert.equal(android.notifications.length, 0);
+    assert.equal(shown(android, 'notifyStatus'), true, '第一次跳不出來之後');
+    assert.equal(android.$('notifyStatus').textContent, UNSUPPORTED_TEXT);
+    assert.deepEqual(android.consoleErrors, []);
+});
+
+test('改提早分鐘數：存起來，下一段照新的提早分鐘數提醒', async () => {
+    const now = at(0, 10);
+    const page = await createGatheringPage({ now, notification: 'granted', stored: storedReminders([CORDIA], { armedAt: now }) });
+    const select = page.$('leadSelect');
+    isSame(select.parentNode, page.document.querySelector('#remindersHead > label.gx-lead'), '選單包在 label 裡');
+    assert.equal(textOf(page.document, 'label.gx-lead > span'), '通知時間');
+    assert.equal(select.className, 'form-control form-control-sm');
+    assert.deepEqual(select.children.map((option) => option.getAttribute('value')), ['0', '1', '2', '3', '5', '10']);
+    assert.deepEqual(select.children.map((option) => option.textContent), ['出現時', '出現前 1 分鐘', '出現前 2 分鐘', '出現前 3 分鐘', '出現前 5 分鐘', '出現前 10 分鐘']);
+    assert.equal(select.value, '1', '預設出現前 1 分鐘');
+
+    setLead(page, 5);
+    assert.equal(savedReminders(page).leadMinutes, 5);
+    assert.equal(select.value, '5');
+    page.tick(at(0, 12) - 5 * MINUTE - 1000 - page.now);
+    assert.equal(alertsOn(page).length, 0);
+    page.tick(1000);
+    assert.equal(alertsOn(page).length, 1);
+    assert.equal(page.notifications[0].title, '科迪亞樹液塊 5 分鐘後出現');
+
+    // 重新整理之後照樣是 5 分鐘
+    const reloaded = await createGatheringPage({ now: page.now, stored: Object.fromEntries(page.storage) });
+    assert.equal(reloaded.$('leadSelect').value, '5');
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('另一個分頁新增或取消：這個分頁的我的提醒與卡片按鈕跟著變', async () => {
+    const page = await createGatheringPage({ now: at(0, 10), notification: 'granted' });
+    assert.equal(shown(page, 'reminders'), false);
+    // 另一個分頁設了科迪亞樹液塊（出現前 3 分鐘）
+    page.storage.set(KEY, JSON.stringify({ enabled: true, enabledAt: page.now, leadMinutes: 3, entries: [{ key: CORDIA, armedAt: page.now }] }));
+    page.storageEvent('ff14tw_weather_selection');
+    assert.equal(shown(page, 'reminders'), false, '別的 key：不理');
+    page.storageEvent(KEY);
+    assert.equal(shown(page, 'reminders'), true);
+    assert.deepEqual(rowKeys(page), [CORDIA]);
+    assert.equal(remindBtnOf(page, CORDIA).getAttribute('aria-pressed'), 'true');
+    assert.equal(remindBtnOf(page, CORDIA).textContent, '🔔 已設提醒');
+    assert.equal(page.$('notificationToggle').checked, true);
+    assert.equal(page.$('leadSelect').value, '3');
+
+    // 另一個分頁取消：這裡跟著收起，也不再提醒
+    page.storage.set(KEY, JSON.stringify({ enabled: true, enabledAt: page.now, leadMinutes: 3, entries: [] }));
+    page.storageEvent(KEY);
+    assert.deepEqual(rowKeys(page), []);
+    assert.equal(shown(page, 'reminders'), false);
+    assert.equal(remindBtnOf(page, CORDIA).getAttribute('aria-pressed'), 'false');
+    assert.equal(remindBtnOf(page, CORDIA).textContent, '🔔 提醒我');
+    page.tick(at(0, 12) - 3 * MINUTE - page.now);
+    page.tick(at(0, 12) - page.now);
+    assert.equal(alertsOn(page).length, 0, '取消的不再提醒');
+
+    // 另一個分頁清掉這個網站的資料（storage 事件的 key 是 null）：這裡的提醒也跟著清掉
+    remindBtnOf(page, CORDIA).click();
+    assert.deepEqual(rowKeys(page), [CORDIA]);
+    page.storage.clear();
+    page.storageEvent(null);
+    assert.deepEqual(rowKeys(page), []);
+    assert.equal(remindBtnOf(page, CORDIA).getAttribute('aria-pressed'), 'false');
+    assert.equal(page.$('notificationToggle').checked, false);
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('另一個分頁剛存、這裡還沒收到 storage 事件就改：不蓋掉另一個分頁的，我的提醒與卡片按鈕跟著變', async () => {
+    // ET 12:30：科迪亞樹液塊正在可採；陽風岩下一次 ET 20:00；八面體隕鐵礦石下一次 ET 22:00
+    const now = at(0, 12, 30);
+    const SUNWIND = 'mining_sunwind_rock_70';
+    const page = await createGatheringPage({ now, notification: 'granted', stored: storedReminders([CORDIA], { armedAt: now - MINUTE }) });
+    const savedKeys = () => savedReminders(page).entries.map((entry) => entry.key);
+    // 另一個分頁設了八面體隕鐵礦石：只改 localStorage，不派送 storage 事件（這裡還沒收到）
+    page.storage.set(KEY, storedReminders([CORDIA, OCTA], { armedAt: now - MINUTE })[KEY]);
+    remindBtnOf(page, SUNWIND).click();
+    await page.settle();
+    assert.deepEqual(savedKeys(), [CORDIA, OCTA, SUNWIND], '提醒我沒有蓋掉另一個分頁設的');
+    assert.deepEqual(rowKeys(page), [CORDIA, SUNWIND, OCTA]);
+    assert.equal(remindBtnOf(page, OCTA).textContent, '🔔 已設提醒');
+
+    // 另一個分頁取消了科迪亞樹液塊，這裡改提早分鐘數：取消的不會被帶回來，卡片的按鈕也跟著變
+    page.storage.set(KEY, storedReminders([OCTA, SUNWIND], { armedAt: now - MINUTE })[KEY]);
+    setLead(page, 5);
+    assert.deepEqual(savedKeys(), [OCTA, SUNWIND]);
+    assert.equal(savedReminders(page).leadMinutes, 5);
+    assert.deepEqual(rowKeys(page), [SUNWIND, OCTA]);
+    assert.equal(remindBtnOf(page, CORDIA).textContent, '🔔 提醒我');
+    assert.equal(remindBtnOf(page, CORDIA).getAttribute('aria-pressed'), 'false');
+
+    // 開關也一樣：另一個分頁又設了科迪亞樹液塊，這裡關掉網頁提醒
+    page.storage.set(KEY, storedReminders([OCTA, SUNWIND, CORDIA], { lead: 5, armedAt: now - MINUTE })[KEY]);
+    setToggle(page, false);
+    assert.deepEqual(savedKeys(), [OCTA, SUNWIND, CORDIA]);
+    assert.equal(savedReminders(page).enabled, false);
+    assert.equal(savedReminders(page).leadMinutes, 5);
+    assert.deepEqual(rowKeys(page), [CORDIA, SUNWIND, OCTA]);
+    assert.equal(remindBtnOf(page, CORDIA).textContent, '🔔 已設提醒');
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('瀏覽器封鎖網站資料：這次打開期間照樣能設提醒、會響', async () => {
+    const page = await createGatheringPage({ now: at(0, 11), storageThrows: true, notification: 'granted' });
+    remindBtnOf(page, CORDIA).click();
+    await page.settle();
+    assert.deepEqual(rowKeys(page), [CORDIA]);
+    assert.equal(page.$('notificationToggle').checked, true);
+    assert.equal(remindBtnOf(page, CORDIA).getAttribute('aria-pressed'), 'true');
+    setLead(page, 2);
+    assert.equal(page.$('leadSelect').value, '2');
+
+    page.tick(at(0, 12) - 2 * MINUTE - page.now);
+    assert.equal(alertsOn(page).length, 1);
+    assert.equal(page.notifications[0].title, '科迪亞樹液塊 2 分鐘後出現');
+    page.tick(1000);
+    assert.equal(alertsOn(page).length, 1, '記不住已提醒，這個頁面照樣只響一次');
+    // 記下來的只有讀不到 localStorage 的那幾筆（ListManager 的）
+    assert.ok(page.consoleErrors.every((entry) => entry.includes('SecurityError')), page.consoleErrors.join('\n'));
+});
+
+test('舊使用者：以前開著採集提醒，打開就看到預設清單的素材在我的提醒裡、網頁提醒開著', async () => {
+    const record = (id) => items.find((item) => item.id === id);
+    const stored = {
+        [LEGACY_KEY]: JSON.stringify({ enabled: true }),
+        ...storedLists([record('botany_cordia_resin_1'), record('mining_octahedrite_72_1'), record('fishing_purple_tongue')])
+    };
+    const now = at(0, 11);
+    const page = await createGatheringPage({ now, notification: 'granted', stored });
+    // ET 11:00：八面體隕鐵礦石正在可採（到 12:00）排第一；全天的紫色舌尖不帶過來
+    assert.equal(shown(page, 'reminders'), true);
+    assert.deepEqual(rowKeys(page), [OCTA, CORDIA]);
+    assert.equal(page.$('notificationToggle').checked, true);
+    for (const key of [OCTA, CORDIA]) assert.equal(remindBtnOf(page, key).getAttribute('aria-pressed'), 'true', key);
+    assert.deepEqual(savedReminders(page), { enabled: true, enabledAt: now, leadMinutes: 1, entries: [{ key: CORDIA, armedAt: now }, { key: OCTA, armedAt: now }] });
+    assert.equal(page.storage.get(LEGACY_KEY), stored[LEGACY_KEY], '舊的開關不動');
+    assert.equal(page.storage.get('ff14tw_timed_gathering_lists'), stored.ff14tw_timed_gathering_lists, '清單不動');
+
+    // 網頁提醒開著：到時間就提醒
+    page.tick(at(0, 12) - MINUTE - page.now);
+    assert.equal(alertsOn(page).length, 1);
+    assert.equal(page.notifications[0].title, '科迪亞樹液塊 1 分鐘後出現');
+    assert.equal(page.permissionRequests, 0, '沒有點擊就不問權限');
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('重新整理後還原的提醒：頁面上的點擊或按鍵就解開提示音；網頁提醒關著或沒有提醒時不解開', async () => {
+    const now = at(0, 11);
+    const page = await createGatheringPage({ now, stored: storedReminders([CORDIA], { armedAt: now - MINUTE }) });
+    const scheduler = page.window.ReminderScheduler;
+    const unlock = scheduler.unlockSound;
+    let unlocks = 0;
+    scheduler.unlockSound = function () {
+        unlocks += 1;
+        return unlock.call(this);
+    };
+    // 瀏覽器只讓使用者操作時建立或 resume 的 AudioContext 出聲：沒按過「提醒我」，頁面上的操作都去解開一次
+    const press = (target) => {
+        for (const type of ['pointerdown', 'pointerup', 'keydown']) target.dispatchEvent(new page.window.Event(type, { bubbles: true }));
+    };
+    for (const type of ['pointerdown', 'pointerup', 'keydown']) {
+        const before = unlocks;
+        page.$('itemsContainer').dispatchEvent(new page.window.Event(type, { bubbles: true }));
+        assert.equal(unlocks, before + 1, type);
+    }
+    page.tick(at(0, 12) - MINUTE - page.now);
+    assert.equal(alertsOn(page).length, 1);
+    assert.equal(page.beeps, 2);
+    assert.equal(page.permissionRequests, 0, '沒有點擊就不問權限');
+
+    // 網頁提醒關著：到時間什麼都不做，也就不用解開
+    setToggle(page, false);
+    const off = unlocks;
+    press(page.$('itemsContainer'));
+    assert.equal(unlocks, off);
+
+    // 沒有提醒的頁面：不解開、不替每個訪客建立 AudioContext；「提醒我」在點擊裡自己解開
+    const empty = await createGatheringPage({ now });
+    const BaseAudioContext = empty.window.AudioContext;
+    let contexts = 0;
+    empty.window.AudioContext = class extends BaseAudioContext {
+        constructor() {
+            super();
+            contexts += 1;
+        }
+    };
+    for (const type of ['pointerdown', 'pointerup', 'keydown']) empty.$('itemsContainer').dispatchEvent(new empty.window.Event(type, { bubbles: true }));
+    assert.equal(contexts, 0, '沒有提醒：不建立 AudioContext');
+    remindBtnOf(empty, CORDIA).click();
+    assert.equal(contexts, 1);
+});
+
+test('測試通知：頁內提示與提示音，允許時加系統通知', async () => {
+    for (const [mode, system] of [['granted', 1], ['default', 0], ['denied', 0], ['unsupported', 0]]) {
+        const page = await createGatheringPage({ now: at(0, 11), notification: mode, stored: storedReminders([CORDIA], { armedAt: at(0, 11) }) });
+        const button = page.$('testNotificationBtn');
+        assert.ok(page.$('remindersHead').contains(button), '測試鈕在我的提醒的標題列');
+        assert.equal(button.getAttribute('title'), '測試通知');
+        assert.equal(button.className, 'btn btn-sm btn-ghost');
+        assert.equal(button.type, 'button');
+        button.click();
+        const alerts = alertsOn(page);
+        assert.equal(alerts.length, 1, mode);
+        assert.equal(alerts[0].textContent, 'FF14 採集提醒\n這是一個測試通知，請確認您是否看到了');
+        assert.equal(page.beeps, 2, `${mode}：提示音`);
+        assert.equal(page.notifications.length, system, `${mode}：系統通知`);
+        if (system) {
+            assert.deepEqual(clone(page.notifications), [{ title: 'FF14 採集提醒', body: '這是一個測試通知，請確認您是否看到了', tag: 'ff14tw-gathering-test' }]);
+        }
+        assert.equal(page.permissionRequests, 0, `${mode}：測試不問權限`);
+    }
+});
+
+test('切換語言：提醒列、選項、按鈕換字；之後的通知用新語言', async () => {
+    // ET 11:00：科迪亞樹液塊下一次 ET 12:00、菖蒲根下一次 ET 16:00
+    const now = at(0, 11);
+    const IRIS = 'botany_iris_root';
+    const page = await createGatheringPage({ now, notification: 'denied', stored: storedReminders([CORDIA, IRIS], { armedAt: now }) });
+    const M = page.window.GatheringMaterials;
+    const select = page.$('leadSelect');
+    const rows = page.$('reminderList').children;
+    assert.deepEqual(rowKeys(page), [CORDIA, IRIS]);
+
+    page.setLang('en');
+    const row = rowOf(page, CORDIA);
+    isSame(row, rows[0], '換語言不重建列');
+    assert.equal(textOf(row, '.gx-r-main > b'), 'Cordia Resin');
+    assert.equal(textOf(row, '.gx-r-where'), "Yak T'el · Mamook　X:35.7, Y:22.3");
+    assert.equal(textOf(row, '.gx-status'), `Appears at ${M.localTime(at(0, 12))} · in ${M.countdown(at(0, 12) - page.now)}`);
+    assert.equal(cancelBtnOf(page, CORDIA).getAttribute('aria-label'), 'Cancel reminder: Cordia Resin');
+    assert.deepEqual(select.children.map((option) => option.textContent), ['When it appears', '1 min before', '2 min before', '3 min before', '5 min before', '10 min before']);
+    assert.equal(select.value, '1', '換語言不改選取');
+    assert.equal(remindBtnOf(page, CORDIA).textContent, '🔔 Reminder on');
+    assert.equal(remindBtnOf(page, 'botany_cordia_log_72').textContent, '🔔 Remind me');
+    assert.equal(textOf(page.$('remindersTitle'), 'span'), 'My reminders');
+    assert.equal(page.$('notifyStatus').textContent, "Your browser blocks notifications from this site, so you'll only get an on-page alert and a sound. You can allow them in the site settings next to the address bar, or use the in-game alarm.");
+    // 之後的通知用英文
+    page.tick(at(0, 12) - MINUTE - page.now);
+    const body = `${M.localTime(at(0, 12))}–${M.localTime(at(0, 14))} (ET 12:00–14:00) · Yak T'el · Mamook　X:35.7, Y:22.3`;
+    assert.equal(alertsOn(page)[0].textContent, `Cordia Resin appears in 1 min\n${body}`);
+    // 設好、取消的提示也是英文
+    remindBtnOf(page, CORDIA).click();
+    assert.deepEqual(page.toasts.at(-1), { message: 'Reminder cancelled: Cordia Resin', type: 'info' });
+    remindBtnOf(page, CORDIA).click();
+    assert.deepEqual(page.toasts.at(-1), { message: 'Reminder set: Cordia Resin', type: 'success' });
+
+    page.setLang('ja');
+    assert.equal(textOf(rowOf(page, CORDIA), '.gx-r-main > b'), 'コーディア樹液塊');
+    assert.equal(textOf(rowOf(page, CORDIA), '.gx-r-where'), 'ヤクテル樹海 · マムーク　X:35.7, Y:22.3');
+    assert.equal(cancelBtnOf(page, CORDIA).getAttribute('aria-label'), '通知を取り消す：コーディア樹液塊');
+    assert.deepEqual(select.children.map((option) => option.textContent), ['出現時', '1分前', '2分前', '3分前', '5分前', '10分前']);
+    assert.equal(remindBtnOf(page, CORDIA).textContent, '🔔 通知中');
+    assert.equal(remindBtnOf(page, 'botany_cordia_log_72').textContent, '🔔 通知する');
+    assert.equal(page.$('notifyStatus').textContent, 'このサイトの通知はブラウザでブロックされています。時間になるとページ上の表示と音でお知らせします。アドレスバー左のサイト設定から許可するか、ゲーム内アラームを使ってください。');
+    // 隔天 ET 00:00 那一次用日文（菖蒲根的 ET 16:00 那一段整段睡過去，不補）
+    page.tick(at(1, 0) - MINUTE - page.now);
+    assert.equal(alertsOn(page).length, 2);
+    const jaBody = `${M.localTime(at(1, 0))}開始、${M.localTime(at(1, 2))}まで（ET 00:00–02:00）・ヤクテル樹海 · マムーク　X:35.7, Y:22.3`;
+    assert.equal(alertsOn(page)[1].textContent, `コーディア樹液塊が1分後に出現\n${jaBody}`);
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('採集物資料載入失敗：我的提醒不出現，也不動存著的提醒與舊的採集提醒（下次載入成功時照樣遷移）', async () => {
+    const legacy = JSON.stringify({ enabled: true });
+    const stored = { [LEGACY_KEY]: legacy, ...storedLists([items[0]]) };
+    // 以前開著採集提醒、還沒遷移的人：資料（items 不是陣列）載入失敗
+    const fresh = await createGatheringPage({ items: null, stored });
+    assert.equal(fresh.storage.has(KEY), false, '沒有遷移成空的我的提醒');
+    assert.equal(fresh.storage.get(LEGACY_KEY), legacy, '舊的開關不動');
+    assert.equal(shown(fresh, 'reminders'), false);
+    isSame(fresh.$('clockLine').parentNode, fresh.$('clockSlot'));
+    assert.equal(fresh.$('errorMessage').textContent, '載入採集物資料失敗，請重新整理頁面再試');
+    assert.equal(fresh.consoleErrors.length, 1, fresh.consoleErrors.join('\n'));
+    assert.ok(fresh.consoleErrors[0].startsWith('載入資料失敗:'), fresh.consoleErrors[0]);
+    // 計時器、另一個分頁的 storage 事件、頁面上的按鍵都照樣不出錯，也不寫任何提醒
+    fresh.tick(1000);
+    fresh.storageEvent(KEY);
+    fresh.storageEvent(null);
+    fresh.$('searchInput').dispatchEvent(new fresh.window.Event('keydown', { bubbles: true }));
+    assert.equal(fresh.storage.has(KEY), false);
+    assert.equal(fresh.consoleErrors.length, 1, fresh.consoleErrors.join('\n'));
+
+    // 已經有提醒的人：存著的原封不動，到時間也不提醒、不記已提醒
+    const reminders = storedReminders([CORDIA], { armedAt: T - MINUTE });
+    const kept = await createGatheringPage({ items: null, stored: { ...reminders, [LEGACY_KEY]: legacy } });
+    kept.tick(at(1, 0) - kept.now);
+    kept.tick(at(1, 12) - kept.now);
+    assert.equal(kept.storage.get(KEY), reminders[KEY]);
+    assert.ok(![...kept.storage.keys()].some((name) => name.startsWith(`${NOTIFIED_KEY}|`)), '沒有已提醒的紀錄');
+    assert.equal(alertsOn(kept).length, 0);
+    assert.equal(shown(kept, 'reminders'), false);
+    assert.equal(kept.consoleErrors.length, 1, kept.consoleErrors.join('\n'));
+
+    // 之後資料載入成功：照樣遷移
+    const later = await createGatheringPage({ stored: Object.fromEntries(fresh.storage) });
+    assert.deepEqual(rowKeys(later), [CORDIA]);
+    assert.equal(savedReminders(later).enabled, true);
+});
+
+test('index.html：三張時鐘卡拿掉、用語是艾歐澤亞；腳本順序；不再載入 notification-manager.js', async () => {
+    const html = read('tools/timed-gathering/index.html');
+    assert.ok(!html.includes('time-display-container'));
+    for (const id of ['localTimeDisplay', 'eorzeaTimeDisplay', 'etPeriod', 'notificationStatus']) assert.ok(!html.includes(`id="${id}"`), `#${id} 要拿掉`);
+    for (const file of ['tools/timed-gathering/index.html', TRANSLATIONS, ...fs.readdirSync(path.join(__dirname, '../tools/timed-gathering')).map((name) => `tools/timed-gathering/${name}`)]) {
+        assert.ok(!read(file).includes('艾歐爾傑亞'), `${file} 要寫艾歐澤亞`);
+    }
+    const scripts = [...html.matchAll(/<script src="([^"]+)"/g)].map((m) => m[1]);
+    const position = (src) => {
+        assert.ok(scripts.includes(src), `index.html 要載入 ${src}`);
+        return scripts.indexOf(src);
+    };
+    assert.ok(position('../../assets/js/security-utils.js') < position('../../assets/js/reminder-scheduler.js'));
+    assert.ok(position('../../assets/js/reminder-scheduler.js') < position('time-calculator.js'), '共用的提醒排程在工具自己的腳本之前');
+    assert.equal(position('gathering-materials.js'), position('time-calculator.js') + 1);
+    assert.equal(position('gathering-reminders.js'), position('gathering-materials.js') + 1);
+    assert.ok(position('gathering-reminders.js') < position('script.js'));
+    assert.ok(!scripts.includes('notification-manager.js'), '不再載入 notification-manager.js');
+    assert.equal(fs.existsSync(path.join(__dirname, '../tools/timed-gathering/notification-manager.js')), false, 'notification-manager.js 刪掉了');
+
+    // 我的提醒與時鐘一行的標記
+    const page = await createGatheringPage();
+    const section = page.$('reminders');
+    assert.equal(section.tagName, 'SECTION');
+    assert.equal(section.className, 'card gx-reminders');
+    assert.equal(section.getAttribute('aria-labelledby'), 'remindersTitle');
+    assert.ok(section.hasAttribute('hidden'));
+    assert.deepEqual(section.children.map((child) => child.id || child.className), ['remindersHead', 'reminderList', 'reminderMoreBtn', 'gx-note', 'notifyStatus']);
+    const head = page.$('remindersHead');
+    assert.equal(head.className, 'gx-reminders-head');
+    assert.deepEqual(head.children.map((child) => child.id || child.className), ['remindersTitle', 'toggle', 'gx-lead', 'testNotificationBtn']);
+    assert.equal(page.$('remindersTitle').tagName, 'H2');
+    assert.equal(textOf(page.$('remindersTitle'), 'span[data-i18n="remindersTitle"]'), '我的提醒');
+    assert.equal(page.$('reminderCount').className, 'gx-count');
+    const toggle = page.$('notificationToggle');
+    assert.equal(toggle.getAttribute('type'), 'checkbox');
+    isSame(toggle.parentNode, head.querySelector('label.toggle'));
+    assert.equal(textOf(head, 'label.toggle > span[data-i18n="webReminderToggle"]'), '網頁提醒');
+    assert.ok(head.querySelector('label.toggle > span.toggle-track'));
+    assert.equal(page.$('testNotificationBtn').getAttribute('data-i18n'), 'testNotificationButtonShort');
+    assert.equal(page.$('testNotificationBtn').getAttribute('data-i18n-attr'), 'title');
+    assert.equal(page.$('reminderList').className, 'gx-reminder-list');
+    assert.ok(page.$('reminderMoreBtn').hasAttribute('hidden'));
+    assert.equal(textOf(section, 'p.gx-note'), '頁面要開著才會響。');
+    assert.ok(page.$('notifyStatus').hasAttribute('hidden'));
+    assert.equal(page.$('clockSlot').className, 'gx-clock-slot');
+    assert.equal(page.$('clockLine').className, 'gx-clock');
+    assert.equal(textOf(page.$('clockLine'), 'span[data-i18n="clockEt"]'), 'ET');
+    assert.equal(textOf(page.$('clockLine'), 'span[data-i18n="clockLocal"]'), '本地');
+    assert.equal(page.$('clockEt').tagName, 'B');
+    assert.equal(page.$('clockLocal').tagName, 'B');
+});
+
+test('頁面上每一個用 hidden 切換的元素在 style.css 都有 display: none', () => {
+    // fake-dom 看不出「設了 hidden 卻沒藏起來」：.card、.btn、.warning-message 等共用樣式設了 display，會蓋過瀏覽器內建的 [hidden]
+    const css = read('tools/timed-gathering/style.css');
+    const html = read('tools/timed-gathering/index.html');
+    for (const id of ['reminders', 'reminderMoreBtn', 'notifyStatus']) {
+        assert.ok(html.includes(` id="${id}"`), `index.html 要有 #${id}`);
+        assert.match(css, new RegExp(`#${id}\\[hidden\\][^{]*\\{\\s*display:\\s*none;`), `style.css 要有 #${id}[hidden] { display: none; }`);
+    }
+});
+
+test('我的提醒與通知的文字三語都有；舊的時鐘與通知文字拿掉', () => {
+    const expected = {
+        remindersTitle: ['我的提醒', 'My reminders', 'マイ通知'],
+        webReminderToggle: ['網頁提醒', 'Page alerts', 'ページ通知'],
+        leadLabel: ['通知時間', 'Notify', '通知'],
+        leadOptionAtStart: ['出現時', 'When it appears', '出現時'],
+        leadOption: ['出現前 {n} 分鐘', '{n} min before', '{n}分前'],
+        clockEt: ['ET', 'ET', 'ET'],
+        clockLocal: ['本地', 'Local', 'ローカル'],
+        remindersNote: ['頁面要開著才會響。', 'Keep this page open to get them.', 'このページを開いたままにしてください。'],
+        showAllReminders: ['顯示全部 {count} 個', 'Show all {count}', 'すべて表示（{count}件）'],
+        showFewerReminders: ['收起', 'Show fewer', '折りたたむ'],
+        remindButton: ['提醒我', 'Remind me', '通知する'],
+        remindSetButton: ['已設提醒', 'Reminder on', '通知中'],
+        cancelReminderLabel: ['取消提醒：{name}', 'Cancel reminder: {name}', '通知を取り消す：{name}'],
+        reminderAddedToast: ['已設提醒：{name}', 'Reminder set: {name}', '通知を設定しました：{name}'],
+        reminderRemovedToast: ['已取消提醒：{name}', 'Reminder cancelled: {name}', '通知を取り消しました：{name}'],
+        notifyTitle: ['{name} {n} 分鐘後出現', '{name} appears in {n} min', '{name}が{n}分後に出現'],
+        notifyTitleNow: ['{name}出現了', '{name} is up now', '{name}が出現しました'],
+        notifyBody: ['{start} 開始，到 {end}（{et}）· {place}', '{start}–{end} ({et}) · {place}', '{start}開始、{end}まで（{et}）・{place}'],
+        notifyDenied: [
+            DENIED_TEXT,
+            "Your browser blocks notifications from this site, so you'll only get an on-page alert and a sound. You can allow them in the site settings next to the address bar, or use the in-game alarm.",
+            'このサイトの通知はブラウザでブロックされています。時間になるとページ上の表示と音でお知らせします。アドレスバー左のサイト設定から許可するか、ゲーム内アラームを使ってください。'
+        ],
+        notifyUnsupported: [
+            UNSUPPORTED_TEXT,
+            "This browser can't show notifications, so you'll only get an on-page alert and a sound, or use the in-game alarm.",
+            'このブラウザは通知を表示できません。時間になるとページ上の表示と音でお知らせします。ゲーム内アラームも使えます。'
+        ],
+        // 留著：測試通知用
+        notificationTitle: ['FF14 採集提醒', 'FF14 Gathering Reminder', 'FF14 採集リマインダー'],
+        testNotificationButtonShort: ['測試通知', 'Test Notification', '通知テスト']
+    };
+    const removed = [
+        'localTimeLabel', 'eorzeaTimeLabel', 'dayTime', 'nightTime', 'notificationLabel', 'notificationToggleLabel',
+        'notificationDisabled', 'notificationEnabled', 'notificationPermissionDenied', 'notificationNotSupported', 'notificationHint',
+        'notificationBodyTemplate', 'testNotificationButton', 'visualNotificationTitle', 'visualNotificationBody',
+        'visualNotificationTime', 'visualNotificationLocation', 'testItemName', 'testZoneName'
+    ];
+    ['zh', 'en', 'ja'].forEach((lang, index) => {
+        const values = translationValues(TRANSLATIONS, lang);
+        for (const [key, texts] of Object.entries(expected)) assert.equal(values.get(key), texts[index], `${lang} ${key}`);
+        assert.ok(values.has('testNotificationBody'), `${lang} testNotificationBody 留著`);
+        for (const key of removed) assert.ok(!values.has(key), `${lang} ${key} 要拿掉`);
+    });
 });

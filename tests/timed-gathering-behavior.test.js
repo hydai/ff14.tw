@@ -7,60 +7,22 @@ const vm = require('node:vm');
 const items = require('../data/timed-gathering.json').items;
 const root = path.resolve(__dirname, '..');
 
-// Keep browser globals isolated while executing the real controllers and modules.
+// Keep browser globals isolated while executing the real modules. The page itself (the controller in script.js)
+// runs on the fake DOM in tests/timed-gathering-page.test.js, so only what these modules touch is provided here:
+// localStorage (ListManager), FF14Utils.getI18nText (ListManager's messages) and console.error (ListManager's failures).
 function createEnvironment() {
-    const nodes = [];
-    function element(tag = 'div') {
-        const node = {
-            tagName: tag, children: [], dataset: {}, attributes: {}, style: {}, value: '', className: '',
-            appendChild(child) { this.children.push(child); return child; },
-            removeChild(child) { this.children.splice(this.children.indexOf(child), 1); },
-            get firstChild() { return this.children[0]; },
-            set textContent(value) { this.text = String(value); this.children = []; },
-            get textContent() { return (this.text || '') + this.children.map(child => child.textContent).join(''); },
-            setAttribute(name, value) { this.attributes[name] = String(value); },
-            getAttribute(name) { return this.attributes[name]; },
-            addEventListener() {}, scrollIntoView() {}, select() {}, focus() {},
-            querySelectorAll(selector) {
-                const descendants = this.children.flatMap(child => [child, ...child.querySelectorAll('*')]);
-                return descendants.filter(child => selector === '*' || (selector.startsWith('.')
-                    ? selector.slice(1).split('.').every(name => child.className.split(' ').includes(name))
-                    : child.tagName === selector));
-            },
-            querySelector(selector) { return this.querySelectorAll(selector)[0] || null; }
-        };
-        node.classList = {
-            add(...names) { node.className = [...new Set([...node.className.split(' ').filter(Boolean), ...names])].join(' '); },
-            remove(...names) { node.className = node.className.split(' ').filter(name => !names.includes(name)).join(' '); },
-            toggle(name, force) { const enabled = force ?? !node.className.split(' ').includes(name); this[enabled ? 'add' : 'remove'](name); return enabled; }
-        };
-        nodes.push(node);
-        return node;
-    }
     const storage = new Map();
-    const toasts = [];
     const context = vm.createContext({
-        console: { log() {}, error() {}, warn() {} },
-        document: {
-            createElement: element,
-            createTextNode(text) { const node = element('#text'); node.textContent = text; return node; },
-            getElementById(id) { let node = nodes.find(candidate => candidate.id === id); if (!node) { node = element(); node.id = id; } return node; },
-            querySelectorAll() { return []; }, addEventListener() {}
-        },
+        console: { error() {} },
         localStorage: { getItem: key => storage.get(key) ?? null, setItem: (key, value) => storage.set(key, value) },
-        FF14Utils: { getI18nText: (key, fallback, values = {}) => fallback.replace(/\{(\w+)\}/g, (_, name) => values[name]), showToast: (message, type) => toasts.push({ message, type }) },
-        i18n: { getCurrentLanguage: () => 'zh', onLanguageChange() {} },
-        ModalManager: class { show() {} hide() {} },
-        FileReader: class { readAsText(text) { this.onload({ target: { result: text } }); } },
-        fetch: async () => ({ ok: true, text: async () => JSON.stringify({ items }) }),
-        setInterval: () => 1, clearInterval() {}, setTimeout() {}, clearTimeout() {}
+        FF14Utils: { getI18nText: (key, fallback, values = {}) => fallback.replace(/\{(\w+)\}/g, (_, name) => values[name]) }
     });
     context.window = context;
-    for (const file of ['assets/js/security-utils.js', ...['time-calculator', 'gathering-materials', 'list-manager', 'notification-manager', 'macro-exporter', 'search-filter', 'script'].map(name => `tools/timed-gathering/${name}.js`)]) {
+    for (const file of ['time-calculator', 'gathering-materials', 'list-manager', 'macro-exporter', 'search-filter'].map(name => `tools/timed-gathering/${name}.js`)) {
         vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file });
     }
-    const classes = vm.runInContext('({ TimeCalculator, GatheringMaterials, ListManager, NotificationManager, MacroExporter, SearchFilter, TimedGatheringManager })', context);
-    return { context, ...classes, storage, toasts };
+    const classes = vm.runInContext('({ TimeCalculator, GatheringMaterials, ListManager, MacroExporter, SearchFilter })', context);
+    return { context, ...classes, storage };
 }
 
 const clone = value => JSON.parse(JSON.stringify(value));

@@ -6,13 +6,7 @@ window.TimedGatheringTranslations = {
         // 頁面標題和標頭
         pageTitle: '特殊採集時間管理器',
         pageDescription: 'FF14 特殊採集時間管理工具，支援搜尋、多清單管理、巨集匯出功能',
-        
-        // 時間顯示
-        localTimeLabel: '本地時間 (LT)',
-        eorzeaTimeLabel: '艾歐爾傑亞時間 (ET)',
-        dayTime: '白天',
-        nightTime: '夜晚',
-        
+
         // 搜尋和篩選
         searchPlaceholder: '用中文、日文或英文搜尋',
         clearButton: '清除',
@@ -145,40 +139,39 @@ window.TimedGatheringTranslations = {
         addedItemsToList: '已新增 {count} 個項目到目標清單',
         listMaxItems: '清單最多只能包含 {max} 個項目',
         itemAlreadyInListSimple: '此採集物已在清單中',
-        
-        // 通知功能
-        notificationLabel: '採集提醒',
-        notificationToggleLabel: '啟用採集通知提醒',
-        notificationDisabled: '已停用',
-        notificationEnabled: '已啟用',
-        notificationPermissionDenied: '通知權限被拒絕',
-        notificationNotSupported: '瀏覽器不支援通知',
-        notificationHint: '採集時間到達時發送瀏覽器通知提醒',
-        notificationTitle: 'FF14 採集提醒',
-        notificationBodyTemplate: '{itemName} 現在可以採集了！\n地點：{zone} {location}\n座標：{coordinates}',
-        testNotificationButton: '🔔 測試',
-        testNotificationButtonShort: '測試通知',
 
-        // 視覺通知文字
-        visualNotificationTitle: '🔔 採集提醒',
-        visualNotificationBody: '{itemName} 現在可以採集了！',
-        visualNotificationTime: '時間',
-        visualNotificationLocation: '地點',
-        testItemName: '測試物品',
-        testZoneName: '測試地區',
+        // 我的提醒、網頁提醒與時鐘
+        remindersTitle: '我的提醒',
+        webReminderToggle: '網頁提醒',
+        leadLabel: '通知時間',
+        leadOptionAtStart: '出現時',
+        leadOption: '出現前 {n} 分鐘',
+        clockEt: 'ET',
+        clockLocal: '本地',
+        remindersNote: '頁面要開著才會響。',
+        showAllReminders: '顯示全部 {count} 個',
+        showFewerReminders: '收起',
+        remindButton: '提醒我',
+        remindSetButton: '已設提醒',
+        cancelReminderLabel: '取消提醒：{name}',
+        reminderAddedToast: '已設提醒：{name}',
+        reminderRemovedToast: '已取消提醒：{name}',
+        notifyTitle: '{name} {n} 分鐘後出現',
+        notifyTitleNow: '{name}出現了',
+        notifyBody: '{start} 開始，到 {end}（{et}）· {place}',
+        notifyDenied: '瀏覽器封鎖了這個網站的通知，到時間只會在頁面上提示和發出聲音。可以從網址列左邊的網站設定打開，或改用遊戲鬧鐘。',
+        notifyUnsupported: '這個瀏覽器不能跳通知，到時間只會在頁面上提示和發出聲音，或改用遊戲鬧鐘。',
+
+        // 測試通知
+        notificationTitle: 'FF14 採集提醒',
+        testNotificationButtonShort: '測試通知',
         testNotificationBody: '這是一個測試通知，請確認您是否看到了'
     },
     ja: {
         // 頁面標題和標頭
         pageTitle: 'タイムド採集管理',
         pageDescription: 'FF14 タイムド採集管理ツール、検索、複数リスト管理、マクロエクスポート機能対応',
-        
-        // 時間顯示
-        localTimeLabel: 'ローカル時間 (LT)',
-        eorzeaTimeLabel: 'エオルゼア時間 (ET)',
-        dayTime: '昼',
-        nightTime: '夜',
-        
+
         // 搜尋和篩選
         searchPlaceholder: '日・英・中国語で検索',
         clearButton: 'クリア',
@@ -311,39 +304,38 @@ window.TimedGatheringTranslations = {
         addedItemsToList: '追加しました：{0} 個のアイテム',
         listMaxItems: 'リストには最大 {max} 個のアイテムまで',
         itemAlreadyInListSimple: 'このアイテムは既にリストに存在します',
-        
-        // 通知機能
-        notificationLabel: '採集リマインダー',
-        notificationToggleLabel: '採集通知リマインダーを有効にする',
-        notificationDisabled: '無効',
-        notificationEnabled: '有効',
-        notificationPermissionDenied: '通知の許可が拒否されました',
-        notificationNotSupported: 'ブラウザは通知をサポートしていません',
-        notificationHint: '採集時間になったらブラウザ通知でお知らせします',
-        notificationTitle: 'FF14 採集リマインダー',
-        notificationBodyTemplate: '{itemName} が採集可能になりました！\n場所：{zone} {location}\n座標：{coordinates}',
-        testNotificationButton: '🔔 テスト',
-        testNotificationButtonShort: '通知テスト',
 
-        // ビジュアル通知テキスト
-        visualNotificationTitle: '🔔 採集リマインダー',
-        visualNotificationBody: '{itemName} が採集可能になりました！',
-        visualNotificationTime: '時間',
-        visualNotificationLocation: '場所',
-        testItemName: 'テストアイテム',
-        testZoneName: 'テストエリア',
+        // マイ通知、ページ通知と時計
+        remindersTitle: 'マイ通知',
+        webReminderToggle: 'ページ通知',
+        leadLabel: '通知',
+        leadOptionAtStart: '出現時',
+        leadOption: '{n}分前',
+        clockEt: 'ET',
+        clockLocal: 'ローカル',
+        remindersNote: 'このページを開いたままにしてください。',
+        showAllReminders: 'すべて表示（{count}件）',
+        showFewerReminders: '折りたたむ',
+        remindButton: '通知する',
+        remindSetButton: '通知中',
+        cancelReminderLabel: '通知を取り消す：{name}',
+        reminderAddedToast: '通知を設定しました：{name}',
+        reminderRemovedToast: '通知を取り消しました：{name}',
+        notifyTitle: '{name}が{n}分後に出現',
+        notifyTitleNow: '{name}が出現しました',
+        notifyBody: '{start}開始、{end}まで（{et}）・{place}',
+        notifyDenied: 'このサイトの通知はブラウザでブロックされています。時間になるとページ上の表示と音でお知らせします。アドレスバー左のサイト設定から許可するか、ゲーム内アラームを使ってください。',
+        notifyUnsupported: 'このブラウザは通知を表示できません。時間になるとページ上の表示と音でお知らせします。ゲーム内アラームも使えます。',
+
+        // テスト通知
+        notificationTitle: 'FF14 採集リマインダー',
+        testNotificationButtonShort: '通知テスト',
         testNotificationBody: 'これはテスト通知です。表示されたかご確認ください'
     },
     en: {
         // Page title and header
         pageTitle: 'Timed Gathering Manager',
         pageDescription: 'FF14 timed gathering management tool with search, multi-list management, and macro export',
-
-        // Time display
-        localTimeLabel: 'Local Time (LT)',
-        eorzeaTimeLabel: 'Eorzea Time (ET)',
-        dayTime: 'Day',
-        nightTime: 'Night',
 
         // Search and filter
         searchPlaceholder: 'Search in EN, JP or ZH-TW',
@@ -478,26 +470,31 @@ window.TimedGatheringTranslations = {
         listMaxItems: 'List can contain maximum of {max} items',
         itemAlreadyInListSimple: 'This item is already in the list',
 
-        // Notification function
-        notificationLabel: 'Gathering Reminder',
-        notificationToggleLabel: 'Enable gathering notification reminder',
-        notificationDisabled: 'Disabled',
-        notificationEnabled: 'Enabled',
-        notificationPermissionDenied: 'Notification permission denied',
-        notificationNotSupported: 'Browser does not support notifications',
-        notificationHint: 'Send browser notification when gathering time arrives',
-        notificationTitle: 'FF14 Gathering Reminder',
-        notificationBodyTemplate: '{itemName} is now available for gathering!\nLocation: {zone} {location}\nCoordinates: {coordinates}',
-        testNotificationButton: '🔔 Test',
-        testNotificationButtonShort: 'Test Notification',
+        // My reminders, page alerts and the clock
+        remindersTitle: 'My reminders',
+        webReminderToggle: 'Page alerts',
+        leadLabel: 'Notify',
+        leadOptionAtStart: 'When it appears',
+        leadOption: '{n} min before',
+        clockEt: 'ET',
+        clockLocal: 'Local',
+        remindersNote: 'Keep this page open to get them.',
+        showAllReminders: 'Show all {count}',
+        showFewerReminders: 'Show fewer',
+        remindButton: 'Remind me',
+        remindSetButton: 'Reminder on',
+        cancelReminderLabel: 'Cancel reminder: {name}',
+        reminderAddedToast: 'Reminder set: {name}',
+        reminderRemovedToast: 'Reminder cancelled: {name}',
+        notifyTitle: '{name} appears in {n} min',
+        notifyTitleNow: '{name} is up now',
+        notifyBody: '{start}–{end} ({et}) · {place}',
+        notifyDenied: "Your browser blocks notifications from this site, so you'll only get an on-page alert and a sound. You can allow them in the site settings next to the address bar, or use the in-game alarm.",
+        notifyUnsupported: "This browser can't show notifications, so you'll only get an on-page alert and a sound, or use the in-game alarm.",
 
-        // Visual notification text
-        visualNotificationTitle: '🔔 Gathering Reminder',
-        visualNotificationBody: '{itemName} is now available for gathering!',
-        visualNotificationTime: 'Time',
-        visualNotificationLocation: 'Location',
-        testItemName: 'Test Item',
-        testZoneName: 'Test Zone',
+        // Test notification
+        notificationTitle: 'FF14 Gathering Reminder',
+        testNotificationButtonShort: 'Test Notification',
         testNotificationBody: 'This is a test notification, please confirm you can see it'
     }
 };

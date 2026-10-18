@@ -8,8 +8,17 @@ class TimedGatheringManager {
         MAX_LISTS: 10,
         // 下一次出現還不到這麼久時，狀態行的「還要」寫 m:ss，否則寫幾分
         SHORT_WAIT_MS: 10 * 60 * 1000,
-        // 每隔這麼久更新一次卡片的倒數（tick()）
-        TICK_INTERVAL_MS: 1000
+        // 每隔這麼久更新一次卡片與我的提醒的倒數（tick()）
+        TICK_INTERVAL_MS: 1000,
+        // 我的提醒最多先列幾個（其餘按「顯示全部」）；手機（NARROW_MEDIA）先列 REMINDERS_SHOWN_NARROW 個，搜尋框才留在第一個畫面
+        REMINDERS_SHOWN: 5,
+        REMINDERS_SHOWN_NARROW: 3,
+        NARROW_MEDIA: '(max-width: 480px)',
+        // localStorage：已經提醒過的每一次（ReminderScheduler 每一次存成一個項目，名字是這個開頭）
+        NOTIFIED_KEY: 'ff14tw_timed_gathering_notified',
+        // 頁面上的這些操作讓之後的提示音放得出來（ReminderScheduler.unlockSound()）。
+        // 觸控到 pointerup 才算一次操作、滑鼠是 pointerdown，所以兩個都聽（同天氣預報）
+        UNLOCK_SOUND_EVENTS: ['pointerdown', 'pointerup', 'keydown']
     };
 
     constructor() {
@@ -21,10 +30,20 @@ class TimedGatheringManager {
         this.shown = [];
         this.scores = new Map();
         this.searchWords = [];
-        // 畫面上的卡片：key -> { card, status, addBtn, kind, start }；kind 與 start 是上一次 tick() 看到的狀態，用來發現切換
+        // 畫面上的卡片：key -> { card, status, addBtn, remindBtn, kind, start }；remindBtn 在全天的素材是 null；
+        // kind 與 start 是上一次 tick() 看到的狀態，用來發現切換
         this.cards = new Map();
-        // 該重排卻因為焦點在卡片清單裡而延後了（焦點離開清單時補排）
-        this.sortPending = false;
+        // 卡片清單的重排（焦點在清單裡時延後，見 keepOrder()）；initializeEvents() 建立
+        this.cardOrder = null;
+        // 我的提醒：GatheringReminders 與 ReminderScheduler，資料載入了才建立（見 initialize()），之前都是 null
+        this.reminders = null;
+        this.scheduler = null;
+        // 我的提醒畫面上的列：key -> { row, name, status, where, cancelBtn }，只有列出來的那幾個
+        this.reminderRows = new Map();
+        // 我的提醒列的重排（同卡片）；initializeReminders() 建立
+        this.reminderOrder = null;
+        // 我的提醒按了「顯示全部」
+        this.remindersExpanded = false;
         this.tickInterval = null;
         this.listManager = null;
         this.macroExporter = null;
@@ -35,6 +54,19 @@ class TimedGatheringManager {
         this.currentLanguage = window.i18n.getCurrentLanguage();
 
         this.elements = {
+            // 我的提醒與時鐘一行
+            reminders: document.getElementById('reminders'),
+            remindersHead: document.getElementById('remindersHead'),
+            reminderCount: document.getElementById('reminderCount'),
+            notificationToggle: document.getElementById('notificationToggle'),
+            leadSelect: document.getElementById('leadSelect'),
+            testNotificationBtn: document.getElementById('testNotificationBtn'),
+            reminderList: document.getElementById('reminderList'),
+            reminderMoreBtn: document.getElementById('reminderMoreBtn'),
+            notifyStatus: document.getElementById('notifyStatus'),
+            clockSlot: document.getElementById('clockSlot'),
+            clockLine: document.getElementById('clockLine'),
+
             // 搜尋與篩選
             searchInput: document.getElementById('searchInput'),
             clearSearchBtn: document.getElementById('clearSearchBtn'),
@@ -91,10 +123,6 @@ class TimedGatheringManager {
             this.macroExporter = new MacroExporter();
             this.searchFilter = new SearchFilter();
             this.timeCalculator = new TimeCalculator();
-            this.notificationManager = new NotificationManager();
-
-            // 將 NotificationManager 實例暴露到全域，以便事件處理器能夠存取
-            window.notificationManager = this.notificationManager;
 
             // 載入資料
             await this.loadData();
@@ -102,8 +130,19 @@ class TimedGatheringManager {
             // 初始化事件
             this.initializeEvents();
 
-            // 初始化通知設定
-            this.initializeNotifications();
+            // 我的提醒：資料載入了才建立。loadData() 失敗時沒有任何素材，GatheringReminders 會認不得存著的提醒
+            // （讀進來就全部丟掉），以前開著採集提醒的人也不能在這時遷移；所以這時「我的提醒」維持隱藏，提醒的儲存一個字都不碰
+            if (this.materials.length > 0) {
+                this.reminders = new GatheringReminders(this.materials);
+                this.scheduler = new ReminderScheduler({
+                    notifiedKey: TimedGatheringManager.CONSTANTS.NOTIFIED_KEY,
+                    getAlerts: (now) => this.reminders.alerts(now),
+                    onDue: (alert) => this.handleReminderDue(alert)
+                });
+                this.initializeReminders();
+                // 每秒檢查一次要不要提醒，分頁切回前景時馬上檢查
+                this.scheduler.start();
+            }
 
             // 載入清單
             this.loadLists();
@@ -111,7 +150,7 @@ class TimedGatheringManager {
             // 初始顯示：照目前的篩選與搜尋框畫出卡片
             this.applyFilters();
 
-            // 每秒更新卡片的倒數，有卡片切換時重排
+            // 每秒更新卡片與我的提醒的倒數，有切換時重排
             this.tickInterval = setInterval(() => this.tick(), TimedGatheringManager.CONSTANTS.TICK_INTERVAL_MS);
 
         } catch (error) {
@@ -185,14 +224,20 @@ class TimedGatheringManager {
         // 還是其他呼叫 window.i18n.setLanguage() 的地方觸發，都只會重繪一次；observer 本身不會呼叫
         // setLanguage()／switchLanguage()，所以不會有「setLanguage → 通知 observer → 又呼叫
         // setLanguage」的遞迴風險。
-        // 語言切換時重新以目前語言重繪：按鈕狀態、採集物卡片（名稱、狀態行、計數）、清單畫面與通知狀態文字
+        // 語言切換時重新以目前語言重繪：按鈕狀態、採集物卡片（名稱、狀態行、計數）、清單畫面，
+        // 以及我的提醒（提早分鐘數的選項、每一列的字、「顯示全部」與通知的說明；有 data-i18n 的由 I18nManager 翻譯）。
+        // 之後才響的提醒在響的時候用那時的語言寫
         // （呼叫的方法與順序沿用原本 switchLanguage() 的重繪部分，只是不再由這裡呼叫 setLanguage()）
         window.i18n.onLanguageChange((lang) => {
             this.currentLanguage = lang;
             this.updateLanguageButtons();
             this.renderItems();
             this.updateListDisplay();
-            this.updateNotificationStatus();
+            if (this.reminders) {
+                this.relabelLeadSelect();
+                this.relabelReminderRows();
+                this.renderReminders();
+            }
         });
 
         // 初始化語言按鈕狀態
@@ -208,14 +253,8 @@ class TimedGatheringManager {
             this.applyFilters();
         });
 
-        // 焦點離開卡片清單時，補上因為焦點在清單裡而延後的重排。
-        // relatedTarget 是接手焦點的元素：還在清單裡（只是在按鈕之間移動）時不排；
-        // 視窗失去焦點時 relatedTarget 是 null，但 document.activeElement 還在清單裡，resortCards() 會繼續延後
-        this.elements.itemsContainer.addEventListener('focusout', (event) => {
-            if (this.sortPending && !this.elements.itemsContainer.contains(event.relatedTarget)) {
-                this.resortCards();
-            }
-        });
+        // 卡片清單的重排：焦點在清單裡時延後，焦點離開清單才排（見 keepOrder()）
+        this.cardOrder = this.keepOrder(this.elements.itemsContainer, (now) => this.arrangeCards(now));
 
         // 類型篩選
         this.elements.typeFilters.querySelectorAll('.chip').forEach(tag => {
@@ -301,61 +340,283 @@ class TimedGatheringManager {
         });
     }
 
-    initializeNotifications() {
-        const notificationToggle = document.getElementById('notificationToggle');
-        const notificationStatus = document.getElementById('notificationStatus');
-        const testNotificationBtn = document.getElementById('testNotificationBtn');
+    /**
+     * 我的提醒：提早分鐘數的選項，開關、選單、測試鈕與「顯示全部」的事件，另一個分頁改了提醒時跟著改，
+     * 頁面上的操作解開提示音；最後畫一次。資料載入了、this.reminders 建好之後才呼叫（initialize()）
+     */
+    initializeReminders() {
+        const { notificationToggle, leadSelect, testNotificationBtn, reminderList, reminderMoreBtn } = this.elements;
 
-        // Notification support is optional; gathering lists still work without it.
-        const state = this.notificationManager.getNotificationState();
-        notificationToggle.checked = state.enabled;
-        notificationToggle.disabled = !state.supported;
-        testNotificationBtn.disabled = !state.supported;
-        this.updateNotificationStatus();
-        if (!state.supported) return;
+        // 提早分鐘數的選項：文字裡有數字，所以在這裡寫（不用 data-i18n）；換語言時 relabelLeadSelect() 只換字，選取不變
+        GatheringReminders.LEAD_OPTIONS.forEach(minutes => {
+            const option = document.createElement('option');
+            option.setAttribute('value', String(minutes));
+            leadSelect.appendChild(option);
+        });
+        this.relabelLeadSelect();
 
-        // 通知開關事件
-        notificationToggle.addEventListener('change', async () => {
+        // 列的重排：焦點在列裡時延後，焦點離開才排（同卡片，見 keepOrder()）
+        this.reminderOrder = this.keepOrder(reminderList, (now) => this.arrangeReminderRows(now));
+
+        // 「網頁提醒」開關：永遠不停用（瀏覽器不能跳通知時，到時間照樣有頁內提示和提示音）；關著時到時間什麼都不做。
+        // 開關與提早分鐘數改之前會重讀（GatheringReminders.refresh()），可能帶進另一個分頁剛設或取消的提醒，卡片的按鈕也跟著畫
+        notificationToggle.addEventListener('change', () => {
             if (notificationToggle.checked) {
-                const enabled = await this.notificationManager.enableNotifications();
-                if (enabled) {
-                    // 更新監控清單
-                    const currentList = this.listManager.getList(this.currentListId);
-                    if (currentList && currentList.items) {
-                        this.notificationManager.updateWatchList(currentList.items);
-                    }
-                } else {
-                    notificationToggle.checked = false;
-                }
+                this.turnOnWebReminders();
             } else {
-                this.notificationManager.disableNotifications();
+                this.reminders.setEnabled(false);
             }
-            this.updateNotificationStatus();
+            this.renderReminders();
+            this.refreshCardButtons();
         });
 
-        // 測試通知按鈕事件
+        leadSelect.addEventListener('change', () => {
+            this.reminders.setLead(Number(leadSelect.value));
+            this.renderReminders();
+            this.refreshCardButtons();
+        });
+
         testNotificationBtn.addEventListener('click', () => {
-            this.notificationManager.testNotification();
+            this.testNotification();
+        });
+
+        reminderMoreBtn.addEventListener('click', () => {
+            this.remindersExpanded = !this.remindersExpanded;
+            this.renderReminders();
+        });
+
+        // 視窗跨過 480px（手機轉向、調整視窗大小）時，先列的個數跟著換；展開著的照樣展開
+        this.narrowMedia = window.matchMedia?.(TimedGatheringManager.CONSTANTS.NARROW_MEDIA);
+        this.narrowMedia?.addEventListener('change', () => {
+            this.renderReminders();
+        });
+
+        // 另一個分頁新增、取消提醒或改了設定；key 是 null：另一個分頁清掉了這個網站的資料
+        this.handleStorage = (event) => {
+            if (event.key === GatheringReminders.STORAGE_KEY || event.key === null) {
+                this.reminders.reload();
+                this.renderReminders();
+                this.refreshCardButtons();
+            }
+        };
+        window.addEventListener('storage', this.handleStorage);
+
+        // 瀏覽器只讓使用者操作時建立或 resume() 的 AudioContext 出聲：重新整理後從記憶還原的提醒，
+        // 沒有人按「提醒我」也要等頁面上的一次操作才放得出提示音（同天氣預報）。只在網頁提醒開著、而且有提醒時才解開，
+        // 不替每個訪客建立 AudioContext；每次操作都解開一次（聲音已經能放時不花什麼，手機也可能又把它暫停）
+        this.handleUnlockSound = () => {
+            if (this.reminders.enabled && this.reminders.keys.length > 0) {
+                ReminderScheduler.unlockSound();
+            }
+        };
+        TimedGatheringManager.CONSTANTS.UNLOCK_SOUND_EVENTS.forEach(type => {
+            document.addEventListener(type, this.handleUnlockSound, { capture: true, passive: true });
+        });
+
+        this.renderReminders();
+    }
+
+    /** 提早分鐘數的選項寫成目前的語言：0 是「出現時」，其他是「出現前 N 分鐘」；選項還是同樣的節點，選取不變 */
+    relabelLeadSelect() {
+        this.elements.leadSelect.querySelectorAll('option').forEach(option => {
+            const minutes = Number(option.getAttribute('value'));
+            option.textContent = minutes === 0
+                ? FF14Utils.getI18nText('leadOptionAtStart', '出現時')
+                : FF14Utils.getI18nText('leadOption', '出現前 {n} 分鐘', { n: minutes });
         });
     }
 
-    updateNotificationStatus() {
-        const notificationStatus = document.getElementById('notificationStatus');
-        if (notificationStatus) {
-            const status = this.notificationManager.getNotificationStatus();
-            notificationStatus.textContent = status;
+    /**
+     * 打開網頁提醒。要在使用者的點擊（或開關的 change）裡呼叫：瀏覽器只在這時讓網頁要通知權限、解開提示音。
+     * 不等權限的回答就打開：玩家可能把詢問晾著回到遊戲裡，提醒不能因此沒設好；頁內提示和提示音不管回答是什麼都會有。
+     * 回答來了再畫一次我的提醒（#notifyStatus 照權限寫）
+     */
+    turnOnWebReminders() {
+        ReminderScheduler.unlockSound();
+        const answer = ReminderScheduler.requestPermission();
+        this.reminders.setEnabled(true, Date.now());
+        answer.then(() => this.renderReminders());
+    }
 
-            // 根據狀態設定徽章樣式（共用 .tag）
-            const statusClasses = ['tag-solid', 'tag-success', 'tag-danger'];
-            notificationStatus.classList.remove(...statusClasses);
-
-            const state = this.notificationManager.getNotificationState();
-            if (state.enabled) {
-                notificationStatus.classList.add('tag-solid', 'tag-success');
-            } else if (state.permission === 'denied') {
-                notificationStatus.classList.add('tag-solid', 'tag-danger');
-            }
+    /**
+     * 執行 update（會改變頁面高度的更新），讓 anchor 留在畫面上原來的位置。
+     * 我的提醒在頁面最上面：第一次設提醒時整塊冒出來、取消最後一個時收起來，已經顯示時多一列、少一列也一樣，
+     * 下面的內容整個被推開或拉回，剛按下的按鈕就跑到別處（手機上掉出畫面，再按一下就按到搬到手指下面的篩選鈕）。
+     * Chrome 在捲動過的頁面上會自己錨定，捲動位置是 0 時不會，Safari 完全沒有。
+     * 所以更新前後各量一次 anchor 的位置，差了超過 1px 就用 window.scrollBy() 捲回去。
+     * 更新後才量：Chrome 自己的錨定在量的那次排版裡就已經套用了，剩下的差才是還要補的，兩邊不會加在一起。
+     * 量不到位置或不能捲動的環境（沒有 getBoundingClientRect() 或 window.scrollBy()）只執行 update
+     * @param {HTMLElement} anchor - 要留在原位的元素（按下的按鈕）
+     * @param {function(): void} update - 改動畫面的更新，要同步做完
+     */
+    keepInPlace(anchor, update) {
+        if (typeof anchor.getBoundingClientRect !== 'function' || typeof window.scrollBy !== 'function') {
+            update();
+            return;
         }
+        const before = anchor.getBoundingClientRect().top;
+        update();
+        const moved = anchor.getBoundingClientRect().top - before;
+        if (Math.abs(moved) > 1) {
+            window.scrollBy(0, moved);
+        }
+    }
+
+    /**
+     * 卡片上的「提醒我」：沒設就設（網頁提醒關著時順便打開），已設就取消。
+     * 設的時候在點擊裡問通知權限：網頁提醒已經開著、但玩家之前把詢問關掉了（權限還是 default）時再問一次；
+     * 允許或封鎖了就不會再跳出詢問（ReminderScheduler.requestPermission() 只在 default 時問）。取消時不問。
+     * 卡片的按鈕與我的提醒就地更新，焦點留在按過的按鈕上，按鈕也留在畫面上原來的位置（見 keepInPlace()）
+     * @param {Object} material - GatheringMaterials.group() 的結果
+     */
+    toggleReminder(material) {
+        ReminderScheduler.unlockSound();
+        const name = this.nameOf(material, this.currentLanguage);
+        if (this.reminders.has(material.key)) {
+            this.reminders.remove(material.key);
+            FF14Utils.showToast(FF14Utils.getI18nText('reminderRemovedToast', '已取消提醒：{name}', { name }), 'info');
+        } else {
+            this.reminders.add(material.key, Date.now());
+            if (!this.reminders.enabled) {
+                this.turnOnWebReminders();
+            } else {
+                // 不等回答（同 turnOnWebReminders()）：回答來了再畫一次我的提醒（#notifyStatus 照權限寫）
+                ReminderScheduler.requestPermission().then(() => this.renderReminders());
+            }
+            FF14Utils.showToast(FF14Utils.getI18nText('reminderAddedToast', '已設提醒：{name}', { name }), 'success');
+        }
+        this.keepInPlace(this.cards.get(material.key).remindBtn, () => {
+            this.refreshCardButtons();
+            this.renderReminders();
+        });
+    }
+
+    /**
+     * 提醒列的取消鈕：取消提醒，卡片的按鈕跟著變。焦點在這一列上時，交給補上這個位置的列的取消鈕，
+     * 沒有下一列就給上一列，一列都沒有了（我的提醒收起來了）就給搜尋框
+     * @param {string} key - 素材的 key
+     */
+    cancelReminder(key) {
+        const list = this.elements.reminderList;
+        const entry = this.reminderRows.get(key);
+        const index = entry ? Array.from(list.children).indexOf(entry.row) : -1;
+        const hadFocus = Boolean(entry) && entry.row.contains(document.activeElement);
+        const name = this.nameOf(this.materialByKey.get(key), this.currentLanguage);
+
+        this.reminders.remove(key);
+        FF14Utils.showToast(FF14Utils.getI18nText('reminderRemovedToast', '已取消提醒：{name}', { name }), 'info');
+        this.refreshCardButtons();
+
+        // 先拿掉這一列：焦點跟著離開清單，下面的 renderReminders() 才不會因為焦點還在列裡而延後重排。
+        // 拿掉有焦點的元素時瀏覽器會同步觸發 focusout，先清掉延後的重排，不讓它在半途排
+        if (entry) {
+            this.reminderOrder.pending = false;
+            this.reminderRows.delete(key);
+            entry.row.remove();
+        }
+        this.renderReminders();
+
+        if (hadFocus) {
+            const rows = Array.from(list.children);
+            const next = rows[Math.min(index, rows.length - 1)];
+            (next ? next.querySelector('.gx-cancel-btn') : this.elements.searchInput).focus();
+        }
+    }
+
+    /** 測試通知：和到時間的提醒一樣（頁內提示、提示音，允許時加系統通知），不問權限 */
+    testNotification() {
+        ReminderScheduler.unlockSound();
+        ReminderScheduler.deliver({
+            title: FF14Utils.getI18nText('notificationTitle', 'FF14 採集提醒'),
+            body: FF14Utils.getI18nText('testNotificationBody', '這是一個測試通知，請確認您是否看到了'),
+            tag: 'ff14tw-gathering-test'
+        });
+        // 系統通知跳不出來時（Android 的 Chrome），旁邊的說明改寫成不能跳通知
+        this.renderReminders();
+    }
+
+    /**
+     * 一個提醒到了（ReminderScheduler）：頁內提示、提示音，允許時加系統通知，用現在的語言寫。
+     * 標題寫實際還剩幾分鐘（進位、至少 1；晚到時比提早分鐘數少），已經開始（出現時通知、來不及提早或晚到）就寫出現了；
+     * 內容寫那一次的本地時間、ET 時段與地點。送出之後重畫我的提醒：new Notification() 丟錯過（Android 的 Chrome）時，
+     * 旁邊的說明改寫成不能跳通知
+     * @param {Object} alert - GatheringReminders.alerts() 回傳的一個
+     */
+    handleReminderDue(alert) {
+        const material = alert.data && this.materialByKey.get(alert.data.materialKey);
+        if (!material) return;
+
+        const lang = this.currentLanguage;
+        const name = this.nameOf(material, lang);
+        const left = alert.start - Date.now();
+        const title = left <= 0
+            ? FF14Utils.getI18nText('notifyTitleNow', '{name}出現了', { name })
+            : FF14Utils.getI18nText('notifyTitle', '{name} {n} 分鐘後出現', { name, n: GatheringMaterials.minutesCeil(left) });
+        const body = FF14Utils.getI18nText('notifyBody', '{start} 開始，到 {end}（{et}）· {place}', {
+            start: GatheringMaterials.localTime(alert.start),
+            end: GatheringMaterials.localTime(alert.end),
+            et: GatheringMaterials.etRange(alert.data.schedule),
+            place: this.placeOf(material, lang)
+        });
+
+        ReminderScheduler.deliver({ title, body, tag: ReminderScheduler.idOf(alert) });
+        this.renderReminders();
+    }
+
+    /** 這個瀏覽器到時間做不到的事：通知被封鎖或不能跳時寫出來（頁內提示和提示音照樣有），其他情況不用說（空字串） */
+    notifyStatusText() {
+        switch (ReminderScheduler.permission()) {
+            case 'denied':
+                return FF14Utils.getI18nText('notifyDenied', '瀏覽器封鎖了這個網站的通知，到時間只會在頁面上提示和發出聲音。可以從網址列左邊的網站設定打開，或改用遊戲鬧鐘。');
+            case 'unsupported':
+                return FF14Utils.getI18nText('notifyUnsupported', '這個瀏覽器不能跳通知，到時間只會在頁面上提示和發出聲音，或改用遊戲鬧鐘。');
+            default:
+                return '';
+        }
+    }
+
+    /**
+     * 畫我的提醒。沒有提醒時整塊隱藏、時鐘一行放在搜尋框上面；有提醒時顯示、時鐘一行併進標題列，
+     * 寫個數、開關、提早分鐘數、「顯示全部」與通知的說明，列照現在的時間排好（焦點在列裡時等焦點離開再排）。
+     * 提醒有變（設、取消、另一個分頁改了）、提醒響過、換語言時呼叫；每秒的倒數不經過這裡（updateReminderRows()）
+     */
+    renderReminders() {
+        const {
+            reminders, remindersHead, reminderCount, notificationToggle, leadSelect, reminderMoreBtn, notifyStatus, clockSlot, clockLine
+        } = this.elements;
+        const count = this.reminders.keys.length;
+        const limit = this.remindersShown();
+
+        reminders.hidden = count === 0;
+        const clockHome = count > 0 ? remindersHead : clockSlot;
+        if (clockLine.parentNode !== clockHome) {
+            clockHome.appendChild(clockLine);
+        }
+
+        TimedGatheringManager.writeText(reminderCount, String(count));
+        notificationToggle.checked = this.reminders.enabled;
+        // 值不一樣時才改（另一個分頁改了）：使用者可能正打開著這個選單
+        const lead = String(this.reminders.leadMinutes);
+        if (leadSelect.value !== lead) {
+            leadSelect.value = lead;
+        }
+
+        // 沒超過上限就用不到「顯示全部」，下次超過時從收起開始
+        if (count <= limit) {
+            this.remindersExpanded = false;
+        }
+        reminderMoreBtn.hidden = count <= limit;
+        // 按鈕控制提醒列（index.html 的 aria-controls）：展開時 true、收起時 false
+        reminderMoreBtn.setAttribute('aria-expanded', String(this.remindersExpanded));
+        TimedGatheringManager.writeText(reminderMoreBtn, this.remindersExpanded
+            ? FF14Utils.getI18nText('showFewerReminders', '收起')
+            : FF14Utils.getI18nText('showAllReminders', '顯示全部 {count} 個', { count }));
+
+        const status = this.notifyStatusText();
+        TimedGatheringManager.writeText(notifyStatus, status);
+        notifyStatus.hidden = !status;
+
+        this.reminderOrder.request(Date.now());
     }
 
     updateLanguageButtons() {
@@ -411,12 +672,13 @@ class TimedGatheringManager {
      * 都同分時照資料的順序（不看傳進來的順序，所以拿畫面上的順序來重排也一樣）
      * @param {Object[]} materials - 要排的素材
      * @param {number} now - 毫秒時間戳
+     * @param {boolean} [byScore=true] - 先看搜尋的分數；我的提醒傳 false（只照出現時間，搜尋不影響它的順序）
      * @returns {Object[]} 排好的新陣列（不改傳進來的陣列）
      */
-    sortMaterials(materials, now) {
+    sortMaterials(materials, now, byScore = true) {
         const order = new Map(this.materials.map((material, index) => [material.key, index]));
         // 沒有搜尋時 this.scores 是空的，分數都當成 0
-        const scoreOf = (material) => this.scores.get(material.key) || 0;
+        const scoreOf = (material) => (byScore && this.scores.get(material.key)) || 0;
         return materials
             .map(material => ({ material, state: GatheringMaterials.state(material, now) }))
             .sort((a, b) => (scoreOf(b.material) - scoreOf(a.material)) ||
@@ -433,7 +695,7 @@ class TimedGatheringManager {
         // 照現在的時間再排一次，順序才和卡片上的狀態是同一個時間
         this.shown = this.sortMaterials(this.shown, now);
         // 整個重畫就沒有延後的重排了。先清掉：瀏覽器移除有焦點的元素時會同步觸發 focusout，不能讓它動到半清掉的清單
-        this.sortPending = false;
+        this.cardOrder.pending = false;
         SecurityUtils.clearElement(container);
         this.cards.clear();
 
@@ -529,6 +791,17 @@ class TimedGatheringManager {
         const actions = document.createElement('div');
         actions.className = 'gx-actions';
 
+        // 提醒我：全天的素材一直都能採，沒有「出現」可以提醒，不放
+        let remindBtn = null;
+        if (!material.allDay) {
+            remindBtn = document.createElement('button');
+            remindBtn.type = 'button';
+            remindBtn.addEventListener('click', () => {
+                this.toggleReminder(material);
+            });
+            actions.appendChild(remindBtn);
+        }
+
         const addBtn = document.createElement('button');
         addBtn.type = 'button';
         addBtn.addEventListener('click', () => {
@@ -537,7 +810,7 @@ class TimedGatheringManager {
         actions.appendChild(addBtn);
         card.appendChild(actions);
 
-        this.cards.set(material.key, { card, status, addBtn, kind: state.kind, start: state.start });
+        this.cards.set(material.key, { card, status, addBtn, remindBtn, kind: state.kind, start: state.start });
         this.updateCardButtons(material);
 
         return card;
@@ -625,11 +898,15 @@ class TimedGatheringManager {
      * @param {number} now - 毫秒時間戳
      */
     writeStatus(status, state, now) {
-        const text = this.statusText(state, now);
-        if (status.textContent !== text) {
-            status.textContent = text;
-        }
+        TimedGatheringManager.writeText(status, this.statusText(state, now));
         status.classList.toggle('now', state.kind === 'now');
+    }
+
+    /** 文字有變才寫：每秒或常常重畫的地方用，沒變的文字節點不換掉 */
+    static writeText(element, text) {
+        if (element.textContent !== text) {
+            element.textContent = text;
+        }
     }
 
     /** 時段行：「每天 ET 00:00、ET 12:00，每次約 6 分鐘」；全天的素材寫「全天」 */
@@ -643,11 +920,14 @@ class TimedGatheringManager {
         });
     }
 
-    /** 每秒一次（initialize() 設的計時器）：更新卡片的倒數；有卡片切換了就重排 */
+    /** 每秒一次（initialize() 設的計時器）：更新卡片與我的提醒的倒數；有切換了就重排（焦點在那個清單裡時延後） */
     tick() {
         const now = Date.now();
         if (this.updateCards(now)) {
-            this.resortCards(now);
+            this.cardOrder.request(now);
+        }
+        if (this.reminders) {
+            this.updateReminderRows(now);
         }
     }
 
@@ -674,21 +954,170 @@ class TimedGatheringManager {
     }
 
     /**
-     * 照 now 重排卡片：搬動現有的卡片元素，不重建。焦點在卡片清單裡時先不排（搬動有焦點的元素，
-     * 瀏覽器會讓它失去焦點），只記下 sortPending，等焦點離開清單（itemsContainer 的 focusout）再排
-     * @param {number} [now] - 毫秒時間戳，預設現在
+     * 一個清單的重排：搬動清單裡現有的元素，不重建。焦點在清單裡時先不排（搬動有焦點的元素，瀏覽器會讓它失去焦點），
+     * 只記下 pending，等焦點離開清單（清單的 focusout，接手焦點的元素不在清單裡）再照那時的時間排。
+     * 卡片（#itemsContainer）與我的提醒的列（#reminderList）共用
+     * @param {HTMLElement} container - 清單
+     * @param {function(number): void} arrange - 照 now 把清單排好（搬動現有的元素）
+     * @returns {{pending: boolean, request: function(number=): void}} request(now)：照 now（預設現在）排，
+     *     焦點在清單裡時只記下 pending。整個重畫、或先拿掉有焦點的元素之前，把 pending 設成 false：
+     *     瀏覽器移除有焦點的元素時會同步觸發 focusout，不能讓它在半途排
      */
-    resortCards(now = Date.now()) {
+    keepOrder(container, arrange) {
+        const order = {
+            pending: false,
+            request(now = Date.now()) {
+                if (container.contains(document.activeElement)) {
+                    order.pending = true;
+                    return;
+                }
+                order.pending = false;
+                arrange(now);
+            }
+        };
+        // relatedTarget 是接手焦點的元素：還在清單裡（只是在按鈕之間移動）時不排；
+        // 視窗失去焦點時 relatedTarget 是 null，但 document.activeElement 還在清單裡，request() 會繼續延後
+        container.addEventListener('focusout', (event) => {
+            if (order.pending && !container.contains(event.relatedTarget)) {
+                order.request();
+            }
+        });
+        return order;
+    }
+
+    /** 照 now 重排卡片：搬動現有的卡片元素，不重建。由 this.cardOrder 呼叫（焦點在卡片清單裡時延後） */
+    arrangeCards(now) {
         const container = this.elements.itemsContainer;
-        if (container.contains(document.activeElement)) {
-            this.sortPending = true;
-            return;
-        }
-        this.sortPending = false;
         this.shown = this.sortMaterials(this.shown, now);
         this.shown.forEach(material => {
             container.appendChild(this.cards.get(material.key).card);
         });
+    }
+
+    /** 我的提醒最多先列幾個：手機（480px 以下）REMINDERS_SHOWN_NARROW 個，其他 REMINDERS_SHOWN 個 */
+    remindersShown() {
+        const { REMINDERS_SHOWN, REMINDERS_SHOWN_NARROW } = TimedGatheringManager.CONSTANTS;
+        return this.narrowMedia?.matches ? REMINDERS_SHOWN_NARROW : REMINDERS_SHOWN;
+    }
+
+    /**
+     * 我的提醒要列出來的素材 key：照出現時間排（同卡片：GatheringMaterials.compare，同分照資料的順序；不看搜尋的分數），
+     * 沒按「顯示全部」時只取前 remindersShown() 個
+     * @param {number} now - 毫秒時間戳
+     * @returns {string[]}
+     */
+    visibleReminderKeys(now) {
+        const materials = this.reminders.keys.map(key => this.materialByKey.get(key));
+        const keys = this.sortMaterials(materials, now, false).map(material => material.key);
+        return this.remindersExpanded ? keys : keys.slice(0, this.remindersShown());
+    }
+
+    /**
+     * 照 now 把我的提醒的列放好：不該列的拿掉，該列的照順序放（已經有的列搬動、不重建，沒有的才建）。
+     * 由 this.reminderOrder 呼叫（焦點在列裡時延後）
+     * @param {number} now - 毫秒時間戳
+     */
+    arrangeReminderRows(now) {
+        const list = this.elements.reminderList;
+        const keys = this.visibleReminderKeys(now);
+        const wanted = new Set(keys);
+        for (const [key, entry] of this.reminderRows) {
+            if (!wanted.has(key)) {
+                this.reminderRows.delete(key);
+                entry.row.remove();
+            }
+        }
+        keys.forEach((key, index) => {
+            const { row } = this.reminderRows.get(key) || this.createReminderRow(key, now);
+            const current = list.children[index] || null;
+            if (current !== row) {
+                list.insertBefore(row, current);
+            }
+        });
+    }
+
+    /**
+     * 我的提醒的一列：圖示、名稱、狀態行（同卡片）、「地區 · 地點　座標」與取消鈕；登記在 this.reminderRows
+     * @param {string} key - 素材的 key
+     * @param {number} now - 毫秒時間戳
+     * @returns {{row: HTMLElement, name: HTMLElement, status: HTMLElement, where: HTMLElement, cancelBtn: HTMLElement}}
+     */
+    createReminderRow(key, now) {
+        const material = this.materialByKey.get(key);
+        const row = document.createElement('li');
+        row.className = 'gx-reminder';
+        row.dataset.material = key;
+
+        const icon = document.createElement('span');
+        icon.className = 'gx-icon';
+        icon.setAttribute('aria-hidden', 'true');
+        icon.textContent = this.getTypeIcon(material.type);
+        row.appendChild(icon);
+
+        const main = document.createElement('div');
+        main.className = 'gx-r-main';
+        const name = document.createElement('b');
+        main.appendChild(name);
+        const status = document.createElement('span');
+        status.className = 'gx-status';
+        main.appendChild(status);
+        const where = document.createElement('span');
+        where.className = 'gx-r-where';
+        main.appendChild(where);
+        row.appendChild(main);
+
+        const actions = document.createElement('div');
+        actions.className = 'gx-r-actions';
+        const cancelBtn = document.createElement('button');
+        cancelBtn.type = 'button';
+        cancelBtn.className = 'btn btn-sm btn-ghost btn-icon-only gx-cancel-btn';
+        cancelBtn.textContent = '✕';
+        cancelBtn.addEventListener('click', () => {
+            this.cancelReminder(key);
+        });
+        actions.appendChild(cancelBtn);
+        row.appendChild(actions);
+
+        const entry = { row, name, status, where, cancelBtn };
+        this.reminderRows.set(key, entry);
+        this.writeReminderRow(key, entry, now);
+        return entry;
+    }
+
+    /** 一列上跟語言或時間有關的字：名稱、狀態行、地點行與取消鈕的 aria-label「取消提醒：名稱」（建列與換語言時寫） */
+    writeReminderRow(key, entry, now) {
+        const material = this.materialByKey.get(key);
+        const lang = this.currentLanguage;
+        const name = this.nameOf(material, lang);
+        TimedGatheringManager.writeText(entry.name, name);
+        TimedGatheringManager.writeText(entry.where, this.placeOf(material, lang));
+        entry.cancelBtn.setAttribute('aria-label', FF14Utils.getI18nText('cancelReminderLabel', '取消提醒：{name}', { name }));
+        this.writeStatus(entry.status, GatheringMaterials.state(material, now), now);
+    }
+
+    /** 換語言：每一列就地改字，不重建（焦點不動） */
+    relabelReminderRows() {
+        const now = Date.now();
+        for (const [key, entry] of this.reminderRows) {
+            this.writeReminderRow(key, entry, now);
+        }
+    }
+
+    /**
+     * 每秒（tick()）：照 now 更新每一列的狀態行，只換文字與 .now，不重建、不碰焦點。該列的素材或順序和畫面上的不一樣時
+     * （有提醒在出現與現在可採之間切換，包括沒列出來的那幾個）重排，焦點在列裡時延後。
+     * 計時器被放慢或電腦睡著時，下一次執行就直接寫成現在的狀態與順序
+     * @param {number} now - 毫秒時間戳
+     */
+    updateReminderRows(now) {
+        for (const [key, entry] of this.reminderRows) {
+            this.writeStatus(entry.status, GatheringMaterials.state(this.materialByKey.get(key), now), now);
+        }
+        const shown = Array.from(this.elements.reminderList.children, row => row.dataset.material);
+        const wanted = this.visibleReminderKeys(now);
+        if (wanted.length !== shown.length || wanted.some((key, index) => key !== shown[index])) {
+            this.reminderOrder.request(now);
+        }
     }
 
     getTypeIcon(type) {
@@ -741,7 +1170,10 @@ class TimedGatheringManager {
         }
     }
 
-    /** 照目前的清單就地更新每張卡片的按鈕（不重建卡片，焦點不動）；換清單、清空、加入或移除之後呼叫 */
+    /**
+     * 照目前的清單與我的提醒就地更新每張卡片的按鈕（不重建卡片，焦點不動）；
+     * 換清單、清空、加入或移除，以及設、取消提醒（包括另一個分頁改的）之後呼叫
+     */
     refreshCardButtons() {
         for (const key of this.cards.keys()) {
             this.updateCardButtons(this.materialByKey.get(key));
@@ -749,12 +1181,26 @@ class TimedGatheringManager {
     }
 
     /**
-     * 一張卡片的加入鈕：素材的每一筆都在目前的清單裡才寫已加入，否則寫加入清單。
-     * 已加入用 aria-disabled 而不是 disabled：剛按過的按鈕還拿著焦點，停用的按鈕拿不住焦點，焦點會掉到 body；
-     * 再按一次也沒事（addMaterialToList() 沒有要加的就什麼都不做）
+     * 一張卡片的按鈕。兩顆都不用 disabled：剛按過的按鈕還拿著焦點，停用的按鈕拿不住焦點，焦點會掉到 body。
+     * - 提醒鈕（全天的素材沒有）：沒設寫「提醒我」，已設寫「已設提醒」並且 aria-pressed="true"，再按就取消
+     * - 加入鈕：素材的每一筆都在目前的清單裡才寫已加入（aria-disabled），否則寫加入清單；
+     *   再按一次也沒事（addMaterialToList() 沒有要加的就什麼都不做）
      */
     updateCardButtons(material) {
-        const { addBtn } = this.cards.get(material.key);
+        const { addBtn, remindBtn } = this.cards.get(material.key);
+        if (remindBtn) {
+            const reminded = this.reminders.has(material.key);
+            remindBtn.className = reminded ? 'btn btn-sm btn-success gx-remind-btn' : 'btn btn-sm btn-outline gx-remind-btn';
+            SecurityUtils.updateButtonContent(
+                remindBtn,
+                '🔔',
+                reminded
+                    ? FF14Utils.getI18nText('remindSetButton', '已設提醒')
+                    : FF14Utils.getI18nText('remindButton', '提醒我')
+            );
+            remindBtn.setAttribute('aria-pressed', reminded ? 'true' : 'false');
+        }
+
         const added = material.records.every(record => this.listManager.hasInCurrentList(this.currentListId, record.id));
         addBtn.className = 'btn btn-sm btn-ghost gx-add-btn';
         SecurityUtils.updateButtonContent(
@@ -783,11 +1229,6 @@ class TimedGatheringManager {
                 FF14Utils.getI18nText('emptyListHint', 'Click "Add to List" button on the left to add items')
             );
             container.appendChild(emptyMessage);
-
-            // 清空通知監控列表
-            if (this.notificationManager) {
-                this.notificationManager.updateWatchList([]);
-            }
             return;
         }
 
@@ -795,11 +1236,6 @@ class TimedGatheringManager {
             const listItem = this.createListItem(item);
             container.appendChild(listItem);
         });
-
-        // 更新通知監控列表
-        if (this.notificationManager && this.notificationManager.enabled) {
-            this.notificationManager.updateWatchList(list.items);
-        }
     }
 
     createListItem(item) {
