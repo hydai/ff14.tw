@@ -7,7 +7,9 @@ class TimedGatheringManager {
         MAX_LIST_NAME_LENGTH: 50,
         MAX_LISTS: 10,
         // 下一次出現還不到這麼久時，狀態行的「還要」寫 m:ss，否則寫幾分
-        SHORT_WAIT_MS: 10 * 60 * 1000
+        SHORT_WAIT_MS: 10 * 60 * 1000,
+        // 每隔這麼久更新一次卡片的倒數（tick()）
+        TICK_INTERVAL_MS: 1000
     };
 
     constructor() {
@@ -19,8 +21,11 @@ class TimedGatheringManager {
         this.shown = [];
         this.scores = new Map();
         this.searchWords = [];
-        // 畫面上的卡片：key -> { card, status, addBtn }
+        // 畫面上的卡片：key -> { card, status, addBtn, kind, start }；kind 與 start 是上一次 tick() 看到的狀態，用來發現切換
         this.cards = new Map();
+        // 該重排卻因為焦點在卡片清單裡而延後了（焦點離開清單時補排）
+        this.sortPending = false;
+        this.tickInterval = null;
         this.listManager = null;
         this.macroExporter = null;
         this.searchFilter = null;
@@ -105,6 +110,9 @@ class TimedGatheringManager {
 
             // 初始顯示：照目前的篩選與搜尋框畫出卡片
             this.applyFilters();
+
+            // 每秒更新卡片的倒數，有卡片切換時重排
+            this.tickInterval = setInterval(() => this.tick(), TimedGatheringManager.CONSTANTS.TICK_INTERVAL_MS);
 
         } catch (error) {
             console.error('初始化失敗:', error);
@@ -198,6 +206,15 @@ class TimedGatheringManager {
         this.elements.clearSearchBtn.addEventListener('click', () => {
             this.elements.searchInput.value = '';
             this.applyFilters();
+        });
+
+        // 焦點離開卡片清單時，補上因為焦點在清單裡而延後的重排。
+        // relatedTarget 是接手焦點的元素：還在清單裡（只是在按鈕之間移動）時不排；
+        // 視窗失去焦點時 relatedTarget 是 null，但 document.activeElement 還在清單裡，resortCards() 會繼續延後
+        this.elements.itemsContainer.addEventListener('focusout', (event) => {
+            if (this.sortPending && !this.elements.itemsContainer.contains(event.relatedTarget)) {
+                this.resortCards();
+            }
         });
 
         // 類型篩選
@@ -384,9 +401,8 @@ class TimedGatheringManager {
             }
         });
 
-        // 照資料的順序取出符合的素材，再排序
-        const materials = this.materials.filter(material => matchedKeys.has(material.key));
-        this.shown = this.sortMaterials(materials, Date.now());
+        // 照資料的順序取出符合的素材；排序在 renderItems() 裡照畫的當下的時間做
+        this.shown = this.materials.filter(material => matchedKeys.has(material.key));
         this.renderItems();
     }
 
@@ -409,9 +425,15 @@ class TimedGatheringManager {
             .map(entry => entry.material);
     }
 
-    /** 照 this.shown 重建卡片，並寫上計數；沒有符合的素材時顯示空狀態 */
+    /** 照現在的時間排好 this.shown、重建卡片，並寫上計數；沒有符合的素材時顯示空狀態 */
     renderItems() {
         const container = this.elements.itemsContainer;
+        const now = Date.now();
+        // 篩選、搜尋、換語言都從這裡重畫。this.shown 可能是之前排的（計時器被放慢、電腦睡著、重排還在延後），
+        // 照現在的時間再排一次，順序才和卡片上的狀態是同一個時間
+        this.shown = this.sortMaterials(this.shown, now);
+        // 整個重畫就沒有延後的重排了。先清掉：瀏覽器移除有焦點的元素時會同步觸發 focusout，不能讓它動到半清掉的清單
+        this.sortPending = false;
         SecurityUtils.clearElement(container);
         this.cards.clear();
 
@@ -428,7 +450,6 @@ class TimedGatheringManager {
             return;
         }
 
-        const now = Date.now();
         this.shown.forEach(material => {
             container.appendChild(this.createMaterialCard(material, now));
         });
@@ -483,8 +504,8 @@ class TimedGatheringManager {
         card.appendChild(head);
 
         const status = document.createElement('p');
-        status.className = isNow ? 'gx-status now' : 'gx-status';
-        status.textContent = this.statusText(state, now);
+        status.className = 'gx-status';
+        this.writeStatus(status, state, now);
         card.appendChild(status);
 
         // 地點行：「📍 地區 · 地點　座標」（地點和地區同名時只寫地區），地區與地點各自標出命中的字
@@ -516,7 +537,7 @@ class TimedGatheringManager {
         actions.appendChild(addBtn);
         card.appendChild(actions);
 
-        this.cards.set(material.key, { card, status, addBtn });
+        this.cards.set(material.key, { card, status, addBtn, kind: state.kind, start: state.start });
         this.updateCardButtons(material);
 
         return card;
@@ -597,6 +618,20 @@ class TimedGatheringManager {
         return '';
     }
 
+    /**
+     * 把狀態行寫成 state 的樣子：文字有變才寫，現在可採時有 .now。每秒呼叫，所以只動文字與 class，不重建元素
+     * @param {HTMLElement} status - 狀態行（p.gx-status）
+     * @param {Object} state - GatheringMaterials.state() 的結果
+     * @param {number} now - 毫秒時間戳
+     */
+    writeStatus(status, state, now) {
+        const text = this.statusText(state, now);
+        if (status.textContent !== text) {
+            status.textContent = text;
+        }
+        status.classList.toggle('now', state.kind === 'now');
+    }
+
     /** 時段行：「每天 ET 00:00、ET 12:00，每次約 6 分鐘」；全天的素材寫「全天」 */
     scheduleText(material) {
         if (material.allDay) {
@@ -605,6 +640,54 @@ class TimedGatheringManager {
         return FF14Utils.getI18nText('scheduleDaily', '每天 {slots}，每次約 {minutes} 分鐘', {
             slots: GatheringMaterials.slots(material).join(FF14Utils.getI18nText('listSeparator', '、')),
             minutes: GatheringMaterials.realMinutes(material)
+        });
+    }
+
+    /** 每秒一次（initialize() 設的計時器）：更新卡片的倒數；有卡片切換了就重排 */
+    tick() {
+        const now = Date.now();
+        if (this.updateCards(now)) {
+            this.resortCards(now);
+        }
+    }
+
+    /**
+     * 照 now 更新畫面上每張卡片的狀態行與 .is-now，有變才寫，不重建任何元素、不碰焦點。
+     * 計時器被放慢或電腦睡著時，下一次執行就直接寫成現在的狀態
+     * @param {number} now - 毫秒時間戳
+     * @returns {boolean} 有沒有卡片切換了，要重排：kind 不同（出現 → 現在可採、現在可採 → 下一次），
+     *     或 kind 一樣但換成另一段（start 不同：睡了很久之後同樣是下一次、卻已經是別的時段，或兩段重疊時換成另一段）
+     */
+    updateCards(now) {
+        let switched = false;
+        for (const [key, entry] of this.cards) {
+            const state = GatheringMaterials.state(this.materialByKey.get(key), now);
+            if (state.kind !== entry.kind || state.start !== entry.start) {
+                switched = true;
+            }
+            entry.kind = state.kind;
+            entry.start = state.start;
+            this.writeStatus(entry.status, state, now);
+            entry.card.classList.toggle('is-now', state.kind === 'now');
+        }
+        return switched;
+    }
+
+    /**
+     * 照 now 重排卡片：搬動現有的卡片元素，不重建。焦點在卡片清單裡時先不排（搬動有焦點的元素，
+     * 瀏覽器會讓它失去焦點），只記下 sortPending，等焦點離開清單（itemsContainer 的 focusout）再排
+     * @param {number} [now] - 毫秒時間戳，預設現在
+     */
+    resortCards(now = Date.now()) {
+        const container = this.elements.itemsContainer;
+        if (container.contains(document.activeElement)) {
+            this.sortPending = true;
+            return;
+        }
+        this.sortPending = false;
+        this.shown = this.sortMaterials(this.shown, now);
+        this.shown.forEach(material => {
+            container.appendChild(this.cards.get(material.key).card);
         });
     }
 
