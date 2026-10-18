@@ -2492,3 +2492,54 @@ test('複製鬧鐘的文字三語都有；說明可以選取、失敗時換警�
     assert.match(alarm[1], /padding:\s*0;/);
     assert.match(narrow, /\n\s+\.gx-reminder \.gx-btn-label\s*\{\s*display:\s*none;\s*\}/);
 });
+
+// ---------- toast 也念給螢幕閱讀器聽 ----------
+// assets/js/common.js 的 FF14Utils.showToast()（realToast: true 才用真的）：看得到的 toast 是剛插進頁面、一開始就有字的元素，
+// 不是每個螢幕閱讀器都會念（VoiceOver），所以另外有一個一直留在頁面上的朗讀區，每次先清空，toast 顯示的同時再寫進訊息
+const liveRegions = (page) => page.document.body.querySelectorAll('div.visually-hidden[role="status"]');
+
+test('toast 的訊息由一直留在頁面上的朗讀區念出來：設提醒、複製鬧鐘、取消；同一句話再出現也會再念；朗讀區只有一個', async () => {
+    const page = await createGatheringPage({ now: at(0, 11), realToast: true });
+    assert.equal(liveRegions(page).length, 0, '還沒有 toast 就還沒有朗讀區');
+
+    remindBtnOf(page, CORDIA).click();
+    await page.settle();
+    const region = liveRegions(page)[0];
+    assert.ok(region, '第一個 toast 建出朗讀區');
+    assert.equal(region.getAttribute('aria-live'), 'polite');
+    isSame(region.parentNode, page.document.body, '朗讀區在 body 裡');
+    assert.equal(region.textContent, '', '朗讀區先放好、先清空，等一下才換字');
+    const toast = page.document.body.querySelectorAll('.toast').at(-1);
+    assert.equal(toast.className, 'toast toast-success');
+    assert.equal(toast.textContent, '已設提醒：科迪亞樹液塊');
+    assert.equal(toast.getAttribute('role'), null, '看得到的 toast 不是朗讀區，不會念兩次');
+    page.runTimeouts();
+    assert.equal(region.textContent, '已設提醒：科迪亞樹液塊', 'toast 顯示的同時寫進朗讀區');
+
+    // 複製鬧鐘：剪貼簿寫好之後的 toast
+    alarmBtnOf(page, CORDIA).click();
+    await page.settle();
+    assert.equal(region.textContent, '');
+    page.runTimeouts();
+    assert.equal(region.textContent, '已複製鬧鐘指令');
+    // 再複製一次：同一句話也先清空再寫回去，螢幕閱讀器會再念一次
+    alarmBtnOf(page, CORDIA).click();
+    await page.settle();
+    assert.equal(region.textContent, '', '同一句話也先清空');
+    page.runTimeouts();
+    assert.equal(region.textContent, '已複製鬧鐘指令');
+
+    // 提醒列的取消鈕：焦點移到別處，取消了哪一個只有 toast 說
+    cancelBtnOf(page, CORDIA).click();
+    page.runTimeouts();
+    assert.equal(region.textContent, '已取消提醒：科迪亞樹液塊');
+
+    assert.equal(liveRegions(page).length, 1, '朗讀區只有一個，每次重用');
+    isSame(liveRegions(page)[0], region);
+    assert.deepEqual(
+        page.toasts.map((entry) => entry.message),
+        ['已設提醒：科迪亞樹液塊', '已複製鬧鐘指令', '已複製鬧鐘指令', '已取消提醒：科迪亞樹液塊'],
+        'toasts 照樣記下每一次'
+    );
+    assert.deepEqual(page.consoleErrors, []);
+});

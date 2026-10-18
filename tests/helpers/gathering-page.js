@@ -7,8 +7,8 @@
 //
 // - 照 index.html 建出 #gatheringTool 與 #dialogOverlay（mountFromHtml），照 index.html 的 <script src> 順序載入這個工具的翻譯檔、
 //   共用的 security-utils.js、reminder-scheduler.js（index.html 有載入時）與工具目錄自己的每一個腳本（src 不含 /），
-//   最後 new TimedGatheringManager() 並等 app.ready。頁首與頁尾（layout-loader.js）、common.js、modal-manager.js、i18n-manager.js
-//   與共用翻譯檔不載入，用到的部分改用下面的替身
+//   最後 new TimedGatheringManager() 並等 app.ready。頁首與頁尾（layout-loader.js）、common.js（realToast 除外）、modal-manager.js、
+//   i18n-manager.js 與共用翻譯檔不載入，用到的部分改用下面的替身
 // - items：fetch 回傳的採集物資料，預設是 data/timed-gathering.json 的 items；stored 是 localStorage 的初始內容（鍵 -> 字串）
 // - i18n 替身從真正的翻譯檔取字（en、ja 找不到時退回 zh，同 I18nManager）並代入 {參數}；setLang(next) 照 I18nManager.setLanguage()
 //   先依 [data-i18n] 重新翻譯頁面，再依序呼叫登記的語言監聽。建立頁面之前先照 lang 翻譯一次（同 DOMContentLoaded 時的順序）。
@@ -25,6 +25,9 @@
 //   beeps 是排了幾聲提示音（oscillator.start() 幾次）
 // - toasts 記下 FF14Utils.showToast() 的 { message, type }。clipboard 記下 navigator.clipboard.writeText() 寫入的內容；
 //   clipboard: 'reject' 時 writeText() 回傳被拒絕的 Promise（什麼都不記）
+// - realToast：true 時在工具的腳本之前載入真正的 assets/js/common.js（頂層只定義東西並登記 DOMContentLoaded，這裡不會觸發），
+//   FF14Utils 換成它的（getI18nText 照樣從 i18n 替身取字）：showToast() 在 body 加上 .toast 與給螢幕閱讀器的朗讀區，
+//   顯示與收起照上面 setTimeout 的規則，toasts 照樣記下每一次。預設 false：FF14Utils 是替身，showToast() 只記在 toasts
 // - fetch 只認 ../../data/timed-gathering.json（回傳 items）。FileReader 的 readAsText(text) 立刻以 text 呼叫 onload（importFile() 收到的是字串）。
 //   ModalManager 的 show(overlay) 加 active、hide() 拿掉（真的那個由 modal-manager-stack 測試負責）
 // - 匯出用的 Blob 與 URL.createObjectURL／revokeObjectURL 是 Node 自己的（fake-dom 的 window.URL 就是 Node 的 URL），不用替身
@@ -60,6 +63,7 @@ const TOOL_DIR = 'tools/timed-gathering';
 const TRANSLATIONS = 'assets/js/i18n/translations/tools/timed-gathering.js';
 const SECURITY_UTILS = 'assets/js/security-utils.js';
 const SCHEDULER = 'assets/js/reminder-scheduler.js';
+const COMMON = 'assets/js/common.js';
 const PAGE_URL = 'https://ff14.tw/tools/timed-gathering/index.html';
 const DATA_URL = '../../data/timed-gathering.json';
 
@@ -101,7 +105,7 @@ const NARROW_QUERY = '(max-width: 480px)';
 
 async function createGatheringPage({
     now = 1_760_000_000_000, lang = 'zh', stored = {}, storageThrows = false, notification = 'default', clipboard = 'ok', items = DATA_ITEMS,
-    narrow = false
+    realToast = false, narrow = false
 } = {}) {
     assert.ok(NOTIFICATION_MODES.includes(notification), `不認得的 notification：${notification}`);
     assert.ok(CLIPBOARD_MODES.includes(clipboard), `不認得的 clipboard：${clipboard}`);
@@ -239,6 +243,17 @@ async function createGatheringPage({
     }
 
     mountFromHtml(dom, PAGE_HTML, ['gatheringTool', 'dialogOverlay']);
+    if (realToast) {
+        // common.js 的頂層 const FF14Utils 成為這個 context 的全域，也設成 window.FF14Utils：工具的腳本用的都是它。
+        // 在同一個物件上把 showToast() 包一層，兩種寫法都照樣記在 toasts
+        dom.load(COMMON);
+        const utils = win.FF14Utils;
+        const showToast = utils.showToast.bind(utils);
+        utils.showToast = (message, type) => {
+            toasts.push({ message, type });
+            showToast(message, type);
+        };
+    }
     for (const file of PAGE_SCRIPTS) dom.load(file);
     translatePage();
     const app = vm.runInContext('new TimedGatheringManager()', win);
