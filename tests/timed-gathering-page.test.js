@@ -961,7 +961,7 @@ const rowKeys = (page) => page.$('reminderList').children.map((row) => row.datas
 const rowOf = (page, key) => page.$('reminderList').querySelector(`[data-material="${key}"]`);
 const cancelBtnOf = (page, key) => rowOf(page, key).querySelector('.gx-cancel-btn');
 const remindBtnOf = (page, key) => page.cardOf(key).querySelector('.gx-remind-btn');
-// 頁內提示：ReminderScheduler.deliver() 加在 body 上的 .reminder-alert（測試裡的 setTimeout 不會自己跑，所以不會收起）
+// 頁內提示：ReminderScheduler.deliver() 放進 body 裡 .reminder-alerts 容器的 .reminder-alert（測試裡的 setTimeout 不會自己跑，所以不會收起）
 const alertsOn = (page) => page.document.body.querySelectorAll('.reminder-alert');
 // 元素在、而且本身和祖先都沒有 hidden（fake-dom 看不出 CSS，只看屬性）
 function shown(page, id) {
