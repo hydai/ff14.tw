@@ -30,120 +30,125 @@
         <div class="container">
             <h1 class="visually-hidden" data-i18n="weather_header">天氣預報</h1>
 
-            <!-- 目前時間顯示 -->
-            <div class="current-time-bar card">
-                <div class="time-display">
-                    <span class="time-label" data-i18n="weather_current_et">目前 ET</span>
-                    <span class="time-value" id="currentET">--:--</span>
-                </div>
-                <div class="time-display">
-                    <span class="time-label" data-i18n="weather_current_lt">本地時間</span>
-                    <span class="time-value" id="currentLT">--:--</span>
-                </div>
-            </div>
-
-            <div class="weather-tool">
-                <!-- 左側：地區選擇 -->
-                <aside class="zone-selector-panel card">
-                    <h2 class="panel-title" data-i18n="weather_select_zone">選擇地區</h2>
-                    <div class="zone-list" id="zoneList">
-                        <!-- 區域和地區按鈕將由 JavaScript 動態生成 -->
-                    </div>
-                </aside>
-
-                <!-- 右側：主要內容區 -->
-                <div class="main-content-panel card">
-                    <!-- 沒有選擇地區時的提示 -->
-                    <div class="no-zone-selected empty-state" id="noZoneSelected">
-                        <div class="empty-state-icon" aria-hidden="true">🗺️</div>
-                        <p class="empty-state-text" data-i18n="weather_select_zone_hint">點擊地區按鈕開始查看天氣</p>
+            <div class="wx-layout" id="weatherTool">
+                <!-- 左欄：選擇區（時鐘、地區、天氣、更多條件） -->
+                <aside class="wx-side card">
+                    <div class="wx-clock">
+                        <span class="wx-clock-item"><span data-i18n="weather_current_et">ET</span> <span class="wx-clock-value" id="currentET">--:--</span></span>
+                        <span class="wx-clock-item"><span data-i18n="weather_current_lt">本地</span> <span class="wx-clock-value" id="currentLT">--:--</span></span>
                     </div>
 
-                    <!-- 選擇地區後的內容 -->
-                    <div class="zone-content" id="zoneContent" style="display: none;">
-                        <!-- 目前選擇的地區 -->
-                        <div class="selected-zone-header">
-                            <h2 id="selectedZoneName">--</h2>
-                            <button class="btn btn-sm btn-secondary" id="shareBtn" title="分享連結">
-                                <span class="btn-icon">🔗</span>
+                    <p class="wx-prompt" id="firstVisitPrompt" data-i18n="weather_first_prompt">想查哪裡的什麼天氣？</p>
+
+                    <div class="wx-field">
+                        <div class="wx-field-head">
+                            <label class="form-label" for="zoneSelect" data-i18n="weather_zone_label">地區</label>
+                            <button class="btn btn-sm btn-ghost" id="shareBtn" type="button" hidden>
+                                <span class="btn-icon" aria-hidden="true">🔗</span>
                                 <span data-i18n="weather_share">分享連結</span>
                             </button>
                         </div>
+                        <select class="form-control" id="zoneSelect">
+                            <!-- 區域（optgroup）與地區（option）由 JavaScript 依目前語言產生 -->
+                            <option value="" disabled hidden selected data-i18n="weather_zone_placeholder">選擇地區</option>
+                        </select>
+                        <p class="form-text" id="zoneHint" data-i18n="weather_zone_hint">選了地區，這裡會列出那裡會出現的天氣。</p>
+                    </div>
 
-                        <!-- 過濾器面板 -->
-                        <div class="filter-panel">
-                            <div class="filter-header">
-                                <h3 data-i18n="weather_filter_title">過濾條件</h3>
-                                <button class="btn btn-sm btn-outline" id="clearFiltersBtn" data-i18n="weather_clear_filters">清除過濾</button>
-                            </div>
+                    <div class="wx-field" id="weatherField" hidden>
+                        <span class="form-label" id="weatherFieldLabel" data-i18n="weather_weather_label">天氣</span>
+                        <div class="chip-group weather-tags" id="desiredWeatherTags" role="group" aria-labelledby="weatherFieldLabel"></div>
+                    </div>
 
-                            <!-- 目標天氣過濾 -->
-                            <div class="form-group">
-                                <label class="form-label" data-i18n="weather_desired_weather">目標天氣</label>
-                                <div class="weather-tags chip-group" id="desiredWeatherTags">
-                                    <!-- 天氣標籤將由 JavaScript 動態生成 -->
-                                </div>
+                    <details class="wx-more" id="moreConditions" hidden>
+                        <summary><span data-i18n="weather_more_conditions">更多條件：時段、前置天氣</span> <span class="wx-more-summary" id="moreSummary"></span></summary>
+                        <div class="wx-more-body">
+                            <div class="wx-field">
+                                <span class="form-label" id="timeRangeLabel" data-i18n="weather_time_range">時段（艾歐澤亞時間）</span>
+                                <!-- 24 個時間格子由 JavaScript 產生 -->
+                                <div class="time-grid" id="timeGrid" role="group" aria-labelledby="timeRangeLabel"></div>
+                                <p class="time-range-display" id="timeRangeText">00:00 - 24:00</p>
                             </div>
+                            <div class="wx-field">
+                                <span class="form-label" id="previousWeatherLabel" data-i18n="weather_previous_weather">前置天氣（釣魚用）</span>
+                                <div class="chip-group weather-tags" id="previousWeatherTags" role="group" aria-labelledby="previousWeatherLabel"></div>
+                            </div>
+                            <button class="btn btn-sm btn-ghost" id="clearFiltersBtn" type="button" data-i18n="weather_clear_filters">清除條件</button>
+                        </div>
+                    </details>
+                </aside>
 
-                            <!-- 前置天氣過濾 -->
-                            <div class="form-group">
-                                <label class="form-label" data-i18n="weather_previous_weather">前置天氣</label>
-                                <div class="weather-tags chip-group" id="previousWeatherTags">
-                                    <!-- 天氣標籤將由 JavaScript 動態生成 -->
-                                </div>
-                            </div>
+                <!-- 右欄：還沒選地區時的說明；選了地區之後由上而下是答案卡、之後幾次、這個地區的天氣時刻表 -->
+                <section class="wx-main">
+                    <!-- 提醒中：有提醒、但答案卡顯示的不是它的目標時（沒選地區時也是），在答案卡上方提一行並可以取消 -->
+                    <div class="wx-notice" id="reminderNotice" hidden>
+                        <span aria-hidden="true">🔔</span>
+                        <span id="reminderNoticeText"></span>
+                        <button class="btn btn-sm btn-ghost" id="reminderNoticeCancel" type="button" data-i18n="weather_reminder_cancel">取消提醒</button>
+                    </div>
 
-                            <!-- 時間範圍過濾 -->
-                            <div class="form-group">
-                                <label class="form-label" data-i18n="weather_time_range">艾歐澤亞時間範圍</label>
-                                <div class="time-range-selector">
-                                    <div class="time-grid" id="timeGrid">
-                                        <!-- 24 個時間格子將由 JavaScript 動態生成 -->
-                                    </div>
-                                    <div class="time-range-display">
-                                        <span id="timeRangeText">00:00 - 24:00</span>
-                                    </div>
-                                </div>
+                    <div class="empty-state wx-empty" id="noZoneSelected">
+                        <div class="empty-state-icon" aria-hidden="true">🌦️</div>
+                        <p class="empty-state-title" data-i18n="weather_empty_title">先選地區和天氣</p>
+                        <p class="empty-state-text" data-i18n="weather_empty_text">這裡會寫它下次什麼時候出現、還要等多久。下次打開會記得你選的。</p>
+                    </div>
+
+                    <div class="wx-zone" id="zoneContent" hidden>
+                        <!-- 答案卡：選的天氣下次什麼時候出現、還要多久、到幾點（沒選天氣時是這個地區現在的天氣）。
+                             文字由 JavaScript 寫入、每分鐘更新，所以不放 aria-live -->
+                        <div class="card wx-answer" id="answerCard">
+                            <h2 class="wx-eyebrow" id="answerEyebrow"></h2>
+                            <p class="wx-when" id="answerWhen"></p>
+                            <p class="wx-wait" id="answerWait"></p>
+                            <p class="wx-meta" id="answerMeta"></p>
+                            <p class="wx-meta" id="answerExtra" hidden></p>
+
+                            <!-- 提醒我：開始前幾分鐘提醒（選項由 JavaScript 依目前語言產生）；設好之後換成幾點提醒與取消，提早幾分鐘照樣可以改 -->
+                            <div class="wx-actions" id="answerActions" hidden>
+                                <button class="btn btn-primary" id="remindBtn" type="button">
+                                    <span class="btn-icon" aria-hidden="true">🔔</span>
+                                    <span data-i18n="weather_remind">提醒我</span>
+                                </button>
+                                <span class="wx-lead">
+                                    <label for="leadSelect" data-i18n="weather_lead_label">通知時間</label>
+                                    <select class="form-control form-control-sm" id="leadSelect"></select>
+                                </span>
+                                <span class="wx-hint" id="remindHint" data-i18n="weather_remind_hint">頁面要開著才會響</span>
                             </div>
+                            <div class="wx-reminder" id="reminderSet" aria-live="polite" hidden>
+                                <span aria-hidden="true">🔔</span>
+                                <span id="reminderSetText"></span>
+                                <button class="btn btn-sm btn-ghost" id="reminderCancelBtn" type="button" aria-describedby="reminderSetText" data-i18n="weather_reminder_cancel">取消提醒</button>
+                            </div>
+                            <p class="wx-meta" id="notifyStatus" hidden></p>
                         </div>
 
-                        <!-- 結果區域 -->
-                        <div class="results-panel">
-                            <h3 id="resultsTitle" data-i18n="weather_timetable">天氣時刻表</h3>
+                        <!-- 之後幾次：答案卡那一次之後的幾次，每一次一列，由 JavaScript 產生 -->
+                        <div class="card wx-section" id="nextSection" hidden>
+                            <h2 class="wx-section-title" id="nextTitle" tabindex="-1" data-i18n="weather_next_title">之後幾次</h2>
+                            <ol class="wx-next" id="nextList"></ol>
+                            <button class="btn btn-outline btn-block" id="nextMoreBtn" type="button" data-i18n="weather_show_more">顯示更多</button>
+                        </div>
 
-                            <!-- 載入中 -->
-                            <div class="loading" id="resultsLoading" style="display: none;">
-                                <div class="loading-spinner"></div>
-                                <p data-i18n="weather_loading">載入中...</p>
-                            </div>
-
-                            <!-- 結果表格 -->
-                            <div class="results-table-container table-wrap" id="resultsContainer">
-                                <table class="table results-table" id="resultsTable">
+                        <div class="card wx-section" id="timetableSection">
+                            <h2 class="wx-section-title" id="timetableTitle" tabindex="-1"></h2>
+                            <div class="table-wrap">
+                                <table class="table results-table">
                                     <thead>
                                         <tr>
                                             <th data-i18n="weather_col_local_time">本地時間</th>
-                                            <th data-i18n="weather_col_eorzea_time">ET 時間</th>
+                                            <th data-i18n="weather_col_eorzea_time">ET</th>
                                             <th data-i18n="weather_col_weather">天氣</th>
-                                            <th data-i18n="weather_col_prev_weather">前置天氣</th>
                                         </tr>
                                     </thead>
-                                    <tbody id="resultsBody">
-                                        <!-- 結果行將由 JavaScript 動態生成 -->
-                                    </tbody>
+                                    <!-- 每 8 ET 小時一列，由 JavaScript 產生 -->
+                                    <tbody id="resultsBody"></tbody>
                                 </table>
                             </div>
-
-                            <!-- 無結果 -->
-                            <div class="no-results empty-state" id="noResults" style="display: none;">
-                                <p class="empty-state-text" data-i18n="weather_no_results">沒有符合條件的結果</p>
-                            </div>
-
-                            <!-- 顯示更多按鈕 -->
-                            <button class="btn btn-primary btn-block" id="showMoreBtn" style="display: none;" data-i18n="weather_show_more">顯示更多</button>
+                            <button class="btn btn-outline btn-block" id="showMoreBtn" type="button" data-i18n="weather_show_more">顯示更多</button>
                         </div>
                     </div>
-                </div>
+                </section>
             </div>
         </div>
     </main>
@@ -159,10 +164,13 @@
     <script src="../../assets/js/components/layout-loader.js"></script>
     <script src="../../assets/js/common.js"></script>
     <script src="../../assets/js/security-utils.js"></script>
+    <script src="../../assets/js/reminder-scheduler.js"></script>
     <script src="zone-data.js"></script>
     <script src="weather-calculator.js"></script>
     <script src="weather-store.js"></script>
     <script src="weather-search.js"></script>
+    <script src="weather-answer.js"></script>
+    <script src="weather-reminder.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

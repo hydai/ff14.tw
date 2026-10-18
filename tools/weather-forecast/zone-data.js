@@ -1,6 +1,6 @@
 /**
  * FF14 Weather Forecast - Zone Data
- * Contains all 78 zones with weather tables for weather calculation
+ * Contains all 73 zones with weather tables for weather calculation
  */
 
 const WeatherZoneData = {
@@ -51,7 +51,7 @@ const WeatherZoneData = {
         'tural': { zh: '圖拉爾', en: 'Tural', ja: 'トラル' }
     },
 
-    // All 78 zones with weather tables
+    // All 73 zones with weather tables
     // Weather table format: [weather1, chance1, weather2, chance2, ..., weatherN]
     // Chances are cumulative (0-99), last weather has no chance (covers remaining)
     zones: [

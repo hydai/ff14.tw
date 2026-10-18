@@ -2,182 +2,114 @@
    天氣預報 — 只寫版面；顏色、圓角、字級一律來自 tokens.css 與共用元件
    ========================================================================== */
 
-/* 目前時間：外觀由 .card 提供 */
-.current-time-bar {
-    display: flex;
-    flex-direction: row;
-    justify-content: center;
-    gap: var(--space-9);
-    padding: var(--space-4) var(--space-6);
-    margin-bottom: var(--space-6);
-}
-
-.time-display {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--space-1);
-}
-
-.time-label {
-    font-size: var(--text-xs);
-    font-weight: var(--weight-semibold);
-    letter-spacing: 0.04em;
-    color: var(--color-muted);
-}
-
-.time-value {
-    font-family: var(--font-mono);
-    font-size: var(--text-2xl);
-    font-weight: var(--weight-bold);
-    line-height: 1;
-    color: var(--color-primary);
-}
-
-/* 左右兩欄 */
-.weather-tool {
+/* 兩欄：左邊選擇區、右邊答案卡、之後幾次與時刻表；767px 以下排成一欄，選擇區在上 */
+.wx-layout {
     display: grid;
-    grid-template-columns: 280px minmax(0, 1fr);
+    grid-template-columns: 320px minmax(0, 1fr);
     gap: var(--space-6);
     align-items: start;
 }
 
-/* 地區選擇：外觀由 .card 提供 */
-.zone-selector-panel {
-    padding: var(--space-5);
-    max-height: calc(100vh - 200px);
-    overflow-y: auto;
-}
-
-.panel-title {
-    margin: 0 0 var(--space-4);
-    font-size: var(--text-lg);
-    font-weight: var(--weight-semibold);
-    color: var(--color-heading);
-}
-
-.region-group {
-    margin-bottom: var(--space-2);
-}
-
-.region-header {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    padding: var(--space-2) var(--space-3);
-    border-radius: var(--radius-md);
-    font-size: var(--text-sm);
-    font-weight: var(--weight-semibold);
-    color: var(--color-heading);
-    cursor: pointer;
-    user-select: none;
-    transition: background-color var(--duration-base) var(--ease);
-}
-
-.region-header:hover {
-    background: var(--color-surface-2);
-}
-
-.region-header:focus-visible {
-    outline: none;
-    box-shadow: var(--ring-primary);
-}
-
-.expand-icon {
-    font-size: var(--text-xs);
-    color: var(--color-muted);
-    transition: transform var(--duration-base) var(--ease);
-}
-
-.region-group.collapsed .expand-icon {
-    transform: rotate(-90deg);
-}
-
-.region-group.collapsed .zone-buttons {
+/* 用 hidden 切換的元素：共用樣式或下面的規則設了 display，會蓋過瀏覽器內建的 [hidden] { display: none }，所以要自己寫 */
+#firstVisitPrompt[hidden],
+#zoneHint[hidden],
+#shareBtn[hidden],
+#weatherField[hidden],
+#moreConditions[hidden],
+#noZoneSelected[hidden],
+#zoneContent[hidden],
+#answerWhen[hidden],
+#answerWait[hidden],
+#answerMeta[hidden],
+#answerExtra[hidden],
+#nextSection[hidden],
+#nextMoreBtn[hidden],
+#showMoreBtn[hidden],
+#reminderNotice[hidden],
+#reminderNoticeText[hidden],
+#answerActions[hidden],
+#remindBtn[hidden],
+#remindHint[hidden],
+#reminderSet[hidden],
+#reminderSetText[hidden],
+#notifyStatus[hidden] {
     display: none;
 }
 
-.zone-buttons {
+/* 選擇區：外觀與直排由 .card 提供 */
+.wx-side {
+    padding: var(--space-5);
+    gap: var(--space-4);
+}
+
+/* 時鐘一行 */
+.wx-clock {
     display: flex;
-    flex-direction: column;
-    gap: 2px;
-    padding: var(--space-1) 0 var(--space-1) var(--space-5);
-}
-
-/* 地區按鈕：比照攻略資料的目錄項目 */
-.zone-btn {
-    padding: var(--space-2) var(--space-3);
-    border: 1px solid transparent;
-    border-radius: var(--radius-md);
-    background: transparent;
-    color: var(--color-text);
-    font-family: inherit;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-4);
     font-size: var(--text-sm);
-    text-align: left;
+    color: var(--color-muted);
+}
+
+.wx-clock-value {
+    font-family: var(--font-mono);
+    font-weight: var(--weight-semibold);
+    color: var(--color-heading);
+}
+
+.wx-prompt {
+    font-size: var(--text-md);
+    font-weight: var(--weight-semibold);
+    color: var(--color-heading);
+}
+
+/* 「地區」與分享連結同一行；分享連結出現時這一行不長高 */
+.wx-field-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    min-height: var(--control-sm);
+    margin-bottom: var(--space-2);
+}
+
+.wx-field-head .form-label {
+    margin-bottom: 0;
+}
+
+/* 更多條件：原生 <details>，預設收起 */
+.wx-more {
+    border-top: 1px solid var(--color-border);
+    padding-top: var(--space-3);
+}
+
+.wx-more summary {
     cursor: pointer;
-    transition: background-color var(--duration-base) var(--ease), border-color var(--duration-base) var(--ease), color var(--duration-base) var(--ease);
-}
-
-.zone-btn:hover {
-    background: var(--color-primary-tint);
+    border-radius: var(--radius-sm);
     color: var(--color-primary);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
 }
 
-.zone-btn:focus-visible {
+.wx-more summary:focus-visible {
     outline: none;
     box-shadow: var(--ring-primary);
 }
 
-.zone-btn.active {
-    background: var(--color-primary);
-    border-color: var(--color-primary);
-    color: var(--color-on-primary);
+.wx-more-summary {
+    color: var(--color-muted);
+    font-weight: var(--weight-normal);
 }
 
-/* 主內容：外觀由 .card 提供 */
-.main-content-panel {
-    padding: var(--space-6);
-    min-height: 600px;
-}
-
-.selected-zone-header {
+.wx-more-body {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    flex-direction: column;
     gap: var(--space-4);
-    margin-bottom: var(--space-6);
+    margin-top: var(--space-3);
 }
 
-.selected-zone-header h2 {
-    margin: 0;
-    font-size: var(--text-2xl);
-    color: var(--color-heading);
-}
-
-/* 過濾條件 */
-.filter-panel {
-    padding: var(--space-5);
-    margin-bottom: var(--space-6);
-    background: var(--color-surface-2);
-    border-radius: var(--radius-md);
-}
-
-.filter-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: var(--space-4);
-    margin-bottom: var(--space-4);
-}
-
-.filter-header h3 {
-    margin: 0;
-    font-size: var(--text-md);
-    color: var(--color-heading);
-}
-
-.filter-panel .form-group:last-child {
-    margin-bottom: 0;
+.wx-more-body .btn {
+    align-self: flex-start;
 }
 
 .weather-icon {
@@ -185,31 +117,11 @@
     line-height: 1;
 }
 
-/* 時間範圍：格子外觀與 selected 狀態由 .cell 提供；
-   欄數依容器實際寬度縮減（兩欄版面在 768–930px 之間只剩 330–480px 給時間格） */
-.time-range-selector {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2);
-    container-type: inline-size;
-}
-
+/* 時段：格子外觀與 selected 狀態由 .cell 提供；左欄窄，一排 8 格、共 3 排 */
 .time-grid {
     display: grid;
-    grid-template-columns: repeat(24, 1fr);
+    grid-template-columns: repeat(8, 1fr);
     gap: 2px;
-}
-
-@container (max-width: 480px) {
-    .time-grid {
-        grid-template-columns: repeat(12, 1fr);
-    }
-}
-
-@container (max-width: 300px) {
-    .time-grid {
-        grid-template-columns: repeat(8, 1fr);
-    }
 }
 
 .time-cell {
@@ -225,16 +137,174 @@
 }
 
 .time-range-display {
+    margin-top: var(--space-2);
     text-align: center;
     font-size: var(--text-sm);
     color: var(--color-muted);
 }
 
-/* 結果：表格外觀由 .table / .table-wrap 提供 */
-.results-panel h3 {
-    margin: 0 0 var(--space-4);
-    font-size: var(--text-lg);
+/* 右欄 */
+.wx-main,
+.wx-zone {
+    display: grid;
+    gap: var(--space-4);
+    min-width: 0;
+}
+
+/* 還沒選地區：外觀由 .empty-state 提供 */
+.wx-empty {
+    padding: var(--space-8) var(--space-6);
+}
+
+/* 答案卡：主色框＋淡主色底，正在下（.is-now）換成成功色；圓角與陰影由 .card 提供 */
+.wx-answer {
+    display: grid;
+    gap: var(--space-2);
+    padding: var(--space-6);
+    border: 2px solid var(--color-primary);
+    background: var(--color-primary-tint);
+}
+
+.wx-answer.is-now {
+    border-color: var(--color-success);
+    background: var(--color-success-tint);
+}
+
+/* 答案卡的第一行是 h2（用標題跳著讀時讀得到答案），外觀照一般段落：拿掉 h2 的下邊距與行高 */
+.wx-eyebrow {
+    margin-bottom: 0;
+    font-size: var(--text-md);
+    font-weight: var(--weight-semibold);
+    line-height: var(--leading-normal);
     color: var(--color-heading);
+}
+
+/* 大字：什麼時候出現，正在下時是到幾點 */
+.wx-when {
+    font-size: var(--text-4xl);
+    font-weight: var(--weight-bold);
+    line-height: var(--leading-tight);
+    color: var(--color-heading);
+    font-variant-numeric: tabular-nums;
+}
+
+.wx-wait {
+    font-size: var(--text-lg);
+    color: var(--color-text);
+    font-variant-numeric: tabular-nums;
+}
+
+.wx-meta {
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+}
+
+/* 提醒我：按鈕、提早幾分鐘、說明排成一行，窄的時候換行 */
+.wx-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-3);
+}
+
+.wx-lead {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+}
+
+/* 共用的 .form-control 是整行寬，這裡跟著選項的寬度 */
+#leadSelect {
+    width: auto;
+}
+
+.wx-hint {
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+}
+
+/* 設好的提醒（答案卡裡）與提醒中那一行（答案卡上方）：成功色的框，取消在最右邊 */
+.wx-reminder,
+.wx-notice {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
+    border: 1px solid var(--color-success-border);
+    border-radius: var(--radius-md);
+    color: var(--color-success-text);
+    font-size: var(--text-sm);
+}
+
+.wx-reminder {
+    background: var(--color-surface);
+}
+
+.wx-notice {
+    background: var(--color-success-tint);
+}
+
+/* 文字跟鈴鐺同一行、佔掉剩下的寬度；取消放在最後，擠不下時自己換到下一行靠右 */
+#reminderSetText,
+#reminderNoticeText {
+    flex: 1 1 12rem;
+}
+
+.wx-reminder .btn,
+.wx-notice .btn {
+    margin-left: auto;
+}
+
+/* 之後幾次：每列三欄（日期時間、還要多久、ET 與到幾點）；欄寬由清單決定，每一列的欄對齊 */
+.wx-next {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr) auto;
+    column-gap: var(--space-3);
+    list-style: none;
+}
+
+.wx-next li {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
+    align-items: baseline;
+    padding: var(--space-3) 0;
+    border-top: 1px solid var(--color-border);
+}
+
+.wx-next li:first-child {
+    border-top: 0;
+}
+
+.wx-n-when {
+    font-weight: var(--weight-semibold);
+    color: var(--color-heading);
+    font-variant-numeric: tabular-nums;
+}
+
+.wx-n-wait {
+    font-variant-numeric: tabular-nums;
+}
+
+.wx-n-et {
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+/* 之後幾次與時刻表：外觀由 .card（時刻表另有 .table / .table-wrap）提供 */
+.wx-section {
+    padding: var(--space-5);
+}
+
+/* 兩段的標題都是 h2（頁面的 h1 是隱藏的），字級照區塊標題 */
+.wx-section-title {
+    margin-bottom: var(--space-3);
+    font-size: var(--text-lg);
 }
 
 .results-table th:first-child,
@@ -258,52 +328,29 @@
     gap: var(--space-2);
 }
 
-.no-results {
-    margin-bottom: var(--space-4);
-}
-
+#nextMoreBtn,
 #showMoreBtn {
     margin-top: var(--space-4);
 }
 
 /* 響應式 */
-@media (max-width: 768px) {
-    .weather-tool {
-        grid-template-columns: 1fr;
+@media (max-width: 767px) {
+    .wx-layout {
+        grid-template-columns: minmax(0, 1fr);
+        gap: var(--space-4);
     }
 
-    .zone-selector-panel {
-        max-height: none;
+    /* 上下留白縮一點：390px 的手機上連同提醒那一列，答案卡整張在第一個畫面裡 */
+    .wx-answer {
+        padding: var(--space-4) var(--space-5);
     }
 
-    .zone-buttons {
-        flex-direction: row;
-        flex-wrap: wrap;
-        padding-left: var(--space-3);
+    .wx-when {
+        font-size: var(--text-3xl);
     }
 
-    .zone-btn {
-        flex: 0 0 auto;
-    }
-
-    .current-time-bar {
-        gap: var(--space-7);
-        padding: var(--space-3);
-    }
-
-    .time-value {
-        font-size: var(--text-xl);
-    }
-
-    .main-content-panel {
+    .wx-section {
         padding: var(--space-4);
-        min-height: 0;
-    }
-
-    .selected-zone-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: var(--space-3);
     }
 
     .results-table th,
@@ -312,20 +359,18 @@
     }
 }
 
-@media (max-width: 480px) {
-    .current-time-bar {
-        flex-direction: column;
-        gap: var(--space-2);
+/* 很窄的手機：之後幾次的 ET 那一段換到第二行 */
+@media (max-width: 479px) {
+    .wx-next {
+        grid-template-columns: minmax(0, 1fr) auto;
     }
 
-    .time-display {
-        flex-direction: row;
-        gap: var(--space-2);
+    .wx-next li {
+        row-gap: var(--space-1);
     }
 
-    /* 隱藏前置天氣欄以節省空間 */
-    .results-table th:nth-child(4),
-    .results-table td:nth-child(4) {
-        display: none;
+    .wx-n-et {
+        grid-column: 1 / -1;
+        text-align: left;
     }
 }
