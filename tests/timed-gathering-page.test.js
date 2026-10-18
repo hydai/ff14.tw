@@ -613,6 +613,22 @@ test('卡片與搜尋結果的文字三語都有；index.html 的預設文字是
     assert.match(html, /id="searchInput"[^>]*placeholder="用中文、日文或英文搜尋"/);
 });
 
+test('翻譯檔的每一個鍵，英文、日文和中文用同樣的 {參數}：頁面照名字代入，寫成 {0} 會原樣顯示出來', () => {
+    const placeholders = (text) => [...new Set(Array.from(text.matchAll(/\{(\w+)\}/g), (match) => match[1]))].sort();
+    const zh = translationValues(TRANSLATIONS, 'zh');
+    const mismatched = [];
+    for (const lang of ['en', 'ja']) {
+        const values = translationValues(TRANSLATIONS, lang);
+        for (const [key, text] of zh) {
+            if (!values.has(key)) continue; // 沒有這個鍵時頁面用中文，參數一定對得上
+            const expected = placeholders(text);
+            const actual = placeholders(values.get(key));
+            if (actual.join() !== expected.join()) mismatched.push(`${lang} ${key}：{${actual.join('}{')}}，中文是 {${expected.join('}{')}}`);
+        }
+    }
+    assert.deepEqual(mismatched, []);
+});
+
 // ---------- 倒數每秒走、切換時重排 ----------
 // 資料的時段都落在每 2 個艾歐澤亞小時一格的整點上，所以 ET 12:00 整同時有兩群切換：
 // 10:00 開始的四種（八面體隕鐵礦石、黑琥珀原石、金合歡原木、真銀礦）在 12:00 結束（end 不含），

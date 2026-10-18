@@ -240,10 +240,10 @@ window.TimedGatheringTranslations = {
         newNameLabel: '新しい名前：',
         enterListNamePlaceholder: 'リスト名を入力',
         
-        confirmDeleteList: 'リスト「{0}」を削除してもよろしいですか',
-        confirmClearList: 'リスト「{0}」をクリアしてもよろしいですか',
+        confirmDeleteList: 'リスト「{name}」を削除してもよろしいですか',
+        confirmClearList: 'リスト「{name}」をクリアしてもよろしいですか',
         operationCannotUndo: 'この操作は取り消せません！',
-        willRemoveItems: '削除されるアイテム：{0} 個',
+        willRemoveItems: '削除されるアイテム：{count} 個',
         
         selectFileLabel: 'ファイルを選択：',
         selectJsonFileHint: '以前エクスポートしたJSONファイルを選択してください',
@@ -260,13 +260,13 @@ window.TimedGatheringTranslations = {
         listDeletedNotification: 'リストを削除しました',
         listClearedNotification: 'リストをクリアしました',
         listsExportedNotification: 'リストをエクスポートしました',
-        listsImportedNotification: 'インポート成功：{0} 個のリスト',
+        listsImportedNotification: 'インポート成功：{count} 個のリスト',
         macroCopiedNotification: 'マクロをクリップボードにコピーしました',
         
         // 錯誤訊息
         initFailedError: '初期化に失敗しました。ページを更新してください',
         dataLoadFailedError: 'アイテムデータの読み込みに失敗しました。ページを更新して再試行してください',
-        maxListsWarning: '最大 {0} 個のリストまで作成可能です',
+        maxListsWarning: '最大 {max} 個のリストまで作成可能です',
         atLeastOneListWarning: '少なくとも1つのリストを保持する必要があります',
         listAlreadyEmptyInfo: 'リストは既に空です',
         emptyListNoMacroWarning: 'リストが空のため、マクロを生成できません',
@@ -285,7 +285,7 @@ window.TimedGatheringTranslations = {
         
         // list-manager 專用訊息
         listNameEmpty: 'リスト名を入力してください',
-        listNameTooLong: 'リスト名は {0} 文字以内にしてください',
+        listNameTooLong: 'リスト名は {max} 文字以内にしてください',
         listNameExists: 'リスト名は既に存在します',
         maxListsReached: '最大リスト数に達しました',
         itemAlreadyInList: 'アイテムは既にリストに存在します',
@@ -305,10 +305,10 @@ window.TimedGatheringTranslations = {
         itemOrderUpdated: 'アイテムの順序を更新しました',
         invalidImportData: '無効なインポートデータ',
         incompatibleFileVersion: 'ファイルバージョンが互換性がありません',
-        successImportedLists: 'インポート成功：{0} 個のリスト',
+        successImportedLists: 'インポート成功：{count} 個のリスト',
         sourceListNotExist: 'ソースリストが存在しません',
         listCopiedSuccess: 'リストをコピーしました',
-        addedItemsToList: '追加しました：{0} 個のアイテム',
+        addedItemsToList: '追加しました：{count} 個のアイテム',
         listMaxItems: 'リストには最大 {max} 個のアイテムまで',
         itemAlreadyInListSimple: 'このアイテムは既にリストに存在します',
 
@@ -412,10 +412,10 @@ window.TimedGatheringTranslations = {
         newNameLabel: 'New Name:',
         enterListNamePlaceholder: 'Enter list name',
 
-        confirmDeleteList: 'Are you sure you want to delete the list "{0}"?',
-        confirmClearList: 'Are you sure you want to clear the list "{0}"?',
+        confirmDeleteList: 'Are you sure you want to delete the list "{name}"?',
+        confirmClearList: 'Are you sure you want to clear the list "{name}"?',
         operationCannotUndo: 'This operation cannot be undone!',
-        willRemoveItems: 'Will remove {0} items',
+        willRemoveItems: 'Will remove {count} items',
 
         selectFileLabel: 'Select File:',
         selectJsonFileHint: 'Select a previously exported JSON file',
@@ -432,13 +432,13 @@ window.TimedGatheringTranslations = {
         listDeletedNotification: 'List deleted',
         listClearedNotification: 'List cleared',
         listsExportedNotification: 'Lists exported',
-        listsImportedNotification: 'Successfully imported {0} lists',
+        listsImportedNotification: 'Successfully imported {count} lists',
         macroCopiedNotification: 'Macro copied to clipboard',
 
         // Error messages
         initFailedError: 'Initialization failed, please refresh the page',
         dataLoadFailedError: 'Failed to load item data, please refresh and try again',
-        maxListsWarning: 'Maximum of {0} lists allowed',
+        maxListsWarning: 'Maximum of {max} lists allowed',
         atLeastOneListWarning: 'At least one list must be kept',
         listAlreadyEmptyInfo: 'List is already empty',
         emptyListNoMacroWarning: 'List is empty, cannot generate macro',
@@ -457,7 +457,7 @@ window.TimedGatheringTranslations = {
 
         // list-manager specific messages
         listNameEmpty: 'List name cannot be empty',
-        listNameTooLong: 'List name cannot exceed {0} characters',
+        listNameTooLong: 'List name cannot exceed {max} characters',
         listNameExists: 'List name already exists',
         maxListsReached: 'Maximum list limit reached',
         itemAlreadyInList: 'Item is already in the list',
@@ -477,10 +477,10 @@ window.TimedGatheringTranslations = {
         itemOrderUpdated: 'Item order updated',
         invalidImportData: 'Invalid import data',
         incompatibleFileVersion: 'File version is incompatible',
-        successImportedLists: 'Successfully imported {0} lists',
+        successImportedLists: 'Successfully imported {count} lists',
         sourceListNotExist: 'Source list does not exist',
         listCopiedSuccess: 'List copied successfully',
-        addedItemsToList: 'Added {0} items to target list',
+        addedItemsToList: 'Added {count} items to target list',
         listMaxItems: 'List can contain maximum of {max} items',
         itemAlreadyInListSimple: 'This item is already in the list',
 
