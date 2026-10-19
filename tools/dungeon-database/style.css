@@ -148,12 +148,12 @@
     color: var(--color-text);
 }
 
-/* 搜尋關鍵字標示 */
+/* 搜尋關鍵字標示：字用標題色，跟著周圍的話，說明的淡色字在底色上對比不夠 */
 .dungeon-card mark {
     padding: 0 2px;
     border-radius: var(--radius-sm);
     background: var(--color-mark);
-    color: inherit;
+    color: var(--color-heading);
 }
 
 /* 無結果：外觀由 .empty-state 提供 */

@@ -100,6 +100,9 @@ test('關鍵配色對比度達 WCAG AA（4.5:1）', () => {
         ['--color-on-danger', '--color-danger'],
         ['--color-on-info', '--color-info'],
         ['--color-primary', '--color-surface'],
+        // 搜尋命中的字（<mark>）一律用標題色寫在 --color-mark 上（見下面的測試）；內文色也要看得清楚
+        ['--color-heading', '--color-mark'],
+        ['--color-text', '--color-mark'],
     ];
     for (const theme of [light, dark]) {
         for (const [fg, bg] of pairs) {
@@ -109,6 +112,22 @@ test('關鍵配色對比度達 WCAG AA（4.5:1）', () => {
             const ratio = contrast(f, b);
             assert.ok(ratio >= 4.5, `${fg} 對 ${bg} 對比 ${ratio.toFixed(2)} < 4.5`);
         }
+    }
+});
+
+test('搜尋命中的底色（--color-mark）在卡片上看得出來，標出來的字一律用標題色', () => {
+    // 以前淺色的 --color-mark 是 #fdf1de，和白色卡片的亮度對比只有 1.12，幾乎看不出哪些字命中
+    for (const theme of [light, dark]) {
+        const ratio = contrast(theme.get('--color-mark'), theme.get('--color-surface'));
+        assert.ok(ratio >= 1.2, `--color-mark 對 --color-surface 的亮度對比 ${ratio.toFixed(2)} < 1.2`);
+    }
+    // 每一條拿 --color-mark 當底色的規則都把字設成標題色：跟著周圍（inherit）時，淡色（--color-muted）的字在底色上對比不到 4.5
+    const rules = TOKEN_CLEAN_FILES.flatMap((file) => [...stripComments(read(file)).matchAll(/([^{}]+)\{([^}]*)\}/g)]
+        .filter((match) => /background(?:-color)?:\s*var\(--color-mark\)/.test(match[2]))
+        .map((match) => ({ file, selector: match[1].trim(), body: match[2] })));
+    assert.ok(rules.length >= 2, '採集頁與副本資料庫都有用 --color-mark 的規則');
+    for (const rule of rules) {
+        assert.match(rule.body, /(?:^|[\s;])color:\s*var\(--color-heading\);/, `${rule.file} 的 ${rule.selector} 要設 color: var(--color-heading)`);
     }
 });
 

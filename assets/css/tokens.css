@@ -37,7 +37,7 @@
     --color-muted: #64707d;
     --color-on-muted: #ffffff;
     --color-hover: rgba(0, 0, 0, 0.05);
-    --color-mark: #fdf1de;
+    --color-mark: #fde68a;
     --color-overlay: rgba(0, 0, 0, 0.5);
 
     /* ---- 語意色：fill / tint（柔和底）/ text（柔和底上的字）/ border / on（實心底上的字） ---- */
@@ -174,7 +174,7 @@
     --color-muted: #a0a8b8;
     --color-on-muted: #0f1419;
     --color-hover: rgba(255, 255, 255, 0.06);
-    --color-mark: rgba(247, 184, 74, 0.25);
+    --color-mark: #725b39;
     --color-overlay: rgba(0, 0, 0, 0.7);
 
     --color-success: #34d058;
