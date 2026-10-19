@@ -7,84 +7,25 @@ const vm = require('node:vm');
 const items = require('../data/timed-gathering.json').items;
 const root = path.resolve(__dirname, '..');
 
-// Keep browser globals isolated while executing the real controllers and modules.
+// Keep browser globals isolated while executing the real modules. The page itself (the controller in script.js)
+// runs on the fake DOM in tests/timed-gathering-page.test.js, so only what these modules touch is provided here:
+// localStorage (ListManager), FF14Utils.getI18nText (ListManager's messages) and console.error (ListManager's failures).
 function createEnvironment() {
-    const nodes = [];
-    function element(tag = 'div') {
-        const node = {
-            tagName: tag, children: [], dataset: {}, attributes: {}, style: {}, value: '', className: '',
-            appendChild(child) { this.children.push(child); return child; },
-            removeChild(child) { this.children.splice(this.children.indexOf(child), 1); },
-            get firstChild() { return this.children[0]; },
-            set textContent(value) { this.text = String(value); this.children = []; },
-            get textContent() { return (this.text || '') + this.children.map(child => child.textContent).join(''); },
-            setAttribute(name, value) { this.attributes[name] = String(value); },
-            getAttribute(name) { return this.attributes[name]; },
-            addEventListener() {}, scrollIntoView() {}, select() {}, focus() {},
-            querySelectorAll(selector) {
-                const descendants = this.children.flatMap(child => [child, ...child.querySelectorAll('*')]);
-                return descendants.filter(child => selector === '*' || (selector.startsWith('.')
-                    ? selector.slice(1).split('.').every(name => child.className.split(' ').includes(name))
-                    : child.tagName === selector));
-            },
-            querySelector(selector) { return this.querySelectorAll(selector)[0] || null; }
-        };
-        node.classList = {
-            add(...names) { node.className = [...new Set([...node.className.split(' ').filter(Boolean), ...names])].join(' '); },
-            remove(...names) { node.className = node.className.split(' ').filter(name => !names.includes(name)).join(' '); },
-            toggle(name, force) { const enabled = force ?? !node.className.split(' ').includes(name); this[enabled ? 'add' : 'remove'](name); return enabled; }
-        };
-        nodes.push(node);
-        return node;
-    }
     const storage = new Map();
-    const toasts = [];
     const context = vm.createContext({
-        console: { log() {}, error() {}, warn() {} },
-        document: {
-            createElement: element,
-            createTextNode(text) { const node = element('#text'); node.textContent = text; return node; },
-            getElementById(id) { let node = nodes.find(candidate => candidate.id === id); if (!node) { node = element(); node.id = id; } return node; },
-            querySelectorAll() { return []; }, addEventListener() {}
-        },
+        console: { error() {} },
         localStorage: { getItem: key => storage.get(key) ?? null, setItem: (key, value) => storage.set(key, value) },
-        FF14Utils: { getI18nText: (key, fallback, values = {}) => fallback.replace(/\{(\w+)\}/g, (_, name) => values[name]), showToast: (message, type) => toasts.push({ message, type }) },
-        i18n: { getCurrentLanguage: () => 'zh', onLanguageChange() {} },
-        ModalManager: class { show() {} hide() {} },
-        FileReader: class { readAsText(text) { this.onload({ target: { result: text } }); } },
-        fetch: async () => ({ ok: true, text: async () => JSON.stringify({ items }) }),
-        setInterval: () => 1, clearInterval() {}, setTimeout() {}, clearTimeout() {}
+        FF14Utils: { getI18nText: (key, fallback, values = {}) => fallback.replace(/\{(\w+)\}/g, (_, name) => values[name]) }
     });
     context.window = context;
-    for (const file of ['assets/js/security-utils.js', ...['time-calculator', 'list-manager', 'notification-manager', 'macro-exporter', 'search-filter', 'script'].map(name => `tools/timed-gathering/${name}.js`)]) {
+    for (const file of ['time-calculator', 'gathering-materials', 'list-manager', 'macro-exporter', 'search-filter'].map(name => `tools/timed-gathering/${name}.js`)) {
         vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), context, { filename: file });
     }
-    const classes = vm.runInContext('({ TimeCalculator, ListManager, NotificationManager, MacroExporter, SearchFilter, TimedGatheringManager })', context);
-    return { context, ...classes, storage, toasts };
-}
-
-async function initializeController(env) {
-    const app = vm.runInContext('new (class extends TimedGatheringManager { initialize() { this.ready = super.initialize(); return this.ready; } })()', env.context);
-    await app.ready;
-    return app;
+    const classes = vm.runInContext('({ TimeCalculator, GatheringMaterials, ListManager, MacroExporter, SearchFilter })', context);
+    return { context, ...classes, storage };
 }
 
 const clone = value => JSON.parse(JSON.stringify(value));
-
-test('a real exported backup round-trips through the file import controller, including all item formats', async () => {
-    const env = createEnvironment();
-    const source = new env.ListManager();
-    source.renameList('default', 'A&B');
-    for (const item of items) assert.equal(source.addToList('default', item).success, true);
-    const backup = JSON.stringify(source.exportLists());
-    const app = await initializeController(env);
-    app.importFile(backup);
-    const imported = app.listManager.getAllLists().find(list => list.name === 'A&B (1)');
-    assert.ok(imported);
-    assert.deepEqual(clone(imported.items), clone(source.getList('default').items));
-    assert.ok(new env.ListManager().getList(imported.id), 'the imported list survives a reload');
-    assert.equal(env.toasts.at(-1).type, 'success');
-});
 
 test('nested invalid backups and capacity overflow cannot partially modify lists or storage', () => {
     const env = createEnvironment();
@@ -219,31 +160,21 @@ test('a renamed or previously used default list is preserved even when it is emp
     }
 });
 
-test('without Notification API the complete controller still loads data and lists', async () => {
-    const env = createEnvironment();
-    const app = await initializeController(env);
-    assert.equal(app.data.length, items.length);
-    assert.equal(app.elements.itemsContainer.children.length, items.length);
-    assert.equal(app.elements.listTabs.children.length, 1);
-    assert.equal(env.context.document.getElementById('notificationToggle').disabled, true);
-    assert.equal(env.context.document.getElementById('testNotificationBtn').disabled, true);
-    assert.equal(env.context.document.getElementById('notificationStatus').textContent, '瀏覽器不支援通知');
-    assert.doesNotThrow(() => app.notificationManager.testNotification());
-    app.addItemToList(items[0]);
-    assert.equal(app.listManager.getList('default').items.length, 1);
-});
-
-test('ranged and all-day schedules agree across notification windows, sorting and alarm export', () => {
+test('ranged and all-day schedules agree across gathering windows, sorting and alarm export', () => {
     const env = createEnvironment();
     const exporter = new env.MacroExporter();
-    const notification = new env.NotificationManager();
-    const at = (hours, minutes = 0) => ({ hours, minutes, seconds: 0 });
-    const crossMidnight = { time: '22:00-00:00', duration: 55 };
-    assert.equal(notification.isInGatheringWindow(crossMidnight, at(23, 59)), true);
-    assert.equal(notification.isInGatheringWindow(crossMidnight, at(0)), false);
-    assert.equal(notification.isInGatheringWindow({ time: '22:00-02:00' }, at(1)), true);
-    assert.equal(notification.isInGatheringWindow({ time: '全天', duration: 1440 }, at(13)), true);
-    assert.equal(notification.getTimeUntilGathering({ time: '全天', duration: 1440 }, at(13)), -1);
+    // ET times are written as "offset ET days from the day containing T, at hours:minutes"
+    const T = 1_760_000_000_000;
+    const day = Math.floor(T / 4_200_000);
+    const at = (offset, hours, minutes = 0) => Math.round(((day + offset) * 1440 + hours * 60 + minutes) * (175000 / 60));
+    // The duration field is ignored when time is a range, so 55 must not shorten these windows
+    const kindAt = (time, duration, now) => env.GatheringMaterials.state(
+        env.GatheringMaterials.group([{ ...items[0], id: 'x_1', time, duration }])[0], now
+    ).kind;
+    assert.equal(kindAt('22:00-00:00', 55, at(0, 23, 59)), 'now');
+    assert.equal(kindAt('22:00-00:00', 55, at(1, 0)), 'next');
+    assert.equal(kindAt('22:00-02:00', 55, at(0, 1)), 'now');
+    assert.equal(kindAt('全天', 1440, at(0, 13)), 'allday');
     const selected = items.filter(item => ['mining_lightning_quartz', 'botany_iris_root', 'fishing_purple_tongue'].includes(item.id));
     const macro = exporter.generate([...selected].reverse());
     assert.equal(macro.split('\n')[0], '/alarm clear');
@@ -258,26 +189,38 @@ test('ranged and all-day schedules agree across notification windows, sorting an
     assert.equal(new env.SearchFilter().parseTime('16:00-20:00'), 960);
 });
 
-test('list names and search preserve raw ampersands, apostrophes and literal markup as text', async () => {
+test('generateOneTimeAlarm: the list-export line minus rp; null for all-day and invalid times; the description when there is no macroFormat', () => {
     const env = createEnvironment();
-    const app = await initializeController(env);
-    app.showNewListDialog();
-    env.context.document.getElementById('newListName').value = 'A&B';
-    app.elements.dialogConfirm.onclick();
-    const created = app.listManager.getList(app.currentListId);
-    assert.equal(created.name, 'A&B');
-    assert.equal(app.elements.currentListName.textContent, 'A&B');
-    app.showRenameListDialog();
-    env.context.document.getElementById('renameListInput').value = "A&B's <plan>";
-    app.elements.dialogConfirm.onclick();
-    assert.equal(created.name, "A&B's <plan>");
-    assert.equal(app.currentListId, created.id);
-    assert.equal(app.elements.currentListName.textContent, "A&B's <plan>");
-    assert.equal(app.elements.currentListName.children.length, 0);
-    app.data = [{ ...items[0], nameEn: "A&B's ore" }];
-    for (const query of ["B's", 'A&B']) {
-        app.elements.searchInput.value = query;
-        app.applyFilters();
-        assert.equal(app.filteredData.length, 1);
+    const exporter = new env.MacroExporter();
+    const byId = id => items.find(item => item.id === id);
+    const cordia = byId('botany_cordia_resin_2');
+
+    // 兩個時段的素材各自一行，開始時間寫在 et 後面；沒有 rp
+    assert.equal(exporter.generateOneTimeAlarm(cordia), '/alarm "園/樹液/マムーク/コーディア樹液塊" et 1200 1 se04 mute');
+    assert.equal(exporter.generateOneTimeAlarm(byId('botany_cordia_resin_1')), '/alarm "園/樹液/マムーク/コーディア樹液塊" et 0000 1 se04 mute');
+    // 區間（00:00-04:00）用開始時間
+    assert.equal(
+        exporter.generateOneTimeAlarm(byId('mining_lightning_quartz')),
+        '/alarm "採/石/レイノード・ウィンド/ライトニングクォーツ" et 0000 1 se04 mute'
+    );
+    assert.equal(exporter.generateOneTimeAlarm(cordia, 'se02'), '/alarm "園/樹液/マムーク/コーディア樹液塊" et 1200 1 se02 mute');
+
+    // 全天與時間無效：沒有鬧鐘可設
+    assert.equal(exporter.generateOneTimeAlarm(byId('fishing_purple_tongue')), null);
+    for (const time of ['99:00', '12:60', 'bad']) assert.equal(exporter.generateOneTimeAlarm({ ...cordia, time }), null, time);
+
+    // 沒有 macroFormat 時用描述（類型/等級/地點/名稱），和 generateAlarmCommand() 拿掉 rp 的結果一樣
+    const plain = { ...cordia, macroFormat: undefined };
+    assert.equal(exporter.generateOneTimeAlarm(plain), '/alarm "園/Lv110/瑪姆克/科迪亞樹液塊" et 1200 1 se04 mute');
+    assert.equal(exporter.generateOneTimeAlarm(plain), exporter.generateAlarmCommand(plain).replace(' et rp ', ' et '));
+    // 資料裡的每一筆都是：和 generateAlarmCommand() 只差一個 rp（全天的兩邊都是 null）
+    for (const item of items) {
+        const repeating = exporter.generateAlarmCommand(item);
+        assert.equal(exporter.generateOneTimeAlarm(item), repeating && repeating.replace(' et rp ', ' et '), item.id);
     }
+
+    // 整份清單的巨集匯出沒有改：每一行鬧鐘仍然有 et rp（超過 15 行時分組的標題行不算）
+    const alarms = exporter.generate(items).split('\n').filter(line => line.startsWith('/alarm "'));
+    assert.equal(alarms.length, items.filter(item => item.time !== '全天').length);
+    assert.ok(alarms.every(line => line.includes(' et rp ')), '每一行都有 et rp');
 });

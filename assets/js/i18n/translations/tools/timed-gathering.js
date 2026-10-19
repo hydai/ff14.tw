@@ -6,15 +6,9 @@ window.TimedGatheringTranslations = {
         // 頁面標題和標頭
         pageTitle: '特殊採集時間管理器',
         pageDescription: 'FF14 特殊採集時間管理工具，支援搜尋、多清單管理、巨集匯出功能',
-        
-        // 時間顯示
-        localTimeLabel: '本地時間 (LT)',
-        eorzeaTimeLabel: '艾歐爾傑亞時間 (ET)',
-        dayTime: '白天',
-        nightTime: '夜晚',
-        
+
         // 搜尋和篩選
-        searchPlaceholder: '搜尋採集物名稱、地點...', 
+        searchPlaceholder: '用中文、日文或英文搜尋',
         clearButton: '清除',
         filterType: '類型：',
         filterExpansion: '資料片：',
@@ -29,9 +23,11 @@ window.TimedGatheringTranslations = {
         exportButton: '匯出',
         
         // 面板標題
-        itemsListTitle: '採集物列表',
+        itemsListTitle: '採集物',
         loadingItems: '載入採集物資料中...',
         noItemsFound: '沒有符合條件的採集物',
+        resultsCount: '{count} 種 · 照出現時間排序',
+        resultsFound: '找到 {count} 種',
         
         // 清單管理
         defaultListName: '預設清單',
@@ -45,6 +41,13 @@ window.TimedGatheringTranslations = {
         addToListButton: '加入清單',
         addedToListButton: '已加入',
         removeFromList: '移除',
+        statusNow: '現在可採 · 還剩 {left}（到 {end}）',
+        statusNext: '{time} 出現 · 還要 {wait}',
+        statusAllDay: '全天都可以採',
+        waitMinutes: '{m} 分',
+        scheduleDaily: '每天 {slots}，每次約 {minutes} 分鐘',
+        scheduleAllDay: '全天',
+        listSeparator: '、',
         
         // 巨集匯出
         macroSectionTitle: '巨集匯出',
@@ -78,6 +81,7 @@ window.TimedGatheringTranslations = {
 
         // 通知訊息
         addedToListNotification: '已加入清單',
+        listAddedNotSaved: '已加入清單，但瀏覽器不讓這個網站存資料，重新整理後就不見了',
         removedFromListNotification: '已從清單移除',
         listCreatedNotification: '清單已建立',
         listRenamedNotification: '清單已重新命名',
@@ -135,42 +139,48 @@ window.TimedGatheringTranslations = {
         addedItemsToList: '已新增 {count} 個項目到目標清單',
         listMaxItems: '清單最多只能包含 {max} 個項目',
         itemAlreadyInListSimple: '此採集物已在清單中',
-        
-        // 通知功能
-        notificationLabel: '採集提醒',
-        notificationToggleLabel: '啟用採集通知提醒',
-        notificationDisabled: '已停用',
-        notificationEnabled: '已啟用',
-        notificationPermissionDenied: '通知權限被拒絕',
-        notificationNotSupported: '瀏覽器不支援通知',
-        notificationHint: '採集時間到達時發送瀏覽器通知提醒',
-        notificationTitle: 'FF14 採集提醒',
-        notificationBodyTemplate: '{itemName} 現在可以採集了！\n地點：{zone} {location}\n座標：{coordinates}',
-        testNotificationButton: '🔔 測試',
-        testNotificationButtonShort: '測試通知',
 
-        // 視覺通知文字
-        visualNotificationTitle: '🔔 採集提醒',
-        visualNotificationBody: '{itemName} 現在可以採集了！',
-        visualNotificationTime: '時間',
-        visualNotificationLocation: '地點',
-        testItemName: '測試物品',
-        testZoneName: '測試地區',
+        // 我的提醒、網頁提醒與時鐘
+        remindersTitle: '我的提醒',
+        webReminderToggle: '網頁提醒',
+        leadLabel: '通知時間',
+        leadOptionAtStart: '出現時',
+        leadOption: '出現前 {n} 分鐘',
+        clockEt: 'ET',
+        clockLocal: '本地',
+        remindersNote: '頁面要開著才會響。',
+        showAllReminders: '顯示全部 {count} 個',
+        showFewerReminders: '收起',
+        remindButton: '提醒我',
+        remindSetButton: '已設提醒',
+        cancelReminderLabel: '取消提醒：{name}',
+        reminderAddedToast: '已設提醒：{name}',
+        reminderRemovedToast: '已取消提醒：{name}',
+        notifyTitle: '{name} {n} 分鐘後出現',
+        notifyTitleNow: '{name}出現了',
+        notifyBody: '{start} 開始，到 {end}（{et}）· {place}',
+        notifyDenied: '瀏覽器封鎖了這個網站的通知，到時間只會在頁面上提示和發出聲音。可以從網址列左邊的網站設定打開，或改用遊戲鬧鐘。',
+        notifyUnsupported: '這個瀏覽器不能跳通知，到時間只會在頁面上提示和發出聲音，或改用遊戲鬧鐘。',
+
+        // 複製鬧鐘
+        copyAlarmButton: '複製鬧鐘',
+        copyAlarmLabel: '複製鬧鐘：{name}',
+        alarmCopiedToast: '已複製鬧鐘指令',
+        alarmCopiedNote: '已複製下一次（ET {time}）的遊戲鬧鐘，貼到遊戲的聊天輸入框就設好：',
+        alarmCopyFailedNote: '沒辦法自動複製。下一次（ET {time}）的遊戲鬧鐘在下面，請自己選取複製，貼到遊戲的聊天輸入框：',
+
+        // 測試通知
+        notificationTitle: 'FF14 採集提醒',
+        testNotificationButtonShort: '測試通知',
         testNotificationBody: '這是一個測試通知，請確認您是否看到了'
     },
     ja: {
         // 頁面標題和標頭
         pageTitle: 'タイムド採集管理',
         pageDescription: 'FF14 タイムド採集管理ツール、検索、複数リスト管理、マクロエクスポート機能対応',
-        
-        // 時間顯示
-        localTimeLabel: 'ローカル時間 (LT)',
-        eorzeaTimeLabel: 'エオルゼア時間 (ET)',
-        dayTime: '昼',
-        nightTime: '夜',
-        
+
         // 搜尋和篩選
-        searchPlaceholder: 'アイテム名、場所を検索...', 
+        searchPlaceholder: '日・英・中国語で検索',
         clearButton: 'クリア',
         filterType: 'タイプ：',
         filterExpansion: 'パッチ：',
@@ -185,9 +195,11 @@ window.TimedGatheringTranslations = {
         exportButton: 'エクスポート',
         
         // 面板標題
-        itemsListTitle: 'アイテムリスト',
+        itemsListTitle: '採集物',
         loadingItems: 'アイテムデータを読み込み中...',
         noItemsFound: '条件に一致するアイテムがありません',
+        resultsCount: '{count}種 ・ 出現が近い順',
+        resultsFound: '{count}種見つかりました',
         
         // 清單管理
         defaultListName: 'デフォルトリスト',
@@ -201,6 +213,13 @@ window.TimedGatheringTranslations = {
         addToListButton: 'リストに追加',
         addedToListButton: '追加済み',
         removeFromList: '削除',
+        statusNow: '採集可能 ・ 残り{left}（{end}まで）',
+        statusNext: '{time}に出現 ・ あと{wait}',
+        statusAllDay: '終日採集できます',
+        waitMinutes: '{m}分',
+        scheduleDaily: '毎日 {slots}、1回約{minutes}分',
+        scheduleAllDay: '終日',
+        listSeparator: '、',
         
         // 巨集匯出
         macroSectionTitle: 'マクロエクスポート',
@@ -221,10 +240,10 @@ window.TimedGatheringTranslations = {
         newNameLabel: '新しい名前：',
         enterListNamePlaceholder: 'リスト名を入力',
         
-        confirmDeleteList: 'リスト「{0}」を削除してもよろしいですか',
-        confirmClearList: 'リスト「{0}」をクリアしてもよろしいですか',
+        confirmDeleteList: 'リスト「{name}」を削除してもよろしいですか',
+        confirmClearList: 'リスト「{name}」をクリアしてもよろしいですか',
         operationCannotUndo: 'この操作は取り消せません！',
-        willRemoveItems: '削除されるアイテム：{0} 個',
+        willRemoveItems: '削除されるアイテム：{count} 個',
         
         selectFileLabel: 'ファイルを選択：',
         selectJsonFileHint: '以前エクスポートしたJSONファイルを選択してください',
@@ -234,19 +253,20 @@ window.TimedGatheringTranslations = {
         
         // 通知訊息
         addedToListNotification: 'リストに追加しました',
+        listAddedNotSaved: 'リストに追加しましたが、ブラウザがこのサイトのデータ保存を許可していないため、再読み込みすると消えます',
         removedFromListNotification: 'リストから削除しました',
         listCreatedNotification: 'リストを作成しました',
         listRenamedNotification: 'リスト名を変更しました',
         listDeletedNotification: 'リストを削除しました',
         listClearedNotification: 'リストをクリアしました',
         listsExportedNotification: 'リストをエクスポートしました',
-        listsImportedNotification: 'インポート成功：{0} 個のリスト',
+        listsImportedNotification: 'インポート成功：{count} 個のリスト',
         macroCopiedNotification: 'マクロをクリップボードにコピーしました',
         
         // 錯誤訊息
         initFailedError: '初期化に失敗しました。ページを更新してください',
         dataLoadFailedError: 'アイテムデータの読み込みに失敗しました。ページを更新して再試行してください',
-        maxListsWarning: '最大 {0} 個のリストまで作成可能です',
+        maxListsWarning: '最大 {max} 個のリストまで作成可能です',
         atLeastOneListWarning: '少なくとも1つのリストを保持する必要があります',
         listAlreadyEmptyInfo: 'リストは既に空です',
         emptyListNoMacroWarning: 'リストが空のため、マクロを生成できません',
@@ -265,7 +285,7 @@ window.TimedGatheringTranslations = {
         
         // list-manager 專用訊息
         listNameEmpty: 'リスト名を入力してください',
-        listNameTooLong: 'リスト名は {0} 文字以内にしてください',
+        listNameTooLong: 'リスト名は {max} 文字以内にしてください',
         listNameExists: 'リスト名は既に存在します',
         maxListsReached: '最大リスト数に達しました',
         itemAlreadyInList: 'アイテムは既にリストに存在します',
@@ -285,33 +305,45 @@ window.TimedGatheringTranslations = {
         itemOrderUpdated: 'アイテムの順序を更新しました',
         invalidImportData: '無効なインポートデータ',
         incompatibleFileVersion: 'ファイルバージョンが互換性がありません',
-        successImportedLists: 'インポート成功：{0} 個のリスト',
+        successImportedLists: 'インポート成功：{count} 個のリスト',
         sourceListNotExist: 'ソースリストが存在しません',
         listCopiedSuccess: 'リストをコピーしました',
-        addedItemsToList: '追加しました：{0} 個のアイテム',
-        listMaxItems: 'リストには最大 {0} 個のアイテムまで',
+        addedItemsToList: '追加しました：{count} 個のアイテム',
+        listMaxItems: 'リストには最大 {max} 個のアイテムまで',
         itemAlreadyInListSimple: 'このアイテムは既にリストに存在します',
-        
-        // 通知機能
-        notificationLabel: '採集リマインダー',
-        notificationToggleLabel: '採集通知リマインダーを有効にする',
-        notificationDisabled: '無効',
-        notificationEnabled: '有効',
-        notificationPermissionDenied: '通知の許可が拒否されました',
-        notificationNotSupported: 'ブラウザは通知をサポートしていません',
-        notificationHint: '採集時間になったらブラウザ通知でお知らせします',
-        notificationTitle: 'FF14 採集リマインダー',
-        notificationBodyTemplate: '{itemName} が採集可能になりました！\n場所：{zone} {location}\n座標：{coordinates}',
-        testNotificationButton: '🔔 テスト',
-        testNotificationButtonShort: '通知テスト',
 
-        // ビジュアル通知テキスト
-        visualNotificationTitle: '🔔 採集リマインダー',
-        visualNotificationBody: '{itemName} が採集可能になりました！',
-        visualNotificationTime: '時間',
-        visualNotificationLocation: '場所',
-        testItemName: 'テストアイテム',
-        testZoneName: 'テストエリア',
+        // マイ通知、ページ通知と時計
+        remindersTitle: 'マイ通知',
+        webReminderToggle: 'ページ通知',
+        leadLabel: '通知',
+        leadOptionAtStart: '出現時',
+        leadOption: '{n}分前',
+        clockEt: 'ET',
+        clockLocal: 'ローカル',
+        remindersNote: 'このページを開いたままにしてください。',
+        showAllReminders: 'すべて表示（{count}件）',
+        showFewerReminders: '折りたたむ',
+        remindButton: '通知する',
+        remindSetButton: '通知中',
+        cancelReminderLabel: '通知を取り消す：{name}',
+        reminderAddedToast: '通知を設定しました：{name}',
+        reminderRemovedToast: '通知を取り消しました：{name}',
+        notifyTitle: '{name}が{n}分後に出現',
+        notifyTitleNow: '{name}が出現しました',
+        notifyBody: '{start}開始、{end}まで（{et}）・{place}',
+        notifyDenied: 'このサイトの通知はブラウザでブロックされています。時間になるとページ上の表示と音でお知らせします。アドレスバー左のサイト設定から許可するか、ゲーム内アラームを使ってください。',
+        notifyUnsupported: 'このブラウザは通知を表示できません。時間になるとページ上の表示と音でお知らせします。ゲーム内アラームも使えます。',
+
+        // アラームのコピー
+        copyAlarmButton: 'アラームをコピー',
+        copyAlarmLabel: 'アラームをコピー：{name}',
+        alarmCopiedToast: 'アラームのコマンドをコピーしました',
+        alarmCopiedNote: '次回（ET {time}）のゲーム内アラームをコピーしました。ゲームのチャット欄に貼り付ければ設定できます：',
+        alarmCopyFailedNote: '自動でコピーできませんでした。次回（ET {time}）のゲーム内アラームは下にあります。選択してコピーし、ゲームのチャット欄に貼り付けてください：',
+
+        // テスト通知
+        notificationTitle: 'FF14 採集リマインダー',
+        testNotificationButtonShort: '通知テスト',
         testNotificationBody: 'これはテスト通知です。表示されたかご確認ください'
     },
     en: {
@@ -319,14 +351,8 @@ window.TimedGatheringTranslations = {
         pageTitle: 'Timed Gathering Manager',
         pageDescription: 'FF14 timed gathering management tool with search, multi-list management, and macro export',
 
-        // Time display
-        localTimeLabel: 'Local Time (LT)',
-        eorzeaTimeLabel: 'Eorzea Time (ET)',
-        dayTime: 'Day',
-        nightTime: 'Night',
-
         // Search and filter
-        searchPlaceholder: 'Search item name, location...', 
+        searchPlaceholder: 'Search in EN, JP or ZH-TW',
         clearButton: 'Clear',
         filterType: 'Type:',
         filterExpansion: 'Expansion:',
@@ -341,9 +367,11 @@ window.TimedGatheringTranslations = {
         exportButton: 'Export',
 
         // Panel titles
-        itemsListTitle: 'Item List',
-        loadingItems: 'Loading item data...', 
+        itemsListTitle: 'Gatherables',
+        loadingItems: 'Loading item data...',
         noItemsFound: 'No items match the criteria',
+        resultsCount: '{count} items · soonest first',
+        resultsFound: '{count} found',
 
         // List management
         defaultListName: 'Default List',
@@ -357,6 +385,13 @@ window.TimedGatheringTranslations = {
         addToListButton: 'Add to List',
         addedToListButton: 'Added',
         removeFromList: 'Remove',
+        statusNow: 'Up now · {left} left (until {end})',
+        statusNext: 'Appears at {time} · in {wait}',
+        statusAllDay: 'Available all day',
+        waitMinutes: '{m} min',
+        scheduleDaily: 'Daily at {slots}, about {minutes} min each',
+        scheduleAllDay: 'All day',
+        listSeparator: ', ',
 
         // Macro export
         macroSectionTitle: 'Macro Export',
@@ -377,10 +412,10 @@ window.TimedGatheringTranslations = {
         newNameLabel: 'New Name:',
         enterListNamePlaceholder: 'Enter list name',
 
-        confirmDeleteList: 'Are you sure you want to delete the list "{0}"?',
-        confirmClearList: 'Are you sure you want to clear the list "{0}"?',
+        confirmDeleteList: 'Are you sure you want to delete the list "{name}"?',
+        confirmClearList: 'Are you sure you want to clear the list "{name}"?',
         operationCannotUndo: 'This operation cannot be undone!',
-        willRemoveItems: 'Will remove {0} items',
+        willRemoveItems: 'Will remove {count} items',
 
         selectFileLabel: 'Select File:',
         selectJsonFileHint: 'Select a previously exported JSON file',
@@ -390,19 +425,20 @@ window.TimedGatheringTranslations = {
 
         // Notifications
         addedToListNotification: 'Added to list',
+        listAddedNotSaved: "Added to the list, but your browser won't let this site save data, so it will be gone after a reload",
         removedFromListNotification: 'Removed from list',
         listCreatedNotification: 'List created',
         listRenamedNotification: 'List renamed',
         listDeletedNotification: 'List deleted',
         listClearedNotification: 'List cleared',
         listsExportedNotification: 'Lists exported',
-        listsImportedNotification: 'Successfully imported {0} lists',
+        listsImportedNotification: 'Successfully imported {count} lists',
         macroCopiedNotification: 'Macro copied to clipboard',
 
         // Error messages
         initFailedError: 'Initialization failed, please refresh the page',
         dataLoadFailedError: 'Failed to load item data, please refresh and try again',
-        maxListsWarning: 'Maximum of {0} lists allowed',
+        maxListsWarning: 'Maximum of {max} lists allowed',
         atLeastOneListWarning: 'At least one list must be kept',
         listAlreadyEmptyInfo: 'List is already empty',
         emptyListNoMacroWarning: 'List is empty, cannot generate macro',
@@ -421,7 +457,7 @@ window.TimedGatheringTranslations = {
 
         // list-manager specific messages
         listNameEmpty: 'List name cannot be empty',
-        listNameTooLong: 'List name cannot exceed {0} characters',
+        listNameTooLong: 'List name cannot exceed {max} characters',
         listNameExists: 'List name already exists',
         maxListsReached: 'Maximum list limit reached',
         itemAlreadyInList: 'Item is already in the list',
@@ -441,33 +477,45 @@ window.TimedGatheringTranslations = {
         itemOrderUpdated: 'Item order updated',
         invalidImportData: 'Invalid import data',
         incompatibleFileVersion: 'File version is incompatible',
-        successImportedLists: 'Successfully imported {0} lists',
+        successImportedLists: 'Successfully imported {count} lists',
         sourceListNotExist: 'Source list does not exist',
         listCopiedSuccess: 'List copied successfully',
-        addedItemsToList: 'Added {0} items to target list',
-        listMaxItems: 'List can contain maximum of {0} items',
+        addedItemsToList: 'Added {count} items to target list',
+        listMaxItems: 'List can contain maximum of {max} items',
         itemAlreadyInListSimple: 'This item is already in the list',
 
-        // Notification function
-        notificationLabel: 'Gathering Reminder',
-        notificationToggleLabel: 'Enable gathering notification reminder',
-        notificationDisabled: 'Disabled',
-        notificationEnabled: 'Enabled',
-        notificationPermissionDenied: 'Notification permission denied',
-        notificationNotSupported: 'Browser does not support notifications',
-        notificationHint: 'Send browser notification when gathering time arrives',
-        notificationTitle: 'FF14 Gathering Reminder',
-        notificationBodyTemplate: '{itemName} is now available for gathering!\nLocation: {zone} {location}\nCoordinates: {coordinates}',
-        testNotificationButton: '🔔 Test',
-        testNotificationButtonShort: 'Test Notification',
+        // My reminders, page alerts and the clock
+        remindersTitle: 'My reminders',
+        webReminderToggle: 'Page alerts',
+        leadLabel: 'Notify',
+        leadOptionAtStart: 'When it appears',
+        leadOption: '{n} min before',
+        clockEt: 'ET',
+        clockLocal: 'Local',
+        remindersNote: 'Keep this page open to get them.',
+        showAllReminders: 'Show all {count}',
+        showFewerReminders: 'Show fewer',
+        remindButton: 'Remind me',
+        remindSetButton: 'Reminder on',
+        cancelReminderLabel: 'Cancel reminder: {name}',
+        reminderAddedToast: 'Reminder set: {name}',
+        reminderRemovedToast: 'Reminder cancelled: {name}',
+        notifyTitle: '{name} appears in {n} min',
+        notifyTitleNow: '{name} is up now',
+        notifyBody: '{start}–{end} ({et}) · {place}',
+        notifyDenied: "Your browser blocks notifications from this site, so you'll only get an on-page alert and a sound. You can allow them in the site settings next to the address bar, or use the in-game alarm.",
+        notifyUnsupported: "This browser can't show notifications, so you'll only get an on-page alert and a sound, or use the in-game alarm.",
 
-        // Visual notification text
-        visualNotificationTitle: '🔔 Gathering Reminder',
-        visualNotificationBody: '{itemName} is now available for gathering!',
-        visualNotificationTime: 'Time',
-        visualNotificationLocation: 'Location',
-        testItemName: 'Test Item',
-        testZoneName: 'Test Zone',
+        // Copy alarm
+        copyAlarmButton: 'Copy alarm',
+        copyAlarmLabel: 'Copy alarm: {name}',
+        alarmCopiedToast: 'Alarm command copied',
+        alarmCopiedNote: "Copied the in-game alarm for the next one (ET {time}). Paste it into the game's chat box to set it:",
+        alarmCopyFailedNote: "Couldn't copy it automatically. Here is the in-game alarm for the next one (ET {time}); select and copy it, then paste it into the game's chat box:",
+
+        // Test notification
+        notificationTitle: 'FF14 Gathering Reminder',
+        testNotificationButtonShort: 'Test Notification',
         testNotificationBody: 'This is a test notification, please confirm you can see it'
     }
 };

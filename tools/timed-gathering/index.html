@@ -27,37 +27,34 @@
     </noscript>
 
     <main class="main">
-        <div class="container">
+        <div class="container" id="gatheringTool">
             <h1 class="visually-hidden" data-i18n="pageTitle">特殊採集時間管理器</h1>
-            <!-- 時間與通知顯示區域 -->
-            <div class="time-display-container">
-                <div class="time-display-card card">
-                    <div class="time-label" data-i18n="localTimeLabel">本地時間 (LT)</div>
-                    <div class="time-value" id="localTimeDisplay">--:--:--</div>
+            <!-- 我的提醒：頁面最上面，沒有提醒時整塊隱藏；有提醒時時鐘一行搬進標題列 -->
+            <section class="card gx-reminders" id="reminders" aria-labelledby="remindersTitle" hidden>
+                <div class="gx-reminders-head" id="remindersHead">
+                    <h2 id="remindersTitle"><span data-i18n="remindersTitle">我的提醒</span> <span class="gx-count" id="reminderCount"></span></h2>
+                    <label class="toggle">
+                        <input type="checkbox" id="notificationToggle">
+                        <span class="toggle-track"></span>
+                        <span data-i18n="webReminderToggle">網頁提醒</span>
+                    </label>
+                    <label class="gx-lead">
+                        <span data-i18n="leadLabel">通知時間</span>
+                        <select id="leadSelect" class="form-control form-control-sm"></select>
+                    </label>
+                    <button id="testNotificationBtn" class="btn btn-sm btn-ghost" type="button" title="測試通知" data-i18n="testNotificationButtonShort" data-i18n-attr="title"><span aria-hidden="true">🔔</span></button>
                 </div>
-                <div class="time-display-card card">
-                    <div class="time-label" data-i18n="eorzeaTimeLabel">艾歐爾傑亞時間 (ET)</div>
-                    <div class="time-value-wrapper">
-                        <span class="time-value" id="eorzeaTimeDisplay">--:--:--</span>
-                        <span class="time-period" id="etPeriod" title="時段"></span>
-                    </div>
-                </div>
-                <!-- 通知設定卡片 -->
-                <div class="time-display-card notification-card card">
-                    <div class="time-label">
-                        <span class="notification-icon">🔔</span>
-                        <span data-i18n="notificationLabel">採集提醒</span>
-                    </div>
-                    <div class="notification-compact">
-                        <label class="toggle toggle-switch">
-                            <input type="checkbox" id="notificationToggle">
-                            <span class="toggle-track"></span>
-                        </label>
-                        <span class="notification-status-compact tag" id="notificationStatus" data-i18n="notificationDisabled">通知已停用</span>
-                        <button id="testNotificationBtn" class="btn btn-sm btn-icon-only" title="測試通知" data-i18n="testNotificationButtonShort" data-i18n-attr="title">
-                            🔔
-                        </button>
-                    </div>
+                <ul class="gx-reminder-list" id="reminderList"></ul>
+                <button id="reminderMoreBtn" class="btn btn-sm btn-ghost" type="button" aria-controls="reminderList" hidden></button>
+                <p class="gx-note" data-i18n="remindersNote">頁面要開著才會響。</p>
+                <p class="warning-message" id="notifyStatus" hidden></p>
+            </section>
+
+            <!-- 時鐘一行（艾歐澤亞時間、本地時間）：沒有提醒時在搜尋框上面 -->
+            <div class="gx-clock-slot" id="clockSlot">
+                <div class="gx-clock" id="clockLine">
+                    <span><span data-i18n="clockEt">ET</span> <b id="clockEt">--:--</b></span>
+                    <span><span data-i18n="clockLocal">本地</span> <b id="clockLocal">--:--</b></span>
                 </div>
             </div>
 
@@ -65,19 +62,8 @@
                 <!-- 頂部工具列 -->
                 <div class="toolbar">
                     <div class="search-section">
-                        <input type="text" id="searchInput" class="form-control" placeholder="搜尋採集物名稱、地點..." data-i18n="searchPlaceholder" data-i18n-attr="placeholder">
+                        <input type="text" id="searchInput" class="form-control" placeholder="用中文、日文或英文搜尋" data-i18n="searchPlaceholder" data-i18n-attr="placeholder">
                         <button id="clearSearchBtn" class="btn btn-secondary btn-sm" data-i18n="clearButton">清除</button>
-                    </div>
-                    <div class="toolbar-actions">
-                        <button id="newListBtn" class="btn btn-primary" data-i18n-html="newListButton">
-                            <span class="btn-icon">➕</span> 新增清單
-                        </button>
-                        <button id="importBtn" class="btn btn-secondary" data-i18n-html="importButton">
-                            <span class="btn-icon">📥</span> 匯入
-                        </button>
-                        <button id="exportBtn" class="btn btn-secondary" data-i18n-html="exportButton">
-                            <span class="btn-icon">📤</span> 匯出
-                        </button>
                     </div>
                 </div>
 
@@ -113,7 +99,7 @@
                     <!-- 左側：採集物列表 -->
                     <div class="items-panel card">
                         <div class="panel-header">
-                            <h2 data-i18n="itemsListTitle">採集物列表</h2>
+                            <h2 data-i18n="itemsListTitle">採集物</h2>
                             <span class="item-count" id="itemCount">載入中...</span>
                         </div>
 
@@ -126,12 +112,25 @@
                         <!-- 錯誤訊息 -->
                         <div class="error-message" id="errorMessage" style="display: none;"></div>
 
-                        <!-- 採集物卡片容器 -->
-                        <div class="items-container" id="itemsContainer"></div>
+                        <!-- 採集物卡片容器：一種素材一張卡片 -->
+                        <div class="gx-cards" id="itemsContainer"></div>
                     </div>
 
                     <!-- 右側：清單管理 -->
                     <div class="lists-panel card">
+                        <!-- 新增清單、匯入、匯出 -->
+                        <div class="toolbar-actions">
+                            <button id="newListBtn" class="btn btn-primary" data-i18n-html="newListButton">
+                                <span class="btn-icon">➕</span> 新增清單
+                            </button>
+                            <button id="importBtn" class="btn btn-secondary" data-i18n-html="importButton">
+                                <span class="btn-icon">📥</span> 匯入
+                            </button>
+                            <button id="exportBtn" class="btn btn-secondary" data-i18n-html="exportButton">
+                                <span class="btn-icon">📤</span> 匯出
+                            </button>
+                        </div>
+
                         <!-- 清單標籤頁 -->
                         <div class="tabs list-tabs" id="listTabs" role="tablist">
                             <button class="tab list-tab active" data-list-id="default" id="tab-list-default" role="tab" aria-selected="true" aria-controls="listItems" tabindex="0" data-i18n="defaultListName">預設清單</button>
@@ -194,7 +193,7 @@
         <div class="dialog">
             <div class="dialog-header">
                 <h3 class="dialog-title" id="dialogTitle">對話框標題</h3>
-                <button class="btn btn-close" id="dialogClose" aria-label="關閉">&times;</button>
+                <button class="btn btn-close" id="dialogClose" aria-label="關閉">×</button>
             </div>
             <div class="dialog-body" id="dialogBody">
                 <!-- 動態內容 -->
@@ -217,9 +216,11 @@
     <script src="../../assets/js/i18n/translations/common.js"></script>
     <script src="../../assets/js/i18n/translations/tools/timed-gathering.js"></script>
     <script src="../../assets/js/security-utils.js"></script>
+    <script src="../../assets/js/reminder-scheduler.js"></script>
     <script src="time-calculator.js"></script>
+    <script src="gathering-materials.js"></script>
+    <script src="gathering-reminders.js"></script>
     <script src="list-manager.js"></script>
-    <script src="notification-manager.js"></script>
     <script src="macro-exporter.js"></script>
     <script src="search-filter.js"></script>
     <script src="script.js"></script>

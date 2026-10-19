@@ -17,7 +17,7 @@
 // - notification：'default'（requestPermission() 回傳並改成 'granted'）、'granted'、'denied'、'unsupported'（沒有 Notification）、
 //   'throws'（'granted'，但建構時丟錯，同 Android 的 Chrome）。notifications 記下每則送出的 { title, body, tag }，
 //   permissionRequests 是 requestPermission() 被呼叫幾次；AudioContext 替身建出來是 suspended、resume() 之後 running，
-//   beeps 是排了幾聲提示音（oscillator.start() 幾次）
+//   beeps 是排了幾聲提示音（oscillator.start() 幾次）。這兩個替身寫在 tests/helpers/notification-stubs.js，和採集頁的替身共用
 // - toasts 記下 FF14Utils.showToast() 的 { message, type }；clipboard 記下 navigator.clipboard.writeText() 寫入的內容
 // - settle()：等點擊處理裡的 await 跑完。「提醒我」在點擊裡先設好提醒、再等權限的回答，回答到了才重畫通知的說明；
 //   settle() 等的就是這次重畫
@@ -28,6 +28,7 @@ const vm = require('node:vm');
 
 const { createFakeDom } = require('./fake-dom.js');
 const { mountFromHtml } = require('./html-fragment.js');
+const { NOTIFICATION_MODES, fakeNotification, fakeAudioContext } = require('./notification-stubs.js');
 
 const ROOT = path.resolve(__dirname, '../..');
 const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
@@ -49,59 +50,6 @@ const PAGE_HTML = read(`${TOOL_DIR}/index.html`);
 const PAGE_SCRIPTS = scriptSources(PAGE_HTML)
     .filter((src) => !src.includes('/') || [`../../${TRANSLATIONS}`, `../../${SCHEDULER}`].includes(src))
     .map((src) => path.posix.join(TOOL_DIR, src));
-
-const NOTIFICATION_MODES = ['default', 'granted', 'denied', 'unsupported', 'throws'];
-
-// Notification 替身（同 tests/reminder-scheduler.test.js 的 fakeNotification）：permission 和真的一樣，使用者回答之後才改變
-function fakeNotification(mode, log) {
-    class FakeNotification {
-        static permission = mode === 'throws' ? 'granted' : mode;
-
-        static requestPermission() {
-            log.requests += 1;
-            if (FakeNotification.permission === 'default') FakeNotification.permission = 'granted';
-            return Promise.resolve(FakeNotification.permission);
-        }
-
-        constructor(title, options = {}) {
-            if (mode === 'throws') throw new TypeError('Illegal constructor');
-            log.created.push({ title, body: options.body, tag: options.tag });
-        }
-
-        close() {}
-    }
-    return FakeNotification;
-}
-
-// AudioContext 替身：和瀏覽器的自動播放限制一樣，建出來是 suspended，resume() 之後才是 running；數 oscillator.start() 幾次
-function fakeAudioContext(log) {
-    return class FakeAudioContext {
-        constructor() {
-            this.state = 'suspended';
-            this.currentTime = 0;
-            this.destination = {};
-        }
-
-        resume() {
-            this.state = 'running';
-            return Promise.resolve();
-        }
-
-        createOscillator() {
-            return {
-                type: '',
-                frequency: { setValueAtTime() {} },
-                connect() {},
-                start: () => { log.beeps += 1; },
-                stop() {}
-            };
-        }
-
-        createGain() {
-            return { gain: { setValueAtTime() {}, linearRampToValueAtTime() {} }, connect() {} };
-        }
-    };
-}
 
 function createWeatherPage({ hash = '', now = 1_760_000_000_000, lang = 'zh', stored = {}, storageThrows = false, notification = 'default' } = {}) {
     assert.ok(NOTIFICATION_MODES.includes(notification), `不認得的 notification：${notification}`);

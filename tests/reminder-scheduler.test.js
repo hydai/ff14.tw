@@ -251,7 +251,8 @@ function setup(t, { storage = mapStorage(), Notification, AudioContext, webkitAu
         ReminderScheduler: win.ReminderScheduler,
         get focusCalls() { return focusCalls; },
         flushFrames() { while (queued.length) queued.shift()(0); },
-        toasts: () => dom.document.body.querySelectorAll('.reminder-alert')
+        toasts: () => dom.document.body.querySelectorAll('.reminder-alert'),
+        stacks: () => dom.document.body.querySelectorAll('.reminder-alerts')
     };
 }
 
@@ -768,7 +769,8 @@ test('deliver：每次都有頁內提示與提示音，允許時再加系統通�
     assert.equal(page.toasts().length, 1);
     const toast = page.toasts()[0];
     assert.equal(toast.textContent, '天氣提醒\n尤里卡·皮羅斯 快要晴天');
-    assert.equal(toast.parentNode, page.dom.document.body);
+    assert.equal(toast.parentNode.className, 'reminder-alerts', '放在共用的 .reminder-alerts 容器裡');
+    assert.equal(toast.parentNode.parentNode, page.dom.document.body);
     assert.equal(toast.getAttribute('role'), 'status');
     for (const name of ['toast', 'toast-success', 'reminder-alert']) assert.ok(toast.classList.contains(name), name);
 
@@ -899,6 +901,88 @@ test('deliver：頁內提示 8 秒後收起，點一下馬上收起；加上 sho
     assert.equal(page.toasts().length, 0);
 });
 
+// 容器裡每個提示的文字，依由上往下的順序
+const alertTexts = (stack) => stack.children.map((alert) => alert.textContent);
+
+test('deliver：一起到時間的好幾個提醒放進同一個 .reminder-alerts 容器，依送出的順序由上往下排，不疊在一起', (t) => {
+    const page = setup(t);
+    const { body } = page.dom.document;
+    const deliver = (title, text) => page.ReminderScheduler.deliver({ title, body: text, tag: 'x' });
+
+    // 同一個時間到的兩個提醒：兩個都顯示出來，都在同一個容器裡，容器直接放在 body 底下
+    deliver('A', '1');
+    deliver('B', '2');
+    assert.equal(page.stacks().length, 1, '容器只有一個');
+    const [stack] = page.stacks();
+    assert.equal(stack.tagName, 'DIV');
+    assert.equal(stack.parentNode, body);
+    assert.deepEqual(alertTexts(stack), ['A\n1', 'B\n2'], '先送出的在上面');
+    assert.equal(page.toasts().length, 2);
+    for (const alert of stack.children) {
+        assert.equal(alert.parentNode, stack);
+        assert.ok(alert.classList.contains('show'), '兩個都顯示出來');
+        assert.equal(alert.getAttribute('role'), 'status');
+        for (const name of ['toast', 'toast-success', 'reminder-alert']) assert.ok(alert.classList.contains(name), name);
+    }
+    assert.equal(body.children.filter((child) => child.classList.contains('reminder-alert')).length, 0, '提示不直接放在 body 底下');
+
+    // 稍後又來一個：重用同一個容器，排在最下面
+    t.mock.timers.tick(1000);
+    deliver('C', '3');
+    assert.equal(page.stacks().length, 1);
+    assert.equal(page.stacks()[0], stack, '重用同一個容器，不再建新的');
+    assert.deepEqual(alertTexts(stack), ['A\n1', 'B\n2', 'C\n3']);
+
+    // 點第一個只收起第一個，其他的往上補位
+    const [first, second, third] = stack.children;
+    first.click();
+    assert.equal(first.classList.contains('show'), false);
+    assert.equal(second.classList.contains('show'), true);
+    assert.equal(third.classList.contains('show'), true);
+    assert.deepEqual(alertTexts(stack), ['A\n1', 'B\n2', 'C\n3'], '收起的動畫還在跑');
+    t.mock.timers.tick(300);
+    assert.deepEqual(alertTexts(stack), ['B\n2', 'C\n3']);
+    assert.equal(first.parentNode, null);
+
+    // 每一個各自算 8 秒：B 是 0 秒送出的，C 晚了 1 秒，所以 C 也晚 1 秒收起
+    t.mock.timers.tick(6700); // 8000 ms
+    assert.equal(second.classList.contains('show'), false, 'B：8 秒到了開始收起');
+    assert.equal(third.classList.contains('show'), true, 'C 還有 1 秒');
+    assert.deepEqual(alertTexts(stack), ['B\n2', 'C\n3']);
+    t.mock.timers.tick(300);
+    assert.deepEqual(alertTexts(stack), ['C\n3'], 'B 收起，C 補位');
+    t.mock.timers.tick(700); // 9000 ms
+    assert.equal(third.classList.contains('show'), false);
+    t.mock.timers.tick(300);
+    assert.equal(page.toasts().length, 0, '全部收起');
+
+    // 容器還在、只有一個，下一個提醒照樣放進去
+    assert.equal(page.stacks().length, 1);
+    assert.equal(page.stacks()[0], stack);
+    deliver('D', '4');
+    assert.equal(page.stacks().length, 1);
+    assert.deepEqual(alertTexts(stack), ['D\n4']);
+});
+
+test('deliver：容器被拿出頁面之後，下一個提醒重建一個，提示照樣顯示（不是放進看不見的舊容器）', (t) => {
+    const page = setup(t);
+    const deliver = (title, text) => page.ReminderScheduler.deliver({ title, body: text, tag: 'x' });
+
+    deliver('A', '1');
+    const [old] = page.stacks();
+    old.remove();
+    assert.equal(page.stacks().length, 0);
+
+    deliver('B', '2');
+    assert.equal(page.stacks().length, 1, '重建一個，頁面上只有一個容器');
+    const [stack] = page.stacks();
+    assert.notEqual(stack, old);
+    assert.equal(stack.parentNode, page.dom.document.body);
+    assert.deepEqual(alertTexts(stack), ['B\n2']);
+    assert.ok(stack.children[0].classList.contains('show'));
+    assert.deepEqual(alertTexts(old), ['A\n1'], '拿出去的舊容器不再被用');
+});
+
 // ---------- permission()、requestPermission()、unlockSound() ----------
 
 test('permission 與 requestPermission：只有 default 才真的去問', async (t) => {
@@ -1013,4 +1097,43 @@ test('tools-common.css：.reminder-alert 排在 .toast 之後，讓提示吃得�
     const rule = css.slice(alert).match(/\.reminder-alert \{([^}]*)\}/)[1];
     assert.match(rule, /pointer-events:\s*auto/);
     assert.match(rule, /cursor:\s*pointer/);
+});
+
+test('tools-common.css：.reminder-alerts 固定在和 .toast 同一個角落，由上往下排；裡面的 .toast 跟著版面排，不再各自固定', () => {
+    const css = fs.readFileSync(path.join(ROOT, 'assets/css/tools-common.css'), 'utf8');
+    // 一條規則：從「換行 + 選擇器 + 空白 + {」到下一個「}」；回傳它在檔案裡的位置和大括號裡的文字
+    const rule = (selector) => {
+        const start = css.indexOf(`\n${selector} {`);
+        assert.ok(start !== -1, `找不到 ${selector}`);
+        return { start, body: css.slice(start).match(/\{([^}]*)\}/)[1] };
+    };
+    const declared = (body, property) => (body.match(new RegExp(`(?:^|[;\\s])${property}:\\s*([^;]+);`)) || [])[1];
+
+    const toast = rule('.toast');
+    const alert = rule('.reminder-alert');
+    const stack = rule('.reminder-alerts');
+    const inside = rule('.reminder-alerts > .toast');
+    assert.ok(stack.start > alert.start, '.reminder-alerts 排在 .reminder-alert 之後');
+    assert.ok(inside.start > stack.start, '.reminder-alerts > .toast 接在 .reminder-alerts 之後');
+
+    // 容器固定在 .toast 原本的角落、同一層（直接拿 .toast 的值比對，.toast 改了這裡要跟著改）
+    assert.equal(declared(stack.body, 'position'), 'fixed');
+    for (const property of ['top', 'right', 'z-index']) {
+        assert.ok(declared(toast.body, property), `.toast 有 ${property}`);
+        assert.equal(declared(stack.body, property), declared(toast.body, property), property);
+    }
+    assert.equal(declared(stack.body, 'top'), 'var(--space-5)');
+    assert.equal(declared(stack.body, 'right'), 'var(--space-5)');
+    assert.equal(declared(stack.body, 'z-index'), 'var(--z-toast)');
+
+    // 由上往下排、靠右對齊、之間留空隙；容器本身不吃滑鼠事件（提示自己有 pointer-events: auto）
+    assert.equal(declared(stack.body, 'display'), 'flex');
+    assert.equal(declared(stack.body, 'flex-direction'), 'column');
+    assert.equal(declared(stack.body, 'gap'), 'var(--space-2)');
+    assert.equal(declared(stack.body, 'align-items'), 'flex-end');
+    assert.equal(declared(stack.body, 'pointer-events'), 'none');
+    assert.equal(declared(alert.body, 'pointer-events'), 'auto');
+
+    // 容器裡的 .toast 不再 position: fixed，跟著容器的版面往下排
+    assert.equal(declared(inside.body, 'position'), 'static');
 });

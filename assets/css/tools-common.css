@@ -135,6 +135,24 @@
     cursor: pointer;
 }
 
+/* 好幾個提醒一起到時間時，頁內提示放進這個容器由上往下排開，不疊在同一個位置：
+   容器固定在 .toast 的角落，裡面的 .toast 改成跟著版面排；容器本身不吃滑鼠事件，不擋住底下的頁面 */
+.reminder-alerts {
+    position: fixed;
+    top: var(--space-5);
+    right: var(--space-5);
+    z-index: var(--z-toast);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: var(--space-2);
+    pointer-events: none;
+}
+
+.reminder-alerts > .toast {
+    position: static;
+}
+
 /* ==========================================================================
    頁籤、開關、進度條、互動格子、表格、空狀態、對話框
    規格：設計系統畫布「元件 05 訊息與狀態」與「元件 08 頁籤、開關、進度與互動格子」

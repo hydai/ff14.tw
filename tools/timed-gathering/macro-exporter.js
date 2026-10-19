@@ -88,25 +88,46 @@ class MacroExporter {
     }
 
     /**
+     * 一筆採集物寫進鬧鐘指令的兩個部分（內部用，generateAlarmCommand() 與 generateOneTimeAlarm() 共用；
+     * 兩種指令的格式，也就是有沒有 rp，各自寫在自己那裡）
+     * @param {Object} item - 採集物項目
+     * @returns {{name: string, time: string}|null} name：有 macroFormat 時優先使用，否則用描述；
+     *     time：ET 開始時間 HHMM。全天或時間無效回傳 null
+     */
+    alarmParts(item) {
+        const schedule = TimeCalculator.parseSchedule(item.time, item.duration);
+        if (!schedule || schedule.allDay) return null;
+        return {
+            name: item.macroFormat || this.generateDescription(item),
+            time: this.formatTimeForAlarm(item.time)
+        };
+    }
+
+    /**
      * 生成單個鬧鐘指令
      * @param {Object} item - 採集物項目
      * @param {string} soundEffect - 音效
      * @returns {string} 鬧鐘指令
      */
     generateAlarmCommand(item, soundEffect = 'se04') {
-        const schedule = TimeCalculator.parseSchedule(item.time, item.duration);
-        if (!schedule || schedule.allDay) return null;
-        // 如果有 macroFormat，優先使用
-        if (item.macroFormat) {
-            const time = this.formatTimeForAlarm(item.time);
-            return `/alarm "${item.macroFormat}" et rp ${time} 1 ${soundEffect} mute`;
-        }
+        const parts = this.alarmParts(item);
+        if (!parts) return null;
+        return `/alarm "${parts.name}" et rp ${parts.time} 1 ${soundEffect} mute`;
+    }
 
-        // 否則使用標準格式
-        const description = this.generateDescription(item);
-        const time = this.formatTimeForAlarm(item.time);
-        
-        return `/alarm "${description}" et rp ${time} 1 ${soundEffect} mute`;
+    /**
+     * 生成不帶 rp 的鬧鐘指令（卡片上的「複製鬧鐘」）：和 generateAlarmCommand() 一樣，只少了 rp，
+     * 也就是官方文字指令說明裡不帶 repeat 的寫法：/alarm "名稱" et HHMM 提前分鐘 音效 mute。
+     * 官方說明沒有寫不帶 rp 的鬧鐘是響一次還是每天響，所以格式沿用巨集匯出、只拿掉 rp，不在畫面上宣稱只響一次。
+     * 整份清單的 generate() 不經過這裡，仍然每行都有 rp
+     * @param {Object} item - 採集物項目
+     * @param {string} soundEffect - 音效
+     * @returns {string|null} 鬧鐘指令；全天或時間無效回傳 null
+     */
+    generateOneTimeAlarm(item, soundEffect = 'se04') {
+        const parts = this.alarmParts(item);
+        if (!parts) return null;
+        return `/alarm "${parts.name}" et ${parts.time} 1 ${soundEffect} mute`;
     }
 
     /**

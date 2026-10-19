@@ -2,7 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 
 const TimeCalculator = require('../tools/timed-gathering/time-calculator');
-const NotificationManager = require('../tools/timed-gathering/notification-manager');
+const GatheringMaterials = require('../tools/timed-gathering/gathering-materials');
 
 const EORZEA_MULTIPLIER = 3600 / 175;
 const TEST_TIMESTAMP = Date.parse('2026-07-11T12:05:46.775Z');
@@ -29,13 +29,13 @@ test('ET conversion is independent of the local timezone', () => {
                 { EORZEA_MULTIPLIER },
                 TEST_TIMESTAMP
             );
-            const notificationTime = NotificationManager.prototype.getEorzeaTime.call(
-                {},
-                TEST_TIMESTAMP
-            );
 
             assert.deepEqual(displayTime, EXPECTED_EORZEA_TIME, timezone);
-            assert.deepEqual(notificationTime, EXPECTED_EORZEA_TIME, timezone);
+            assert.equal(
+                Math.floor(GatheringMaterials.etMinutes(TEST_TIMESTAMP) % 1440),
+                EXPECTED_EORZEA_TIME.hours * 60 + EXPECTED_EORZEA_TIME.minutes,
+                timezone
+            );
         }
     } finally {
         if (originalTimezone === undefined) {

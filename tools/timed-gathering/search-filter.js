@@ -8,8 +8,10 @@ class SearchFilter {
             nameEn: 2.0,      // 英文名稱
             zone: 1.5,        // 地區名稱
             zoneJp: 1.5,      // 日文地區名稱
+            zoneEn: 1.5,      // 英文地區名稱
             location: 1.5,    // 地點名稱
             locationJp: 1.5,  // 日文地點名稱
+            locationEn: 1.5,  // 英文地點名稱
             description: 1.0, // 描述
             coordinates: 0.5  // 座標
         };
@@ -86,93 +88,185 @@ class SearchFilter {
     }
 
     /**
-     * 搜尋篩選
+     * 把搜尋詞切成一個個字：轉小寫、依空白（含全形空白）切開、去掉空的
+     * @param {string} term - 搜尋詞
+     * @returns {Array<string>} 小寫的字
+     */
+    static words(term) {
+        return String(term ?? '').toLowerCase().split(/\s+/).filter(word => word.length > 0);
+    }
+
+    /**
+     * 搜尋篩選：每個字都要符合，依相關度分數由高到低排序
      * @param {Array} items - 項目陣列
      * @param {string} searchTerm - 搜尋詞
      * @returns {Array} 篩選結果
      */
     filterBySearch(items, searchTerm) {
-        const lowerSearchTerm = searchTerm.toLowerCase();
-        const searchWords = lowerSearchTerm.split(/\s+/).filter(word => word.length > 0);
+        const searchWords = SearchFilter.words(searchTerm);
 
         // 計算每個項目的相關度分數
-        const scoredItems = items.map(item => {
-            let score = 0;
+        const scoredItems = items.map(item => ({ item, score: this.scoreItem(item, searchWords) }));
 
-            // 檢查每個搜尋詞
-            for (const word of searchWords) {
-                // 名稱匹配
-                if (item.name && item.name.toLowerCase().includes(word)) {
-                    score += this.searchWeights.name;
-                    // 完全匹配額外加分
-                    if (item.name.toLowerCase() === word) {
-                        score += this.searchWeights.name;
-                    }
-                }
-                
-                // 日文名稱匹配
-                if (item.nameJp && item.nameJp.toLowerCase().includes(word)) {
-                    score += this.searchWeights.nameJp;
-                    // 完全匹配額外加分
-                    if (item.nameJp.toLowerCase() === word) {
-                        score += this.searchWeights.nameJp;
-                    }
-                }
-
-                // 英文名稱匹配
-                if (item.nameEn && item.nameEn.toLowerCase().includes(word)) {
-                    score += this.searchWeights.nameEn;
-                }
-
-                // 地區匹配
-                if (item.zone && item.zone.toLowerCase().includes(word)) {
-                    score += this.searchWeights.zone;
-                }
-                
-                // 日文地區匹配
-                if (item.zoneJp && item.zoneJp.toLowerCase().includes(word)) {
-                    score += this.searchWeights.zoneJp;
-                }
-
-                // 地點匹配
-                if (item.location && item.location.toLowerCase().includes(word)) {
-                    score += this.searchWeights.location;
-                }
-                
-                // 日文地點匹配
-                if (item.locationJp && item.locationJp.toLowerCase().includes(word)) {
-                    score += this.searchWeights.locationJp;
-                }
-
-                // 描述匹配
-                if (item.description && item.description.toLowerCase().includes(word)) {
-                    score += this.searchWeights.description;
-                }
-
-                // 座標匹配
-                if (item.coordinates && item.coordinates.toLowerCase().includes(word)) {
-                    score += this.searchWeights.coordinates;
-                }
-
-                // 時間匹配
-                if (item.time && item.time.includes(word)) {
-                    score += 0.5;
-                }
-
-                // 等級匹配
-                if (item.level && item.level.toString().includes(word)) {
-                    score += 0.5;
-                }
-            }
-
-            return { item, score };
-        });
-
-        // 篩選有分數的項目並按分數排序
+        // 篩選有分數的項目並按分數排序（sort 是穩定排序：同分的保留資料原本的順序）
         return scoredItems
             .filter(scored => scored.score > 0)
             .sort((a, b) => b.score - a.score)
             .map(scored => scored.item);
+    }
+
+    /**
+     * 計算一個項目對一組搜尋字的相關度分數
+     * 每個字都要在某個欄位找得到：只要有一個字是 0 分，整筆就是 0 分
+     * @param {Object} item - 項目
+     * @param {Array<string>} words - 小寫的搜尋字（SearchFilter.words() 的結果）
+     * @returns {number} 每個字的分數加總；有字不符合時為 0
+     */
+    scoreItem(item, words) {
+        let total = 0;
+
+        // 檢查每個搜尋詞
+        for (const word of words) {
+            let score = 0;
+
+            // 名稱匹配
+            if (item.name && item.name.toLowerCase().includes(word)) {
+                score += this.searchWeights.name;
+                // 完全匹配額外加分
+                if (item.name.toLowerCase() === word) {
+                    score += this.searchWeights.name;
+                }
+            }
+
+            // 日文名稱匹配
+            if (item.nameJp && item.nameJp.toLowerCase().includes(word)) {
+                score += this.searchWeights.nameJp;
+                // 完全匹配額外加分
+                if (item.nameJp.toLowerCase() === word) {
+                    score += this.searchWeights.nameJp;
+                }
+            }
+
+            // 英文名稱匹配
+            if (item.nameEn && item.nameEn.toLowerCase().includes(word)) {
+                score += this.searchWeights.nameEn;
+            }
+
+            // 地區匹配
+            if (item.zone && item.zone.toLowerCase().includes(word)) {
+                score += this.searchWeights.zone;
+            }
+
+            // 日文地區匹配
+            if (item.zoneJp && item.zoneJp.toLowerCase().includes(word)) {
+                score += this.searchWeights.zoneJp;
+            }
+
+            // 英文地區匹配
+            if (item.zoneEn && item.zoneEn.toLowerCase().includes(word)) {
+                score += this.searchWeights.zoneEn;
+            }
+
+            // 地點匹配
+            if (item.location && item.location.toLowerCase().includes(word)) {
+                score += this.searchWeights.location;
+            }
+
+            // 日文地點匹配
+            if (item.locationJp && item.locationJp.toLowerCase().includes(word)) {
+                score += this.searchWeights.locationJp;
+            }
+
+            // 英文地點匹配
+            if (item.locationEn && item.locationEn.toLowerCase().includes(word)) {
+                score += this.searchWeights.locationEn;
+            }
+
+            // 描述匹配
+            if (item.description && item.description.toLowerCase().includes(word)) {
+                score += this.searchWeights.description;
+            }
+
+            // 座標匹配
+            if (item.coordinates && item.coordinates.toLowerCase().includes(word)) {
+                score += this.searchWeights.coordinates;
+            }
+
+            // 時間匹配
+            if (item.time && item.time.includes(word)) {
+                score += 0.5;
+            }
+
+            // 等級匹配
+            if (item.level && item.level.toString().includes(word)) {
+                score += 0.5;
+            }
+
+            // 這個字在哪一欄都找不到，整筆不符合
+            if (score === 0) {
+                return 0;
+            }
+            total += score;
+        }
+
+        return total;
+    }
+
+    /**
+     * 把文字依搜尋字切成「命中／沒命中」的段落，畫面用來把命中的字標出來（<mark>）
+     * 不分大小寫；每個字的每一次出現都算（彼此重疊的也算），重疊或相鄰的合成一段，
+     * 中間隔著沒命中的字元就是兩段。段落接起來等於原本的文字（大小寫不變）
+     * @param {string} text - 要標示的文字
+     * @param {Array<string>} words - 搜尋字（SearchFilter.words() 的結果）
+     * @returns {Array<{text: string, mark: boolean}>} 段落；文字是空的時回傳空陣列
+     */
+    static segments(text, words = []) {
+        const source = String(text ?? '');
+        if (source === '') {
+            return [];
+        }
+
+        // 位置都以轉小寫後的字串計算；資料裡的名稱與地點轉小寫後長度不變，所以位置和原文字對得上
+        const lowerSource = source.toLowerCase();
+        const ranges = [];
+        for (const word of words) {
+            const lowerWord = word.toLowerCase();
+            // 空字串在每個位置都找得到，會一直找下去
+            if (lowerWord === '') {
+                continue;
+            }
+            // 下一次從這一次的下一個位置找起，自己和自己重疊的出現（'aa' 在 'aaa' 裡）也都算
+            for (let at = lowerSource.indexOf(lowerWord); at !== -1; at = lowerSource.indexOf(lowerWord, at + 1)) {
+                ranges.push([at, at + lowerWord.length]);
+            }
+        }
+
+        // 依開始位置排序，重疊或相鄰的併成一段
+        ranges.sort((a, b) => a[0] - b[0]);
+        const merged = [];
+        for (const [start, end] of ranges) {
+            const last = merged[merged.length - 1];
+            if (last && start <= last[1]) {
+                last[1] = Math.max(last[1], end);
+            } else {
+                merged.push([start, end]);
+            }
+        }
+
+        // 命中的段落之間與前後，補上沒命中的字元
+        const result = [];
+        let cursor = 0;
+        for (const [start, end] of merged) {
+            if (start > cursor) {
+                result.push({ text: source.slice(cursor, start), mark: false });
+            }
+            result.push({ text: source.slice(start, end), mark: true });
+            cursor = end;
+        }
+        if (cursor < source.length) {
+            result.push({ text: source.slice(cursor), mark: false });
+        }
+        return result;
     }
 
     /**
@@ -483,8 +577,10 @@ class SearchFilter {
             (item.nameEn && item.nameEn.toLowerCase().includes(lowerTerm)) ||
             (item.zone && item.zone.toLowerCase().includes(lowerTerm)) ||
             (item.zoneJp && item.zoneJp.toLowerCase().includes(lowerTerm)) ||
+            (item.zoneEn && item.zoneEn.toLowerCase().includes(lowerTerm)) ||
             (item.location && item.location.toLowerCase().includes(lowerTerm)) ||
             (item.locationJp && item.locationJp.toLowerCase().includes(lowerTerm)) ||
+            (item.locationEn && item.locationEn.toLowerCase().includes(lowerTerm)) ||
             (item.description && item.description.toLowerCase().includes(lowerTerm))
         );
     }

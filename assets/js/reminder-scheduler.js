@@ -1,6 +1,6 @@
 /**
  * 提醒排程：決定「提醒現在該不該響」，到時候在頁面上顯示提示、發出提示音，瀏覽器允許的話再送出系統通知。
- * 用在：天氣預報的「提醒我」；特殊採集時間管理器之後也會改用它。
+ * 用在：天氣預報與特殊採集時間管理器的「提醒我」。
  * 這裡不認識任何一個工具：一個提醒是一段時間加上提早多久通知，要提醒什麼、寫什麼字都由呼叫端決定。
  *
  * - Alert：{ key, start, end, leadMs, armedAt, data? }，時間都是毫秒時間戳。armedAt 是這個提醒被設定的時間，
@@ -349,7 +349,26 @@ class ReminderScheduler {
         }
     }
 
-    /** 頁內提示：共用的 .toast（右上角），8 秒後自己收起，點一下馬上收起 @private */
+    /**
+     * 頁內提示的容器 div.reminder-alerts（右上角，提示由上往下排）：第一次要顯示提示時才加進 body，之後都放進同一個。
+     * 每次都先在頁面上找：容器被拿掉、不在頁面上了就重建一個，不會把提示放進看不見的舊容器。
+     * @private
+     */
+    static _alertStack() {
+        let stack = document.body.querySelector('.reminder-alerts');
+        if (!stack) {
+            stack = document.createElement('div');
+            stack.className = 'reminder-alerts';
+            document.body.appendChild(stack);
+        }
+        return stack;
+    }
+
+    /**
+     * 頁內提示：共用的 .toast，放進 _alertStack() 的容器，8 秒後自己收起，點一下馬上收起。
+     * 一起到時間的好幾個提醒依送出的順序由上往下排，不疊在同一個位置；各自算 8 秒，一個收起後下面的往上補位。
+     * @private
+     */
     static _showAlert(title, body) {
         try {
             const toast = document.createElement('div');
@@ -365,7 +384,7 @@ class ReminderScheduler {
                 window.setTimeout(() => toast.remove(), ReminderScheduler.CONSTANTS.ALERT_FADE_MS);
             };
             toast.addEventListener('click', dismiss);
-            document.body.appendChild(toast);
+            ReminderScheduler._alertStack().appendChild(toast);
             // 背景分頁不會畫出下一個畫面（requestAnimationFrame 暫停）：8 秒要等真的顯示之後才開始算，
             // 不然使用者切回來時提醒可能已經不見了
             window.requestAnimationFrame(() => {

@@ -35,11 +35,11 @@ class TimeCalculator {
     }
     
     /**
-     * Get current local time
+     * Get current local time (read through Date.now(), like the rest of the page, so a test clock controls it too)
      * @returns {Object} Object with hours, minutes, seconds
      */
     getLocalTime() {
-        const now = new Date();
+        const now = new Date(Date.now());
         return {
             hours: now.getHours(),
             minutes: now.getMinutes(),
@@ -74,44 +74,28 @@ class TimeCalculator {
     }
     
     /**
-     * Format time object to HH:MM:SS string
-     * @param {Object} time - Time object with hours, minutes, seconds
+     * Format time object to HH:MM string
+     * @param {Object} time - Time object with hours, minutes
      * @returns {string} Formatted time string
      */
-    formatTime(time) {
+    formatHourMinute(time) {
         const pad = (num) => String(num).padStart(2, '0');
-        return `${pad(time.hours)}:${pad(time.minutes)}:${pad(time.seconds)}`;
+        return `${pad(time.hours)}:${pad(time.minutes)}`;
     }
-    
+
     /**
-     * Update clock display elements
+     * Update the clock line: Eorzea time (#clockEt) and local time (#clockLocal) as HH:MM.
+     * Called every second; the text is only written when it changes (an Eorzea minute is about 2.9 seconds)
      */
     updateClockDisplay() {
-        const ltElement = document.getElementById('localTimeDisplay');
-        const etElement = document.getElementById('eorzeaTimeDisplay');
-        
-        if (ltElement) {
-            const localTime = this.getLocalTime();
-            ltElement.textContent = this.formatTime(localTime);
-        }
-        
-        if (etElement) {
-            const eorzeaTime = this.getEorzeaTime();
-            etElement.textContent = this.formatTime(eorzeaTime);
-            
-            // Add time period indicator (day/night)
-            const hour = eorzeaTime.hours;
-            const periodElement = document.getElementById('etPeriod');
-            if (periodElement) {
-                if (hour >= 6 && hour < 18) {
-                    periodElement.textContent = '☀️';
-                    periodElement.title = FF14Utils.getI18nText('dayTime', '白天');
-                } else {
-                    periodElement.textContent = '🌙';
-                    periodElement.title = FF14Utils.getI18nText('nightTime', '夜晚');
-                }
+        const write = (id, text) => {
+            const element = document.getElementById(id);
+            if (element && element.textContent !== text) {
+                element.textContent = text;
             }
-        }
+        };
+        write('clockEt', this.formatHourMinute(this.getEorzeaTime()));
+        write('clockLocal', this.formatHourMinute(this.getLocalTime()));
     }
     
     /**

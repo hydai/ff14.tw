@@ -250,16 +250,31 @@ const FF14Utils = {
 
     // 顯示提示訊息
     showToast(message, type = 'success') {
+        // 給螢幕閱讀器的朗讀區：剛插進頁面、一開始就有字的 toast 不是每個螢幕閱讀器都會念（VoiceOver），
+        // 所以第一次顯示時在 body 放一個一直留著的 role="status" 區塊，之後重用。每次先清空，toast 顯示的同時再寫進訊息：
+        // 區塊已經在頁面上才換字，同一句話連續出現也會再念一次
+        let announcer = document.getElementById('toast-announcer');
+        if (!announcer) {
+            announcer = document.createElement('div');
+            announcer.id = 'toast-announcer';
+            announcer.className = 'visually-hidden';
+            announcer.setAttribute('role', 'status');
+            announcer.setAttribute('aria-live', 'polite');
+            document.body.appendChild(announcer);
+        }
+        announcer.textContent = '';
+
         const toast = document.createElement('div');
         toast.className = `toast toast-${type}`;
         toast.textContent = message;
 
         document.body.appendChild(toast);
 
-        // 動畫顯示
+        // 動畫顯示，同時念出來
         setTimeout(() => {
             toast.style.opacity = '1';
             toast.style.transform = 'translateY(0)';
+            announcer.textContent = message;
         }, 100);
 
         // 自動移除
