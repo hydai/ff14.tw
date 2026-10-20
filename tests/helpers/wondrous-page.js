@@ -4,7 +4,7 @@
 //   const { createWondrousPage } = require('./helpers/wondrous-page.js');
 //   const page = createWondrousPage({ lang: 'en' });
 //   page.place(0, 5, 10); page.cell(5).click(); page.count(); page.placed(); page.setLang('ja');
-//   page.odds(); page.header(); page.doneCells(); page.nearCells();
+//   page.odds(); page.header(); page.doneCells(); page.nearCells(); page.clearButton().click();
 //
 // - 照 index.html 建出 #wondrousTool（mountFromHtml），照 index.html 的 <script src> 順序載入這個工具的翻譯檔
 //   與工具目錄自己的每一個腳本（src 不含 /），最後 new WondrousTailsCalculator()。
@@ -21,7 +21,8 @@
 // - cell(p) 是 #wondrous-grid 裡 data-position 為 p 的格子，cells() 是十六格（照位置）；
 //   count() 是 #placed-count 的文字；placed() 是 aria-pressed="true" 的格子位置（由小到大）；
 //   doneCells() 是有 line-done class（在連成的線上）的格子位置、nearCells() 是有 line-near class（只差一張的空格）的格子位置（都由小到大）；
-//   place(...positions) 照順序點每一格（點已經貼了的格子就是拿掉；disabled 的格子點了沒有反應）
+//   place(...positions) 照順序點每一格（點已經貼了的格子就是拿掉；disabled 的格子點了沒有反應）；
+//   clearButton() 是 #clear-btn，盤面卡標題列右邊的「清空盤面」／「復原」按鈕（同一顆，文字與 disabled 由頁面程式寫；disabled 時 click() 什麼都不做）
 // - 機率表（#odds-table）：odds() 是三列（照 data-lines 1–3）[{ label, now, after, nowWidth, afterWidth }, …]：
 //   label 是 .odds-label 的文字，now／after 是 .odds-now／.odds-after 的文字，
 //   nowWidth／afterWidth 是 .odds-bar-now／.odds-bar-after 的 style.width；header() 是 thead 兩個 th 的文字（現在、重置之後）
@@ -127,6 +128,7 @@ function createWondrousPage({ lang = 'zh' } = {}) {
         cell,
         cells: () => POSITIONS.map(cell),
         count: () => $('placed-count').textContent,
+        clearButton: () => $('clear-btn'),
         placed: () => POSITIONS.filter((p) => cell(p).getAttribute('aria-pressed') === 'true'),
         doneCells: () => POSITIONS.filter((p) => cell(p).classList.contains('line-done')),
         nearCells: () => POSITIONS.filter((p) => cell(p).classList.contains('line-near')),

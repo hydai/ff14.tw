@@ -27,7 +27,7 @@
     padding: var(--space-4);
 }
 
-/* 標題列：張數靠左。高度固定成一顆小按鈕的高度（--control-sm），之後右邊放進按鈕時盤面不會跳動 */
+/* 標題列：張數靠左，「清空盤面」／「復原」按鈕靠右。高度固定成一顆小按鈕的高度（--control-sm），盤面不會因為標題列換了內容而跳動 */
 .board-head {
     display: flex;
     align-items: center;
@@ -41,6 +41,11 @@
     font-weight: var(--weight-semibold);
     color: var(--color-muted);
     font-variant-numeric: tabular-nums;
+}
+
+/* 「清空盤面」與「復原」是同一顆按鈕：最小寬度 7.5rem（120px）放得下三種語言裡最長的「盤面をクリア」（118px），換文字時按鈕不變窄，靠右的左邊緣不會跳 */
+#clear-btn {
+    min-width: 7.5rem;
 }
 
 /* 4×4 盤面：四欄一樣寬，用滿卡片的寬度 */

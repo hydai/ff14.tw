@@ -16,6 +16,8 @@ const WondrousTailsTranslations = {
         wondrous_tails_cell_label: '第 {n} 格',
         wondrous_tails_cell_line: '第 {n} 格：已連成線',
         wondrous_tails_cell_near: '第 {n} 格：貼了就連成線',
+        wondrous_tails_clear: '清空盤面',
+        wondrous_tails_restore: '復原',
 
         // 機率
         wondrous_tails_now: '現在',
@@ -38,6 +40,8 @@ const WondrousTailsTranslations = {
         wondrous_tails_cell_label: 'Cell {n}',
         wondrous_tails_cell_line: 'Cell {n}: in a completed line',
         wondrous_tails_cell_near: 'Cell {n}: completes a line',
+        wondrous_tails_clear: 'Clear board',
+        wondrous_tails_restore: 'Restore',
 
         // Odds
         wondrous_tails_now: 'Now',
@@ -60,6 +64,8 @@ const WondrousTailsTranslations = {
         wondrous_tails_cell_label: 'マス {n}',
         wondrous_tails_cell_line: 'マス {n}：ライン完成',
         wondrous_tails_cell_near: 'マス {n}：貼るとライン完成',
+        wondrous_tails_clear: '盤面をクリア',
+        wondrous_tails_restore: '元に戻す',
 
         // 確率
         wondrous_tails_now: '現在',

@@ -271,3 +271,76 @@ test('樣式：綠框用 outline（不蓋掉共用的 box-shadow 焦點外框）
     assert.match(cssRule(file, '.cell.line-near'), /border:\s*2px dashed var\(--color-success\);/);
     assert.doesNotMatch(read('tools/wondrous-tails/index.html'), /legend|圖例/);
 });
+
+test('一打開：「清空盤面」在盤面卡標題列的右邊，是一般按鈕，不能按', () => {
+    const html = read('tools/wondrous-tails/index.html');
+    assert.match(html, /<div class="board-head">\s*<span class="board-count" id="placed-count">[^<]*<\/span>\s*<button type="button" class="btn btn-sm" id="clear-btn" disabled>清空盤面<\/button>\s*<\/div>/);
+    const page = createWondrousPage();
+    assert.equal(page.clearButton().textContent, '清空盤面');
+    assert.equal(page.clearButton().disabled, true);
+});
+
+test('按「清空盤面」：盤面清空、按鈕變成「復原」，焦點留在按鈕上，不跳 toast', () => {
+    const page = createWondrousPage();
+    page.place(0, 1, 2, 5);
+    assert.equal(page.clearButton().disabled, false);
+    page.clearButton().focus();
+    page.clearButton().click();
+    assert.deepEqual(page.placed(), []);
+    assert.equal(page.count(), '已貼 0／9 張');
+    assert.equal(page.clearButton().textContent, '復原');
+    assert.equal(page.clearButton().disabled, false);
+    isSame(page.document.activeElement, page.clearButton(), '焦點留在按鈕上');
+    assert.deepEqual(page.odds().map((row) => row.after), ['—', '—', '—']);
+    assert.equal(page.toasts.length, 0);
+});
+
+test('按「復原」：放回剛才的盤面（9 張時空格不能點、連線框照樣在），按鈕變回「清空盤面」', () => {
+    const page = createWondrousPage();
+    page.place(0, 1, 2, 3, 4, 5, 8, 10, 12);
+    const before = { placed: page.placed(), done: page.doneCells(), disabled: page.cells().map((c) => c.disabled === true) };
+    page.clearButton().click();
+    page.clearButton().click();
+    assert.deepEqual(page.placed(), before.placed);
+    assert.deepEqual(page.doneCells(), before.done);
+    assert.deepEqual(page.cells().map((c) => c.disabled === true), before.disabled);
+    assert.equal(page.clearButton().textContent, '清空盤面');
+    assert.equal(page.toasts.length, 0);
+});
+
+test('清空之後貼了新的一格：不能再復原，按鈕變回「清空盤面」；再清空、復原的是新的盤面', () => {
+    const page = createWondrousPage();
+    page.place(0, 1);
+    page.clearButton().click();
+    page.place(7);
+    assert.equal(page.clearButton().textContent, '清空盤面');
+    assert.deepEqual(page.placed(), [7]);
+    page.clearButton().click();
+    page.clearButton().click();
+    assert.deepEqual(page.placed(), [7]);
+});
+
+test('一張一張拿掉到空（不是按清空）：按鈕不能按', () => {
+    const page = createWondrousPage();
+    page.place(0);
+    page.place(0);
+    assert.equal(page.clearButton().textContent, '清空盤面');
+    assert.equal(page.clearButton().disabled, true);
+});
+
+test('切換語言：兩種狀態的按鈕文字都換', () => {
+    const page = createWondrousPage();
+    page.place(0);
+    page.setLang('en');
+    assert.equal(page.clearButton().textContent, 'Clear board');
+    page.clearButton().click();
+    assert.equal(page.clearButton().textContent, 'Restore');
+    page.setLang('ja');
+    assert.equal(page.clearButton().textContent, '元に戻す');
+    page.clearButton().click();
+    assert.equal(page.clearButton().textContent, '盤面をクリア');
+});
+
+test('按鈕換成「復原」時寬度不變：#clear-btn 有 min-width: 7.5rem，放得下三種語言裡最長的「盤面をクリア」', () => {
+    assert.match(cssRule('tools/wondrous-tails/style.css', '#clear-btn'), /min-width:\s*7\.5rem;/);
+});
