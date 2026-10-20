@@ -206,3 +206,68 @@ test('toggle() 自己也擋（不靠格子的 disabled）：傳盤面外的位�
     assert.equal(page.count(), '已貼 9／9 張');
     assert.deepEqual(page.odds().map((row) => row.now), ['100%', '100%', '0%']);
 });
+
+test('連成一條線：線上 4 格加綠框（line-done），格子名稱寫「已連成線」', () => {
+    const page = createWondrousPage();
+    page.place(0, 1, 2, 3);
+    assert.deepEqual(page.doneCells(), [0, 1, 2, 3]);
+    assert.deepEqual(page.nearCells(), []);
+    assert.equal(page.cell(0).getAttribute('aria-label'), '第 1 格：已連成線');
+    assert.equal(page.cell(4).getAttribute('aria-label'), '第 5 格');
+});
+
+test('只差一張：缺的那格加虛線框（line-near），名稱寫「貼了就連成線」', () => {
+    const page = createWondrousPage();
+    page.place(0, 1, 2);
+    assert.deepEqual(page.nearCells(), [3]);
+    assert.deepEqual(page.doneCells(), []);
+    assert.equal(page.cell(3).getAttribute('aria-label'), '第 4 格：貼了就連成線');
+});
+
+test('同一格補齊兩條線只標一次；連成的線和差一張的線可以同時出現', () => {
+    const page = createWondrousPage();
+    page.place(0, 1, 2, 7, 11, 15);
+    assert.deepEqual(page.nearCells(), [3]);
+    const other = createWondrousPage();
+    other.place(0, 1, 2, 3, 4, 8);
+    assert.deepEqual(other.doneCells(), [0, 1, 2, 3]);
+    assert.deepEqual(other.nearCells(), [12]);
+});
+
+test('9 張時不標虛線框；拿掉一張後又標回來', () => {
+    const page = createWondrousPage();
+    page.place(0, 1, 2, 4, 6, 9, 11, 13, 14);
+    assert.deepEqual(page.nearCells(), []);
+    page.place(14);
+    assert.deepEqual(page.nearCells(), [3, 5]);
+});
+
+test('拿掉一張讓線斷掉：綠框跟著拿掉，缺的那格改成虛線框', () => {
+    const page = createWondrousPage();
+    page.place(0, 1, 2, 3);
+    page.place(3);
+    assert.deepEqual(page.doneCells(), []);
+    assert.deepEqual(page.nearCells(), [3]);
+    assert.equal(page.cell(0).getAttribute('aria-label'), '第 1 格');
+});
+
+test('切換語言：格子名稱的「已連成線」「貼了就連成線」換字', () => {
+    const page = createWondrousPage();
+    page.place(0, 1, 2, 3, 4, 8);
+    page.setLang('en');
+    assert.equal(page.cell(0).getAttribute('aria-label'), 'Cell 1: in a completed line');
+    assert.equal(page.cell(12).getAttribute('aria-label'), 'Cell 13: completes a line');
+    page.setLang('ja');
+    assert.equal(page.cell(0).getAttribute('aria-label'), 'マス 1：ライン完成');
+    assert.equal(page.cell(12).getAttribute('aria-label'), 'マス 13：貼るとライン完成');
+});
+
+test('樣式：綠框用 outline（不蓋掉共用的 box-shadow 焦點外框）、虛線框用 --color-success；沒有圖例', () => {
+    const file = 'tools/wondrous-tails/style.css';
+    const done = cssRule(file, '.cell.line-done');
+    assert.match(done, /outline:\s*3px solid var\(--color-success\);/);
+    assert.match(done, /outline-offset:\s*3px;/);
+    assert.doesNotMatch(done, /box-shadow/);
+    assert.match(cssRule(file, '.cell.line-near'), /border:\s*2px dashed var\(--color-success\);/);
+    assert.doesNotMatch(read('tools/wondrous-tails/index.html'), /legend|圖例/);
+});

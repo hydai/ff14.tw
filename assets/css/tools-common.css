@@ -322,7 +322,7 @@
     opacity: 0.7;
 }
 
-/* 建議（綠色）：仙人推薦的格子與線、之後天書的連線與宗長的下一格；放在 :hover、:disabled 後面，兩種狀態下都維持綠色 */
+/* 建議（綠色）：仙人推薦的格子與線、之後宗長的下一格；放在 :hover、:disabled 後面，兩種狀態下都維持綠色 */
 .cell.suggested {
     border: 2px solid var(--color-success);
     background: var(--color-success-tint);

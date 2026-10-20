@@ -2,6 +2,8 @@
 // 盤面是 index.html 裡寫好的 16 個按鈕：點空格貼上貼紙，再點一次拿掉，最多 9 張，貼滿後其他的空格不能點（disabled），不跳 toast。
 // 畫面上的字與屬性都由 render() 照 this.grid 重畫，只改內容與屬性，不重建格子，用鍵盤（Enter、空白鍵）貼上或拿掉之後焦點才會留在同一格。
 // 機率表（現在、重置之後，各列「至少 N 條」）也由 render() 重畫：數字與長條的長度來自 tails-odds.js 的 analyze()，只改三列的文字與長度，不重建。
+// 盤面上的標示同樣來自 analyze()：連成的線上的格子加 line-done（綠框）、只差一張的空格加 line-near（虛線框），
+// 格子的名稱也跟著寫出來（cellLabel()），螢幕閱讀器才聽得到。
 class WondrousTailsCalculator {
     // 最多貼幾張、盤面有幾格（4×4）
     static MAX_STICKERS = 9;
@@ -75,19 +77,36 @@ class WondrousTailsCalculator {
         const view = WondrousTailsOdds.analyze(this.grid);
         // 貼滿 9 張：還沒貼的格子不能再點
         const full = view.placed >= WondrousTailsCalculator.MAX_STICKERS;
+        // 連成的線上的格子、只差一張的空格。前者一定貼了，後者一定還沒貼，所以兩個 class 不會同時出現在一格
+        const done = new Set(view.doneCells);
+        const near = new Set(view.nearCells);
 
         this.elements.count.textContent = this.t('wondrous_tails_count', '已貼 {n}／9 張', { n: view.placed });
 
-        // class 與 disabled 每次都從頭設，不留上一次的樣子
+        // class、disabled 與名稱每次都從頭設，不留上一次的樣子
         this.cells.forEach((cell, p) => {
             const isPlaced = this.grid[p];
-            cell.className = isPlaced ? 'cell grid-cell placed' : 'cell grid-cell';
+            const isDone = done.has(p);
+            const isNear = near.has(p);
+            const classes = ['cell', 'grid-cell'];
+            if (isPlaced) classes.push('placed');
+            if (isDone) classes.push('line-done');
+            if (isNear) classes.push('line-near');
+            cell.className = classes.join(' ');
             cell.setAttribute('aria-pressed', String(isPlaced));
             cell.disabled = !isPlaced && full;
-            cell.setAttribute('aria-label', this.t('wondrous_tails_cell_label', '第 {n} 格', { n: p + 1 }));
+            cell.setAttribute('aria-label', this.cellLabel(p, isDone, isNear));
         });
 
         this.renderOdds(view);
+    }
+
+    // 格子的名稱：綠框與虛線框只畫在畫面上，螢幕閱讀器看不到，所以把意思也寫進名稱
+    cellLabel(position, isDone, isNear) {
+        const n = position + 1;
+        if (isDone) return this.t('wondrous_tails_cell_line', '第 {n} 格：已連成線', { n });
+        if (isNear) return this.t('wondrous_tails_cell_near', '第 {n} 格：貼了就連成線', { n });
+        return this.t('wondrous_tails_cell_label', '第 {n} 格', { n });
     }
 
     // 機率表：每一列寫「現在」與「重置之後」的百分比，兩條長條的長度就是那個機率。

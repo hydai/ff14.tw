@@ -20,7 +20,7 @@
     margin: 0 auto;
 }
 
-/* 盤面卡片：外觀由 .card 提供。.card 預設 overflow: hidden，格子外面的焦點外框（3px）會伸進 padding，所以 padding 要留得下它 */
+/* 盤面卡片：外觀由 .card 提供。.card 預設 overflow: hidden，格子外面畫的框會伸進 padding：焦點外框 3px，連成的線的綠框 6px（3px 間隔加 3px 粗），所以 padding 要留得下最大的 6px */
 .wondrous-board-card {
     display: grid;
     gap: var(--space-3);
@@ -81,6 +81,17 @@
     .cell.placed::before {
         animation: none;
     }
+}
+
+/* 連成的線：線上每一格外面一圈綠框（伸出 6px：3px 間隔加 3px 粗）。用 outline 不用 box-shadow：共用的 .cell:focus-visible 用 box-shadow 畫焦點外框，這裡設了就會蓋掉它 */
+.cell.line-done {
+    outline: 3px solid var(--color-success);
+    outline-offset: 3px;
+}
+
+/* 只差一張的空格：綠色虛線框，和連成的線同一個綠色，意思是「貼了就連成」；不用 --color-warning，它在白底上的對比只有約 2.2:1 */
+.cell.line-near {
+    border: 2px dashed var(--color-success);
 }
 
 /* 機率卡片：外觀由 .card 提供，裡面放機率表 */

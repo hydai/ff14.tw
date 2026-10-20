@@ -14,6 +14,8 @@ const WondrousTailsTranslations = {
         // 盤面
         wondrous_tails_count: '已貼 {n}／9 張',
         wondrous_tails_cell_label: '第 {n} 格',
+        wondrous_tails_cell_line: '第 {n} 格：已連成線',
+        wondrous_tails_cell_near: '第 {n} 格：貼了就連成線',
 
         // 機率
         wondrous_tails_now: '現在',
@@ -34,6 +36,8 @@ const WondrousTailsTranslations = {
         // Board
         wondrous_tails_count: 'Stickers: {n}/9',
         wondrous_tails_cell_label: 'Cell {n}',
+        wondrous_tails_cell_line: 'Cell {n}: in a completed line',
+        wondrous_tails_cell_near: 'Cell {n}: completes a line',
 
         // Odds
         wondrous_tails_now: 'Now',
@@ -54,6 +58,8 @@ const WondrousTailsTranslations = {
         // 盤面
         wondrous_tails_count: 'シール {n}／9 枚',
         wondrous_tails_cell_label: 'マス {n}',
+        wondrous_tails_cell_line: 'マス {n}：ライン完成',
+        wondrous_tails_cell_near: 'マス {n}：貼るとライン完成',
 
         // 確率
         wondrous_tails_now: '現在',
