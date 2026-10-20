@@ -28,95 +28,40 @@
 
     <main class="main">
         <div class="container">
-            <div class="page-header">
-                <h1 class="visually-hidden" data-i18n="mini_cactpot_header">仙人微彩計算機</h1>
-                <p class="description" data-i18n="mini_cactpot_desc">點選四個格子並輸入對應數字 (1-9)，期望值將自動顯示在對應位置並推薦最佳線條</p>
-            </div>
-
-            <div class="tool-content container-narrow">
-                <div class="cactpot-grid-container card">
+            <h1 class="visually-hidden" data-i18n="mini_cactpot_header">仙人微彩計算機</h1>
+            <div class="cactpot-layout" id="cactpotTool">
+                <section class="card cactpot-board">
+                    <p class="cactpot-status" id="cactpotStatus" aria-live="polite">① 點遊戲已經翻開的那一格</p>
                     <div class="extended-grid" id="extended-grid">
-                        <!-- Row 1: 期望值顯示 -->
-                        <div class="expectation-cell" data-line="6">↘</div>
-                        <div class="expectation-cell" data-line="3">↓</div>
-                        <div class="expectation-cell" data-line="4">↓</div>
-                        <div class="expectation-cell" data-line="5">↓</div>
-                        <div class="expectation-cell" data-line="7">↙</div>
+                        <div class="line-badge line-badge-top" data-line="6" aria-hidden="true">↘</div>
+                        <div class="line-badge line-badge-top" data-line="3" aria-hidden="true">↓</div>
+                        <div class="line-badge line-badge-top" data-line="4" aria-hidden="true">↓</div>
+                        <div class="line-badge line-badge-top" data-line="5" aria-hidden="true">↓</div>
+                        <div class="line-badge line-badge-top" data-line="7" aria-hidden="true">↙</div>
 
-                        <!-- Row 2-4: 原始九宮格與橫列期望值 -->
-                        <div class="expectation-cell" data-line="0">→</div>
-                        <div class="cell grid-cell" data-position="0" tabindex="0" role="button" aria-label="第 1 格"></div>
-                        <div class="cell grid-cell" data-position="1" tabindex="0" role="button" aria-label="第 2 格"></div>
-                        <div class="cell grid-cell" data-position="2" tabindex="0" role="button" aria-label="第 3 格"></div>
-                        <div class="empty-cell"></div>
+                        <div class="line-badge" data-line="0" aria-hidden="true">→</div>
+                        <button type="button" class="cell grid-cell" data-position="0" aria-expanded="false" aria-label="左上">?</button>
+                        <button type="button" class="cell grid-cell" data-position="1" aria-expanded="false" aria-label="上中">?</button>
+                        <button type="button" class="cell grid-cell" data-position="2" aria-expanded="false" aria-label="右上">?</button>
+                        <div class="grid-spacer" aria-hidden="true"></div>
 
-                        <div class="expectation-cell" data-line="1">→</div>
-                        <div class="cell grid-cell" data-position="3" tabindex="0" role="button" aria-label="第 4 格"></div>
-                        <div class="cell grid-cell" data-position="4" tabindex="0" role="button" aria-label="第 5 格"></div>
-                        <div class="cell grid-cell" data-position="5" tabindex="0" role="button" aria-label="第 6 格"></div>
-                        <div class="empty-cell"></div>
+                        <div class="line-badge" data-line="1" aria-hidden="true">→</div>
+                        <button type="button" class="cell grid-cell" data-position="3" aria-expanded="false" aria-label="左中">?</button>
+                        <button type="button" class="cell grid-cell" data-position="4" aria-expanded="false" aria-label="中央">?</button>
+                        <button type="button" class="cell grid-cell" data-position="5" aria-expanded="false" aria-label="右中">?</button>
+                        <div class="grid-spacer" aria-hidden="true"></div>
 
-                        <div class="expectation-cell" data-line="2">→</div>
-                        <div class="cell grid-cell" data-position="6" tabindex="0" role="button" aria-label="第 7 格"></div>
-                        <div class="cell grid-cell" data-position="7" tabindex="0" role="button" aria-label="第 8 格"></div>
-                        <div class="cell grid-cell" data-position="8" tabindex="0" role="button" aria-label="第 9 格"></div>
-                        <div class="empty-cell"></div>
+                        <div class="line-badge" data-line="2" aria-hidden="true">→</div>
+                        <button type="button" class="cell grid-cell" data-position="6" aria-expanded="false" aria-label="左下">?</button>
+                        <button type="button" class="cell grid-cell" data-position="7" aria-expanded="false" aria-label="下中">?</button>
+                        <button type="button" class="cell grid-cell" data-position="8" aria-expanded="false" aria-label="右下">?</button>
+                        <div class="grid-spacer" aria-hidden="true"></div>
                     </div>
-                    <div class="grid-info">
-                        <span data-i18n="mini_cactpot_selected">已選擇</span>: <span id="selected-count">0</span>/4 <span data-i18n="mini_cactpot_cells">個格子</span>
+                    <div class="cactpot-actions">
+                        <button type="button" class="btn" id="undo-btn" data-i18n="mini_cactpot_undo" aria-disabled="true">上一步</button>
+                        <button type="button" class="btn" id="next-btn" data-i18n="mini_cactpot_next" aria-disabled="true">下一張</button>
                     </div>
-                </div>
-
-                <div class="cell-recommendation-info card" id="cell-recommendation-info" style="display: none;">
-                    <div class="card-body">
-                        <h3 class="card-title"><span data-i18n="mini_cactpot_recommend_best_reveal">最佳揭開</span></h3>
-                        <div id="cell-recommendation-summary"></div>
-                    </div>
-                </div>
-
-                <div class="controls">
-                    <div class="btn-group">
-                        <button class="btn btn-secondary" id="undo-btn" disabled>
-                            <span class="btn-icon">↩️</span> <span data-i18n="mini_cactpot_undo">回到上一步</span>
-                        </button>
-                        <button class="btn btn-secondary" id="redo-btn" disabled>
-                            <span class="btn-icon">↪️</span> <span data-i18n="mini_cactpot_redo">重做</span>
-                        </button>
-                    </div>
-                    <button class="btn btn-outline" id="reset-btn" data-i18n="mini_cactpot_reset">重置</button>
-                </div>
-
-                <div class="best-choice-info card" id="best-choice-info" style="display: none;">
-                    <div class="card-body">
-                        <h3 class="card-title">🏆 <span data-i18n="mini_cactpot_best_choice">最佳選擇</span></h3>
-                        <div id="best-line-summary"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Number Picker Popup -->
-            <div id="number-popup" class="popup-overlay dialog-overlay" role="dialog" aria-modal="true" aria-labelledby="number-popup-title">
-                <div class="popup-content number-picker dialog">
-                    <div class="dialog-header">
-                        <h3 id="number-popup-title" class="dialog-title" data-i18n="mini_cactpot_popup_title">選擇數字</h3>
-                    </div>
-                    <div class="dialog-body">
-                        <div class="number-grid">
-                            <button class="cell number-btn" data-number="1">1</button>
-                            <button class="cell number-btn" data-number="2">2</button>
-                            <button class="cell number-btn" data-number="3">3</button>
-                            <button class="cell number-btn" data-number="4">4</button>
-                            <button class="cell number-btn" data-number="5">5</button>
-                            <button class="cell number-btn" data-number="6">6</button>
-                            <button class="cell number-btn" data-number="7">7</button>
-                            <button class="cell number-btn" data-number="8">8</button>
-                            <button class="cell number-btn" data-number="9">9</button>
-                        </div>
-                    </div>
-                    <div class="dialog-actions">
-                        <button class="btn btn-block popup-close" data-i18n="mini_cactpot_popup_cancel">取消</button>
-                    </div>
-                </div>
+                </section>
             </div>
         </div>
     </main>
@@ -132,8 +77,8 @@
     <script src="../../assets/js/components/layout-loader.js"></script>
     <script src="../../assets/js/common.js"></script>
     <script src="../../assets/js/security-utils.js"></script>
-    <script src="../../assets/js/state-history-manager.js"></script>
-    <script src="../../assets/js/modal-manager.js"></script>
+    <script src="../../assets/js/cell-popover.js"></script>
+    <script src="cactpot-solver.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

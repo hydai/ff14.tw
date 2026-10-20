@@ -9,21 +9,13 @@ const MiniCactpotTranslations = {
 
         // 頁面標題
         mini_cactpot_header: '仙人微彩計算機',
-        mini_cactpot_desc: '點選四個格子並輸入對應數字 (1-9)，期望值將自動顯示在對應位置並推薦最佳線條',
 
-        // 格子資訊
-        mini_cactpot_selected: '已選擇',
-        mini_cactpot_cells: '個格子',
+        // 狀態列
+        mini_cactpot_status_start: '① 點遊戲已經翻開的那一格',
 
         // 按鈕
-        mini_cactpot_undo: '回到上一步',
-        mini_cactpot_redo: '重做',
-        mini_cactpot_reset: '重置',
-
-        // 最佳選擇
-        mini_cactpot_best_choice: '最佳選擇',
-        mini_cactpot_expected_value: '期望值',
-        mini_cactpot_range: '範圍',
+        mini_cactpot_undo: '上一步',
+        mini_cactpot_next: '下一張',
 
         // 線條名稱
         mini_cactpot_line_row_top: '上橫列',
@@ -35,16 +27,6 @@ const MiniCactpotTranslations = {
         mini_cactpot_line_diag_left: '左斜線',
         mini_cactpot_line_diag_right: '右斜線',
 
-        // Toast 訊息
-        mini_cactpot_max_cells: '最多只能選擇 4 個格子',
-        mini_cactpot_number_used: '數字 {value} 已被使用',
-        mini_cactpot_undone: '已回到上一步',
-        mini_cactpot_reset_done: '已重置九宮格',
-
-        // 格子推薦
-        mini_cactpot_recommend_best_reveal: '最佳揭開',
-        mini_cactpot_recommend_ev: '期望 MGP',
-
         // 格子位置名稱
         mini_cactpot_pos_top_left: '左上',
         mini_cactpot_pos_top_center: '上中',
@@ -54,15 +36,7 @@ const MiniCactpotTranslations = {
         mini_cactpot_pos_mid_right: '右中',
         mini_cactpot_pos_bot_left: '左下',
         mini_cactpot_pos_bot_center: '下中',
-        mini_cactpot_pos_bot_right: '右下',
-
-        // Popup
-        mini_cactpot_popup_title: '選擇數字',
-        mini_cactpot_popup_cancel: '取消',
-
-        // 格子無障礙標籤
-        mini_cactpot_cell_label: '第 {n} 格',
-        mini_cactpot_cell_ev: '期望值 {ev}',
+        mini_cactpot_pos_bot_right: '右下'
     },
     en: {
         // Page info
@@ -71,21 +45,13 @@ const MiniCactpotTranslations = {
 
         // Page header
         mini_cactpot_header: 'Mini Cactpot Calculator',
-        mini_cactpot_desc: 'Select 4 cells and enter numbers (1-9). Expected values will display automatically with the best line recommendation',
 
-        // Grid info
-        mini_cactpot_selected: 'Selected',
-        mini_cactpot_cells: 'cells',
+        // Status line
+        mini_cactpot_status_start: '① Click the cell the game has already revealed',
 
         // Buttons
         mini_cactpot_undo: 'Undo',
-        mini_cactpot_redo: 'Redo',
-        mini_cactpot_reset: 'Reset',
-
-        // Best choice
-        mini_cactpot_best_choice: 'Best Choice',
-        mini_cactpot_expected_value: 'Expected Value',
-        mini_cactpot_range: 'Range',
+        mini_cactpot_next: 'Next ticket',
 
         // Line names
         mini_cactpot_line_row_top: 'Top Row',
@@ -97,16 +63,6 @@ const MiniCactpotTranslations = {
         mini_cactpot_line_diag_left: 'Left Diagonal',
         mini_cactpot_line_diag_right: 'Right Diagonal',
 
-        // Toast messages
-        mini_cactpot_max_cells: 'Maximum 4 cells can be selected',
-        mini_cactpot_number_used: 'Number {value} is already used',
-        mini_cactpot_undone: 'Undone',
-        mini_cactpot_reset_done: 'Grid has been reset',
-
-        // Cell recommendations
-        mini_cactpot_recommend_best_reveal: 'Best Reveal',
-        mini_cactpot_recommend_ev: 'Expected MGP',
-
         // Cell position names
         mini_cactpot_pos_top_left: 'Top Left',
         mini_cactpot_pos_top_center: 'Top Center',
@@ -116,15 +72,7 @@ const MiniCactpotTranslations = {
         mini_cactpot_pos_mid_right: 'Middle Right',
         mini_cactpot_pos_bot_left: 'Bottom Left',
         mini_cactpot_pos_bot_center: 'Bottom Center',
-        mini_cactpot_pos_bot_right: 'Bottom Right',
-
-        // Popup
-        mini_cactpot_popup_title: 'Select Number',
-        mini_cactpot_popup_cancel: 'Cancel',
-
-        // Cell accessible label
-        mini_cactpot_cell_label: 'Cell {n}',
-        mini_cactpot_cell_ev: 'expected value {ev}',
+        mini_cactpot_pos_bot_right: 'Bottom Right'
     },
     ja: {
         // ページ情報
@@ -133,21 +81,13 @@ const MiniCactpotTranslations = {
 
         // ページヘッダー
         mini_cactpot_header: 'ミニくじテンダー計算機',
-        mini_cactpot_desc: '4つのマスを選択して数字（1-9）を入力すると、期待値が自動的に表示され、最適なラインが推奨されます',
 
-        // グリッド情報
-        mini_cactpot_selected: '選択済み',
-        mini_cactpot_cells: 'マス',
+        // ステータス行
+        mini_cactpot_status_start: '① ゲームで最初から開いているマスをクリック',
 
         // ボタン
         mini_cactpot_undo: '元に戻す',
-        mini_cactpot_redo: 'やり直す',
-        mini_cactpot_reset: 'リセット',
-
-        // 最適選択
-        mini_cactpot_best_choice: '最適な選択',
-        mini_cactpot_expected_value: '期待値',
-        mini_cactpot_range: '範囲',
+        mini_cactpot_next: '次のくじ',
 
         // ライン名
         mini_cactpot_line_row_top: '上段横列',
@@ -159,16 +99,6 @@ const MiniCactpotTranslations = {
         mini_cactpot_line_diag_left: '左斜め',
         mini_cactpot_line_diag_right: '右斜め',
 
-        // Toastメッセージ
-        mini_cactpot_max_cells: '最大4つのマスのみ選択できます',
-        mini_cactpot_number_used: '数字 {value} は既に使用されています',
-        mini_cactpot_undone: '元に戻しました',
-        mini_cactpot_reset_done: 'グリッドをリセットしました',
-
-        // マス推奨
-        mini_cactpot_recommend_best_reveal: '最適マス',
-        mini_cactpot_recommend_ev: '期待 MGP',
-
         // マス位置名
         mini_cactpot_pos_top_left: '左上',
         mini_cactpot_pos_top_center: '上中央',
@@ -178,15 +108,7 @@ const MiniCactpotTranslations = {
         mini_cactpot_pos_mid_right: '右中央',
         mini_cactpot_pos_bot_left: '左下',
         mini_cactpot_pos_bot_center: '下中央',
-        mini_cactpot_pos_bot_right: '右下',
-
-        // ポップアップ
-        mini_cactpot_popup_title: '数字を選択',
-        mini_cactpot_popup_cancel: 'キャンセル',
-
-        // セルのアクセシブルラベル
-        mini_cactpot_cell_label: 'マス {n}',
-        mini_cactpot_cell_ev: '期待値 {ev}'
+        mini_cactpot_pos_bot_right: '右下'
     }
 };
 
