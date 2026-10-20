@@ -4,47 +4,71 @@
 
 .page-header {
     text-align: center;
-    margin-bottom: var(--space-7);
+    margin-bottom: var(--space-4);
 }
 
-.grid-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+/* 說明文字換行時兩行的長度接近，第二行不會只剩一兩個字（手機上不會把「張）」單獨留在第二行） */
+.page-header .description {
+    text-wrap: balance;
+}
+
+/* 一欄，最寬 28rem：盤面卡片用滿這個寬度 */
+.wondrous-layout {
+    display: grid;
     gap: var(--space-4);
-    margin-bottom: var(--space-7);
+    max-width: 28rem;
+    margin: 0 auto;
 }
 
-/* 4×4 盤面 */
+/* 盤面卡片：外觀由 .card 提供。.card 預設 overflow: hidden，格子外面的焦點外框（3px）會伸進 padding，所以 padding 要留得下它 */
+.wondrous-board-card {
+    display: grid;
+    gap: var(--space-3);
+    padding: var(--space-4);
+}
+
+/* 標題列：張數靠左。高度固定成一顆小按鈕的高度（--control-sm），之後右邊放進按鈕時盤面不會跳動 */
+.board-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    min-height: var(--control-sm);
+}
+
+.board-count {
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    color: var(--color-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+/* 4×4 盤面：四欄一樣寬，用滿卡片的寬度 */
 .wondrous-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: var(--space-2);
-    width: 100%;
-    max-width: 400px;
-    padding: var(--space-5);
-    background: var(--color-surface-2);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--space-3);
 }
 
-/* 格子：外觀由 .cell 提供，這裡只定尺寸與已放置狀態 */
+/* 格子：外觀由 .cell 提供。大小跟著欄寬走，aspect-ratio 讓它保持正方形；min-width: 0 讓窄螢幕的格子可以縮小 */
 .grid-cell {
-    width: 80px;
-    height: 80px;
+    aspect-ratio: 1;
+    min-width: 0;
+    padding: 0;
+    font: inherit;
     font-size: var(--text-2xl);
 }
 
+/* 貼了貼紙的格子：主色底加 ⭐。這條規則不設 box-shadow，因為共用的 .cell:focus-visible 用 box-shadow 畫焦點外框，
+   在這裡設了就會蓋掉它，用鍵盤時看不到焦點在哪一格 */
 .cell.placed {
     border-color: var(--color-primary);
     background: var(--color-primary);
     color: var(--color-on-primary);
-    box-shadow: var(--glow-primary);
 }
 
 .cell.placed::before {
     content: "⭐";
-    font-size: var(--text-3xl);
     animation: star-glow 2s ease-in-out infinite alternate;
 }
 
@@ -53,153 +77,8 @@
     to { text-shadow: var(--glow-primary-strong); }
 }
 
-.grid-info {
-    text-align: center;
-    font-size: var(--text-md);
-    font-weight: var(--weight-medium);
-    color: var(--color-muted);
-}
-
-.grid-info span {
-    font-weight: var(--weight-bold);
-    color: var(--color-primary);
-}
-
-.controls {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: var(--space-4);
-    margin-bottom: var(--space-7);
-}
-
-/* 結果面板：外觀由 .card 提供 */
-.results-panel {
-    max-width: 600px;
-    margin: 0 auto;
-    padding: var(--space-7);
-    animation: slideIn var(--duration-slow) var(--ease);
-}
-
-@keyframes slideIn {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: none; }
-}
-
-.results-panel h3 {
-    margin: 0 0 var(--space-6);
-    text-align: center;
-    font-size: var(--text-2xl);
-    color: var(--color-heading);
-}
-
-.probability-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: var(--space-4);
-    margin-bottom: var(--space-6);
-}
-
-.prob-item {
-    padding: var(--space-4);
-    text-align: center;
-    background: var(--color-surface-2);
-    border-radius: var(--radius-md);
-}
-
-.prob-label {
-    margin-bottom: var(--space-2);
-    font-size: var(--text-xs);
-    font-weight: var(--weight-semibold);
-    letter-spacing: 0.04em;
-    color: var(--color-muted);
-}
-
-.prob-value {
-    font-size: var(--text-4xl);
-    font-weight: var(--weight-bold);
-    line-height: 1;
-    color: var(--color-heading);
-}
-
-.prob-value.high {
-    color: var(--color-success-text);
-}
-
-.prob-value.medium {
-    color: var(--color-warning-text);
-}
-
-.prob-value.low {
-    color: var(--color-muted);
-}
-
-/* 建議：外觀由 .info-message 提供 */
-.recommendation {
-    margin: 0;
-    text-align: center;
-}
-
-.recommendation p {
-    margin: 0;
-    line-height: var(--leading-normal);
-}
-
-/* 響應式 */
-@media (max-width: 768px) {
-    .grid-cell {
-        width: 60px;
-        height: 60px;
-        font-size: var(--text-xl);
-    }
-
-    .cell.placed::before {
-        font-size: var(--text-2xl);
-    }
-
-    .wondrous-grid {
-        max-width: 300px;
-        padding: var(--space-4);
-    }
-
-    .probability-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .controls {
-        flex-direction: column;
-        align-items: center;
-    }
-
-    .results-panel {
-        padding: var(--space-6);
-    }
-}
-
-@media (max-width: 480px) {
-    .grid-cell {
-        width: 50px;
-        height: 50px;
-        font-size: var(--text-md);
-    }
-
-    .cell.placed::before {
-        font-size: var(--text-xl);
-    }
-
-    .wondrous-grid {
-        max-width: 250px;
-        padding: var(--space-3);
-    }
-
-    .prob-value {
-        font-size: var(--text-2xl);
-    }
-}
-
 @media (prefers-reduced-motion: reduce) {
-    .cell.placed::before,
-    .results-panel {
+    .cell.placed::before {
         animation: none;
     }
 }
