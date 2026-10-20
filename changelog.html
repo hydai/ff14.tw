@@ -50,6 +50,25 @@
 
                     <article class="changelog-entry">
                         <div class="changelog-header">
+                            <h3 class="changelog-version">v2.25.0</h3>
+                            <time class="changelog-date" datetime="2026-10-21">2026年10月21日</time>
+                        </div>
+                        <div class="changelog-content">
+                            <ul>
+                                <li><span class="tag tag-success">新增</span> 天書奇談預測器把「現在」與「重置之後」的連線機率並排列出來：貼滿 9 張時，至少連成 1 條、2 條、3 條線的機率各是多少，每個機率都配一條長條，一眼就能比較。「現在」照目前的盤面算；「重置之後」是重置後拿到隨機 9 張盤面的機率，只有貼了 3～7 張（遊戲裡才能重置）時才有數字，其他張數寫「—」</li>
+                                <li><span class="tag tag-info">改善</span> 已經連成的線，線上的格子會框上綠色外框；再貼一張就連成線的空格，用綠色虛線框起來（貼滿 9 張不能再貼，就不標）。用螢幕閱讀器時，這些格子的名稱也會唸出「已連成線」「貼了就連成線」</li>
+                                <li><span class="tag tag-info">改善</span> 手機上盤面用滿整個寬度，機率緊接在盤面下面；電腦上盤面在左邊、機率在右邊</li>
+                                <li><span class="tag tag-info">改善</span> 「重置盤面」改叫「清空盤面」（「重置」留給遊戲裡真正的重置），不再是紅色按鈕，改成一般按鈕放在盤面的右上角；按下去清空盤面，同一顆按鈕會變成「復原」，按錯了再按一次就放回去，清空之後貼了新的貼紙就不能復原了</li>
+                                <li><span class="tag tag-info">改善</span> 拿掉「還原」「重做」兩顆按鈕（貼錯了再點一下那一格就好）；頁面上的說明只留一句，張數改寫成盤面上方的「已貼 N／9 張」；貼滿 9 張後，其他的格子變淡、不能再點，也不再跳出「最多只能放置 9 個物件」的提示</li>
+                                <li><span class="tag tag-warning">修正</span> 機率的標籤以前寫「1條線」「2條線」「3條線」，其實算的是至少連成 1 條、2 條、3 條線的機率，現在照實寫成「至少 1 條」「至少 2 條」「至少 3 條」</li>
+                                <li><span class="tag tag-warning">修正</span> 拿掉建議文字，也拿掉依機率換的綠、黃、灰配色：以前在遊戲裡不能重置的時候（例如貼滿 9 張、一條線都沒有）也會寫「建議重置盤面」，貼了 8 張、至少 1 條已經是 100% 時還可能寫「尚可盤面」。現在只列出機率，要不要重置由你決定</li>
+                                <li><span class="tag tag-warning">修正</span> 用鍵盤的 Tab 鍵移動時，貼了貼紙的格子看不到焦點外框，現在看得到了</li>
+                            </ul>
+                        </div>
+                    </article>
+
+                    <article class="changelog-entry">
+                        <div class="changelog-header">
                             <h3 class="changelog-version">v2.24.0</h3>
                             <time class="changelog-date" datetime="2026-10-20">2026年10月20日</time>
                         </div>
