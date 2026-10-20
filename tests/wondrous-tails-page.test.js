@@ -120,3 +120,89 @@ test('不再用到的翻譯鍵三語都拿掉', () => {
         for (const key of removed) assert.ok(!keys.has(key), `${lang} 還有 ${key}`);
     }
 });
+
+const RESET_TEXT = ['58.5%', '10.6%', '0.21%'];
+const DASHES = ['—', '—', '—'];
+const column = (page, name) => page.odds().map((row) => row[name]);
+
+test('一打開（0 張）：現在是隨機 9 張的機率，重置之後寫「—」、長條長度 0', () => {
+    const page = createWondrousPage();
+    assert.deepEqual(column(page, 'label'), ['至少 1 條', '至少 2 條', '至少 3 條']);
+    assert.deepEqual(page.header(), ['現在', '重置之後']);
+    assert.deepEqual(column(page, 'now'), RESET_TEXT);
+    assert.deepEqual(column(page, 'nowWidth'), ['58.46%', '10.56%', '0.21%']);
+    assert.deepEqual(column(page, 'after'), DASHES);
+    assert.deepEqual(column(page, 'afterWidth'), ['0.00%', '0.00%', '0.00%']);
+});
+
+test('貼 3～7 張才有重置之後：2 張「—」、3 張與 7 張是 58.5%／10.6%／0.21%、8 張與 9 張又是「—」', () => {
+    const page = createWondrousPage();
+    const order = [0, 5, 10, 15, 1, 2, 3, 4, 8];
+    const expected = [DASHES, DASHES, DASHES, RESET_TEXT, RESET_TEXT, RESET_TEXT, RESET_TEXT, RESET_TEXT, DASHES, DASHES];
+    assert.deepEqual(column(page, 'after'), expected[0]);
+    order.forEach((p, i) => {
+        page.place(p);
+        assert.deepEqual(column(page, 'after'), expected[i + 1], `${i + 1} 張`);
+    });
+    assert.deepEqual(column(page, 'afterWidth'), ['0.00%', '0.00%', '0.00%']);
+});
+
+test('例子盤面：0、1、2、5、10、12（6 張）現在是 70.0%／13.3%／0%', () => {
+    const page = createWondrousPage();
+    page.place(0, 1, 2, 5, 10, 12);
+    assert.deepEqual(column(page, 'now'), ['70.0%', '13.3%', '0%']);
+    assert.deepEqual(column(page, 'nowWidth'), ['70.00%', '13.33%', '0.00%']);
+    assert.deepEqual(column(page, 'after'), RESET_TEXT);
+    assert.deepEqual(column(page, 'afterWidth'), ['58.46%', '10.56%', '0.21%']);
+});
+
+test('貼滿 9 張：現在只剩 100% 或 0%', () => {
+    const page = createWondrousPage();
+    page.place(0, 1, 2, 3, 4, 5, 8, 10, 12);
+    assert.deepEqual(column(page, 'now'), ['100%', '100%', '0%']);
+    assert.deepEqual(column(page, 'after'), DASHES);
+});
+
+test('切換語言：表頭與每一列的名稱換字，數字不變', () => {
+    const page = createWondrousPage();
+    page.place(0, 1, 2);
+    page.setLang('en');
+    assert.deepEqual(page.header(), ['Now', 'After reset']);
+    assert.deepEqual(column(page, 'label'), ['At least 1 line', 'At least 2 lines', 'At least 3 lines']);
+    assert.deepEqual(column(page, 'now'), ['68.9%', '15.4%', '0.35%']);
+    page.setLang('ja');
+    assert.deepEqual(page.header(), ['現在', 'リセット後']);
+    assert.deepEqual(column(page, 'label'), ['1ライン以上', '2ライン以上', '3ライン以上']);
+});
+
+test('機率卡：在盤面卡後面；電腦（768px 以上）兩欄；數字與長條不用好壞配色；先載入 tails-odds.js', () => {
+    const html = read('tools/wondrous-tails/index.html');
+    assert.ok(html.indexOf('wondrous-board-card') < html.indexOf('wondrous-odds-card'));
+    const srcs = [...html.matchAll(/<script src="([^"]+)"/g)].map((m) => m[1]);
+    assert.equal(srcs.indexOf('tails-odds.js'), srcs.length - 2);
+    const file = 'tools/wondrous-tails/style.css';
+    const css = read(file);
+    const wideAt = css.indexOf('@media (min-width: 768px)');
+    assert.notEqual(wideAt, -1, 'style.css 找不到 @media (min-width: 768px)');
+    assert.match(css.slice(wideAt), /\.wondrous-layout \{[^}]*grid-template-columns:\s*minmax\(0, 26rem\) minmax\(0, 22rem\);/);
+    assert.match(cssRule(file, '.odds-bar-now'), /background:\s*var\(--color-primary\);/);
+    assert.match(cssRule(file, '.odds-bar-after'), /background:\s*var\(--color-muted\);/);
+    for (const selector of ['.odds-now', '.odds-after', '.odds-bar-now', '.odds-bar-after']) {
+        assert.doesNotMatch(cssRule(file, selector), /--color-(success|warning|danger)/, `${selector} 不用好壞配色`);
+    }
+    assert.doesNotMatch(css, /\.prob-value|\.(high|medium|low)\b/);
+    assert.doesNotMatch(read('tools/wondrous-tails/script.js'), /'(high|medium|low)'/);
+});
+
+test('toggle() 自己也擋（不靠格子的 disabled）：傳盤面外的位置、或 9 張時再貼第 10 張，都什麼都不變、不丟錯', () => {
+    const page = createWondrousPage();
+    page.place(0);
+    for (const position of [-1, 16, 1.5]) assert.doesNotThrow(() => page.app.toggle(position));
+    assert.deepEqual(page.placed(), [0]);
+    assert.equal(page.count(), '已貼 1／9 張');
+    page.place(1, 2, 3, 4, 5, 6, 7, 8);
+    assert.doesNotThrow(() => page.app.toggle(9));
+    assert.deepEqual(page.placed(), [0, 1, 2, 3, 4, 5, 6, 7, 8]);
+    assert.equal(page.count(), '已貼 9／9 張');
+    assert.deepEqual(page.odds().map((row) => row.now), ['100%', '100%', '0%']);
+});

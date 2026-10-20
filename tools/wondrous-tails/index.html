@@ -56,6 +56,43 @@
                         <button type="button" class="cell grid-cell" data-position="15" aria-pressed="false" aria-label="第 16 格"></button>
                     </div>
                 </section>
+                <section class="card wondrous-odds-card">
+                    <table class="odds-table" id="odds-table">
+                        <thead>
+                            <tr>
+                                <td></td>
+                                <th scope="col" data-i18n="wondrous_tails_now">現在</th>
+                                <th scope="col" data-i18n="wondrous_tails_after_reset">重置之後</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr data-lines="1">
+                                <th scope="row">
+                                    <span class="odds-label" data-i18n="wondrous_tails_at_least_1">至少 1 條</span>
+                                    <span class="odds-bars" aria-hidden="true"><span class="odds-bar odds-bar-now"></span><span class="odds-bar odds-bar-after"></span></span>
+                                </th>
+                                <td class="odds-now">—</td>
+                                <td class="odds-after">—</td>
+                            </tr>
+                            <tr data-lines="2">
+                                <th scope="row">
+                                    <span class="odds-label" data-i18n="wondrous_tails_at_least_2">至少 2 條</span>
+                                    <span class="odds-bars" aria-hidden="true"><span class="odds-bar odds-bar-now"></span><span class="odds-bar odds-bar-after"></span></span>
+                                </th>
+                                <td class="odds-now">—</td>
+                                <td class="odds-after">—</td>
+                            </tr>
+                            <tr data-lines="3">
+                                <th scope="row">
+                                    <span class="odds-label" data-i18n="wondrous_tails_at_least_3">至少 3 條</span>
+                                    <span class="odds-bars" aria-hidden="true"><span class="odds-bar odds-bar-now"></span><span class="odds-bar odds-bar-after"></span></span>
+                                </th>
+                                <td class="odds-now">—</td>
+                                <td class="odds-after">—</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
             </div>
         </div>
     </main>
@@ -71,6 +108,7 @@
     <script src="../../assets/js/components/layout-loader.js"></script>
     <script src="../../assets/js/common.js"></script>
     <script src="../../assets/js/security-utils.js"></script>
+    <script src="tails-odds.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

@@ -82,3 +82,95 @@
         animation: none;
     }
 }
+
+/* 機率卡片：外觀由 .card 提供，裡面放機率表 */
+.wondrous-odds-card {
+    padding: var(--space-4);
+}
+
+/* 機率表：列標題是「至少 N 條」加兩條長條，欄標題是「現在」「重置之後」，螢幕閱讀器照表格唸。
+   table、tr、th、td 都維持原本的 display，不用 flex 或 grid 改它們（有些螢幕閱讀器會因此讀不出表格） */
+.odds-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-variant-numeric: tabular-nums;
+}
+
+/* 欄標題：小字、靠右，對著下面靠右的數字 */
+.odds-table thead th {
+    padding: 0 0 var(--space-2) var(--space-3);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    color: var(--color-muted);
+    text-align: right;
+}
+
+.odds-table tbody th,
+.odds-table tbody td {
+    padding: var(--space-3) 0 var(--space-3) var(--space-3);
+    border-top: 1px solid var(--color-border);
+}
+
+/* 列標題：名稱靠左。名稱與長條左右排，長條佔剩下的寬度；放不下時（手機）名稱先換行，
+   還是放不下，長條就換到名稱下面。做法：名稱 float，長條是 grid（自己的格式化脈絡，會避開 float 排在它旁邊），
+   旁邊剩下的寬度不到 min-width 就掉到 float 下面 */
+.odds-table tbody th {
+    padding-left: 0;
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    color: var(--color-text);
+    text-align: left;
+}
+
+.odds-label {
+    float: left;
+    margin-right: var(--space-3);
+}
+
+/* 兩條長條上下疊。min-width 讓長條不會縮到看不見；min-height 是一行字的高度，長條在裡面垂直置中，和旁邊的名稱對齊 */
+.odds-bars {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-content: center;
+    gap: 2px;
+    min-width: 3rem;
+    min-height: calc(1em * var(--leading-normal));
+}
+
+/* 長條的長度（style.width）由 script.js 照機率設定；機率是 0 或沒有時長度 0 */
+.odds-bar {
+    height: 8px;
+    border-radius: var(--radius-full);
+}
+
+/* 數字和長條都不用好壞配色：「現在」主色，「重置之後」灰色 */
+.odds-bar-now {
+    background: var(--color-primary);
+}
+
+.odds-bar-after {
+    background: var(--color-muted);
+}
+
+.odds-now {
+    font-size: var(--text-md);
+    font-weight: var(--weight-bold);
+    color: var(--color-primary);
+    text-align: right;
+}
+
+.odds-after {
+    font-size: var(--text-md);
+    color: var(--color-muted);
+    text-align: right;
+}
+
+/* 電腦（768px 以上）：機率卡在盤面右邊；手機照 DOM 順序，機率卡在盤面下面 */
+@media (min-width: 768px) {
+    .wondrous-layout {
+        max-width: 52rem;
+        grid-template-columns: minmax(0, 26rem) minmax(0, 22rem);
+        justify-content: center;
+        align-items: start;
+    }
+}

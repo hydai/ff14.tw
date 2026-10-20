@@ -13,7 +13,14 @@ const WondrousTailsTranslations = {
 
         // 盤面
         wondrous_tails_count: '已貼 {n}／9 張',
-        wondrous_tails_cell_label: '第 {n} 格'
+        wondrous_tails_cell_label: '第 {n} 格',
+
+        // 機率
+        wondrous_tails_now: '現在',
+        wondrous_tails_after_reset: '重置之後',
+        wondrous_tails_at_least_1: '至少 1 條',
+        wondrous_tails_at_least_2: '至少 2 條',
+        wondrous_tails_at_least_3: '至少 3 條'
     },
     en: {
         // Page info
@@ -26,7 +33,14 @@ const WondrousTailsTranslations = {
 
         // Board
         wondrous_tails_count: 'Stickers: {n}/9',
-        wondrous_tails_cell_label: 'Cell {n}'
+        wondrous_tails_cell_label: 'Cell {n}',
+
+        // Odds
+        wondrous_tails_now: 'Now',
+        wondrous_tails_after_reset: 'After reset',
+        wondrous_tails_at_least_1: 'At least 1 line',
+        wondrous_tails_at_least_2: 'At least 2 lines',
+        wondrous_tails_at_least_3: 'At least 3 lines'
     },
     ja: {
         // ページ情報
@@ -39,7 +53,14 @@ const WondrousTailsTranslations = {
 
         // 盤面
         wondrous_tails_count: 'シール {n}／9 枚',
-        wondrous_tails_cell_label: 'マス {n}'
+        wondrous_tails_cell_label: 'マス {n}',
+
+        // 確率
+        wondrous_tails_now: '現在',
+        wondrous_tails_after_reset: 'リセット後',
+        wondrous_tails_at_least_1: '1ライン以上',
+        wondrous_tails_at_least_2: '2ライン以上',
+        wondrous_tails_at_least_3: '3ライン以上'
     }
 };
 
