@@ -11,12 +11,28 @@ const LINES = [0, 1, 2, 3, 4, 5, 6, 7];
 const ARROWS = ['→', '→', '→', '↓', '↓', '↓', '↘', '↙'];
 const POSITIONS = ['左上', '上中', '右上', '左中', '中央', '右中', '左下', '下中', '右下'];
 const START = '① 點遊戲已經翻開的那一格';
+// 元素用 === 比：assert.equal 失敗時 test runner 會展開 actual／expected，fake-dom 的元素連著整份文件與 vm 的全域，
+// 展開不完（測試卡住、吃光記憶體），所以只讓 assert 看到 true／false
+const isSame = (actual, expected, message) => assert.ok(actual === expected, message);
 // style.css 裡某個選擇器第一條規則的內容
 function cssRule(file, selector) {
     const css = read(file);
     const at = css.indexOf(`${selector} {`);
     assert.notEqual(at, -1, `${file} 找不到 ${selector}`);
     return css.slice(at, css.indexOf('}', at));
+}
+// style.css 裡某個 @media 區塊的內容：從 @media 數到和它成對的 }（裡面有規則自己的 }，不能只切到第一個 }）
+function mediaBlock(file, query) {
+    const css = read(file);
+    const at = css.indexOf(`@media ${query} {`);
+    assert.notEqual(at, -1, `${file} 找不到 @media ${query}`);
+    let depth = 0;
+    for (let i = css.indexOf('{', at); i < css.length; i++) {
+        if (css[i] === '{') depth += 1;
+        if (css[i] === '}') depth -= 1;
+        if (depth === 0) return css.slice(at, i + 1);
+    }
+    return assert.fail(`${file} 的 @media ${query} 沒有結尾`);
 }
 // 獎金表裡標了綠色（possible）的總和，由小到大
 const possibleSums = (page) => page.payoutRows().filter((row) => row.classList.contains('possible')).map((row) => Number(row.dataset.sum));
@@ -56,7 +72,7 @@ test('頁面替身：disabled 的元素 click() 什麼都不做，元素有 getB
     assert.deepEqual(JSON.parse(JSON.stringify(page.cell(0).getBoundingClientRect())), { top: 0, bottom: 0, left: 0, right: 0, width: 0, height: 0 });
     page.cell(1).scrollIntoView();
     assert.equal(page.scrolls.length, 1);
-    assert.equal(page.scrolls[0], page.cell(1));
+    isSame(page.scrolls[0], page.cell(1), 'scrollIntoView() 記下的是呼叫它的那一格');
 });
 
 test('頁面結構：沒有蓋住盤面的對話框、說明段落、結果卡與「重做」；格子是按鈕', () => {
@@ -79,7 +95,7 @@ test('腳本：載入小選單與期望值模組，不再載入復原紀錄與�
     assert.equal(at('../../assets/js/modal-manager.js'), -1);
 });
 
-test('版面：格子大小不隨內容改變，狀態列留三行高，盤面是小選單的定位基準、卡片不切掉選單', () => {
+test('版面：格子大小不隨內容改變，狀態列留三行高（413px 以下的手機英文留四行），盤面是小選單的定位基準、卡片不切掉選單', () => {
     const file = 'tools/mini-cactpot/style.css';
     assert.match(cssRule(file, '.grid-cell'), /aspect-ratio:\s*1;/);
     assert.match(cssRule(file, '.grid-cell'), /min-width:\s*0;/);
@@ -89,6 +105,8 @@ test('版面：格子大小不隨內容改變，狀態列留三行高，盤面�
     // 同分的名字用「或」接起來，手機上會折到第三行：min-height 只算文字的三行（content-box，padding 另外加），一到三行的狀態列一樣高
     assert.match(cssRule(file, '.cactpot-status'), /min-height:\s*calc\(3em \* var\(--leading-normal\)\);/);
     assert.match(cssRule(file, '.cactpot-status'), /box-sizing:\s*content-box;/);
+    // 英文的名字比較長：413px 以下的手機，英文（<html lang="en">，I18nManager 在載入與每次切換語言時設定）多留一行，共四行
+    assert.match(mediaBlock(file, '(max-width: 413px)'), /\.cactpot-status:lang\(en\)\s*\{[^}]*min-height:\s*calc\(4em \* var\(--leading-normal\)\);/);
 });
 
 test('不再用到的翻譯鍵三語都拿掉', () => {
@@ -107,13 +125,13 @@ test('點格子：小數字盤開在盤面裡（不是對話框），九個數�
     page.cell(0).click();
     const menu = page.menu();
     assert.ok(menu);
-    assert.equal(menu.parentNode, page.$('extended-grid'));
-    assert.equal(page.document.querySelector('[role="dialog"]'), null);
+    isSame(menu.parentNode, page.$('extended-grid'), '小選單掛在盤面裡');
+    isSame(page.document.querySelector('[role="dialog"]'), null, '小選單不是對話框，頁面上沒有 role="dialog"');
     assert.equal(menu.getAttribute('aria-label'), '左上的數字');
     const options = menu.querySelectorAll('.cell-popover-option');
     assert.deepEqual(options.map((b) => b.dataset.value), ['1', '2', '3', '4', '5', '6', '7', '8', '9']);
     assert.deepEqual(options.map((b) => b.disabled === true), Array(9).fill(false));
-    assert.equal(page.option('clear'), null);
+    isSame(page.option('clear'), null, '還沒填的格子沒有「清除」');
     assert.equal(page.cell(0).getAttribute('aria-expanded'), 'true');
     assert.equal(page.status(), START);
 });
@@ -121,9 +139,9 @@ test('點格子：小數字盤開在盤面裡（不是對話框），九個數�
 test('填了左上 1：建議刮右上或左下，其他沒翻開的格子寫「平均」', () => {
     const page = createCactpotPage();
     page.pick(0, 1);
-    assert.equal(page.menu(), null);
+    isSame(page.menu(), null, '選完數字小選單就關掉');
     assert.equal(page.cell(0).getAttribute('aria-expanded'), 'false');
-    assert.equal(page.document.activeElement, page.cell(0));
+    isSame(page.document.activeElement, page.cell(0), '選完焦點回到格子');
     assert.equal(page.status(), '② 刮開【右上】或【左下】');
     assert.equal(page.$('cactpotStatus').children.length, 0);
     assert.deepEqual(page.suggestedCells(), [2, 6]);
@@ -191,7 +209,7 @@ test('填滿 4 格：狀態列寫選哪條線與平均 MGP，外圈寫每條線�
     assert.deepEqual([2, 3, 5, 6, 7].map((p) => page.cell(p).disabled), Array(5).fill(true));
     assert.deepEqual([0, 1, 4, 8].map((p) => page.cell(p).disabled === true), Array(4).fill(false));
     page.cell(2).click();
-    assert.equal(page.menu(), null);
+    isSame(page.menu(), null, '填滿後沒翻開的格子不能點，不開小選單');
     page.cell(0).click();
     assert.ok(page.option('clear'));
 });
@@ -242,14 +260,14 @@ test('鍵盤打開小數字盤：焦點在第一個能選的數字，選完回�
     const page = createCactpotPage();
     page.pick(0, 1);
     page.keyboardOpen(4);
-    assert.equal(page.document.activeElement, page.option(2));
+    isSame(page.document.activeElement, page.option(2), '鍵盤打開後焦點在第一個能選的數字');
     page.option(2).click();
     assert.equal(page.cell(4).textContent, '2');
-    assert.equal(page.document.activeElement, page.cell(4));
+    isSame(page.document.activeElement, page.cell(4), '選完焦點回到格子');
     page.keyboardOpen(5);
     page.key('Escape');
-    assert.equal(page.menu(), null);
-    assert.equal(page.document.activeElement, page.cell(5));
+    isSame(page.menu(), null, 'Esc 關掉小選單');
+    isSame(page.document.activeElement, page.cell(5), 'Esc 之後焦點回到格子');
     assert.match(page.cell(5).textContent, /^平均 /);
 });
 
@@ -261,7 +279,7 @@ test('點另一格就換到那一格；點盤面外面就關掉', () => {
     assert.equal(page.cell(0).getAttribute('aria-expanded'), 'false');
     assert.equal(page.cell(1).getAttribute('aria-expanded'), 'true');
     page.$('cactpotStatus').click();
-    assert.equal(page.menu(), null);
+    isSame(page.menu(), null, '點盤面外面就關掉');
 });
 
 test('切換語言：小數字盤開著就先關掉，狀態列與格子換成那個語言', () => {
@@ -269,7 +287,7 @@ test('切換語言：小數字盤開著就先關掉，狀態列與格子換成�
     page.pick(0, 1);
     page.cell(4).click();
     page.setLang('en');
-    assert.equal(page.menu(), null);
+    isSame(page.menu(), null, '切換語言先關掉小選單');
     assert.equal(page.status(), '② Scratch [Top Right] or [Bottom Left]');
     assert.equal(page.cell(4).textContent, 'avg 1,678');
     assert.equal(page.cell(2).getAttribute('aria-label'), 'Top Right: avg 1,678');
@@ -343,4 +361,223 @@ test('版面：手機獎金表在盤面下面，電腦（768px 以上）在盤�
     assert.notEqual(at, -1);
     assert.match(css.slice(at), /\.cactpot-layout\s*\{[^}]*grid-template-columns:/);
     assert.match(cssRule('tools/mini-cactpot/style.css', '.payout-table'), /grid-auto-flow:\s*column;/);
+});
+
+test('上一步：退回上一個動作，toast 寫出退回了什麼', () => {
+    const page = createCactpotPage();
+    page.pick(2, 7);
+    assert.equal(page.$('undo-btn').getAttribute('aria-disabled'), 'false');
+    page.$('undo-btn').click();
+    assert.deepEqual(page.toasts.at(-1), { message: '已退回：右上的 7', type: 'info' });
+    assert.equal(page.cell(2).textContent, '?');
+    assert.equal(page.status(), START);
+    assert.equal(page.$('undo-btn').getAttribute('aria-disabled'), 'true');
+});
+
+test('改數字與清除也能退回', () => {
+    const page = createCactpotPage();
+    page.pick(2, 7);
+    page.pick(2, 3);
+    page.$('undo-btn').click();
+    assert.equal(page.toasts.at(-1).message, '已退回：右上的 3');
+    assert.equal(page.cell(2).textContent, '7');
+    page.pick(2, 'clear');
+    page.$('undo-btn').click();
+    assert.equal(page.toasts.at(-1).message, '已退回：清除右上');
+    assert.equal(page.cell(2).textContent, '7');
+});
+
+test('下一張：清空盤面、不跳 toast；按「上一步」救回來', () => {
+    const page = createCactpotPage();
+    page.fill({ 0: 7, 1: 1, 4: 2, 8: 3 });
+    page.$('next-btn').click();
+    assert.equal(page.toasts.length, 0);
+    assert.deepEqual(page.cells().map((c) => c.textContent), Array(9).fill('?'));
+    assert.equal(page.status(), START);
+    assert.equal(page.$('next-btn').getAttribute('aria-disabled'), 'true');
+    page.$('undo-btn').click();
+    assert.equal(page.toasts.at(-1).message, '已退回：下一張');
+    assert.equal(page.status(), '③ 選【左直行】・平均可拿 692 MGP');
+    assert.deepEqual([0, 1, 4, 8].map((p) => page.cell(p).textContent), ['7', '1', '2', '3']);
+});
+
+test('一直按「上一步」：一步一步退回，沒得退時按鈕變灰、焦點留在按鈕上', () => {
+    const page = createCactpotPage();
+    page.pick(0, 1);
+    page.$('next-btn').click();
+    page.$('undo-btn').focus();
+    page.$('undo-btn').click();
+    assert.equal(page.status(), '② 刮開【右上】或【左下】');
+    page.$('undo-btn').click();
+    assert.equal(page.status(), START);
+    assert.equal(page.$('undo-btn').getAttribute('aria-disabled'), 'true');
+    isSame(page.document.activeElement, page.$('undo-btn'), '沒得退時按鈕變灰，焦點還在按鈕上');
+    page.$('undo-btn').click();
+    assert.equal(page.toasts.length, 2);
+    assert.equal(page.status(), START);
+});
+
+test('空的盤面按「下一張」：什麼都不做，「上一步」不多一步', () => {
+    const page = createCactpotPage();
+    page.$('next-btn').click();
+    assert.equal(page.$('undo-btn').getAttribute('aria-disabled'), 'true');
+    assert.equal(page.toasts.length, 0);
+});
+
+test('小數字盤開著時按「上一步」「下一張」：先關掉選單', () => {
+    const page = createCactpotPage();
+    page.pick(0, 1);
+    page.cell(4).click();
+    page.$('undo-btn').click();
+    isSame(page.menu(), null, '按「上一步」先關掉小選單');
+    page.pick(0, 1);
+    page.cell(4).click();
+    page.$('next-btn').click();
+    isSame(page.menu(), null, '按「下一張」先關掉小選單');
+});
+
+// 上面兩個是真的點按鈕，小選單也會被「點外面」的處理關掉，拿掉 undo()、nextTicket() 裡的 close() 照樣過；
+// 這兩個函式要自己先關掉選單，不靠「點外面」的處理（例如之後加了快速鍵，就沒有 click），所以直接呼叫它們
+test('小數字盤開著時直接呼叫 undo()：函式自己先關掉選單', () => {
+    const page = createCactpotPage();
+    page.pick(0, 1);
+    page.cell(4).click();
+    assert.ok(page.menu() !== null, '先把小選單打開');
+    page.app.undo();
+    isSame(page.menu(), null, 'undo() 自己先關掉小選單');
+});
+
+test('小數字盤開著時直接呼叫 nextTicket()（盤面上有數字）：函式自己先關掉選單', () => {
+    const page = createCactpotPage();
+    page.pick(0, 1);
+    page.cell(4).click();
+    assert.ok(page.menu() !== null, '先把小選單打開');
+    page.app.nextTicket();
+    isSame(page.menu(), null, 'nextTicket() 自己先關掉小選單');
+});
+
+test('焦點在格子上直接按 1–9 就填入，不用開選單', () => {
+    const page = createCactpotPage();
+    page.cell(4).focus();
+    const event = page.key('5');
+    assert.equal(event.defaultPrevented, true, '填進去的按鍵 preventDefault');
+    assert.equal(page.cell(4).textContent, '5');
+    isSame(page.menu(), null, '直接按數字鍵不開小選單');
+    isSame(page.document.activeElement, page.cell(4), '焦點還在格子上');
+    assert.equal(page.status(), '② 刮開【左上】或【右上】或【左下】或【右下】');
+});
+
+test('小數字盤開著時按 1–9：填進那一格、關掉選單，焦點回到格子', () => {
+    const page = createCactpotPage();
+    page.keyboardOpen(0);
+    isSame(page.document.activeElement, page.option(1), '鍵盤打開後焦點在第一個能選的數字');
+    const event = page.key('3');
+    assert.equal(event.defaultPrevented, true, '填進去的按鍵 preventDefault');
+    assert.equal(page.cell(0).textContent, '3');
+    isSame(page.menu(), null, '按數字鍵填入後小選單關掉');
+    isSame(page.document.activeElement, page.cell(0), '填入後焦點回到格子');
+});
+
+test('滑鼠打開小數字盤後按 Tab 到另一格再按數字（Chrome）：小數字盤跟著關掉，數字填進焦點所在的那一格', () => {
+    const page = createCactpotPage();
+    // Chrome 點按鈕會給它焦點；fake-dom 的 click() 不會移動焦點，所以自己 focus()
+    page.cell(0).focus();
+    page.cell(0).click();
+    assert.ok(page.menu() !== null, '小選單開在左上');
+    page.cell(1).focus();
+    isSame(page.menu(), null, '焦點離開左上，小選單跟著關掉');
+    const event = page.key('7');
+    assert.equal(event.defaultPrevented, true, '填進去的按鍵 preventDefault');
+    assert.equal(page.cell(1).textContent, '7', '填進焦點所在的上中');
+    assert.match(page.cell(0).textContent, /^平均 /, '不是小選單原本開給的左上：左上還沒填，寫的是平均');
+    isSame(page.document.activeElement, page.cell(1), '焦點留在上中，沒有跳回左上');
+});
+
+test('Safari：左上從沒有過焦點，沒有 focusout 可以關掉小選單；焦點移到另一格再按數字，先關掉小選單，數字填進焦點所在的那一格', () => {
+    const page = createCactpotPage();
+    page.cell(0).click();   // Safari 點按鈕不給焦點
+    page.cell(1).focus();
+    assert.ok(page.menu() !== null, '左上沒有焦點可以失去，小選單還開著');
+    const event = page.key('7', page.cell(1));
+    assert.equal(event.defaultPrevented, true, '填進去的按鍵 preventDefault');
+    assert.equal(page.cell(1).textContent, '7', '填進焦點所在的上中');
+    assert.match(page.cell(0).textContent, /^平均 /, '不是小選單開給的左上：左上還沒填，寫的是平均');
+    isSame(page.menu(), null, '填入前先關掉開在左上的小選單');
+    assert.equal(page.cell(0).getAttribute('aria-expanded'), 'false');
+    isSame(page.document.activeElement, page.cell(1), '焦點留在上中，沒有跳回左上');
+});
+
+test('小數字盤開在焦點所在的那一格（滑鼠點下去）時按數字：填進這一格、關掉選單，焦點留在這一格', () => {
+    const page = createCactpotPage();
+    page.cell(0).focus();
+    page.cell(0).click();
+    assert.ok(page.menu() !== null, '小選單開在左上');
+    const event = page.key('3');
+    assert.equal(event.defaultPrevented, true, '填進去的按鍵 preventDefault');
+    assert.equal(page.cell(0).textContent, '3');
+    isSame(page.menu(), null, '按數字鍵填入後小選單關掉');
+    isSame(page.document.activeElement, page.cell(0), '焦點還在左上');
+});
+
+test('小數字盤開著而焦點不在任何格子上（Safari 點格子不給焦點）：數字填進小選單開給的那一格，焦點回到那一格', () => {
+    const page = createCactpotPage();
+    page.cell(0).click();
+    isSame(page.document.activeElement, page.document.body, '焦點不在格子上');
+    page.key('3');   // 按鍵的目標是 body
+    assert.equal(page.cell(0).textContent, '3');
+    isSame(page.menu(), null, '填入後小選單關掉');
+    isSame(page.document.activeElement, page.cell(0), '焦點回到小選單開給的那一格');
+    // 按鍵的目標是 document（沒有 closest）：開著小選單時照樣填進它開給的那一格，沒開時什麼都不做、不丟例外
+    page.cell(4).click();
+    page.key('5', page.document);
+    assert.equal(page.cell(4).textContent, '5');
+    isSame(page.menu(), null, '填入後小選單關掉');
+    const before = page.cells().map((c) => c.textContent);
+    assert.equal(page.key('6', page.document).defaultPrevented, false);
+    assert.deepEqual(page.cells().map((c) => c.textContent), before);
+});
+
+test('按到不能填的數字：什麼都不變、不跳 toast、「上一步」不多一步、不擋瀏覽器原本的行為', () => {
+    const page = createCactpotPage();
+    page.pick(0, 1);
+    const before = page.cells().map((c) => c.textContent);
+    const ignored = [];
+    page.cell(4).focus();
+    ignored.push(page.key('1'));                                   // 左上已經用了 1
+    ignored.push(page.key('5', page.cell(4), { ctrlKey: true }));  // 按著 Ctrl
+    ignored.push(page.key('5', page.cell(4), { metaKey: true }));  // 按著 ⌘
+    ignored.push(page.key('5', page.cell(4), { altKey: true }));   // 按著 Alt
+    ignored.push(page.key('0'));                                   // 不是 1–9
+    page.cell(0).focus();
+    ignored.push(page.key('1'));                                   // 這一格目前就是 1
+    page.$('undo-btn').focus();
+    ignored.push(page.key('5'));                                   // 焦點不在格子上
+    assert.deepEqual(page.cells().map((c) => c.textContent), before);
+    // 七個按鍵都沒有 preventDefault：瀏覽器與系統的快速鍵（Ctrl／⌘／Alt 加數字）和一般的按鍵照常運作
+    assert.deepEqual(ignored.map((event) => event.defaultPrevented), Array(7).fill(false));
+    assert.equal(page.toasts.length, 0);
+    page.$('undo-btn').click();
+    assert.equal(page.status(), START);
+    assert.equal(page.$('undo-btn').getAttribute('aria-disabled'), 'true');
+});
+
+test('填滿後沒翻開的格子按數字也不能填：不跳 toast、「上一步」不多一步', () => {
+    const page = createCactpotPage();
+    page.fill({ 0: 7, 1: 1, 4: 2, 8: 3 });
+    page.cell(2).focus();
+    assert.equal(page.key('4').defaultPrevented, false, '不擋瀏覽器原本的行為');
+    assert.equal(page.cell(2).textContent, '?');
+    assert.equal(page.status(), '③ 選【左直行】・平均可拿 692 MGP');
+    assert.equal(page.toasts.length, 0);
+    // 上一步退回的是最後填的右下：按數字沒有多存一步
+    page.$('undo-btn').click();
+    assert.equal(page.toasts.at(-1).message, '已退回：右下的 3');
+});
+
+test('切換語言之後，上一步的 toast 用新的語言', () => {
+    const page = createCactpotPage();
+    page.setLang('en');
+    page.pick(2, 7);
+    page.$('undo-btn').click();
+    assert.equal(page.toasts.at(-1).message, 'Undone: 7 in Top Right');
 });

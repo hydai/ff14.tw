@@ -29,6 +29,11 @@ const MiniCactpotTranslations = {
         mini_cactpot_undo: '上一步',
         mini_cactpot_next: '下一張',
 
+        // 上一步的提示：{pos} 是位置名稱，{n} 是被退回的數字
+        mini_cactpot_undone_set: '已退回：{pos}的 {n}',
+        mini_cactpot_undone_clear: '已退回：清除{pos}',
+        mini_cactpot_undone_next: '已退回：下一張',
+
         // 獎金表
         mini_cactpot_payout_title: '三格總和 → MGP',
 
@@ -80,6 +85,11 @@ const MiniCactpotTranslations = {
         mini_cactpot_undo: 'Undo',
         mini_cactpot_next: 'Next ticket',
 
+        // Undo messages: {pos} is the cell position name, {n} is the number that was undone
+        mini_cactpot_undone_set: 'Undone: {n} in {pos}',
+        mini_cactpot_undone_clear: 'Undone: clear {pos}',
+        mini_cactpot_undone_next: 'Undone: next ticket',
+
         // Payout table
         mini_cactpot_payout_title: 'Sum of 3 cells → MGP',
 
@@ -130,6 +140,11 @@ const MiniCactpotTranslations = {
         // ボタン
         mini_cactpot_undo: '元に戻す',
         mini_cactpot_next: '次のくじ',
+
+        // 元に戻したときのメッセージ：{pos} はマスの位置名、{n} は戻した数字
+        mini_cactpot_undone_set: '元に戻しました：{pos}の {n}',
+        mini_cactpot_undone_clear: '元に戻しました：{pos}のクリア',
+        mini_cactpot_undone_next: '元に戻しました：次のくじ',
 
         // 配当表
         mini_cactpot_payout_title: '3マスの合計 → MGP',
