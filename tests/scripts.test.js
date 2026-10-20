@@ -191,8 +191,8 @@ test('tools/**/*.html 與根頁面用到的 data-i18n 鍵值都能在該頁引�
 
 test('label_sep_colon／label_sep_comma 在 common.js 的 zh/en/ja 三語都存在且非空', () => {
     // 這兩個 key 不是透過 data-i18n 屬性套用，而是 tools/faux-hollows-foxes/script.js
-    // 與 tools/mini-cactpot/script.js 直接呼叫 FF14Utils.getI18nText() 組出 aria-label 文字，
-    // 不會被上面那個掃 data-i18n 的測試涵蓋到。刪掉任一語系的 key 不會有任何測試失敗，
+    // 直接呼叫 FF14Utils.getI18nText() 組出 aria-label 文字（仙人微彩改用自己的 mini_cactpot_cell_* 鍵，
+    // 不再用這兩個鍵），不會被上面那個掃 data-i18n 的測試涵蓋到。刪掉任一語系的 key 不會有任何測試失敗，
     // 只會讓 getI18nText() 悄悄退回寫死的中文全形標點，所以在這裡直接鎖住三語都要有值。
     const COMMON_FILE = 'assets/js/i18n/translations/common.js';
     const common = read(COMMON_FILE);

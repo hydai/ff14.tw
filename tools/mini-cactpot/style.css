@@ -2,208 +2,202 @@
    仙人微彩計算機 — 只寫版面；顏色、圓角、字級一律來自 tokens.css 與共用元件
    ========================================================================== */
 
-.page-header {
-    text-align: center;
-    margin-bottom: var(--space-7);
-}
-
-/* 棋盤：外觀由 .card 提供，這裡只補內距 */
-.cactpot-grid-container {
-    padding: var(--space-6);
-    margin-bottom: var(--space-6);
-    text-align: center;
-}
-
-.extended-grid {
+/* 手機一欄：盤面卡片（狀態列、盤面與兩顆按鈕）在上，獎金表卡片在下；768px 以上改成兩欄，見檔案最後的規則 */
+.cactpot-layout {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: var(--space-2);
-    width: 100%;
-    max-width: 400px;
-    margin: 0 auto var(--space-4);
+    gap: var(--space-6);
+    max-width: 28rem;
+    margin: 0 auto;
 }
 
-/* 九宮格：外觀與 selected / revealed 狀態由 .cell 提供 */
-.grid-cell {
-    aspect-ratio: 1;
-    font-size: var(--text-2xl);
+/* 盤面卡片：外觀由 .card 提供。.card 預設 overflow: hidden，會切掉開在格子下方的小選單，所以這裡改成 visible */
+.cactpot-board {
+    display: grid;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    overflow: visible;
 }
 
-.grid-cell.cell-recommended-best {
-    border: 2px solid var(--color-primary);
-    color: var(--color-primary);
-    animation: cell-glow 2s ease-in-out infinite;
-}
-
-.cell-ev {
-    font-size: var(--text-xs);
-    font-weight: var(--weight-normal);
-    line-height: 1;
-    color: var(--color-muted);
-}
-
-.cell-recommended-best .cell-ev {
-    font-weight: var(--weight-semibold);
-    color: var(--color-primary);
-}
-
-/* 線條指示格（8 條線的期望值） */
-.expectation-cell {
-    aspect-ratio: 1;
+/* 狀態列：留三行的高度，一行、兩行或三行都一樣高，下面的盤面與按鈕不會跳動。
+   三行：同分的名字用「或」接起來，名單長的時候在手機上會折到第三行。
+   英文的名字比較長，所以 413px 以下的手機英文留四行（下面的 :lang(en) 規則；I18nManager 在載入與每次切換語言時設定 <html lang>，只有英文的手機會多留一行）。
+   還是可能需要再多一行的，只有 320px 寬、七個同分的時候（英文要五行、日文要四行），很少見。
+   全站的 box-sizing 是 border-box，padding 會吃掉 min-height，所以這裡用 content-box：min-height 只算文字的三行，padding 另外加。
+   display: flex 加 align-items: center：一行或兩行的字在三行高的框裡垂直置中 */
+.cactpot-status {
     display: flex;
-    flex-direction: column;
+    align-items: center;
+    box-sizing: content-box;
+    margin: 0;
+    min-height: calc(3em * var(--leading-normal));
+    padding: var(--space-2) var(--space-3);
+    background: var(--color-surface-2);
+    border-radius: var(--radius-md);
+    color: var(--color-heading);
+    font-weight: var(--weight-semibold);
+}
+
+/* 英文的手機：多留一行，原因見上面狀態列的說明 */
+@media (max-width: 413px) {
+    .cactpot-status:lang(en) {
+        min-height: calc(4em * var(--leading-normal));
+    }
+}
+
+/* 盤面：5 欄，左上角是左斜線、中間三欄是三條直行、右上角是右斜線；下面三列每列最前面是橫列。
+   position: relative：小選單（assets/js/cell-popover.js）掛在這裡，位置相對於盤面的左上角 */
+.extended-grid {
+    position: relative;
+    display: grid;
+    grid-template-columns: 0.62fr repeat(3, minmax(0, 1fr)) 0.62fr;
+    gap: var(--space-2);
+    align-items: center;
+}
+
+/* 外圈的膠囊：選線的箭頭，之後寫這條線的平均 MGP */
+.line-badge {
+    display: flex;
     align-items: center;
     justify-content: center;
-    gap: 2px;
-    border: 1px solid var(--color-border);
+    min-height: 1.75em;
     border-radius: var(--radius-full);
     background: var(--color-surface-2);
     color: var(--color-muted);
-    font-size: var(--text-sm);
+    font-size: var(--text-xs);
     font-weight: var(--weight-semibold);
-    transition: background-color var(--duration-base) var(--ease), border-color var(--duration-base) var(--ease), color var(--duration-base) var(--ease);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    text-align: center;
 }
 
-.expectation-cell.active {
-    border-color: var(--color-primary);
-    background: var(--color-primary-tint);
-    color: var(--color-primary);
-}
-
-.expectation-cell.best {
-    border-color: var(--color-success);
+/* 推薦的線：膠囊標綠色（這條線的 3 格是 .cell.suggested，在 tools-common.css） */
+.line-badge.suggested {
     background: var(--color-success);
     color: var(--color-on-success);
-    box-shadow: 0 0 0 3px var(--color-success-tint);
 }
 
-.expectation-value {
-    font-size: var(--text-xs);
+/* 最上面一列的膠囊貼著下面的格子 */
+.line-badge-top {
+    align-self: end;
+}
+
+/* 九宮格：外觀由 .cell 提供。格子大小不隨內容改變（aspect-ratio、min-width: 0、overflow: hidden），數字出現或消失時版面不動 */
+.grid-cell {
+    aspect-ratio: 1;
+    min-width: 0;
+    padding: 0;
+    overflow: hidden;
+    font: inherit;
+    font-size: var(--text-2xl);
+    font-weight: var(--weight-bold);
+    line-height: var(--leading-tight);
+}
+
+/* 還沒翻開的格子：小一點、淡一點 */
+.grid-cell.is-unknown {
+    font-size: var(--text-lg);
     font-weight: var(--weight-normal);
-    line-height: 1;
+    color: var(--color-muted);
 }
 
-.expectation-cell.best .expectation-value {
+/* 填了數字的格子：沿用 .grid-cell 的大字、粗體 */
+.grid-cell.is-number {
+    font-size: var(--text-2xl);
     font-weight: var(--weight-bold);
 }
 
-.empty-cell {
-    aspect-ratio: 1;
-}
-
-.grid-info {
-    font-size: var(--text-sm);
-    color: var(--color-muted);
-}
-
-.controls {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: var(--space-4);
-    margin-bottom: var(--space-6);
-}
-
-/* 結果面板：外觀由 .card 提供 */
-.cell-recommendation-info,
-.best-choice-info {
-    margin-bottom: var(--space-6);
-    animation: slideIn var(--duration-slow) var(--ease);
-}
-
-.result-stat {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1);
-}
-
-.best-choice-title {
-    font-size: var(--text-lg);
+/* 沒翻開的格子寫「平均 1,678」：字小一點，手機的格子裡放得下，放不下就換行；格子大小不變（aspect-ratio、overflow: hidden） */
+.grid-cell.is-avg {
+    font-size: var(--text-xs);
     font-weight: var(--weight-semibold);
+    line-height: var(--leading-snug);
+    padding: 0 var(--space-1);
+}
+
+/* 小選單正開給這一格 */
+.grid-cell[aria-expanded="true"] {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+.cactpot-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-3);
+}
+
+/* 不能按：外觀照 .btn:disabled，但用 aria-disabled，按鈕變灰時焦點還在原地 */
+.cactpot-actions .btn[aria-disabled="true"] {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+/* .btn 的 hover／active 只排除 :disabled：這裡拿掉它們的底色、浮起與陰影 */
+.cactpot-actions .btn[aria-disabled="true"]:hover,
+.cactpot-actions .btn[aria-disabled="true"]:active {
+    background: var(--color-surface);
+    transform: none;
+    box-shadow: none;
+}
+
+/* 焦點還在這顆按鈕上，鍵盤焦點的外框照樣看得到 */
+.cactpot-actions .btn[aria-disabled="true"]:focus-visible {
+    box-shadow: var(--ring-primary);
+}
+
+/* 獎金表：三格總和 → MGP，另一張卡片。外觀由 .card 提供，這裡只寫版面 */
+.cactpot-payout {
+    padding: var(--space-4);
+}
+
+.cactpot-payout-title {
+    margin: 0 0 var(--space-3);
+    font-size: var(--text-md);
     color: var(--color-heading);
 }
 
-.best-choice-value {
-    font-size: var(--text-md);
-    font-weight: var(--weight-medium);
+/* 19 列照欄排下去：左欄總和 6–15（10 列），右欄 16–24（9 列） */
+.payout-table {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: repeat(10, auto);
+    grid-auto-flow: column;
+    gap: 2px var(--space-4);
+    margin: 0;
+    font-size: var(--text-sm);
+    font-variant-numeric: tabular-nums;
+}
+
+.payout-row {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-2);
+    padding: 2px var(--space-2);
+    border-radius: var(--radius-sm);
+}
+
+.payout-row dt,
+.payout-row dd {
+    margin: 0;
+}
+
+/* 1,000 MGP 以上的列用粗體 */
+.payout-row.big {
+    font-weight: var(--weight-bold);
+}
+
+/* 推薦的線還可能出現的總和：綠色。表下面不加圖例或說明文字 */
+.payout-row.possible {
+    background: var(--color-success-tint);
     color: var(--color-success-text);
 }
 
-.best-choice-value.recommend-value {
-    color: var(--color-primary);
-}
-
-.best-choice-range {
-    font-size: var(--text-sm);
-    color: var(--color-muted);
-}
-
-@keyframes slideIn {
-    from { opacity: 0; transform: translateY(-10px); }
-    to { opacity: 1; transform: none; }
-}
-
-/* 數字選擇對話框：外觀由 .dialog-overlay / .dialog 提供，這裡只管顯示切換與尺寸 */
-.popup-overlay {
-    display: none;
-}
-
-.popup-overlay.visible {
-    display: flex;
-}
-
-.number-picker {
-    max-width: 320px;
-    animation: popIn var(--duration-base) var(--ease);
-}
-
-.number-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: var(--space-2);
-}
-
-.number-btn {
-    aspect-ratio: 1;
-    min-width: 60px;
-    font-family: inherit;
-    font-size: var(--text-2xl);
-}
-
-@keyframes popIn {
-    from { opacity: 0; transform: translateY(8px); }
-    to { opacity: 1; transform: none; }
-}
-
-/* 響應式 */
-@media (max-width: 768px) {
-    .cactpot-grid-container {
-        padding: var(--space-4);
-    }
-
-    .extended-grid {
-        max-width: 320px;
-        gap: 6px;
-    }
-
-    .grid-cell,
-    .number-btn {
-        font-size: var(--text-xl);
-    }
-}
-
-@media (max-width: 480px) {
-    .controls {
-        flex-direction: column;
-        align-items: stretch;
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .cell-recommendation-info,
-    .best-choice-info,
-    .number-picker,
-    .grid-cell.cell-recommended-best {
-        animation: none;
+/* 電腦（768px 以上）：獎金表在盤面右邊；手機照 DOM 順序，獎金表在盤面下面 */
+@media (min-width: 768px) {
+    .cactpot-layout {
+        max-width: 52rem;
+        grid-template-columns: minmax(0, 28rem) minmax(0, 20rem);
+        justify-content: center;
+        align-items: start;
     }
 }

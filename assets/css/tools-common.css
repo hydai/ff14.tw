@@ -322,6 +322,14 @@
     opacity: 0.7;
 }
 
+/* 建議（綠色）：仙人推薦的格子與線、之後天書的連線與宗長的下一格；放在 :hover、:disabled 後面，兩種狀態下都維持綠色 */
+.cell.suggested {
+    border: 2px solid var(--color-success);
+    background: var(--color-success-tint);
+    color: var(--color-success-text);
+    opacity: 1;
+}
+
 .cell-label {
     font-size: var(--text-xs);
     font-weight: var(--weight-semibold);
@@ -332,6 +340,68 @@
 @keyframes cell-glow {
     0%, 100% { box-shadow: var(--glow-primary); }
     50% { box-shadow: var(--glow-primary-strong); }
+}
+
+/* 格子旁的小選單（assets/js/cell-popover.js，仙人微彩、宗長計算機共用）。放格子的元素要 position: relative，外層的 .card 要 overflow: visible */
+.cell-popover {
+    position: absolute;
+    z-index: 1;
+    display: grid;
+    gap: var(--space-1);
+    padding: var(--space-2);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+}
+
+.cell-popover-cols-2 {
+    grid-template-columns: repeat(2, minmax(var(--control-lg), auto));
+}
+
+.cell-popover-cols-3 {
+    grid-template-columns: repeat(3, var(--control-lg));
+}
+
+.cell-popover-option {
+    min-height: var(--control-lg);
+    padding: 0 var(--space-2);
+    font: inherit;
+    font-size: var(--text-lg);
+    font-weight: var(--weight-semibold);
+    color: var(--color-text);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+}
+
+.cell-popover-option:hover:not(:disabled) {
+    border-color: var(--color-primary);
+    background: var(--color-primary-tint);
+}
+
+.cell-popover-option:focus-visible {
+    outline: none;
+    box-shadow: var(--ring-primary);
+}
+
+.cell-popover-option:disabled {
+    background: var(--color-surface-2);
+    color: var(--color-muted);
+    cursor: not-allowed;
+}
+
+/* 目前的值也是 disabled：這一條要排在 :disabled 後面，才會是選取的樣子而不是灰掉的樣子 */
+.cell-popover-option[aria-pressed="true"] {
+    border-color: var(--color-primary);
+    background: var(--color-primary-tint);
+    color: var(--color-primary);
+}
+
+.cell-popover-option-wide {
+    grid-column: 1 / -1;
+    font-size: var(--text-md);
 }
 
 /* 表格（<div class="table-wrap"><table class="table">…</table></div>） */

@@ -1,907 +1,299 @@
-// Mini Cactpot Calculator
+// 仙人微彩計算機
+// 盤面上的每個字都從 MiniCactpotSolver.analyze(this.grid) 畫出來（cactpot-solver.js，不碰 DOM）：
+// 狀態列寫下一步，格子寫數字或「平均」，外圈在選線時寫每條線的平均，推薦的格子與線標綠色。
+// 獎金表（三格總和 → MGP）一直顯示，選線時推薦的線還可能出現的總和標綠色。
+// 填數字用格子旁的小選單（assets/js/cell-popover.js 的 CellPopover）；焦點在格子上時也能直接按 1–9（先填焦點所在的格子，
+// 焦點不在格子上而小選單開著時填進它開給的那一格）。
+// 每個動作（填、改、清除、下一張）改盤面之前先存一份到 undoStack，「上一步」退回最後一份並用 toast 寫出退回了什麼；
+// 「下一張」清空盤面，按「上一步」救得回來。
 class MiniCactpotCalculator {
+    // 位置 0–8 的名稱：翻譯鍵與中文預設文字（左上、上中、右上 / 左中、中央、右中 / 左下、下中、右下）
+    static POSITION_KEYS = [
+        'mini_cactpot_pos_top_left', 'mini_cactpot_pos_top_center', 'mini_cactpot_pos_top_right',
+        'mini_cactpot_pos_mid_left', 'mini_cactpot_pos_center', 'mini_cactpot_pos_mid_right',
+        'mini_cactpot_pos_bot_left', 'mini_cactpot_pos_bot_center', 'mini_cactpot_pos_bot_right'
+    ];
+    static POSITION_NAMES = ['左上', '上中', '右上', '左中', '中央', '右中', '左下', '下中', '右下'];
+
+    // 線 0–7 的名稱，和 MiniCactpotSolver.LINES 同順序：三條橫列、三條直行、兩條斜線
+    static LINE_KEYS = [
+        'mini_cactpot_line_row_top', 'mini_cactpot_line_row_mid', 'mini_cactpot_line_row_bot',
+        'mini_cactpot_line_col_left', 'mini_cactpot_line_col_mid', 'mini_cactpot_line_col_right',
+        'mini_cactpot_line_diag_left', 'mini_cactpot_line_diag_right'
+    ];
+    static LINE_NAMES = ['上橫列', '中橫列', '下橫列', '左直行', '中直行', '右直行', '左斜線', '右斜線'];
+
+    // 外圈膠囊在還沒有建議時寫的箭頭，以線的編號為索引：橫列 →、直行 ↓、斜線 ↘ ↙
+    static LINE_ARROWS = ['→', '→', '→', '↓', '↓', '↓', '↘', '↙'];
+
+    // 獎金表裡 MGP 到這個數字以上的列用粗體
+    static BIG_MGP = 1000;
+
     constructor() {
+        // 九格的數字：null 是還沒填，1–9 是填了的數字
         this.grid = new Array(9).fill(null);
-        this.selectedCells = [];
-        this.history = new StateHistoryManager(); // 歷史記錄
-        this.modalManager = new ModalManager();
-        this.isUndoingOrRedoing = false;
+        // 上一步：每個動作之前存一份 { grid: 動作之前的盤面（複本）, action: 那個動作 }，最後存的最先退回
+        this.undoStack = [];
 
-        this.mgpTable = {
-            6: 10000, 7: 36, 8: 720, 9: 360, 10: 80,
-            11: 252, 12: 108, 13: 72, 14: 54, 15: 180,
-            16: 72, 17: 180, 18: 119, 19: 36, 20: 306,
-            21: 1080, 22: 144, 23: 1800, 24: 3600
-        };
-        this.lines = [
-            [0, 1, 2], [3, 4, 5], [6, 7, 8], // 橫列
-            [0, 3, 6], [1, 4, 7], [2, 5, 8], // 直行
-            [0, 4, 8], [2, 4, 6]             // 斜線
-        ];
-        // Line names will be fetched via i18n
-        this.lineNameKeys = [
-            'mini_cactpot_line_row_top', 'mini_cactpot_line_row_mid', 'mini_cactpot_line_row_bot',
-            'mini_cactpot_line_col_left', 'mini_cactpot_line_col_mid', 'mini_cactpot_line_col_right',
-            'mini_cactpot_line_diag_left', 'mini_cactpot_line_diag_right'
-        ];
-        // Fallback line names (Chinese)
-        this.lineNamesFallback = [
-            '上橫列', '中橫列', '下橫列',
-            '左直行', '中直行', '右直行',
-            '左斜線', '右斜線'
-        ];
-        // Cell position names (i18n keys and fallbacks)
-        this.cellPositionKeys = [
-            'mini_cactpot_pos_top_left', 'mini_cactpot_pos_top_center', 'mini_cactpot_pos_top_right',
-            'mini_cactpot_pos_mid_left', 'mini_cactpot_pos_center', 'mini_cactpot_pos_mid_right',
-            'mini_cactpot_pos_bot_left', 'mini_cactpot_pos_bot_center', 'mini_cactpot_pos_bot_right'
-        ];
-        this.cellPositionFallback = [
-            '左上', '上中', '右上',
-            '左中', '中央', '右中',
-            '左下', '下中', '右下'
-        ];
-
-        // DOM 元素快取
         this.elements = {
-            grid: document.getElementById('extended-grid'),
-            selectedCount: document.getElementById('selected-count'),
-            bestChoiceInfo: document.getElementById('best-choice-info'),
-            bestLineSummary: document.getElementById('best-line-summary'),
-            undoBtn: document.getElementById('undo-btn'),
-            redoBtn: document.getElementById('redo-btn'),
-            resetBtn: document.getElementById('reset-btn'),
-            numberPopup: document.getElementById('number-popup'),
-            numberGrid: document.querySelector('.number-grid'),
-            popupClose: document.querySelector('#number-popup .popup-close'),
-            cellRecommendationInfo: document.getElementById('cell-recommendation-info'),
-            cellRecommendationSummary: document.getElementById('cell-recommendation-summary')
+            status: document.getElementById('cactpotStatus'),
+            lineAverages: document.getElementById('cactpotLineAverages'),
+            board: document.getElementById('extended-grid'),
+            undo: document.getElementById('undo-btn'),
+            next: document.getElementById('next-btn'),
+            payout: document.getElementById('payoutTable')
         };
+        // 九格與外圈的膠囊都在 index.html 裡，照位置、線的編號收好，重畫時只改內容，不重建
+        this.cells = Array.from({ length: 9 }, (_, p) => this.elements.board.querySelector(`.grid-cell[data-position="${p}"]`));
+        this.badges = Array.from({ length: 8 }, (_, line) => this.elements.board.querySelector(`.line-badge[data-line="${line}"]`));
+        // 獎金表的 19 列照 MiniCactpotSolver.MGP 建出來（HTML 裡不寫第二份），照總和收好；重畫時只切換 possible
+        this.payoutRows = this.buildPayoutRows();
 
-        // 當前選中的格子位置（用於 popup）
-        this.currentPopupPosition = null;
-        this.currentPopupOptions = null;
-        this.selectionMade = false;
-        this.lastFocusedElement = null; // 用於 popup 的無障礙功能
+        this.popover = new CellPopover({ board: this.elements.board, columns: 3 });
 
-        // 語言切換時重繪快取（見 onLanguageChange／showBestChoice／displayCellRecommendations）
-        this.lastBestResult = null;
-        this.lastCellRecommendations = null;
+        // 點格子：在格子旁邊打開小數字盤。Esc、點外面、焦點移出由小選單自己關；點另一格就是對另一格再呼叫 open()
+        this.elements.board.addEventListener('click', (event) => this.handleBoardClick(event));
 
-        this.initializeGrid();
-        this.initializePopup();
-        this.initializeControls();
+        // 上一步、下一張：不能按的時候用 aria-disabled（不用 disabled），click 照樣會送出，所以 undo()、nextTicket() 自己擋
+        this.elements.undo.addEventListener('click', () => this.undo());
+        this.elements.next.addEventListener('click', () => this.nextTicket());
 
-        // 語言切換時重新以目前語言重建所有格子的 aria-label
+        // 數字鍵 1–9：整頁聽 keydown，由 handleDigitKey() 判斷填不填、填哪一格
+        document.addEventListener('keydown', (event) => this.handleDigitKey(event));
+
+        // 切換語言：小選單的文字是打開時才寫的，先關掉，再用新的語言重畫整個盤面
         window.i18n.onLanguageChange(() => {
-            this.refreshCellLabels();
-            if (this.lastBestResult) {
-                this.showBestChoice(this.lastBestResult, { scrollIntoView: false });
-            }
-            if (this.lastCellRecommendations) {
-                this.displayCellRecommendations(this.lastCellRecommendations);
-            }
+            this.popover.close();
+            this.render();
         });
 
-        // index.html 裡的 aria-label 是寫死的中文；若使用者先前已切換過語言
-        // （儲存在 localStorage），第一次載入時要立刻依目前語言重建一次，
-        // 不能等到下一次語言切換才更新
-        this.refreshCellLabels();
-
-        // 保存初始狀態
-        this.saveState();
+        this.render();
     }
 
-    initializeGrid() {
-        // 移除可能存在的舊事件監聽器
-        this.elements.grid.removeEventListener('click', this.handleGridClick);
-
-        // 綁定新的事件監聽器
-        this.handleGridClick = (e) => {
-            const cell = e.target.closest('.grid-cell');
-            if (cell) {
-                this.handleCellClick(parseInt(cell.dataset.position, 10));
-            }
-        };
-
-        this.elements.grid.addEventListener('click', this.handleGridClick);
-
-        // 移除可能存在的舊事件監聽器（鍵盤）
-        this.elements.grid.removeEventListener('keydown', this.handleGridKeydown);
-
-        this.handleGridKeydown = (e) => {
-            if (e.key !== 'Enter' && e.key !== ' ') return;
-            const cell = e.target.closest('.grid-cell');
-            if (cell) {
-                e.preventDefault();
-                this.handleCellClick(parseInt(cell.dataset.position, 10));
-            }
-        };
-        this.elements.grid.addEventListener('keydown', this.handleGridKeydown);
+    t(key, fallback, params) {
+        return FF14Utils.getI18nText(key, fallback, params);
     }
 
-    initializePopup() {
-        // 使用事件委派處理數字按鈕點擊
-        this.handleNumberGridClick = (e) => {
-            const btn = e.target.closest('.number-btn');
-            if (btn && !btn.disabled) {
-                const number = parseInt(btn.dataset.number, 10);
-                this.handleNumberSelection(number);
-            }
-        };
-        this.elements.numberGrid.addEventListener('click', this.handleNumberGridClick);
+    // 獎金表：總和 6–24 照順序各一列，<dt> 是總和、<dd> 是 MGP，MGP 到 BIG_MGP 以上加 big。回傳 Map：總和 → 那一列
+    buildPayoutRows() {
+        const rows = new Map();
+        const sums = Object.keys(MiniCactpotSolver.MGP).map(Number).sort((a, b) => a - b);
+        for (const sum of sums) {
+            const mgp = MiniCactpotSolver.MGP[sum];
 
-        // 取消按鈕
-        this.handlePopupCloseClick = () => {
-            this.hideNumberPopup();
-        };
-        this.elements.popupClose.addEventListener('click', this.handlePopupCloseClick);
+            const term = document.createElement('dt');
+            term.textContent = String(sum);
+            const detail = document.createElement('dd');
+            detail.textContent = MiniCactpotSolver.formatMgp(mgp);
+
+            const row = document.createElement('div');
+            row.className = mgp >= MiniCactpotCalculator.BIG_MGP ? 'payout-row big' : 'payout-row';
+            row.dataset.sum = String(sum);
+            row.appendChild(term);
+            row.appendChild(detail);
+            this.elements.payout.appendChild(row);
+            rows.set(sum, row);
+        }
+        return rows;
     }
 
-    initializeControls() {
-        // Undo button
-        this.elements.undoBtn.addEventListener('click', () => {
-            this.undo();
+    // 位置 p（0–8）、線 i（0–7）照目前語言的名稱
+    positionName(p) {
+        return this.t(MiniCactpotCalculator.POSITION_KEYS[p], MiniCactpotCalculator.POSITION_NAMES[p]);
+    }
+
+    lineName(i) {
+        return this.t(MiniCactpotCalculator.LINE_KEYS[i], MiniCactpotCalculator.LINE_NAMES[i]);
+    }
+
+    // 每個名字套上 mini_cactpot_name（【右上】），再用 mini_cactpot_or 接起來（【右上】或【左下】）
+    joinNames(names) {
+        return names
+            .map((name) => this.t('mini_cactpot_name', '【{name}】', { name }))
+            .join(this.t('mini_cactpot_or', '或'));
+    }
+
+    handleBoardClick(event) {
+        const cell = event.target.closest('.grid-cell');
+        if (!cell || cell.disabled) return;
+
+        const p = Number(cell.dataset.position);
+        this.popover.open(cell, this.pickerOptions(p), {
+            label: this.t('mini_cactpot_picker_label', '{pos}的數字', { pos: this.positionName(p) }),
+            // 上兩列開在格子下方，最下面一列開在上方
+            placement: Math.floor(p / 3) < 2 ? 'below' : 'above',
+            // 鍵盤按 Enter、空白鍵送出的 click，detail 是 0（滑鼠點是 1 以上）：用鍵盤打開時焦點移到第一個能選的數字
+            focusFirst: event.detail === 0,
+            onSelect: (value) => this.apply(value === 'clear'
+                ? { type: 'clear', position: p }
+                : { type: 'set', position: p, value })
         });
+    }
 
-        // Redo button
-        if (this.elements.redoBtn) {
-            this.elements.redoBtn.addEventListener('click', () => {
-                this.redo();
+    // 位置 p 的小數字盤：1–9，別格已經用了的不能選，這一格目前的數字標成已選；這一格有數字時最後多一個「清除」
+    pickerOptions(p) {
+        const options = [];
+        for (let n = 1; n <= 9; n++) {
+            options.push({
+                value: n,
+                label: String(n),
+                current: this.grid[p] === n,
+                disabled: this.grid.some((value, q) => q !== p && value === n)
             });
         }
-
-        // Reset button
-        this.elements.resetBtn.addEventListener('click', () => {
-            this.reset();
-        });
-    }
-
-    destroy() {
-        // 移除 grid 事件監聽器
-        if (this.handleGridClick && this.elements.grid) {
-            this.elements.grid.removeEventListener('click', this.handleGridClick);
+        if (this.grid[p] !== null) {
+            options.push({ value: 'clear', label: this.t('mini_cactpot_clear', '清除'), wide: true });
         }
-
-        // 移除 popup 事件監聽器
-        if (this.handleNumberGridClick && this.elements.numberGrid) {
-            this.elements.numberGrid.removeEventListener('click', this.handleNumberGridClick);
-        }
-        if (this.handlePopupCloseClick && this.elements.popupClose) {
-            this.elements.popupClose.removeEventListener('click', this.handlePopupCloseClick);
-        }
-
-        // 隱藏 popup (也會清理 ModalManager)
-        this.hideNumberPopup();
+        return options;
     }
 
-    showNumberPopup(position, options = {}) {
-        this.currentPopupPosition = position;
-        this.currentPopupOptions = options;
-        this.selectionMade = false;
-        this.updateNumberPopupState();
+    // 數字鍵 1–9：填進焦點所在的格子；焦點不在格子上而小選單開著時，填進它開給的那一格（焦點在選單的選項上，或 Safari 點按鈕不會給焦點）。
+    // 看得到焦點的格子優先：小選單開在別格時（Safari 點格子不給焦點，按 Tab 到旁邊的格子沒有 focusout 可以關掉選單），先關掉它再填焦點所在的格子。
+    // 不能填的一律什麼都不做、不跳 toast，也不擋瀏覽器原本的行為：按著 Ctrl／⌘／Alt（瀏覽器與系統的快速鍵）、焦點不在格子上而小選單也沒開、
+    // 格子不能點（填滿 4 格後沒翻開的），或這個數字已經在盤面上（別格用了，或就是這一格目前的數字）
+    handleDigitKey(event) {
+        if (!/^[1-9]$/.test(event.key) || event.ctrlKey || event.metaKey || event.altKey) return;
 
-        this.modalManager.show(this.elements.numberPopup, {
-            useClass: 'visible',
-            onClose: () => {
-                // If closed without selection (cancelled) and was a new selection (clicked empty cell)
-                // we need to revert the '?' state by directly restoring the cell
-                if (
-                    !this.selectionMade &&
-                    this.currentPopupOptions?.isNewSelection &&
-                    this.currentPopupPosition !== null
-                ) {
-                    const pos = this.currentPopupPosition;
-                    const cell = document.querySelector(`[data-position="${pos}"]`);
+        // event.target 可能是 document 這種沒有 closest 的東西，當成沒有格子；小選單沒開時 popover.anchor 是 null
+        const cell = event.target.closest?.('.grid-cell') ?? this.popover.anchor;
+        if (!cell || cell.disabled) return;
 
-                    // 還原格子狀態
-                    cell.classList.remove('selected');
-                    this.setCellDisplay(cell, '');
+        const value = Number(event.key);
+        if (this.grid.includes(value)) return;
 
-                    // 從 selectedCells 中移除
-                    const idx = this.selectedCells.indexOf(pos);
-                    if (idx > -1) {
-                        this.selectedCells.splice(idx, 1);
-                    }
-
-                    // 更新 UI
-                    this.updateUI();
-                }
-
-                this.currentPopupPosition = null;
-                this.currentPopupOptions = null;
-            }
-        });
+        event.preventDefault();
+        // 先關掉小選單再填。開給這一格（或焦點在選單裡）：焦點回到這一格；開給別格：焦點本來就在這一格上，不搶焦點。
+        // 沒開小選單時焦點本來就在格子上，重畫不會動到它
+        if (this.popover.isOpen) this.popover.close({ returnFocus: cell === this.popover.anchor });
+        this.apply({ type: 'set', position: Number(cell.dataset.position), value });
     }
 
-    hideNumberPopup() {
-        this.modalManager.hide();
+    // 填、改、清除一格或換下一張，然後重畫。action 是 { type: 'set', position, value }、{ type: 'clear', position } 或 { type: 'next' }
+    // 改盤面之前先把動作之前的盤面連同這個動作存進 undoStack，「上一步」才退得回來
+    apply(action) {
+        this.undoStack.push({ grid: [...this.grid], action });
+        if (action.type === 'set') this.grid[action.position] = action.value;
+        else if (action.type === 'clear') this.grid[action.position] = null;
+        else if (action.type === 'next') this.grid.fill(null);
+        this.render();
     }
 
-    updateNumberPopupState() {
-        // 更新已使用數字的狀態
-        const usedNumbers = this.grid.filter(n => n !== null);
-
-        this.elements.numberGrid.querySelectorAll('.number-btn').forEach(btn => {
-            const number = parseInt(btn.dataset.number, 10);
-            const isUsed = usedNumbers.includes(number);
-
-            btn.disabled = isUsed;
-        });
-    }
-
-    handleNumberSelection(number) {
-        if (this.currentPopupPosition === null) return;
-
-        // 標記已選擇，避免關閉時觸發取消邏輯
-        this.selectionMade = true;
-
-        // 填入數字
-        const position = this.currentPopupPosition;
-        this.grid[position] = number;
-        const cell = document.querySelector(`[data-position="${position}"]`);
-        cell.classList.add('revealed');
-        this.setCellDisplay(cell, number);
-
-        // 在修改後保存狀態（確保 redo 能正確還原）
-        this.saveState();
-
-        // 關閉 popup
-        this.hideNumberPopup();
-
-        // 更新 UI
-        this.updateUI();
-    }
-
-    getLineName(index) {
-        return FF14Utils.getI18nText(this.lineNameKeys[index], this.lineNamesFallback[index]);
-    }
-
-    saveState() {
-        if (this.isUndoingOrRedoing) return;
-
-        // 保存當前狀態到歷史記錄
-        this.history.push({
-            grid: [...this.grid],
-            selectedCells: [...this.selectedCells]
-        });
-
-        // 更新按鈕狀態
-        this.updateHistoryButtons();
-    }
-
+    // 上一步：退回最後一個動作，再用 toast 寫出退回了什麼。沒得退的時候按鈕是 aria-disabled，click 照樣會送出，所以這裡自己看 undoStack 擋
     undo() {
-        if (!this.history.canUndo()) return;
+        if (this.undoStack.length === 0) return;
 
-        this.isUndoingOrRedoing = true;
-        const previousState = this.history.undo();
-
-        if (previousState) {
-            this.restoreState(previousState);
-            FF14Utils.showToast(FF14Utils.getI18nText('msg_success', '操作成功'));
-        }
-
-        this.isUndoingOrRedoing = false;
-        this.updateHistoryButtons();
+        // 小選單的選項是照退回之前的盤面畫的，先關掉（不把焦點移回格子，按鈕上的焦點不動）
+        this.popover.close();
+        const { grid, action } = this.undoStack.pop();
+        this.grid = grid;
+        this.render();
+        FF14Utils.showToast(this.undoneText(action), 'info');
     }
 
-    redo() {
-        if (!this.history.canRedo()) return;
-
-        this.isUndoingOrRedoing = true;
-        const nextState = this.history.redo();
-
-        if (nextState) {
-            this.restoreState(nextState);
-            FF14Utils.showToast(FF14Utils.getI18nText('msg_success', '操作成功'));
+    // toast 的字：填或改寫被退回的那個數字，清除寫清除哪一格，下一張就寫下一張
+    undoneText(action) {
+        if (action.type === 'set') {
+            return this.t('mini_cactpot_undone_set', '已退回：{pos}的 {n}', { pos: this.positionName(action.position), n: action.value });
         }
-
-        this.isUndoingOrRedoing = false;
-        this.updateHistoryButtons();
+        if (action.type === 'clear') {
+            return this.t('mini_cactpot_undone_clear', '已退回：清除{pos}', { pos: this.positionName(action.position) });
+        }
+        return this.t('mini_cactpot_undone_next', '已退回：下一張');
     }
 
-    restoreState(state) {
-        // 恢復狀態
-        this.grid = [...state.grid];
-        this.selectedCells = [...state.selectedCells];
+    // 下一張：清空盤面開始新的一張，不跳 toast（按錯了按「上一步」救回來）。盤面是空的時按鈕是 aria-disabled，
+    // click 照樣會送出，所以這裡自己看盤面是不是空的擋，不然「上一步」會多一步什麼都沒改的
+    nextTicket() {
+        if (this.grid.every((value) => value === null)) return;
 
-        // 重繪介面
-        this.redrawGrid();
-        this.updateUI();
+        this.popover.close();
+        this.apply({ type: 'next' });
     }
 
-    updateHistoryButtons() {
-        if (this.elements.undoBtn) {
-            this.elements.undoBtn.disabled = !this.history.canUndo();
-        }
-
-        if (this.elements.redoBtn) {
-            this.elements.redoBtn.disabled = !this.history.canRedo();
-        }
-    }
-
-    setCellDisplay(cell, text) {
-        cell.textContent = text;
-        this.updateCellLabel(cell);
-    }
-
-    /**
-     * 依格子目前實際顯示的內容重建 aria-label，
-     * 讓輔助科技讀到的名稱與畫面一致（數字，以及計算後顯示的期望值）
-     */
-    updateCellLabel(cell) {
-        const position = parseInt(cell.dataset.position, 10);
-        // 數字是 setCellDisplay 寫進去的第一個文字節點，期望值則是後來附加的 .cell-ev
-        const firstChild = cell.firstChild;
-        const displayText = (firstChild && firstChild.nodeType === Node.TEXT_NODE) ? firstChild.textContent : '';
-        const evElement = cell.querySelector('.cell-ev');
-        const evText = evElement ? evElement.textContent : '';
-
-        const sepColon = FF14Utils.getI18nText('label_sep_colon', '：');
-        const sepComma = FF14Utils.getI18nText('label_sep_comma', '，');
-        let label = FF14Utils.getI18nText('mini_cactpot_cell_label', '第 {n} 格', { n: position + 1 });
-        if (displayText !== '') {
-            label += `${sepColon}${displayText}`;
-        }
-        if (evText !== '') {
-            const evLabel = FF14Utils.getI18nText('mini_cactpot_cell_ev', '期望值 {ev}', { ev: evText });
-            label += displayText === '' ? `${sepColon}${evLabel}` : `${sepComma}${evLabel}`;
-        }
-        cell.setAttribute('aria-label', label);
-
-        // 已輸入數字的格子 (revealed) 不能再被點選或用鍵盤觸發（見 handleCellClick
-        // 開頭的判斷），因此一併標記 aria-disabled 並移出 Tab 順序，避免使用者
-        // 用鍵盤或螢幕閱讀器停在一顆按下去沒有作用的格子上。undo／redo／reset
-        // 都是透過 setCellDisplay() 呼叫到這裡重繪，因此不需要在各處個別處理。
-        if (cell.classList.contains('revealed')) {
-            cell.setAttribute('aria-disabled', 'true');
-            cell.tabIndex = -1;
-        } else {
-            cell.removeAttribute('aria-disabled');
-            cell.tabIndex = 0;
-        }
-    }
-
-    /**
-     * 語言切換時，重新以目前語言重建所有格子的 aria-label
-     */
-    refreshCellLabels() {
-        document.querySelectorAll('.grid-cell').forEach((cell) => this.updateCellLabel(cell));
-    }
-
-    redrawGrid() {
-        // 清除所有格子
-        document.querySelectorAll('.grid-cell').forEach(cell => {
-            cell.classList.remove('selected', 'revealed', 'cell-recommended-best');
-            this.setCellDisplay(cell, '');
-            const ev = cell.querySelector('.cell-ev');
-            if (ev) ev.remove();
-        });
-
-        // 重新繪製格子狀態
-        this.selectedCells.forEach(position => {
-            const cell = document.querySelector(`[data-position="${position}"]`);
-            cell.classList.add('selected');
-
-            if (this.grid[position] !== null) {
-                cell.classList.add('revealed');
-                this.setCellDisplay(cell, this.grid[position]);
-            } else {
-                // 顯示問號表示尚未輸入數字
-                this.setCellDisplay(cell, '?');
-            }
-        });
-    }
-
-    handleCellClick(position) {
-        const cell = document.querySelector(`[data-position="${position}"]`);
-
-        if (cell.classList.contains('revealed')) {
-            return; // 已經輸入數字的格子不能再點選
-        }
-
-        if (cell.classList.contains('selected')) {
-            // 已選擇但尚未輸入數字的格子，重新顯示 popup
-            this.showNumberPopup(position, { isNewSelection: false });
-        } else if (this.selectedCells.length < 4) {
-            // 選擇格子
-            this.selectCell(position);
-        } else {
-            FF14Utils.showToast(FF14Utils.getI18nText('mini_cactpot_max_cells', '最多只能選擇 4 個格子'), 'error');
-        }
-    }
-
-    selectCell(position) {
-        const cell = document.querySelector(`[data-position="${position}"]`);
-        cell.classList.add('selected');
-        this.setCellDisplay(cell, '?');
-        this.selectedCells.push(position);
-
-        // 注意：這裡不保存狀態，狀態只在 handleNumberSelection 中數字被選擇後才保存
-        // 這樣 undo 時就不會回到 '?' 的中介狀態
-
-        this.updateUI();
-
-        // 顯示數字選擇 popup
-        this.showNumberPopup(position, { isNewSelection: true });
-    }
-
-    updateUI() {
-        const selectedCount = this.selectedCells.length;
-        const revealedCount = this.selectedCells.filter(pos => this.grid[pos] !== null).length;
-
-        this.elements.selectedCount.textContent = selectedCount;
-
-        // 當輸入完成四個數字時，自動計算並顯示期望值
-        if (revealedCount === 4) {
-            this.clearCellRecommendations();
-            this.calculateAndDisplayExpectations();
-        } else if (revealedCount >= 1 && revealedCount <= 3) {
-            this.clearExpectations();
-            const recommendations = this.calculateCellRecommendations();
-            if (recommendations) {
-                this.displayCellRecommendations(recommendations);
-            }
-        } else {
-            this.clearExpectations();
-            this.clearCellRecommendations();
-        }
-    }
-
-    getAllPossibleCombinations() {
-        const knownNumbers = this.grid.filter(n => n !== null);
-        const availableNumbers = [];
-
-        for (let i = 1; i <= 9; i++) {
-            if (!knownNumbers.includes(i)) {
-                availableNumbers.push(i);
-            }
-        }
-
-        const emptyPositions = [];
-        for (let i = 0; i < 9; i++) {
-            if (this.grid[i] === null) {
-                emptyPositions.push(i);
-            }
-        }
-
-        // 生成所有可能的排列組合
-        const combinations = [];
-        this.generatePermutations(availableNumbers, emptyPositions.length, [], combinations);
-
-        return combinations.map(combo => {
-            const fullGrid = [...this.grid];
-            combo.forEach((num, idx) => {
-                fullGrid[emptyPositions[idx]] = num;
+    // 狀態列的一句話：還沒填是 ① 第一步，填了 1–3 格是 ② 刮哪格，填滿 4 格是 ③ 選哪條線；同分的全部寫出來
+    statusText(view) {
+        if (view.known >= 4) {
+            return this.t('mini_cactpot_status_pick', '③ 選{lines}・平均可拿 {mgp} MGP', {
+                lines: this.joinNames(view.suggestedLines.map((line) => this.lineName(line))),
+                mgp: MiniCactpotSolver.formatMgp(view.bestLineEv)
             });
-            return fullGrid;
-        });
-    }
-
-    generatePermutations(arr, length, current, results) {
-        if (current.length === length) {
-            results.push([...current]);
-            return;
         }
-
-        for (let i = 0; i < arr.length; i++) {
-            if (!current.includes(arr[i])) {
-                current.push(arr[i]);
-                this.generatePermutations(arr, length, current, results);
-                current.pop();
-            }
-        }
-    }
-
-    calculateAndDisplayExpectations() {
-        const lineResults = this.calculateExpectedValues();
-        this.displayExpectationsInGrid(lineResults);
-        this.showBestChoice(lineResults[0]);
-    }
-
-    calculateExpectedValues() {
-        const combinations = this.getAllPossibleCombinations();
-        const lineResults = this.lines.map((line, lineIdx) => {
-            let totalMGP = 0;
-            let minMGP = Infinity;
-            let maxMGP = -Infinity;
-
-            combinations.forEach(grid => {
-                const sum = line.reduce((acc, pos) => acc + grid[pos], 0);
-                const mgp = this.mgpTable[sum] || 0;
-                totalMGP += mgp;
-                minMGP = Math.min(minMGP, mgp);
-                maxMGP = Math.max(maxMGP, mgp);
+        if (view.known >= 1) {
+            return this.t('mini_cactpot_status_scratch', '② 刮開{cells}', {
+                cells: this.joinNames(view.suggestedCells.map((p) => this.positionName(p)))
             });
+        }
+        return this.t('mini_cactpot_status_start', '① 點遊戲已經翻開的那一格');
+    }
 
-            return {
-                name: this.getLineName(lineIdx),
-                positions: line,
-                expectedValue: totalMGP / combinations.length,
-                minMGP,
-                maxMGP,
-                lineIndex: lineIdx
-            };
+    render() {
+        const view = MiniCactpotSolver.analyze(this.grid);
+        // 填滿 4 格就要選線：沒翻開的格子不能點（遊戲接下來會整張翻開），外圈寫每條線的平均
+        const picking = view.known >= 4;
+        // 刮格時沒翻開的格子寫「平均」；view.cells 只有這時才有東西
+        const averages = new Map(view.cells.map((entry) => [entry.position, entry.ev]));
+        // 綠色的格子：刮格時是推薦要刮的格子，選線時是推薦的線上的每一格
+        const suggested = new Set(picking
+            ? view.suggestedLines.flatMap((line) => MiniCactpotSolver.LINES[line])
+            : view.suggestedCells);
+
+        this.elements.status.textContent = this.statusText(view);
+
+        // 選線時外圈寫每條線的平均，但膠囊是 aria-hidden（照 DOM 唸會先唸五條直行與斜線，再唸一條橫列與它的三格）：
+        // 螢幕閱讀器改唸狀態列下面這份看不到的清單，一條線一項「上橫列：平均 97」，照橫列、直行、斜線的順序；不用選線時藏起來
+        const lineAverages = this.elements.lineAverages;
+        lineAverages.textContent = '';
+        for (const { line, ev } of view.lines) {
+            const item = document.createElement('li');
+            item.textContent = this.t('mini_cactpot_line_avg', '{line}：平均 {mgp}', { line: this.lineName(line), mgp: MiniCactpotSolver.formatMgp(ev) });
+            lineAverages.appendChild(item);
+        }
+        lineAverages.hidden = !picking;
+
+        // class 與 disabled 每次都從頭設，不留上一次的樣子；格子只改內容，不重建（小選單關掉時焦點才回得到同一個格子）
+        this.cells.forEach((cell, p) => {
+            const value = this.grid[p];
+            const name = this.positionName(p);
+            let text = '?';
+            let state = 'is-unknown';
+            let label = name;
+            if (value !== null) {
+                text = String(value);
+                state = 'is-number';
+                label = this.t('mini_cactpot_cell_number', '{pos}：{n}', { pos: name, n: value });
+            } else if (averages.has(p)) {
+                const mgp = MiniCactpotSolver.formatMgp(averages.get(p));
+                text = this.t('mini_cactpot_avg', '平均 {mgp}', { mgp });
+                state = 'is-avg';
+                label = this.t('mini_cactpot_cell_avg', '{pos}：平均 {mgp}', { pos: name, mgp });
+            }
+
+            cell.textContent = text;
+            cell.className = suggested.has(p) ? `cell grid-cell ${state} suggested` : `cell grid-cell ${state}`;
+            cell.setAttribute('aria-label', label);
+            cell.disabled = picking && value === null;
         });
 
-        // 排序找出最佳選擇
-        return lineResults.sort((a, b) => b.expectedValue - a.expectedValue);
-    }
-
-    clearExpectations() {
-        // 這個面板即將被清空／隱藏，連帶清掉語言切換重繪快取，避免下次切換語言時
-        // 重繪一個畫面上其實已經看不到的舊結果
-        this.lastBestResult = null;
-
-        // 清除所有期望值顯示
-        const expectationCells = document.querySelectorAll('.expectation-cell');
-        expectationCells.forEach(cell => {
-            cell.classList.remove('active', 'best');
-            const valueElement = cell.querySelector('.expectation-value');
-            if (valueElement) {
-                valueElement.remove();
-            }
+        // 外圈的膠囊另外還有 line-badge-top 等 class，只切換 suggested，不重設 class
+        this.badges.forEach((badge, line) => {
+            badge.textContent = picking
+                ? MiniCactpotSolver.formatMgp(view.lines[line].ev)
+                : MiniCactpotCalculator.LINE_ARROWS[line];
+            badge.classList.toggle('suggested', view.suggestedLines.includes(line));
         });
 
-        // 隱藏最佳選擇資訊
-        this.elements.bestChoiceInfo.style.display = 'none';
-    }
-
-    displayExpectationsInGrid(lineResults) {
-        this.clearExpectations();
-
-        lineResults.forEach((result, index) => {
-            this.updateExpectationCell(result, index === 0);
-        });
-    }
-
-    updateExpectationCell(result, isBest) {
-        const cell = document.querySelector(`[data-line="${result.lineIndex}"]`);
-        if (!cell) return;
-
-        cell.classList.add('active');
-        if (isBest) {
-            cell.classList.add('best');
-        }
-
-        const valueElement = document.createElement('div');
-        valueElement.className = 'expectation-value';
-        valueElement.textContent = FF14Utils.formatNumber(Math.round(result.expectedValue));
-        cell.appendChild(valueElement);
-    }
-
-    showBestChoice(bestResult, { scrollIntoView = true } = {}) {
-        // 快取這次的結果，語言切換時（見 onLanguageChange）可用同一份資料重繪
-        this.lastBestResult = bestResult;
-
-        // Clear existing content
-        SecurityUtils.clearElement(this.elements.bestLineSummary);
-
-        // Create the card using SecurityUtils
-        // 不能直接用 bestResult.name：它是呼叫當下語言算好的字串，語言切換後重繪
-        // 必須用 lineIndex 重新查目前語言的名稱，否則永遠停在切換前的舊語言
-        const sepColon = FF14Utils.getI18nText('label_sep_colon', '：');
-        const lineName = this.getLineName(bestResult.lineIndex);
-        const card = SecurityUtils.createCard({
-            className: 'result-stat',
-            title: lineName,
-            titleClass: 'best-choice-title',
-            value: `${FF14Utils.getI18nText('mini_cactpot_expected_value', '期望值')}${sepColon}${FF14Utils.formatNumber(Math.round(bestResult.expectedValue))} MGP`,
-            valueClass: 'best-choice-value',
-            range: `${FF14Utils.getI18nText('mini_cactpot_range', '範圍')}${sepColon}${FF14Utils.formatNumber(bestResult.minMGP)} - ${FF14Utils.formatNumber(bestResult.maxMGP)} MGP`,
-            rangeClass: 'best-choice-range'
+        // 獎金表：推薦的線還可能出現的總和標綠色（view.possibleSums 只有填滿 4 格時才有東西）。只切換 possible，不重設 class（big 要留著）
+        this.payoutRows.forEach((row, sum) => {
+            row.classList.toggle('possible', view.possibleSums.includes(sum));
         });
 
-        // Move children from card to bestLineSummary
-        while (card.firstChild) {
-            this.elements.bestLineSummary.appendChild(card.firstChild);
-        }
-
-        this.elements.bestChoiceInfo.style.display = 'block';
-        if (scrollIntoView) {
-            this.elements.bestChoiceInfo.scrollIntoView({ behavior: 'smooth' });
-        }
-    }
-
-    // ===== Cell Recommendation Algorithm =====
-
-    /**
-     * Calculates which empty cells to reveal next for optimal expected MGP.
-     * Uses recursive optimal EV computation with in-place mutation.
-     * @returns {Array|null} Sorted array of {position, ev} or null if not applicable
-     */
-    calculateCellRecommendations() {
-        const revealedCount = this.grid.filter(v => v !== null).length;
-        if (revealedCount < 1 || revealedCount >= 4) return null;
-
-        // Build remaining numbers boolean array (index 1-9)
-        const remaining = new Array(10).fill(true);
-        remaining[0] = false;
-        for (let i = 0; i < 9; i++) {
-            if (this.grid[i] !== null) {
-                remaining[this.grid[i]] = false;
-            }
-        }
-
-        // Count remaining numbers
-        let remainingCount = 0;
-        for (let n = 1; n <= 9; n++) {
-            if (remaining[n]) remainingCount++;
-        }
-
-        const results = [];
-        for (let pos = 0; pos < 9; pos++) {
-            if (this.grid[pos] !== null) continue;
-
-            // Average EV over all possible values at this position
-            let totalEV = 0;
-            for (let val = 1; val <= 9; val++) {
-                if (!remaining[val]) continue;
-
-                // Mutate
-                this.grid[pos] = val;
-                remaining[val] = false;
-
-                totalEV += this.computeOptimalEV(this.grid, remaining, revealedCount + 1);
-
-                // Undo
-                this.grid[pos] = null;
-                remaining[val] = true;
-            }
-
-            results.push({ position: pos, ev: totalEV / remainingCount });
-        }
-
-        results.sort((a, b) => b.ev - a.ev);
-        return results;
-    }
-
-    /**
-     * Recursively computes the optimal expected MGP from a given state.
-     * At 4 known cells, returns the best line's EV.
-     * At fewer, finds the best cell to reveal by averaging over all possible values.
-     */
-    computeOptimalEV(grid, remaining, numKnown) {
-        if (numKnown >= 4) {
-            return this.computeBestLineEV(grid, remaining);
-        }
-
-        // Count remaining
-        let remainingCount = 0;
-        for (let n = 1; n <= 9; n++) {
-            if (remaining[n]) remainingCount++;
-        }
-
-        let bestEV = -Infinity;
-
-        for (let pos = 0; pos < 9; pos++) {
-            if (grid[pos] !== null) continue;
-
-            let totalEV = 0;
-            for (let val = 1; val <= 9; val++) {
-                if (!remaining[val]) continue;
-
-                // Mutate
-                grid[pos] = val;
-                remaining[val] = false;
-
-                totalEV += this.computeOptimalEV(grid, remaining, numKnown + 1);
-
-                // Undo
-                grid[pos] = null;
-                remaining[val] = true;
-            }
-
-            const avgEV = totalEV / remainingCount;
-            if (avgEV > bestEV) bestEV = avgEV;
-        }
-
-        return bestEV;
-    }
-
-    /**
-     * Returns the maximum expected value across all 8 lines.
-     * Called when exactly 4 cells are known.
-     */
-    computeBestLineEV(grid, remaining) {
-        // Collect remaining numbers into array for line EV computation
-        const remainingArr = [];
-        for (let n = 1; n <= 9; n++) {
-            if (remaining[n]) remainingArr.push(n);
-        }
-
-        let bestEV = -Infinity;
-        for (let i = 0; i < this.lines.length; i++) {
-            const ev = this.computeLineEV(this.lines[i], grid, remainingArr);
-            if (ev > bestEV) bestEV = ev;
-        }
-        return bestEV;
-    }
-
-    /**
-     * Computes expected value for a single line.
-     * Enumerates all valid assignments of remaining numbers to unknown positions.
-     */
-    computeLineEV(line, grid, remainingArr) {
-        const n = remainingArr.length;
-        let knownSum = 0;
-        let numUnknown = 0;
-
-        for (let i = 0; i < 3; i++) {
-            if (grid[line[i]] !== null) {
-                knownSum += grid[line[i]];
-            } else {
-                numUnknown++;
-            }
-        }
-
-        if (numUnknown === 0) {
-            return this.mgpTable[knownSum] || 0;
-        }
-
-        if (numUnknown === 1) {
-            let total = 0;
-            for (let i = 0; i < n; i++) {
-                total += this.mgpTable[knownSum + remainingArr[i]] || 0;
-            }
-            return total / n;
-        }
-
-        if (numUnknown === 2) {
-            let total = 0;
-            let count = 0;
-            for (let i = 0; i < n; i++) {
-                for (let j = 0; j < n; j++) {
-                    if (i === j) continue;
-                    total += this.mgpTable[knownSum + remainingArr[i] + remainingArr[j]] || 0;
-                    count++;
-                }
-            }
-            return count > 0 ? total / count : 0;
-        }
-
-        // numUnknown === 3
-        let total = 0;
-        let count = 0;
-        for (let i = 0; i < n; i++) {
-            for (let j = 0; j < n; j++) {
-                if (j === i) continue;
-                for (let k = 0; k < n; k++) {
-                    if (k === i || k === j) continue;
-                    total += this.mgpTable[remainingArr[i] + remainingArr[j] + remainingArr[k]] || 0;
-                    count++;
-                }
-            }
-        }
-        return count > 0 ? total / count : 0;
-    }
-
-    // ===== Cell Recommendation UI =====
-
-    /**
-     * Displays cell recommendations on the grid and info panel.
-     */
-    displayCellRecommendations(results) {
-        this.clearCellRecommendations();
-
-        if (!results || results.length === 0) return;
-
-        // 快取這次的結果，語言切換時（見 onLanguageChange）可用同一份資料重繪；
-        // posName／getI18nText 都是呼叫當下才查目前語言，所以這裡不需要像
-        // showBestChoice 那樣額外重新查名稱
-        this.lastCellRecommendations = results;
-
-        const best = results[0];
-
-        results.forEach((result, index) => {
-            const cell = document.querySelector(`[data-position="${result.position}"]`);
-            if (!cell) return;
-
-            // Skip cells in "?" state (selected but not yet revealed)
-            if (cell.classList.contains('selected') && !cell.classList.contains('revealed')) return;
-
-            // Only highlight the best cell
-            if (index === 0) {
-                cell.classList.add('cell-recommended-best');
-            }
-
-            // Show EV value inside the cell
-            const evLabel = document.createElement('div');
-            evLabel.className = 'cell-ev';
-            evLabel.textContent = FF14Utils.formatNumber(Math.round(result.ev));
-            cell.appendChild(evLabel);
-            this.updateCellLabel(cell);
-        });
-
-        // Update recommendation info panel
-        SecurityUtils.clearElement(this.elements.cellRecommendationSummary);
-
-        const posName = FF14Utils.getI18nText(
-            this.cellPositionKeys[best.position],
-            this.cellPositionFallback[best.position]
-        );
-        const sepColon = FF14Utils.getI18nText('label_sep_colon', '：');
-
-        const card = SecurityUtils.createCard({
-            className: 'result-stat',
-            title: posName,
-            titleClass: 'best-choice-title',
-            value: `${FF14Utils.getI18nText('mini_cactpot_recommend_ev', '期望 MGP')}${sepColon}${FF14Utils.formatNumber(Math.round(best.ev))} MGP`,
-            valueClass: 'best-choice-value recommend-value',
-        });
-
-        while (card.firstChild) {
-            this.elements.cellRecommendationSummary.appendChild(card.firstChild);
-        }
-
-        this.elements.cellRecommendationInfo.style.display = 'block';
-    }
-
-    /**
-     * Clears all cell recommendation visuals.
-     */
-    clearCellRecommendations() {
-        this.lastCellRecommendations = null;
-
-        document.querySelectorAll('.grid-cell').forEach(cell => {
-            cell.classList.remove('cell-recommended-best');
-            const ev = cell.querySelector('.cell-ev');
-            if (ev) ev.remove();
-            this.updateCellLabel(cell);
-        });
-
-        if (this.elements.cellRecommendationInfo) {
-            this.elements.cellRecommendationInfo.style.display = 'none';
-        }
-    }
-
-    reset() {
-        // 清除所有格子的狀態
-        document.querySelectorAll('.grid-cell').forEach(cell => {
-            cell.classList.remove('selected', 'revealed', 'cell-recommended-best');
-            this.setCellDisplay(cell, '');
-            const ev = cell.querySelector('.cell-ev');
-            if (ev) ev.remove();
-        });
-
-        // 清除期望值顯示
-        document.querySelectorAll('.expectation-cell').forEach(cell => {
-            cell.classList.remove('active', 'best');
-            const valueElement = cell.querySelector('.expectation-value');
-            if (valueElement) {
-                valueElement.remove();
-            }
-        });
-
-        // 隱藏最佳選擇資訊
-        this.elements.bestChoiceInfo.style.display = 'none';
-
-        // 隱藏格子推薦資訊
-        if (this.elements.cellRecommendationInfo) {
-            this.elements.cellRecommendationInfo.style.display = 'none';
-        }
-
-        // 清除語言切換重繪快取，避免下次切換語言時重繪已重置的舊資料
-        this.lastBestResult = null;
-        this.lastCellRecommendations = null;
-
-        // 重置選擇計數顯示
-        this.elements.selectedCount.textContent = '0';
-
-        // 重置資料
-        this.grid = new Array(9).fill(null);
-        this.selectedCells = [];
-        this.history.clear();
-
-        // 保存初始狀態
-        this.saveState();
-
-        FF14Utils.showToast(FF14Utils.getI18nText('mini_cactpot_reset_done', '已重置九宮格'), 'success');
+        // 上一步：有動作可以退才能按；下一張：盤面上有數字才能按。用 aria-disabled，不用 disabled：按鈕變灰時焦點留在原地
+        this.elements.undo.setAttribute('aria-disabled', String(this.undoStack.length === 0));
+        this.elements.next.setAttribute('aria-disabled', String(view.known === 0));
     }
 }
 
 // 初始化
-let calculator;
 document.addEventListener('DOMContentLoaded', () => {
-    calculator = new MiniCactpotCalculator();
+    window.miniCactpot = new MiniCactpotCalculator();
 });

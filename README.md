@@ -22,9 +22,10 @@
 - 資料來源：灰機Wiki
 
 ### 仙人微彩計算機 (`mini-cactpot/`)
-- 期望值計算
-- 最佳策略推薦
-- 機率分析
+- 點格子旁的小數字盤填數字（焦點在格子上或小數字盤開著時也能按鍵盤 1–9），填好的格子再點可以改或清除
+- 狀態列寫下一步（點遊戲翻開的那一格 → 刮哪一格 → 選哪條線與平均 MGP，一樣好的用「或」連起來），沒翻開的格子寫刮了之後平均可拿多少 MGP，推薦的格子與線標綠色，填滿 4 格後外圈寫每條線的平均
+- 獎金表一直顯示（手機在盤面下面、電腦在右邊），標出推薦的線還可能出現的總和
+- 上一步會寫出退回了什麼，「下一張」清空盤面、按錯可以救回來
 
 ### Wondrous Tails 預測器 (`wondrous-tails/`)
 - 連線機率計算
@@ -192,6 +193,7 @@ ff14.tw/
 │   │   ├── modal-manager.js  # 對話框管理
 │   │   ├── state-history-manager.js # 狀態歷史管理
 │   │   ├── reminder-scheduler.js # 提醒排程（頁內提示、提示音、系統通知；天氣預報與特殊採集時間管理器的「提醒我」使用）
+│   │   ├── cell-popover.js # 格子旁的小選單（不是對話框；仙人微彩使用）
 │   │   ├── home.js         # 首頁腳本（最近使用）
 │   │   ├── not-found.js    # 404 頁腳本（工具清單）
 │   │   ├── components/     # 動態載入元件
@@ -215,12 +217,13 @@ ff14.tw/
 │   ├── add-design-links.mjs
 │   ├── remove-dark-mode-links.mjs
 │   └── replace-noscript-nav.mjs
-├── tests/                  # 45 份 node --test 測試（下列為部分範例）
+├── tests/                  # 48 份 node --test 測試（下列為部分範例）
 │   ├── design-system.test.js
 │   ├── docs.test.js
 │   ├── gathering-materials.test.js
 │   ├── gathering-reminders.test.js
 │   ├── helpers/            # 測試輔助模組（不是測試檔）
+│   │   ├── cactpot-page.js         # 仙人微彩頁的頁面替身
 │   │   ├── gathering-page.js       # 採集頁的頁面替身
 │   │   └── notification-stubs.js   # Notification／AudioContext 替身
 │   ├── modal-manager-stack.test.js
