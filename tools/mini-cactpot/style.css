@@ -70,6 +70,12 @@
     text-align: center;
 }
 
+/* 推薦的線：膠囊標綠色（這條線的 3 格是 .cell.suggested，在 tools-common.css） */
+.line-badge.suggested {
+    background: var(--color-success);
+    color: var(--color-on-success);
+}
+
 /* 最上面一列的膠囊貼著下面的格子 */
 .line-badge-top {
     align-self: end;
@@ -92,6 +98,26 @@
     font-size: var(--text-lg);
     font-weight: var(--weight-normal);
     color: var(--color-muted);
+}
+
+/* 填了數字的格子：沿用 .grid-cell 的大字、粗體 */
+.grid-cell.is-number {
+    font-size: var(--text-2xl);
+    font-weight: var(--weight-bold);
+}
+
+/* 沒翻開的格子寫「平均 1,678」：字小一點，手機的格子裡放得下，放不下就換行；格子大小不變（aspect-ratio、overflow: hidden） */
+.grid-cell.is-avg {
+    font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
+    line-height: var(--leading-snug);
+    padding: 0 var(--space-1);
+}
+
+/* 小選單正開給這一格 */
+.grid-cell[aria-expanded="true"] {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
 }
 
 .cactpot-actions {

@@ -10,8 +10,20 @@ const MiniCactpotTranslations = {
         // 頁面標題
         mini_cactpot_header: '仙人微彩計算機',
 
-        // 狀態列
+        // 狀態列：{cells}、{lines} 是幾個名字用「或」接起來
         mini_cactpot_status_start: '① 點遊戲已經翻開的那一格',
+        mini_cactpot_status_scratch: '② 刮開{cells}',
+        mini_cactpot_status_pick: '③ 選{lines}・平均可拿 {mgp} MGP',
+        mini_cactpot_name: '【{name}】',
+        mini_cactpot_or: '或',
+
+        // 格子與小數字盤
+        mini_cactpot_avg: '平均 {mgp}',
+        mini_cactpot_cell_number: '{pos}：{n}',
+        mini_cactpot_cell_avg: '{pos}：平均 {mgp}',
+        mini_cactpot_line_avg: '{line}：平均 {mgp}',
+        mini_cactpot_picker_label: '{pos}的數字',
+        mini_cactpot_clear: '清除',
 
         // 按鈕
         mini_cactpot_undo: '上一步',
@@ -46,8 +58,20 @@ const MiniCactpotTranslations = {
         // Page header
         mini_cactpot_header: 'Mini Cactpot Calculator',
 
-        // Status line
+        // Status line: {cells} and {lines} are names joined with "or"
         mini_cactpot_status_start: '① Click the cell the game has already revealed',
+        mini_cactpot_status_scratch: '② Scratch {cells}',
+        mini_cactpot_status_pick: '③ Pick {lines} · avg {mgp} MGP',
+        mini_cactpot_name: '[{name}]',
+        mini_cactpot_or: ' or ',
+
+        // Cells and the number picker
+        mini_cactpot_avg: 'avg {mgp}',
+        mini_cactpot_cell_number: '{pos}: {n}',
+        mini_cactpot_cell_avg: '{pos}: avg {mgp}',
+        mini_cactpot_line_avg: '{line}: avg {mgp}',
+        mini_cactpot_picker_label: 'Number for {pos}',
+        mini_cactpot_clear: 'Clear',
 
         // Buttons
         mini_cactpot_undo: 'Undo',
@@ -82,8 +106,20 @@ const MiniCactpotTranslations = {
         // ページヘッダー
         mini_cactpot_header: 'ミニくじテンダー計算機',
 
-        // ステータス行
+        // ステータス行：{cells}、{lines} は名前を「か」でつないだもの
         mini_cactpot_status_start: '① ゲームで最初から開いているマスをクリック',
+        mini_cactpot_status_scratch: '② {cells}を削る',
+        mini_cactpot_status_pick: '③ {lines}を選ぶ・平均 {mgp} MGP',
+        mini_cactpot_name: '【{name}】',
+        mini_cactpot_or: 'か',
+
+        // マスと数字パネル
+        mini_cactpot_avg: '平均 {mgp}',
+        mini_cactpot_cell_number: '{pos}：{n}',
+        mini_cactpot_cell_avg: '{pos}：平均 {mgp}',
+        mini_cactpot_line_avg: '{line}：平均 {mgp}',
+        mini_cactpot_picker_label: '{pos}の数字',
+        mini_cactpot_clear: 'クリア',
 
         // ボタン
         mini_cactpot_undo: '元に戻す',
