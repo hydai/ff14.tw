@@ -2,7 +2,7 @@
    仙人微彩計算機 — 只寫版面；顏色、圓角、字級一律來自 tokens.css 與共用元件
    ========================================================================== */
 
-/* 一欄：狀態列、盤面與兩顆按鈕在同一張卡片裡 */
+/* 手機一欄：盤面卡片（狀態列、盤面與兩顆按鈕）在上，獎金表卡片在下；768px 以上改成兩欄，見檔案最後的規則 */
 .cactpot-layout {
     display: grid;
     gap: var(--space-6);
@@ -143,4 +143,61 @@
 /* 焦點還在這顆按鈕上，鍵盤焦點的外框照樣看得到 */
 .cactpot-actions .btn[aria-disabled="true"]:focus-visible {
     box-shadow: var(--ring-primary);
+}
+
+/* 獎金表：三格總和 → MGP，另一張卡片。外觀由 .card 提供，這裡只寫版面 */
+.cactpot-payout {
+    padding: var(--space-4);
+}
+
+.cactpot-payout-title {
+    margin: 0 0 var(--space-3);
+    font-size: var(--text-md);
+    color: var(--color-heading);
+}
+
+/* 19 列照欄排下去：左欄總和 6–15（10 列），右欄 16–24（9 列） */
+.payout-table {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: repeat(10, auto);
+    grid-auto-flow: column;
+    gap: 2px var(--space-4);
+    margin: 0;
+    font-size: var(--text-sm);
+    font-variant-numeric: tabular-nums;
+}
+
+.payout-row {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-2);
+    padding: 2px var(--space-2);
+    border-radius: var(--radius-sm);
+}
+
+.payout-row dt,
+.payout-row dd {
+    margin: 0;
+}
+
+/* 1,000 MGP 以上的列用粗體 */
+.payout-row.big {
+    font-weight: var(--weight-bold);
+}
+
+/* 推薦的線還可能出現的總和：綠色。表下面不加圖例或說明文字 */
+.payout-row.possible {
+    background: var(--color-success-tint);
+    color: var(--color-success-text);
+}
+
+/* 電腦（768px 以上）：獎金表在盤面右邊；手機照 DOM 順序，獎金表在盤面下面 */
+@media (min-width: 768px) {
+    .cactpot-layout {
+        max-width: 52rem;
+        grid-template-columns: minmax(0, 28rem) minmax(0, 20rem);
+        justify-content: center;
+        align-items: start;
+    }
 }

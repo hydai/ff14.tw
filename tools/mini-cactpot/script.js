@@ -1,6 +1,7 @@
 // 仙人微彩計算機
 // 盤面上的每個字都從 MiniCactpotSolver.analyze(this.grid) 畫出來（cactpot-solver.js，不碰 DOM）：
 // 狀態列寫下一步，格子寫數字或「平均」，外圈在選線時寫每條線的平均，推薦的格子與線標綠色。
+// 獎金表（三格總和 → MGP）一直顯示，選線時推薦的線還可能出現的總和標綠色。
 // 填數字用格子旁的小選單（assets/js/cell-popover.js 的 CellPopover）。上一步、下一張還不能按。
 class MiniCactpotCalculator {
     // 位置 0–8 的名稱：翻譯鍵與中文預設文字（左上、上中、右上 / 左中、中央、右中 / 左下、下中、右下）
@@ -22,6 +23,9 @@ class MiniCactpotCalculator {
     // 外圈膠囊在還沒有建議時寫的箭頭，以線的編號為索引：橫列 →、直行 ↓、斜線 ↘ ↙
     static LINE_ARROWS = ['→', '→', '→', '↓', '↓', '↓', '↘', '↙'];
 
+    // 獎金表裡 MGP 到這個數字以上的列用粗體
+    static BIG_MGP = 1000;
+
     constructor() {
         // 九格的數字：null 是還沒填，1–9 是填了的數字
         this.grid = new Array(9).fill(null);
@@ -31,11 +35,14 @@ class MiniCactpotCalculator {
             lineAverages: document.getElementById('cactpotLineAverages'),
             board: document.getElementById('extended-grid'),
             undo: document.getElementById('undo-btn'),
-            next: document.getElementById('next-btn')
+            next: document.getElementById('next-btn'),
+            payout: document.getElementById('payoutTable')
         };
         // 九格與外圈的膠囊都在 index.html 裡，照位置、線的編號收好，重畫時只改內容，不重建
         this.cells = Array.from({ length: 9 }, (_, p) => this.elements.board.querySelector(`.grid-cell[data-position="${p}"]`));
         this.badges = Array.from({ length: 8 }, (_, line) => this.elements.board.querySelector(`.line-badge[data-line="${line}"]`));
+        // 獎金表的 19 列照 MiniCactpotSolver.MGP 建出來（HTML 裡不寫第二份），照總和收好；重畫時只切換 possible
+        this.payoutRows = this.buildPayoutRows();
 
         this.popover = new CellPopover({ board: this.elements.board, columns: 3 });
 
@@ -53,6 +60,29 @@ class MiniCactpotCalculator {
 
     t(key, fallback, params) {
         return FF14Utils.getI18nText(key, fallback, params);
+    }
+
+    // 獎金表：總和 6–24 照順序各一列，<dt> 是總和、<dd> 是 MGP，MGP 到 BIG_MGP 以上加 big。回傳 Map：總和 → 那一列
+    buildPayoutRows() {
+        const rows = new Map();
+        const sums = Object.keys(MiniCactpotSolver.MGP).map(Number).sort((a, b) => a - b);
+        for (const sum of sums) {
+            const mgp = MiniCactpotSolver.MGP[sum];
+
+            const term = document.createElement('dt');
+            term.textContent = String(sum);
+            const detail = document.createElement('dd');
+            detail.textContent = MiniCactpotSolver.formatMgp(mgp);
+
+            const row = document.createElement('div');
+            row.className = mgp >= MiniCactpotCalculator.BIG_MGP ? 'payout-row big' : 'payout-row';
+            row.dataset.sum = String(sum);
+            row.appendChild(term);
+            row.appendChild(detail);
+            this.elements.payout.appendChild(row);
+            rows.set(sum, row);
+        }
+        return rows;
     }
 
     // 位置 p（0–8）、線 i（0–7）照目前語言的名稱
@@ -182,6 +212,11 @@ class MiniCactpotCalculator {
                 ? MiniCactpotSolver.formatMgp(view.lines[line].ev)
                 : MiniCactpotCalculator.LINE_ARROWS[line];
             badge.classList.toggle('suggested', view.suggestedLines.includes(line));
+        });
+
+        // 獎金表：推薦的線還可能出現的總和標綠色（view.possibleSums 只有填滿 4 格時才有東西）。只切換 possible，不重設 class（big 要留著）
+        this.payoutRows.forEach((row, sum) => {
+            row.classList.toggle('possible', view.possibleSums.includes(sum));
         });
 
         // 上一步、下一張還不能按（用 aria-disabled，不用 disabled：按鈕變灰時焦點留在原地）

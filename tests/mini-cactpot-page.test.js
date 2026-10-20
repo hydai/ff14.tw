@@ -18,6 +18,8 @@ function cssRule(file, selector) {
     assert.notEqual(at, -1, `${file} 找不到 ${selector}`);
     return css.slice(at, css.indexOf('}', at));
 }
+// 獎金表裡標了綠色（possible）的總和，由小到大
+const possibleSums = (page) => page.payoutRows().filter((row) => row.classList.contains('possible')).map((row) => Number(row.dataset.sum));
 
 test('一打開：狀態列寫第一步，九格都是「?」，外圈是選線的箭頭，兩顆按鈕不能按', () => {
     const page = createCactpotPage();
@@ -296,4 +298,49 @@ test('綠色的建議是共用的 .cell.suggested，寫在 :disabled 後面', ()
     const css = read('assets/css/tools-common.css');
     assert.ok(css.indexOf('.cell.suggested {') > css.indexOf('.cell:disabled {'));
     assert.match(cssRule('assets/css/tools-common.css', '.cell.suggested'), /var\(--color-success\)/);
+});
+
+test('獎金表一直顯示：19 列，總和 6–24 對 MGP，1,000 以上粗體', () => {
+    const page = createCactpotPage();
+    const rows = page.payoutRows();
+    const sums = Array.from({ length: 19 }, (_, i) => String(i + 6));
+    assert.deepEqual(rows.map((row) => row.dataset.sum), sums);
+    assert.deepEqual(rows.map((row) => row.querySelector('dt').textContent), sums);
+    assert.deepEqual(rows.map((row) => row.querySelector('dd').textContent), ['10,000', '36', '720', '360', '80', '252', '108', '72', '54', '180', '72', '180', '119', '36', '306', '1,080', '144', '1,800', '3,600']);
+    assert.deepEqual(rows.filter((row) => row.classList.contains('big')).map((row) => row.dataset.sum), ['6', '21', '23', '24']);
+    assert.deepEqual(possibleSums(page), []);
+    assert.equal(page.$('payoutTitle').textContent, '三格總和 → MGP');
+    // 不加圖例：獎金表那張卡只有標題與表
+    assert.deepEqual(page.$('payoutTable').parentNode.children.map((child) => child.tagName), ['H2', 'DL']);
+});
+
+test('填滿 4 格時標出推薦的線還可能出現的總和，同分的線合起來', () => {
+    const mixed = createCactpotPage();
+    mixed.fill({ 0: 7, 1: 1, 4: 2, 8: 3 });
+    assert.deepEqual(possibleSums(mixed), [16, 17, 18, 19, 20, 21, 22, 24]);
+    const tie = createCactpotPage();
+    tie.fill({ 0: 1, 2: 2, 6: 3, 8: 4 });
+    assert.deepEqual(possibleSums(tie), [18, 19, 20, 21, 22, 23, 24]);
+    const full = createCactpotPage();
+    full.fill({ 0: 1, 1: 2, 2: 3, 4: 9 });
+    assert.equal(full.status(), '③ 選【上橫列】・平均可拿 10,000 MGP');
+    assert.deepEqual(possibleSums(full), [6]);
+    full.pick(4, 'clear');
+    assert.deepEqual(possibleSums(full), []);
+});
+
+test('獎金表的標題跟著語言', () => {
+    const page = createCactpotPage();
+    page.setLang('ja');
+    assert.equal(page.$('payoutTitle').textContent, '3マスの合計 → MGP');
+});
+
+test('版面：手機獎金表在盤面下面，電腦（768px 以上）在盤面右邊，獎金表排成兩欄', () => {
+    const html = read('tools/mini-cactpot/index.html');
+    assert.ok(html.indexOf('cactpot-board') < html.indexOf('cactpot-payout'));
+    const css = read('tools/mini-cactpot/style.css');
+    const at = css.indexOf('@media (min-width: 768px)');
+    assert.notEqual(at, -1);
+    assert.match(css.slice(at), /\.cactpot-layout\s*\{[^}]*grid-template-columns:/);
+    assert.match(cssRule('tools/mini-cactpot/style.css', '.payout-table'), /grid-auto-flow:\s*column;/);
 });

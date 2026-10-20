@@ -4,7 +4,7 @@
 //   const { createCactpotPage } = require('./helpers/cactpot-page.js');
 //   const page = createCactpotPage({ lang: 'en' });
 //   page.fill({ 0: 7, 1: 1 }); page.pick(4, 2); page.cell(0).click(); page.option(3).click();
-//   page.status(); page.badge(3).textContent; page.suggestedCells(); page.setLang('ja');
+//   page.status(); page.badge(3).textContent; page.suggestedCells(); page.payoutRows(); page.setLang('ja');
 //
 // - 照 index.html 建出 #cactpotTool（mountFromHtml），照 index.html 的 <script src> 順序載入這個工具的翻譯檔、
 //   共用的 cell-popover.js 與工具目錄自己的每一個腳本（src 不含 /），最後 new MiniCactpotCalculator()。
@@ -20,6 +20,8 @@
 //   換 createElement 一定要在 mountFromHtml 之前，index.html 的格子才會有這些補丁
 // - cell(p) 是 #extended-grid 裡 data-position 為 p 的格子，cells() 是九格（照位置），badge(line) 是外圈 data-line 為 line 的膠囊，
 //   status() 是狀態列（#cactpotStatus）的文字；suggestedCells()、suggestedBadges() 是有 suggested class 的格子位置、線（由小到大）
+// - payoutRows() 是獎金表（#payoutTable）裡的每一列（.payout-row），照畫面順序（總和 6 到 24）；總和在 dataset.sum，
+//   1,000 以上的列有 big class，推薦的線還可能出現的總和有 possible class
 // - menu() 是 #extended-grid 裡的小選單（.cell-popover，沒有是 null），option(value) 是打開的選單裡 data-value 為 String(value) 的選項
 //   （沒有是 null）；pick(p, value) 點格子再點選項（找不到選項時丟錯），fill({ 0: 7, 1: 1 }) 照位置由小到大一格一格 pick
 // - keyboardOpen(p)：在格子上派送 detail 為 0 的 click（鍵盤按 Enter、空白鍵時瀏覽器送的 click）；
@@ -157,6 +159,7 @@ function createCactpotPage({ lang = 'zh' } = {}) {
         },
         suggestedCells: () => POSITIONS.filter((p) => cell(p).classList.contains('suggested')),
         suggestedBadges: () => LINES.filter((line) => badge(line).classList.contains('suggested')),
+        payoutRows: () => $('payoutTable').querySelectorAll('.payout-row'),
         toasts,
         scrolls,
         setLang(next) {

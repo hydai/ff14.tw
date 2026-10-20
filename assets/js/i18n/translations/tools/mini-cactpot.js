@@ -29,6 +29,9 @@ const MiniCactpotTranslations = {
         mini_cactpot_undo: '上一步',
         mini_cactpot_next: '下一張',
 
+        // 獎金表
+        mini_cactpot_payout_title: '三格總和 → MGP',
+
         // 線條名稱
         mini_cactpot_line_row_top: '上橫列',
         mini_cactpot_line_row_mid: '中橫列',
@@ -77,6 +80,9 @@ const MiniCactpotTranslations = {
         mini_cactpot_undo: 'Undo',
         mini_cactpot_next: 'Next ticket',
 
+        // Payout table
+        mini_cactpot_payout_title: 'Sum of 3 cells → MGP',
+
         // Line names
         mini_cactpot_line_row_top: 'Top Row',
         mini_cactpot_line_row_mid: 'Middle Row',
@@ -124,6 +130,9 @@ const MiniCactpotTranslations = {
         // ボタン
         mini_cactpot_undo: '元に戻す',
         mini_cactpot_next: '次のくじ',
+
+        // 配当表
+        mini_cactpot_payout_title: '3マスの合計 → MGP',
 
         // ライン名
         mini_cactpot_line_row_top: '上段横列',
