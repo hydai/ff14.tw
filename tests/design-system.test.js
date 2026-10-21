@@ -351,8 +351,7 @@ test('.btn-close／.popup-close／.btn-remove 按鈕必須有可存取名稱（a
 
 test('猜謎方格工具的格子都能用 Tab 鍵移動焦點（div 要設 tabindex，按鈕本來就可以）', () => {
     const jsChecks = [
-        { file: 'tools/faux-hollows-foxes/script.js', classNamePattern: /cell\.className\s*=\s*'cell board-cell'/ },
-        { file: 'tools/wondrous-tails/script.js', classNamePattern: /cell\.className\s*=\s*'cell grid-cell'/ }
+        { file: 'tools/faux-hollows-foxes/script.js', classNamePattern: /cell\.className\s*=\s*'cell board-cell'/ }
     ];
     for (const { file, classNamePattern } of jsChecks) {
         const js = read(file);
@@ -367,6 +366,13 @@ test('猜謎方格工具的格子都能用 Tab 鍵移動焦點（div 要設 tabi
     assert.equal(gridCells.length, 9, 'mini-cactpot 應該有 9 個 .grid-cell 按鈕');
     for (const tag of gridCells) {
         assert.doesNotMatch(tag, /\stabindex="-1"/, `mini-cactpot 的格子不應該移出 Tab 順序：${tag}`);
+    }
+
+    const wondrousHtml = read('tools/wondrous-tails/index.html');
+    const wondrousCells = wondrousHtml.match(/<button type="button" class="cell grid-cell"[^>]*>/g) || [];
+    assert.equal(wondrousCells.length, 16, 'wondrous-tails 應該有 16 個 .grid-cell 按鈕');
+    for (const tag of wondrousCells) {
+        assert.doesNotMatch(tag, /\stabindex="-1"/, `wondrous-tails 的格子不應該移出 Tab 順序：${tag}`);
     }
 });
 

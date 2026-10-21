@@ -28,9 +28,11 @@
 - 上一步會寫出退回了什麼，「下一張」清空盤面、按錯可以救回來
 
 ### Wondrous Tails 預測器 (`wondrous-tails/`)
-- 連線機率計算
-- 4x4 互動介面
-- 策略建議
+- 4x4 盤面點一格貼上貼紙、再點一次拿掉，最多 9 張，貼滿後其他的格子不能點；盤面上方寫「已貼 N／9 張」
+- 連線機率「現在」與「重置之後」並排：貼滿 9 張時至少 1／2／3 條線的機率，每個機率配一條長條；「重置之後」只在貼 3～7 張（遊戲能重置）時有數字，其他張數寫「—」。只列機率、不給建議，要不要重置由玩家決定
+- 連線標示：已經連成的線，線上的格子框綠色；再貼一張就連成線的空格用綠色虛線框（貼滿 9 張時不標），格子的名稱也會唸給螢幕閱讀器
+- 「清空盤面」在盤面右上角，按下去同一顆按鈕變成「復原」，按錯了可以放回去
+- 手機上機率緊接在盤面下面，電腦上盤面在左、機率在右
 
 ### 角色卡產生器 (`character-card/`)
 - 名稱顏色自訂
@@ -217,7 +219,7 @@ ff14.tw/
 │   ├── add-design-links.mjs
 │   ├── remove-dark-mode-links.mjs
 │   └── replace-noscript-nav.mjs
-├── tests/                  # 48 份 node --test 測試（下列為部分範例）
+├── tests/                  # 50 份 node --test 測試（下列為部分範例）
 │   ├── design-system.test.js
 │   ├── docs.test.js
 │   ├── gathering-materials.test.js
@@ -225,7 +227,8 @@ ff14.tw/
 │   ├── helpers/            # 測試輔助模組（不是測試檔）
 │   │   ├── cactpot-page.js         # 仙人微彩頁的頁面替身
 │   │   ├── gathering-page.js       # 採集頁的頁面替身
-│   │   └── notification-stubs.js   # Notification／AudioContext 替身
+│   │   ├── notification-stubs.js   # Notification／AudioContext 替身
+│   │   └── wondrous-page.js        # 天書奇談頁的頁面替身
 │   ├── modal-manager-stack.test.js
 │   ├── pages.test.js
 │   ├── scripts.test.js

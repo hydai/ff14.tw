@@ -4,47 +4,76 @@
 
 .page-header {
     text-align: center;
-    margin-bottom: var(--space-7);
+    margin-bottom: var(--space-4);
 }
 
-.grid-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+/* 說明文字換行時兩行的長度接近，第二行不會只剩一兩個字（手機上不會把「張）」單獨留在第二行） */
+.page-header .description {
+    text-wrap: balance;
+}
+
+/* 一欄，最寬 28rem：盤面卡片用滿這個寬度 */
+.wondrous-layout {
+    display: grid;
     gap: var(--space-4);
-    margin-bottom: var(--space-7);
+    max-width: 28rem;
+    margin: 0 auto;
 }
 
-/* 4×4 盤面 */
+/* 盤面卡片：外觀由 .card 提供。.card 預設 overflow: hidden，格子外面畫的框會伸進 padding：焦點外框 3px，連成的線的綠框 6px（3px 間隔加 3px 粗），所以 padding 要留得下最大的 6px */
+.wondrous-board-card {
+    display: grid;
+    gap: var(--space-3);
+    padding: var(--space-4);
+}
+
+/* 標題列：張數靠左，「清空盤面」／「復原」按鈕靠右。高度固定成一顆小按鈕的高度（--control-sm），盤面不會因為標題列換了內容而跳動 */
+.board-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    min-height: var(--control-sm);
+}
+
+.board-count {
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    color: var(--color-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+/* 「清空盤面」與「復原」是同一顆按鈕：最小寬度 7.5rem（120px）放得下三種語言裡最長的「盤面をクリア」（118px），換文字時按鈕不變窄，靠右的左邊緣不會跳 */
+#clear-btn {
+    min-width: 7.5rem;
+}
+
+/* 4×4 盤面：四欄一樣寬，用滿卡片的寬度 */
 .wondrous-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: var(--space-2);
-    width: 100%;
-    max-width: 400px;
-    padding: var(--space-5);
-    background: var(--color-surface-2);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--space-3);
 }
 
-/* 格子：外觀由 .cell 提供，這裡只定尺寸與已放置狀態 */
+/* 格子：外觀由 .cell 提供。大小跟著欄寬走，aspect-ratio 讓它保持正方形；min-width: 0 讓窄螢幕的格子可以縮小 */
 .grid-cell {
-    width: 80px;
-    height: 80px;
+    aspect-ratio: 1;
+    min-width: 0;
+    padding: 0;
+    font: inherit;
     font-size: var(--text-2xl);
 }
 
+/* 貼了貼紙的格子：主色底加 ⭐。這條規則不設 box-shadow，因為共用的 .cell:focus-visible 用 box-shadow 畫焦點外框，
+   在這裡設了就會蓋掉它，用鍵盤時看不到焦點在哪一格 */
 .cell.placed {
     border-color: var(--color-primary);
     background: var(--color-primary);
     color: var(--color-on-primary);
-    box-shadow: var(--glow-primary);
 }
 
 .cell.placed::before {
     content: "⭐";
-    font-size: var(--text-3xl);
     animation: star-glow 2s ease-in-out infinite alternate;
 }
 
@@ -53,153 +82,111 @@
     to { text-shadow: var(--glow-primary-strong); }
 }
 
-.grid-info {
-    text-align: center;
-    font-size: var(--text-md);
-    font-weight: var(--weight-medium);
-    color: var(--color-muted);
+@media (prefers-reduced-motion: reduce) {
+    .cell.placed::before {
+        animation: none;
+    }
 }
 
-.grid-info span {
+/* 連成的線：線上每一格外面一圈綠框（伸出 6px：3px 間隔加 3px 粗）。用 outline 不用 box-shadow：共用的 .cell:focus-visible 用 box-shadow 畫焦點外框，這裡設了就會蓋掉它 */
+.cell.line-done {
+    outline: 3px solid var(--color-success);
+    outline-offset: 3px;
+}
+
+/* 只差一張的空格：綠色虛線框，和連成的線同一個綠色，意思是「貼了就連成」；不用 --color-warning，它在白底上的對比只有約 2.2:1 */
+.cell.line-near {
+    border: 2px dashed var(--color-success);
+}
+
+/* 機率卡片：外觀由 .card 提供，裡面放機率表 */
+.wondrous-odds-card {
+    padding: var(--space-4);
+}
+
+/* 機率表：列標題是「至少 N 條」加兩條長條，欄標題是「現在」「重置之後」，螢幕閱讀器照表格唸。
+   table、tr、th、td 都維持原本的 display，不用 flex 或 grid 改它們（有些螢幕閱讀器會因此讀不出表格） */
+.odds-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-variant-numeric: tabular-nums;
+}
+
+/* 欄標題：小字、靠右，對著下面靠右的數字 */
+.odds-table thead th {
+    padding: 0 0 var(--space-2) var(--space-3);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    color: var(--color-muted);
+    text-align: right;
+}
+
+.odds-table tbody th,
+.odds-table tbody td {
+    padding: var(--space-3) 0 var(--space-3) var(--space-3);
+    border-top: 1px solid var(--color-border);
+}
+
+/* 列標題：名稱靠左。名稱與長條左右排，長條佔剩下的寬度；放不下時（手機）名稱先換行，
+   還是放不下，長條就換到名稱下面。做法：名稱 float，長條是 grid（自己的格式化脈絡，會避開 float 排在它旁邊），
+   旁邊剩下的寬度不到 min-width 就掉到 float 下面 */
+.odds-table tbody th {
+    padding-left: 0;
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    color: var(--color-text);
+    text-align: left;
+}
+
+.odds-label {
+    float: left;
+    margin-right: var(--space-3);
+}
+
+/* 兩條長條上下疊。min-width 讓長條不會縮到看不見；min-height 是一行字的高度，長條在裡面垂直置中，和旁邊的名稱對齊 */
+.odds-bars {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-content: center;
+    gap: 2px;
+    min-width: 3rem;
+    min-height: calc(1em * var(--leading-normal));
+}
+
+/* 長條的長度（style.width）由 script.js 照機率設定；機率是 0 或沒有時長度 0 */
+.odds-bar {
+    height: 8px;
+    border-radius: var(--radius-full);
+}
+
+/* 數字和長條都不用好壞配色：「現在」主色，「重置之後」灰色 */
+.odds-bar-now {
+    background: var(--color-primary);
+}
+
+.odds-bar-after {
+    background: var(--color-muted);
+}
+
+.odds-now {
+    font-size: var(--text-md);
     font-weight: var(--weight-bold);
     color: var(--color-primary);
+    text-align: right;
 }
 
-.controls {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: var(--space-4);
-    margin-bottom: var(--space-7);
-}
-
-/* 結果面板：外觀由 .card 提供 */
-.results-panel {
-    max-width: 600px;
-    margin: 0 auto;
-    padding: var(--space-7);
-    animation: slideIn var(--duration-slow) var(--ease);
-}
-
-@keyframes slideIn {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: none; }
-}
-
-.results-panel h3 {
-    margin: 0 0 var(--space-6);
-    text-align: center;
-    font-size: var(--text-2xl);
-    color: var(--color-heading);
-}
-
-.probability-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: var(--space-4);
-    margin-bottom: var(--space-6);
-}
-
-.prob-item {
-    padding: var(--space-4);
-    text-align: center;
-    background: var(--color-surface-2);
-    border-radius: var(--radius-md);
-}
-
-.prob-label {
-    margin-bottom: var(--space-2);
-    font-size: var(--text-xs);
-    font-weight: var(--weight-semibold);
-    letter-spacing: 0.04em;
+.odds-after {
+    font-size: var(--text-md);
     color: var(--color-muted);
+    text-align: right;
 }
 
-.prob-value {
-    font-size: var(--text-4xl);
-    font-weight: var(--weight-bold);
-    line-height: 1;
-    color: var(--color-heading);
-}
-
-.prob-value.high {
-    color: var(--color-success-text);
-}
-
-.prob-value.medium {
-    color: var(--color-warning-text);
-}
-
-.prob-value.low {
-    color: var(--color-muted);
-}
-
-/* 建議：外觀由 .info-message 提供 */
-.recommendation {
-    margin: 0;
-    text-align: center;
-}
-
-.recommendation p {
-    margin: 0;
-    line-height: var(--leading-normal);
-}
-
-/* 響應式 */
-@media (max-width: 768px) {
-    .grid-cell {
-        width: 60px;
-        height: 60px;
-        font-size: var(--text-xl);
-    }
-
-    .cell.placed::before {
-        font-size: var(--text-2xl);
-    }
-
-    .wondrous-grid {
-        max-width: 300px;
-        padding: var(--space-4);
-    }
-
-    .probability-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .controls {
-        flex-direction: column;
-        align-items: center;
-    }
-
-    .results-panel {
-        padding: var(--space-6);
-    }
-}
-
-@media (max-width: 480px) {
-    .grid-cell {
-        width: 50px;
-        height: 50px;
-        font-size: var(--text-md);
-    }
-
-    .cell.placed::before {
-        font-size: var(--text-xl);
-    }
-
-    .wondrous-grid {
-        max-width: 250px;
-        padding: var(--space-3);
-    }
-
-    .prob-value {
-        font-size: var(--text-2xl);
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .cell.placed::before,
-    .results-panel {
-        animation: none;
+/* 電腦（768px 以上）：機率卡在盤面右邊；手機照 DOM 順序，機率卡在盤面下面 */
+@media (min-width: 768px) {
+    .wondrous-layout {
+        max-width: 52rem;
+        grid-template-columns: minmax(0, 26rem) minmax(0, 22rem);
+        justify-content: center;
+        align-items: start;
     }
 }

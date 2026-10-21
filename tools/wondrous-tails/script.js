@@ -1,435 +1,161 @@
+// 天書奇談預測器
+// 盤面是 index.html 裡寫好的 16 個按鈕：點空格貼上貼紙，再點一次拿掉，最多 9 張，貼滿後其他的空格不能點（disabled），不跳 toast。
+// 畫面上的字與屬性都由 render() 照 this.grid 重畫，只改內容與屬性，不重建格子，用鍵盤（Enter、空白鍵）貼上或拿掉之後焦點才會留在同一格。
+// 機率表（現在、重置之後，各列「至少 N 條」）也由 render() 重畫：數字與長條的長度來自 tails-odds.js 的 analyze()，只改三列的文字與長度，不重建。
+// 盤面上的標示同樣來自 analyze()：連成的線上的格子加 line-done（綠框）、只差一張的空格加 line-near（虛線框），
+// 格子的名稱也跟著寫出來（cellLabel()），螢幕閱讀器才聽得到。
+// 盤面卡標題列右邊是同一顆「清空盤面」／「復原」按鈕：清空時先把清空前的盤面存在 this.cleared，按鈕就地改成「復原」（不跳 toast，焦點不動）；
+// 復原把它放回去。清空之後貼上或拿掉任何一張貼紙，就不能再復原。盤面是空的、也沒有可以復原的盤面時，按鈕不能按（disabled）。
 class WondrousTailsCalculator {
+    // 最多貼幾張、盤面有幾格（4×4）
+    static MAX_STICKERS = 9;
+    static CELL_COUNT = 16;
+    // 機率表三列的 data-lines：「至少 1 條」「至少 2 條」「至少 3 條」
+    static ODDS_LINES = [1, 2, 3];
+    // 沒有「重置之後」的機率時（不是貼 3～7 張）寫的符號，U+2014
+    static NO_ODDS = '—';
+
+    // 長條的長度：機率就是百分比；沒有這個機率（null）是 0
+    static barWidth(fraction) {
+        return `${((fraction ?? 0) * 100).toFixed(2)}%`;
+    }
+
     constructor() {
-        this.gridSize = 4;
-        this.totalObjects = 9;
-        this.grid = Array(16).fill(false); // 4x4 grid, false = empty, true = placed
-        this.placedCount = 0;
-
-        // Initialize State History Manager
-        this.historyManager = new StateHistoryManager();
-        this.isUndoingOrRedoing = false;
-
-        // 語言切換時重繪建議文字用的快取（見 onLanguageChange／displayResults／updateDisplay）
-        this.lastRecommendationArgs = null;
+        // 16 格：false 是還沒貼，true 是貼了貼紙
+        this.grid = new Array(WondrousTailsCalculator.CELL_COUNT).fill(false);
+        // 按「清空盤面」之前的盤面（一份複本）；null 是沒有可以復原的盤面。按「復原」、或貼上與拿掉任何一張貼紙之後都回到 null
+        this.cleared = null;
 
         this.elements = {
-            grid: document.getElementById('wondrous-grid'),
-            placedCount: document.getElementById('placed-count'),
-            resetBtn: document.getElementById('reset-btn'),
-            undoBtn: document.getElementById('undo-btn'),
-            redoBtn: document.getElementById('redo-btn'),
-            resultsPanel: document.getElementById('results-panel'),
-            prob1Line: document.getElementById('prob-1-line'),
-            prob2Lines: document.getElementById('prob-2-lines'),
-            prob3Lines: document.getElementById('prob-3-lines'),
-            recommendationText: document.getElementById('recommendation-text')
+            board: document.getElementById('wondrous-grid'),
+            count: document.getElementById('placed-count'),
+            clear: document.getElementById('clear-btn'),
+            odds: document.getElementById('odds-table')
         };
-
-        this.initializeGrid();
-        this.initializeEvents();
-
-        // 語言切換時重新以目前語言重建所有格子的 aria-label，並在有建議文字快取時一併重繪
-        window.i18n.onLanguageChange(() => {
-            this.refreshCellLabels();
-            if (this.lastRecommendationArgs) {
-                const [prob1, prob2, prob3, details] = this.lastRecommendationArgs;
-                this.elements.recommendationText.textContent = this.generateRecommendation(prob1, prob2, prob3, details);
-            }
+        // 16 個格子照位置收好，重畫時只改內容與屬性
+        this.cells = Array.from({ length: WondrousTailsCalculator.CELL_COUNT }, (_, p) => this.elements.board.querySelector(`.grid-cell[data-position="${p}"]`));
+        // 機率表的三列照 data-lines 收好，重畫時只改文字與長條的長度：now／after 是「現在」「重置之後」的數字，barNow／barAfter 是它們的長條
+        this.oddsRows = WondrousTailsCalculator.ODDS_LINES.map((lines) => {
+            const row = this.elements.odds.querySelector(`tr[data-lines="${lines}"]`);
+            return {
+                now: row.querySelector('.odds-now'),
+                after: row.querySelector('.odds-after'),
+                barNow: row.querySelector('.odds-bar-now'),
+                barAfter: row.querySelector('.odds-bar-after')
+            };
         });
 
-        // Save initial state
-        this.saveState();
-    }
-    
-    initializeGrid() {
-        SecurityUtils.clearElement(this.elements.grid);
-        
-        for (let i = 0; i < 16; i++) {
-            const cell = document.createElement('div');
-            cell.className = 'cell grid-cell';
-            cell.dataset.position = i;
-            cell.tabIndex = 0;
-            cell.setAttribute('role', 'button');
-            cell.setAttribute('aria-pressed', 'false');
-            cell.setAttribute('aria-label', FF14Utils.getI18nText('wondrous_tails_cell_label', '第 {n} 格', { n: i + 1 }));
-            this.elements.grid.appendChild(cell);
-        }
-    }
-
-    /**
-     * 語言切換時，重新以目前語言重建所有格子的 aria-label
-     */
-    refreshCellLabels() {
-        this.elements.grid.querySelectorAll('.grid-cell').forEach((cell) => {
-            const position = parseInt(cell.dataset.position, 10);
-            cell.setAttribute('aria-label', FF14Utils.getI18nText('wondrous_tails_cell_label', '第 {n} 格', { n: position + 1 }));
+        // 點格子：貼上或拿掉。disabled 的格子瀏覽器本來就不送 click，這裡再擋一次
+        this.elements.board.addEventListener('click', (event) => {
+            const cell = event.target.closest('.grid-cell');
+            if (!cell || cell.disabled) return;
+            this.toggle(Number(cell.dataset.position));
         });
-    }
-    
-    initializeEvents() {
-        this.handleCellClick = (e) => {
-            if (e.target.classList.contains('grid-cell')) {
-                this.toggleCell(parseInt(e.target.dataset.position));
-            }
-        };
 
-        this.handleReset = () => {
-            this.resetGrid();
-        };
+        // 清空盤面／復原：disabled 的按鈕瀏覽器本來就不送 click
+        this.elements.clear.addEventListener('click', () => this.clearOrRestore());
 
-        this.handleUndo = () => {
-            this.undo();
-        };
+        // 切換語言：張數、按鈕與格子的名稱換成新的語言
+        window.i18n.onLanguageChange(() => this.render());
 
-        this.handleRedo = () => {
-            this.redo();
-        };
-
-        this.elements.grid.addEventListener('click', this.handleCellClick);
-
-        this.handleCellKeydown = (e) => {
-            if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('grid-cell')) {
-                e.preventDefault();
-                this.toggleCell(parseInt(e.target.dataset.position));
-            }
-        };
-        this.elements.grid.addEventListener('keydown', this.handleCellKeydown);
-        this.elements.resetBtn.addEventListener('click', this.handleReset);
-
-        if (this.elements.undoBtn) {
-            this.elements.undoBtn.addEventListener('click', this.handleUndo);
-        }
-
-        if (this.elements.redoBtn) {
-            this.elements.redoBtn.addEventListener('click', this.handleRedo);
-        }
+        this.render();
     }
 
-    toggleCell(position) {
-        if (this.grid[position]) {
-            // Remove object
-            this.grid[position] = false;
-            this.placedCount--;
-        } else {
-            // Add object (max 9)
-            if (this.placedCount < this.totalObjects) {
-                this.grid[position] = true;
-                this.placedCount++;
-            } else {
-                FF14Utils.showToast(
-                    FF14Utils.getI18nText('wondrous_tails_max_objects', '最多只能放置 {totalObjects} 個物件', { totalObjects: this.totalObjects }),
-                    'error'
-                );
-                return;
-            }
-        }
-        
-        this.updateDisplay();
-        this.saveState();
+    t(key, fallback, params) {
+        return FF14Utils.getI18nText(key, fallback, params);
     }
 
-    updateDisplay() {
-        // Update grid visualization
-        const cells = this.elements.grid.querySelectorAll('.grid-cell');
-        cells.forEach((cell, index) => {
-            cell.classList.toggle('placed', this.grid[index]);
-            cell.setAttribute('aria-pressed', String(this.grid[index]));
+    // 貼了幾張
+    get placedCount() {
+        return this.grid.filter(Boolean).length;
+    }
+
+    // 點一格：貼了就拿掉，沒貼而且不到 9 張就貼上，然後重畫。
+    // 已經 9 張時不能再貼：render() 會讓那些格子 disabled，這裡自己也擋（tails-odds.js 的機率計算遇到超過 9 張的盤面會丟 RangeError）。
+    // 位置不在 0–15 也不理，不然盤面上會多出看不見的貼紙。
+    // 被擋下來的點擊什麼都不變（包括可以復原的盤面）；真的貼上或拿掉了一張，清空前的盤面就不能再復原（放回去會蓋掉剛貼的）
+    toggle(position) {
+        if (!Number.isInteger(position) || position < 0 || position >= WondrousTailsCalculator.CELL_COUNT) return;
+        if (!this.grid[position] && this.placedCount >= WondrousTailsCalculator.MAX_STICKERS) return;
+
+        this.cleared = null;
+        this.grid[position] = !this.grid[position];
+        this.render();
+    }
+
+    // 「清空盤面」與「復原」是同一顆按鈕：有可以復原的盤面就放回去；否則盤面有貼紙時，先存一份複本再清空。
+    // 盤面是空的、也沒有可以復原的盤面時什麼都不做（這時按鈕是 disabled）。不跳 toast：按鈕變成「復原」就是回饋
+    clearOrRestore() {
+        if (this.cleared !== null) {
+            this.grid = this.cleared;
+            this.cleared = null;
+        } else if (this.placedCount > 0) {
+            this.cleared = this.grid.slice();
+            this.grid.fill(false);
+        }
+        this.render();
+    }
+
+    render() {
+        const view = WondrousTailsOdds.analyze(this.grid);
+        // 貼滿 9 張：還沒貼的格子不能再點
+        const full = view.placed >= WondrousTailsCalculator.MAX_STICKERS;
+        // 連成的線上的格子、只差一張的空格。前者一定貼了，後者一定還沒貼，所以兩個 class 不會同時出現在一格
+        const done = new Set(view.doneCells);
+        const near = new Set(view.nearCells);
+
+        this.elements.count.textContent = this.t('wondrous_tails_count', '已貼 {n}／9 張', { n: view.placed });
+
+        // 清空盤面／復原：有可以復原的盤面寫「復原」，否則寫「清空盤面」；盤面是空的、也沒有可以復原的盤面時沒東西可清，不能按。
+        // 兩種文字會切換，所以不用 data-i18n，由這裡寫；按鈕不重建，焦點留在原處
+        const restorable = this.cleared !== null;
+        this.elements.clear.textContent = restorable
+            ? this.t('wondrous_tails_restore', '復原')
+            : this.t('wondrous_tails_clear', '清空盤面');
+        this.elements.clear.disabled = !restorable && view.placed === 0;
+
+        // class、disabled 與名稱每次都從頭設，不留上一次的樣子
+        this.cells.forEach((cell, p) => {
+            const isPlaced = this.grid[p];
+            const isDone = done.has(p);
+            const isNear = near.has(p);
+            const classes = ['cell', 'grid-cell'];
+            if (isPlaced) classes.push('placed');
+            if (isDone) classes.push('line-done');
+            if (isNear) classes.push('line-near');
+            cell.className = classes.join(' ');
+            cell.setAttribute('aria-pressed', String(isPlaced));
+            cell.disabled = !isPlaced && full;
+            cell.setAttribute('aria-label', this.cellLabel(p, isDone, isNear));
         });
-        
-        // Update counter
-        this.elements.placedCount.textContent = this.placedCount;
-        
-        // Auto-calculate probabilities if there are placed objects
-        if (this.placedCount > 0) {
-            this.calculateProbabilities();
-        } else {
-            // Hide results when no objects are placed
-            this.elements.resultsPanel.style.display = 'none';
-            // 清除語言切換重繪快取，避免下次切換語言時重繪已清空的舊建議文字
-            this.lastRecommendationArgs = null;
-        }
 
-        this.updateHistoryButtons();
+        this.renderOdds(view);
     }
 
-    resetGrid() {
-        this.grid = Array(16).fill(false);
-        this.placedCount = 0;
-        this.updateDisplay();
-        this.saveState();
-        FF14Utils.showToast(FF14Utils.getI18nText('wondrous_tails_reset_done', '盤面已重置'));
+    // 格子的名稱：綠框與虛線框只畫在畫面上，螢幕閱讀器看不到，所以把意思也寫進名稱
+    cellLabel(position, isDone, isNear) {
+        const n = position + 1;
+        if (isDone) return this.t('wondrous_tails_cell_line', '第 {n} 格：已連成線', { n });
+        if (isNear) return this.t('wondrous_tails_cell_near', '第 {n} 格：貼了就連成線', { n });
+        return this.t('wondrous_tails_cell_label', '第 {n} 格', { n });
     }
 
-    // State History Methods
-    saveState() {
-        if (this.isUndoingOrRedoing) return;
-
-        const state = {
-            grid: [...this.grid],
-            placedCount: this.placedCount
-        };
-
-        this.historyManager.push(state);
-        this.updateHistoryButtons();
-    }
-
-    undo() {
-        if (!this.historyManager.canUndo()) return;
-
-        this.isUndoingOrRedoing = true;
-        const previousState = this.historyManager.undo();
-
-        if (previousState) {
-            this.restoreState(previousState);
-            FF14Utils.showToast(FF14Utils.getI18nText('msg_success', '操作成功'));
-        }
-
-        this.isUndoingOrRedoing = false;
-        this.updateHistoryButtons();
-    }
-
-    redo() {
-        if (!this.historyManager.canRedo()) return;
-
-        this.isUndoingOrRedoing = true;
-        const nextState = this.historyManager.redo();
-
-        if (nextState) {
-            this.restoreState(nextState);
-            FF14Utils.showToast(FF14Utils.getI18nText('msg_success', '操作成功'));
-        }
-
-        this.isUndoingOrRedoing = false;
-        this.updateHistoryButtons();
-    }
-
-    restoreState(state) {
-        this.grid = [...state.grid];
-        this.placedCount = state.placedCount;
-        this.updateDisplay();
-    }
-
-    updateHistoryButtons() {
-        if (this.elements.undoBtn) {
-            this.elements.undoBtn.disabled = !this.historyManager.canUndo();
-        }
-
-        if (this.elements.redoBtn) {
-            this.elements.redoBtn.disabled = !this.historyManager.canRedo();
-        }
-    }
-
-    // Check if a line (4 consecutive positions) has all objects placed
-    checkLine(positions) {
-        return positions.every(pos => this.grid[pos]);
-    }
-    
-    // Get all possible lines (horizontal, vertical, diagonal)
-    getAllLines() {
-        const lines = [];
-        
-        // Horizontal lines
-        for (let row = 0; row < 4; row++) {
-            lines.push([row * 4, row * 4 + 1, row * 4 + 2, row * 4 + 3]);
-        }
-        
-        // Vertical lines  
-        for (let col = 0; col < 4; col++) {
-            lines.push([col, col + 4, col + 8, col + 12]);
-        }
-        
-        // Diagonal lines
-        lines.push([0, 5, 10, 15]); // Main diagonal
-        lines.push([3, 6, 9, 12]);  // Anti-diagonal
-        
-        return lines;
-    }
-    
-    // Count how many lines are completed in current state
-    countCompletedLines(state) {
-        const lines = this.getAllLines();
-        return lines.filter(line => line.every(pos => state[pos])).length;
-    }
-    
-    // Generate all possible ways to place remaining objects
-    generatePossibleStates() {
-        const emptyPositions = [];
-        const currentState = [...this.grid];
-        
-        // Find empty positions
-        for (let i = 0; i < 16; i++) {
-            if (!currentState[i]) {
-                emptyPositions.push(i);
-            }
-        }
-        
-        const remainingObjects = this.totalObjects - this.placedCount;
-        
-        if (remainingObjects === 0) {
-            return [currentState];
-        }
-        
-        if (remainingObjects > emptyPositions.length) {
-            return [];
-        }
-        
-        // Generate all combinations of placing remaining objects
-        const combinations = this.getCombinations(emptyPositions, remainingObjects);
-        const states = [];
-        
-        combinations.forEach(combination => {
-            const state = [...currentState];
-            combination.forEach(pos => {
-                state[pos] = true;
-            });
-            states.push(state);
+    // 機率表：每一列寫「現在」與「重置之後」的百分比，兩條長條的長度就是那個機率。
+    // 不能重置（不是貼 3～7 張）時 view.afterReset 是 null：數字寫「—」，長條長度 0。
+    // 表頭與每一列的名稱是 data-i18n，由 I18nManager 換語言，這裡不碰
+    renderOdds(view) {
+        this.oddsRows.forEach((row, i) => {
+            const now = view.now[i];
+            const after = view.afterReset ? view.afterReset[i] : null;
+            row.now.textContent = WondrousTailsOdds.formatPercent(now);
+            row.after.textContent = after === null ? WondrousTailsCalculator.NO_ODDS : WondrousTailsOdds.formatPercent(after);
+            row.barNow.style.width = WondrousTailsCalculator.barWidth(now);
+            row.barAfter.style.width = WondrousTailsCalculator.barWidth(after);
         });
-        
-        return states;
-    }
-    
-    // Get all combinations of k elements from array
-    getCombinations(array, k) {
-        if (k === 0) return [[]];
-        if (k > array.length) return [];
-        
-        const result = [];
-        
-        function backtrack(start, current) {
-            if (current.length === k) {
-                result.push([...current]);
-                return;
-            }
-            
-            for (let i = start; i <= array.length - (k - current.length); i++) {
-                current.push(array[i]);
-                backtrack(i + 1, current);
-                current.pop();
-            }
-        }
-        
-        backtrack(0, []);
-        return result;
-    }
-    
-    calculateProbabilities() {
-        if (this.placedCount === 0) {
-            return;
-        }
-        
-        const possibleStates = this.generatePossibleStates();
-        
-        if (possibleStates.length === 0) {
-            return;
-        }
-        
-        const lineCounts = {
-            0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0
-        };
-        
-        // Count line completions for each possible state
-        possibleStates.forEach(state => {
-            const completedLines = this.countCompletedLines(state);
-            lineCounts[completedLines]++;
-        });
-        
-        const totalStates = possibleStates.length;
-        
-        // Calculate probabilities for exactly 1, 2, 3+ lines
-        const prob1Line = (lineCounts[1] / totalStates * 100).toFixed(1);
-        const prob2Lines = (lineCounts[2] / totalStates * 100).toFixed(1);
-        const prob3PlusLines = (Object.keys(lineCounts)
-            .filter(k => parseInt(k) >= 3)
-            .reduce((sum, k) => sum + lineCounts[k], 0) / totalStates * 100).toFixed(1);
-        
-        // Calculate probability of at least 1, 2, 3 lines
-        const probAtLeast1 = (Object.keys(lineCounts)
-            .filter(k => parseInt(k) >= 1)
-            .reduce((sum, k) => sum + lineCounts[k], 0) / totalStates * 100).toFixed(1);
-        const probAtLeast2 = (Object.keys(lineCounts)
-            .filter(k => parseInt(k) >= 2)
-            .reduce((sum, k) => sum + lineCounts[k], 0) / totalStates * 100).toFixed(1);
-        const probAtLeast3 = (Object.keys(lineCounts)
-            .filter(k => parseInt(k) >= 3)
-            .reduce((sum, k) => sum + lineCounts[k], 0) / totalStates * 100).toFixed(1);
-        
-        this.displayResults(probAtLeast1, probAtLeast2, probAtLeast3, {
-            exactly1: prob1Line,
-            exactly2: prob2Lines,
-            exactly3Plus: prob3PlusLines,
-            totalStates: totalStates
-        });
-    }
-    
-    displayResults(prob1, prob2, prob3, details) {
-        // Update probability displays
-        this.elements.prob1Line.textContent = `${prob1}%`;
-        this.elements.prob2Lines.textContent = `${prob2}%`;
-        this.elements.prob3Lines.textContent = `${prob3}%`;
-        
-        // Add color classes based on probability
-        this.updateProbabilityColors(this.elements.prob1Line, parseFloat(prob1));
-        this.updateProbabilityColors(this.elements.prob2Lines, parseFloat(prob2));
-        this.updateProbabilityColors(this.elements.prob3Lines, parseFloat(prob3));
-        
-        // Generate recommendation
-        // 快取這次呼叫的參數，語言切換時（見建構子的 onLanguageChange）用同一份資料
-        // 以目前語言重新呼叫 generateRecommendation() 重繪文字
-        this.lastRecommendationArgs = [parseFloat(prob1), parseFloat(prob2), parseFloat(prob3), details];
-        const recommendation = this.generateRecommendation(...this.lastRecommendationArgs);
-        this.elements.recommendationText.textContent = recommendation;
-        
-        // Show results panel
-        this.elements.resultsPanel.style.display = 'block';
-    }
-    
-    updateProbabilityColors(element, probability) {
-        element.classList.remove('high', 'medium', 'low');
-        
-        if (probability >= 60) {
-            element.classList.add('high');
-        } else if (probability >= 30) {
-            element.classList.add('medium');
-        } else {
-            element.classList.add('low');
-        }
-    }
-    
-    generateRecommendation(prob1, prob2, prob3, details) {
-        const remainingObjects = this.totalObjects - this.placedCount;
-
-        if (remainingObjects === 0) {
-            if (prob1 >= 80) {
-                return FF14Utils.getI18nText('wondrous_tails_rec_excellent', '很好的盤面！建議保留，有很高機率獲得獎勵。');
-            } else if (prob1 >= 50) {
-                return FF14Utils.getI18nText('wondrous_tails_rec_medium', '中等盤面，可以考慮保留或重置。');
-            } else {
-                return FF14Utils.getI18nText('wondrous_tails_rec_poor', '建議重置盤面，當前獲得獎勵的機率較低。');
-            }
-        }
-
-        if (prob3 >= 20) {
-            return FF14Utils.getI18nText('wondrous_tails_rec_3lines', `極佳盤面！有 ${prob3}% 機率獲得 3+ 條線獎勵，強烈建議繼續。`, { prob: prob3 });
-        } else if (prob2 >= 40) {
-            return FF14Utils.getI18nText('wondrous_tails_rec_2lines', `良好盤面！有 ${prob2}% 機率獲得 2+ 條線獎勵，建議繼續。`, { prob: prob2 });
-        } else if (prob1 >= 60) {
-            return FF14Utils.getI18nText('wondrous_tails_rec_1line', `尚可盤面，有 ${prob1}% 機率獲得至少 1 條線獎勵。`, { prob: prob1 });
-        } else {
-            return FF14Utils.getI18nText('wondrous_tails_rec_low', `當前盤面獲得獎勵機率較低，建議考慮重置。還有 ${remainingObjects} 個物件待放置。`, { remaining: remainingObjects });
-        }
     }
 }
 
-// Initialize calculator when page loads
-let calculator;
-
-document.addEventListener('DOMContentLoaded', function() {
-    calculator = new WondrousTailsCalculator();
+// 初始化
+document.addEventListener('DOMContentLoaded', () => {
+    window.wondrousTails = new WondrousTailsCalculator();
 });
-
-// Reset function for reset button
-function resetGrid() {
-    if (calculator) {
-        calculator.resetGrid();
-    }
-}
