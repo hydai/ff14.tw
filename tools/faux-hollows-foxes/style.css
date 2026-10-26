@@ -113,6 +113,28 @@
     line-height: 1;
 }
 
+/* 還沒翻的格子上的提示：⚔️75%、📦13%、🦊，一個提示一行，一格最多三行（⚔️25%／📦13%／🦊）。
+   還沒翻的格子不設底色或框：會蓋掉 .cell.suggested（下一格）的綠框。
+   手機上的格子很小。在 Chrome（macOS、Noto Sans TC 載入後）量過，字 12px 時：
+   一位數、兩位數的一行（⚔️6%、⚔️75%、⚔️<1%）最寬約 40.3px，⚔️100% 約 47.3px；三行（行高 1.1）高 39.6px；
+   下一格的綠框是 2px，比一般格子的 1px 框，裡面再少 2px。所以行高 1.1、字不換行（nowrap），
+   只有一個提示的格子圖示與百分比分兩行（下面那條），374px 以下與 359px 以下的調整在檔案最後的 @media */
+.cell-hint {
+    font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    line-height: 1.1;
+}
+
+/* 只有一個提示的格子，圖示一行、百分比一行：⚔️100% 在 414px 以下的手機一行放不下。
+   三位數只會出現在這種格子（劍或寶箱是 100% 的格子不可能是別的，不會同時有 📦、🦊）。
+   不管多寬都分兩行：同一個盤面上，不會有些只有一個提示的格子是一行、有些是兩行。
+   格子裡只放 .cell-hint，不放別的元素，:only-child 才判斷得對 */
+.cell-hint:only-child .cell-hint-icon {
+    display: block;
+}
+
 /* 盤面資料的來源與說明：盤面卡片下面，置中的小字 */
 .data-source-note {
     margin-top: var(--space-4);
@@ -126,7 +148,13 @@
     margin: 0;
 }
 
-/* 窄的手機：格子間距與卡片內距縮小，讓格子大一點。
+/* 窄的手機：格子間距與卡片內距縮小、提示的字變小，讓格子大一點、提示放得下。
+   374px 以下格子間距 2px：360px 寬時綠框格子裡面從 40.3px 變成 42px，放得下 40.3px 的一行。
+   359px 以下卡片內距 var(--space-2)、提示字 11px（0.6875rem）：320px 寬時綠框格子裡面只有 38px，12px 的一行（40.3px 寬）
+   與三行（39.6px 高）都放不下，11px 是 37.2px 寬、36.3px 高。tokens.css 最小的字級是 --text-xs（12px），
+   這是這一頁唯一沒有用 token 的字級（設計系統測試不檢查字級）。
+   綠框格子裡面的寬度：414px 49、390px 45.3、375px 42.8、360px 42、320px 38；320、360、375、390px 都量過放得下。
+   Android 的 emoji 字型、網路字型沒載入時的備用字型，寬度會差幾 px，沒有量過；格子是 overflow: hidden，真的超出時切掉的是邊緣。
    這兩個 @media 放在檔案最後，之後加規則也加在它們前面：同權重的規則排在後面的才蓋得過去 */
 @media (max-width: 374px) {
     .hollows-grid {
@@ -137,5 +165,9 @@
 @media (max-width: 359px) {
     .hollows-card {
         padding: var(--space-2);
+    }
+
+    .cell-hint {
+        font-size: 0.6875rem;
     }
 }

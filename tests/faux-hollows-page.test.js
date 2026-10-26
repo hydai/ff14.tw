@@ -328,6 +328,124 @@ test('切換語言：開著的小選單先關掉；之後打開的選單、狀�
     assert.equal(page.cell(25).getAttribute('aria-label'), 'マス 26：剣');
 });
 
+test('進入翻格：還沒翻的格子寫 ⚔️、📦 的整數百分比（帶 %，0 不寫），可能有宗長的只放 🦊；下一格 26 框綠色；障礙物沒有提示', () => {
+    const page = createHollowsPage();
+    page.tap(9, 13);
+    assert.deepEqual(page.nextCells(), [26]);
+    assert.deepEqual(page.hints(26), ['⚔️75%', '📦13%']);
+    assert.deepEqual(page.hints(25), ['⚔️50%', '📦19%']);
+    assert.deepEqual(page.hints(0), ['⚔️25%', '📦13%', '🦊']);
+    assert.deepEqual(page.hints(1), ['⚔️25%', '📦31%']);
+    assert.deepEqual(page.hints(15), ['⚔️13%', '📦13%']);
+    assert.deepEqual(page.hints(3), ['🦊']);
+    assert.deepEqual([9, 16].map((p) => page.hints(p)), [[], []]);
+    // 圖示放在 .cell-hint-icon（只有一個提示時 CSS 讓它自己一行）；格子裡只有 .cell-hint
+    assert.deepEqual([...page.cell(0).querySelectorAll('.cell-hint-icon')].map((s) => s.textContent), ['⚔️', '📦', '🦊']);
+    assert.equal(page.cell(0).children.length, 3);
+    assert.equal(page.cell(26).getAttribute('aria-label'), '第 27 格：劍 75%，寶箱 13%，建議翻這格');
+    assert.equal(page.cell(0).getAttribute('aria-label'), '第 1 格：劍 25%，寶箱 13%，宗長有出現的話，可能在這格');
+    assert.equal(page.cell(3).getAttribute('aria-label'), '第 4 格：宗長有出現的話，可能在這格');
+    // 宗長的格子只有 🦊：格 3 的字裡沒有數字
+    assert.doesNotMatch(page.cell(3).textContent, /\d/);
+});
+
+test('障礙物階段不寫提示、不框下一格', () => {
+    const page = createHollowsPage();
+    page.tap(9);
+    assert.deepEqual(ALL.flatMap((p) => page.hints(p)), []);
+    assert.deepEqual(page.nextCells(), []);
+});
+
+test('翻開的格子不寫提示；下一格跟著重算（25 是劍 → 26；改成寶箱 → 0、1、2、6、7、8 同分全部框起來）', () => {
+    const page = createHollowsPage();
+    page.tap(9, 13);
+    page.pick(25, 'sword');
+    assert.deepEqual(page.hints(25), []);
+    assert.deepEqual(page.nextCells(), [26]);
+    page.pick(25, 'chest');
+    assert.deepEqual(page.nextCells(), [0, 1, 2, 6, 7, 8]);
+});
+
+test('審閱者的例子：翻開 0、3、23 之後格 29 只有 🦊、沒有數字，下一格還是劍的 32、33；照建議翻完劍，④ 翻宗長、下一格 29', () => {
+    const page = createHollowsPage();
+    page.tap(9, 13);
+    page.pick(4, 'chest');
+    page.pick(25, 'sword');
+    page.tap(26);
+    page.pick(27, 'sword');
+    page.pick(31, 'sword');
+    for (const p of [0, 3, 23]) page.pick(p, 'empty');
+    assert.deepEqual(page.hints(29), ['🦊']);
+    assert.doesNotMatch(page.cell(29).textContent, /\d/);
+    assert.deepEqual(page.nextCells(), [32, 33]);
+    assert.equal(page.status(), '② 找劍・剩 3 次');
+    page.tap(32, 33);
+    assert.equal(page.status(), '④ 翻宗長（不一定有）・剩 1 次');
+    assert.deepEqual(page.nextCells(), [29]);
+    assert.equal(page.cell(29).getAttribute('aria-label'), '第 30 格：宗長有出現的話，可能在這格，建議翻這格');
+});
+
+test('找到宗長（格 0）之後其他格都不放 🦊，下一格是劍的 26、27、32、33', () => {
+    const page = createHollowsPage();
+    page.tap(9, 13);
+    page.pick(0, 'fox');
+    assert.ok(ALL.every((p) => !page.hints(p).includes('🦊')));
+    assert.deepEqual(page.nextCells(), [26, 27, 32, 33]);
+});
+
+test('切換語言：格子名稱裡的提示換成那個語言，格子上的提示不變', () => {
+    const page = createHollowsPage();
+    page.tap(9, 13);
+    page.setLang('en');
+    assert.equal(page.cell(26).getAttribute('aria-label'), 'Cell 27: Sword 75%, Chest 13%, Suggested next');
+    assert.equal(page.cell(3).getAttribute('aria-label'), 'Cell 4: The fox may be here if it appears');
+    assert.deepEqual(page.hints(26), ['⚔️75%', '📦13%']);
+    page.setLang('ja');
+    assert.equal(page.cell(26).getAttribute('aria-label'), 'マス 27：剣 75%、宝箱 13%、次はこのマスがおすすめ');
+    assert.equal(page.cell(3).getAttribute('aria-label'), 'マス 4：宗長が出るならこのマスかもしれない');
+});
+
+test('🦊 的說明改短成一句（三語）；提示的字小、不換行、行高 1.1；只有一個提示時圖示自己一行；359px 以下提示 11px', () => {
+    assert.match(read('tools/faux-hollows-foxes/index.html'),
+        /<p data-i18n="faux_hollows_candidate_note">🦊：宗長有出現的話，可能在這格<\/p>/);
+    assert.equal(translationValues(TRANSLATIONS, 'zh').get('faux_hollows_candidate_note'), '🦊：宗長有出現的話，可能在這格');
+    assert.equal(translationValues(TRANSLATIONS, 'en').get('faux_hollows_candidate_note'), '🦊: If the fox appears, it may be on this cell');
+    assert.equal(translationValues(TRANSLATIONS, 'ja').get('faux_hollows_candidate_note'), '🦊：宗長が出るなら、このマスにいるかもしれません');
+    const file = 'tools/faux-hollows-foxes/style.css';
+    assert.match(cssRule(file, '.cell-hint'), /font-size:\s*var\(--text-xs\);/);
+    assert.match(cssRule(file, '.cell-hint'), /white-space:\s*nowrap;/);
+    assert.match(cssRule(file, '.cell-hint'), /line-height:\s*1\.1;/);
+    // 我的決定 14：「⚔️100%」在 414px 以下的手機一行放不下，只有一個提示時圖示一行、百分比一行
+    assert.match(cssRule(file, '.cell-hint:only-child .cell-hint-icon'), /display:\s*block;/);
+    assert.match(mediaBlock(file, '(max-width: 359px)'), /\.cell-hint \{\s*font-size:\s*0\.6875rem;\s*\}/);
+});
+
+test('翻了好幾格之後回頭改早先的一格：選單只列還對得上的；清掉之後機率、🦊、下一格與剩幾次跟著重算', () => {
+    const page = createHollowsPage();
+    page.tap(9, 13);
+    page.pick(4, 'chest');
+    page.pick(25, 'sword');
+    page.tap(26);
+    page.pick(27, 'sword');
+    page.pick(31, 'sword');
+    for (const p of [0, 3, 23]) page.pick(p, 'empty');
+    assert.equal(page.status(), '② 找劍・剩 3 次');
+    assert.deepEqual(page.hints(5), ['📦100%']);
+    // 回頭點早先翻開的寶箱（格 4）：還對得上的只有寶箱（目前的值）與空，另外有「清除」
+    page.cell(4).click();
+    assert.deepEqual(['sword', 'chest', 'fox', 'empty', 'clear'].map((v) => page.option(v).disabled === true), [true, true, true, false, false]);
+    page.option('clear').click();
+    // 寶箱不再確定：剩 2 種盤面，寶箱可能在 4、5、10、11 或 14、15、20、21
+    assert.equal(page.status(), '② 找劍・剩 4 次');
+    assert.deepEqual(page.nextCells(), [32, 33]);
+    assert.deepEqual([4, 5, 10, 11, 14, 15, 20, 21].map((p) => page.hints(p)), Array(8).fill(['📦50%']));
+    // 再清掉早先翻開的空格（格 0）：🦊 回到格 0
+    page.pick(0, 'clear');
+    assert.equal(page.status(), '② 找劍・剩 5 次');
+    assert.deepEqual(page.hints(0), ['🦊']);
+    assert.deepEqual(page.hints(29), ['🦊']);
+});
+
 test('頁面結構：拿掉提示、盤面資訊、重置／重做、機率與最佳策略的開關、結果卡、對話框與回到頂部；格子是 36 個按鈕；不再載入 state-history-manager.js、modal-manager.js', () => {
     const html = read('tools/faux-hollows-foxes/index.html');
     for (const gone of ['game-hint', 'game-info', 'remaining-clicks', 'matching-boards', 'reset-btn', 'redo-btn',

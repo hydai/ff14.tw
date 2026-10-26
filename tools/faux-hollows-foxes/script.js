@@ -9,6 +9,8 @@
 //    （assets/js/cell-popover.js 的 CellPopover）選劍、寶箱、宗長、空，和其他格對不上的選項是灰的；只剩一種可能時點一下就標好，不開選單。
 //    翻開的格子再點是同一個選單，目前的標成已選，最後多一個「清除」。一局最多翻 11 格，用完時還沒翻的格子不能點，翻開的照樣能點。
 //    狀態列照 analyze() 的目標寫：② 找劍 → ③ 找寶箱 → ④ 翻宗長（不一定有）→ 完成。
+//    還沒翻的格子寫提示：⚔️、📦 加整數百分比（0 不寫），可能有宗長的只放 🦊、不寫任何數字，下一格框綠色（共用的 .cell.suggested）；
+//    格子名稱（aria-label）也寫出同樣的提示，螢幕閱讀器才聽得到。
 //
 // 擺法確定的那一刻，焦點所在的格子可能跟著鎖住：瀏覽器會把焦點丟到頁面上，只用鍵盤就玩不下去，
 // 所以重畫時先記下焦點在哪一格，鎖住了就把焦點移到下一格。
@@ -47,7 +49,7 @@ class FauxHollowsFoxes {
         clear: '清除'
     };
 
-    // 翻開的格子上的圖示
+    // 翻開的格子上的圖示，sword、chest、fox 也是還沒翻的格子上提示的圖示
     static ICONS = {
         sword: '⚔️',
         chest: '📦',
@@ -215,12 +217,58 @@ class FauxHollowsFoxes {
         return this.t('faux_hollows_status_done', '完成');
     }
 
+    // 還沒翻的格子上的提示，依序是劍、寶箱（比例大於 0 才有）、宗長（還可能在這格才有）。
+    // 每個提示是 { icon, percent, text }：icon 與 percent 畫在格子上，text 是格子名稱裡的說法；
+    // 百分比是 formatPercent() 的結果，本身就帶 %（「75%」「<1%」），翻譯檔不再寫 %。
+    // 宗長沒有比例（見 hollows-solver.js），所以它的提示沒有 percent，格子上與名稱裡都沒有任何宗長的數字
+    hintsAt(view, position) {
+        const hints = [];
+        const sword = FauxHollowsSolver.formatPercent(view.sword[position]);
+        if (sword !== '') {
+            hints.push({
+                icon: FauxHollowsFoxes.ICONS.sword,
+                percent: sword,
+                text: this.t('faux_hollows_hint_sword', '劍 {p}', { p: sword })
+            });
+        }
+        const chest = FauxHollowsSolver.formatPercent(view.chest[position]);
+        if (chest !== '') {
+            hints.push({
+                icon: FauxHollowsFoxes.ICONS.chest,
+                percent: chest,
+                text: this.t('faux_hollows_hint_chest', '寶箱 {p}', { p: chest })
+            });
+        }
+        if (view.foxCells.includes(position)) {
+            hints.push({
+                icon: FauxHollowsFoxes.ICONS.fox,
+                percent: '',
+                text: this.t('faux_hollows_hint_fox', '宗長有出現的話，可能在這格')
+            });
+        }
+        return hints;
+    }
+
+    // 格子上的一個提示：<span class="cell-hint"><span class="cell-hint-icon">⚔️</span>75%</span>。
+    // 圖示放在自己的 span 裡：格子裡只有一個提示時，CSS 讓圖示自己一行、百分比一行；宗長只有圖示，沒有文字節點
+    hintElement({ icon, percent }) {
+        const hint = document.createElement('span');
+        hint.className = 'cell-hint';
+        const iconElement = document.createElement('span');
+        iconElement.className = 'cell-hint-icon';
+        iconElement.textContent = icon;
+        hint.appendChild(iconElement);
+        if (percent !== '') hint.appendChild(document.createTextNode(percent));
+        return hint;
+    }
+
     render() {
         const view = FauxHollowsSolver.analyze(this.boards, this.state);
         // 先記下焦點在哪一格：下面有的格子會變成 disabled，焦點要在那之前就記好
         const focused = this.cells.indexOf(document.activeElement);
         const revealing = view.phase === 'reveal';
         const separator = this.t('label_sep_colon', '：');
+        const joiner = this.t('label_sep_comma', '，');
 
         this.elements.status.textContent = this.statusText(view);
 
@@ -230,9 +278,10 @@ class FauxHollowsFoxes {
             const auto = view.auto.includes(p);
             const item = this.itemAt(p);
 
-            // 還沒翻的格子不加 class：會設底色或框的 class 會蓋掉共用的 .cell.suggested 綠框
+            // 還沒翻的格子最多只加 suggested 一個 class：會設底色或框的 class 會蓋掉共用的 .cell.suggested 綠框
             let className = 'cell grid-cell';
             let label = this.cellName(p);
+            let hints = [];
             if (manual) {
                 className += ' is-obstacle';
                 label += separator + this.stateName('obstacle');
@@ -242,6 +291,15 @@ class FauxHollowsFoxes {
             } else if (item !== null) {
                 className += ` is-${item}`;
                 label += separator + this.stateName(item);
+            } else if (revealing) {
+                // 還沒翻的格子：⚔️、📦 的機率，可能有宗長的放 🦊，下一格框綠色；格子名稱照同樣的順序寫出這些提示
+                hints = this.hintsAt(view, p);
+                const notes = hints.map((hint) => hint.text);
+                if (view.next.includes(p)) {
+                    className += ' suggested';
+                    notes.push(this.t('faux_hollows_cell_next', '建議翻這格'));
+                }
+                if (notes.length > 0) label += separator + notes.join(joiner);
             }
 
             cell.className = className;
@@ -252,6 +310,8 @@ class FauxHollowsFoxes {
                 icon.textContent = FauxHollowsFoxes.ICONS[item];
                 cell.appendChild(icon);
             }
+            // 格子裡只放 .cell-hint，不放別的元素：CSS 靠 :only-child 判斷「只有一個提示」
+            for (const hint of hints) cell.appendChild(this.hintElement(hint));
             // 障礙物階段：手動標的是切換鈕，還能標的才能點；翻格階段：障礙物都鎖住，次數用完時還沒翻的格子也鎖住（翻開的照樣能點）
             // 次數用完時鎖住的還沒翻格子，上面照樣畫了提示（⚔️、📦 的機率與 🦊），是刻意的：設計 6.4「完成時盤面保留」，例如寶箱剩下的格子還寫著 📦100%
             cell.disabled = revealing ? (manual || auto || (item === null && view.left === 0)) : (!manual && !view.obstacleCells.includes(p));

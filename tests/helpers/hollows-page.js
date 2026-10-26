@@ -5,6 +5,7 @@
 //   const page = createHollowsPage({ lang: 'en' });
 //   page.tap(9, 13); page.status(); page.enabled(); page.obstacles(); page.autoCells(); page.setLang('ja');
 //   page.pick(25, 'sword'); page.cell(3).click(); page.option('fox').click(); page.itemOf(25); page.menu();
+//   page.hints(0); page.nextCells();
 //
 // - 照 index.html 建出 #hollowsTool（mountFromHtml），照 index.html 的 <script src> 順序載入共用的 common.js 翻譯檔
 //   （格子名稱用到 label_sep_colon、label_sep_comma）、這個工具的翻譯檔、共用的 cell-popover.js（index.html 有載入它才會載入）
@@ -25,6 +26,8 @@
 // - menu() 是 #hollows-grid 裡的小選單（.cell-popover，沒有是 null），option(value) 是打開的選單裡 data-value 為 value 的選項（沒有是 null）；
 //   pick(p, value) 點格子再點選項（選單沒開、找不到選項或選項是 disabled 時丟錯）；
 //   itemOf(p) 是 sword、chest、fox、empty 裡格子有 is-… class 的那一個（還沒翻開是 null）
+// - hints(p) 是那一格每個 .cell-hint 的文字，照格子裡的順序（⚔️75%、📦13%、🦊；沒有提示是 []）；
+//   nextCells() 是有 suggested class（下一格，共用的綠框）的格子位置，由小到大
 // - tap(...positions)：照順序點每一格（disabled 的格子點了沒有反應）；
 //   keyboardOpen(p)：在格子上派送 detail 為 0 的 click（鍵盤按 Enter、空白鍵時瀏覽器送的 click）；
 //   key(key, target = 目前的焦點, init = {})：派送會冒泡、可取消的 keydown，init 可帶 ctrlKey 等，回傳事件
@@ -152,6 +155,8 @@ function createHollowsPage({ lang = 'zh' } = {}) {
         enabled: () => POSITIONS.filter((p) => cell(p).disabled !== true),
         obstacles: () => POSITIONS.filter((p) => cell(p).classList.contains('is-obstacle')),
         autoCells: () => POSITIONS.filter((p) => cell(p).classList.contains('is-auto')),
+        hints: (p) => [...cell(p).querySelectorAll('.cell-hint')].map((hint) => hint.textContent),
+        nextCells: () => POSITIONS.filter((p) => cell(p).classList.contains('suggested')),
         menu,
         option,
         pick,

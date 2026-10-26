@@ -32,8 +32,12 @@ const FauxHollowsTranslations = {
         // 資料來源
         faux_hollows_data_source: '盤面資料來源',
 
-        // 格子內容
-        faux_hollows_candidate_note: '宗長標記只表示候選位置，不代表出現機率；找到宗長後會移除其他候選提示。',
+        // 格子內容（提示也寫進格子名稱）：{p} 是整數百分比，本身就帶 %
+        faux_hollows_hint_sword: '劍 {p}',
+        faux_hollows_hint_chest: '寶箱 {p}',
+        faux_hollows_hint_fox: '宗長有出現的話，可能在這格',
+        faux_hollows_cell_next: '建議翻這格',
+        faux_hollows_candidate_note: '🦊：宗長有出現的話，可能在這格',
 
         // 格子無障礙標籤與狀態
         faux_hollows_cell_label: '第 {n} 格',
@@ -74,8 +78,12 @@ const FauxHollowsTranslations = {
         // Data source
         faux_hollows_data_source: 'Board data source',
 
-        // Cell content
-        faux_hollows_candidate_note: 'Fox markers show possible locations, not spawn probabilities. Other candidates disappear once the fox is found.',
+        // Cell content (the hints are also in the cell's accessible name): {p} is a whole-number percentage that already includes %
+        faux_hollows_hint_sword: 'Sword {p}',
+        faux_hollows_hint_chest: 'Chest {p}',
+        faux_hollows_hint_fox: 'The fox may be here if it appears',
+        faux_hollows_cell_next: 'Suggested next',
+        faux_hollows_candidate_note: '🦊: If the fox appears, it may be on this cell',
 
         // Cell accessible label and state
         faux_hollows_cell_label: 'Cell {n}',
@@ -116,8 +124,12 @@ const FauxHollowsTranslations = {
         // データソース
         faux_hollows_data_source: 'ボードデータソース',
 
-        // セル内容
-        faux_hollows_candidate_note: '宗長の表示は候補位置であり、出現確率ではありません。宗長を発見すると他の候補表示は消えます。',
+        // セル内容（ヒントはセルの名前にも入る）：{p} は % 付きの整数パーセント
+        faux_hollows_hint_sword: '剣 {p}',
+        faux_hollows_hint_chest: '宝箱 {p}',
+        faux_hollows_hint_fox: '宗長が出るならこのマスかもしれない',
+        faux_hollows_cell_next: '次はこのマスがおすすめ',
+        faux_hollows_candidate_note: '🦊：宗長が出るなら、このマスにいるかもしれません',
 
         // セルのアクセシブルラベルと状態
         faux_hollows_cell_label: 'マス {n}',
