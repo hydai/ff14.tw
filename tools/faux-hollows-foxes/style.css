@@ -8,11 +8,12 @@
     margin: 0 auto;
 }
 
-/* 盤面卡片：狀態列加 6×6 的盤面。外觀由 .card 提供 */
+/* 盤面卡片：狀態列加 6×6 的盤面。外觀由 .card 提供。.card 預設 overflow: hidden，會切掉開在格子下方的小選單，所以這裡改成 visible */
 .hollows-card {
     display: grid;
     gap: var(--space-3);
     padding: var(--space-4);
+    overflow: visible;
 }
 
 /* 狀態列：固定留兩行的高度，一行或兩行都一樣高，下面的盤面不會跳動。
@@ -32,8 +33,9 @@
     font-weight: var(--weight-semibold);
 }
 
-/* 盤面：6 欄一樣寬 */
+/* 盤面：6 欄一樣寬。position: relative：小選單（assets/js/cell-popover.js）掛在這裡，位置相對於盤面的左上角 */
 .hollows-grid {
+    position: relative;
     display: grid;
     grid-template-columns: repeat(6, minmax(0, 1fr));
     gap: var(--space-1);
@@ -73,6 +75,42 @@
 .cell.is-auto {
     background: repeating-linear-gradient(45deg, var(--color-surface-2) 0 4px, var(--color-muted) 4px 6px);
     border: 2px dashed var(--color-muted);
+}
+
+/* 小選單正開給這一格 */
+.grid-cell[aria-expanded="true"] {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+/* 翻開的格子：底色照類型（劍藍、寶箱紅、宗長黃），淡色底加同色的框，裡面的圖示才看得清楚。
+   不設 box-shadow，不然會蓋掉 .cell:focus-visible 用 box-shadow 畫的焦點外框；
+   還沒翻的格子不加這些 class，不然會蓋掉 .cell.suggested 的綠框 */
+.cell.is-sword {
+    background: var(--color-info-tint);
+    border-color: var(--color-info);
+}
+
+.cell.is-chest {
+    background: var(--color-danger-tint);
+    border-color: var(--color-danger);
+}
+
+.cell.is-fox {
+    background: var(--color-warning-tint);
+    border-color: var(--color-warning);
+}
+
+/* 空的：底色淡灰、框不改，裡面的 ✕ 用灰字（次數用完後鎖住的格子也是淡灰，靠 ✕ 分得出來） */
+.cell.is-empty {
+    background: var(--color-surface-2);
+    color: var(--color-muted);
+}
+
+/* 翻開的格子裡的圖示 */
+.cell-icon {
+    font-size: var(--text-xl);
+    line-height: 1;
 }
 
 /* 盤面資料的來源與說明：盤面卡片下面，置中的小字 */

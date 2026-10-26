@@ -14,16 +14,20 @@ const FauxHollowsTranslations = {
         faux_hollows_status_obstacles: '① 點遊戲裡被擋住的格子',
         faux_hollows_status_obstacles_known: '① 點遊戲裡被擋住的格子・已知 {n}／5',
         faux_hollows_status_sword: '② 找劍・剩 {n} 次',
+        faux_hollows_status_chest: '③ 找寶箱・剩 {n} 次',
+        faux_hollows_status_fox: '④ 翻宗長（不一定有）・剩 {n} 次',
+        faux_hollows_status_done: '完成',
 
         // 按鈕
         faux_hollows_undo: '回到上一步',
 
-        // 彈窗
-        faux_hollows_popup_sword: '⚔️ 劍 (2x3)',
-        faux_hollows_popup_chest: '📦 寶箱 (2x2)',
-        faux_hollows_popup_fox: '🦊 宗長 (1x1)',
-        faux_hollows_popup_empty: '✅ 空格',
-        faux_hollows_popup_clear: '🗑️ 清除',
+        // 格子旁的小選單
+        faux_hollows_menu_label: '{cell}翻到什麼',
+        faux_hollows_popup_sword: '⚔️ 劍',
+        faux_hollows_popup_chest: '📦 寶箱',
+        faux_hollows_popup_fox: '🦊 宗長',
+        faux_hollows_popup_empty: '空',
+        faux_hollows_popup_clear: '清除',
 
         // 資料來源
         faux_hollows_data_source: '盤面資料來源',
@@ -38,7 +42,7 @@ const FauxHollowsTranslations = {
         faux_hollows_cell_state_sword: '劍',
         faux_hollows_cell_state_chest: '寶箱',
         faux_hollows_cell_state_fox: '宗長',
-        faux_hollows_cell_state_empty: '空格'
+        faux_hollows_cell_state_empty: '空'
     },
     en: {
         // Page info
@@ -52,16 +56,20 @@ const FauxHollowsTranslations = {
         faux_hollows_status_obstacles: '① Mark the blocked cells',
         faux_hollows_status_obstacles_known: '① Mark the blocked cells · {n}/5 known',
         faux_hollows_status_sword: '② Find the sword · Clicks left: {n}',
+        faux_hollows_status_chest: '③ Find the chest · Clicks left: {n}',
+        faux_hollows_status_fox: '④ Look for the fox (may not appear) · Clicks left: {n}',
+        faux_hollows_status_done: 'Done',
 
         // Buttons
         faux_hollows_undo: 'Undo',
 
-        // Popup
-        faux_hollows_popup_sword: '⚔️ Sword (2x3)',
-        faux_hollows_popup_chest: '📦 Chest (2x2)',
-        faux_hollows_popup_fox: '🦊 Fox (1x1)',
-        faux_hollows_popup_empty: '✅ Empty',
-        faux_hollows_popup_clear: '🗑️ Clear',
+        // Menu beside a cell
+        faux_hollows_menu_label: 'What is under {cell}',
+        faux_hollows_popup_sword: '⚔️ Sword',
+        faux_hollows_popup_chest: '📦 Chest',
+        faux_hollows_popup_fox: '🦊 Fox',
+        faux_hollows_popup_empty: 'Empty',
+        faux_hollows_popup_clear: 'Clear',
 
         // Data source
         faux_hollows_data_source: 'Board data source',
@@ -90,16 +98,20 @@ const FauxHollowsTranslations = {
         faux_hollows_status_obstacles: '① ふさがれたマスをクリック',
         faux_hollows_status_obstacles_known: '① ふさがれたマスをクリック・判明 {n}／5',
         faux_hollows_status_sword: '② 剣を探す・残り {n} 回',
+        faux_hollows_status_chest: '③ 宝箱を探す・残り {n} 回',
+        faux_hollows_status_fox: '④ 宗長を探す（いないこともある）・残り {n} 回',
+        faux_hollows_status_done: '完了',
 
         // ボタン
         faux_hollows_undo: '元に戻す',
 
-        // ポップアップ
-        faux_hollows_popup_sword: '⚔️ 剣 (2x3)',
-        faux_hollows_popup_chest: '📦 宝箱 (2x2)',
-        faux_hollows_popup_fox: '🦊 宗長 (1x1)',
-        faux_hollows_popup_empty: '✅ 空',
-        faux_hollows_popup_clear: '🗑️ クリア',
+        // マスの横のメニュー
+        faux_hollows_menu_label: '{cell}の中身',
+        faux_hollows_popup_sword: '⚔️ 剣',
+        faux_hollows_popup_chest: '📦 宝箱',
+        faux_hollows_popup_fox: '🦊 宗長',
+        faux_hollows_popup_empty: '空',
+        faux_hollows_popup_clear: 'クリア',
 
         // データソース
         faux_hollows_data_source: 'ボードデータソース',
@@ -113,8 +125,8 @@ const FauxHollowsTranslations = {
         faux_hollows_cell_state_auto: '障害物（自動）',
         faux_hollows_cell_state_sword: '剣',
         faux_hollows_cell_state_chest: '宝箱',
-        faux_hollows_cell_state_fox: '狐',
-        faux_hollows_cell_state_empty: '空き'
+        faux_hollows_cell_state_fox: '宗長',
+        faux_hollows_cell_state_empty: '空'
     }
 };
 
