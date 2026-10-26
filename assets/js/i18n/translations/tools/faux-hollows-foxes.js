@@ -19,7 +19,13 @@ const FauxHollowsTranslations = {
         faux_hollows_status_done: '完成',
 
         // 按鈕
-        faux_hollows_undo: '回到上一步',
+        faux_hollows_undo: '上一步',
+        faux_hollows_next: '下一局',
+
+        // 上一步的提示：{cell} 是格子名稱，{item} 是被退回的標記（障礙物、劍、寶箱、宗長、空）
+        faux_hollows_undone_set: '已退回：{cell}標成{item}',
+        faux_hollows_undone_clear: '已退回：清除{cell}',
+        faux_hollows_undone_next: '已退回：下一局',
 
         // 格子旁的小選單
         faux_hollows_menu_label: '{cell}翻到什麼',
@@ -66,6 +72,12 @@ const FauxHollowsTranslations = {
 
         // Buttons
         faux_hollows_undo: 'Undo',
+        faux_hollows_next: 'Next game',
+
+        // Undo messages: {cell} is the cell name, {item} is the mark that was undone (Obstacle, Sword, Chest, Fox, Empty)
+        faux_hollows_undone_set: 'Undone: {item} on {cell}',
+        faux_hollows_undone_clear: 'Undone: clear {cell}',
+        faux_hollows_undone_next: 'Undone: next game',
 
         // Menu beside a cell
         faux_hollows_menu_label: 'What is under {cell}',
@@ -112,6 +124,12 @@ const FauxHollowsTranslations = {
 
         // ボタン
         faux_hollows_undo: '元に戻す',
+        faux_hollows_next: '次のゲーム',
+
+        // 元に戻したときのメッセージ：{cell} はマスの名前、{item} は戻した印（障害物、剣、宝箱、宗長、空）
+        faux_hollows_undone_set: '元に戻しました：{cell}の{item}',
+        faux_hollows_undone_clear: '元に戻しました：{cell}のクリア',
+        faux_hollows_undone_next: '元に戻しました：次のゲーム',
 
         // マスの横のメニュー
         faux_hollows_menu_label: '{cell}の中身',

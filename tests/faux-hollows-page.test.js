@@ -508,3 +508,137 @@ test('不再用到的翻譯鍵三語都拿掉', () => {
         for (const key of removed) assert.ok(!keys.has(key), `${lang} 還有 ${key}`);
     }
 });
+
+test('一打開：上一步、下一局都不能按（用 aria-disabled，不是 disabled）', () => {
+    const page = createHollowsPage();
+    assert.equal(page.$('undo-btn').getAttribute('aria-disabled'), 'true');
+    assert.equal(page.$('next-btn').getAttribute('aria-disabled'), 'true');
+    assert.equal(page.$('undo-btn').disabled === true, false);
+});
+
+test('上一步退回上一個動作，toast 寫出退回了什麼：標障礙物、拿掉障礙物、翻開、改、清除', () => {
+    const page = createHollowsPage();
+    const undo = () => page.$('undo-btn').click();
+    const last = () => page.toasts.at(-1);
+    page.tap(9);
+    undo();
+    assert.deepEqual(last(), { message: '已退回：第 10 格標成障礙物', type: 'info' });
+    assert.deepEqual(page.obstacles(), []);
+    page.tap(9, 9);   // 標了又拿掉
+    undo();
+    assert.deepEqual(last(), { message: '已退回：清除第 10 格', type: 'info' });
+    assert.deepEqual(page.obstacles(), [9]);
+    page.tap(13);
+    page.pick(25, 'sword');
+    page.pick(25, 'chest');
+    undo();
+    assert.deepEqual(last(), { message: '已退回：第 26 格標成寶箱', type: 'info' });
+    assert.equal(page.itemOf(25), 'sword');
+    page.pick(25, 'clear');
+    undo();
+    assert.deepEqual(last(), { message: '已退回：清除第 26 格', type: 'info' });
+    assert.equal(page.itemOf(25), 'sword');
+    undo();
+    assert.deepEqual(last(), { message: '已退回：第 26 格標成劍', type: 'info' });
+    assert.equal(page.itemOf(25), null);
+    assert.equal(page.status(), '② 找劍・剩 11 次');
+});
+
+test('上一步跨過進入翻格的那一步：回到障礙物階段，自動補上的跟著消失、障礙物又能點，小選單留下的 aria-expanded 拿掉', () => {
+    const page = createHollowsPage();
+    page.tap(9, 13);
+    page.cell(25).click();   // 開著小選單
+    page.$('undo-btn').click();
+    assert.equal(page.menu(), null);
+    assert.equal(page.toasts.at(-1).message, '已退回：第 14 格標成障礙物');
+    assert.equal(page.status(), '① 點遊戲裡被擋住的格子・已知 1／5');
+    assert.deepEqual(page.autoCells(), []);
+    assert.deepEqual(page.obstacles(), [9]);
+    assert.equal(page.cell(9).disabled === true, false);
+    assert.equal(page.cell(9).getAttribute('aria-pressed'), 'true');
+    assert.deepEqual(ALL.filter((p) => page.cell(p).getAttribute('aria-expanded') !== null), []);
+});
+
+test('下一局：清空盤面、不跳 toast；上一步整盤救回來；盤面是空的時按了什麼都不做', () => {
+    const page = createHollowsPage();
+    page.$('next-btn').click();
+    assert.equal(page.$('undo-btn').getAttribute('aria-disabled'), 'true');   // 沒有多一步
+    page.tap(9, 13);
+    page.pick(25, 'sword');
+    assert.equal(page.$('next-btn').getAttribute('aria-disabled'), 'false');
+    const count = page.toasts.length;
+    page.$('next-btn').click();
+    assert.equal(page.toasts.length, count);
+    assert.equal(page.status(), '① 點遊戲裡被擋住的格子');
+    assert.deepEqual(page.obstacles(), []);
+    assert.equal(page.$('next-btn').getAttribute('aria-disabled'), 'true');
+    page.$('undo-btn').click();
+    assert.equal(page.toasts.at(-1).message, '已退回：下一局');
+    assert.deepEqual(page.obstacles(), LAYOUT0_OBSTACLES);
+    assert.equal(page.itemOf(25), 'sword');
+    assert.equal(page.status(), '② 找劍・剩 10 次');
+});
+
+test('沒得退時按上一步：什麼都不變、不跳 toast，焦點留在按鈕上', () => {
+    const page = createHollowsPage();
+    const undo = page.$('undo-btn');
+    undo.focus();
+    undo.click();
+    assert.equal(page.toasts.length, 0);
+    isSame(page.document.activeElement, undo, '焦點留在按鈕上');
+});
+
+test('小選單開著時按下一局：先把選單關掉', () => {
+    const page = createHollowsPage();
+    page.tap(9, 13);
+    page.cell(25).click();
+    page.$('next-btn').click();
+    assert.equal(page.menu(), null);
+    assert.equal(page.status(), '① 點遊戲裡被擋住的格子');
+});
+
+// 上面是真的點按鈕，小選單也會被「點外面」的處理關掉，拿掉 nextGame() 裡的 close() 照樣過；
+// 這兩個函式要自己先關掉選單，不靠「點外面」的處理（沒有 click 時，例如之後加了快速鍵），所以直接呼叫它們（同 mini-cactpot-page.test.js）
+test('小選單開著時直接呼叫 undo()：函式自己先關掉選單', () => {
+    const page = createHollowsPage();
+    page.tap(9, 13);
+    page.cell(25).click();
+    assert.ok(page.menu() !== null, '先把小選單打開');
+    page.app.undo();
+    isSame(page.menu(), null, 'undo() 自己先關掉小選單');
+});
+
+test('小選單開著時直接呼叫 nextGame()（盤面上有東西）：函式自己先關掉選單', () => {
+    const page = createHollowsPage();
+    page.tap(9, 13);
+    page.cell(25).click();
+    assert.ok(page.menu() !== null, '先把小選單打開');
+    page.app.nextGame();
+    isSame(page.menu(), null, 'nextGame() 自己先關掉小選單');
+});
+
+test('切換語言：按鈕與之後的 toast 換字', () => {
+    const page = createHollowsPage();
+    page.setLang('en');
+    assert.equal(page.$('undo-btn').textContent, 'Undo');
+    assert.equal(page.$('next-btn').textContent, 'Next game');
+    page.tap(9);
+    page.$('undo-btn').click();
+    assert.equal(page.toasts.at(-1).message, 'Undone: Obstacle on Cell 10');
+    page.setLang('ja');
+    assert.equal(page.$('next-btn').textContent, '次のゲーム');
+    page.tap(9);
+    page.$('next-btn').click();
+    page.$('undo-btn').click();
+    assert.equal(page.toasts.at(-1).message, '元に戻しました：次のゲーム');
+});
+
+test('版面：兩顆按鈕並排；不能按時是 aria-disabled 的樣子；頁面上沒有 .btn-primary', () => {
+    const file = 'tools/faux-hollows-foxes/style.css';
+    assert.match(cssRule(file, '.hollows-actions'), /grid-template-columns:\s*1fr 1fr;/);
+    assert.match(cssRule(file, '.hollows-actions .btn[aria-disabled="true"]'), /opacity:\s*0\.55;/);
+    const html = read('tools/faux-hollows-foxes/index.html');
+    assert.match(html, /<button type="button" class="btn" id="undo-btn" data-i18n="faux_hollows_undo" aria-disabled="true">上一步<\/button>/);
+    assert.match(html, /<button type="button" class="btn" id="next-btn" data-i18n="faux_hollows_next" aria-disabled="true">下一局<\/button>/);
+    assert.ok(!html.includes('btn-primary'));
+});

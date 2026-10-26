@@ -50,3 +50,11 @@ test('清掉宗長的格子：🦊 回到其他還可能的格子', () => {
     page.pick(0, 'clear');
     assert.deepEqual(foxCells(page), FOX);
 });
+
+test('上一步退回找到宗長：🦊 回到原本的 4 格', () => {
+    const page = reviewerBoard();
+    page.pick(0, 'fox');
+    page.$('undo-btn').click();
+    assert.equal(page.toasts.at(-1).message, '已退回：第 1 格標成宗長');
+    assert.deepEqual(foxCells(page), FOX);
+});

@@ -135,6 +135,32 @@
     display: block;
 }
 
+/* 上一步、下一局：盤面下面兩顆並排的按鈕 */
+.hollows-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-3);
+}
+
+/* 不能按：外觀照 .btn:disabled，但用 aria-disabled，按鈕變灰時焦點還在原地 */
+.hollows-actions .btn[aria-disabled="true"] {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+/* .btn 的 hover／active 只排除 :disabled：這裡拿掉它們的底色、浮起與陰影 */
+.hollows-actions .btn[aria-disabled="true"]:hover,
+.hollows-actions .btn[aria-disabled="true"]:active {
+    background: var(--color-surface);
+    transform: none;
+    box-shadow: none;
+}
+
+/* 焦點還在這顆按鈕上，鍵盤焦點的外框照樣看得到 */
+.hollows-actions .btn[aria-disabled="true"]:focus-visible {
+    box-shadow: var(--ring-primary);
+}
+
 /* 盤面資料的來源與說明：盤面卡片下面，置中的小字 */
 .data-source-note {
     margin-top: var(--space-4);

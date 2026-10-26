@@ -12,6 +12,9 @@
 //    還沒翻的格子寫提示：⚔️、📦 加整數百分比（0 不寫），可能有宗長的只放 🦊、不寫任何數字，下一格框綠色（共用的 .cell.suggested）；
 //    格子名稱（aria-label）也寫出同樣的提示，螢幕閱讀器才聽得到。
 //
+// 每個動作（標、拿掉、翻開、改、清除、下一局）改 this.state 之前先存一份到 undoStack，「上一步」退回最後一份並用 toast 寫出退回了什麼；
+// 「下一局」清空盤面，按「上一步」救得回來。兩顆按鈕不能按時用 aria-disabled（不用 disabled），焦點才留得在按鈕上。
+//
 // 擺法確定的那一刻，焦點所在的格子可能跟著鎖住：瀏覽器會把焦點丟到頁面上，只用鍵盤就玩不下去，
 // 所以重畫時先記下焦點在哪一格，鎖住了就把焦點移到下一格。
 class FauxHollowsFoxes {
@@ -62,10 +65,14 @@ class FauxHollowsFoxes {
         this.boards = FauxHollowsSolver.flatten(window.FAUX_HOLLOWS_BOARD_DATA);
         // 36 格的狀態：null 是還沒標，'obstacle' 是手動標的障礙物
         this.state = new Array(FauxHollowsSolver.SIZE).fill(null);
+        // 上一步：每個動作之前存一份 { state: 動作之前的 36 格（複本）, action: 那個動作 }，最後存的最先退回
+        this.undoStack = [];
 
         this.elements = {
             status: document.getElementById('hollowsStatus'),
-            board: document.getElementById('hollows-grid')
+            board: document.getElementById('hollows-grid'),
+            undo: document.getElementById('undo-btn'),
+            next: document.getElementById('next-btn')
         };
         // 36 格都在 index.html 裡，照位置收好；重畫時只改內容與屬性，不重建（焦點才留得在同一個元素上）
         this.cells = Array.from({ length: FauxHollowsSolver.SIZE }, (_, p) => this.elements.board.querySelector(`.grid-cell[data-position="${p}"]`));
@@ -75,6 +82,10 @@ class FauxHollowsFoxes {
 
         // 點格子：整個盤面只聽一次 click，由 handleBoardClick() 找出是哪一格。Esc、點外面、焦點移出由小選單自己關
         this.elements.board.addEventListener('click', (event) => this.handleBoardClick(event));
+
+        // 上一步、下一局：不能按的時候用 aria-disabled（不用 disabled），click 照樣會送出，所以 undo()、nextGame() 自己擋
+        this.elements.undo.addEventListener('click', () => this.undo());
+        this.elements.next.addEventListener('click', () => this.nextGame());
 
         // 切換語言：小選單的文字是打開時才寫的，先關掉；狀態列與格子名稱都是 render() 寫的，用新的語言重畫
         window.i18n.onLanguageChange(() => {
@@ -189,11 +200,55 @@ class FauxHollowsFoxes {
         this.apply(value === 'clear' ? { type: 'clear', position } : { type: 'set', position, value });
     }
 
-    // 標上或拿掉一格，然後重畫。action 是 { type: 'set', position, value } 或 { type: 'clear', position }
+    // 標上、拿掉一格或換下一局，然後重畫。action 是 { type: 'set', position, value }、{ type: 'clear', position } 或 { type: 'next' }
+    // 改 this.state 之前先把動作之前的 36 格連同這個動作存進 undoStack，「上一步」才退得回來
     apply(action) {
+        this.undoStack.push({ state: [...this.state], action });
         if (action.type === 'set') this.state[action.position] = action.value;
         else if (action.type === 'clear') this.state[action.position] = null;
+        else if (action.type === 'next') this.state.fill(null);
         this.render();
+    }
+
+    // 盤面上有沒有標記（障礙物或翻開的格子）：沒有的話下一局沒有東西可以清
+    hasMarks() {
+        return this.state.some((mark) => mark !== null);
+    }
+
+    // 上一步：退回最後一個動作，再用 toast 寫出退回了什麼。沒得退的時候按鈕是 aria-disabled，click 照樣會送出，所以這裡自己看 undoStack 擋。
+    // 自動補上的障礙物不存進 this.state，退回之後 render() 重新算：退回進入翻格的那一步，自動補上的跟著消失、障礙物又能點
+    undo() {
+        if (this.undoStack.length === 0) return;
+
+        // 小選單的選項是照退回之前的狀態畫的，先關掉（不把焦點移回格子，按鈕上的焦點不動）
+        this.popover.close();
+        const { state, action } = this.undoStack.pop();
+        this.state = state;
+        this.render();
+        FF14Utils.showToast(this.undoneText(action), 'info');
+    }
+
+    // toast 的字：標或改寫被退回的那一格與標記（手動標的障礙物也算），清除寫清除哪一格，下一局就寫下一局
+    undoneText(action) {
+        if (action.type === 'set') {
+            return this.t('faux_hollows_undone_set', '已退回：{cell}標成{item}', {
+                cell: this.cellName(action.position),
+                item: this.stateName(action.value)
+            });
+        }
+        if (action.type === 'clear') {
+            return this.t('faux_hollows_undone_clear', '已退回：清除{cell}', { cell: this.cellName(action.position) });
+        }
+        return this.t('faux_hollows_undone_next', '已退回：下一局');
+    }
+
+    // 下一局：清空盤面開始新的一局，不跳 toast（按錯了按「上一步」救回來）。盤面是空的時按鈕是 aria-disabled，
+    // click 照樣會送出，所以這裡自己看盤面上有沒有標記擋，不然「上一步」會多一步什麼都沒改的
+    nextGame() {
+        if (!this.hasMarks()) return;
+
+        this.popover.close();
+        this.apply({ type: 'next' });
     }
 
     // 狀態列的一句話：障礙物階段寫已知幾個（還沒有就只寫要做什麼）；擺法確定後進入翻格，一開始一定是找劍，還剩 11 次，
@@ -324,6 +379,10 @@ class FauxHollowsFoxes {
             }
             cell.setAttribute('aria-label', label);
         });
+
+        // 上一步：有動作可以退才能按；下一局：盤面上有標記才能按。用 aria-disabled，不用 disabled：按鈕變灰時焦點留在原地
+        this.elements.undo.setAttribute('aria-disabled', String(this.undoStack.length === 0));
+        this.elements.next.setAttribute('aria-disabled', String(!this.hasMarks()));
 
         // 焦點所在的格子鎖住了（擺法確定，它是障礙物；或次數用完，它還沒翻）：移到下一格，沒有下一格就移到第一個能點的格子
         // 鎖住的原因還有第三種：還在標障礙物時，標了別的格子後它變得不可能或被自動補上，或拿掉它自己的標記後被自動補上
