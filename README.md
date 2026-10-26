@@ -193,7 +193,6 @@ ff14.tw/
 │   │   ├── common.js       # 共用函式庫（含漢堡選單、FF14Utils）
 │   │   ├── security-utils.js # 安全工具（XSS 防護）
 │   │   ├── modal-manager.js  # 對話框管理
-│   │   ├── state-history-manager.js # 狀態歷史管理
 │   │   ├── reminder-scheduler.js # 提醒排程（頁內提示、提示音、系統通知；天氣預報與特殊採集時間管理器的「提醒我」使用）
 │   │   ├── cell-popover.js # 格子旁的小選單（不是對話框；仙人微彩使用）
 │   │   ├── home.js         # 首頁腳本（最近使用）
