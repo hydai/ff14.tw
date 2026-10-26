@@ -349,18 +349,7 @@ test('.btn-close／.popup-close／.btn-remove 按鈕必須有可存取名稱（a
     assert.ok(jsChecked > 0, '沒有找到任何 JS 動態建立的 CLOSE_CLASSES 中的按鈕，測試可能失效');
 });
 
-test('猜謎方格工具的格子都能用 Tab 鍵移動焦點（div 要設 tabindex，按鈕本來就可以）', () => {
-    const jsChecks = [
-        { file: 'tools/faux-hollows-foxes/script.js', classNamePattern: /cell\.className\s*=\s*'cell board-cell'/ }
-    ];
-    for (const { file, classNamePattern } of jsChecks) {
-        const js = read(file);
-        const match = classNamePattern.exec(js);
-        assert.ok(match, `${file} 找不到格子的 className 設定，測試可能失效`);
-        const windowText = js.slice(match.index, match.index + 300);
-        assert.match(windowText, /\.tabIndex\s*=\s*0|setAttribute\(\s*['"]tabindex['"]/, `${file} 的格子工廠沒有設定 tabindex`);
-    }
-
+test('猜謎方格工具（仙人微彩、天書奇談、宗長計算機）的格子都是按鈕，都能用 Tab 鍵移動焦點', () => {
     const html = read('tools/mini-cactpot/index.html');
     const gridCells = html.match(/<button type="button" class="cell grid-cell"[^>]*>/g) || [];
     assert.equal(gridCells.length, 9, 'mini-cactpot 應該有 9 個 .grid-cell 按鈕');
@@ -373,6 +362,13 @@ test('猜謎方格工具的格子都能用 Tab 鍵移動焦點（div 要設 tabi
     assert.equal(wondrousCells.length, 16, 'wondrous-tails 應該有 16 個 .grid-cell 按鈕');
     for (const tag of wondrousCells) {
         assert.doesNotMatch(tag, /\stabindex="-1"/, `wondrous-tails 的格子不應該移出 Tab 順序：${tag}`);
+    }
+
+    const hollowsHtml = read('tools/faux-hollows-foxes/index.html');
+    const hollowsCells = hollowsHtml.match(/<button type="button" class="cell grid-cell"[^>]*>/g) || [];
+    assert.equal(hollowsCells.length, 36, 'faux-hollows-foxes 應該有 36 個 .grid-cell 按鈕');
+    for (const tag of hollowsCells) {
+        assert.doesNotMatch(tag, /\stabindex="-1"/, `faux-hollows-foxes 的格子不應該移出 Tab 順序：${tag}`);
     }
 });
 
