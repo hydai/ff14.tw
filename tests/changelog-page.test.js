@@ -442,7 +442,7 @@ test('切換語言時「N 條」跟著換；記住的語言是日文時一打開
     for (const [lang, v2250, v2260] of [['en', '8 items', '10 items'], ['ja', '8 件', '10 件'], ['zh', '8 條', '10 條']]) {
         dom.window.i18n.setLanguage(lang);
         assert.equal(countOf(dom, 'version-v2250'), v2250, `切到 ${lang}`);
-        assert.equal(countOf(dom, 'version-v2260'), v2260, `切到 ${lang}，最新一版（CSS 把它藏起來）也跟著換`);
+        assert.equal(countOf(dom, 'version-v2260'), v2260, `切到 ${lang}，v2.26.0 的條數也跟著換`);
         assert.equal(dom.document.querySelectorAll('.changelog-count').length, folded, `切到 ${lang}，每個 details 版本還是只有一個「N 條」`);
         assert.equal(countOf(dom, 'version-v2114'), null, `切到 ${lang}，單行的版本還是不寫`);
     }
