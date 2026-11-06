@@ -21,11 +21,9 @@ const ChangelogTranslations = {
         changelog_about_desc_suffix: '。',
 
         // 標籤說明
-        changelog_tag_legend_title: '標籤說明',
         changelog_tag_new: '新功能或新工具',
         changelog_tag_improve: '功能優化或體驗提升',
-        changelog_tag_fix: '錯誤修復',
-        changelog_tag_info: '重要資訊或里程碑'
+        changelog_tag_fix: '錯誤修復'
     },
     en: {
         // Page info
@@ -46,11 +44,9 @@ const ChangelogTranslations = {
         changelog_about_desc_suffix: '.',
 
         // Tag legend
-        changelog_tag_legend_title: 'Tag Legend',
         changelog_tag_new: 'New features or tools',
         changelog_tag_improve: 'Feature optimization or UX improvement',
-        changelog_tag_fix: 'Bug fixes',
-        changelog_tag_info: 'Important information or milestones'
+        changelog_tag_fix: 'Bug fixes'
     },
     ja: {
         // ページ情報
@@ -71,11 +67,9 @@ const ChangelogTranslations = {
         changelog_about_desc_suffix: 'をご参照ください。',
 
         // タグ凡例
-        changelog_tag_legend_title: 'タグの説明',
         changelog_tag_new: '新機能またはツール',
         changelog_tag_improve: '機能最適化またはUX改善',
-        changelog_tag_fix: 'バグ修正',
-        changelog_tag_info: '重要な情報またはマイルストーン'
+        changelog_tag_fix: 'バグ修正'
     }
 };
 

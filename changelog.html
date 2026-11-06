@@ -42,8 +42,13 @@
             <div class="changelog-content-wrapper">
                 <h1 data-i18n="changelog_hero_title">修改紀錄</h1>
                 <p class="subtitle" data-i18n="changelog_hero_subtitle">記錄 FF14.tw 的功能更新與改進</p>
+                <p class="changelog-legend" id="changelogLegend">
+                    <span class="changelog-legend-item"><span class="tag tag-success">新增</span> <span data-i18n="changelog_tag_new">新功能或新工具</span></span>
+                    <span class="changelog-legend-item"><span class="tag tag-info">改善</span> <span data-i18n="changelog_tag_improve">功能優化或體驗提升</span></span>
+                    <span class="changelog-legend-item"><span class="tag tag-warning">修正</span> <span data-i18n="changelog_tag_fix">錯誤修復</span></span>
+                </p>
 
-                <div class="changelog-container">
+                <div class="changelog-container" id="changelogEntries">
                 <!-- 2026年10月 -->
                 <section class="changelog-section">
                     <h2 class="changelog-year">2026年10月</h2>
@@ -499,7 +504,7 @@
                                 <li><span class="tag tag-success">新增</span> 天氣預報：可過濾目標天氣、前置天氣與艾歐澤亞時間範圍</li>
                                 <li><span class="tag tag-success">新增</span> 天氣預報：即時顯示目前 ET 時間與本地時間</li>
                                 <li><span class="tag tag-success">新增</span> 天氣預報：支援 URL 分享，可分享搜尋條件</li>
-                                <li><span class="tag tag-info">優化</span> Lodestone 角色查詢：標記為繁中版不支援（FF14 繁中版無 Lodestone 功能）</li>
+                                <li><span class="tag tag-info">改善</span> Lodestone 角色查詢：標記為繁中版不支援（FF14 繁中版無 Lodestone 功能）</li>
                             </ul>
                         </div>
                     </article>
@@ -512,8 +517,8 @@
                         <div class="changelog-content">
                             <ul>
                                 <li><span class="tag tag-warning">修正</span> 寶圖搜尋器：修復格式設定面板中的事件監聽器記憶體洩漏問題</li>
-                                <li><span class="tag tag-info">優化</span> 寶圖搜尋器：移除冗餘的事件監聽器以提升效能</li>
-                                <li><span class="tag tag-info">優化</span> 角色卡產生器：改進拖曳功能的事件處理機制，僅在拖曳時監聽移動事件</li>
+                                <li><span class="tag tag-info">改善</span> 寶圖搜尋器：移除冗餘的事件監聽器以提升效能</li>
+                                <li><span class="tag tag-info">改善</span> 角色卡產生器：改進拖曳功能的事件處理機制，僅在拖曳時監聽移動事件</li>
                             </ul>
                         </div>
                     </article>
@@ -561,7 +566,7 @@
                         </div>
                         <div class="changelog-content">
                             <ul>
-                                <li><span class="tag tag-info">調整</span> 導航列改版：移除下拉式選單，頁尾新增修改紀錄連結</li>
+                                <li><span class="tag tag-info">改善</span> 導航列改版：移除下拉式選單，頁尾新增修改紀錄連結</li>
                             </ul>
                         </div>
                     </article>
@@ -783,7 +788,7 @@
                         <div class="changelog-content">
                             <ul>
                                 <li><span class="tag tag-success">新增</span> 角色卡產生器上線</li>
-                                <li><span class="tag tag-info">資訊</span> FF14.tw 正式發布</li>
+                                <li><span class="tag tag-outline-primary">里程碑</span> FF14.tw 正式發布</li>
                             </ul>
                         </div>
                     </article>
@@ -800,7 +805,7 @@
                         </div>
                         <div class="changelog-content">
                             <ul>
-                                <li><span class="tag tag-info">資訊</span> FF14.tw 專案正式啟動</li>
+                                <li><span class="tag tag-outline-primary">里程碑</span> FF14.tw 專案正式啟動</li>
                             </ul>
                         </div>
                     </article>
@@ -811,15 +816,6 @@
                 <div class="update-notice" id="aboutChangelog">
                     <h3 data-i18n="changelog_about_title">關於修改紀錄</h3>
                     <p><span data-i18n="changelog_about_desc">本頁面記錄 FF14.tw 的重要功能更新與改進。詳細的技術變更請參考</span> <a href="https://github.com/hydai/ff14.tw/commits/main" target="_blank" rel="noopener noreferrer">GitHub Commits</a><span data-i18n="changelog_about_desc_suffix">。</span></p>
-                    <div class="tag-legend">
-                        <h4 data-i18n="changelog_tag_legend_title">標籤說明</h4>
-                        <ul>
-                            <li><span class="tag tag-success">新增</span> <span data-i18n="changelog_tag_new">新功能或新工具</span></li>
-                            <li><span class="tag tag-info">改進</span> <span data-i18n="changelog_tag_improve">功能優化或體驗提升</span></li>
-                            <li><span class="tag tag-warning">修正</span> <span data-i18n="changelog_tag_fix">錯誤修復</span></li>
-                            <li><span class="tag tag-info">資訊</span> <span data-i18n="changelog_tag_info">重要資訊或里程碑</span></li>
-                        </ul>
-                    </div>
                 </div>
             </div>
         </div>

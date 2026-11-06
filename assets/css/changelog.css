@@ -4,10 +4,27 @@
    ========================================================================== */
 
 .subtitle {
-    margin-bottom: var(--space-7);
+    margin-bottom: var(--space-3);
     font-size: var(--text-lg);
     text-align: center;
     color: var(--color-muted);
+}
+
+/* 標籤圖例：副標題下面的一行，窄螢幕自己換行 */
+.changelog-legend {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-2) var(--space-5);
+    margin-bottom: var(--space-7);
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+}
+
+.changelog-legend-item {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2);
 }
 
 /* 版面：左側目錄＋內容 */
@@ -222,6 +239,10 @@
     line-height: var(--leading-normal);
 }
 
+.update-notice p:last-child {
+    margin-bottom: 0;
+}
+
 .update-notice a {
     font-weight: var(--weight-medium);
     text-decoration: none;
@@ -229,36 +250,6 @@
 
 .update-notice a:hover {
     text-decoration: underline;
-}
-
-.tag-legend {
-    margin-top: var(--space-6);
-}
-
-.tag-legend h4 {
-    margin-bottom: var(--space-3);
-    font-size: var(--text-md);
-    color: var(--color-heading);
-}
-
-.tag-legend ul {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: var(--space-2);
-    margin: 0;
-    padding: 0;
-    list-style: none;
-}
-
-.tag-legend li {
-    display: flex;
-    align-items: center;
-    margin: 0;
-    padding: var(--space-1) 0;
-}
-
-.tag-legend .tag {
-    margin-right: var(--space-2);
 }
 
 /* 響應式（1024px 是目錄側欄的版面斷點，不是工具格線） */
@@ -302,10 +293,6 @@
 
     .changelog-year {
         font-size: var(--text-2xl);
-    }
-
-    .tag-legend ul {
-        grid-template-columns: 1fr;
     }
 
     .update-notice {
