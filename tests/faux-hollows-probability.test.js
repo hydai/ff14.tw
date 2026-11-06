@@ -1,90 +1,60 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const path = require('node:path');
-const vm = require('node:vm');
+const { createHollowsPage } = require('./helpers/hollows-page.js');
 
-function element() {
-    const node = { className: '', children: [], style: {}, dataset: {}, attributes: {}, text: '' };
-    node.classList = {
-        contains: name => node.className.split(' ').includes(name),
-        add: (...names) => { node.className = [...new Set([...node.className.split(' '), ...names])].join(' '); },
-        remove: (...names) => { node.className = node.className.split(' ').filter(name => !names.includes(name)).join(' '); }
-    };
-    Object.defineProperty(node, 'textContent', {
-        get: () => node.text + node.children.map(child => child.textContent).join(''),
-        set: text => { node.text = String(text); node.children.length = 0; }
-    });
-    node.appendChild = child => { node.children.push(child); };
-    node.querySelectorAll = selector => node.children.flatMap(child => [
-        ...(child.classList.contains(selector.slice(1)) ? [child] : []), ...child.querySelectorAll(selector)
-    ]);
-    node.setAttribute = (key, value) => { node.attributes[key] = value; };
-    node.removeAttribute = key => { delete node.attributes[key]; };
-    return node;
+// 設計 6.4：宗長多常出現沒有公開，「假設這局有宗長」的機率又會隨翻開的空格一路加到 100%，所以宗長的格子只放 🦊、不寫任何數字。
+// 2026-09-08 檢查第 9 項：以前只剩 1 種盤面時，4 個宗長位置會同時寫 100%；這份測試守住它不會回來。
+// 計畫〈例子〉審閱者的例子：擺法 0＋寶箱 4、劍 25、26、27、31，只剩 1 種盤面，宗長的位置是 0、3、23、29
+function reviewerBoard(lang = 'zh') {
+    const page = createHollowsPage({ lang });
+    page.tap(9, 13);
+    page.pick(4, 'chest');
+    page.pick(25, 'sword');
+    page.tap(26);
+    page.pick(27, 'sword');
+    page.pick(31, 'sword');
+    return page;
 }
+const ALL = Array.from({ length: 36 }, (_, p) => p);
+const FOX = [0, 3, 23, 29];
+const foxCells = (page) => ALL.filter((p) => page.hints(p).includes('🦊'));
 
-function fixture() {
-    let language = 'zh';
-    let translations;
-    const context = vm.createContext({
-        window: { i18n: { loadTranslations: (_name, values) => { translations = values; } } },
-        document: { addEventListener() {}, createElement: element },
-        SecurityUtils: { clearElement: node => { node.textContent = ''; } },
-        FF14Utils: { getI18nText: (key, fallback, values = {}) =>
-            Object.entries(values).reduce((text, [name, value]) => text.replace(`{${name}}`, value), translations[language][key] || fallback) }
-    });
-    for (const file of ['assets/js/i18n/translations/tools/faux-hollows-foxes.js', 'tools/faux-hollows-foxes/board-data.js', 'tools/faux-hollows-foxes/script.js']) {
-        vm.runInContext(fs.readFileSync(path.join(__dirname, '..', file), 'utf8'), context);
+test('只剩 1 種盤面時，4 個宗長的位置只放 🦊：不寫成 100%、不寫任何數字，名稱也沒有百分比', () => {
+    const page = reviewerBoard();
+    assert.deepEqual(foxCells(page), FOX);
+    for (const p of FOX) {
+        assert.deepEqual(page.hints(p), ['🦊'], `格 ${p}`);
+        assert.doesNotMatch(page.cell(p).textContent, /\d/, `格 ${p}`);
+        assert.doesNotMatch(page.cell(p).getAttribute('aria-label'), /%/, `格 ${p}`);
+        assert.match(page.cell(p).getAttribute('aria-label'), /宗長有出現的話，可能在這格/, `格 ${p}`);
     }
-    const game = vm.runInContext('Object.create(FauxHollowsFoxes.prototype)', context);
-    game.board = Array(36).fill(null);
-    for (const i of [9, 13, 16, 28, 30]) game.board[i] = 'obstacle';
-    game.board[4] = 'chest';
-    for (const i of [25, 26, 27, 31]) game.board[i] = 'sword';
-    game.treasureProbabilities = { sword: [], chest: [] };
-    game.foxCandidates = Array(36).fill(false);
-    game.obstacleProbabilities = Array(36).fill(0);
-    game.obstaclesConfirmed = game.showTreasureProbabilities = game.showProbabilities = true;
-    game.clickCount = 5;
-    game.score = 0;
-    game.elements = { board: element(), matchingBoards: element(), gameHint: null };
-    game.elements.board.children = Array.from({ length: 36 }, () => element());
-    game.updateDisplay = game.updateOptimalHighlight = game.updateHistoryButtons = () => {};
-    game.updateTreasureProbabilitiesBasedOnMatches();
-    return { game, setLanguage: value => { language = value; } };
-}
-
-test('唯一符合盤面中的四個 FOX_OR_EMPTY 只標候選，不當成 100% 出現率', () => {
-    const { game } = fixture();
-    assert.equal(game.countMatchingBoards(), 1);
-    assert.deepEqual(game.foxCandidates.flatMap((candidate, i) => candidate ? [i] : []), [0, 3, 23, 29]);
-    game.renderBoard();
-    const fox = game.elements.board.children[0];
-    assert.equal(fox.querySelectorAll('.fox-prob')[0].textContent, '宗長候選');
-    assert.equal(fox.querySelectorAll('.fox-prob')[0].textContent.includes('%'), false);
-    assert.ok(fox.attributes['aria-label'].includes('宗長候選'));
+    // 劍與寶箱確定的格子照實寫 100%；這種格子只有這一個提示
+    assert.deepEqual(page.hints(5), ['📦100%']);
+    assert.deepEqual(page.hints(32), ['⚔️100%']);
+    assert.equal(page.cell(5).children.length, 1);
 });
 
-test('找到宗長後移除剩餘候選；還原歷史與三語重繪仍保留候選語意', () => {
-    const { game, setLanguage } = fixture();
-    let saved;
-    game.history = { push: state => { saved = state; } };
-    game.saveState();
-    game.board[0] = 'fox';
-    game.updateTreasureProbabilitiesBasedOnMatches();
-    assert.equal(game.foxCandidates.some(Boolean), false);
-    game.renderBoard();
-    assert.equal(game.elements.board.children[3].querySelectorAll('.fox-prob').length, 0);
-    game.restoreState(saved);
-    for (const [language, expected] of [['zh', '宗長候選'], ['en', 'Fox candidate'], ['ja', '宗長候補']]) {
-        setLanguage(language);
-        game.updateProbabilityDisplay();
-        assert.equal(game.elements.board.children[3].querySelectorAll('.fox-prob')[0].textContent, expected);
-        assert.ok(game.elements.board.children[3].attributes['aria-label'].includes(expected));
+test('找到宗長之後其他格不再放 🦊；三語重畫照樣是 🦊、名稱照語言', () => {
+    for (const [lang, phrase] of [['zh', '宗長有出現的話，可能在這格'], ['en', 'The fox may be here if it appears'], ['ja', '宗長が出るならこのマスかもしれない']]) {
+        const page = reviewerBoard(lang);
+        assert.deepEqual(page.hints(3), ['🦊'], lang);
+        assert.ok(page.cell(3).getAttribute('aria-label').includes(phrase), lang);
+        page.pick(0, 'fox');
+        assert.deepEqual(foxCells(page), [], lang);
     }
-    game.board[3] = 'empty';
-    game.updateTreasureProbabilitiesBasedOnMatches();
-    assert.equal(game.foxCandidates[3], false);
-    assert.equal(game.foxCandidates[23], true);
+});
+
+test('清掉宗長的格子：🦊 回到其他還可能的格子', () => {
+    const page = reviewerBoard();
+    page.pick(0, 'fox');
+    page.pick(0, 'clear');
+    assert.deepEqual(foxCells(page), FOX);
+});
+
+test('上一步退回找到宗長：🦊 回到原本的 4 格', () => {
+    const page = reviewerBoard();
+    page.pick(0, 'fox');
+    page.$('undo-btn').click();
+    assert.equal(page.toasts.at(-1).message, '已退回：第 1 格標成宗長');
+    assert.deepEqual(foxCells(page), FOX);
 });

@@ -1,1614 +1,446 @@
+// 宗長計算機
+// 畫面上的每個字都從 FauxHollowsSolver.analyze(this.boards, this.state) 畫出來（hollows-solver.js，不碰 DOM）：
+// 每次重畫都從 36 格的狀態重新算，自動補上的障礙物不存進 this.state。
+// 36 個格子是 index.html 裡的按鈕（鍵盤按 Enter、空白鍵就能點），重畫只改內容與屬性，不重建。
+//
+// ① 標障礙物：狀態列寫已知幾個（共 5 個），格子是切換鈕（aria-pressed），只有可能是障礙物的格子能點；
+//    其他障礙物的位置能確定時自動補上（斜線、不能點），擺法確定就進入翻格。
+// ② 翻格：手動標的與自動補上的障礙物都鎖住（disabled）。點還沒翻的格子，在格子旁邊開小選單
+//    （assets/js/cell-popover.js 的 CellPopover）選劍、寶箱、宗長、空，和其他格對不上的選項是灰的；只剩一種可能時點一下就標好，不開選單。
+//    翻開的格子再點是同一個選單，目前的標成已選，最後多一個「清除」。一局最多翻 11 格，用完時還沒翻的格子不能點，翻開的照樣能點。
+//    狀態列照 analyze() 的目標寫：② 找劍 → ③ 找寶箱 → ④ 翻宗長（不一定有）→ 完成。
+//    還沒翻的格子寫提示：⚔️、📦 加整數百分比（0 不寫），可能有宗長的只放 🦊、不寫任何數字，下一格框綠色（共用的 .cell.suggested）；
+//    格子名稱（aria-label）也寫出同樣的提示，螢幕閱讀器才聽得到。
+//
+// 標障礙物時顯示該格的障礙物機率；翻格提示依劍、寶箱、宗長分成藍、紅、黃的等高色帶。
+// 「隱藏機率」只收起百分比數字；兩個階段的候選底色、圖示與下一格綠框都保留。
+// 每個盤面動作之前存一份到 undoStack；上一步移到 redoStack，重做移回 undoStack，新動作清掉 redoStack。
+// 「重置遊戲」清空盤面，按「上一步」救得回來。歷史按鈕用 aria-disabled，焦點才留得在按鈕上。
+//
+// 擺法確定的那一刻，焦點所在的格子可能跟著鎖住：瀏覽器會把焦點丟到頁面上，只用鍵盤就玩不下去，
+// 所以重畫時先記下焦點在哪一格，鎖住了就把焦點移到下一格。
 class FauxHollowsFoxes {
-    static CONSTANTS = {
-        BOARD_SIZE: 6,
-        TOTAL_CELLS: 36,
-        MAX_CLICKS: 11,
-        PERCENTAGE: 100,
-        SCORES: {
-            SWORD: 100,
-            CHEST: 60,
-            FOX: 20
-        },
-        SHAPES: {
-            SWORD: { width: 2, height: 3 }, // Can be rotated to 3x2
-            CHEST: { width: 2, height: 2 },
-            FOX: { width: 1, height: 1 }
-        },
-        CELL_VALUES: {
-            EMPTY: 0,
-            OBSTACLE: 1,
-            SWORD: 2,
-            CHEST: 3,
-            FOX_OR_EMPTY: 4
-        }
+    // 格子狀態的名稱：翻譯鍵與中文預設文字。auto 是自動補上的障礙物，只用在名稱上，不存進 this.state
+    static STATE_KEYS = {
+        obstacle: 'faux_hollows_cell_state_obstacle',
+        auto: 'faux_hollows_cell_state_auto',
+        sword: 'faux_hollows_cell_state_sword',
+        chest: 'faux_hollows_cell_state_chest',
+        fox: 'faux_hollows_cell_state_fox',
+        empty: 'faux_hollows_cell_state_empty'
+    };
+    static STATE_NAMES = {
+        obstacle: '障礙物',
+        auto: '障礙物（自動補上）',
+        sword: '劍',
+        chest: '寶箱',
+        fox: '宗長',
+        empty: '空'
     };
 
+    // 小選單的選項文字：翻譯鍵與中文預設文字。clear 是翻開的格子才有的「清除」
+    static POPUP_KEYS = {
+        sword: 'faux_hollows_popup_sword',
+        chest: 'faux_hollows_popup_chest',
+        fox: 'faux_hollows_popup_fox',
+        empty: 'faux_hollows_popup_empty',
+        clear: 'faux_hollows_popup_clear'
+    };
+    static POPUP_LABELS = {
+        sword: '⚔️ 劍',
+        chest: '📦 寶箱',
+        fox: '🦊 宗長',
+        empty: '空',
+        clear: '清除'
+    };
 
-    static BOARD_DATA = window.FAUX_HOLLOWS_BOARD_DATA;
+    // 翻開的格子上的圖示，sword、chest、fox 也是還沒翻的格子上提示的圖示
+    static ICONS = {
+        sword: '⚔️',
+        chest: '📦',
+        fox: '🦊',
+        empty: '✕'
+    };
 
     constructor() {
-        this.board = Array(FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS).fill(null);
-        this.clickCount = 0;
-        this.score = 0;
-        this.selectedCell = null;
-        this.obstacleProbabilities = Array(FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS).fill(0);
-        this.treasureProbabilities = {
-            sword: Array(FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS).fill(0),
-            chest: Array(FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS).fill(0)
-        };
-        this.foxCandidates = Array(FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS).fill(false);
+        // board-data.js 的 252 種 6×6 盤面，每一種接成長度 36 的陣列
+        this.boards = FauxHollowsSolver.flatten(window.FAUX_HOLLOWS_BOARD_DATA);
+        // 36 格的狀態：null 是還沒標，'obstacle' 是手動標的障礙物
+        this.state = new Array(FauxHollowsSolver.SIZE).fill(null);
+        // 上一步：每個動作之前存一份 { state: 動作之前的 36 格（複本）, action: 那個動作 }，最後存的最先退回
+        this.undoStack = [];
+        this.redoStack = [];
         this.showProbabilities = true;
-        this.showTreasureProbabilities = false;
-        this.obstaclesConfirmed = false;
-        this.showOptimalHighlight = true; // 預設開啟高亮功能
-        // 語言切換時重繪結果面板用的快取（見 onLanguageChange／showResult／hideResult／renderResultPanel）；
-        // 面板顯示時填入這次算出的分數與造型統計，面板收起時清空（updateDisplay() 在點擊數低於
-        // MAX_CLICKS 時呼叫 hideResult()，涵蓋 undo 與 reset）。不直接在語言切換時重新從
-        // this.board 計算，確保重繪的永遠是畫面上正在顯示的那份結果。
-        this.lastResult = null;
-        this.history = new StateHistoryManager(); // 儲存每一步的歷史狀態
-        this.modalManager = new ModalManager();
 
         this.elements = {
-            board: document.getElementById('game-board'),
-            remainingClicks: document.getElementById('remaining-clicks'),
-            matchingBoards: document.getElementById('matching-boards'),
-            resetBtn: document.getElementById('reset-btn'),
-            undoBtn: document.getElementById('undo-btn'),
-            redoBtn: document.getElementById('redo-btn'),
-            autoCalculateBtn: document.getElementById('auto-calculate'),
-            toggleProbabilitiesBtn: document.getElementById('toggle-probabilities'),
-            resultPanel: document.getElementById('result-panel'),
-            finalScore: document.getElementById('final-score'),
-            resultDetails: document.getElementById('result-details'),
-            popup: document.getElementById('cell-popup'),
-            popupBtns: document.querySelectorAll('.popup-btn'),
-            popupClose: document.querySelector('.popup-close'),
-            gameHint: document.getElementById('game-hint')
+            status: document.getElementById('hollowsStatus'),
+            board: document.getElementById('hollows-grid'),
+            undo: document.getElementById('undo-btn'),
+            redo: document.getElementById('redo-btn'),
+            reset: document.getElementById('reset-btn'),
+            probabilities: document.getElementById('toggle-probabilities')
         };
+        // 36 格都在 index.html 裡，照位置收好；重畫時只改內容與屬性，不重建（焦點才留得在同一個元素上）
+        this.cells = Array.from({ length: FauxHollowsSolver.SIZE }, (_, p) => this.elements.board.querySelector(`.grid-cell[data-position="${p}"]`));
 
-        this.isUndoingOrRedoing = false;
+        // 翻開格子用的小選單，掛在盤面裡（盤面要 position: relative）；選項排 2 欄
+        this.popover = new CellPopover({ board: this.elements.board, columns: 2 });
 
-        this.initializeBoard();
-        this.initializeEvents();
-        this.calculateObstacleProbabilities();
+        // 點格子：整個盤面只聽一次 click，由 handleBoardClick() 找出是哪一格。Esc、點外面、焦點移出由小選單自己關
+        this.elements.board.addEventListener('click', (event) => this.handleBoardClick(event));
 
-        // 語言切換時：先重繪機率顯示（.treasure-prob-item 的文字、障礙物機率百分比
-        // 是在建立當下就寫死目前語言的純文字節點，語言切換不會自動更新），
-        // 這一步本身就會連帶呼叫 setCellLabel() 更新每個格子的 aria-label，
-        // 但仍明確再呼叫一次 refreshCellLabels() 確保所有格子的 aria-label
-        // 一定跟著目前語言重建，行為不依賴 updateProbabilityDisplay() 的實作細節。
-        // updateProbabilityDisplay() 只讀取 this.board／this.elements.board 現有的格子
-        // 元素進行覆寫，建構子已在呼叫這裡之前完成盤面初始化，因此不會有
-        // 盤面或機率尚未建立就被呼叫的情形。
+        // 不能按時用 aria-disabled，方法自己擋；切換顯示不改盤面歷史
+        this.elements.undo.addEventListener('click', () => this.undo());
+        this.elements.redo.addEventListener('click', () => this.redo());
+        this.elements.reset.addEventListener('click', () => this.resetGame());
+        this.elements.probabilities.addEventListener('click', () => {
+            this.popover.close();
+            this.showProbabilities = !this.showProbabilities;
+            this.render();
+        });
+
+        // 切換語言：小選單的文字是打開時才寫的，先關掉；狀態列與格子名稱都是 render() 寫的，用新的語言重畫
         window.i18n.onLanguageChange(() => {
-            this.updateProbabilityDisplay();
-            this.refreshCellLabels();
-
-            // this.showProbabilities／this.showOptimalHighlight 是這兩顆按鈕文字唯一的真相來源
-            // （toggleProbabilities()／toggleOptimalHighlight() 都是依這兩個布林值決定文字）。
-            // updatePageLanguage() 已經把 index.html 上舊的靜態 data-i18n 移除（見下方 index.html
-            // 修改），這裡是這兩顆按鈕語言切換後唯一會重新設定文字的地方，必須依目前的布林狀態
-            // 重新選字，而不是相信畫面上切換前的字串。
-            this.elements.toggleProbabilitiesBtn.textContent = this.showProbabilities
-                ? FF14Utils.getI18nText('faux_hollows_hide_prob', '隱藏機率')
-                : FF14Utils.getI18nText('faux_hollows_show_prob', '顯示機率');
-            this.elements.autoCalculateBtn.textContent = this.showOptimalHighlight
-                ? FF14Utils.getI18nText('faux_hollows_close_best', '關閉最佳策略')
-                : FF14Utils.getI18nText('faux_hollows_show_best', '顯示最佳策略');
-
-            // 結果面板顯示中（this.lastResult 有值）時，用顯示當下快取的分數／造型統計
-            // 以目前語言重繪；面板未顯示過或已被 reset() 清空快取時不做任何事。
-            if (this.lastResult) {
-                this.renderResultPanel(this.lastResult);
-            }
+            this.popover.close();
+            this.render();
         });
 
-        // 設定按鈕初始文字（兩顆按鈕的文字完全由 JS 依目前布林狀態決定；
-        // 對應的 index.html 已移除這兩顆按鈕上容易誤導的靜態 data-i18n，
-        // 避免語言切換時被 updatePageLanguage() 蓋回跟目前狀態不符的固定字串）
-        this.elements.autoCalculateBtn.textContent = FF14Utils.getI18nText('faux_hollows_close_best', '關閉最佳策略');
-        this.elements.toggleProbabilitiesBtn.textContent = this.showProbabilities
-            ? FF14Utils.getI18nText('faux_hollows_hide_prob', '隱藏機率')
-            : FF14Utils.getI18nText('faux_hollows_show_prob', '顯示機率');
-
-        // 初始化歷史記錄按鈕狀態
-        this.saveState();
+        this.render();
     }
 
-    initializeBoard() {
-        SecurityUtils.clearElement(this.elements.board);
-        for (let i = 0; i < FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS; i++) {
-            const cell = document.createElement('div');
-            cell.className = 'cell board-cell';
-            cell.dataset.index = i;
-            cell.tabIndex = 0;
-            cell.setAttribute('role', 'button');
-            // 由 setCellLabel 依格子狀態決定 aria-label、aria-disabled 與 tabIndex
-            this.setCellLabel(cell, i);
-            this.elements.board.appendChild(cell);
+    t(key, fallback, params) {
+        return FF14Utils.getI18nText(key, fallback, params);
+    }
+
+    // 位置 p（0–35）照目前語言的名稱：第 p+1 格
+    cellName(p) {
+        return this.t('faux_hollows_cell_label', '第 {n} 格', { n: p + 1 });
+    }
+
+    // 格子狀態照目前語言的名稱，value 是 'obstacle'（手動標的）、'auto'（自動補上的）或翻開的 sword、chest、fox、empty
+    stateName(value) {
+        return this.t(FauxHollowsFoxes.STATE_KEYS[value], FauxHollowsFoxes.STATE_NAMES[value]);
+    }
+
+    // 這一格翻開的是什麼（sword、chest、fox、empty）；還沒翻、是障礙物、或不是盤面上的位置都是 null
+    itemAt(position) {
+        const mark = this.state[position];
+        return FauxHollowsSolver.ITEMS.includes(mark) ? mark : null;
+    }
+
+    handleBoardClick(event) {
+        const cell = event.target.closest('.grid-cell');
+        if (!cell || cell.disabled) return;
+
+        // 鍵盤按 Enter、空白鍵送出的 click，detail 是 0（滑鼠點是 1 以上）
+        this.tapCell(Number(cell.dataset.position), { keyboard: event.detail === 0 });
+    }
+
+    // 點一格。障礙物階段：手動標的拿掉，還能標的標上，其他（不可能的、自動補上的）什麼都不做。
+    // 翻格階段：障礙物什麼都不做；次數用完時還沒翻的格子也什麼都不做（翻開的照樣能點）；
+    // 還沒翻而且只剩一種可能就直接標好，不開選單；其他在格子旁邊打開小選單。
+    // 自己看 analyze() 與 choices() 擋，不靠格子的 disabled，直接呼叫也一樣。
+    // keyboard：是不是用鍵盤點的，用鍵盤打開的小選單，焦點移到第一個能選的選項
+    tapCell(position, { keyboard = false } = {}) {
+        const view = FauxHollowsSolver.analyze(this.boards, this.state);
+        if (view.phase === 'obstacles') {
+            if (this.state[position] === 'obstacle') {
+                this.apply({ type: 'clear', position });
+            } else if (view.obstacleCells.includes(position)) {
+                this.apply({ type: 'set', position, value: 'obstacle' });
+            }
+            return;
         }
+
+        if (this.state[position] === 'obstacle' || view.auto.includes(position)) return;
+        const revealed = this.itemAt(position) !== null;
+        if (!revealed && view.left === 0) return;
+
+        // 沒有任何選項的格子（不是盤面上的位置）也沒有東西可以開
+        const options = FauxHollowsSolver.choices(this.boards, this.state, position);
+        if (options.length === 0) return;
+        if (!revealed && options.length === 1) {
+            this.choose(position, options[0]);
+            return;
+        }
+
+        this.popover.open(this.cells[position], this.menuOptions(position, options), {
+            label: this.t('faux_hollows_menu_label', '{cell}翻到什麼', { cell: this.cellName(position) }),
+            // 上三列開在格子下方，下三列開在上方
+            placement: Math.floor(position / 6) < 3 ? 'below' : 'above',
+            focusFirst: keyboard,
+            onSelect: (value) => this.choose(position, value)
+        });
     }
 
-    initializeEvents() {
-        // Board cell clicks
-        this.handleCellClick = (e) => {
-            // Find the board-cell element (could be clicked element or its parent)
-            let targetCell = e.target;
-            while (targetCell && !targetCell.classList.contains('board-cell')) {
-                targetCell = targetCell.parentElement;
-            }
-
-            if (targetCell && targetCell.classList.contains('board-cell')) {
-                this.onCellClick(targetCell);
-            }
-        };
-        this.elements.board.addEventListener('click', this.handleCellClick);
-
-        this.handleCellKeydown = (e) => {
-            if (e.key !== 'Enter' && e.key !== ' ') return;
-            let targetCell = e.target;
-            while (targetCell && !targetCell.classList.contains('board-cell')) {
-                targetCell = targetCell.parentElement;
-            }
-            if (targetCell && targetCell.classList.contains('board-cell')) {
-                e.preventDefault();
-                this.onCellClick(targetCell);
-            }
-        };
-        this.elements.board.addEventListener('keydown', this.handleCellKeydown);
-
-        // Popup buttons
-        this.elements.popupBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                this.handlePopupSelection(btn.dataset.type);
-            });
-        });
-
-
-        // Popup close
-        this.elements.popupClose.addEventListener('click', () => {
-            this.closePopup();
-        });
-
-        // Reset button
-        this.elements.resetBtn.addEventListener('click', () => {
-            this.reset();
-        });
-
-        // Undo button
-        this.elements.undoBtn.addEventListener('click', () => {
-            this.undo();
-        });
-
-        // Redo button
-        if (this.elements.redoBtn) {
-            this.elements.redoBtn.addEventListener('click', () => {
-                this.redo();
+    // 位置 position 的小選單：劍、寶箱、宗長、空，和其他格對不上的是灰的（options 是 choices() 的結果），這一格目前的標成已選；
+    // 翻開的格子最後多一個獨佔一列的「清除」
+    menuOptions(position, options) {
+        const items = FauxHollowsSolver.ITEMS.map((item) => ({
+            value: item,
+            label: this.t(FauxHollowsFoxes.POPUP_KEYS[item], FauxHollowsFoxes.POPUP_LABELS[item]),
+            disabled: !options.includes(item),
+            current: this.state[position] === item
+        }));
+        if (this.itemAt(position) !== null) {
+            items.push({
+                value: 'clear',
+                label: this.t(FauxHollowsFoxes.POPUP_KEYS.clear, FauxHollowsFoxes.POPUP_LABELS.clear),
+                wide: true
             });
         }
-
-        // Auto calculate button (toggle)
-        this.elements.autoCalculateBtn.addEventListener('click', () => {
-            this.toggleOptimalHighlight();
-        });
-
-        // Toggle probabilities button
-        this.elements.toggleProbabilitiesBtn.addEventListener('click', () => {
-            this.toggleProbabilities();
-        });
+        return items;
     }
 
-    calculateObstacleProbabilities() {
-        // 初始計算：基於所有盤面
-        this.updateObstacleProbabilitiesBasedOnMatches();
-        this.updateProbabilityDisplay();
+    // 這一格翻到了什麼：value 是 ITEMS 之一，或 'clear'（清掉翻開的這一格）。小選單與「只剩一種」都走這裡。
+    // 自己再擋一次，不靠小選單只列得出能選的：不是翻格階段、障礙物、清除還沒翻的格子、不是選項、就是現在的值、
+    // 次數用完時還沒翻的格子、和其他格對不上的選項，直接呼叫也什麼都不變
+    choose(position, value) {
+        const view = FauxHollowsSolver.analyze(this.boards, this.state);
+        if (view.phase !== 'reveal') return;
+        if (this.state[position] === 'obstacle' || view.auto.includes(position)) return;
 
-        // 初始化時顯示所有盤面的數量
-        const matchingCount = this.countMatchingBoards();
-        this.elements.matchingBoards.textContent = matchingCount;
-    }
-
-    getMatchingBoards() {
-        return FauxHollowsFoxes.BOARD_DATA.filter(board => this.boardMatches(board));
-    }
-
-    updateObstacleProbabilitiesBasedOnMatches() {
-        const obstacleCount = Array(FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS).fill(0);
-        const matchingBoards = this.getMatchingBoards();
-
-        // 統計符合盤面中的障礙物位置
-        for (const board of matchingBoards) {
-            for (let row = 0; row < FauxHollowsFoxes.CONSTANTS.BOARD_SIZE; row++) {
-                for (let col = 0; col < FauxHollowsFoxes.CONSTANTS.BOARD_SIZE; col++) {
-                    const index = row * FauxHollowsFoxes.CONSTANTS.BOARD_SIZE + col;
-                    if (board[row][col] === FauxHollowsFoxes.CONSTANTS.CELL_VALUES.OBSTACLE) {
-                        obstacleCount[index]++;
-                    }
-                }
-            }
-        }
-
-        // 基於符合的盤面計算機率
-        for (let i = 0; i < FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS; i++) {
-            this.obstacleProbabilities[i] = matchingBoards.length > 0 ?
-                Math.round((obstacleCount[i] / matchingBoards.length) * FauxHollowsFoxes.CONSTANTS.PERCENTAGE) : 0;
-        }
-    }
-
-    updateTreasureProbabilitiesBasedOnMatches() {
-        const treasureCount = {
-            sword: Array(FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS).fill(0),
-            chest: Array(FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS).fill(0),
-            fox: Array(FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS).fill(0)
-        };
-        const matchingBoards = this.getMatchingBoards();
-
-        // 統計符合盤面中的寶物位置
-        for (const board of matchingBoards) {
-            for (let row = 0; row < FauxHollowsFoxes.CONSTANTS.BOARD_SIZE; row++) {
-                for (let col = 0; col < FauxHollowsFoxes.CONSTANTS.BOARD_SIZE; col++) {
-                    const index = row * FauxHollowsFoxes.CONSTANTS.BOARD_SIZE + col;
-                    const value = board[row][col];
-                    if (value === FauxHollowsFoxes.CONSTANTS.CELL_VALUES.SWORD) {
-                        treasureCount.sword[index]++;
-                    } else if (value === FauxHollowsFoxes.CONSTANTS.CELL_VALUES.CHEST) {
-                        treasureCount.chest[index]++;
-                    } else if (value === FauxHollowsFoxes.CONSTANTS.CELL_VALUES.FOX_OR_EMPTY) {
-                        treasureCount.fox[index]++;
-                    }
-                }
-            }
-        }
-
-        // 資料只記錄宗長候選位置，沒有提供宗長出現率。找到宗長後不再提示其他候選。
-        const foxFound = this.board.includes('fox');
-        // 劍與寶箱按符合盤面計算機率；宗長只保留候選旗標。
-        for (let i = 0; i < FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS; i++) {
-            this.treasureProbabilities.sword[i] = matchingBoards.length > 0 ?
-                Math.round((treasureCount.sword[i] / matchingBoards.length) * FauxHollowsFoxes.CONSTANTS.PERCENTAGE) : 0;
-            this.treasureProbabilities.chest[i] = matchingBoards.length > 0 ?
-                Math.round((treasureCount.chest[i] / matchingBoards.length) * FauxHollowsFoxes.CONSTANTS.PERCENTAGE) : 0;
-            this.foxCandidates[i] = !foxFound && this.board[i] === null && treasureCount.fox[i] > 0;
-        }
-    }
-
-    updateProbabilityDisplay() {
-        for (let i = 0; i < FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS; i++) {
-            const cell = this.elements.board.children[i];
-
-            // 先清除所有機率顯示類別
-            cell.classList.remove('probability-display', 'treasure-probability-display');
-
-            if (this.board[i] === null) {
-                // 只在未設置的格子上顯示機率
-                cell.textContent = '';
-                SecurityUtils.clearElement(cell);
-
-                if (this.showProbabilities && this.showTreasureProbabilities && this.obstaclesConfirmed) {
-                    // 顯示寶物機率
-                    this.displayTreasureProbabilities(cell, i);
-                } else if (this.showProbabilities) {
-                    // 顯示障礙物機率
-                    if (this.obstacleProbabilities[i] > 0) {
-                        cell.textContent = `${this.obstacleProbabilities[i]}%`;
-                        cell.classList.add('probability-display');
-                    }
-                }
-
-                this.setCellLabel(cell, i);
-            } else {
-                // 如果格子已經被設置，確保顯示正確的內容
-                this.updateCellDisplay(cell, i);
-            }
-        }
-    }
-
-    displayTreasureProbabilities(cell, index) {
-        const entries = [
-            { value: this.treasureProbabilities.sword[index], key: 'faux_hollows_cell_sword', fallback: '劍', className: 'sword-prob' },
-            { value: this.treasureProbabilities.chest[index], key: 'faux_hollows_cell_chest', fallback: '箱', className: 'chest-prob' }
-        ].filter(entry => entry.value > 0);
-        if (this.foxCandidates[index]) {
-            entries.push({ key: 'faux_hollows_fox_candidate', fallback: '宗長候選', className: 'fox-prob' });
-        }
-        if (entries.length === 0) return;
-
-        SecurityUtils.clearElement(cell);
-        const container = document.createElement('div');
-        container.className = 'treasure-prob-container';
-        for (const entry of entries) {
-            const item = document.createElement('div');
-            item.className = `treasure-prob-item ${entry.className}`;
-            const label = FF14Utils.getI18nText(entry.key, entry.fallback);
-            item.textContent = entry.value === undefined ? label : `${label}: ${entry.value}%`;
-            container.appendChild(item);
-        }
-        cell.appendChild(container);
-        cell.classList.add('treasure-probability-display');
-        this.setCellLabel(cell, index);
-    }
-
-    /**
-     * 依格子目前的狀態與畫面上顯示的機率重建 aria-label，
-     * 讓輔助科技讀到的名稱與看得到的內容一致；
-     * 已停用（clicked）的格子同時標記為停用並移出 Tab 順序。
-     * 「已停用」同時看 this.board 與 DOM class：markGrayCells() 會同時把
-     * this.board[i] 設成 'clicked' 並改 class，兩者本來就該一致；保留雙重檢查作為防呆。
-     * @param {HTMLElement} cell - 格子元素
-     * @param {number} index - 格子索引（0 起算）
-     */
-    setCellLabel(cell, index) {
-        const value = this.board[index];
-        const isUsed = value === 'clicked' || cell.classList.contains('clicked');
-        let state;
-        if (isUsed) {
-            state = FF14Utils.getI18nText('faux_hollows_cell_state_used', '已用');
-        } else if (value === 'obstacle') {
-            state = FF14Utils.getI18nText('faux_hollows_cell_state_obstacle', '障礙物');
-        } else if (value === 'empty') {
-            state = FF14Utils.getI18nText('faux_hollows_cell_state_empty', '空格');
-        } else if (typeof value === 'string' && value.startsWith('sword')) {
-            state = FF14Utils.getI18nText('faux_hollows_cell_state_sword', '劍');
-        } else if (typeof value === 'string' && value.startsWith('chest')) {
-            state = FF14Utils.getI18nText('faux_hollows_cell_state_chest', '寶箱');
-        } else if (typeof value === 'string' && value.startsWith('fox')) {
-            state = FF14Utils.getI18nText('faux_hollows_cell_state_fox', '宗長');
+        const current = this.itemAt(position);
+        if (value === 'clear') {
+            if (current === null) return;
         } else {
-            state = FF14Utils.getI18nText('faux_hollows_cell_state_unknown', '未揭開');
+            if (!FauxHollowsSolver.ITEMS.includes(value) || value === current) return;
+            if (current === null && view.left === 0) return;
+            if (!FauxHollowsSolver.choices(this.boards, this.state, position).includes(value)) return;
         }
 
-        const sepColon = FF14Utils.getI18nText('label_sep_colon', '：');
-        const sepComma = FF14Utils.getI18nText('label_sep_comma', '，');
-        let label = `${FF14Utils.getI18nText('faux_hollows_cell_label', '第 {n} 格', { n: index + 1 })}${sepColon}${state}`;
-
-        // 把畫面上看得到的機率一併帶進名稱（例如「劍: 32%」→「劍 32%」）；
-        // 只收「實際看得見」的機率項目 —— empty-prob 是 CSS display:none 的佔位項目，要排除
-        const probTexts = [...cell.querySelectorAll('.treasure-prob-item')]
-            .filter((item) => !item.classList.contains('empty-prob') && item.style.display !== 'none')
-            .map((item) => item.textContent.trim().replace(/\s*[:：]\s*/, ' '))
-            .filter((text) => text !== '');
-        if (probTexts.length > 0) {
-            label += `${sepComma}${probTexts.join(sepComma)}`;
-        } else if (cell.classList.contains('probability-display')) {
-            // 障礙物階段的機率是直接寫在格子上的純文字（例如「42%」）
-            const obstacleText = cell.textContent.trim();
-            if (obstacleText !== '') {
-                label += `${sepComma}${FF14Utils.getI18nText('faux_hollows_cell_obstacle_prob', '障礙物機率 {value}', { value: obstacleText })}`;
-            }
-        }
-
-        cell.setAttribute('aria-label', label);
-
-        if (isUsed) {
-            cell.setAttribute('aria-disabled', 'true');
-            cell.tabIndex = -1;
-        } else {
-            cell.removeAttribute('aria-disabled');
-            cell.tabIndex = 0;
-        }
+        this.apply(value === 'clear' ? { type: 'clear', position } : { type: 'set', position, value });
     }
 
-    /**
-     * 語言切換時，重新以目前語言重建所有格子的 aria-label
-     */
-    refreshCellLabels() {
-        this.elements.board.querySelectorAll('.board-cell').forEach((cell) => {
-            this.setCellLabel(cell, parseInt(cell.dataset.index, 10));
-        });
+    // 標上、拿掉一格或重置，然後重畫。新動作會清掉重做分支。
+    // 改 this.state 之前先把動作之前的 36 格連同這個動作存進 undoStack，「上一步」才退得回來
+    apply(action) {
+        this.undoStack.push({ state: [...this.state], action });
+        this.redoStack = [];
+        if (action.type === 'set') this.state[action.position] = action.value;
+        else if (action.type === 'clear') this.state[action.position] = null;
+        else if (action.type === 'reset') this.state.fill(null);
+        this.render();
     }
 
-    updateCellDisplay(cell, index) {
-        const value = this.board[index];
-
-        switch (value) {
-            case 'obstacle':
-                cell.className = 'cell board-cell obstacle';
-                cell.textContent = '✕';
-                break;
-            case 'sword':
-                cell.className = 'cell board-cell sword';
-                cell.textContent = '⚔️';
-                break;
-            case 'chest':
-                cell.className = 'cell board-cell chest';
-                cell.textContent = '📦';
-                break;
-            case 'fox':
-                cell.className = 'cell board-cell fox';
-                cell.textContent = '🦊';
-                break;
-            case 'empty':
-                cell.className = 'cell board-cell empty';
-                cell.textContent = '◯';
-                break;
-            case 'clicked':
-                cell.className = 'cell board-cell clicked';
-                cell.textContent = '';
-                break;
-            default:
-                // 處理其他特殊情況
-                if (value && value.startsWith('sword')) {
-                    cell.className = 'cell board-cell sword connected';
-                    cell.textContent = '⚔️';
-                } else if (value && value.startsWith('chest')) {
-                    cell.className = 'cell board-cell chest connected';
-                    cell.textContent = '📦';
-                }
-                break;
-        }
-
-        this.setCellLabel(cell, index);
+    // 盤面上有沒有標記（障礙物或翻開的格子）：沒有的話重置沒有東西可以清
+    hasMarks() {
+        return this.state.some((mark) => mark !== null);
     }
 
-    toggleProbabilities() {
-        this.showProbabilities = !this.showProbabilities;
-        this.elements.toggleProbabilitiesBtn.textContent =
-            this.showProbabilities ? FF14Utils.getI18nText('faux_hollows_hide_prob', '隱藏機率') : FF14Utils.getI18nText('faux_hollows_show_prob', '顯示機率');
-
-        if (this.showProbabilities) {
-            this.updateProbabilityDisplay();
-        } else {
-            // 清除機率顯示
-            for (let i = 0; i < FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS; i++) {
-                const cell = this.elements.board.children[i];
-                if (this.board[i] === null) {
-                    cell.textContent = '';
-                    cell.classList.remove('probability-display');
-                    this.setCellLabel(cell, i);
-                }
-            }
-        }
-    }
-
-    updateMatchingBoards() {
-        const matchingCount = this.countMatchingBoards();
-        this.elements.matchingBoards.textContent = matchingCount;
-
-        // 重新計算基於當前符合盤面的障礙物機率
-        this.updateObstacleProbabilitiesBasedOnMatches();
-
-        // 如果障礙物已確認，也計算寶物機率
-        if (this.obstaclesConfirmed) {
-            this.updateTreasureProbabilitiesBasedOnMatches();
-        }
-
-        this.updateProbabilityDisplay();
-
-        // 檢查是否可以自動填充障礙物
-        this.checkAndAutoFillObstacles();
-
-        // 更新最佳策略高亮
-        this.updateOptimalHighlight();
-    }
-
-    countMatchingBoards() {
-        return this.getMatchingBoards().length;
-    }
-
-    boardMatches(dbBoard) {
-        // 檢查使用者當前盤面是否與資料庫盤面相符
-        if (!dbBoard || dbBoard.length !== FauxHollowsFoxes.CONSTANTS.BOARD_SIZE) return false;
-
-        for (let row = 0; row < FauxHollowsFoxes.CONSTANTS.BOARD_SIZE; row++) {
-            if (!dbBoard[row] || dbBoard[row].length !== FauxHollowsFoxes.CONSTANTS.BOARD_SIZE) return false;
-
-            for (let col = 0; col < FauxHollowsFoxes.CONSTANTS.BOARD_SIZE; col++) {
-                const index = row * FauxHollowsFoxes.CONSTANTS.BOARD_SIZE + col;
-                const userValue = this.board[index];
-                const dbValue = dbBoard[row][col];
-
-                // 只有當使用者已經設置了某個位置時，才檢查是否與資料庫一致
-                // null 值表示未設置；'clicked' 是 markGrayCells() 在遊戲結束時
-                // 補上的已用格標記（該格從未被使用者實際設置過內容），兩者都應該
-                // 被視為「未知」，可以匹配任何資料庫值
-                if (userValue !== null && userValue !== 'clicked') {
-                    const userMappedValue = this.mapUserValueToDbValue(userValue);
-
-                    // 特殊處理：資料庫中的 FOX_OR_EMPTY 表示可能是宗長或空格
-                    if (dbValue === FauxHollowsFoxes.CONSTANTS.CELL_VALUES.FOX_OR_EMPTY) {
-                        // 如果資料庫是 FOX_OR_EMPTY，使用者可以是 fox 或 empty
-                        if (userMappedValue !== FauxHollowsFoxes.CONSTANTS.CELL_VALUES.FOX_OR_EMPTY &&
-                            userMappedValue !== FauxHollowsFoxes.CONSTANTS.CELL_VALUES.EMPTY) {
-                            return false;
-                        }
-                    } else {
-                        // 一般情況：必須完全匹配
-                        if (userMappedValue !== dbValue) {
-                            return false;
-                        }
-                    }
-                }
-                // 如果 userValue 是 null 或 'clicked'，則跳過此位置的檢查（未知狀態可匹配任何值）
-            }
-        }
-
-        return true;
-    }
-
-    mapUserValueToDbValue(userValue) {
-        // 將使用者盤面的值映射到資料庫格式
-        switch (userValue) {
-            case 'obstacle': return FauxHollowsFoxes.CONSTANTS.CELL_VALUES.OBSTACLE;
-            case 'sword': return FauxHollowsFoxes.CONSTANTS.CELL_VALUES.SWORD;
-            case 'chest': return FauxHollowsFoxes.CONSTANTS.CELL_VALUES.CHEST;
-            case 'fox': return FauxHollowsFoxes.CONSTANTS.CELL_VALUES.FOX_OR_EMPTY;
-            case 'empty': return FauxHollowsFoxes.CONSTANTS.CELL_VALUES.EMPTY;
-            default: return FauxHollowsFoxes.CONSTANTS.CELL_VALUES.EMPTY;
-        }
-    }
-
-    checkAndAutoFillObstacles() {
-        // 計算已經放置的障礙物數量
-        let obstacleCount = 0;
-        for (let i = 0; i < FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS; i++) {
-            if (this.board[i] === 'obstacle') {
-                obstacleCount++;
-            }
-        }
-
-        // 如果已經有2個或以上的障礙物，檢查是否可以自動填充
-        if (obstacleCount >= 2) {
-            this.tryAutoFillObstacles();
-        }
-
-        // 如果有2個障礙物了，隱藏提示
-        if (obstacleCount >= 2 && this.elements.gameHint) {
-            this.elements.gameHint.classList.add('hidden');
-        }
-
-        // 檢查障礙物是否已確認（自動填充完成後）
-        this.checkObstaclesConfirmed();
-    }
-
-    checkObstaclesConfirmedWithoutAutoFill() {
-        // 與 checkObstaclesConfirmed 相同的邏輯，但不觸發自動填充
-        const matchingBoards = [];
-        for (const board of FauxHollowsFoxes.BOARD_DATA) {
-            if (this.boardMatches(board)) {
-                matchingBoards.push(board);
-            }
-        }
-
-        if (matchingBoards.length === 0) {
-            this.obstaclesConfirmed = false;
-            return;
-        }
-
-        // 檢查障礙物是否已確認
-        let obstacleCount = 0;
-        for (let i = 0; i < FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS; i++) {
-            if (this.board[i] === 'obstacle') {
-                obstacleCount++;
-            }
-        }
-
-        let allObstaclesConfirmed = false;
-        if (obstacleCount === 0) {
-            allObstaclesConfirmed = false;
-        } else {
-            // 檢查每個位置：如果在所有符合盤面中都是障礙物，則必須已被設定為障礙物
-            allObstaclesConfirmed = true;
-            for (let i = 0; i < FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS; i++) {
-                const row = Math.floor(i / 6);
-                const col = i % 6;
-
-                // 檢查這個位置在所有符合盤面中是否都是障礙物
-                let allAreObstacles = true;
-                for (const board of matchingBoards) {
-                    if (board[row][col] !== 1) {
-                        allAreObstacles = false;
-                        break;
-                    }
-                }
-
-                // 如果這個位置在所有符合盤面中都是障礙物，但使用者還沒設定為障礙物
-                if (allAreObstacles && this.board[i] !== 'obstacle') {
-                    allObstaclesConfirmed = false;
-                    break;
-                }
-            }
-        }
-
-        const wasConfirmed = this.obstaclesConfirmed;
-        this.obstaclesConfirmed = allObstaclesConfirmed;
-
-        // 如果障礙物剛確認，啟動寶物機率顯示
-        if (!wasConfirmed && this.obstaclesConfirmed) {
-            this.showTreasureProbabilities = true;
-            this.updateTreasureProbabilitiesBasedOnMatches();
-            this.updateProbabilityDisplay(); // 需要更新UI顯示
-            FF14Utils.showToast(FF14Utils.getI18nText('faux_hollows_obstacles_confirmed', '障礙物位置已確認！現在顯示寶物機率，點擊格子可填寫實際發現的寶物'), 'success');
-
-            // 更新最佳策略高亮
-            this.updateOptimalHighlight();
-        }
-    }
-
-
-    checkIfObstaclesComplete() {
-        // 檢查所有未設置位置的障礙物機率是否都已確定（100%或0%）
-        let allObstacleProbabilitiesDetermined = true;
-        let guaranteedObstacles = [];
-
-        for (let i = 0; i < FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS; i++) {
-            // 跳過已設置的位置
-            if (this.board[i] !== null) continue;
-
-            const probability = this.obstacleProbabilities[i];
-
-            if (probability === FauxHollowsFoxes.CONSTANTS.PERCENTAGE) {
-                // 100%機率的位置應該被自動填充，如果沒有就有問題
-                guaranteedObstacles.push(i);
-            } else if (probability !== 0) {
-                // 介於0-100%之間，未確定
-                allObstacleProbabilitiesDetermined = false;
-            }
-        }
-
-        // 如果有100%機率但未填充的位置，先填充它們
-        if (guaranteedObstacles.length > 0) {
-            // 自動填充時不保存狀態
-            for (const pos of guaranteedObstacles) {
-                this.setObstacle(pos, true);
-            }
-            // 重新計算機率並再次檢查
-            this.updateObstacleProbabilitiesBasedOnMatches();
-            this.checkIfObstaclesComplete();
-            return;
-        }
-
-        // 只有當所有位置的障礙物機率都已確定時，才切換到寶物階段
-        if (allObstacleProbabilitiesDetermined && !this.obstaclesConfirmed) {
-            this.obstaclesConfirmed = true;
-            this.showTreasureProbabilities = true;
-            this.updateTreasureProbabilitiesBasedOnMatches();
-            FF14Utils.showToast(FF14Utils.getI18nText('faux_hollows_all_obstacles_confirmed', '所有障礙物位置已確定！現在顯示寶物機率，點擊格子可填寫實際發現的寶物'), 'success');
-
-            // 更新最佳策略高亮
-            this.updateOptimalHighlight();
-        }
-    }
-
-    checkObstaclesConfirmed() {
-        // 檢查是否所有障礙物位置都已確定
-        const matchingBoards = [];
-        for (const board of FauxHollowsFoxes.BOARD_DATA) {
-            if (this.boardMatches(board)) {
-                matchingBoards.push(board);
-            }
-        }
-
-        if (matchingBoards.length === 0) {
-            this.obstaclesConfirmed = false;
-            return;
-        }
-
-        // 檢查障礙物是否已確認
-        // 條件：至少有一些障礙物已設定，且所有符合盤面中必須為障礙物的位置都已設定
-        let obstacleCount = 0;
-        for (let i = 0; i < FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS; i++) {
-            if (this.board[i] === 'obstacle') {
-                obstacleCount++;
-            }
-        }
-
-        // 如果沒有任何障礙物，則未確認
-        let allObstaclesConfirmed;
-        if (obstacleCount === 0) {
-            allObstaclesConfirmed = false;
-        } else {
-            // 檢查每個位置：如果在所有符合盤面中都是障礙物，則必須已被設定為障礙物
-            allObstaclesConfirmed = true;
-            for (let i = 0; i < FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS; i++) {
-                const row = Math.floor(i / 6);
-                const col = i % 6;
-
-                // 檢查這個位置在所有符合盤面中是否都是障礙物
-                let allAreObstacles = true;
-                for (const board of matchingBoards) {
-                    if (board[row][col] !== 1) {
-                        allAreObstacles = false;
-                        break;
-                    }
-                }
-
-                // 如果這個位置在所有符合盤面中都是障礙物，但使用者還沒設定為障礙物
-                if (allAreObstacles && this.board[i] !== 'obstacle') {
-                    allObstaclesConfirmed = false;
-                    break;
-                }
-            }
-        }
-
-        const wasConfirmed = this.obstaclesConfirmed;
-        this.obstaclesConfirmed = allObstaclesConfirmed;
-
-        // 如果障礙物剛確認，啟動寶物機率顯示
-        if (!wasConfirmed && this.obstaclesConfirmed) {
-            this.showTreasureProbabilities = true;
-            this.updateTreasureProbabilitiesBasedOnMatches();
-            this.updateProbabilityDisplay(); // 需要更新UI顯示
-            FF14Utils.showToast(FF14Utils.getI18nText('faux_hollows_obstacles_confirmed', '障礙物位置已確認！現在顯示寶物機率，點擊格子可填寫實際發現的寶物'), 'success');
-
-            // 更新最佳策略高亮
-            this.updateOptimalHighlight();
-        }
-    }
-
-    tryAutoFillObstacles() {
-        // 收集所有符合的盤面
-        const matchingBoards = this.getMatchingBoards();
-
-        // 如果沒有符合的盤面，不執行自動填充
-        if (matchingBoards.length === 0) return;
-
-        // 檢查所有符合盤面中，每個位置的障礙物是否一致
-        const confirmedObstacles = [];
-
-        for (let i = 0; i < FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS; i++) {
-            // 跳過已經設置的格子
-            if (this.board[i] !== null) continue;
-
-            const row = Math.floor(i / FauxHollowsFoxes.CONSTANTS.BOARD_SIZE);
-            const col = i % FauxHollowsFoxes.CONSTANTS.BOARD_SIZE;
-
-            // 檢查這個位置在所有符合盤面中是否都是障礙物
-            let allAreObstacles = true;
-            let allAreNotObstacles = true;
-
-            for (const board of matchingBoards) {
-                if (board[row][col] === FauxHollowsFoxes.CONSTANTS.CELL_VALUES.OBSTACLE) {
-                    allAreNotObstacles = false;
-                } else {
-                    allAreObstacles = false;
-                }
-            }
-
-            // 如果所有符合的盤面在這個位置都是障礙物，則自動填充
-            if (allAreObstacles) {
-                confirmedObstacles.push(i);
-            }
-        }
-
-        // 自動填充確定的障礙物
-        if (confirmedObstacles.length > 0) {
-            // 自動填充時，不保存狀態（因為使用者的手動操作已經保存過了）
-            let fillCount = 0;
-            for (const index of confirmedObstacles) {
-                // 全部都跳過保存狀態
-                this.setObstacle(index, true);
-                fillCount++;
-            }
-
-            // 顯示自動填充的提示
-            FF14Utils.showToast(FF14Utils.getI18nText('faux_hollows_auto_filled', '已自動填充 {count} 個確定的障礙物位置', { count: fillCount }), 'success');
-
-            // 更新顯示（但不觸發 updateMatchingBoards 避免遞迴）
-            this.updateDisplay();
-            this.checkForCompletedShapes();
-            this.validateShapes();
-
-            // 手動更新符合盤面計數，但不觸發自動填充
-            const matchingCount = this.countMatchingBoards();
-            this.elements.matchingBoards.textContent = matchingCount;
-            this.updateObstacleProbabilitiesBasedOnMatches();
-
-            // 檢查是否完成障礙物階段
-            this.checkIfObstaclesComplete();
-
-            this.updateProbabilityDisplay();
-        }
-    }
-
-    onCellClick(cell) {
-        const index = parseInt(cell.dataset.index);
-
-        // If cell is already clicked (gray), do nothing
-        // 註：occupied 這個 class 從未被程式加入過，原本的 OR 判斷恆為 false，予以移除
-        if (cell.classList.contains('clicked')) {
-            return;
-        }
-
-        if (this.obstaclesConfirmed) {
-            this.handleTreasurePhaseClick(cell, index);
-        } else {
-            this.handleObstaclePhaseClick(cell, index);
-        }
-    }
-
-    handleTreasurePhaseClick(cell, index) {
-        // Allow clicking on: null cells, treasure probability display, or existing treasure cells
-        const canClick = this.board[index] === null ||
-            cell.classList.contains('treasure-probability-display') ||
-            ['sword', 'chest', 'fox', 'empty'].includes(this.board[index]);
-
-        if (canClick) {
-            this.selectedCell = index;
-            this.showPopup();
-        }
-    }
-
-    handleObstaclePhaseClick(cell, index) {
-        // In obstacle phase, directly place/remove obstacles
-        if (this.board[index] === null || cell.classList.contains('treasure-probability-display')) {
-            // Place obstacle on empty cell
-            this.setObstacle(index);
-        } else if (this.board[index] === 'obstacle') {
-            // Remove obstacle if clicking on existing obstacle
-            this.clearCell(index);
-        } else {
-            // Cell is occupied by something else, do nothing
-            return;
-        }
-
-        this.updateObstaclePhaseState();
-        this.saveState();
-    }
-
-    updateObstaclePhaseState() {
-        this.updateDisplay();
-        this.checkForCompletedShapes();
-        this.validateShapes();
-
-        // 更新符合盤面計數並觸發自動填充
-        const matchingCount = this.countMatchingBoards();
-        this.elements.matchingBoards.textContent = matchingCount;
-        this.updateObstacleProbabilitiesBasedOnMatches();
-
-        // 嘗試自動填充障礙物並檢查是否完成
-        this.tryAutoFillObstacles();
-
-        this.updateProbabilityDisplay();
-    }
-
-    showPopup() {
-        // 根據遊戲階段顯示不同的選項
-        this.updatePopupOptions();
-
-        this.modalManager.show(this.elements.popup, {
-            useClass: null,
-            displayStyle: 'flex',
-            onClose: () => {
-                this.selectedCell = null;
-            }
-        });
-    }
-
-    updatePopupOptions() {
-        const popupBtns = this.elements.popup.querySelectorAll('.popup-btn');
-
-        if (this.obstaclesConfirmed) {
-            // 填寶物階段：顯示劍、寶箱、宗長、空格、清除
-            popupBtns.forEach(btn => {
-                const type = btn.dataset.type;
-                if (type === 'sword' || type === 'chest' || type === 'fox' || type === 'empty' || type === 'clear') {
-                    btn.style.display = 'flex';
-                } else {
-                    btn.style.display = 'none';
-                }
-            });
-        } else {
-            // 填障礙物階段：只顯示障礙物、清除
-            popupBtns.forEach(btn => {
-                const type = btn.dataset.type;
-                if (type === 'obstacle' || type === 'clear') {
-                    btn.style.display = 'flex';
-                } else {
-                    btn.style.display = 'none';
-                }
-            });
-        }
-    }
-
-    closePopup() {
-        this.modalManager.hide();
-    }
-
-    handlePopupSelection(type) {
-        if (this.selectedCell === null) return;
-
-        const cell = this.elements.board.children[this.selectedCell];
-
-        if (type === 'clear') {
-            this.clearCell(this.selectedCell);
-        } else if (type === 'obstacle') {
-            this.setObstacle(this.selectedCell);
-        } else if (type === 'empty') {
-            // Check if we can place empty
-            if (this.clickCount >= FauxHollowsFoxes.CONSTANTS.MAX_CLICKS) {
-                FF14Utils.showToast(FF14Utils.getI18nText('faux_hollows_max_clicks', '已達到最大點擊次數！'), 'error');
-                this.closePopup();
-                return;
-            }
-            this.placeEmpty(this.selectedCell);
-        } else {
-            // Check if we can place the shape
-            if (this.clickCount >= FauxHollowsFoxes.CONSTANTS.MAX_CLICKS) {
-                FF14Utils.showToast(FF14Utils.getI18nText('faux_hollows_max_clicks', '已達到最大點擊次數！'), 'error');
-                this.closePopup();
-                return;
-            }
-
-            // Check shape limits before placing
-            if (!this.checkShapeLimits(type)) {
-                this.closePopup();
-                return;
-            }
-
-            // Place single cell
-            this.placeSingleCell(this.selectedCell, type);
-        }
-
-        this.closePopup();
-        this.updateDisplay();
-        this.checkForCompletedShapes();
-        this.validateShapes();
-        this.updateMatchingBoards();
-        this.updateOptimalHighlight();
-        this.saveState();
-    }
-
-    setObstacle(index) {
-        const cell = this.elements.board.children[index];
-
-        // Set as obstacle directly without clearing first
-        this.board[index] = 'obstacle';
-        cell.className = 'cell board-cell obstacle';
-        cell.textContent = '✕';
-    }
-
-    clearCell(index) {
-        const cell = this.elements.board.children[index];
-
-        // 已用格不可清除
-        if (this.clickCount >= FauxHollowsFoxes.CONSTANTS.MAX_CLICKS && this.board[index] === 'clicked') {
-            return;
-        }
-
-        // Clear the cell
-        this.board[index] = null;
-        cell.className = 'cell board-cell';
-        cell.textContent = '';
-
-        // Restore probability display if enabled
-        if (this.showProbabilities && this.obstacleProbabilities[index] > 0) {
-            cell.textContent = `${this.obstacleProbabilities[index]}%`;
-            cell.classList.add('probability-display');
-        }
-
-        // Recalculate everything
-        this.recalculateState();
-    }
-
-    placeSingleCell(index, type) {
-        const cell = this.elements.board.children[index];
-
-        // In treasure phase (obstacles confirmed), allow overwriting treasure cells
-        if (this.obstaclesConfirmed) {
-            // Allow placing on: null cells, treasure probability display, or existing treasure cells
-            const canPlace = this.board[index] === null ||
-                cell.classList.contains('treasure-probability-display') ||
-                ['sword', 'chest', 'fox', 'empty'].includes(this.board[index]);
-
-            if (!canPlace) {
-                FF14Utils.showToast(FF14Utils.getI18nText('faux_hollows_cannot_modify', '此格子無法修改！'), 'error');
-                return;
-            }
-        } else {
-            // In obstacle phase, only allow placing on null cells or treasure probability display
-            if (this.board[index] !== null && !cell.classList.contains('treasure-probability-display')) {
-                FF14Utils.showToast(FF14Utils.getI18nText('faux_hollows_cell_occupied', '此格子已被佔用！'), 'error');
-                return;
-            }
-        }
-
-        // If overwriting an existing treasure cell, don't increment click count
-        const isOverwriting = this.obstaclesConfirmed &&
-            ['sword', 'chest', 'fox', 'empty'].includes(this.board[index]);
-
-        // Place the single cell
-        this.board[index] = type;
-        cell.className = `cell board-cell ${type}`;
-        SecurityUtils.clearElement(cell);
-
-        // Set display text
-        if (type === 'fox') {
-            cell.textContent = '狐';
-        } else if (type === 'sword') {
-            cell.textContent = '劍';
-        } else if (type === 'chest') {
-            cell.textContent = '箱';
-        }
-
-        // Only increment click count if not overwriting
-        if (!isOverwriting) {
-            this.clickCount++;
-        }
-    }
-
-    placeEmpty(index) {
-        const cell = this.elements.board.children[index];
-
-        // In treasure phase (obstacles confirmed), allow overwriting treasure cells
-        if (this.obstaclesConfirmed) {
-            // Allow placing on: null cells, treasure probability display, or existing treasure cells
-            const canPlace = this.board[index] === null ||
-                cell.classList.contains('treasure-probability-display') ||
-                ['sword', 'chest', 'fox', 'empty'].includes(this.board[index]);
-
-            if (!canPlace) {
-                FF14Utils.showToast(FF14Utils.getI18nText('faux_hollows_cannot_modify', '此格子無法修改！'), 'error');
-                return;
-            }
-        } else {
-            // In obstacle phase, only allow placing on null cells or treasure probability display
-            if (this.board[index] !== null && !cell.classList.contains('treasure-probability-display')) {
-                FF14Utils.showToast(FF14Utils.getI18nText('faux_hollows_cell_occupied', '此格子已被佔用！'), 'error');
-                return;
-            }
-        }
-
-        // If overwriting an existing treasure cell, don't increment click count
-        const isOverwriting = this.obstaclesConfirmed &&
-            ['sword', 'chest', 'fox', 'empty'].includes(this.board[index]);
-
-        this.board[index] = 'empty';
-        cell.className = 'cell board-cell empty';
-        SecurityUtils.clearElement(cell);
-        cell.textContent = '';
-
-        // Only increment click count if not overwriting
-        if (!isOverwriting) {
-            this.clickCount++;
-        }
-    }
-
-    checkShapeLimits(type) {
-        // Count existing cells of this type
-        let count = 0;
-        for (let i = 0; i < FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS; i++) {
-            if (this.board[i] === type) {
-                count++;
-            }
-        }
-
-        if (type === 'fox' && count >= 1) {
-            FF14Utils.showToast(FF14Utils.getI18nText('faux_hollows_fox_limit', '宗長只能放置 1 格！'), 'error');
-            return false;
-        } else if (type === 'sword' && count >= 6) {
-            FF14Utils.showToast(FF14Utils.getI18nText('faux_hollows_sword_limit', '劍最多只能放置 6 格！'), 'error');
-            return false;
-        } else if (type === 'chest' && count >= 4) {
-            FF14Utils.showToast(FF14Utils.getI18nText('faux_hollows_chest_limit', '寶箱最多只能放置 4 格！'), 'error');
-            return false;
-        }
-
-        return true;
-    }
-
-
-    checkForCompletedShapes() {
-        // Reset score
-        this.score = 0;
-
-        // Track processed cells to avoid double counting
-        const processed = new Set();
-
-        // Check for foxes (1x1)
-        for (let i = 0; i < FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS; i++) {
-            if (this.board[i] === 'fox' && !processed.has(i)) {
-                processed.add(i);
-                this.score += FauxHollowsFoxes.CONSTANTS.SCORES.FOX;
-            }
-        }
-
-        // Check for chests (2x2)
-        for (let row = 0; row < 5; row++) {
-            for (let col = 0; col < 5; col++) {
-                if (this.checkShapePattern(row, col, 2, 2, 'chest', processed)) {
-                    this.score += FauxHollowsFoxes.CONSTANTS.SCORES.CHEST;
-                }
-            }
-        }
-
-        // Check for swords (2x3 or 3x2)
-        // Check 2x3
-        for (let row = 0; row < 4; row++) {
-            for (let col = 0; col < 5; col++) {
-                if (this.checkShapePattern(row, col, 2, 3, 'sword', processed)) {
-                    this.score += FauxHollowsFoxes.CONSTANTS.SCORES.SWORD;
-                }
-            }
-        }
-
-        // Check 3x2
-        for (let row = 0; row < 5; row++) {
-            for (let col = 0; col < 4; col++) {
-                if (this.checkShapePattern(row, col, 3, 2, 'sword', processed)) {
-                    this.score += FauxHollowsFoxes.CONSTANTS.SCORES.SWORD;
-                }
-            }
-        }
-
-        // Only mark surrounding cells as gray when game is complete
-        if (this.clickCount >= FauxHollowsFoxes.CONSTANTS.MAX_CLICKS) {
-            this.markGrayCells();
-        }
-
-        this.updateDisplay();
-    }
-
-    validateShapes() {
-        // Count cells of each type
-        const counts = {
-            fox: 0,
-            sword: 0,
-            chest: 0
-        };
-
-        for (let i = 0; i < FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS; i++) {
-            if (this.board[i] === 'fox') counts.fox++;
-            else if (this.board[i] === 'sword') counts.sword++;
-            else if (this.board[i] === 'chest') counts.chest++;
-        }
-
-        // Check fox limit
-        if (counts.fox > 1) {
-            FF14Utils.showToast(FF14Utils.getI18nText('faux_hollows_fox_error', '錯誤：宗長只能有 0 或 1 格！'), 'error');
-            return false;
-        }
-
-        // Check sword
-        if (counts.sword > 6) {
-            FF14Utils.showToast(FF14Utils.getI18nText('faux_hollows_sword_error', '錯誤：劍最多只能有 6 格！'), 'error');
-            return false;
-        } else if (counts.sword === 6) {
-            // Check if it forms a valid 2x3 or 3x2 shape
-            let validShape = false;
-            const processed = new Set();
-
-            // Check 2x3
-            for (let row = 0; row < 4; row++) {
-                for (let col = 0; col < 5; col++) {
-                    if (this.checkShapePattern(row, col, 2, 3, 'sword', processed)) {
-                        validShape = true;
-                        break;
-                    }
-                }
-                if (validShape) break;
-            }
-
-            // Check 3x2
-            if (!validShape) {
-                processed.clear();
-                for (let row = 0; row < 5; row++) {
-                    for (let col = 0; col < 4; col++) {
-                        if (this.checkShapePattern(row, col, 3, 2, 'sword', processed)) {
-                            validShape = true;
-                            break;
-                        }
-                    }
-                    if (validShape) break;
-                }
-            }
-
-            if (!validShape && processed.size === 6) {
-                FF14Utils.showToast(FF14Utils.getI18nText('faux_hollows_sword_shape_error', '錯誤：6 格劍必須形成 2x3 或 3x2 的形狀！'), 'error');
-                return false;
-            }
-        }
-
-        // Check chest
-        if (counts.chest > 4) {
-            FF14Utils.showToast(FF14Utils.getI18nText('faux_hollows_chest_error', '錯誤：寶箱最多只能有 4 格！'), 'error');
-            return false;
-        } else if (counts.chest === 4) {
-            // Check if it forms a valid 2x2 shape
-            let validShape = false;
-            const processed = new Set();
-
-            for (let row = 0; row < 5; row++) {
-                for (let col = 0; col < 5; col++) {
-                    if (this.checkShapePattern(row, col, 2, 2, 'chest', processed)) {
-                        validShape = true;
-                        break;
-                    }
-                }
-                if (validShape) break;
-            }
-
-            if (!validShape) {
-                FF14Utils.showToast(FF14Utils.getI18nText('faux_hollows_chest_shape_error', '錯誤：4 格寶箱必須形成 2x2 的形狀！'), 'error');
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    checkShapePattern(row, col, width, height, type, processed) {
-        // Check if all cells in the pattern match the type
-        const cells = [];
-
-        for (let r = row; r < row + height; r++) {
-            for (let c = col; c < col + width; c++) {
-                const index = r * 6 + c;
-                if (this.board[index] !== type || processed.has(index)) {
-                    return false;
-                }
-                cells.push(index);
-            }
-        }
-
-        // Mark all cells as processed
-        cells.forEach(index => processed.add(index));
-        return true;
-    }
-
-
-    markGrayCells() {
-        // Mark all remaining empty cells as gray when game is complete
-        for (let i = 0; i < FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS; i++) {
-            if (this.board[i] === null) {
-                // 寫回 this.board，讓 saveState()／restoreState() 能正確保存並還原這個「已停用」狀態，
-                // 否則 renderBoard() 在 undo/redo 後只看 this.board 重建，會把這些格子還原成可點擊
-                this.board[i] = 'clicked';
-                const cell = this.elements.board.children[i];
-                cell.className = 'cell board-cell clicked';
-                this.setCellLabel(cell, i);
-            }
-        }
-    }
-
-
-    recalculateState() {
-        // Reset click count
-        this.clickCount = 0;
-
-        // Count all non-obstacle, non-null cells, excluding cells markGrayCells()
-        // already marked as 'clicked' when the game completed (they were never an
-        // actual click and must not inflate the count past MAX_CLICKS)
-        for (let i = 0; i < FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS; i++) {
-            const value = this.board[i];
-            if (value && value !== 'obstacle' && value !== 'clicked') {
-                this.clickCount++;
-            }
-        }
-
-        // Recalculate shapes and score
-        this.checkForCompletedShapes();
-        this.validateShapes();
-        this.updateMatchingBoards();
-    }
-
-    updateDisplay() {
-        this.elements.remainingClicks.textContent = FauxHollowsFoxes.CONSTANTS.MAX_CLICKS - this.clickCount;
-
-        // Check if game is complete
-        if (this.clickCount >= FauxHollowsFoxes.CONSTANTS.MAX_CLICKS) {
-            this.showResult();
-        } else {
-            // undo／重置讓點擊數回到門檻以下時，結果面板要跟著收起
-            this.hideResult();
-        }
-    }
-
-    showResult() {
-        // Calculate shape counts
-        const shapes = { sword: 0, chest: 0, fox: 0 };
-        const counted = new Set();
-
-        for (let i = 0; i < FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS; i++) {
-            const value = this.board[i];
-            if (value && !counted.has(value) && value !== 'obstacle' && value !== 'clicked') {
-                counted.add(value);
-                if (value === 'fox') shapes.fox++;
-                else if (value.startsWith('sword')) shapes.sword++;
-                else if (value.startsWith('chest')) shapes.chest++;
-            }
-        }
-
-        // 快取這次顯示的分數與造型統計，語言切換時（見 onLanguageChange）用同一份資料重繪
-        this.lastResult = { score: this.score, shapes };
-
-        this.renderResultPanel(this.lastResult);
-    }
-
-    hideResult() {
-        // 清除語言切換重繪快取，避免切換語言時重繪一個畫面上已經看不到的舊結果
-        this.lastResult = null;
-        this.elements.resultPanel.style.display = 'none';
-    }
-
-    /**
-     * 依分數與造型統計渲染結果面板。showResult() 與語言切換後的 onLanguageChange
-     * 共用這份邏輯，確保重繪出來的文字跟第一次顯示時一致。
-     */
-    renderResultPanel({ score, shapes }) {
-        this.elements.finalScore.textContent = score;
-
-        SecurityUtils.clearElement(this.elements.resultDetails);
-
-        const scoreUnit = FF14Utils.getI18nText('faux_hollows_score_unit', '分');
-
-        const swordP = document.createElement('p');
-        const swordText = FF14Utils.getI18nText('faux_hollows_cell_sword', '劍');
-        swordP.textContent = `${swordText} x ${shapes.sword} = ${shapes.sword * FauxHollowsFoxes.CONSTANTS.SCORES.SWORD}${scoreUnit}`;
-        this.elements.resultDetails.appendChild(swordP);
-
-        const chestP = document.createElement('p');
-        const chestText = FF14Utils.getI18nText('faux_hollows_cell_chest', '箱');
-        chestP.textContent = `${chestText} x ${shapes.chest} = ${shapes.chest * FauxHollowsFoxes.CONSTANTS.SCORES.CHEST}${scoreUnit}`;
-        this.elements.resultDetails.appendChild(chestP);
-
-        const foxP = document.createElement('p');
-        const foxText = FF14Utils.getI18nText('faux_hollows_cell_fox', '狐');
-        foxP.textContent = `${foxText} x ${shapes.fox} = ${shapes.fox * FauxHollowsFoxes.CONSTANTS.SCORES.FOX}${scoreUnit}`;
-        this.elements.resultDetails.appendChild(foxP);
-
-        this.elements.resultPanel.style.display = 'flex';
-    }
-
-
-    toggleOptimalHighlight() {
-        this.showOptimalHighlight = !this.showOptimalHighlight;
-
-        if (this.showOptimalHighlight) {
-            this.elements.autoCalculateBtn.textContent = FF14Utils.getI18nText('faux_hollows_close_best', '關閉最佳策略');
-            this.updateOptimalHighlight();
-        } else {
-            this.elements.autoCalculateBtn.textContent = FF14Utils.getI18nText('faux_hollows_show_best', '顯示最佳策略');
-            this.clearHighlights();
-        }
-    }
-
-    updateOptimalHighlight() {
-        // 清除之前的高亮
-        this.clearHighlights();
-
-        // 如果功能關閉或障礙物未確認，不進行高亮
-        if (!this.showOptimalHighlight || !this.obstaclesConfirmed) {
-            return;
-        }
-
-        // 確保寶物機率已更新
-        this.updateTreasureProbabilitiesBasedOnMatches();
-
-        // 找出最高機率的劍和寶箱位置
-        const optimalCells = this.findOptimalCells();
-
-        if (optimalCells.length > 0) {
-            // 高亮這些格子
-            optimalCells.forEach(cellData => {
-                const cell = this.elements.board.children[cellData.index];
-                cell.classList.add('optimal-highlight', 'best');
-                cell.dataset.optimalType = cellData.type;
-                cell.dataset.optimalProbability = cellData.probability;
-            });
-        }
-    }
-
-    findOptimalCells() {
-        const optimalCells = [];
-        let maxSwordProb = 0;
-        let maxChestProb = 0;
-
-        // 先找出最高機率
-        for (let i = 0; i < FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS; i++) {
-            // 跳過已經有內容的格子
-            if (this.board[i] !== null) continue;
-
-            const swordProb = this.treasureProbabilities.sword[i];
-            const chestProb = this.treasureProbabilities.chest[i];
-
-            if (swordProb > maxSwordProb) {
-                maxSwordProb = swordProb;
-            }
-
-            if (chestProb > maxChestProb) {
-                maxChestProb = chestProb;
-            }
-        }
-
-        // 找出所有等於最高機率的格子
-        for (let i = 0; i < FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS; i++) {
-            // 跳過已經有內容的格子
-            if (this.board[i] !== null) continue;
-
-            const swordProb = this.treasureProbabilities.sword[i];
-            const chestProb = this.treasureProbabilities.chest[i];
-
-            // 加入所有最高機率的劍位置
-            if (swordProb > 0 && swordProb === maxSwordProb) {
-                optimalCells.push({
-                    index: i,
-                    type: 'sword',
-                    probability: swordProb
-                });
-            }
-
-            // 加入所有最高機率的寶箱位置
-            if (chestProb > 0 && chestProb === maxChestProb) {
-                optimalCells.push({
-                    index: i,
-                    type: 'chest',
-                    probability: chestProb
-                });
-            }
-        }
-
-        return optimalCells;
-    }
-
-    clearHighlights() {
-        // 清除所有高亮效果
-        const cells = this.elements.board.querySelectorAll('.optimal-highlight');
-        cells.forEach(cell => {
-            cell.classList.remove('optimal-highlight', 'best');
-            delete cell.dataset.optimalType;
-            delete cell.dataset.optimalProbability;
-        });
-    }
-
-    saveState() {
-        if (this.isUndoingOrRedoing) return;
-
-        // 儲存目前狀態到歷史記錄
-        const state = {
-            board: [...this.board],
-            clickCount: this.clickCount,
-            score: this.score,
-            obstaclesConfirmed: this.obstaclesConfirmed,
-            showTreasureProbabilities: this.showTreasureProbabilities,
-            obstacleProbabilities: [...this.obstacleProbabilities],
-            treasureProbabilities: {
-                sword: [...this.treasureProbabilities.sword],
-                chest: [...this.treasureProbabilities.chest]
-            },
-            foxCandidates: [...this.foxCandidates]
-        };
-        this.history.push(state);
-
-        // 更新按鈕狀態
-        this.updateHistoryButtons();
-    }
-
+    // 上一步：退回最後一個動作，再用 toast 寫出退回了什麼。沒得退的時候按鈕是 aria-disabled，click 照樣會送出，所以這裡自己看 undoStack 擋。
+    // 自動補上的障礙物不存進 this.state，退回之後 render() 重新算：退回進入翻格的那一步，自動補上的跟著消失、障礙物又能點
     undo() {
-        if (!this.history.canUndo()) return;
+        if (this.undoStack.length === 0) return;
 
-        this.isUndoingOrRedoing = true;
-        const previousState = this.history.undo();
+        // 小選單的選項是照退回之前的狀態畫的，先關掉（不把焦點移回格子，按鈕上的焦點不動）
+        this.popover.close();
+        const { state, action } = this.undoStack.pop();
+        this.redoStack.push({ state: [...this.state], action });
+        this.state = state;
+        this.render();
+        FF14Utils.showToast(this.undoneText(action), 'info');
+    }
 
-        if (previousState) {
-            this.restoreState(previousState);
-            FF14Utils.showToast(FF14Utils.getI18nText('msg_success', '操作成功'));
+    // toast 的字：標或改寫被退回的那一格與標記（手動標的障礙物也算），清除寫清除哪一格，重置就寫重置遊戲
+    undoneText(action) {
+        if (action.type === 'set') {
+            return this.t('faux_hollows_undone_set', '已退回：{cell}標成{item}', {
+                cell: this.cellName(action.position),
+                item: this.stateName(action.value)
+            });
         }
-
-        this.isUndoingOrRedoing = false;
-        this.updateHistoryButtons();
+        if (action.type === 'clear') {
+            return this.t('faux_hollows_undone_clear', '已退回：清除{cell}', { cell: this.cellName(action.position) });
+        }
+        return this.t('faux_hollows_undone_reset', '已退回：重置遊戲');
     }
 
     redo() {
-        if (!this.history.canRedo()) return;
-
-        this.isUndoingOrRedoing = true;
-        const nextState = this.history.redo();
-
-        if (nextState) {
-            this.restoreState(nextState);
-            FF14Utils.showToast(FF14Utils.getI18nText('msg_success', '操作成功'));
-        }
-
-        this.isUndoingOrRedoing = false;
-        this.updateHistoryButtons();
+        if (this.redoStack.length === 0) return;
+        this.popover.close();
+        const { state, action } = this.redoStack.pop();
+        this.undoStack.push({ state: [...this.state], action });
+        this.state = state;
+        this.render();
+        FF14Utils.showToast(this.t('faux_hollows_redone', '已重做'), 'info');
     }
 
-    restoreState(state) {
-        // 恢復狀態
-        this.board = [...state.board];
-        this.clickCount = state.clickCount;
-        this.score = state.score;
-        this.obstaclesConfirmed = state.obstaclesConfirmed;
-        this.showTreasureProbabilities = state.showTreasureProbabilities;
-        this.obstacleProbabilities = [...state.obstacleProbabilities];
-        this.treasureProbabilities = {
-            sword: [...state.treasureProbabilities.sword],
-            chest: [...state.treasureProbabilities.chest]
-        };
-        this.foxCandidates = [...state.foxCandidates];
+    // 重置：清空盤面開始新的一局，不跳 toast（按錯了按「上一步」救回來）。盤面是空的時按鈕是 aria-disabled，
+    // click 照樣會送出，所以這裡自己看盤面上有沒有標記擋，不然「上一步」會多一步什麼都沒改的
+    resetGame() {
+        if (!this.hasMarks()) return;
 
-        // 重新渲染盤面
-        this.renderBoard();
+        this.popover.close();
+        this.apply({ type: 'reset' });
+    }
 
-        // 更新顯示（注意：不能呼叫 updateMatchingBoards，因為它會重新計算機率並覆蓋已恢復的值）
-        this.updateDisplay();
-        // 只更新符合盤面數量顯示，不重新計算機率
-        const matchingCount = this.countMatchingBoards();
-        this.elements.matchingBoards.textContent = matchingCount;
-        this.updateProbabilityDisplay();
-        this.updateOptimalHighlight();
+    // 狀態列的一句話：障礙物階段寫已知幾個（還沒有就只寫要做什麼）；擺法確定後進入翻格，一開始一定是找劍，還剩 11 次，
+    // 之後照 analyze() 的目標寫：找劍 → 找寶箱 → 翻宗長（剩的次數不夠翻完劍或寶箱就跳到下一個），都沒有就是完成
+    statusText(view) {
+        if (view.phase === 'obstacles') {
+            if (view.known > 0) {
+                return this.t('faux_hollows_status_obstacles_known', '① 點遊戲裡被擋住的格子・已知 {n}／5', { n: view.known });
+            }
+            return this.t('faux_hollows_status_obstacles', '① 點遊戲裡被擋住的格子');
+        }
+        if (view.goal === 'sword') {
+            return this.t('faux_hollows_status_sword', '② 找劍・剩 {n} 次', { n: view.left });
+        }
+        if (view.goal === 'chest') {
+            return this.t('faux_hollows_status_chest', '③ 找寶箱・剩 {n} 次', { n: view.left });
+        }
+        if (view.goal === 'fox') {
+            return this.t('faux_hollows_status_fox', '④ 翻宗長（不一定有）・剩 {n} 次', { n: view.left });
+        }
+        return this.t('faux_hollows_status_done', '完成');
+    }
 
-        // 檢查是否需要顯示提示
-        if (!this.obstaclesConfirmed && this.elements.gameHint) {
-            let obstacleCount = 0;
-            for (let i = 0; i < FauxHollowsFoxes.CONSTANTS.TOTAL_CELLS; i++) {
-                if (this.board[i] === 'obstacle') {
-                    obstacleCount++;
+    // 還沒翻的格子上的提示，依序是劍、寶箱（比例大於 0 才有）、宗長（還可能在這格才有）。
+    // 每個提示是 { icon, percent, text }：icon 與 percent 畫在格子上，text 是格子名稱裡的說法；
+    // 百分比是 formatPercent() 的結果，本身就帶 %（「75%」「<1%」），翻譯檔不再寫 %。
+    // 宗長沒有比例（見 hollows-solver.js），所以它的提示沒有 percent，格子上與名稱裡都沒有任何宗長的數字
+    hintsAt(view, position) {
+        const hints = [];
+        const sword = FauxHollowsSolver.formatPercent(view.sword[position]);
+        if (sword !== '') {
+            hints.push({
+                kind: 'sword',
+                icon: FauxHollowsFoxes.ICONS.sword,
+                percent: this.showProbabilities ? sword : '',
+                text: this.showProbabilities
+                    ? this.t('faux_hollows_hint_sword', '劍 {p}', { p: sword })
+                    : this.candidateText('sword')
+            });
+        }
+        const chest = FauxHollowsSolver.formatPercent(view.chest[position]);
+        if (chest !== '') {
+            hints.push({
+                kind: 'chest',
+                icon: FauxHollowsFoxes.ICONS.chest,
+                percent: this.showProbabilities ? chest : '',
+                text: this.showProbabilities
+                    ? this.t('faux_hollows_hint_chest', '寶箱 {p}', { p: chest })
+                    : this.candidateText('chest')
+            });
+        }
+        if (view.foxCells.includes(position)) {
+            hints.push({
+                kind: 'fox',
+                icon: FauxHollowsFoxes.ICONS.fox,
+                percent: '',
+                text: this.t('faux_hollows_hint_fox', '宗長有出現的話，可能在這格')
+            });
+        }
+        return hints;
+    }
+
+    candidateText(item) {
+        return this.t('faux_hollows_hint_candidate', '可能是{item}', { item: this.stateName(item) });
+    }
+
+    // 格子上的一個提示：<span class="cell-hint"><span class="cell-hint-icon">⚔️</span>75%</span>。
+    // 圖示放在自己的 span 裡：格子裡只有一個提示時，CSS 讓圖示自己一行、百分比一行；宗長只有圖示，沒有文字節點
+    hintElement({ kind, icon, percent }) {
+        const hint = document.createElement('span');
+        hint.className = `cell-hint hint-${kind}`;
+        const iconElement = document.createElement('span');
+        iconElement.className = 'cell-hint-icon';
+        iconElement.textContent = icon;
+        hint.appendChild(iconElement);
+        if (percent !== '') hint.appendChild(document.createTextNode(percent));
+        return hint;
+    }
+
+    render() {
+        const view = FauxHollowsSolver.analyze(this.boards, this.state);
+        // 先記下焦點在哪一格：下面有的格子會變成 disabled，焦點要在那之前就記好
+        const focused = this.cells.indexOf(document.activeElement);
+        const revealing = view.phase === 'reveal';
+        const separator = this.t('label_sep_colon', '：');
+        const joiner = this.t('label_sep_comma', '，');
+
+        this.elements.status.textContent = this.statusText(view);
+        this.elements.probabilities.textContent = this.showProbabilities
+            ? this.t('faux_hollows_hide_prob', '隱藏機率')
+            : this.t('faux_hollows_show_prob', '顯示機率');
+
+        // class、disabled 與 aria 每次都從頭設，不留上一次的樣子；格子只改內容，不重建
+        this.cells.forEach((cell, p) => {
+            const manual = this.state[p] === 'obstacle';
+            const auto = view.auto.includes(p);
+            const item = this.itemAt(p);
+
+            // 還沒翻的格子最多只加 suggested 一個 class：會設底色或框的 class 會蓋掉共用的 .cell.suggested 綠框
+            let className = 'cell grid-cell';
+            let label = this.cellName(p);
+            let hints = [];
+            let obstaclePercent = '';
+            if (manual) {
+                className += ' is-obstacle';
+                label += separator + this.stateName('obstacle');
+            } else if (auto) {
+                className += ' is-obstacle is-auto';
+                label += separator + this.stateName('auto');
+            } else if (item !== null) {
+                className += ` is-${item}`;
+                label += separator + this.stateName(item);
+            } else if (revealing) {
+                // 還沒翻的格子：⚔️、📦 的機率，可能有宗長的放 🦊，下一格框綠色；格子名稱照同樣的順序寫出這些提示
+                hints = this.hintsAt(view, p);
+                const notes = hints.map((hint) => hint.text);
+                if (view.next.includes(p)) {
+                    className += ' suggested';
+                    notes.push(this.t('faux_hollows_cell_next', '建議翻這格'));
                 }
+                if (notes.length > 0) label += separator + notes.join(joiner);
+            } else if (view.obstacle[p] > 0) {
+                obstaclePercent = this.showProbabilities ? FauxHollowsSolver.formatPercent(view.obstacle[p]) : '';
+                className += ' has-obstacle-probability';
+                label += separator + (this.showProbabilities
+                    ? this.t('faux_hollows_hint_obstacle', '障礙物 {p}', { p: obstaclePercent })
+                    : this.candidateText('obstacle'));
             }
-            if (obstacleCount < 2) {
-                this.elements.gameHint.classList.remove('hidden');
-            }
-        }
-    }
 
-    updateHistoryButtons() {
-        if (this.elements.undoBtn) {
-            this.elements.undoBtn.disabled = !this.history.canUndo();
-        }
-
-        if (this.elements.redoBtn) {
-            this.elements.redoBtn.disabled = !this.history.canRedo();
-        }
-    }
-
-    renderBoard() {
-        // 一般操作、語言切換與 undo/redo 共用顯示流程，避免把宗長候選重新畫成百分比。
-        for (const cell of this.elements.board.children) {
-            cell.className = 'cell board-cell';
+            cell.className = className;
             cell.textContent = '';
+            if (obstaclePercent !== '') cell.textContent = obstaclePercent;
+            if (item !== null) {
+                const icon = document.createElement('span');
+                icon.className = 'cell-icon';
+                icon.textContent = FauxHollowsFoxes.ICONS[item];
+                cell.appendChild(icon);
+            }
+            // 格子裡只放 .cell-hint，不放別的元素：CSS 靠 :only-child 判斷「只有一個提示」
+            for (const hint of hints) cell.appendChild(this.hintElement(hint));
+            // 障礙物階段：手動標的是切換鈕，還能標的才能點；翻格階段：障礙物都鎖住，次數用完時還沒翻的格子也鎖住（翻開的照樣能點）
+            // 次數用完時鎖住的還沒翻格子，上面照樣畫了提示（⚔️、📦 的機率與 🦊），是刻意的：設計 6.4「完成時盤面保留」，例如寶箱剩下的格子還寫著 📦100%
+            cell.disabled = revealing ? (manual || auto || (item === null && view.left === 0)) : (!manual && !view.obstacleCells.includes(p));
+            // 切換鈕才有 aria-pressed，翻格階段的格子不是切換鈕；開小選單的鈕才有 aria-expanded（CellPopover 設），障礙物階段的格子沒有
+            if (revealing) {
+                cell.removeAttribute('aria-pressed');
+            } else {
+                cell.setAttribute('aria-pressed', String(manual));
+                cell.removeAttribute('aria-expanded');
+            }
+            cell.setAttribute('aria-label', label);
+        });
+
+        // 用 aria-disabled，不用 disabled：按鈕變灰時焦點留在原地
+        this.elements.undo.setAttribute('aria-disabled', String(this.undoStack.length === 0));
+        this.elements.redo.setAttribute('aria-disabled', String(this.redoStack.length === 0));
+        this.elements.reset.setAttribute('aria-disabled', String(!this.hasMarks()));
+
+        // 焦點所在的格子鎖住了（擺法確定，它是障礙物；或次數用完，它還沒翻）：移到下一格，沒有下一格就移到第一個能點的格子
+        // 鎖住的原因還有第三種：還在標障礙物時，標了別的格子後它變得不可能或被自動補上，或拿掉它自己的標記後被自動補上
+        if (focused !== -1 && this.cells[focused].disabled) {
+            const target = view.next.length > 0 ? this.cells[view.next[0]] : this.cells.find((cell) => !cell.disabled);
+            target?.focus();
         }
-        this.updateProbabilityDisplay();
-    }
-
-    reset() {
-        // Clear board
-        this.board = Array(36).fill(null);
-        this.clickCount = 0;
-        this.score = 0;
-        this.selectedCell = null;
-        this.obstacleProbabilities = Array(36).fill(0);
-        this.treasureProbabilities = {
-            sword: Array(36).fill(0),
-            chest: Array(36).fill(0)
-        };
-        this.foxCandidates = Array(36).fill(false);
-        this.obstaclesConfirmed = false;
-        this.showTreasureProbabilities = false;
-        this.showOptimalHighlight = true; // 重置時回復預設開啟
-        this.history.clear(); // 清空歷史記錄
-
-        // 清除高亮
-        this.clearHighlights();
-
-        // 更新按鈕文字
-        this.elements.autoCalculateBtn.textContent = FF14Utils.getI18nText('faux_hollows_close_best', '關閉最佳策略');
-
-        // 禁用回到上一步按鈕
-        this.elements.undoBtn.disabled = true;
-
-        // Reset UI
-        this.initializeBoard();
-        // clickCount 已歸零，updateDisplay() 會透過 hideResult() 收起結果面板並清除快取
-        this.updateDisplay();
-
-        // Restore probability display if enabled
-        this.updateProbabilityDisplay();
-        this.updateMatchingBoards();
-
-        // 顯示提示
-        if (this.elements.gameHint) {
-            this.elements.gameHint.classList.remove('hidden');
-        }
-
-        // 保存初始狀態
-        this.saveState();
     }
 }
 
-// Initialize the game when page loads
-let game;
+// 初始化
 document.addEventListener('DOMContentLoaded', () => {
-    game = new FauxHollowsFoxes();
+    window.fauxHollows = new FauxHollowsFoxes();
 });
