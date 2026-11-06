@@ -12,8 +12,10 @@
 //    還沒翻的格子寫提示：⚔️、📦 加整數百分比（0 不寫），可能有宗長的只放 🦊、不寫任何數字，下一格框綠色（共用的 .cell.suggested）；
 //    格子名稱（aria-label）也寫出同樣的提示，螢幕閱讀器才聽得到。
 //
-// 每個動作（標、拿掉、翻開、改、清除、下一局）改 this.state 之前先存一份到 undoStack，「上一步」退回最後一份並用 toast 寫出退回了什麼；
-// 「下一局」清空盤面，按「上一步」救得回來。兩顆按鈕不能按時用 aria-disabled（不用 disabled），焦點才留得在按鈕上。
+// 標障礙物時顯示該格的障礙物機率；翻格提示依劍、寶箱、宗長分成藍、紅、黃的等高色帶。
+// 「隱藏機率」只收起百分比數字；兩個階段的候選底色、圖示與下一格綠框都保留。
+// 每個盤面動作之前存一份到 undoStack；上一步移到 redoStack，重做移回 undoStack，新動作清掉 redoStack。
+// 「重置遊戲」清空盤面，按「上一步」救得回來。歷史按鈕用 aria-disabled，焦點才留得在按鈕上。
 //
 // 擺法確定的那一刻，焦點所在的格子可能跟著鎖住：瀏覽器會把焦點丟到頁面上，只用鍵盤就玩不下去，
 // 所以重畫時先記下焦點在哪一格，鎖住了就把焦點移到下一格。
@@ -67,12 +69,16 @@ class FauxHollowsFoxes {
         this.state = new Array(FauxHollowsSolver.SIZE).fill(null);
         // 上一步：每個動作之前存一份 { state: 動作之前的 36 格（複本）, action: 那個動作 }，最後存的最先退回
         this.undoStack = [];
+        this.redoStack = [];
+        this.showProbabilities = true;
 
         this.elements = {
             status: document.getElementById('hollowsStatus'),
             board: document.getElementById('hollows-grid'),
             undo: document.getElementById('undo-btn'),
-            next: document.getElementById('next-btn')
+            redo: document.getElementById('redo-btn'),
+            reset: document.getElementById('reset-btn'),
+            probabilities: document.getElementById('toggle-probabilities')
         };
         // 36 格都在 index.html 裡，照位置收好；重畫時只改內容與屬性，不重建（焦點才留得在同一個元素上）
         this.cells = Array.from({ length: FauxHollowsSolver.SIZE }, (_, p) => this.elements.board.querySelector(`.grid-cell[data-position="${p}"]`));
@@ -83,9 +89,15 @@ class FauxHollowsFoxes {
         // 點格子：整個盤面只聽一次 click，由 handleBoardClick() 找出是哪一格。Esc、點外面、焦點移出由小選單自己關
         this.elements.board.addEventListener('click', (event) => this.handleBoardClick(event));
 
-        // 上一步、下一局：不能按的時候用 aria-disabled（不用 disabled），click 照樣會送出，所以 undo()、nextGame() 自己擋
+        // 不能按時用 aria-disabled，方法自己擋；切換顯示不改盤面歷史
         this.elements.undo.addEventListener('click', () => this.undo());
-        this.elements.next.addEventListener('click', () => this.nextGame());
+        this.elements.redo.addEventListener('click', () => this.redo());
+        this.elements.reset.addEventListener('click', () => this.resetGame());
+        this.elements.probabilities.addEventListener('click', () => {
+            this.popover.close();
+            this.showProbabilities = !this.showProbabilities;
+            this.render();
+        });
 
         // 切換語言：小選單的文字是打開時才寫的，先關掉；狀態列與格子名稱都是 render() 寫的，用新的語言重畫
         window.i18n.onLanguageChange(() => {
@@ -200,17 +212,18 @@ class FauxHollowsFoxes {
         this.apply(value === 'clear' ? { type: 'clear', position } : { type: 'set', position, value });
     }
 
-    // 標上、拿掉一格或換下一局，然後重畫。action 是 { type: 'set', position, value }、{ type: 'clear', position } 或 { type: 'next' }
+    // 標上、拿掉一格或重置，然後重畫。新動作會清掉重做分支。
     // 改 this.state 之前先把動作之前的 36 格連同這個動作存進 undoStack，「上一步」才退得回來
     apply(action) {
         this.undoStack.push({ state: [...this.state], action });
+        this.redoStack = [];
         if (action.type === 'set') this.state[action.position] = action.value;
         else if (action.type === 'clear') this.state[action.position] = null;
-        else if (action.type === 'next') this.state.fill(null);
+        else if (action.type === 'reset') this.state.fill(null);
         this.render();
     }
 
-    // 盤面上有沒有標記（障礙物或翻開的格子）：沒有的話下一局沒有東西可以清
+    // 盤面上有沒有標記（障礙物或翻開的格子）：沒有的話重置沒有東西可以清
     hasMarks() {
         return this.state.some((mark) => mark !== null);
     }
@@ -223,12 +236,13 @@ class FauxHollowsFoxes {
         // 小選單的選項是照退回之前的狀態畫的，先關掉（不把焦點移回格子，按鈕上的焦點不動）
         this.popover.close();
         const { state, action } = this.undoStack.pop();
+        this.redoStack.push({ state: [...this.state], action });
         this.state = state;
         this.render();
         FF14Utils.showToast(this.undoneText(action), 'info');
     }
 
-    // toast 的字：標或改寫被退回的那一格與標記（手動標的障礙物也算），清除寫清除哪一格，下一局就寫下一局
+    // toast 的字：標或改寫被退回的那一格與標記（手動標的障礙物也算），清除寫清除哪一格，重置就寫重置遊戲
     undoneText(action) {
         if (action.type === 'set') {
             return this.t('faux_hollows_undone_set', '已退回：{cell}標成{item}', {
@@ -239,16 +253,26 @@ class FauxHollowsFoxes {
         if (action.type === 'clear') {
             return this.t('faux_hollows_undone_clear', '已退回：清除{cell}', { cell: this.cellName(action.position) });
         }
-        return this.t('faux_hollows_undone_next', '已退回：下一局');
+        return this.t('faux_hollows_undone_reset', '已退回：重置遊戲');
     }
 
-    // 下一局：清空盤面開始新的一局，不跳 toast（按錯了按「上一步」救回來）。盤面是空的時按鈕是 aria-disabled，
+    redo() {
+        if (this.redoStack.length === 0) return;
+        this.popover.close();
+        const { state, action } = this.redoStack.pop();
+        this.undoStack.push({ state: [...this.state], action });
+        this.state = state;
+        this.render();
+        FF14Utils.showToast(this.t('faux_hollows_redone', '已重做'), 'info');
+    }
+
+    // 重置：清空盤面開始新的一局，不跳 toast（按錯了按「上一步」救回來）。盤面是空的時按鈕是 aria-disabled，
     // click 照樣會送出，所以這裡自己看盤面上有沒有標記擋，不然「上一步」會多一步什麼都沒改的
-    nextGame() {
+    resetGame() {
         if (!this.hasMarks()) return;
 
         this.popover.close();
-        this.apply({ type: 'next' });
+        this.apply({ type: 'reset' });
     }
 
     // 狀態列的一句話：障礙物階段寫已知幾個（還沒有就只寫要做什麼）；擺法確定後進入翻格，一開始一定是找劍，還剩 11 次，
@@ -281,21 +305,28 @@ class FauxHollowsFoxes {
         const sword = FauxHollowsSolver.formatPercent(view.sword[position]);
         if (sword !== '') {
             hints.push({
+                kind: 'sword',
                 icon: FauxHollowsFoxes.ICONS.sword,
-                percent: sword,
-                text: this.t('faux_hollows_hint_sword', '劍 {p}', { p: sword })
+                percent: this.showProbabilities ? sword : '',
+                text: this.showProbabilities
+                    ? this.t('faux_hollows_hint_sword', '劍 {p}', { p: sword })
+                    : this.candidateText('sword')
             });
         }
         const chest = FauxHollowsSolver.formatPercent(view.chest[position]);
         if (chest !== '') {
             hints.push({
+                kind: 'chest',
                 icon: FauxHollowsFoxes.ICONS.chest,
-                percent: chest,
-                text: this.t('faux_hollows_hint_chest', '寶箱 {p}', { p: chest })
+                percent: this.showProbabilities ? chest : '',
+                text: this.showProbabilities
+                    ? this.t('faux_hollows_hint_chest', '寶箱 {p}', { p: chest })
+                    : this.candidateText('chest')
             });
         }
         if (view.foxCells.includes(position)) {
             hints.push({
+                kind: 'fox',
                 icon: FauxHollowsFoxes.ICONS.fox,
                 percent: '',
                 text: this.t('faux_hollows_hint_fox', '宗長有出現的話，可能在這格')
@@ -304,11 +335,15 @@ class FauxHollowsFoxes {
         return hints;
     }
 
+    candidateText(item) {
+        return this.t('faux_hollows_hint_candidate', '可能是{item}', { item: this.stateName(item) });
+    }
+
     // 格子上的一個提示：<span class="cell-hint"><span class="cell-hint-icon">⚔️</span>75%</span>。
     // 圖示放在自己的 span 裡：格子裡只有一個提示時，CSS 讓圖示自己一行、百分比一行；宗長只有圖示，沒有文字節點
-    hintElement({ icon, percent }) {
+    hintElement({ kind, icon, percent }) {
         const hint = document.createElement('span');
-        hint.className = 'cell-hint';
+        hint.className = `cell-hint hint-${kind}`;
         const iconElement = document.createElement('span');
         iconElement.className = 'cell-hint-icon';
         iconElement.textContent = icon;
@@ -326,6 +361,9 @@ class FauxHollowsFoxes {
         const joiner = this.t('label_sep_comma', '，');
 
         this.elements.status.textContent = this.statusText(view);
+        this.elements.probabilities.textContent = this.showProbabilities
+            ? this.t('faux_hollows_hide_prob', '隱藏機率')
+            : this.t('faux_hollows_show_prob', '顯示機率');
 
         // class、disabled 與 aria 每次都從頭設，不留上一次的樣子；格子只改內容，不重建
         this.cells.forEach((cell, p) => {
@@ -337,6 +375,7 @@ class FauxHollowsFoxes {
             let className = 'cell grid-cell';
             let label = this.cellName(p);
             let hints = [];
+            let obstaclePercent = '';
             if (manual) {
                 className += ' is-obstacle';
                 label += separator + this.stateName('obstacle');
@@ -355,10 +394,17 @@ class FauxHollowsFoxes {
                     notes.push(this.t('faux_hollows_cell_next', '建議翻這格'));
                 }
                 if (notes.length > 0) label += separator + notes.join(joiner);
+            } else if (view.obstacle[p] > 0) {
+                obstaclePercent = this.showProbabilities ? FauxHollowsSolver.formatPercent(view.obstacle[p]) : '';
+                className += ' has-obstacle-probability';
+                label += separator + (this.showProbabilities
+                    ? this.t('faux_hollows_hint_obstacle', '障礙物 {p}', { p: obstaclePercent })
+                    : this.candidateText('obstacle'));
             }
 
             cell.className = className;
             cell.textContent = '';
+            if (obstaclePercent !== '') cell.textContent = obstaclePercent;
             if (item !== null) {
                 const icon = document.createElement('span');
                 icon.className = 'cell-icon';
@@ -380,9 +426,10 @@ class FauxHollowsFoxes {
             cell.setAttribute('aria-label', label);
         });
 
-        // 上一步：有動作可以退才能按；下一局：盤面上有標記才能按。用 aria-disabled，不用 disabled：按鈕變灰時焦點留在原地
+        // 用 aria-disabled，不用 disabled：按鈕變灰時焦點留在原地
         this.elements.undo.setAttribute('aria-disabled', String(this.undoStack.length === 0));
-        this.elements.next.setAttribute('aria-disabled', String(!this.hasMarks()));
+        this.elements.redo.setAttribute('aria-disabled', String(this.redoStack.length === 0));
+        this.elements.reset.setAttribute('aria-disabled', String(!this.hasMarks()));
 
         // 焦點所在的格子鎖住了（擺法確定，它是障礙物；或次數用完，它還沒翻）：移到下一格，沒有下一格就移到第一個能點的格子
         // 鎖住的原因還有第三種：還在標障礙物時，標了別的格子後它變得不可能或被自動補上，或拿掉它自己的標記後被自動補上

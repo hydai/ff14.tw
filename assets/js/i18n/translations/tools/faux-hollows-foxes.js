@@ -20,12 +20,16 @@ const FauxHollowsTranslations = {
 
         // 按鈕
         faux_hollows_undo: '上一步',
-        faux_hollows_next: '下一局',
+        faux_hollows_redo: '重做',
+        faux_hollows_reset: '重置遊戲',
+        faux_hollows_hide_prob: '隱藏機率',
+        faux_hollows_show_prob: '顯示機率',
 
         // 上一步的提示：{cell} 是格子名稱，{item} 是被退回的標記（障礙物、劍、寶箱、宗長、空）
         faux_hollows_undone_set: '已退回：{cell}標成{item}',
         faux_hollows_undone_clear: '已退回：清除{cell}',
-        faux_hollows_undone_next: '已退回：下一局',
+        faux_hollows_undone_reset: '已退回：重置遊戲',
+        faux_hollows_redone: '已重做',
 
         // 格子旁的小選單
         faux_hollows_menu_label: '{cell}翻到什麼',
@@ -39,6 +43,8 @@ const FauxHollowsTranslations = {
         faux_hollows_data_source: '盤面資料來源',
 
         // 格子內容（提示也寫進格子名稱）：{p} 是整數百分比，本身就帶 %
+        faux_hollows_hint_obstacle: '障礙物 {p}',
+        faux_hollows_hint_candidate: '可能是{item}',
         faux_hollows_hint_sword: '劍 {p}',
         faux_hollows_hint_chest: '寶箱 {p}',
         faux_hollows_hint_fox: '宗長有出現的話，可能在這格',
@@ -72,12 +78,16 @@ const FauxHollowsTranslations = {
 
         // Buttons
         faux_hollows_undo: 'Undo',
-        faux_hollows_next: 'Next game',
+        faux_hollows_redo: 'Redo',
+        faux_hollows_reset: 'Reset game',
+        faux_hollows_hide_prob: 'Hide probabilities',
+        faux_hollows_show_prob: 'Show probabilities',
 
         // Undo messages: {cell} is the cell name, {item} is the mark that was undone (Obstacle, Sword, Chest, Fox, Empty)
         faux_hollows_undone_set: 'Undone: {item} on {cell}',
         faux_hollows_undone_clear: 'Undone: clear {cell}',
-        faux_hollows_undone_next: 'Undone: next game',
+        faux_hollows_undone_reset: 'Undone: reset game',
+        faux_hollows_redone: 'Redone',
 
         // Menu beside a cell
         faux_hollows_menu_label: 'What is under {cell}',
@@ -91,6 +101,8 @@ const FauxHollowsTranslations = {
         faux_hollows_data_source: 'Board data source',
 
         // Cell content (the hints are also in the cell's accessible name): {p} is a whole-number percentage that already includes %
+        faux_hollows_hint_obstacle: 'Obstacle {p}',
+        faux_hollows_hint_candidate: 'May be {item}',
         faux_hollows_hint_sword: 'Sword {p}',
         faux_hollows_hint_chest: 'Chest {p}',
         faux_hollows_hint_fox: 'The fox may be here if it appears',
@@ -124,12 +136,16 @@ const FauxHollowsTranslations = {
 
         // ボタン
         faux_hollows_undo: '元に戻す',
-        faux_hollows_next: '次のゲーム',
+        faux_hollows_redo: 'やり直す',
+        faux_hollows_reset: 'ゲームをリセット',
+        faux_hollows_hide_prob: '確率を隠す',
+        faux_hollows_show_prob: '確率を表示',
 
         // 元に戻したときのメッセージ：{cell} はマスの名前、{item} は戻した印（障害物、剣、宝箱、宗長、空）
         faux_hollows_undone_set: '元に戻しました：{cell}の{item}',
         faux_hollows_undone_clear: '元に戻しました：{cell}のクリア',
-        faux_hollows_undone_next: '元に戻しました：次のゲーム',
+        faux_hollows_undone_reset: '元に戻しました：ゲームのリセット',
+        faux_hollows_redone: 'やり直しました',
 
         // マスの横のメニュー
         faux_hollows_menu_label: '{cell}の中身',
@@ -143,6 +159,8 @@ const FauxHollowsTranslations = {
         faux_hollows_data_source: 'ボードデータソース',
 
         // セル内容（ヒントはセルの名前にも入る）：{p} は % 付きの整数パーセント
+        faux_hollows_hint_obstacle: '障害物 {p}',
+        faux_hollows_hint_candidate: '{item}の候補',
         faux_hollows_hint_sword: '剣 {p}',
         faux_hollows_hint_chest: '宝箱 {p}',
         faux_hollows_hint_fox: '宗長が出るならこのマスかもしれない',

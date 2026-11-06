@@ -32,6 +32,9 @@
             <div class="hollows-layout" id="hollowsTool">
                 <section class="card hollows-card">
                     <p class="hollows-status" id="hollowsStatus" aria-live="polite">① 點遊戲裡被擋住的格子</p>
+                    <div class="hollows-toolbar">
+                        <button type="button" class="btn btn-sm" id="toggle-probabilities" aria-controls="hollows-grid">隱藏機率</button>
+                    </div>
                     <div class="hollows-grid" id="hollows-grid">
                         <button type="button" class="cell grid-cell" data-position="0" aria-label="第 1 格"></button>
                         <button type="button" class="cell grid-cell" data-position="1" aria-label="第 2 格"></button>
@@ -77,7 +80,8 @@
                     </div>
                     <div class="hollows-actions">
                         <button type="button" class="btn" id="undo-btn" data-i18n="faux_hollows_undo" aria-disabled="true">上一步</button>
-                        <button type="button" class="btn" id="next-btn" data-i18n="faux_hollows_next" aria-disabled="true">下一局</button>
+                        <button type="button" class="btn" id="redo-btn" data-i18n="faux_hollows_redo" aria-disabled="true">重做</button>
+                        <button type="button" class="btn hollows-reset" id="reset-btn" data-i18n="faux_hollows_reset" aria-disabled="true">重置遊戲</button>
                     </div>
                 </section>
             </div>

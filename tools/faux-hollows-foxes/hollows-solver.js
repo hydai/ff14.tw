@@ -126,7 +126,8 @@ const FauxHollowsSolver = (() => {
             }
         });
 
-        return { total, known, auto, obstacleCells, settled };
+        const obstacle = counts.map((count) => total > 0 ? count / total : 0);
+        return { total, known, auto, obstacleCells, settled, obstacle };
     }
 
     /**
@@ -202,6 +203,7 @@ const FauxHollowsSolver = (() => {
      * - matches：障礙物階段是和手動障礙物對得上的盤面數；翻格階段是和整份狀態對得上的盤面數。
      * - known：在每個對得上的盤面裡都是障礙物的格數，手動的也算；auto：其中自動補上的格子，由小到大。
      * - obstacleCells：障礙物階段還能標的格子；翻格階段是 []。
+     * - obstacle：長度 36，每一格依目前手動障礙物計算的障礙物比例（0–1）。
      * - left：11 減去翻開的格數（狀態是劍、寶箱、宗長、空的格子）。
      * - goal：下一個目標 'sword'、'chest'、'fox'；null 是完成（次數用完、宗長沒了；對不上任何盤面時也是），障礙物階段也是 null。
      * - next：目標的下一格，同分的全部，由小到大（障礙物階段是 []）。
@@ -212,7 +214,7 @@ const FauxHollowsSolver = (() => {
      */
     function analyze(boards, state) {
         const left = MAX_REVEALS - state.filter((mark) => ITEMS.includes(mark)).length;
-        const { total, known, auto, obstacleCells, settled } = obstacleView(boards, state);
+        const { total, known, auto, obstacleCells, settled, obstacle } = obstacleView(boards, state);
 
         if (!settled) {
             return {
@@ -221,6 +223,7 @@ const FauxHollowsSolver = (() => {
                 known,
                 auto,
                 obstacleCells,
+                obstacle,
                 left,
                 goal: null,
                 next: [],
@@ -237,6 +240,7 @@ const FauxHollowsSolver = (() => {
             known,
             auto,
             obstacleCells: [],
+            obstacle,
             left,
             goal: reveal.goal,
             next: reveal.next,

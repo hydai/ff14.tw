@@ -38,7 +38,11 @@ test('一打開：① 點遊戲裡被擋住的格子；36 格都是按鈕，格 
     assert.equal(page.status(), '① 點遊戲裡被擋住的格子');
     assert.equal(page.cells().length, 36);
     assert.deepEqual(page.cells().map((c) => c.type), Array(36).fill('button'));
-    assert.deepEqual(page.cells().map((c) => c.getAttribute('aria-label')), ALL.map((p) => `第 ${p + 1} 格`));
+    for (const p of ALL) {
+        const label = page.cell(p).getAttribute('aria-label');
+        if ([1, 11, 24, 34].includes(p)) assert.equal(label, `第 ${p + 1} 格`);
+        else assert.match(label, new RegExp(`^第 ${p + 1} 格：障礙物 [0-9]+%$`));
+    }
     assert.deepEqual(page.cells().map((c) => c.getAttribute('aria-pressed')), Array(36).fill('false'));
     assert.deepEqual(page.enabled(), ALL.filter((p) => ![1, 11, 24, 34].includes(p)));
     assert.deepEqual(page.obstacles(), []);
@@ -71,7 +75,7 @@ test('自動補上：標 2 就補上 10（斜線、不能點、名稱寫自動�
     page.tap(2);
     assert.deepEqual(page.obstacles(), []);
     assert.deepEqual(page.autoCells(), []);
-    assert.equal(page.cell(10).getAttribute('aria-label'), '第 11 格');
+    assert.equal(page.cell(10).getAttribute('aria-label'), '第 11 格：障礙物 25%');
     assert.equal(page.status(), '① 點遊戲裡被擋住的格子');
 });
 
@@ -349,10 +353,14 @@ test('進入翻格：還沒翻的格子寫 ⚔️、📦 的整數百分比（�
     assert.doesNotMatch(page.cell(3).textContent, /\d/);
 });
 
-test('障礙物階段不寫提示、不框下一格', () => {
+test('障礙物階段寫障礙物機率，不放寶物提示、不框下一格', () => {
     const page = createHollowsPage();
     page.tap(9);
     assert.deepEqual(ALL.flatMap((p) => page.hints(p)), []);
+    assert.equal(page.cell(13).textContent, '33%');
+    assert.equal(page.cell(13).getAttribute('aria-label'), '第 14 格：障礙物 33%');
+    assert.equal(page.cell(9).textContent, '');
+    assert.equal(page.cell(1).textContent, '');
     assert.deepEqual(page.nextCells(), []);
 });
 
@@ -446,10 +454,10 @@ test('翻了好幾格之後回頭改早先的一格：選單只列還對得上�
     assert.deepEqual(page.hints(29), ['🦊']);
 });
 
-test('頁面結構：拿掉提示、盤面資訊、重置／重做、機率與最佳策略的開關、結果卡、對話框與回到頂部；格子是 36 個按鈕；不再載入 state-history-manager.js、modal-manager.js', () => {
+test('頁面結構：拿掉舊提示、盤面資訊、最佳策略的開關、結果卡、對話框與回到頂部；格子是 36 個按鈕；不再載入 state-history-manager.js、modal-manager.js', () => {
     const html = read('tools/faux-hollows-foxes/index.html');
-    for (const gone of ['game-hint', 'game-info', 'remaining-clicks', 'matching-boards', 'reset-btn', 'redo-btn',
-        'toggle-probabilities', 'auto-calculate', 'result-panel', 'cell-popup', 'back-to-top', 'btn-primary',
+    for (const gone of ['game-hint', 'game-info', 'remaining-clicks', 'matching-boards',
+        'auto-calculate', 'result-panel', 'cell-popup', 'back-to-top', 'btn-primary',
         'style="display: none', 'state-history-manager.js', 'modal-manager.js']) {
         assert.ok(!html.includes(gone), `index.html 不應該再有 ${gone}`);
     }
@@ -493,7 +501,7 @@ test('版面：卡片 overflow: visible、盤面 position: relative（小選單�
 
 test('不再用到的翻譯鍵三語都拿掉', () => {
     const removed = ['faux_hollows_hint', 'faux_hollows_remaining_clicks', 'faux_hollows_matching_boards', 'faux_hollows_boards_unit',
-        'faux_hollows_reset', 'faux_hollows_redo', 'faux_hollows_hide_prob', 'faux_hollows_show_prob', 'faux_hollows_close_best',
+        'faux_hollows_next', 'faux_hollows_undone_next', 'faux_hollows_close_best',
         'faux_hollows_show_best', 'faux_hollows_popup_title', 'faux_hollows_popup_obstacle', 'faux_hollows_popup_cancel',
         'faux_hollows_result_title', 'faux_hollows_final_score', 'faux_hollows_score_unit', 'faux_hollows_back_to_top',
         'faux_hollows_obstacles_confirmed', 'faux_hollows_all_obstacles_confirmed', 'faux_hollows_auto_filled',
@@ -502,18 +510,19 @@ test('不再用到的翻譯鍵三語都拿掉', () => {
         'faux_hollows_sword_shape_error', 'faux_hollows_chest_error', 'faux_hollows_chest_shape_error', 'faux_hollows_cell_fox',
         'faux_hollows_fox_candidate', 'faux_hollows_cell_sword', 'faux_hollows_cell_chest', 'faux_hollows_cell_state_used',
         'faux_hollows_cell_state_unknown', 'faux_hollows_cell_obstacle_prob'];
-    assert.equal(removed.length, 38);
+    assert.equal(removed.length, 36);
     for (const lang of ['zh', 'en', 'ja']) {
         const keys = translationKeySet(TRANSLATIONS, lang);
         for (const key of removed) assert.ok(!keys.has(key), `${lang} 還有 ${key}`);
     }
 });
 
-test('一打開：上一步、下一局都不能按（用 aria-disabled，不是 disabled）', () => {
+test('一打開：上一步、重做、重置遊戲都不能按（用 aria-disabled，不是 disabled）', () => {
     const page = createHollowsPage();
     assert.equal(page.$('undo-btn').getAttribute('aria-disabled'), 'true');
-    assert.equal(page.$('next-btn').getAttribute('aria-disabled'), 'true');
+    assert.equal(page.$('reset-btn').getAttribute('aria-disabled'), 'true');
     assert.equal(page.$('undo-btn').disabled === true, false);
+    assert.equal(page.$('redo-btn').getAttribute('aria-disabled'), 'true');
 });
 
 test('上一步退回上一個動作，toast 寫出退回了什麼：標障礙物、拿掉障礙物、翻開、改、清除', () => {
@@ -559,21 +568,21 @@ test('上一步跨過進入翻格的那一步：回到障礙物階段，自動�
     assert.deepEqual(ALL.filter((p) => page.cell(p).getAttribute('aria-expanded') !== null), []);
 });
 
-test('下一局：清空盤面、不跳 toast；上一步整盤救回來；盤面是空的時按了什麼都不做', () => {
+test('重置遊戲：清空盤面、不跳 toast；上一步整盤救回來；盤面是空的時按了什麼都不做', () => {
     const page = createHollowsPage();
-    page.$('next-btn').click();
+    page.$('reset-btn').click();
     assert.equal(page.$('undo-btn').getAttribute('aria-disabled'), 'true');   // 沒有多一步
     page.tap(9, 13);
     page.pick(25, 'sword');
-    assert.equal(page.$('next-btn').getAttribute('aria-disabled'), 'false');
+    assert.equal(page.$('reset-btn').getAttribute('aria-disabled'), 'false');
     const count = page.toasts.length;
-    page.$('next-btn').click();
+    page.$('reset-btn').click();
     assert.equal(page.toasts.length, count);
     assert.equal(page.status(), '① 點遊戲裡被擋住的格子');
     assert.deepEqual(page.obstacles(), []);
-    assert.equal(page.$('next-btn').getAttribute('aria-disabled'), 'true');
+    assert.equal(page.$('reset-btn').getAttribute('aria-disabled'), 'true');
     page.$('undo-btn').click();
-    assert.equal(page.toasts.at(-1).message, '已退回：下一局');
+    assert.equal(page.toasts.at(-1).message, '已退回：重置遊戲');
     assert.deepEqual(page.obstacles(), LAYOUT0_OBSTACLES);
     assert.equal(page.itemOf(25), 'sword');
     assert.equal(page.status(), '② 找劍・剩 10 次');
@@ -588,16 +597,16 @@ test('沒得退時按上一步：什麼都不變、不跳 toast，焦點留在�
     isSame(page.document.activeElement, undo, '焦點留在按鈕上');
 });
 
-test('小選單開著時按下一局：先把選單關掉', () => {
+test('小選單開著時按重置遊戲：先把選單關掉', () => {
     const page = createHollowsPage();
     page.tap(9, 13);
     page.cell(25).click();
-    page.$('next-btn').click();
+    page.$('reset-btn').click();
     assert.equal(page.menu(), null);
     assert.equal(page.status(), '① 點遊戲裡被擋住的格子');
 });
 
-// 上面是真的點按鈕，小選單也會被「點外面」的處理關掉，拿掉 nextGame() 裡的 close() 照樣過；
+// 上面是真的點按鈕，小選單也會被「點外面」的處理關掉，拿掉 resetGame() 裡的 close() 照樣過；
 // 這兩個函式要自己先關掉選單，不靠「點外面」的處理（沒有 click 時，例如之後加了快速鍵），所以直接呼叫它們（同 mini-cactpot-page.test.js）
 test('小選單開著時直接呼叫 undo()：函式自己先關掉選單', () => {
     const page = createHollowsPage();
@@ -608,37 +617,152 @@ test('小選單開著時直接呼叫 undo()：函式自己先關掉選單', () =
     isSame(page.menu(), null, 'undo() 自己先關掉小選單');
 });
 
-test('小選單開著時直接呼叫 nextGame()（盤面上有東西）：函式自己先關掉選單', () => {
+test('小選單開著時直接呼叫 resetGame()（盤面上有東西）：函式自己先關掉選單', () => {
     const page = createHollowsPage();
     page.tap(9, 13);
     page.cell(25).click();
     assert.ok(page.menu() !== null, '先把小選單打開');
-    page.app.nextGame();
-    isSame(page.menu(), null, 'nextGame() 自己先關掉小選單');
+    page.app.resetGame();
+    isSame(page.menu(), null, 'resetGame() 自己先關掉小選單');
 });
 
 test('切換語言：按鈕與之後的 toast 換字', () => {
     const page = createHollowsPage();
     page.setLang('en');
     assert.equal(page.$('undo-btn').textContent, 'Undo');
-    assert.equal(page.$('next-btn').textContent, 'Next game');
+    assert.equal(page.$('reset-btn').textContent, 'Reset game');
     page.tap(9);
     page.$('undo-btn').click();
     assert.equal(page.toasts.at(-1).message, 'Undone: Obstacle on Cell 10');
     page.setLang('ja');
-    assert.equal(page.$('next-btn').textContent, '次のゲーム');
+    assert.equal(page.$('reset-btn').textContent, 'ゲームをリセット');
     page.tap(9);
-    page.$('next-btn').click();
+    page.$('reset-btn').click();
     page.$('undo-btn').click();
-    assert.equal(page.toasts.at(-1).message, '元に戻しました：次のゲーム');
+    assert.equal(page.toasts.at(-1).message, '元に戻しました：ゲームのリセット');
 });
 
-test('版面：兩顆按鈕並排；不能按時是 aria-disabled 的樣子；頁面上沒有 .btn-primary', () => {
+test('版面：上一步與重做並排、重置另放一行；不能按時是 aria-disabled 的樣子；頁面上沒有 .btn-primary', () => {
     const file = 'tools/faux-hollows-foxes/style.css';
     assert.match(cssRule(file, '.hollows-actions'), /grid-template-columns:\s*1fr 1fr;/);
     assert.match(cssRule(file, '.hollows-actions .btn[aria-disabled="true"]'), /opacity:\s*0\.55;/);
     const html = read('tools/faux-hollows-foxes/index.html');
     assert.match(html, /<button type="button" class="btn" id="undo-btn" data-i18n="faux_hollows_undo" aria-disabled="true">上一步<\/button>/);
-    assert.match(html, /<button type="button" class="btn" id="next-btn" data-i18n="faux_hollows_next" aria-disabled="true">下一局<\/button>/);
+    assert.match(html, /<button type="button" class="btn hollows-reset" id="reset-btn" data-i18n="faux_hollows_reset" aria-disabled="true">重置遊戲<\/button>/);
     assert.ok(!html.includes('btn-primary'));
+});
+
+test('隱藏機率只隱藏百分比：兩階段保留候選底色、圖示、結果與下一格；重做、重置不改顯示偏好', () => {
+    const page = createHollowsPage();
+    const toggle = page.$('toggle-probabilities');
+    // 按鈕上的字寫按了會做什麼（隱藏機率／顯示機率），所以不是切換鈕、沒有 aria-pressed：
+    // 不然機率顯示著時螢幕閱讀器會唸「隱藏機率，已按下」，聽起來像已經藏起來了
+    assert.equal(toggle.hasAttribute('aria-pressed'), false);
+    assert.equal(page.cell(9).textContent, '19%');
+    toggle.click();
+    assert.equal(toggle.textContent, '顯示機率');
+    assert.equal(toggle.hasAttribute('aria-pressed'), false);
+    assert.equal(page.cell(9).textContent, '');
+    assert.equal(page.cell(9).getAttribute('aria-label'), '第 10 格：可能是障礙物');
+    assert.equal(page.cell(9).classList.contains('has-obstacle-probability'), true);
+    page.tap(9, 13);
+    assert.deepEqual(page.hints(26), ['⚔️', '📦']);
+    assert.deepEqual(page.hints(0), ['⚔️', '📦', '🦊']);
+    assert.deepEqual(page.hints(3), ['🦊']);
+    assert.deepEqual([...page.cell(0).querySelectorAll('.cell-hint')].map((e) => e.className),
+        ['cell-hint hint-sword', 'cell-hint hint-chest', 'cell-hint hint-fox']);
+    assert.equal(page.cell(26).getAttribute('aria-label'), '第 27 格：可能是劍，可能是寶箱，建議翻這格');
+    for (const cell of page.cells()) {
+        assert.doesNotMatch(cell.textContent, /%/);
+        assert.doesNotMatch(cell.getAttribute('aria-label'), /%/);
+    }
+    assert.deepEqual(page.nextCells(), [26]);
+    toggle.click();
+    assert.deepEqual(page.hints(26), ['⚔️75%', '📦13%']);
+    page.pick(25, 'sword');
+    toggle.click();
+    assert.equal(page.cell(25).textContent, '⚔️');
+    assert.equal(page.cell(25).classList.contains('is-sword'), true);
+    page.$('undo-btn').click();
+    page.$('redo-btn').click();
+    assert.deepEqual(page.hints(26), ['⚔️']);
+    page.$('reset-btn').click();
+    assert.equal(page.cell(9).textContent, '');
+    assert.equal(page.cell(9).classList.contains('has-obstacle-probability'), true);
+    toggle.click();
+    assert.equal(page.cell(9).textContent, '19%');
+});
+
+test('重做跨過障礙物階段、翻格與清除，次數與選單選項都重算', () => {
+    const page = createHollowsPage();
+    page.tap(9, 13);
+    page.pick(0, 'fox');
+    page.pick(0, 'clear');
+    for (let i = 0; i < 3; i++) page.$('undo-btn').click();
+    assert.equal(page.status(), '① 點遊戲裡被擋住的格子・已知 1／5');
+    page.$('redo-btn').click();
+    assert.deepEqual(page.autoCells(), [16, 28, 30]);
+    page.$('redo-btn').click();
+    assert.equal(page.itemOf(0), 'fox');
+    assert.equal(page.status(), '② 找劍・剩 10 次');
+    page.cell(21).click();
+    assert.equal(page.option('fox').disabled, true);
+    page.app.redo();
+    assert.equal(page.menu(), null);
+    assert.equal(page.itemOf(0), null);
+    assert.equal(page.status(), '② 找劍・剩 11 次');
+    assert.equal(page.$('redo-btn').getAttribute('aria-disabled'), 'true');
+    page.cell(21).click();
+    assert.equal(page.option('fox').disabled === true, false);
+});
+
+test('上一步之後的新動作清除重做分支；無效選擇與切換顯示不清除', () => {
+    const page = createHollowsPage();
+    page.tap(9, 13);
+    page.pick(25, 'sword');
+    page.$('undo-btn').click();
+    page.app.choose(25, 'fox'); // 這格不可能是宗長
+    page.$('toggle-probabilities').click();
+    assert.equal(page.$('redo-btn').getAttribute('aria-disabled'), 'false');
+    page.pick(25, 'chest');
+    assert.equal(page.$('redo-btn').getAttribute('aria-disabled'), 'true');
+    page.app.redo();
+    assert.equal(page.itemOf(25), 'chest');
+});
+
+test('重置可以上一步救回，再重做清空；空盤重置不會清掉重做歷史', () => {
+    const page = createHollowsPage();
+    page.tap(9, 13);
+    page.pick(25, 'sword');
+    page.$('reset-btn').click();
+    page.$('undo-btn').click();
+    assert.equal(page.itemOf(25), 'sword');
+    page.$('redo-btn').click();
+    assert.deepEqual(page.obstacles(), []);
+    page.$('undo-btn').click();
+    page.$('undo-btn').click();
+    page.$('undo-btn').click();
+    page.$('undo-btn').click();
+    page.$('reset-btn').click();
+    page.$('redo-btn').click();
+    assert.deepEqual(page.obstacles(), [9]);
+});
+
+test('三語的機率切換、重做與重置文字隨目前狀態切換', () => {
+    const page = createHollowsPage();
+    page.$('toggle-probabilities').click();
+    page.setLang('en');
+    assert.equal(page.$('toggle-probabilities').textContent, 'Show probabilities');
+    assert.equal(page.cell(9).getAttribute('aria-label'), 'Cell 10: May be Obstacle');
+    assert.equal(page.$('redo-btn').textContent, 'Redo');
+    assert.equal(page.$('reset-btn').textContent, 'Reset game');
+    page.$('toggle-probabilities').click();
+    assert.equal(page.cell(9).getAttribute('aria-label'), 'Cell 10: Obstacle 19%');
+    page.setLang('ja');
+    assert.equal(page.$('toggle-probabilities').textContent, '確率を隠す');
+    assert.equal(page.$('redo-btn').textContent, 'やり直す');
+    assert.equal(page.$('reset-btn').textContent, 'ゲームをリセット');
+    assert.equal(page.cell(9).getAttribute('aria-label'), 'マス 10：障害物 19%');
+    page.$('toggle-probabilities').click();
+    assert.equal(page.cell(9).getAttribute('aria-label'), 'マス 10：障害物の候補');
 });

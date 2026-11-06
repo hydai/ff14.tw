@@ -94,7 +94,7 @@ test('🦊 只放在還可能有宗長的格子：審閱者的例子翻開 0、3
     // 宗長沒有數字：29 的劍、寶箱都是 0，回傳的東西裡也沒有宗長的比例
     assert.deepEqual([v.sword[29], v.chest[29]], [0, 0]);
     assert.deepEqual(Object.keys(v).sort(),
-        ['auto', 'chest', 'foxCells', 'goal', 'known', 'left', 'matches', 'next', 'obstacleCells', 'phase', 'sword']);
+        ['auto', 'chest', 'foxCells', 'goal', 'known', 'left', 'matches', 'next', 'obstacle', 'obstacleCells', 'phase', 'sword']);
 });
 
 test('找到宗長之後其他格都不放 🦊（格 0 是宗長：剩 4 種、下一格是劍的 26、27、32、33）', () => {
@@ -187,4 +187,15 @@ test('不改傳進來的資料（凍結的也算得對）；對不上任何盤�
     // 格 1、11 在每一種盤面都不是障礙物：0 種盤面
     assert.deepEqual(pick(view({ obstacle: [1, 11] }), ['phase', 'matches', 'known', 'auto', 'obstacleCells', 'goal', 'next', 'foxCells']),
         { phase: 'obstacles', matches: 0, known: 0, auto: [], obstacleCells: [], goal: null, next: [], foxCells: [] });
+});
+
+test('障礙物比例來自相容盤面：更新標記後重新計算，無相容盤面時為 0', () => {
+    const a = Array(36).fill(0);
+    const b = Array(36).fill(0);
+    const c = Array(36).fill(0);
+    a[0] = a[1] = b[0] = b[2] = c[3] = 1;
+    const boards = [a, b, c];
+    assert.deepEqual(view({}, boards).obstacle.slice(0, 4), [2 / 3, 1 / 3, 1 / 3, 1 / 3]);
+    assert.deepEqual(view({ obstacle: [0] }, boards).obstacle.slice(0, 4), [1, 1 / 2, 1 / 2, 0]);
+    assert.ok(view({ obstacle: [35] }, boards).obstacle.every((value) => value === 0));
 });

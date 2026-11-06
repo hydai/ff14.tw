@@ -41,6 +41,11 @@
     gap: var(--space-1);
 }
 
+.hollows-toolbar {
+    display: flex;
+    justify-content: flex-end;
+}
+
 /* 格子：外觀由 .cell 提供。格子大小不隨內容改變（aspect-ratio、min-width: 0、overflow: hidden）；
    gap: 0 蓋掉 .cell 的 2px，格子裡的字行與行之間不留空隙 */
 .grid-cell {
@@ -51,6 +56,14 @@
     overflow: hidden;
     font: inherit;
     line-height: var(--leading-tight);
+}
+
+/* 障礙物候選：數字是目前相容盤面裡該格為障礙物的比例。 */
+.cell.has-obstacle-probability {
+    background: var(--color-primary-tint);
+    color: var(--color-primary);
+    font-size: var(--text-sm);
+    font-variant-numeric: tabular-nums;
 }
 
 /* 障礙物（手動標的與自動補上的）：實心的灰色。.cell:disabled 會把格子淡掉（opacity: 0.7），障礙物要維持原樣，所以自己寫 opacity: 1；
@@ -113,18 +126,43 @@
     line-height: 1;
 }
 
-/* 還沒翻的格子上的提示：⚔️75%、📦13%、🦊，一個提示一行，一格最多三行（⚔️25%／📦13%／🦊）。
-   還沒翻的格子不設底色或框：會蓋掉 .cell.suggested（下一格）的綠框。
+/* 還沒翻的格子上的提示：每種候選佔等高的一段；一種填滿、兩種各半、三種各三分之一。
+   底色放在格子裡的提示上，保留 .cell.suggested（下一格）的綠框。
    手機上的格子很小。在 Chrome（macOS、Noto Sans TC 載入後）量過，字 12px 時：
    一位數、兩位數的一行（⚔️6%、⚔️75%、⚔️<1%）最寬約 40.3px，⚔️100% 約 47.3px；三行（行高 1.1）高 39.6px；
    下一格的綠框是 2px，比一般格子的 1px 框，裡面再少 2px。所以行高 1.1、字不換行（nowrap），
    只有一個提示的格子圖示與百分比分兩行（下面那條），374px 以下與 359px 以下的調整在檔案最後的 @media */
 .cell-hint {
+    display: flex;
+    flex: 1 1 0;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 0;
     font-size: var(--text-xs);
     font-weight: var(--weight-semibold);
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
     line-height: 1.1;
+}
+
+.hint-sword {
+    background: var(--color-info-tint);
+    color: var(--color-info-text);
+}
+
+.hint-chest {
+    background: var(--color-danger-tint);
+    color: var(--color-danger-text);
+}
+
+.hint-fox {
+    background: var(--color-warning-tint);
+    color: var(--color-warning-text);
+}
+
+.cell-hint:only-child {
+    flex-direction: column;
 }
 
 /* 只有一個提示的格子，圖示一行、百分比一行：⚔️100% 在 414px 以下的手機一行放不下。
@@ -135,11 +173,17 @@
     display: block;
 }
 
-/* 上一步、下一局：盤面下面兩顆並排的按鈕 */
+/* 上一步與重做並排；重置另放一整行，與歷史操作拉開距離。 */
 .hollows-actions {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: var(--space-3);
+}
+
+.hollows-reset {
+    grid-column: 1 / -1;
+    margin-top: var(--space-2);
+    color: var(--color-danger-text);
 }
 
 /* 不能按：外觀照 .btn:disabled，但用 aria-disabled，按鈕變灰時焦點還在原地 */
