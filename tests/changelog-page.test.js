@@ -348,3 +348,213 @@ test('同一個月的收合列接成一張清單：第一列上圓角、最後�
     assert.match(latest, /border-radius:\s*var\(--radius-lg\)/);
     assert.match(latest, /box-shadow:\s*var\(--shadow-md\)/);
 });
+
+// ---------- changelog.js：每一版的「N 條」與網址 # 展開 ----------
+
+const SCRIPT = 'assets/js/changelog.js';
+
+// 照 changelog.html 的順序：（i18n）→ changelog.js；#changelogEntries 用頁面真正的標記。
+// readyState 'loading' 是真實頁面的樣子（腳本在 body 最後，文件還在解析，要等 DOMContentLoaded），'complete' 是載入時文件已經就緒。
+// fake-dom 的元素沒有 scrollIntoView()：每一版補一個不真的捲動、只把 id 記在 dom.scrolls 的；
+// 同一個位置的 dom.openWhenScrolled 記下捲動的那一刻這一版有沒有 open（要先展開再捲：展開前頁面比較短，頁面最底下的版本捲不到視窗最上面）
+// changelogTranslations: false 是部署空窗的樣子（新的 HTML 配到舊的翻譯檔，還沒有這一頁的鍵）；vmConsole 換掉那個 vm 裡的 console（I18nManager 找不到鍵會 console.warn）
+function setupScript({ url = 'https://ff14.tw/changelog.html', readyState = 'complete', i18n = false, storage, changelogTranslations = true, vmConsole } = {}) {
+    const dom = createFakeDom({ url, readyState });
+    if (vmConsole) dom.window.console = vmConsole;
+    mountFromHtml(dom, read(PAGE), ['changelogEntries']);
+    dom.scrolls = [];
+    dom.openWhenScrolled = [];
+    for (const entry of dom.document.querySelectorAll('.changelog-entry')) {
+        entry.scrollIntoView = () => {
+            dom.scrolls.push(entry.id);
+            dom.openWhenScrolled.push(entry.hasAttribute('open'));
+        };
+    }
+    if (i18n) {
+        dom.window.navigator = { languages: ['zh-TW'] };
+        dom.window.localStorage = storage ?? { getItem: () => null, setItem() {} };
+        dom.load('assets/js/i18n/i18n-manager.js');
+        dom.load('assets/js/i18n/translations/common.js');
+        if (changelogTranslations) dom.load(TRANSLATIONS);
+    }
+    dom.load(SCRIPT);
+    return dom;
+}
+const countOf = (dom, id) => dom.document.getElementById(id).querySelector('.changelog-count')?.textContent ?? null;
+const loaded = (dom) => dom.document.dispatchEvent(new dom.window.CustomEvent('DOMContentLoaded'));
+// 有 open 的 <details> 版本的 id，照文件裡的順序
+const openIds = (dom) => dom.document.querySelectorAll('details.changelog-entry').filter((entry) => entry.hasAttribute('open')).map((entry) => entry.id);
+// 同瀏覽器：換掉網址的 #，然後在 window 派送 hashchange
+function changeHash(dom, hash) {
+    dom.window.location.hash = hash;
+    dom.window.dispatchEvent(new dom.window.Event('hashchange'));
+}
+
+test('每個 details 版本的那一行寫「N 條」，只有一條的版本不寫，重畫不會多出第二個', () => {
+    const dom = setupScript();
+    assert.equal(dom.window.i18n, undefined, '不設 window.i18n，寫中文');
+    const folded = dom.document.querySelectorAll('details.changelog-entry');
+    const singles = dom.document.querySelectorAll('.changelog-entry-single');
+    assert.ok(folded.length >= 29 && singles.length >= 18, `只找到 ${folded.length} 個 <details> 版本與 ${singles.length} 個單行版本，解析可能失效`);
+
+    // 比較節點一律用 === 加訊息（assert.equal 失敗時會展開整份 fake-dom）
+    const verify = (when) => {
+        for (const entry of folded) {
+            const version = versionOf(entry);
+            const total = entry.querySelectorAll('.changelog-items > li').length;
+            const counts = entry.querySelectorAll('.changelog-count');
+            assert.ok(counts.length === 1, `${when}：${version} 要剛好有一個 .changelog-count，實際有 ${counts.length} 個`);
+            const meta = entry.querySelector('summary > .changelog-meta');
+            assert.ok(meta.children.at(-1) === counts[0], `${when}：${version} 的 .changelog-count 要接在 .changelog-meta 的最後`);
+            assert.equal(counts[0].tagName, 'SPAN');
+            assert.equal(counts[0].textContent, `${total} 條`, `${when}：${version} 有 ${total} 條`);
+        }
+        for (const entry of singles) {
+            assert.ok(entry.querySelector('.changelog-count') === null, `${when}：${versionOf(entry)} 只有一條，直接寫出來，不寫「N 條」`);
+        }
+    };
+    verify('載入時');
+    assert.equal(countOf(dom, 'version-v2260'), '10 條');
+    assert.equal(countOf(dom, 'version-v2114'), null);
+
+    dom.window.ChangelogPage.renderCounts();
+    verify('再畫一次');
+    assert.equal(countOf(dom, 'version-v2260'), '10 條');
+
+    // renderCounts(root)：只畫 root 底下的版本，沒傳就是整份文件
+    const scoped = setupScript({ readyState: 'loading' });
+    const [firstMonth] = scoped.document.querySelectorAll('section.changelog-month');
+    scoped.window.ChangelogPage.renderCounts(firstMonth);
+    const drawn = scoped.document.querySelectorAll('.changelog-count');
+    const inFirstMonth = firstMonth.querySelectorAll('details.changelog-entry');
+    assert.ok(inFirstMonth.length >= 1 && drawn.length === inFirstMonth.length, `第一個月份有 ${inFirstMonth.length} 個 <details> 版本，卻畫了 ${drawn.length} 個「N 條」`);
+    assert.ok(drawn.every((count) => firstMonth.contains(count)), '只有第一個月份底下的版本畫了「N 條」');
+});
+
+test('切換語言時「N 條」跟著換；記住的語言是日文時一打開就是日文', () => {
+    // 照真實頁面：文件載入中，I18nManager 與 changelog.js 都等 DOMContentLoaded（I18nManager 先登記，先換好頁面上其他的字）
+    const dom = setupScript({ readyState: 'loading', i18n: true });
+    assert.equal(countOf(dom, 'version-v2250'), null, 'DOMContentLoaded 之前還不畫');
+    loaded(dom);
+    assert.equal(countOf(dom, 'version-v2250'), '8 條');
+
+    const folded = dom.document.querySelectorAll('details.changelog-entry').length;
+    for (const [lang, v2250, v2260] of [['en', '8 items', '10 items'], ['ja', '8 件', '10 件'], ['zh', '8 條', '10 條']]) {
+        dom.window.i18n.setLanguage(lang);
+        assert.equal(countOf(dom, 'version-v2250'), v2250, `切到 ${lang}`);
+        assert.equal(countOf(dom, 'version-v2260'), v2260, `切到 ${lang}，最新一版（CSS 把它藏起來）也跟著換`);
+        assert.equal(dom.document.querySelectorAll('.changelog-count').length, folded, `切到 ${lang}，每個 details 版本還是只有一個「N 條」`);
+        assert.equal(countOf(dom, 'version-v2114'), null, `切到 ${lang}，單行的版本還是不寫`);
+    }
+
+    // 玩家上次選的是日文：文件載入完（DOMContentLoaded）之後，第一次看到的條數就是日文的「8 件」
+    const ja = setupScript({ readyState: 'loading', i18n: true, storage: { getItem: (key) => (key === 'ff14tw_preferred_language' ? 'ja' : null), setItem() {} } });
+    loaded(ja);
+    assert.equal(ja.window.i18n.getCurrentLanguage(), 'ja');
+    assert.equal(countOf(ja, 'version-v2250'), '8 件');
+});
+
+test('部署空窗：新的頁面配到舊的翻譯檔（沒有 changelog_item_count）時，每一列還是寫「N 條」，不露出翻譯鍵', () => {
+    // I18nManager 找不到鍵會 console.warn：把那個 vm 的 console 換成記下來的替身，測試輸出才乾淨（不改 I18nManager），也順便確認真的走到了找不到鍵的那條路
+    const logged = [];
+    const record = (...args) => { logged.push(args.map(String).join(' ')); };
+    const dom = setupScript({ i18n: true, changelogTranslations: false, vmConsole: { warn: record, error: record, log: record } });
+    assert.equal(dom.window.i18n.getText('changelog_item_count'), 'changelog_item_count', '翻譯檔沒載入時，getText 回傳的是鍵名本身');
+
+    const folded = dom.document.querySelectorAll('details.changelog-entry');
+    assert.ok(folded.length >= 29, `只找到 ${folded.length} 個 <details> 版本，解析可能失效`);
+    const verify = (when) => {
+        for (const entry of folded) {
+            const total = entry.querySelectorAll('.changelog-items > li').length;
+            assert.equal(countOf(dom, entry.id), `${total} 條`, `${when}：${versionOf(entry)} 有 ${total} 條`);
+        }
+    };
+    verify('載入時');
+
+    // 切換語言後重畫也一樣（英文與日文的鍵還是找不到，沿用中文的寫法）
+    dom.window.i18n.setLanguage('en');
+    verify('切到 en');
+    assert.equal(dom.document.querySelectorAll('.changelog-count').length, folded.length, '重畫後每個 details 版本還是只有一個「N 條」');
+
+    assert.ok(logged.some((line) => line.endsWith('changelog_item_count')), '要有 changelog_item_count 找不到的警告，不然這個測試沒走到找不到鍵的那條路');
+    for (const line of logged) assert.match(line, /^\[i18n\] 找不到翻譯鍵值: /, `console 裡只該有「找不到翻譯鍵值」的警告，卻有：${line}`);
+});
+
+test('網址 # 指到收起來的版本就展開；指到單行的版本、不存在的 id、空的或編碼壞掉時不丟錯也不展開別的', () => {
+    const dom = setupScript({ url: 'https://ff14.tw/changelog.html#version-v2250' });
+    const latestId = dom.document.querySelector('details.is-latest').id;
+    assert.deepEqual(openIds(dom), [latestId, 'version-v2250'], '載入時，網址指到的版本跟著最新一版一起展開');
+
+    // 單行的版本不能展開；#nope 沒有這個 id；#% 的編碼是壞的（decodeURIComponent 會丟錯）；空的 #；#changelogEntries 存在但不是一個版本
+    for (const hash of ['#version-v2114', '#nope', '#%', '', '#changelogEntries']) {
+        assert.doesNotThrow(() => changeHash(dom, hash), `網址是「${hash}」`);
+        assert.deepEqual(openIds(dom), [latestId, 'version-v2250'], `網址是「${hash}」，展開的還是原本那兩版`);
+    }
+
+    // 開著頁面時網址換到另一版：那一版也展開，原本展開的不收起
+    changeHash(dom, '#version-v2240');
+    assert.deepEqual(openIds(dom), [latestId, 'version-v2250', 'version-v2240']);
+
+    // id 是百分比編碼的也找得到（decodeURIComponent 後的字串才是 id）
+    changeHash(dom, '#version%2Dv2230');
+    assert.deepEqual(openIds(dom), [latestId, 'version-v2250', 'version-v2240', 'version-v2230']);
+
+    // 沒有 # 的網址：只有最新一版展開
+    assert.deepEqual(openIds(setupScript()), [latestId]);
+});
+
+test('網址 # 指到收起來的版本時，展開之後捲到它，載入時與 hashchange 都是；不是可以展開的版本就不另外捲', () => {
+    const dom = setupScript({ url: 'https://ff14.tw/changelog.html#version-v2250' });
+    assert.deepEqual(dom.scrolls, ['version-v2250'], '載入時');
+    // v2.25.0 載入時是收起來的：捲動的那一刻它已經展開，才是先展開再捲
+    assert.deepEqual(dom.openWhenScrolled, [true], '載入時，捲動的那一刻那一版已經展開');
+
+    // 單行的版本由瀏覽器自己捲過去；其他的根本沒有版本可以捲：這些腳本都不碰
+    for (const hash of ['#version-v2114', '#nope', '#%', '', '#changelogEntries']) {
+        changeHash(dom, hash);
+    }
+    assert.deepEqual(dom.scrolls, ['version-v2250'], '單行的版本、不存在的 id、空的、編碼壞掉、不是版本的元素都不另外捲');
+
+    changeHash(dom, '#version-v2240');
+    assert.deepEqual(dom.scrolls, ['version-v2250', 'version-v2240'], 'hashchange');
+    assert.deepEqual(dom.openWhenScrolled, [true, true], 'hashchange，捲動的那一刻那一版已經展開');
+
+    assert.deepEqual(setupScript().scrolls, [], '網址沒有 # 時不捲');
+});
+
+test('changelog.js：文件載入中等 DOMContentLoaded 才畫、才展開，載入時文件已經就緒就直接做；頁面上沒有版本時不丟例外', () => {
+    const url = 'https://ff14.tw/changelog.html#version-v2250';
+
+    const loading = setupScript({ url, readyState: 'loading' });
+    const latestId = loading.document.querySelector('details.is-latest').id;
+    assert.equal(countOf(loading, 'version-v2250'), null, 'DOMContentLoaded 之前還不畫');
+    assert.deepEqual(openIds(loading), [latestId], 'DOMContentLoaded 之前網址指到的版本還沒展開');
+    loaded(loading);
+    assert.equal(countOf(loading, 'version-v2250'), '8 條');
+    assert.deepEqual(openIds(loading), [latestId, 'version-v2250']);
+    changeHash(loading, '#version-v2240');
+    assert.deepEqual(openIds(loading), [latestId, 'version-v2250', 'version-v2240'], 'DOMContentLoaded 之後 hashchange 才有人聽');
+
+    const ready = setupScript({ url, readyState: 'interactive' });
+    assert.equal(countOf(ready, 'version-v2250'), '8 條');
+    assert.deepEqual(openIds(ready), [latestId, 'version-v2250']);
+
+    // 沒有 #changelogEntries 的文件：載入、重畫、hashchange 都不丟例外
+    const bare = createFakeDom({ url });
+    assert.doesNotThrow(() => bare.load(SCRIPT));
+    assert.doesNotThrow(() => bare.window.ChangelogPage.renderCounts());
+    assert.doesNotThrow(() => bare.window.dispatchEvent(new bare.window.Event('hashchange')));
+});
+
+test('changelog.html 在 common.js 後面載入 changelog.js', () => {
+    const scripts = [...read(PAGE).matchAll(/<script\s+src="([^"]+)"/g)].map((match) => match[1]);
+    const common = scripts.indexOf('assets/js/common.js');
+    const changelog = scripts.indexOf('assets/js/changelog.js');
+    assert.notEqual(common, -1, `${PAGE} 找不到 assets/js/common.js`);
+    assert.notEqual(changelog, -1, `${PAGE} 找不到 assets/js/changelog.js`);
+    assert.ok(changelog > common, `changelog.js（第 ${changelog + 1} 個）要在 common.js（第 ${common + 1} 個）後面`);
+});
+
+test('「N 條」三語都有 {count}', () => {
+    assert.deepEqual(LANGS.map((lang) => translationValues(TRANSLATIONS, lang).get('changelog_item_count')), ['{count} 條', '{count} items', '{count} 件']);
+});

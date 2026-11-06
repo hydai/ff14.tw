@@ -14,6 +14,9 @@ const ChangelogTranslations = {
         // 最新一版的標記
         changelog_latest: '最新',
 
+        // 收起來的那一行右邊的條數（{count} 由 changelog.js 換成數字）
+        changelog_item_count: '{count} 條',
+
         // 關於區塊
         changelog_about_title: '關於修改紀錄',
         changelog_about_desc: '本頁面記錄 FF14.tw 的重要功能更新與改進。詳細的技術變更請參考',
@@ -36,6 +39,9 @@ const ChangelogTranslations = {
         // Latest version marker
         changelog_latest: 'Latest',
 
+        // Entry count on the right of a folded row ({count} is replaced by changelog.js)
+        changelog_item_count: '{count} items',
+
         // About section
         changelog_about_title: 'About Changelog',
         changelog_about_desc: 'This page records important feature updates and improvements of FF14.tw. For detailed technical changes, please refer to',
@@ -57,6 +63,9 @@ const ChangelogTranslations = {
 
         // 最新バージョンの印
         changelog_latest: '最新',
+
+        // 折りたたんだ行の右側の件数（{count} は changelog.js が数字に置き換える）
+        changelog_item_count: '{count} 件',
 
         // About セクション
         changelog_about_title: '更新履歴について',
