@@ -189,6 +189,13 @@
     padding: var(--space-6);
 }
 
+/* 兩條以上的版本，條目上方的一句標題 */
+.changelog-headline {
+    margin: 0 0 var(--space-3);
+    font-weight: var(--weight-semibold);
+    color: var(--color-heading);
+}
+
 .changelog-content h4 {
     margin: 0 0 var(--space-3);
     padding-bottom: var(--space-1);

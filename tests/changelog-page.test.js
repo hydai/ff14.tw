@@ -79,3 +79,27 @@ test('不再用的圖例翻譯鍵三語都拿掉', () => {
         }
     }
 });
+
+// ---------- 每一版的標題 ----------
+
+test('兩條以上的版本與最新一版都有一句標題，其他只有一條的版本沒有', () => {
+    const { all } = entries();
+    assert.ok(all.length >= 47, `只找到 ${all.length} 版，解析可能失效`);
+
+    // 之後每發一版都會多一句，所以不寫死總數；比較節點一律用 === 加訊息（assert.equal 失敗時會展開整份 fake-dom）
+    let titled = 0;
+    all.forEach((entry, index) => {
+        const version = versionOf(entry);
+        const count = itemsOf(entry).length;
+        const headlines = entry.querySelectorAll('.changelog-headline');
+        if (count >= 2 || index === 0) {
+            assert.ok(headlines.length === 1, `${version} 有 ${count} 條${index === 0 ? '（最新一版）' : ''}，要剛好有一句標題，實際有 ${headlines.length} 個`);
+            assert.notEqual(headlines[0].textContent.trim(), '', `${version} 的標題是空的`);
+            assert.ok(headlines[0].querySelector('.tag') === null, `${version} 的標題裡不該有標籤（標籤只屬於條目）`);
+            titled += 1;
+        } else {
+            assert.ok(headlines.length === 0, `${version} 只有 ${count} 條，那一條直接寫出來，不該另外有標題`);
+        }
+    });
+    assert.ok(titled >= 29, `只有 ${titled} 版要有標題，解析可能失效（兩條以上的舊版本就有 29 版）`);
+});
