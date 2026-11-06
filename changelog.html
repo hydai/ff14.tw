@@ -27,832 +27,735 @@
     </noscript>
 
     <main class="main">
-        <div class="container changelog-layout">
-            <!-- TOC 側邊欄 -->
-            <aside class="toc-sidebar">
-                <div class="toc-container">
-                    <h2 class="toc-title" data-i18n="changelog_toc_title">快速導覽</h2>
-                    <nav class="toc-nav" id="tocNav">
-                        <!-- TOC 內容將由 JavaScript 動態生成 -->
-                    </nav>
-                </div>
-            </aside>
+        <div class="container changelog-page">
+            <h1 data-i18n="changelog_hero_title">修改紀錄</h1>
+            <p class="subtitle" data-i18n="changelog_hero_subtitle">記錄 FF14.tw 的功能更新與改進</p>
+            <p class="changelog-legend" id="changelogLegend">
+                <span class="changelog-legend-item"><span class="tag tag-success">新增</span> <span data-i18n="changelog_tag_new">新功能或新工具</span></span>
+                <span class="changelog-legend-item"><span class="tag tag-info">改善</span> <span data-i18n="changelog_tag_improve">功能優化或體驗提升</span></span>
+                <span class="changelog-legend-item"><span class="tag tag-warning">修正</span> <span data-i18n="changelog_tag_fix">錯誤修復</span></span>
+            </p>
 
-            <!-- 主要內容區 -->
-            <div class="changelog-content-wrapper">
-                <h1 data-i18n="changelog_hero_title">修改紀錄</h1>
-                <p class="subtitle" data-i18n="changelog_hero_subtitle">記錄 FF14.tw 的功能更新與改進</p>
-                <p class="changelog-legend" id="changelogLegend">
-                    <span class="changelog-legend-item"><span class="tag tag-success">新增</span> <span data-i18n="changelog_tag_new">新功能或新工具</span></span>
-                    <span class="changelog-legend-item"><span class="tag tag-info">改善</span> <span data-i18n="changelog_tag_improve">功能優化或體驗提升</span></span>
-                    <span class="changelog-legend-item"><span class="tag tag-warning">修正</span> <span data-i18n="changelog_tag_fix">錯誤修復</span></span>
-                </p>
-
-                <div class="changelog-container" id="changelogEntries">
+            <div class="changelog-container" id="changelogEntries">
                 <!-- 2026年10月 -->
-                <section class="changelog-section">
-                    <h2 class="changelog-year">2026年10月</h2>
+                <section class="changelog-month">
+                    <h2 class="changelog-month-title">2026年10月</h2>
+                    <details class="changelog-entry is-latest" id="version-v2260" open>
+                        <summary>
+                            <span class="changelog-meta">
+                                <time class="changelog-date" datetime="2026-10-27">10月27日</time>
+                                <span class="changelog-version">v2.26.0</span>
+                                <span class="changelog-latest" data-i18n="changelog_latest">最新</span>
+                            </span>
+                            <span class="changelog-headline">宗長計算機改版：狀態列、格子上的機率與旁邊的小選單</span>
+                        </summary>
+                        <ul class="changelog-items">
+                            <li><span class="tag tag-success">新增</span> 宗長計算機盤面上方多了一行狀態列，直接寫現在要做什麼、還能翻幾次：① 點遊戲裡被擋住的格子 → ② 找劍 → ③ 找寶箱 → ④ 翻宗長（不一定有）→ 完成。剩的次數不夠翻完劍或寶箱時，會直接跳到下一個目標。下一個該翻的格子用綠色框出來，有好幾個一樣好的就全部框起來</li>
+                            <li><span class="tag tag-info">改善</span> 在遊戲裡翻開一格後，點這一格，旁邊會跳出小選單，選劍、寶箱、宗長或空（以前是蓋住整個盤面的視窗）。和其他格對不上的選項是灰的，只剩一種可能時點一下就標好；點標好的格子可以改選或清除，翻了好幾格之後回頭改，機率和建議也會跟著重算</li>
+                            <li><span class="tag tag-info">改善</span> 標障礙物時，候選格顯示障礙物機率，不可能是障礙物的格子變淡、不能點；能確定的障礙物會自動補上，用斜線加虛線框，和你自己標的分得出來。拿掉你標的障礙物，它補上的也會跟著消失；障礙物的位置全部確定後自動進入翻格，障礙物鎖住，要改請按「上一步」</li>
+                            <li><span class="tag tag-info">改善</span> 每個還沒翻的格子直接寫劍、寶箱的機率（例如「⚔️75%」「📦13%」），機率是 0 的不寫；宗長只放 🦊，意思是「宗長有出現的話，可能在這格」，不寫數字（宗長多常出現沒有公開，算不出真正的機率）；找到宗長之後，其他格就不再放 🦊。用螢幕閱讀器時，格子的名稱也會唸出這些提示和「建議翻這格」</li>
+                            <li><span class="tag tag-info">改善</span> 劍、寶箱、宗長的候選提示保留藍、紅、黃底色；一種候選填滿一格、兩種各半、三種各佔三分之一。「隱藏機率」只隱藏百分比數字，圖示、底色和建議綠框都保留</li>
+                            <li><span class="tag tag-info">改善</span> 「上一步」會寫出退回了什麼（例如「已退回：第 26 格標成劍」），「重做」可恢復退回的動作；「重置遊戲」另放一行，按下去清空盤面開始新的一局，按錯了按「上一步」可以救回來，也能重做重置</li>
+                            <li><span class="tag tag-info">改善</span> 格子都是按鈕，可以用鍵盤操作：Enter 標障礙物或打開小選單，小選單用鍵盤打開時焦點直接在第一個能選的選項，Esc 關掉。焦點所在的格子鎖住時（例如標完障礙物進入翻格），焦點會自動移到下一格，不會掉到頁面上</li>
+                            <li><span class="tag tag-info">改善</span> 拿掉「關閉最佳策略」、最後的分數卡（遊戲裡會自己顯示拿到什麼）、「符合盤面」那一欄和說明段落，頁面上保留狀態列、機率開關、盤面、上一步／重做／重置遊戲，和盤面下面一句 🦊 的說明與資料來源</li>
+                            <li><span class="tag tag-warning">修正</span> 以前標錯障礙物或寶物時，盤面會變成一片空白、沒有任何訊息；現在不可能的格子和選項都點不了</li>
+                            <li><span class="tag tag-warning">修正</span> 以前「最佳策略」會同時亮好幾格，分不出先翻哪一格；現在照「先找劍、再找寶箱、最後翻宗長」的順序，把下一格框出來</li>
+                        </ul>
+                    </details>
 
-                    <article class="changelog-entry">
-                        <div class="changelog-header">
-                            <h3 class="changelog-version">v2.26.0</h3>
-                            <time class="changelog-date" datetime="2026-10-27">2026年10月27日</time>
-                        </div>
-                        <div class="changelog-content">
-                            <p class="changelog-headline">宗長計算機改版：狀態列、格子上的機率與旁邊的小選單</p>
-                            <ul>
-                                <li><span class="tag tag-success">新增</span> 宗長計算機盤面上方多了一行狀態列，直接寫現在要做什麼、還能翻幾次：① 點遊戲裡被擋住的格子 → ② 找劍 → ③ 找寶箱 → ④ 翻宗長（不一定有）→ 完成。剩的次數不夠翻完劍或寶箱時，會直接跳到下一個目標。下一個該翻的格子用綠色框出來，有好幾個一樣好的就全部框起來</li>
-                                <li><span class="tag tag-info">改善</span> 在遊戲裡翻開一格後，點這一格，旁邊會跳出小選單，選劍、寶箱、宗長或空（以前是蓋住整個盤面的視窗）。和其他格對不上的選項是灰的，只剩一種可能時點一下就標好；點標好的格子可以改選或清除，翻了好幾格之後回頭改，機率和建議也會跟著重算</li>
-                                <li><span class="tag tag-info">改善</span> 標障礙物時，候選格顯示障礙物機率，不可能是障礙物的格子變淡、不能點；能確定的障礙物會自動補上，用斜線加虛線框，和你自己標的分得出來。拿掉你標的障礙物，它補上的也會跟著消失；障礙物的位置全部確定後自動進入翻格，障礙物鎖住，要改請按「上一步」</li>
-                                <li><span class="tag tag-info">改善</span> 每個還沒翻的格子直接寫劍、寶箱的機率（例如「⚔️75%」「📦13%」），機率是 0 的不寫；宗長只放 🦊，意思是「宗長有出現的話，可能在這格」，不寫數字（宗長多常出現沒有公開，算不出真正的機率）；找到宗長之後，其他格就不再放 🦊。用螢幕閱讀器時，格子的名稱也會唸出這些提示和「建議翻這格」</li>
-                                <li><span class="tag tag-info">改善</span> 劍、寶箱、宗長的候選提示保留藍、紅、黃底色；一種候選填滿一格、兩種各半、三種各佔三分之一。「隱藏機率」只隱藏百分比數字，圖示、底色和建議綠框都保留</li>
-                                <li><span class="tag tag-info">改善</span> 「上一步」會寫出退回了什麼（例如「已退回：第 26 格標成劍」），「重做」可恢復退回的動作；「重置遊戲」另放一行，按下去清空盤面開始新的一局，按錯了按「上一步」可以救回來，也能重做重置</li>
-                                <li><span class="tag tag-info">改善</span> 格子都是按鈕，可以用鍵盤操作：Enter 標障礙物或打開小選單，小選單用鍵盤打開時焦點直接在第一個能選的選項，Esc 關掉。焦點所在的格子鎖住時（例如標完障礙物進入翻格），焦點會自動移到下一格，不會掉到頁面上</li>
-                                <li><span class="tag tag-info">改善</span> 拿掉「關閉最佳策略」、最後的分數卡（遊戲裡會自己顯示拿到什麼）、「符合盤面」那一欄和說明段落，頁面上保留狀態列、機率開關、盤面、上一步／重做／重置遊戲，和盤面下面一句 🦊 的說明與資料來源</li>
-                                <li><span class="tag tag-warning">修正</span> 以前標錯障礙物或寶物時，盤面會變成一片空白、沒有任何訊息；現在不可能的格子和選項都點不了</li>
-                                <li><span class="tag tag-warning">修正</span> 以前「最佳策略」會同時亮好幾格，分不出先翻哪一格；現在照「先找劍、再找寶箱、最後翻宗長」的順序，把下一格框出來</li>
-                            </ul>
-                        </div>
-                    </article>
+                    <details class="changelog-entry" id="version-v2250">
+                        <summary>
+                            <span class="changelog-meta">
+                                <time class="changelog-date" datetime="2026-10-21">10月21日</time>
+                                <span class="changelog-version">v2.25.0</span>
+                            </span>
+                            <span class="changelog-headline">天書奇談：現在與重置之後的機率並排，連成的線標出來</span>
+                        </summary>
+                        <ul class="changelog-items">
+                            <li><span class="tag tag-success">新增</span> 天書奇談預測器把「現在」與「重置之後」的連線機率並排列出來：貼滿 9 張時，至少連成 1 條、2 條、3 條線的機率各是多少，每個機率都配一條長條，一眼就能比較。「現在」照目前的盤面算；「重置之後」是重置後拿到隨機 9 張盤面的機率，只有貼了 3～7 張（遊戲裡才能重置）時才有數字，其他張數寫「—」</li>
+                            <li><span class="tag tag-info">改善</span> 已經連成的線，線上的格子會框上綠色外框；再貼一張就連成線的空格，用綠色虛線框起來（貼滿 9 張不能再貼，就不標）。用螢幕閱讀器時，這些格子的名稱也會唸出「已連成線」「貼了就連成線」</li>
+                            <li><span class="tag tag-info">改善</span> 手機上盤面用滿整個寬度，機率緊接在盤面下面；電腦上盤面在左邊、機率在右邊</li>
+                            <li><span class="tag tag-info">改善</span> 「重置盤面」改叫「清空盤面」（「重置」留給遊戲裡真正的重置），不再是紅色按鈕，改成一般按鈕放在盤面的右上角；按下去清空盤面，同一顆按鈕會變成「復原」，按錯了再按一次就放回去，清空之後貼了新的貼紙就不能復原了</li>
+                            <li><span class="tag tag-info">改善</span> 拿掉「還原」「重做」兩顆按鈕（貼錯了再點一下那一格就好）；頁面上的說明只留一句，張數改寫成盤面上方的「已貼 N／9 張」；貼滿 9 張後，其他的格子變淡、不能再點，也不再跳出「最多只能放置 9 個物件」的提示</li>
+                            <li><span class="tag tag-warning">修正</span> 機率的標籤以前寫「1條線」「2條線」「3條線」，其實算的是至少連成 1 條、2 條、3 條線的機率，現在照實寫成「至少 1 條」「至少 2 條」「至少 3 條」</li>
+                            <li><span class="tag tag-warning">修正</span> 拿掉建議文字，也拿掉依機率換的綠、黃、灰配色：以前在遊戲裡不能重置的時候（例如貼滿 9 張、一條線都沒有）也會寫「建議重置盤面」，貼了 8 張、至少 1 條已經是 100% 時還可能寫「尚可盤面」。現在只列出機率，要不要重置由你決定</li>
+                            <li><span class="tag tag-warning">修正</span> 用鍵盤的 Tab 鍵移動時，貼了貼紙的格子看不到焦點外框，現在看得到了</li>
+                        </ul>
+                    </details>
 
-                    <article class="changelog-entry">
-                        <div class="changelog-header">
-                            <h3 class="changelog-version">v2.25.0</h3>
-                            <time class="changelog-date" datetime="2026-10-21">2026年10月21日</time>
-                        </div>
-                        <div class="changelog-content">
-                            <p class="changelog-headline">天書奇談：現在與重置之後的機率並排，連成的線標出來</p>
-                            <ul>
-                                <li><span class="tag tag-success">新增</span> 天書奇談預測器把「現在」與「重置之後」的連線機率並排列出來：貼滿 9 張時，至少連成 1 條、2 條、3 條線的機率各是多少，每個機率都配一條長條，一眼就能比較。「現在」照目前的盤面算；「重置之後」是重置後拿到隨機 9 張盤面的機率，只有貼了 3～7 張（遊戲裡才能重置）時才有數字，其他張數寫「—」</li>
-                                <li><span class="tag tag-info">改善</span> 已經連成的線，線上的格子會框上綠色外框；再貼一張就連成線的空格，用綠色虛線框起來（貼滿 9 張不能再貼，就不標）。用螢幕閱讀器時，這些格子的名稱也會唸出「已連成線」「貼了就連成線」</li>
-                                <li><span class="tag tag-info">改善</span> 手機上盤面用滿整個寬度，機率緊接在盤面下面；電腦上盤面在左邊、機率在右邊</li>
-                                <li><span class="tag tag-info">改善</span> 「重置盤面」改叫「清空盤面」（「重置」留給遊戲裡真正的重置），不再是紅色按鈕，改成一般按鈕放在盤面的右上角；按下去清空盤面，同一顆按鈕會變成「復原」，按錯了再按一次就放回去，清空之後貼了新的貼紙就不能復原了</li>
-                                <li><span class="tag tag-info">改善</span> 拿掉「還原」「重做」兩顆按鈕（貼錯了再點一下那一格就好）；頁面上的說明只留一句，張數改寫成盤面上方的「已貼 N／9 張」；貼滿 9 張後，其他的格子變淡、不能再點，也不再跳出「最多只能放置 9 個物件」的提示</li>
-                                <li><span class="tag tag-warning">修正</span> 機率的標籤以前寫「1條線」「2條線」「3條線」，其實算的是至少連成 1 條、2 條、3 條線的機率，現在照實寫成「至少 1 條」「至少 2 條」「至少 3 條」</li>
-                                <li><span class="tag tag-warning">修正</span> 拿掉建議文字，也拿掉依機率換的綠、黃、灰配色：以前在遊戲裡不能重置的時候（例如貼滿 9 張、一條線都沒有）也會寫「建議重置盤面」，貼了 8 張、至少 1 條已經是 100% 時還可能寫「尚可盤面」。現在只列出機率，要不要重置由你決定</li>
-                                <li><span class="tag tag-warning">修正</span> 用鍵盤的 Tab 鍵移動時，貼了貼紙的格子看不到焦點外框，現在看得到了</li>
-                            </ul>
-                        </div>
-                    </article>
+                    <details class="changelog-entry" id="version-v2240">
+                        <summary>
+                            <span class="changelog-meta">
+                                <time class="changelog-date" datetime="2026-10-20">10月20日</time>
+                                <span class="changelog-version">v2.24.0</span>
+                            </span>
+                            <span class="changelog-headline">仙人微彩：格子旁的數字盤、下一步提示與獎金表</span>
+                        </summary>
+                        <ul class="changelog-items">
+                            <li><span class="tag tag-success">新增</span> 仙人微彩計算機點格子後，1–9 的小數字盤直接在那一格旁邊跳出來（以前是蓋住整個盤面的視窗），選一個數字就填好；別格已經用掉的數字不能選，填好的格子再點可以改數字或清除。電腦上也可以直接按鍵盤的 1–9：焦點在格子上，或小數字盤開著時，按下去就填進那一格</li>
+                            <li><span class="tag tag-success">新增</span> 盤面上方多了一行狀態列，直接寫下一步：先點遊戲已經翻開的那一格，接著寫要刮開哪一格，填滿 4 格後寫要選哪條線、平均可拿多少 MGP；有好幾個一樣好的選擇時會全部寫出來</li>
+                            <li><span class="tag tag-success">新增</span> 獎金表（三格總和對應的 MGP）一直顯示，手機在盤面下面、電腦在盤面右邊；填滿 4 格後，推薦的線還可能出現的總和會用綠色標出來</li>
+                            <li><span class="tag tag-info">改善</span> 填了第一格之後，每個還沒翻開的格子直接寫刮了之後平均可拿多少 MGP；推薦的格子、推薦的線和它的三格用綠色標出來，填滿 4 格後外圈寫每條線的平均，沒翻開的格子不能再點</li>
+                            <li><span class="tag tag-info">改善</span> 「上一步」會寫出退回了什麼（例如「已退回：右上的 7」）；「重置」改叫「下一張」，按下去清空盤面開始新的一張，按錯了按「上一步」可以救回來；拿掉「重做」</li>
+                            <li><span class="tag tag-info">改善</span> 建議不再寫在盤面下方的「最佳揭開」「最佳選擇」兩張卡片裡（改寫在盤面上方的狀態列和格子上），也不會自動捲動，按鈕不再換位置</li>
+                            <li><span class="tag tag-warning">修正</span> 推薦的格子有好幾個一樣好時，以前只框出其中一格，現在全部標出來</li>
+                            <li><span class="tag tag-warning">修正</span> 頁面上的說明寫「點選四個格子」，和遊戲不符（遊戲一開始就翻開 1 格，之後再刮 3 格）；這段說明拿掉了，改由狀態列一步一步帶著做</li>
+                        </ul>
+                    </details>
 
-                    <article class="changelog-entry">
-                        <div class="changelog-header">
-                            <h3 class="changelog-version">v2.24.0</h3>
-                            <time class="changelog-date" datetime="2026-10-20">2026年10月20日</time>
-                        </div>
-                        <div class="changelog-content">
-                            <p class="changelog-headline">仙人微彩：格子旁的數字盤、下一步提示與獎金表</p>
-                            <ul>
-                                <li><span class="tag tag-success">新增</span> 仙人微彩計算機點格子後，1–9 的小數字盤直接在那一格旁邊跳出來（以前是蓋住整個盤面的視窗），選一個數字就填好；別格已經用掉的數字不能選，填好的格子再點可以改數字或清除。電腦上也可以直接按鍵盤的 1–9：焦點在格子上，或小數字盤開著時，按下去就填進那一格</li>
-                                <li><span class="tag tag-success">新增</span> 盤面上方多了一行狀態列，直接寫下一步：先點遊戲已經翻開的那一格，接著寫要刮開哪一格，填滿 4 格後寫要選哪條線、平均可拿多少 MGP；有好幾個一樣好的選擇時會全部寫出來</li>
-                                <li><span class="tag tag-success">新增</span> 獎金表（三格總和對應的 MGP）一直顯示，手機在盤面下面、電腦在盤面右邊；填滿 4 格後，推薦的線還可能出現的總和會用綠色標出來</li>
-                                <li><span class="tag tag-info">改善</span> 填了第一格之後，每個還沒翻開的格子直接寫刮了之後平均可拿多少 MGP；推薦的格子、推薦的線和它的三格用綠色標出來，填滿 4 格後外圈寫每條線的平均，沒翻開的格子不能再點</li>
-                                <li><span class="tag tag-info">改善</span> 「上一步」會寫出退回了什麼（例如「已退回：右上的 7」）；「重置」改叫「下一張」，按下去清空盤面開始新的一張，按錯了按「上一步」可以救回來；拿掉「重做」</li>
-                                <li><span class="tag tag-info">改善</span> 建議不再寫在盤面下方的「最佳揭開」「最佳選擇」兩張卡片裡（改寫在盤面上方的狀態列和格子上），也不會自動捲動，按鈕不再換位置</li>
-                                <li><span class="tag tag-warning">修正</span> 推薦的格子有好幾個一樣好時，以前只框出其中一格，現在全部標出來</li>
-                                <li><span class="tag tag-warning">修正</span> 頁面上的說明寫「點選四個格子」，和遊戲不符（遊戲一開始就翻開 1 格，之後再刮 3 格）；這段說明拿掉了，改由狀態列一步一步帶著做</li>
-                            </ul>
-                        </div>
-                    </article>
+                    <details class="changelog-entry" id="version-v2230">
+                        <summary>
+                            <span class="changelog-meta">
+                                <time class="changelog-date" datetime="2026-10-19">10月19日</time>
+                                <span class="changelog-version">v2.23.0</span>
+                            </span>
+                            <span class="changelog-headline">特殊採集：一種素材一張卡、提醒我與複製鬧鐘</span>
+                        </summary>
+                        <ul class="changelog-items">
+                            <li><span class="tag tag-success">新增</span> 特殊採集時間管理器改成一種素材一張卡片（以前同一種素材的兩個時段是兩張）：直接寫現在可採的還剩多久、到幾點，還沒到的寫幾點出現、還要多久；倒數每秒走，現在可採的排在最前面，接著是快出現的，全天的最後，素材出現或結束時會自動重排</li>
+                            <li><span class="tag tag-success">新增</span> 「提醒我」：卡片上按一下，這種素材出現前幾分鐘提醒你。頁面最上面多了「我的提醒」（設了提醒才會出現），可以選出現時、出現前 1、2、3、5 或 10 分鐘通知，預設 1 分鐘，也可以用「網頁提醒」開關暫停；設定的時候離出現已經不到這麼久，就在出現時提醒。每次出現都會提醒，直到你取消。「我的提醒」先列最快出現的 5 個（手機 3 個），其餘按「顯示全部」。頁面要開著才會響。全天都能採的素材沒有「提醒我」</li>
+                            <li><span class="tag tag-success">新增</span> 提醒到時間時，頁面上會跳出提示並發出提示音，瀏覽器允許的話再加系統通知；通知被封鎖，或瀏覽器不支援、不讓網頁跳通知時，仍然有頁面上的提示和提示音，「我的提醒」下方會寫出目前只有這兩種。重新整理或重新打開頁面後，要先在頁面上點一下或按任一個鍵，提示音才會響（瀏覽器的限制）</li>
+                            <li><span class="tag tag-success">新增</span> 「複製鬧鐘」：複製這種素材下一次出現的一行遊戲內 /alarm 指令（正在可採時複製的是再下一段），貼到遊戲的聊天輸入框就設好；只複製下一次。卡片或「我的提醒」那一列的下面會寫出複製了什麼，剪貼簿不能用時會請你自己選取複製。全天的素材沒有「複製鬧鐘」</li>
+                            <li><span class="tag tag-info">改善</span> 以前開著「採集提醒」的人，打開頁面時預設清單裡的素材（全天的除外）會自動放進「我的提醒」，「網頁提醒」維持開著，不用重新設定</li>
+                            <li><span class="tag tag-info">改善</span> 搜尋框寫明可以用中文、日文或英文搜尋，搜到的字會在卡片上標出來；好幾個字時每個字都要符合（以前只要符合其中一個字就會列出來，搜「Cordia Log」連不是科迪亞的原木也會列出來）；英文的地區與地點名稱（例如 Yak T'el、Mamook）也搜得到</li>
+                            <li><span class="tag tag-info">改善</span> 英文介面現在顯示英文的名稱、地區與地點（以前只有日文介面會換名稱，地點一直是中文），日文介面顯示日文；卡片標題下面的小字寫另外兩種語言的名稱，清單裡的名稱也跟著介面語言換</li>
+                            <li><span class="tag tag-info">改善</span> 卡片上的「加入清單」會把這種素材的每個時段一起加進目前的清單，兩個時段都在清單裡才顯示「已加入」；清單、匯入／匯出和整份清單的巨集匯出照舊</li>
+                            <li><span class="tag tag-info">改善</span> 時間顯示從三張卡縮成一行（ET 與本地時間），放在搜尋框上面，有提醒時併進「我的提醒」的標題列；「新增清單」「匯入」「匯出」搬到清單那一欄的最上面。原本寫錯的「艾歐爾傑亞時間」字樣拿掉了，用語以官方的「艾歐澤亞」為準</li>
+                            <li><span class="tag tag-info">改善</span> 網站上跳出的提示訊息（例如「已設提醒」「已複製鬧鐘指令」）現在螢幕閱讀器也會念出來</li>
+                            <li><span class="tag tag-info">改善</span> 天氣預報與特殊採集時間管理器同時有好幾個提醒到時間時，頁面上的提示會由上往下排開，不會疊在一起只看得到一個</li>
+                            <li><span class="tag tag-info">改善</span> 副本資料庫搜到的字，標示的底色改成比較明顯的黃色（和特殊採集時間管理器一樣）</li>
+                            <li><span class="tag tag-warning">修正</span> 特殊採集時間管理器英文與日文介面的清單訊息（刪除或清空清單時的確認、匯入成功、清單數量與名稱長度的上限）現在會寫出清單名稱與數字，以前會直接顯示「{0}」</li>
+                            <li><span class="tag tag-warning">修正</span> 特殊採集時間管理器的清單項目一多、清單開始捲動時，每一列不再被壓扁、移除鈕不再被切掉</li>
+                        </ul>
+                    </details>
 
-                    <article class="changelog-entry">
-                        <div class="changelog-header">
-                            <h3 class="changelog-version">v2.23.0</h3>
-                            <time class="changelog-date" datetime="2026-10-19">2026年10月19日</time>
-                        </div>
-                        <div class="changelog-content">
-                            <p class="changelog-headline">特殊採集：一種素材一張卡、提醒我與複製鬧鐘</p>
-                            <ul>
-                                <li><span class="tag tag-success">新增</span> 特殊採集時間管理器改成一種素材一張卡片（以前同一種素材的兩個時段是兩張）：直接寫現在可採的還剩多久、到幾點，還沒到的寫幾點出現、還要多久；倒數每秒走，現在可採的排在最前面，接著是快出現的，全天的最後，素材出現或結束時會自動重排</li>
-                                <li><span class="tag tag-success">新增</span> 「提醒我」：卡片上按一下，這種素材出現前幾分鐘提醒你。頁面最上面多了「我的提醒」（設了提醒才會出現），可以選出現時、出現前 1、2、3、5 或 10 分鐘通知，預設 1 分鐘，也可以用「網頁提醒」開關暫停；設定的時候離出現已經不到這麼久，就在出現時提醒。每次出現都會提醒，直到你取消。「我的提醒」先列最快出現的 5 個（手機 3 個），其餘按「顯示全部」。頁面要開著才會響。全天都能採的素材沒有「提醒我」</li>
-                                <li><span class="tag tag-success">新增</span> 提醒到時間時，頁面上會跳出提示並發出提示音，瀏覽器允許的話再加系統通知；通知被封鎖，或瀏覽器不支援、不讓網頁跳通知時，仍然有頁面上的提示和提示音，「我的提醒」下方會寫出目前只有這兩種。重新整理或重新打開頁面後，要先在頁面上點一下或按任一個鍵，提示音才會響（瀏覽器的限制）</li>
-                                <li><span class="tag tag-success">新增</span> 「複製鬧鐘」：複製這種素材下一次出現的一行遊戲內 /alarm 指令（正在可採時複製的是再下一段），貼到遊戲的聊天輸入框就設好；只複製下一次。卡片或「我的提醒」那一列的下面會寫出複製了什麼，剪貼簿不能用時會請你自己選取複製。全天的素材沒有「複製鬧鐘」</li>
-                                <li><span class="tag tag-info">改善</span> 以前開著「採集提醒」的人，打開頁面時預設清單裡的素材（全天的除外）會自動放進「我的提醒」，「網頁提醒」維持開著，不用重新設定</li>
-                                <li><span class="tag tag-info">改善</span> 搜尋框寫明可以用中文、日文或英文搜尋，搜到的字會在卡片上標出來；好幾個字時每個字都要符合（以前只要符合其中一個字就會列出來，搜「Cordia Log」連不是科迪亞的原木也會列出來）；英文的地區與地點名稱（例如 Yak T'el、Mamook）也搜得到</li>
-                                <li><span class="tag tag-info">改善</span> 英文介面現在顯示英文的名稱、地區與地點（以前只有日文介面會換名稱，地點一直是中文），日文介面顯示日文；卡片標題下面的小字寫另外兩種語言的名稱，清單裡的名稱也跟著介面語言換</li>
-                                <li><span class="tag tag-info">改善</span> 卡片上的「加入清單」會把這種素材的每個時段一起加進目前的清單，兩個時段都在清單裡才顯示「已加入」；清單、匯入／匯出和整份清單的巨集匯出照舊</li>
-                                <li><span class="tag tag-info">改善</span> 時間顯示從三張卡縮成一行（ET 與本地時間），放在搜尋框上面，有提醒時併進「我的提醒」的標題列；「新增清單」「匯入」「匯出」搬到清單那一欄的最上面。原本寫錯的「艾歐爾傑亞時間」字樣拿掉了，用語以官方的「艾歐澤亞」為準</li>
-                                <li><span class="tag tag-info">改善</span> 網站上跳出的提示訊息（例如「已設提醒」「已複製鬧鐘指令」）現在螢幕閱讀器也會念出來</li>
-                                <li><span class="tag tag-info">改善</span> 天氣預報與特殊採集時間管理器同時有好幾個提醒到時間時，頁面上的提示會由上往下排開，不會疊在一起只看得到一個</li>
-                                <li><span class="tag tag-info">改善</span> 副本資料庫搜到的字，標示的底色改成比較明顯的黃色（和特殊採集時間管理器一樣）</li>
-                                <li><span class="tag tag-warning">修正</span> 特殊採集時間管理器英文與日文介面的清單訊息（刪除或清空清單時的確認、匯入成功、清單數量與名稱長度的上限）現在會寫出清單名稱與數字，以前會直接顯示「{0}」</li>
-                                <li><span class="tag tag-warning">修正</span> 特殊採集時間管理器的清單項目一多、清單開始捲動時，每一列不再被壓扁、移除鈕不再被切掉</li>
-                            </ul>
-                        </div>
-                    </article>
+                    <details class="changelog-entry" id="version-v2220">
+                        <summary>
+                            <span class="changelog-meta">
+                                <time class="changelog-date" datetime="2026-10-18">10月18日</time>
+                                <span class="changelog-version">v2.22.0</span>
+                            </span>
+                            <span class="changelog-headline">天氣預報：直接寫下次什麼時候，開始前提醒你</span>
+                        </summary>
+                        <ul class="changelog-items">
+                            <li><span class="tag tag-success">新增</span> 天氣預報改成答案優先：選好地區和天氣，第一張卡就寫它下次什麼時候出現、還要等多久、到幾點結束；正在下的時候，改寫到幾點、還剩多久，以及下一次什麼時候</li>
+                            <li><span class="tag tag-success">新增</span> 天氣預報會記住上次選的地區和天氣（連同前置天氣與時段），下次打開直接接著看；別人給的分享連結一樣能用，打開時以連結裡的選擇為準</li>
+                            <li><span class="tag tag-success">新增</span> 答案卡下面列出「之後幾次」，先列 5 次，按「顯示更多」最多看到 50 次</li>
+                            <li><span class="tag tag-success">新增</span> 「提醒我」：在你選的天氣開始前幾分鐘提醒你，預設 5 分鐘，可以改成 1、3、5、10、15 或 30 分鐘；設定的時候離開始已經不到這麼久，就在開始時提醒。每次出現都會提醒，直到你取消。頁面要開著才會響</li>
+                            <li><span class="tag tag-success">新增</span> 提醒到時間時，頁面上會跳出提示並發出提示音，瀏覽器允許的話再加系統通知；通知被封鎖，或瀏覽器不支援、不讓網頁跳通知時，仍然有頁面上的提示和提示音。重新整理或重新打開頁面後，要先在頁面上點一下或按任一個鍵，提示音才會響（瀏覽器的限制）</li>
+                            <li><span class="tag tag-success">新增</span> 提醒有自己的地區和天氣：換地區、換天氣或打開別人的分享連結都不會取消它；答案卡顯示的不是提醒的目標時，上方會多一行「提醒中」，寫出是哪個地區和天氣、下次幾點提醒你，可以直接取消</li>
+                            <li><span class="tag tag-info">改善</span> 地區改成依區域分組的下拉選單，手機上不用再捲過 73 個地區；時段和前置天氣（釣魚用）收進預設收起的「更多條件」</li>
+                            <li><span class="tag tag-info">改善</span> 設了時段（艾歐澤亞時間）時，答案只算時段裡的部分（例如只要夜晚）；連在一起的同一種天氣合成一段，不再算成好幾次</li>
+                            <li><span class="tag tag-info">改善</span> 天氣時刻表放在最下面，拿掉前置天氣欄；「顯示更多」展開後，天氣換期也不會收回去</li>
+                        </ul>
+                    </details>
 
-                    <article class="changelog-entry">
-                        <div class="changelog-header">
-                            <h3 class="changelog-version">v2.22.0</h3>
-                            <time class="changelog-date" datetime="2026-10-18">2026年10月18日</time>
-                        </div>
-                        <div class="changelog-content">
-                            <p class="changelog-headline">天氣預報：直接寫下次什麼時候，開始前提醒你</p>
-                            <ul>
-                                <li><span class="tag tag-success">新增</span> 天氣預報改成答案優先：選好地區和天氣，第一張卡就寫它下次什麼時候出現、還要等多久、到幾點結束；正在下的時候，改寫到幾點、還剩多久，以及下一次什麼時候</li>
-                                <li><span class="tag tag-success">新增</span> 天氣預報會記住上次選的地區和天氣（連同前置天氣與時段），下次打開直接接著看；別人給的分享連結一樣能用，打開時以連結裡的選擇為準</li>
-                                <li><span class="tag tag-success">新增</span> 答案卡下面列出「之後幾次」，先列 5 次，按「顯示更多」最多看到 50 次</li>
-                                <li><span class="tag tag-success">新增</span> 「提醒我」：在你選的天氣開始前幾分鐘提醒你，預設 5 分鐘，可以改成 1、3、5、10、15 或 30 分鐘；設定的時候離開始已經不到這麼久，就在開始時提醒。每次出現都會提醒，直到你取消。頁面要開著才會響</li>
-                                <li><span class="tag tag-success">新增</span> 提醒到時間時，頁面上會跳出提示並發出提示音，瀏覽器允許的話再加系統通知；通知被封鎖，或瀏覽器不支援、不讓網頁跳通知時，仍然有頁面上的提示和提示音。重新整理或重新打開頁面後，要先在頁面上點一下或按任一個鍵，提示音才會響（瀏覽器的限制）</li>
-                                <li><span class="tag tag-success">新增</span> 提醒有自己的地區和天氣：換地區、換天氣或打開別人的分享連結都不會取消它；答案卡顯示的不是提醒的目標時，上方會多一行「提醒中」，寫出是哪個地區和天氣、下次幾點提醒你，可以直接取消</li>
-                                <li><span class="tag tag-info">改善</span> 地區改成依區域分組的下拉選單，手機上不用再捲過 73 個地區；時段和前置天氣（釣魚用）收進預設收起的「更多條件」</li>
-                                <li><span class="tag tag-info">改善</span> 設了時段（艾歐澤亞時間）時，答案只算時段裡的部分（例如只要夜晚）；連在一起的同一種天氣合成一段，不再算成好幾次</li>
-                                <li><span class="tag tag-info">改善</span> 天氣時刻表放在最下面，拿掉前置天氣欄；「顯示更多」展開後，天氣換期也不會收回去</li>
-                            </ul>
-                        </div>
-                    </article>
+                    <details class="changelog-entry" id="version-v2210">
+                        <summary>
+                            <span class="changelog-meta">
+                                <time class="changelog-date" datetime="2026-10-17">10月17日</time>
+                                <span class="changelog-version">v2.21.0</span>
+                            </span>
+                            <span class="changelog-headline">寶圖組隊：邀請連結，每張圖寫是誰的</span>
+                        </summary>
+                        <ul class="changelog-items">
+                            <li><span class="tag tag-success">新增</span> 寶圖搜尋器的隊伍新增「複製邀請連結」，隊友打開連結就能加入，不用輸入代號</li>
+                            <li><span class="tag tag-success">新增</span> 打開邀請連結、而且這台裝置還沒在這個隊伍裡時，會先問「加入隊伍 X？」，寫出是誰的隊伍、幾個人、幾張寶圖，以及你會叫什麼名字</li>
+                            <li><span class="tag tag-success">新增</span> 隊伍裡的清單與路線，每一張寶圖都寫是誰的（例如「你的圖」「光之戰士K7Q 的圖」）；在隊伍裡，路線複製到隊伍頻道的句子也會帶上主人的名字，自訂格式可以用新的變數「&lt;寶圖主人&gt;」</li>
+                            <li><span class="tag tag-success">新增</span> 預設名字改成「光之戰士＋3 碼字串」（例如光之戰士K7Q），同一台機器每次組隊都一樣（以前建立的人固定叫「光之戰士1」，其他人都叫「光之戰士」，分不出誰是誰）</li>
+                            <li><span class="tag tag-info">改善</span> 建立、加入隊伍時，如果清單裡有寶圖，會在頁面裡問要不要帶進隊伍清單，預設帶進（以前是瀏覽器的確認視窗，按預設的「確定」會清掉自己的清單）</li>
+                            <li><span class="tag tag-info">改善</span> 輸入代號加入失敗時（代號打錯、隊伍滿了、寶圖會超過 8 張、連不上），錯誤直接寫在代號欄下面，對話框不會關掉，代號也不用重打</li>
+                            <li><span class="tag tag-info">改善</span> 隊伍狀態縮成三行：代號與同步狀態、複製邀請連結／複製代號／離開隊伍、成員（點開看每個人）</li>
+                            <li><span class="tag tag-info">改善</span> 移出成員改成頁面裡的確認對話框，不再跳瀏覽器的確認視窗；離開隊伍的對話框重新做過，先選「留在我的清單」（預設）或「清空」，再按「離開隊伍」</li>
+                            <li><span class="tag tag-info">改善</span> 連不上伺服器時，隊伍狀態會一直顯示「連不上，重試中」，連回來就變回「已同步」，不再每隔幾秒跳出提示</li>
+                            <li><span class="tag tag-info">改善</span> 用語統一：中文寫「隊伍」，英文寫 Party、日文寫 パーティ（以前混用房間、Room、Team、ルーム、チーム）</li>
+                            <li><span class="tag tag-info">改善</span> 拿掉隊伍的「歷史」頁籤（它只記得這台裝置自己做過的事，看不到隊友的變動）</li>
+                            <li><span class="tag tag-warning">修正</span> 窄螢幕的手機（畫面寬度 389px 以下）上，寶圖卡片的「加入清單」按鈕不再被截掉，改顯示短一點的字（「＋ 加入」「＋ Add」「＋ 追加」）</li>
+                            <li><span class="tag tag-warning">修正</span> 英文、日文的底部列在隊伍裡改寫「👥 Party N/8」「👥 パーティ N/8」，窄螢幕也看得到張數</li>
+                            <li><span class="tag tag-warning">修正</span> 網址同時有隊伍與分享的寶圖時，先問要不要加入隊伍、再問分享的寶圖；按「上一頁」再重新整理，不會再問一次</li>
+                        </ul>
+                    </details>
 
-                    <article class="changelog-entry">
-                        <div class="changelog-header">
-                            <h3 class="changelog-version">v2.21.0</h3>
-                            <time class="changelog-date" datetime="2026-10-17">2026年10月17日</time>
-                        </div>
-                        <div class="changelog-content">
-                            <p class="changelog-headline">寶圖組隊：邀請連結，每張圖寫是誰的</p>
-                            <ul>
-                                <li><span class="tag tag-success">新增</span> 寶圖搜尋器的隊伍新增「複製邀請連結」，隊友打開連結就能加入，不用輸入代號</li>
-                                <li><span class="tag tag-success">新增</span> 打開邀請連結、而且這台裝置還沒在這個隊伍裡時，會先問「加入隊伍 X？」，寫出是誰的隊伍、幾個人、幾張寶圖，以及你會叫什麼名字</li>
-                                <li><span class="tag tag-success">新增</span> 隊伍裡的清單與路線，每一張寶圖都寫是誰的（例如「你的圖」「光之戰士K7Q 的圖」）；在隊伍裡，路線複製到隊伍頻道的句子也會帶上主人的名字，自訂格式可以用新的變數「&lt;寶圖主人&gt;」</li>
-                                <li><span class="tag tag-success">新增</span> 預設名字改成「光之戰士＋3 碼字串」（例如光之戰士K7Q），同一台機器每次組隊都一樣（以前建立的人固定叫「光之戰士1」，其他人都叫「光之戰士」，分不出誰是誰）</li>
-                                <li><span class="tag tag-info">改善</span> 建立、加入隊伍時，如果清單裡有寶圖，會在頁面裡問要不要帶進隊伍清單，預設帶進（以前是瀏覽器的確認視窗，按預設的「確定」會清掉自己的清單）</li>
-                                <li><span class="tag tag-info">改善</span> 輸入代號加入失敗時（代號打錯、隊伍滿了、寶圖會超過 8 張、連不上），錯誤直接寫在代號欄下面，對話框不會關掉，代號也不用重打</li>
-                                <li><span class="tag tag-info">改善</span> 隊伍狀態縮成三行：代號與同步狀態、複製邀請連結／複製代號／離開隊伍、成員（點開看每個人）</li>
-                                <li><span class="tag tag-info">改善</span> 移出成員改成頁面裡的確認對話框，不再跳瀏覽器的確認視窗；離開隊伍的對話框重新做過，先選「留在我的清單」（預設）或「清空」，再按「離開隊伍」</li>
-                                <li><span class="tag tag-info">改善</span> 連不上伺服器時，隊伍狀態會一直顯示「連不上，重試中」，連回來就變回「已同步」，不再每隔幾秒跳出提示</li>
-                                <li><span class="tag tag-info">改善</span> 用語統一：中文寫「隊伍」，英文寫 Party、日文寫 パーティ（以前混用房間、Room、Team、ルーム、チーム）</li>
-                                <li><span class="tag tag-info">改善</span> 拿掉隊伍的「歷史」頁籤（它只記得這台裝置自己做過的事，看不到隊友的變動）</li>
-                                <li><span class="tag tag-warning">修正</span> 窄螢幕的手機（畫面寬度 389px 以下）上，寶圖卡片的「加入清單」按鈕不再被截掉，改顯示短一點的字（「＋ 加入」「＋ Add」「＋ 追加」）</li>
-                                <li><span class="tag tag-warning">修正</span> 英文、日文的底部列在隊伍裡改寫「👥 Party N/8」「👥 パーティ N/8」，窄螢幕也看得到張數</li>
-                                <li><span class="tag tag-warning">修正</span> 網址同時有隊伍與分享的寶圖時，先問要不要加入隊伍、再問分享的寶圖；按「上一頁」再重新整理，不會再問一次</li>
-                            </ul>
-                        </div>
-                    </article>
+                    <details class="changelog-entry" id="version-v2200">
+                        <summary>
+                            <span class="changelog-meta">
+                                <time class="changelog-date" datetime="2026-10-16">10月16日</time>
+                                <span class="changelog-version">v2.20.0</span>
+                            </span>
+                            <span class="changelog-headline">寶圖清單：分享連結與一站一站的路線</span>
+                        </summary>
+                        <ul class="changelog-items">
+                            <li><span class="tag tag-success">新增</span> 寶圖搜尋器新增「複製分享連結」，打開連結時可以選加進或取代自己的清單（取代以前的「匯出」，以前匯出的內容仍然可以匯入）</li>
+                            <li><span class="tag tag-info">改善</span> 路線顯示在清單裡，一站一張寶圖，標出目前這一站、可以標記完成，重新整理後進度還在；「複製下一站」一次複製一站</li>
+                            <li><span class="tag tag-info">改善</span> 路線預設複製的句子和卡片相同，前面加上站號，例如「/p 1/6 G17 烏爾科帕恰 (21.6, 23.9) 最近：瓦群佩洛」</li>
+                            <li><span class="tag tag-info">改善</span> 路線先跑寶圖多的地區；清單只有 1 張也能生成路線</li>
+                            <li><span class="tag tag-info">改善</span> 清單每一列直接顯示座標與最近的傳送點；手機上清單加高到畫面的 85%</li>
+                            <li><span class="tag tag-info">改善</span> 匯入、清空改成頁面裡的對話框，預設不會丟掉原本的清單；從清單移除單張不再跳確認</li>
+                            <li><span class="tag tag-info">改善</span> 自訂格式只剩一個欄位，點變數就能插入，預覽用目前這一站的真實資料；路線的傳送不再單獨一行（自訂的傳送點格式不再使用）；「&lt;座標&gt;」以前輸出「/pos x y z」，現在輸出「(x, y)」</li>
+                            <li><span class="tag tag-warning">修正</span> 自訂格式裡同一個變數出現多次時都會換掉；「恢復預設」會真的恢復</li>
+                            <li><span class="tag tag-warning">修正</span> 路線不再固定從清單第一張的地區開始</li>
+                            <li><span class="tag tag-warning">修正</span> 瀏覽器封鎖網站資料時，加入清單不再沒有反應</li>
+                        </ul>
+                    </details>
 
-                    <article class="changelog-entry">
-                        <div class="changelog-header">
-                            <h3 class="changelog-version">v2.20.0</h3>
-                            <time class="changelog-date" datetime="2026-10-16">2026年10月16日</time>
-                        </div>
-                        <div class="changelog-content">
-                            <p class="changelog-headline">寶圖清單：分享連結與一站一站的路線</p>
-                            <ul>
-                                <li><span class="tag tag-success">新增</span> 寶圖搜尋器新增「複製分享連結」，打開連結時可以選加進或取代自己的清單（取代以前的「匯出」，以前匯出的內容仍然可以匯入）</li>
-                                <li><span class="tag tag-info">改善</span> 路線顯示在清單裡，一站一張寶圖，標出目前這一站、可以標記完成，重新整理後進度還在；「複製下一站」一次複製一站</li>
-                                <li><span class="tag tag-info">改善</span> 路線預設複製的句子和卡片相同，前面加上站號，例如「/p 1/6 G17 烏爾科帕恰 (21.6, 23.9) 最近：瓦群佩洛」</li>
-                                <li><span class="tag tag-info">改善</span> 路線先跑寶圖多的地區；清單只有 1 張也能生成路線</li>
-                                <li><span class="tag tag-info">改善</span> 清單每一列直接顯示座標與最近的傳送點；手機上清單加高到畫面的 85%</li>
-                                <li><span class="tag tag-info">改善</span> 匯入、清空改成頁面裡的對話框，預設不會丟掉原本的清單；從清單移除單張不再跳確認</li>
-                                <li><span class="tag tag-info">改善</span> 自訂格式只剩一個欄位，點變數就能插入，預覽用目前這一站的真實資料；路線的傳送不再單獨一行（自訂的傳送點格式不再使用）；「&lt;座標&gt;」以前輸出「/pos x y z」，現在輸出「(x, y)」</li>
-                                <li><span class="tag tag-warning">修正</span> 自訂格式裡同一個變數出現多次時都會換掉；「恢復預設」會真的恢復</li>
-                                <li><span class="tag tag-warning">修正</span> 路線不再固定從清單第一張的地區開始</li>
-                                <li><span class="tag tag-warning">修正</span> 瀏覽器封鎖網站資料時，加入清單不再沒有反應</li>
-                            </ul>
-                        </div>
-                    </article>
+                    <details class="changelog-entry" id="version-v2190">
+                        <summary>
+                            <span class="changelog-meta">
+                                <time class="changelog-date" datetime="2026-10-15">10月15日</time>
+                                <span class="changelog-version">v2.19.0</span>
+                            </span>
+                            <span class="changelog-headline">寶圖搜尋器：先選等級再選地區，詳細地圖能直接加入清單</span>
+                        </summary>
+                        <ul class="changelog-items">
+                            <li><span class="tag tag-success">新增</span> 寶圖搜尋器的詳細地圖可以直接加入或移除清單、複製，並用按鈕或鍵盤的 ← → 切換上一張與下一張；手機版改為全螢幕，地圖上會標出最近的傳送點</li>
+                            <li><span class="tag tag-success">新增</span> 寶圖搜尋器會記住上次選的等級與地區，下次打開自動還原</li>
+                            <li><span class="tag tag-info">改善</span> 寶圖搜尋器改成先選等級、再選地區：選了等級才會出現地區，而且只列出所選等級有寶圖的地區，每個地區附上張數，選得到的組合一定有寶圖</li>
+                            <li><span class="tag tag-info">改善</span> 選好等級後一次列出所有符合的寶圖，顯示的張數就是實際張數，不用再按「載入更多」</li>
+                            <li><span class="tag tag-info">改善</span> 寶圖卡片改成直接顯示目前語言的地名、座標與最近的傳送點；點縮圖開啟詳細地圖，整張卡不再是點了就複製，改用卡片上的複製鈕</li>
+                            <li><span class="tag tag-info">改善</span> 複製鈕改成複製一句可以貼到隊伍頻道的話，例如「/p G17 烏爾科帕恰 (13.7, 14.2) 最近：瓦群佩洛」，地名與傳送點會跟著介面語言</li>
+                            <li><span class="tag tag-info">改善</span> 清單入口一直看得到（電腦版捲動時固定在畫面上方，手機版固定在畫面底部），頁面上方的步驟提示標出目前進行到「選等級、加入清單、生成路線」的哪一步；「建立組隊」與「加入隊伍」移進清單裡；從卡片或詳細地圖加入、移除寶圖時不再跳出提示訊息，改成直接更新清單入口上的張數</li>
+                            <li><span class="tag tag-info">改善</span> 寶圖搜尋器頁面底部的「資料來源」補上 G18 巨獸革地圖的出處（Game8）</li>
+                            <li><span class="tag tag-warning">修正</span> G8、G10、G12 的寶圖現在也能依地區篩選</li>
+                            <li><span class="tag tag-warning">修正</span> 詳細地圖只畫出該地區自己的傳送點，不再混進其他地區的（拉凱提卡大森林原本會畫出整個諾弗蘭特的傳送點）</li>
+                            <li><span class="tag tag-warning">修正</span> 瀏覽器封鎖網站資料（Cookie）時，寶圖搜尋器不再顯示「載入寶圖資料失敗」，可以照常選等級與地區瀏覽寶圖</li>
+                        </ul>
+                    </details>
 
-                    <article class="changelog-entry">
-                        <div class="changelog-header">
-                            <h3 class="changelog-version">v2.19.0</h3>
-                            <time class="changelog-date" datetime="2026-10-15">2026年10月15日</time>
-                        </div>
-                        <div class="changelog-content">
-                            <p class="changelog-headline">寶圖搜尋器：先選等級再選地區，詳細地圖能直接加入清單</p>
-                            <ul>
-                                <li><span class="tag tag-success">新增</span> 寶圖搜尋器的詳細地圖可以直接加入或移除清單、複製，並用按鈕或鍵盤的 ← → 切換上一張與下一張；手機版改為全螢幕，地圖上會標出最近的傳送點</li>
-                                <li><span class="tag tag-success">新增</span> 寶圖搜尋器會記住上次選的等級與地區，下次打開自動還原</li>
-                                <li><span class="tag tag-info">改善</span> 寶圖搜尋器改成先選等級、再選地區：選了等級才會出現地區，而且只列出所選等級有寶圖的地區，每個地區附上張數，選得到的組合一定有寶圖</li>
-                                <li><span class="tag tag-info">改善</span> 選好等級後一次列出所有符合的寶圖，顯示的張數就是實際張數，不用再按「載入更多」</li>
-                                <li><span class="tag tag-info">改善</span> 寶圖卡片改成直接顯示目前語言的地名、座標與最近的傳送點；點縮圖開啟詳細地圖，整張卡不再是點了就複製，改用卡片上的複製鈕</li>
-                                <li><span class="tag tag-info">改善</span> 複製鈕改成複製一句可以貼到隊伍頻道的話，例如「/p G17 烏爾科帕恰 (13.7, 14.2) 最近：瓦群佩洛」，地名與傳送點會跟著介面語言</li>
-                                <li><span class="tag tag-info">改善</span> 清單入口一直看得到（電腦版捲動時固定在畫面上方，手機版固定在畫面底部），頁面上方的步驟提示標出目前進行到「選等級、加入清單、生成路線」的哪一步；「建立組隊」與「加入隊伍」移進清單裡；從卡片或詳細地圖加入、移除寶圖時不再跳出提示訊息，改成直接更新清單入口上的張數</li>
-                                <li><span class="tag tag-info">改善</span> 寶圖搜尋器頁面底部的「資料來源」補上 G18 巨獸革地圖的出處（Game8）</li>
-                                <li><span class="tag tag-warning">修正</span> G8、G10、G12 的寶圖現在也能依地區篩選</li>
-                                <li><span class="tag tag-warning">修正</span> 詳細地圖只畫出該地區自己的傳送點，不再混進其他地區的（拉凱提卡大森林原本會畫出整個諾弗蘭特的傳送點）</li>
-                                <li><span class="tag tag-warning">修正</span> 瀏覽器封鎖網站資料（Cookie）時，寶圖搜尋器不再顯示「載入寶圖資料失敗」，可以照常選等級與地區瀏覽寶圖</li>
-                            </ul>
-                        </div>
-                    </article>
+                    <details class="changelog-entry" id="version-v2180">
+                        <summary>
+                            <span class="changelog-meta">
+                                <time class="changelog-date" datetime="2026-10-14">10月14日</time>
+                                <span class="changelog-version">v2.18.0</span>
+                            </span>
+                            <span class="changelog-headline">每一頁都能換工具，首頁多了「最近使用」</span>
+                        </summary>
+                        <ul class="changelog-items">
+                            <li><span class="tag tag-success">新增</span> 每一頁的頁首都有「工具」選單，點開就能直接換到任何一個工具，目前所在的工具會標示出來；手機版的選單最上面就是工具清單</li>
+                            <li><span class="tag tag-success">新增</span> 首頁新增「最近使用」，記住你最近用過的 4 個工具，一點就能再開（第一次來訪時不會出現）</li>
+                            <li><span class="tag tag-success">新增</span> 打錯網址時會顯示中文的「找不到這個頁面」，附上回首頁的按鈕與全部工具的連結</li>
+                            <li><span class="tag tag-info">改善</span> 首頁的工具卡改成精簡版面，手機版一個畫面就能看到更多工具</li>
+                            <li><span class="tag tag-info">改善</span> 站務連結集中在頁尾並新增「回報問題」；頁首只留首頁、工具、修改紀錄與版權聲明，「關於」和 GitHub 移到頁尾</li>
+                            <li><span class="tag tag-info">改善</span> 首頁的工具標示更新：寶圖搜尋器不再標示「施工中」；副本資料庫與攻略資料改成寫出還缺什麼（部分副本的機制說明待補；公會、副本、風脈、探索筆記 4 頁撰寫中）；Lodestone 角色查詢由「繁中版不支援」改標「僅限國際版角色」；「官方商城計算機」改名為「水晶商城清單」，標示為外部網站並另開新分頁；移除一直沒有上線的「裝備分析器」卡片</li>
+                            <li><span class="tag tag-warning">修正</span> 宗長計算機的名稱統一：首頁、頁首、分頁標題與工具選單都叫「宗長計算機」，不再寫成「Faux Hollows Foxes 計算機」</li>
+                        </ul>
+                    </details>
 
-                    <article class="changelog-entry">
-                        <div class="changelog-header">
-                            <h3 class="changelog-version">v2.18.0</h3>
-                            <time class="changelog-date" datetime="2026-10-14">2026年10月14日</time>
-                        </div>
-                        <div class="changelog-content">
-                            <p class="changelog-headline">每一頁都能換工具，首頁多了「最近使用」</p>
-                            <ul>
-                                <li><span class="tag tag-success">新增</span> 每一頁的頁首都有「工具」選單，點開就能直接換到任何一個工具，目前所在的工具會標示出來；手機版的選單最上面就是工具清單</li>
-                                <li><span class="tag tag-success">新增</span> 首頁新增「最近使用」，記住你最近用過的 4 個工具，一點就能再開（第一次來訪時不會出現）</li>
-                                <li><span class="tag tag-success">新增</span> 打錯網址時會顯示中文的「找不到這個頁面」，附上回首頁的按鈕與全部工具的連結</li>
-                                <li><span class="tag tag-info">改善</span> 首頁的工具卡改成精簡版面，手機版一個畫面就能看到更多工具</li>
-                                <li><span class="tag tag-info">改善</span> 站務連結集中在頁尾並新增「回報問題」；頁首只留首頁、工具、修改紀錄與版權聲明，「關於」和 GitHub 移到頁尾</li>
-                                <li><span class="tag tag-info">改善</span> 首頁的工具標示更新：寶圖搜尋器不再標示「施工中」；副本資料庫與攻略資料改成寫出還缺什麼（部分副本的機制說明待補；公會、副本、風脈、探索筆記 4 頁撰寫中）；Lodestone 角色查詢由「繁中版不支援」改標「僅限國際版角色」；「官方商城計算機」改名為「水晶商城清單」，標示為外部網站並另開新分頁；移除一直沒有上線的「裝備分析器」卡片</li>
-                                <li><span class="tag tag-warning">修正</span> 宗長計算機的名稱統一：首頁、頁首、分頁標題與工具選單都叫「宗長計算機」，不再寫成「Faux Hollows Foxes 計算機」</li>
-                            </ul>
-                        </div>
-                    </article>
-
-                    <article class="changelog-entry">
-                        <div class="changelog-header">
-                            <h3 class="changelog-version">v2.17.1</h3>
-                            <time class="changelog-date" datetime="2026-10-13">2026年10月13日</time>
-                        </div>
-                        <div class="changelog-content">
-                            <p class="changelog-headline">手機上被壓扁的按鈕恢復正常，修好幾個會算錯的地方</p>
-                            <ul>
-                                <li><span class="tag tag-warning">修正</span> 手機版角色卡、檢舉模板、寶圖卡片與 Lodestone 查詢的按鈕和輸入框不再被壓扁；仙人微彩的棋盤恢復正常大小</li>
-                                <li><span class="tag tag-warning">修正</span> 寶圖「最佳路線」會使用地區內所有傳送點，永生記憶、遺產之地、黑風海等地區不再出現沒有傳送的路線</li>
-                                <li><span class="tag tag-warning">修正</span> 天氣預報開著頁面不動時，天氣一變化，結果表就會自動更新</li>
-                                <li><span class="tag tag-warning">修正</span> 陸行鳥染色計算器改選顏色後立即重算；巨集轉換器改目標語言後立即重新轉換</li>
-                                <li><span class="tag tag-warning">修正</span> Lodestone 可以直接貼上角色頁網址；檢舉模板超過 1000 字時不再自動複製</li>
-                                <li><span class="tag tag-warning">修正</span> 特殊採集手機版搜尋框下方不再有大片空白；Lodestone 與攻略頁手機版恢復左右留白；修改紀錄的版本標題更清楚；手機從橫向轉為直向後，主題切換鈕不再藏在收合的選單裡；寶圖離開隊伍後清單不再卡在歷史分頁</li>
-                            </ul>
-                        </div>
-                    </article>
+                    <details class="changelog-entry" id="version-v2171">
+                        <summary>
+                            <span class="changelog-meta">
+                                <time class="changelog-date" datetime="2026-10-13">10月13日</time>
+                                <span class="changelog-version">v2.17.1</span>
+                            </span>
+                            <span class="changelog-headline">手機上被壓扁的按鈕恢復正常，修好幾個會算錯的地方</span>
+                        </summary>
+                        <ul class="changelog-items">
+                            <li><span class="tag tag-warning">修正</span> 手機版角色卡、檢舉模板、寶圖卡片與 Lodestone 查詢的按鈕和輸入框不再被壓扁；仙人微彩的棋盤恢復正常大小</li>
+                            <li><span class="tag tag-warning">修正</span> 寶圖「最佳路線」會使用地區內所有傳送點，永生記憶、遺產之地、黑風海等地區不再出現沒有傳送的路線</li>
+                            <li><span class="tag tag-warning">修正</span> 天氣預報開著頁面不動時，天氣一變化，結果表就會自動更新</li>
+                            <li><span class="tag tag-warning">修正</span> 陸行鳥染色計算器改選顏色後立即重算；巨集轉換器改目標語言後立即重新轉換</li>
+                            <li><span class="tag tag-warning">修正</span> Lodestone 可以直接貼上角色頁網址；檢舉模板超過 1000 字時不再自動複製</li>
+                            <li><span class="tag tag-warning">修正</span> 特殊採集手機版搜尋框下方不再有大片空白；Lodestone 與攻略頁手機版恢復左右留白；修改紀錄的版本標題更清楚；手機從橫向轉為直向後，主題切換鈕不再藏在收合的選單裡；寶圖離開隊伍後清單不再卡在歷史分頁</li>
+                        </ul>
+                    </details>
                 </section>
 
                 <!-- 2026年9月 -->
-                <section class="changelog-section">
-                    <h2 class="changelog-year">2026年9月</h2>
+                <section class="changelog-month">
+                    <h2 class="changelog-month-title">2026年9月</h2>
+                    <details class="changelog-entry" id="version-v2170">
+                        <summary>
+                            <span class="changelog-meta">
+                                <time class="changelog-date" datetime="2026-09-08">9月8日</time>
+                                <span class="changelog-version">v2.17.0</span>
+                            </span>
+                            <span class="changelog-headline">寶圖隊伍、採集備份、陸行鳥配方與 Lodestone 的修正</span>
+                        </summary>
+                        <ul class="changelog-items">
+                            <li><span class="tag tag-warning">修正</span> 寶圖隊伍建立與加入會保留選擇帶入的個人清單；多人同步與斷線重試不再互相覆蓋，成員操作改用私人憑證驗證。舊隊伍的寶圖保留在本機，可重新建立隊伍</li>
+                            <li><span class="tag tag-warning">修正</span> 特殊採集清單的備份可重新匯入，異常檔案不會覆蓋既有清單；支援區間與跨日時段的鬧鐘巨集，全天項目不再產生無效鬧鐘，不支援通知的瀏覽器仍可正常使用工具</li>
+                            <li><span class="tag tag-warning">修正</span> 陸行鳥毛色配方納入水果對三個色彩通道的完整效果，提供逐步餵食順序；宗長位置以候選提示顯示，避免誤標為保證命中</li>
+                            <li><span class="tag tag-warning">修正</span> Lodestone 部分資料暫時無法取得時仍顯示角色主資料；切換角色與翻頁後，較晚回傳的舊查詢不會蓋掉新結果</li>
+                            <li><span class="tag tag-warning">修正</span> 瀏覽器限制儲存時仍可切換語言；天氣預報的分享網址、上一頁與重置操作會同步更新篩選介面</li>
+                        </ul>
+                    </details>
 
-                    <article class="changelog-entry">
-                        <div class="changelog-header">
-                            <h3 class="changelog-version">v2.17.0</h3>
-                            <time class="changelog-date" datetime="2026-09-08">2026年9月8日</time>
-                        </div>
-                        <div class="changelog-content">
-                            <p class="changelog-headline">寶圖隊伍、採集備份、陸行鳥配方與 Lodestone 的修正</p>
-                            <ul>
-                                <li><span class="tag tag-warning">修正</span> 寶圖隊伍建立與加入會保留選擇帶入的個人清單；多人同步與斷線重試不再互相覆蓋，成員操作改用私人憑證驗證。舊隊伍的寶圖保留在本機，可重新建立隊伍</li>
-                                <li><span class="tag tag-warning">修正</span> 特殊採集清單的備份可重新匯入，異常檔案不會覆蓋既有清單；支援區間與跨日時段的鬧鐘巨集，全天項目不再產生無效鬧鐘，不支援通知的瀏覽器仍可正常使用工具</li>
-                                <li><span class="tag tag-warning">修正</span> 陸行鳥毛色配方納入水果對三個色彩通道的完整效果，提供逐步餵食順序；宗長位置以候選提示顯示，避免誤標為保證命中</li>
-                                <li><span class="tag tag-warning">修正</span> Lodestone 部分資料暫時無法取得時仍顯示角色主資料；切換角色與翻頁後，較晚回傳的舊查詢不會蓋掉新結果</li>
-                                <li><span class="tag tag-warning">修正</span> 瀏覽器限制儲存時仍可切換語言；天氣預報的分享網址、上一頁與重置操作會同步更新篩選介面</li>
-                            </ul>
-                        </div>
-                    </article>
+                    <details class="changelog-entry" id="version-v2164">
+                        <summary>
+                            <span class="changelog-meta">
+                                <time class="changelog-date" datetime="2026-09-02">9月2日</time>
+                                <span class="changelog-version">v2.16.4</span>
+                            </span>
+                            <span class="changelog-headline">手機選單改成滑入，寶圖清單關閉時不會誤點</span>
+                        </summary>
+                        <ul class="changelog-items">
+                            <li><span class="tag tag-info">改善</span> 手機版導覽選單開關改為滑入／滑出動畫，關閉中的選單不再能被點到</li>
+                            <li><span class="tag tag-warning">修正</span> 寶圖搜尋器「我的清單」關閉後的滑出動畫期間不再能被點擊或聚焦</li>
+                        </ul>
+                    </details>
 
-                    <article class="changelog-entry">
-                        <div class="changelog-header">
-                            <h3 class="changelog-version">v2.16.4</h3>
-                            <time class="changelog-date" datetime="2026-09-02">2026年9月2日</time>
-                        </div>
-                        <div class="changelog-content">
-                            <p class="changelog-headline">手機選單改成滑入，寶圖清單關閉時不會誤點</p>
-                            <ul>
-                                <li><span class="tag tag-info">改善</span> 手機版導覽選單開關改為滑入／滑出動畫，關閉中的選單不再能被點到</li>
-                                <li><span class="tag tag-warning">修正</span> 寶圖搜尋器「我的清單」關閉後的滑出動畫期間不再能被點擊或聚焦</li>
-                            </ul>
-                        </div>
-                    </article>
-
-                    <article class="changelog-entry">
-                        <div class="changelog-header">
-                            <h3 class="changelog-version">v2.16.3</h3>
-                            <time class="changelog-date" datetime="2026-09-02">2026年9月2日</time>
-                        </div>
-                        <div class="changelog-content">
-                            <p class="changelog-headline">寶圖的視窗疊在清單上開，英文、日文介面補齊</p>
-                            <ul>
-                                <li><span class="tag tag-info">改善</span> 寶圖搜尋器的路線、匯出、匯入與自訂格式視窗改為疊在「我的清單」上開啟：Escape 一次只關最上層，關閉後回到清單，鍵盤焦點不再落到看不見的按鈕</li>
-                                <li><span class="tag tag-warning">修正</span> 寶圖搜尋器在英文／日文介面下，我的清單、路線、自訂格式、隊伍協作區塊與對話框、匯入與同步提示、隊伍歷史紀錄都會顯示對應語言</li>
-                                <li><span class="tag tag-warning">修正</span> 宗長計算機回到上一步讓點擊數低於門檻時，結果面板會一併收起</li>
-                                <li><span class="tag tag-warning">修正</span> Lodestone 角色查詢的裝備與成就區塊在手機寬度不再水平溢出</li>
-                            </ul>
-                        </div>
-                    </article>
+                    <details class="changelog-entry" id="version-v2163">
+                        <summary>
+                            <span class="changelog-meta">
+                                <time class="changelog-date" datetime="2026-09-02">9月2日</time>
+                                <span class="changelog-version">v2.16.3</span>
+                            </span>
+                            <span class="changelog-headline">寶圖的視窗疊在清單上開，英文、日文介面補齊</span>
+                        </summary>
+                        <ul class="changelog-items">
+                            <li><span class="tag tag-info">改善</span> 寶圖搜尋器的路線、匯出、匯入與自訂格式視窗改為疊在「我的清單」上開啟：Escape 一次只關最上層，關閉後回到清單，鍵盤焦點不再落到看不見的按鈕</li>
+                            <li><span class="tag tag-warning">修正</span> 寶圖搜尋器在英文／日文介面下，我的清單、路線、自訂格式、隊伍協作區塊與對話框、匯入與同步提示、隊伍歷史紀錄都會顯示對應語言</li>
+                            <li><span class="tag tag-warning">修正</span> 宗長計算機回到上一步讓點擊數低於門檻時，結果面板會一併收起</li>
+                            <li><span class="tag tag-warning">修正</span> Lodestone 角色查詢的裝備與成就區塊在手機寬度不再水平溢出</li>
+                        </ul>
+                    </details>
                 </section>
 
                 <!-- 2026年8月 -->
-                <section class="changelog-section">
-                    <h2 class="changelog-year">2026年8月</h2>
+                <section class="changelog-month">
+                    <h2 class="changelog-month-title">2026年8月</h2>
+                    <details class="changelog-entry" id="version-v2162">
+                        <summary>
+                            <span class="changelog-meta">
+                                <time class="changelog-date" datetime="2026-08-31">8月31日</time>
+                                <span class="changelog-version">v2.16.2</span>
+                            </span>
+                            <span class="changelog-headline">切換語言後，各工具的結果跟著換語言</span>
+                        </summary>
+                        <ul class="changelog-items">
+                            <li><span class="tag tag-warning">修正</span> 切換語言後，副本資料庫卡片、角色卡預設文字、天氣預報結果與側欄、巨集轉換器提示、仙人微彩／天書奇談／宗長計算機的結果與按鈕、寶圖搜尋器的對話框與路線文字都會跟著更新</li>
+                            <li><span class="tag tag-warning">修正</span> Lodestone 角色查詢的裝備部位名稱在英文／日文介面顯示正確語言；特殊採集時間管理器不再在載入時出現翻譯警告</li>
+                            <li><span class="tag tag-info">改善</span> 寶圖搜尋器的預設巨集模板依介面語言、地圖標記與提示文字跟著語言切換</li>
+                        </ul>
+                    </details>
 
-                    <article class="changelog-entry">
-                        <div class="changelog-header">
-                            <h3 class="changelog-version">v2.16.2</h3>
-                            <time class="changelog-date" datetime="2026-08-31">2026年8月31日</time>
-                        </div>
-                        <div class="changelog-content">
-                            <p class="changelog-headline">切換語言後，各工具的結果跟著換語言</p>
-                            <ul>
-                                <li><span class="tag tag-warning">修正</span> 切換語言後，副本資料庫卡片、角色卡預設文字、天氣預報結果與側欄、巨集轉換器提示、仙人微彩／天書奇談／宗長計算機的結果與按鈕、寶圖搜尋器的對話框與路線文字都會跟著更新</li>
-                                <li><span class="tag tag-warning">修正</span> Lodestone 角色查詢的裝備部位名稱在英文／日文介面顯示正確語言；特殊採集時間管理器不再在載入時出現翻譯警告</li>
-                                <li><span class="tag tag-info">改善</span> 寶圖搜尋器的預設巨集模板依介面語言、地圖標記與提示文字跟著語言切換</li>
-                            </ul>
-                        </div>
-                    </article>
+                    <details class="changelog-entry" id="version-v2161">
+                        <summary>
+                            <span class="changelog-meta">
+                                <time class="changelog-date" datetime="2026-08-29">8月29日</time>
+                                <span class="changelog-version">v2.16.1</span>
+                            </span>
+                            <span class="changelog-headline">陸行鳥計算器、宗長上一步與寶圖清單的鍵盤操作修正</span>
+                        </summary>
+                        <ul class="changelog-items">
+                            <li><span class="tag tag-warning">修正</span> 陸行鳥毛色計算器載入時的錯誤，語言切換後選單與結果會跟著翻譯</li>
+                            <li><span class="tag tag-warning">修正</span> 宗長計算機回到上一步／重做時，已用的格子不會再被重新啟用</li>
+                            <li><span class="tag tag-warning">修正</span> 寶圖搜尋器「我的清單」面板可用鍵盤操作（開啟時焦點移入、Escape 關閉、焦點回到按鈕）；語言切換後總覽與卡片按鈕不再殘留舊語言；英文／日文介面的無障礙標籤改用各語言的標點</li>
+                        </ul>
+                    </details>
 
-                    <article class="changelog-entry">
-                        <div class="changelog-header">
-                            <h3 class="changelog-version">v2.16.1</h3>
-                            <time class="changelog-date" datetime="2026-08-29">2026年8月29日</time>
-                        </div>
-                        <div class="changelog-content">
-                            <p class="changelog-headline">陸行鳥計算器、宗長上一步與寶圖清單的鍵盤操作修正</p>
-                            <ul>
-                                <li><span class="tag tag-warning">修正</span> 陸行鳥毛色計算器載入時的錯誤，語言切換後選單與結果會跟著翻譯</li>
-                                <li><span class="tag tag-warning">修正</span> 宗長計算機回到上一步／重做時，已用的格子不會再被重新啟用</li>
-                                <li><span class="tag tag-warning">修正</span> 寶圖搜尋器「我的清單」面板可用鍵盤操作（開啟時焦點移入、Escape 關閉、焦點回到按鈕）；語言切換後總覽與卡片按鈕不再殘留舊語言；英文／日文介面的無障礙標籤改用各語言的標點</li>
-                            </ul>
-                        </div>
-                    </article>
+                    <details class="changelog-entry" id="version-v2160">
+                        <summary>
+                            <span class="changelog-meta">
+                                <time class="changelog-date" datetime="2026-08-27">8月27日</time>
+                                <span class="changelog-version">v2.16.0</span>
+                            </span>
+                            <span class="changelog-headline">無障礙改善，寶圖卡片多了「複製座標」</span>
+                        </summary>
+                        <ul class="changelog-items">
+                            <li><span class="tag tag-info">改善</span> 無障礙：對話框與圖示按鈕加上輔助科技可讀的名稱；宗長計算機、仙人微彩計算機、天書奇談預測器的棋盤格子與 Lodestone 總覽卡片可以用鍵盤操作（Tab、Enter、空白鍵）；Lodestone 角色查詢、寶圖搜尋器、特殊採集時間管理器的頁籤支援左右方向鍵</li>
+                            <li><span class="tag tag-info">改善</span> 寶圖搜尋器的寶圖卡片新增「複製座標」按鈕，「自訂格式」面板可用 Escape 關閉並會把焦點還給原本的按鈕</li>
+                            <li><span class="tag tag-warning">修正</span> Lodestone 角色查詢的職業識別色對比度不足，改為符合無障礙標準的顏色</li>
+                            <li><span class="tag tag-warning">修正</span> 版權聲明頁的強調文字與陸行鳥攻略的染色計算器來源連結在切換語言後消失</li>
+                        </ul>
+                    </details>
 
-                    <article class="changelog-entry">
-                        <div class="changelog-header">
-                            <h3 class="changelog-version">v2.16.0</h3>
-                            <time class="changelog-date" datetime="2026-08-27">2026年8月27日</time>
-                        </div>
-                        <div class="changelog-content">
-                            <p class="changelog-headline">無障礙改善，寶圖卡片多了「複製座標」</p>
-                            <ul>
-                                <li><span class="tag tag-info">改善</span> 無障礙：對話框與圖示按鈕加上輔助科技可讀的名稱；宗長計算機、仙人微彩計算機、天書奇談預測器的棋盤格子與 Lodestone 總覽卡片可以用鍵盤操作（Tab、Enter、空白鍵）；Lodestone 角色查詢、寶圖搜尋器、特殊採集時間管理器的頁籤支援左右方向鍵</li>
-                                <li><span class="tag tag-info">改善</span> 寶圖搜尋器的寶圖卡片新增「複製座標」按鈕，「自訂格式」面板可用 Escape 關閉並會把焦點還給原本的按鈕</li>
-                                <li><span class="tag tag-warning">修正</span> Lodestone 角色查詢的職業識別色對比度不足，改為符合無障礙標準的顏色</li>
-                                <li><span class="tag tag-warning">修正</span> 版權聲明頁的強調文字與陸行鳥攻略的染色計算器來源連結在切換語言後消失</li>
-                            </ul>
-                        </div>
-                    </article>
+                    <details class="changelog-entry" id="version-v2150">
+                        <summary>
+                            <span class="changelog-meta">
+                                <time class="changelog-date" datetime="2026-08-27">8月27日</time>
+                                <span class="changelog-version">v2.15.0</span>
+                            </span>
+                            <span class="changelog-headline">全站統一外觀完成，修好各頁的顯示問題</span>
+                        </summary>
+                        <ul class="changelog-items">
+                            <li><span class="tag tag-info">改善</span> 設計系統全站完成：宗長計算機、Lodestone 角色查詢、角色卡產生器、寶圖搜尋器與首頁、關於、版權聲明、修改紀錄頁面全部改用統一的顏色、元件與深色模式</li>
+                            <li><span class="tag tag-warning">修正</span> 寶圖搜尋器：次要按鈕白字看不見、「生成路線」無法開啟、深色模式對話框半白、卡片沒有圓角</li>
+                            <li><span class="tag tag-warning">修正</span> Lodestone 角色查詢：淺色模式下搜尋框與資訊卡片沒有底色；宗長計算機：回到上一步後機率顯示壞掉、格子與視窗沒有圓角</li>
+                            <li><span class="tag tag-warning">修正</span> 修改紀錄頁「新增」「修正」標籤沒有顏色；首頁「施工中」「即將推出」徽章文字對比不足；攻略資料的職能分類表格沒有樣式</li>
+                            <li><span class="tag tag-info">改善</span> 深色模式下的捲軸與原生表單控制項自動配色；角色卡產生器的卡片成品維持原本的設計，不受站台主題影響</li>
+                        </ul>
+                    </details>
 
-                    <article class="changelog-entry">
-                        <div class="changelog-header">
-                            <h3 class="changelog-version">v2.15.0</h3>
-                            <time class="changelog-date" datetime="2026-08-27">2026年8月27日</time>
-                        </div>
-                        <div class="changelog-content">
-                            <p class="changelog-headline">全站統一外觀完成，修好各頁的顯示問題</p>
-                            <ul>
-                                <li><span class="tag tag-info">改善</span> 設計系統全站完成：宗長計算機、Lodestone 角色查詢、角色卡產生器、寶圖搜尋器與首頁、關於、版權聲明、修改紀錄頁面全部改用統一的顏色、元件與深色模式</li>
-                                <li><span class="tag tag-warning">修正</span> 寶圖搜尋器：次要按鈕白字看不見、「生成路線」無法開啟、深色模式對話框半白、卡片沒有圓角</li>
-                                <li><span class="tag tag-warning">修正</span> Lodestone 角色查詢：淺色模式下搜尋框與資訊卡片沒有底色；宗長計算機：回到上一步後機率顯示壞掉、格子與視窗沒有圓角</li>
-                                <li><span class="tag tag-warning">修正</span> 修改紀錄頁「新增」「修正」標籤沒有顏色；首頁「施工中」「即將推出」徽章文字對比不足；攻略資料的職能分類表格沒有樣式</li>
-                                <li><span class="tag tag-info">改善</span> 深色模式下的捲軸與原生表單控制項自動配色；角色卡產生器的卡片成品維持原本的設計，不受站台主題影響</li>
-                            </ul>
-                        </div>
-                    </article>
+                    <details class="changelog-entry" id="version-v2140">
+                        <summary>
+                            <span class="changelog-meta">
+                                <time class="changelog-date" datetime="2026-08-26">8月26日</time>
+                                <span class="changelog-version">v2.14.0</span>
+                            </span>
+                            <span class="changelog-headline">副本、採集、天氣、天書、仙人微彩換上統一外觀</span>
+                        </summary>
+                        <ul class="changelog-items">
+                            <li><span class="tag tag-info">改善</span> 副本資料庫、特殊採集時間管理器、天氣預報、天書奇談預測器、仙人微彩計算機改用設計系統：卡片、篩選膠囊、標籤、表格、頁籤、開關、對話框與空狀態全站一致，深色模式不再各自調色</li>
+                            <li><span class="tag tag-warning">修正</span> 仙人微彩計算機：九宮格、線條指示與數字選擇視窗在淺色模式下沒有底色與邊框；「最佳揭開」改用主色標示</li>
+                            <li><span class="tag tag-warning">修正</span> 副本資料庫：搜尋框未套用共用樣式、獎勵文字對比不足；資料來源改用統一的說明面板樣式</li>
+                            <li><span class="tag tag-warning">修正</span> 天氣預報：目前時間列在深色模式下白字看不清；特殊採集時間管理器：頁首語言切換器被工具樣式覆寫、標題顏色未套用</li>
+                            <li><span class="tag tag-info">改善</span> 天氣預報與特殊採集時間管理器的通知改用右上角的統一提示</li>
+                        </ul>
+                    </details>
 
-                    <article class="changelog-entry">
-                        <div class="changelog-header">
-                            <h3 class="changelog-version">v2.14.0</h3>
-                            <time class="changelog-date" datetime="2026-08-26">2026年8月26日</time>
-                        </div>
-                        <div class="changelog-content">
-                            <p class="changelog-headline">副本、採集、天氣、天書、仙人微彩換上統一外觀</p>
-                            <ul>
-                                <li><span class="tag tag-info">改善</span> 副本資料庫、特殊採集時間管理器、天氣預報、天書奇談預測器、仙人微彩計算機改用設計系統：卡片、篩選膠囊、標籤、表格、頁籤、開關、對話框與空狀態全站一致，深色模式不再各自調色</li>
-                                <li><span class="tag tag-warning">修正</span> 仙人微彩計算機：九宮格、線條指示與數字選擇視窗在淺色模式下沒有底色與邊框；「最佳揭開」改用主色標示</li>
-                                <li><span class="tag tag-warning">修正</span> 副本資料庫：搜尋框未套用共用樣式、獎勵文字對比不足；資料來源改用統一的說明面板樣式</li>
-                                <li><span class="tag tag-warning">修正</span> 天氣預報：目前時間列在深色模式下白字看不清；特殊採集時間管理器：頁首語言切換器被工具樣式覆寫、標題顏色未套用</li>
-                                <li><span class="tag tag-info">改善</span> 天氣預報與特殊採集時間管理器的通知改用右上角的統一提示</li>
-                            </ul>
-                        </div>
-                    </article>
-
-                    <article class="changelog-entry">
-                        <div class="changelog-header">
-                            <h3 class="changelog-version">v2.13.0</h3>
-                            <time class="changelog-date" datetime="2026-08-26">2026年8月26日</time>
-                        </div>
-                        <div class="changelog-content">
-                            <p class="changelog-headline">全站統一顏色、按鈕與字型</p>
-                            <ul>
-                                <li><span class="tag tag-success">新增</span> 設計系統：全站顏色、字級、圓角、陰影改由同一份 token 定義，深色模式一併統一</li>
-                                <li><span class="tag tag-info">改善</span> 按鈕、表單、標籤、卡片、訊息改用統一元件；主色改為對比度合格的靛藍，次要按鈕不再顯示為橘色</li>
-                                <li><span class="tag tag-info">改善</span> 每一頁統一載入 Noto Sans TC 字型</li>
-                                <li><span class="tag tag-info">改善</span> 巨集轉換器、檢舉模板產生器、攻略資料改用設計系統</li>
-                                <li><span class="tag tag-warning">修正</span> 副本資料庫深色模式下標題與底色同色而看不見、巨集轉換器面板沒有底色、特殊採集時間管理器搜尋框左側留白</li>
-                            </ul>
-                        </div>
-                    </article>
+                    <details class="changelog-entry" id="version-v2130">
+                        <summary>
+                            <span class="changelog-meta">
+                                <time class="changelog-date" datetime="2026-08-26">8月26日</time>
+                                <span class="changelog-version">v2.13.0</span>
+                            </span>
+                            <span class="changelog-headline">全站統一顏色、按鈕與字型</span>
+                        </summary>
+                        <ul class="changelog-items">
+                            <li><span class="tag tag-success">新增</span> 設計系統：全站顏色、字級、圓角、陰影改由同一份 token 定義，深色模式一併統一</li>
+                            <li><span class="tag tag-info">改善</span> 按鈕、表單、標籤、卡片、訊息改用統一元件；主色改為對比度合格的靛藍，次要按鈕不再顯示為橘色</li>
+                            <li><span class="tag tag-info">改善</span> 每一頁統一載入 Noto Sans TC 字型</li>
+                            <li><span class="tag tag-info">改善</span> 巨集轉換器、檢舉模板產生器、攻略資料改用設計系統</li>
+                            <li><span class="tag tag-warning">修正</span> 副本資料庫深色模式下標題與底色同色而看不見、巨集轉換器面板沒有底色、特殊採集時間管理器搜尋框左側留白</li>
+                        </ul>
+                    </details>
                 </section>
 
                 <!-- 2026年3月 -->
-                <section class="changelog-section">
-                    <h2 class="changelog-year">2026年3月</h2>
-
-                    <article class="changelog-entry">
-                        <div class="changelog-header">
-                            <h3 class="changelog-version">v2.11.4</h3>
-                            <time class="changelog-date" datetime="2026-03-29">2026年3月29日</time>
-                        </div>
-                        <div class="changelog-content">
-                            <ul>
-                                <li><span class="tag tag-warning">修正</span> 寶圖搜尋器、天氣預報：修正蒼天之禁城 3 個地區的繁中名稱為官方用語（龍堡參天高地→德拉瓦尼亞山麓地、翻雲霧海→德拉瓦尼亞雲海、雲海→阿巴拉提亞雲海）</li>
-                            </ul>
-                        </div>
-                    </article>
+                <section class="changelog-month">
+                    <h2 class="changelog-month-title">2026年3月</h2>
+                    <div class="changelog-entry changelog-entry-single" id="version-v2114">
+                        <span class="changelog-meta">
+                            <time class="changelog-date" datetime="2026-03-29">3月29日</time>
+                            <span class="changelog-version">v2.11.4</span>
+                        </span>
+                        <p class="changelog-single-item"><span class="tag tag-warning">修正</span> 寶圖搜尋器、天氣預報：修正蒼天之禁城 3 個地區的繁中名稱為官方用語（龍堡參天高地→德拉瓦尼亞山麓地、翻雲霧海→德拉瓦尼亞雲海、雲海→阿巴拉提亞雲海）</p>
+                    </div>
                 </section>
 
                 <!-- 2026年2月 -->
-                <section class="changelog-section">
-                    <h2 class="changelog-year">2026年2月</h2>
+                <section class="changelog-month">
+                    <h2 class="changelog-month-title">2026年2月</h2>
+                    <div class="changelog-entry changelog-entry-single" id="version-v2113">
+                        <span class="changelog-meta">
+                            <time class="changelog-date" datetime="2026-02-21">2月21日</time>
+                            <span class="changelog-version">v2.11.3</span>
+                        </span>
+                        <p class="changelog-single-item"><span class="tag tag-warning">修正</span> 專屬陸行鳥攻略：修正「陸行鳥房」為官方用語「陸行鳥廄」</p>
+                    </div>
 
-                    <article class="changelog-entry">
-                        <div class="changelog-header">
-                            <h3 class="changelog-version">v2.11.3</h3>
-                            <time class="changelog-date" datetime="2026-02-21">2026年2月21日</time>
-                        </div>
-                        <div class="changelog-content">
-                            <ul>
-                                <li><span class="tag tag-warning">修正</span> 專屬陸行鳥攻略：修正「陸行鳥房」為官方用語「陸行鳥廄」</li>
-                            </ul>
-                        </div>
-                    </article>
+                    <div class="changelog-entry changelog-entry-single" id="version-v2112">
+                        <span class="changelog-meta">
+                            <time class="changelog-date" datetime="2026-02-21">2月21日</time>
+                            <span class="changelog-version">v2.11.2</span>
+                        </span>
+                        <p class="changelog-single-item"><span class="tag tag-warning">修正</span> 陸行鳥染色計算機：修正 53 個顏色的繁中名稱為官方用語</p>
+                    </div>
 
-                    <article class="changelog-entry">
-                        <div class="changelog-header">
-                            <h3 class="changelog-version">v2.11.2</h3>
-                            <time class="changelog-date" datetime="2026-02-21">2026年2月21日</time>
-                        </div>
-                        <div class="changelog-content">
-                            <ul>
-                                <li><span class="tag tag-warning">修正</span> 陸行鳥染色計算機：修正 53 個顏色的繁中名稱為官方用語</li>
-                            </ul>
-                        </div>
-                    </article>
+                    <div class="changelog-entry changelog-entry-single" id="version-v2111">
+                        <span class="changelog-meta">
+                            <time class="changelog-date" datetime="2026-02-21">2月21日</time>
+                            <span class="changelog-version">v2.11.1</span>
+                        </span>
+                        <p class="changelog-single-item"><span class="tag tag-warning">修正</span> 陸行鳥染色計算機：修正 7 種水果的繁中名稱為官方用語（塞爾法特爾沙果、輝鱗油梨、歐·葛莫羅漿果、多瑪青梅、瓦爾醋栗、謝爾達萊鳳梨、拉札漢檸檬）</p>
+                    </div>
 
-                    <article class="changelog-entry">
-                        <div class="changelog-header">
-                            <h3 class="changelog-version">v2.11.1</h3>
-                            <time class="changelog-date" datetime="2026-02-21">2026年2月21日</time>
-                        </div>
-                        <div class="changelog-content">
-                            <ul>
-                                <li><span class="tag tag-warning">修正</span> 陸行鳥染色計算機：修正 7 種水果的繁中名稱為官方用語（塞爾法特爾沙果、輝鱗油梨、歐·葛莫羅漿果、多瑪青梅、瓦爾醋栗、謝爾達萊鳳梨、拉札漢檸檬）</li>
-                            </ul>
-                        </div>
-                    </article>
-
-                    <article class="changelog-entry">
-                        <div class="changelog-header">
-                            <h3 class="changelog-version">v2.12.0</h3>
-                            <time class="changelog-date" datetime="2026-02-10">2026年2月10日</time>
-                        </div>
-                        <div class="changelog-content">
-                            <ul>
-                                <li><span class="tag tag-success">新增</span> 仙人微彩計算機：揭開 1-3 格後，自動推薦最佳揭開格子並顯示各格期望 MGP</li>
-                            </ul>
-                        </div>
-                    </article>
+                    <div class="changelog-entry changelog-entry-single" id="version-v2120">
+                        <span class="changelog-meta">
+                            <time class="changelog-date" datetime="2026-02-10">2月10日</time>
+                            <span class="changelog-version">v2.12.0</span>
+                        </span>
+                        <p class="changelog-single-item"><span class="tag tag-success">新增</span> 仙人微彩計算機：揭開 1-3 格後，自動推薦最佳揭開格子並顯示各格期望 MGP</p>
+                    </div>
                 </section>
 
                 <!-- 2026年1月 -->
-                <section class="changelog-section">
-                    <h2 class="changelog-year">2026年1月</h2>
+                <section class="changelog-month">
+                    <h2 class="changelog-month-title">2026年1月</h2>
+                    <div class="changelog-entry changelog-entry-single" id="version-v2110">
+                        <span class="changelog-meta">
+                            <time class="changelog-date" datetime="2026-01-30">1月30日</time>
+                            <span class="changelog-version">v2.11.0</span>
+                        </span>
+                        <p class="changelog-single-item"><span class="tag tag-success">新增</span> 官方商城計算機：新增工具連結，可快速前往繁中版官方商城計算機統計已購買道具</p>
+                    </div>
 
-                    <article class="changelog-entry">
-                        <div class="changelog-header">
-                            <h3 class="changelog-version">v2.11.0</h3>
-                            <time class="changelog-date" datetime="2026-01-30">2026年1月30日</time>
-                        </div>
-                        <div class="changelog-content">
-                            <ul>
-                                <li><span class="tag tag-success">新增</span> 官方商城計算機：新增工具連結，可快速前往繁中版官方商城計算機統計已購買道具</li>
-                            </ul>
-                        </div>
-                    </article>
+                    <details class="changelog-entry" id="version-v2100">
+                        <summary>
+                            <span class="changelog-meta">
+                                <time class="changelog-date" datetime="2026-01-27">1月27日</time>
+                                <span class="changelog-version">v2.10.0</span>
+                            </span>
+                            <span class="changelog-headline">新工具：天氣預報</span>
+                        </summary>
+                        <ul class="changelog-items">
+                            <li><span class="tag tag-success">新增</span> 天氣預報：全新工具，可查看艾歐澤亞各地區的天氣預報</li>
+                            <li><span class="tag tag-success">新增</span> 天氣預報：支援 78 個地區的天氣查詢</li>
+                            <li><span class="tag tag-success">新增</span> 天氣預報：可過濾目標天氣、前置天氣與艾歐澤亞時間範圍</li>
+                            <li><span class="tag tag-success">新增</span> 天氣預報：即時顯示目前 ET 時間與本地時間</li>
+                            <li><span class="tag tag-success">新增</span> 天氣預報：支援 URL 分享，可分享搜尋條件</li>
+                            <li><span class="tag tag-info">改善</span> Lodestone 角色查詢：標記為繁中版不支援（FF14 繁中版無 Lodestone 功能）</li>
+                        </ul>
+                    </details>
 
-                    <article class="changelog-entry">
-                        <div class="changelog-header">
-                            <h3 class="changelog-version">v2.10.0</h3>
-                            <time class="changelog-date" datetime="2026-01-27">2026年1月27日</time>
-                        </div>
-                        <div class="changelog-content">
-                            <p class="changelog-headline">新工具：天氣預報</p>
-                            <ul>
-                                <li><span class="tag tag-success">新增</span> 天氣預報：全新工具，可查看艾歐澤亞各地區的天氣預報</li>
-                                <li><span class="tag tag-success">新增</span> 天氣預報：支援 78 個地區的天氣查詢</li>
-                                <li><span class="tag tag-success">新增</span> 天氣預報：可過濾目標天氣、前置天氣與艾歐澤亞時間範圍</li>
-                                <li><span class="tag tag-success">新增</span> 天氣預報：即時顯示目前 ET 時間與本地時間</li>
-                                <li><span class="tag tag-success">新增</span> 天氣預報：支援 URL 分享，可分享搜尋條件</li>
-                                <li><span class="tag tag-info">改善</span> Lodestone 角色查詢：標記為繁中版不支援（FF14 繁中版無 Lodestone 功能）</li>
-                            </ul>
-                        </div>
-                    </article>
-
-                    <article class="changelog-entry">
-                        <div class="changelog-header">
-                            <h3 class="changelog-version">v2.9.1</h3>
-                            <time class="changelog-date" datetime="2026-01-10">2026年1月10日</time>
-                        </div>
-                        <div class="changelog-content">
-                            <p class="changelog-headline">寶圖與角色卡變得更順</p>
-                            <ul>
-                                <li><span class="tag tag-warning">修正</span> 寶圖搜尋器：修復格式設定面板中的事件監聽器記憶體洩漏問題</li>
-                                <li><span class="tag tag-info">改善</span> 寶圖搜尋器：移除冗餘的事件監聽器以提升效能</li>
-                                <li><span class="tag tag-info">改善</span> 角色卡產生器：改進拖曳功能的事件處理機制，僅在拖曳時監聽移動事件</li>
-                            </ul>
-                        </div>
-                    </article>
+                    <details class="changelog-entry" id="version-v291">
+                        <summary>
+                            <span class="changelog-meta">
+                                <time class="changelog-date" datetime="2026-01-10">1月10日</time>
+                                <span class="changelog-version">v2.9.1</span>
+                            </span>
+                            <span class="changelog-headline">寶圖與角色卡變得更順</span>
+                        </summary>
+                        <ul class="changelog-items">
+                            <li><span class="tag tag-warning">修正</span> 寶圖搜尋器：修復格式設定面板中的事件監聽器記憶體洩漏問題</li>
+                            <li><span class="tag tag-info">改善</span> 寶圖搜尋器：移除冗餘的事件監聽器以提升效能</li>
+                            <li><span class="tag tag-info">改善</span> 角色卡產生器：改進拖曳功能的事件處理機制，僅在拖曳時監聽移動事件</li>
+                        </ul>
+                    </details>
                 </section>
 
                 <!-- 2025年12月 -->
-                <section class="changelog-section">
-                    <h2 class="changelog-year">2025年12月</h2>
+                <section class="changelog-month">
+                    <h2 class="changelog-month-title">2025年12月</h2>
+                    <details class="changelog-entry" id="version-v290">
+                        <summary>
+                            <span class="changelog-meta">
+                                <time class="changelog-date" datetime="2025-12-07">12月7日</time>
+                                <span class="changelog-version">v2.9.0</span>
+                            </span>
+                            <span class="changelog-headline">新工具：巨集轉換器</span>
+                        </summary>
+                        <ul class="changelog-items">
+                            <li><span class="tag tag-success">新增</span> 巨集轉換器：支援繁體中文、英文、日文巨集互相轉換</li>
+                            <li><span class="tag tag-success">新增</span> 巨集轉換器：自動語言偵測功能</li>
+                            <li><span class="tag tag-success">新增</span> 巨集轉換器：483 個文字指令與 69 個製作技能翻譯</li>
+                        </ul>
+                    </details>
 
-                    <article class="changelog-entry">
-                        <div class="changelog-header">
-                            <h3 class="changelog-version">v2.9.0</h3>
-                            <time class="changelog-date" datetime="2025-12-07">2025年12月7日</time>
-                        </div>
-                        <div class="changelog-content">
-                            <p class="changelog-headline">新工具：巨集轉換器</p>
-                            <ul>
-                                <li><span class="tag tag-success">新增</span> 巨集轉換器：支援繁體中文、英文、日文巨集互相轉換</li>
-                                <li><span class="tag tag-success">新增</span> 巨集轉換器：自動語言偵測功能</li>
-                                <li><span class="tag tag-success">新增</span> 巨集轉換器：483 個文字指令與 69 個製作技能翻譯</li>
-                            </ul>
-                        </div>
-                    </article>
-
-                    <article class="changelog-entry">
-                        <div class="changelog-header">
-                            <h3 class="changelog-version">v2.8.0</h3>
-                            <time class="changelog-date" datetime="2025-12-04">2025年12月4日</time>
-                        </div>
-                        <div class="changelog-content">
-                            <ul>
-                                <li><span class="tag tag-success">新增</span> 檢舉模板產生器：快速產生不當行為檢舉的模板文字</li>
-                            </ul>
-                        </div>
-                    </article>
+                    <div class="changelog-entry changelog-entry-single" id="version-v280">
+                        <span class="changelog-meta">
+                            <time class="changelog-date" datetime="2025-12-04">12月4日</time>
+                            <span class="changelog-version">v2.8.0</span>
+                        </span>
+                        <p class="changelog-single-item"><span class="tag tag-success">新增</span> 檢舉模板產生器：快速產生不當行為檢舉的模板文字</p>
+                    </div>
                 </section>
 
                 <!-- 2025年11月 -->
-                <section class="changelog-section">
-                    <h2 class="changelog-year">2025年11月</h2>
+                <section class="changelog-month">
+                    <h2 class="changelog-month-title">2025年11月</h2>
+                    <div class="changelog-entry changelog-entry-single" id="version-v270">
+                        <span class="changelog-meta">
+                            <time class="changelog-date" datetime="2025-11-29">11月29日</time>
+                            <span class="changelog-version">v2.7.0</span>
+                        </span>
+                        <p class="changelog-single-item"><span class="tag tag-info">改善</span> 導航列改版：移除下拉式選單，頁尾新增修改紀錄連結</p>
+                    </div>
 
-                    <article class="changelog-entry">
-                        <div class="changelog-header">
-                            <h3 class="changelog-version">v2.7.0</h3>
-                            <time class="changelog-date" datetime="2025-11-29">2025年11月29日</time>
-                        </div>
-                        <div class="changelog-content">
-                            <ul>
-                                <li><span class="tag tag-info">改善</span> 導航列改版：移除下拉式選單，頁尾新增修改紀錄連結</li>
-                            </ul>
-                        </div>
-                    </article>
+                    <div class="changelog-entry changelog-entry-single" id="version-v260">
+                        <span class="changelog-meta">
+                            <time class="changelog-date" datetime="2025-11-28">11月28日</time>
+                            <span class="changelog-version">v2.6.0</span>
+                        </span>
+                        <p class="changelog-single-item"><span class="tag tag-success">新增</span> 多語言支援：繁體中文、English、日本語三種語言切換</p>
+                    </div>
 
-                    <article class="changelog-entry">
-                        <div class="changelog-header">
-                            <h3 class="changelog-version">v2.6.0</h3>
-                            <time class="changelog-date" datetime="2025-11-28">2025年11月28日</time>
-                        </div>
-                        <div class="changelog-content">
-                            <ul>
-                                <li><span class="tag tag-success">新增</span> 多語言支援：繁體中文、English、日本語三種語言切換</li>
-                            </ul>
-                        </div>
-                    </article>
-
-                    <article class="changelog-entry">
-                        <div class="changelog-header">
-                            <h3 class="changelog-version">v2.5.14</h3>
-                            <time class="changelog-date" datetime="2025-11-15">2025年11月15日</time>
-                        </div>
-                        <div class="changelog-content">
-                            <ul>
-                                <li><span class="tag tag-warning">修正</span> 暗黑模式對比度與跨瀏覽器一致性問題</li>
-                            </ul>
-                        </div>
-                    </article>
+                    <div class="changelog-entry changelog-entry-single" id="version-v2514">
+                        <span class="changelog-meta">
+                            <time class="changelog-date" datetime="2025-11-15">11月15日</time>
+                            <span class="changelog-version">v2.5.14</span>
+                        </span>
+                        <p class="changelog-single-item"><span class="tag tag-warning">修正</span> 暗黑模式對比度與跨瀏覽器一致性問題</p>
+                    </div>
                 </section>
 
                 <!-- 2025年8月 -->
-                <section class="changelog-section">
-                    <h2 class="changelog-year">2025年8月</h2>
+                <section class="changelog-month">
+                    <h2 class="changelog-month-title">2025年8月</h2>
+                    <div class="changelog-entry changelog-entry-single" id="version-v258">
+                        <span class="changelog-meta">
+                            <time class="changelog-date" datetime="2025-08-17">8月17日</time>
+                            <span class="changelog-version">v2.5.8</span>
+                        </span>
+                        <p class="changelog-single-item"><span class="tag tag-success">新增</span> 寶圖搜尋器：G18 巨獸革地圖支援（等級 100，永生記憶區域）</p>
+                    </div>
 
-                    <article class="changelog-entry">
-                        <div class="changelog-header">
-                            <h3 class="changelog-version">v2.5.8</h3>
-                            <time class="changelog-date" datetime="2025-08-17">2025年8月17日</time>
-                        </div>
-                        <div class="changelog-content">
-                            <ul>
-                                <li><span class="tag tag-success">新增</span> 寶圖搜尋器：G18 巨獸革地圖支援（等級 100，永生記憶區域）</li>
-                            </ul>
-                        </div>
-                    </article>
+                    <div class="changelog-entry changelog-entry-single" id="version-v255">
+                        <span class="changelog-meta">
+                            <time class="changelog-date" datetime="2025-08-09">8月9日</time>
+                            <span class="changelog-version">v2.5.5</span>
+                        </span>
+                        <p class="changelog-single-item"><span class="tag tag-success">新增</span> 特殊採集時間管理器：瀏覽器通知提醒功能</p>
+                    </div>
 
-                    <article class="changelog-entry">
-                        <div class="changelog-header">
-                            <h3 class="changelog-version">v2.5.5</h3>
-                            <time class="changelog-date" datetime="2025-08-09">2025年8月9日</time>
-                        </div>
-                        <div class="changelog-content">
-                            <ul>
-                                <li><span class="tag tag-success">新增</span> 特殊採集時間管理器：瀏覽器通知提醒功能</li>
-                            </ul>
-                        </div>
-                    </article>
+                    <details class="changelog-entry" id="version-v250v252">
+                        <summary>
+                            <span class="changelog-meta">
+                                <time class="changelog-date" datetime="2025-08-08">8月8日</time>
+                                <span class="changelog-version">v2.5.0 - v2.5.2</span>
+                            </span>
+                            <span class="changelog-headline">特殊採集：7.0 與 7.1 的素材與時間顯示</span>
+                        </summary>
+                        <ul class="changelog-items">
+                            <li><span class="tag tag-success">新增</span> 特殊採集時間管理器：7.0/7.1 版本傳說與精選採集素材</li>
+                            <li><span class="tag tag-success">新增</span> 特殊採集時間管理器：ET/LT 時間顯示功能</li>
+                        </ul>
+                    </details>
 
-                    <article class="changelog-entry">
-                        <div class="changelog-header">
-                            <h3 class="changelog-version">v2.5.0 - v2.5.2</h3>
-                            <time class="changelog-date" datetime="2025-08-08">2025年8月</time>
-                        </div>
-                        <div class="changelog-content">
-                            <p class="changelog-headline">特殊採集：7.0 與 7.1 的素材與時間顯示</p>
-                            <ul>
-                                <li><span class="tag tag-success">新增</span> 特殊採集時間管理器：7.0/7.1 版本傳說與精選採集素材</li>
-                                <li><span class="tag tag-success">新增</span> 特殊採集時間管理器：ET/LT 時間顯示功能</li>
-                            </ul>
-                        </div>
-                    </article>
-
-                    <article class="changelog-entry">
-                        <div class="changelog-header">
-                            <h3 class="changelog-version">v2.4.6</h3>
-                            <time class="changelog-date" datetime="2025-08-08">2025年8月8日</time>
-                        </div>
-                        <div class="changelog-content">
-                            <ul>
-                                <li><span class="tag tag-success">新增</span> 特殊採集時間管理器：完整國際化支援（中/日文切換）</li>
-                            </ul>
-                        </div>
-                    </article>
+                    <div class="changelog-entry changelog-entry-single" id="version-v246">
+                        <span class="changelog-meta">
+                            <time class="changelog-date" datetime="2025-08-08">8月8日</time>
+                            <span class="changelog-version">v2.4.6</span>
+                        </span>
+                        <p class="changelog-single-item"><span class="tag tag-success">新增</span> 特殊採集時間管理器：完整國際化支援（中/日文切換）</p>
+                    </div>
                 </section>
 
                 <!-- 2025年7月 -->
-                <section class="changelog-section">
-                    <h2 class="changelog-year">2025年7月</h2>
+                <section class="changelog-month">
+                    <h2 class="changelog-month-title">2025年7月</h2>
+                    <div class="changelog-entry changelog-entry-single" id="version-v235">
+                        <span class="changelog-meta">
+                            <time class="changelog-date" datetime="2025-07-25">7月25日</time>
+                            <span class="changelog-version">v2.3.5</span>
+                        </span>
+                        <p class="changelog-single-item"><span class="tag tag-success">新增</span> 全站主題自動偵測功能，根據系統偏好設定初始主題</p>
+                    </div>
 
-                    <article class="changelog-entry">
-                        <div class="changelog-header">
-                            <h3 class="changelog-version">v2.3.5</h3>
-                            <time class="changelog-date" datetime="2025-07-25">2025年7月25日</time>
-                        </div>
-                        <div class="changelog-content">
-                            <ul>
-                                <li><span class="tag tag-success">新增</span> 全站主題自動偵測功能，根據系統偏好設定初始主題</li>
-                            </ul>
-                        </div>
-                    </article>
+                    <div class="changelog-entry changelog-entry-single" id="version-v225">
+                        <span class="changelog-meta">
+                            <time class="changelog-date" datetime="2025-07-12">7月12日</time>
+                            <span class="changelog-version">v2.2.5</span>
+                        </span>
+                        <p class="changelog-single-item"><span class="tag tag-success">新增</span> 全站 Dark Mode 支援</p>
+                    </div>
 
-                    <article class="changelog-entry">
-                        <div class="changelog-header">
-                            <h3 class="changelog-version">v2.2.5</h3>
-                            <time class="changelog-date" datetime="2025-07-12">2025年7月12日</time>
-                        </div>
-                        <div class="changelog-content">
-                            <ul>
-                                <li><span class="tag tag-success">新增</span> 全站 Dark Mode 支援</li>
-                            </ul>
-                        </div>
-                    </article>
+                    <div class="changelog-entry changelog-entry-single" id="version-v222">
+                        <span class="changelog-meta">
+                            <time class="changelog-date" datetime="2025-07-09">7月9日</time>
+                            <span class="changelog-version">v2.2.2</span>
+                        </span>
+                        <p class="changelog-single-item"><span class="tag tag-success">新增</span> 寶圖搜尋器：G15 蛇牛革地圖（厄爾庇斯）、G17 獰豹革地圖（圖拉爾）支援</p>
+                    </div>
 
-                    <article class="changelog-entry">
-                        <div class="changelog-header">
-                            <h3 class="changelog-version">v2.2.2</h3>
-                            <time class="changelog-date" datetime="2025-07-09">2025年7月9日</time>
-                        </div>
-                        <div class="changelog-content">
-                            <ul>
-                                <li><span class="tag tag-success">新增</span> 寶圖搜尋器：G15 蛇牛革地圖（厄爾庇斯）、G17 獰豹革地圖（圖拉爾）支援</li>
-                            </ul>
-                        </div>
-                    </article>
+                    <details class="changelog-entry" id="version-v220v224">
+                        <summary>
+                            <span class="changelog-meta">
+                                <time class="changelog-date" datetime="2025-07-06">7月6日</time>
+                                <span class="changelog-version">v2.2.0 - v2.2.4</span>
+                            </span>
+                            <span class="changelog-headline">新工具：Lodestone 角色查詢</span>
+                        </summary>
+                        <ul class="changelog-items">
+                            <li><span class="tag tag-success">新增</span> Lodestone 角色查詢工具上線</li>
+                            <li><span class="tag tag-success">新增</span> 角色完整屬性、職業等級、裝備資訊顯示</li>
+                            <li><span class="tag tag-success">新增</span> 成就、坐騎、寵物收藏展示</li>
+                            <li><span class="tag tag-success">新增</span> 公會詳細資訊與成員列表查詢</li>
+                            <li><span class="tag tag-success">新增</span> 多資料中心選擇（北美/日本）</li>
+                        </ul>
+                    </details>
 
-                    <article class="changelog-entry">
-                        <div class="changelog-header">
-                            <h3 class="changelog-version">v2.2.0 - v2.2.4</h3>
-                            <time class="changelog-date" datetime="2025-07-06">2025年7月</time>
-                        </div>
-                        <div class="changelog-content">
-                            <p class="changelog-headline">新工具：Lodestone 角色查詢</p>
-                            <ul>
-                                <li><span class="tag tag-success">新增</span> Lodestone 角色查詢工具上線</li>
-                                <li><span class="tag tag-success">新增</span> 角色完整屬性、職業等級、裝備資訊顯示</li>
-                                <li><span class="tag tag-success">新增</span> 成就、坐騎、寵物收藏展示</li>
-                                <li><span class="tag tag-success">新增</span> 公會詳細資訊與成員列表查詢</li>
-                                <li><span class="tag tag-success">新增</span> 多資料中心選擇（北美/日本）</li>
-                            </ul>
-                        </div>
-                    </article>
-
-                    <article class="changelog-entry">
-                        <div class="changelog-header">
-                            <h3 class="changelog-version">v2.1.0 - v2.1.6</h3>
-                            <time class="changelog-date" datetime="2025-07-04">2025年7月</time>
-                        </div>
-                        <div class="changelog-content">
-                            <p class="changelog-headline">寶圖搜尋器：組隊、自訂格式與 G12 地圖</p>
-                            <ul>
-                                <li><span class="tag tag-success">新增</span> 寶圖搜尋器：組隊協作功能</li>
-                                <li><span class="tag tag-success">新增</span> 寶圖搜尋器：自訂輸出格式功能</li>
-                                <li><span class="tag tag-success">新增</span> 寶圖搜尋器：G12 纏尾蛟革地圖（48個座標）</li>
-                                <li><span class="tag tag-success">新增</span> 最佳路線複製功能</li>
-                            </ul>
-                        </div>
-                    </article>
+                    <details class="changelog-entry" id="version-v210v216">
+                        <summary>
+                            <span class="changelog-meta">
+                                <time class="changelog-date" datetime="2025-07-04">7月4日</time>
+                                <span class="changelog-version">v2.1.0 - v2.1.6</span>
+                            </span>
+                            <span class="changelog-headline">寶圖搜尋器：組隊、自訂格式與 G12 地圖</span>
+                        </summary>
+                        <ul class="changelog-items">
+                            <li><span class="tag tag-success">新增</span> 寶圖搜尋器：組隊協作功能</li>
+                            <li><span class="tag tag-success">新增</span> 寶圖搜尋器：自訂輸出格式功能</li>
+                            <li><span class="tag tag-success">新增</span> 寶圖搜尋器：G12 纏尾蛟革地圖（48個座標）</li>
+                            <li><span class="tag tag-success">新增</span> 最佳路線複製功能</li>
+                        </ul>
+                    </details>
                 </section>
 
                 <!-- 2025年6月 -->
-                <section class="changelog-section">
-                    <h2 class="changelog-year">2025年6月</h2>
+                <section class="changelog-month">
+                    <h2 class="changelog-month-title">2025年6月</h2>
+                    <details class="changelog-entry" id="version-v200">
+                        <summary>
+                            <span class="changelog-meta">
+                                <time class="changelog-date" datetime="2025-06-28">6月28日</time>
+                                <span class="changelog-version">v2.0.0</span>
+                            </span>
+                            <span class="changelog-headline">新工具：寶圖搜尋器</span>
+                        </summary>
+                        <ul class="changelog-items">
+                            <li><span class="tag tag-success">新增</span> 寶圖搜尋器工具上線</li>
+                            <li><span class="tag tag-success">新增</span> G8/G10/G14 寶圖座標資料（171個座標）</li>
+                            <li><span class="tag tag-success">新增</span> 最佳路線規劃與傳送點整合</li>
+                            <li><span class="tag tag-success">新增</span> 批次匯出清單功能</li>
+                        </ul>
+                    </details>
 
-                    <article class="changelog-entry">
-                        <div class="changelog-header">
-                            <h3 class="changelog-version">v2.0.0</h3>
-                            <time class="changelog-date" datetime="2025-06-28">2025年6月28日</time>
-                        </div>
-                        <div class="changelog-content">
-                            <p class="changelog-headline">新工具：寶圖搜尋器</p>
-                            <ul>
-                                <li><span class="tag tag-success">新增</span> 寶圖搜尋器工具上線</li>
-                                <li><span class="tag tag-success">新增</span> G8/G10/G14 寶圖座標資料（171個座標）</li>
-                                <li><span class="tag tag-success">新增</span> 最佳路線規劃與傳送點整合</li>
-                                <li><span class="tag tag-success">新增</span> 批次匯出清單功能</li>
-                            </ul>
-                        </div>
-                    </article>
+                    <details class="changelog-entry" id="version-v130">
+                        <summary>
+                            <span class="changelog-meta">
+                                <time class="changelog-date" datetime="2025-06-26">6月26日</time>
+                                <span class="changelog-version">v1.3.0</span>
+                            </span>
+                            <span class="changelog-headline">新工具：特殊採集時間管理器</span>
+                        </summary>
+                        <ul class="changelog-items">
+                            <li><span class="tag tag-success">新增</span> 特殊採集時間管理器上線</li>
+                            <li><span class="tag tag-success">新增</span> 多清單管理與巨集匯出功能</li>
+                        </ul>
+                    </details>
 
-                    <article class="changelog-entry">
-                        <div class="changelog-header">
-                            <h3 class="changelog-version">v1.3.0</h3>
-                            <time class="changelog-date" datetime="2025-06-26">2025年6月26日</time>
-                        </div>
-                        <div class="changelog-content">
-                            <p class="changelog-headline">新工具：特殊採集時間管理器</p>
-                            <ul>
-                                <li><span class="tag tag-success">新增</span> 特殊採集時間管理器上線</li>
-                                <li><span class="tag tag-success">新增</span> 多清單管理與巨集匯出功能</li>
-                            </ul>
-                        </div>
-                    </article>
+                    <div class="changelog-entry changelog-entry-single" id="version-v120">
+                        <span class="changelog-meta">
+                            <time class="changelog-date" datetime="2025-06-23">6月23日</time>
+                            <span class="changelog-version">v1.2.0</span>
+                        </span>
+                        <p class="changelog-single-item"><span class="tag tag-success">新增</span> 宗長計算機（Faux Hollows Foxes）上線</p>
+                    </div>
 
-                    <article class="changelog-entry">
-                        <div class="changelog-header">
-                            <h3 class="changelog-version">v1.2.0</h3>
-                            <time class="changelog-date" datetime="2025-06-23">2025年6月23日</time>
-                        </div>
-                        <div class="changelog-content">
-                            <ul>
-                                <li><span class="tag tag-success">新增</span> 宗長計算機（Faux Hollows Foxes）上線</li>
-                            </ul>
-                        </div>
-                    </article>
+                    <details class="changelog-entry" id="version-v110">
+                        <summary>
+                            <span class="changelog-meta">
+                                <time class="changelog-date" datetime="2025-06-22">6月22日</time>
+                                <span class="changelog-version">v1.1.0</span>
+                            </span>
+                            <span class="changelog-headline">新工具：副本資料庫、天書奇談、仙人微彩</span>
+                        </summary>
+                        <ul class="changelog-items">
+                            <li><span class="tag tag-success">新增</span> 副本資料庫（362個副本）</li>
+                            <li><span class="tag tag-success">新增</span> 天書奇談預測器</li>
+                            <li><span class="tag tag-success">新增</span> 仙人微彩計算機</li>
+                        </ul>
+                    </details>
 
-                    <article class="changelog-entry">
-                        <div class="changelog-header">
-                            <h3 class="changelog-version">v1.1.0</h3>
-                            <time class="changelog-date" datetime="2025-06-22">2025年6月22日</time>
-                        </div>
-                        <div class="changelog-content">
-                            <p class="changelog-headline">新工具：副本資料庫、天書奇談、仙人微彩</p>
-                            <ul>
-                                <li><span class="tag tag-success">新增</span> 副本資料庫（362個副本）</li>
-                                <li><span class="tag tag-success">新增</span> 天書奇談預測器</li>
-                                <li><span class="tag tag-success">新增</span> 仙人微彩計算機</li>
-                            </ul>
-                        </div>
-                    </article>
-
-                    <article class="changelog-entry">
-                        <div class="changelog-header">
-                            <h3 class="changelog-version">v1.0.0</h3>
-                            <time class="changelog-date" datetime="2025-06-21">2025年6月21日</time>
-                        </div>
-                        <div class="changelog-content">
-                            <p class="changelog-headline">FF14.tw 正式上線，第一個工具是角色卡產生器</p>
-                            <ul>
-                                <li><span class="tag tag-success">新增</span> 角色卡產生器上線</li>
-                                <li><span class="tag tag-outline-primary">里程碑</span> FF14.tw 正式發布</li>
-                            </ul>
-                        </div>
-                    </article>
+                    <details class="changelog-entry" id="version-v100">
+                        <summary>
+                            <span class="changelog-meta">
+                                <time class="changelog-date" datetime="2025-06-21">6月21日</time>
+                                <span class="changelog-version">v1.0.0</span>
+                            </span>
+                            <span class="changelog-headline">FF14.tw 正式上線，第一個工具是角色卡產生器</span>
+                        </summary>
+                        <ul class="changelog-items">
+                            <li><span class="tag tag-success">新增</span> 角色卡產生器上線</li>
+                            <li><span class="tag tag-outline-primary">里程碑</span> FF14.tw 正式發布</li>
+                        </ul>
+                    </details>
                 </section>
 
                 <!-- 2024年11月 -->
-                <section class="changelog-section">
-                    <h2 class="changelog-year">2024年11月</h2>
-
-                    <article class="changelog-entry">
-                        <div class="changelog-header">
-                            <h3 class="changelog-version">專案啟動</h3>
-                            <time class="changelog-date" datetime="2024-11-22">2024年11月22日</time>
-                        </div>
-                        <div class="changelog-content">
-                            <ul>
-                                <li><span class="tag tag-outline-primary">里程碑</span> FF14.tw 專案正式啟動</li>
-                            </ul>
-                        </div>
-                    </article>
+                <section class="changelog-month">
+                    <h2 class="changelog-month-title">2024年11月</h2>
+                    <div class="changelog-entry changelog-entry-single" id="version-start">
+                        <span class="changelog-meta">
+                            <time class="changelog-date" datetime="2024-11-22">11月22日</time>
+                            <span class="changelog-version">專案啟動</span>
+                        </span>
+                        <p class="changelog-single-item"><span class="tag tag-outline-primary">里程碑</span> FF14.tw 專案正式啟動</p>
+                    </div>
                 </section>
             </div>
 
-                <!-- 更新說明 -->
-                <div class="update-notice" id="aboutChangelog">
-                    <h3 data-i18n="changelog_about_title">關於修改紀錄</h3>
-                    <p><span data-i18n="changelog_about_desc">本頁面記錄 FF14.tw 的重要功能更新與改進。詳細的技術變更請參考</span> <a href="https://github.com/hydai/ff14.tw/commits/main" target="_blank" rel="noopener noreferrer">GitHub Commits</a><span data-i18n="changelog_about_desc_suffix">。</span></p>
-                </div>
+            <!-- 更新說明 -->
+            <div class="update-notice" id="aboutChangelog">
+                <h3 data-i18n="changelog_about_title">關於修改紀錄</h3>
+                <p><span data-i18n="changelog_about_desc">本頁面記錄 FF14.tw 的重要功能更新與改進。詳細的技術變更請參考</span> <a href="https://github.com/hydai/ff14.tw/commits/main" target="_blank" rel="noopener noreferrer">GitHub Commits</a><span data-i18n="changelog_about_desc_suffix">。</span></p>
             </div>
         </div>
     </main>
 
     <div id="footer-placeholder" data-base-path="/"></div>
 
-    <a href="#" class="back-to-top" id="backToTop">↑</a>
     <script src="assets/js/i18n/i18n-manager.js"></script>
     <script src="assets/js/i18n/translations/common.js"></script>
     <script src="assets/js/i18n/translations/changelog.js"></script>
@@ -861,123 +764,5 @@
     <script src="assets/js/components/footer-template.js"></script>
     <script src="assets/js/components/layout-loader.js"></script>
     <script src="assets/js/common.js"></script>
-    <script>
-        // 生成 TOC
-        document.addEventListener('DOMContentLoaded', function() {
-            const tocNav = document.getElementById('tocNav');
-            const tocItems = [];
-
-            // 收集所有版本並按年份分組
-            const yearGroups = {};
-
-            document.querySelectorAll('.changelog-entry').forEach(entry => {
-                const version = entry.querySelector('.changelog-version');
-                const date = entry.querySelector('.changelog-date');
-
-                if (version && date) {
-                    const dateText = date.textContent;
-                    // 提取年份和月日（例如：2025年6月21日 -> 2025年, 6月21日）
-                    const yearMatch = dateText.match(/(\d+)年/);
-                    const monthDayMatch = dateText.match(/(\d+月\d+日)/);
-
-                    if (yearMatch) {
-                        const year = yearMatch[0];
-                        const monthDay = monthDayMatch ? monthDayMatch[0] : dateText.replace(/\d+年/, '');
-
-                        if (!yearGroups[year]) {
-                            yearGroups[year] = {
-                                text: year,
-                                id: 'year-' + year.replace(/[^\d]/g, ''),
-                                level: 1,
-                                versions: []
-                            };
-                        }
-
-                        const versionId = 'version-' + version.textContent.replace(/[^\w\d]/g, '');
-                        entry.id = versionId;
-
-                        yearGroups[year].versions.push({
-                            text: version.textContent + ' - ' + monthDay,
-                            id: versionId,
-                            level: 2
-                        });
-                    }
-                }
-            });
-
-            // 轉換為陣列並排序（新到舊）
-            Object.values(yearGroups)
-                .sort((a, b) => b.text.localeCompare(a.text))
-                .forEach(group => tocItems.push(group));
-
-            // 為年份分組設定 ID
-            document.querySelectorAll('.changelog-section').forEach(section => {
-                const year = section.querySelector('.changelog-year');
-                if (year) {
-                    const yearText = year.textContent;
-                    const yearMatch = yearText.match(/(\d+)年/);
-                    if (yearMatch) {
-                        section.id = 'year-' + yearMatch[1];
-                    }
-                }
-            });
-
-            // 添加關於修改紀錄
-            tocItems.push({
-                text: window.i18n ? window.i18n.getText('changelog_about_section') : '關於修改紀錄',
-                id: 'aboutChangelog',
-                level: 1,
-                versions: []
-            });
-
-            // 建立 TOC HTML
-            tocItems.forEach(item => {
-                const yearLink = document.createElement('a');
-                yearLink.href = '#' + item.id;
-                yearLink.className = 'toc-link toc-level-1';
-                yearLink.textContent = item.text;
-                tocNav.appendChild(yearLink);
-
-                if (item.versions.length > 0) {
-                    const versionList = document.createElement('div');
-                    versionList.className = 'toc-sublist';
-
-                    item.versions.forEach(version => {
-                        const versionLink = document.createElement('a');
-                        versionLink.href = '#' + version.id;
-                        versionLink.className = 'toc-link toc-level-2';
-                        versionLink.textContent = version.text;
-                        versionList.appendChild(versionLink);
-                    });
-
-                    tocNav.appendChild(versionList);
-                }
-            });
-
-            // TOC 滾動高亮
-            const observerOptions = {
-                root: null,
-                rootMargin: '-20% 0px -70% 0px',
-                threshold: 0
-            };
-
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    const id = entry.target.id;
-                    const tocLink = tocNav.querySelector(`a[href="#${id}"]`);
-                    if (tocLink) {
-                        if (entry.isIntersecting) {
-                            tocNav.querySelectorAll('a').forEach(a => a.classList.remove('active'));
-                            tocLink.classList.add('active');
-                        }
-                    }
-                });
-            }, observerOptions);
-
-            document.querySelectorAll('.changelog-entry, .changelog-section, .update-notice').forEach(el => {
-                if (el.id) observer.observe(el);
-            });
-        });
-    </script>
 </body>
 </html>

@@ -11,9 +11,8 @@ const ChangelogTranslations = {
         changelog_hero_title: '修改紀錄',
         changelog_hero_subtitle: '記錄 FF14.tw 的功能更新與改進',
 
-        // TOC 側邊欄
-        changelog_toc_title: '快速導覽',
-        changelog_about_section: '關於修改紀錄',
+        // 最新一版的標記
+        changelog_latest: '最新',
 
         // 關於區塊
         changelog_about_title: '關於修改紀錄',
@@ -34,9 +33,8 @@ const ChangelogTranslations = {
         changelog_hero_title: 'Changelog',
         changelog_hero_subtitle: 'Track FF14.tw feature updates and improvements',
 
-        // TOC sidebar
-        changelog_toc_title: 'Quick Navigation',
-        changelog_about_section: 'About Changelog',
+        // Latest version marker
+        changelog_latest: 'Latest',
 
         // About section
         changelog_about_title: 'About Changelog',
@@ -57,9 +55,8 @@ const ChangelogTranslations = {
         changelog_hero_title: '更新履歴',
         changelog_hero_subtitle: 'FF14.tw の機能更新と改善を記録',
 
-        // TOC サイドバー
-        changelog_toc_title: 'クイックナビ',
-        changelog_about_section: '更新履歴について',
+        // 最新バージョンの印
+        changelog_latest: '最新',
 
         // About セクション
         changelog_about_title: '更新履歴について',

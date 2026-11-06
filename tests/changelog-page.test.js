@@ -103,3 +103,248 @@ test('兩條以上的版本與最新一版都有一句標題，其他只有一�
     });
     assert.ok(titled >= 29, `只有 ${titled} 版要有標題，解析可能失效（兩條以上的舊版本就有 29 版）`);
 });
+
+// ---------- 版面：最新一版展開，其他每版收成一行 ----------
+
+const expectedId = (version) => (version === '專案啟動' ? 'version-start' : `version-${version.replace(/[^A-Za-z0-9_]/g, '')}`);
+const stripComments = (css) => css.replace(/\/\*[\s\S]*?\*\//g, '');
+// 這個 CSS 檔裡、前面是換行的那個「選擇器 {」區塊（不會誤抓到更長的選擇器的尾巴）
+function cssBlock(css, selector) {
+    const at = css.indexOf(`\n${selector} {`);
+    assert.notEqual(at, -1, `找不到 ${selector}`);
+    return css.slice(at, css.indexOf('}', at));
+}
+// 選擇器清單裡有這個選擇器的每一條規則的內容（selector 要和 CSS 裡寫的一模一樣；一條規則可以同時寫給好幾個選擇器）
+function ruleBodies(css, selector) {
+    return [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
+        .filter((match) => match[1].split(',').some((part) => part.trim() === selector))
+        .map((match) => match[2]);
+}
+
+test('只有第一版展開、標「最新」', () => {
+    const { all } = entries();
+    const [latest, ...others] = all;
+    assert.ok(others.length >= 46, `只找到 ${all.length} 版，解析可能失效`);
+
+    // 比較節點一律用 === 加訊息（assert.equal 失敗時會展開整份 fake-dom）
+    assert.ok(latest.tagName === 'DETAILS', `最新一版是 <${latest.tagName.toLowerCase()}>，要是 <details>`);
+    assert.ok(latest.classList.contains('is-latest'), '最新一版要有 is-latest');
+    assert.ok(latest.hasAttribute('open'), '最新一版要有 open，一打開就是展開的');
+    const pills = latest.querySelectorAll('.changelog-latest');
+    assert.ok(pills.length === 1, `最新一版要剛好有一個「最新」，實際有 ${pills.length} 個`);
+    assert.equal(pills[0].getAttribute('data-i18n'), 'changelog_latest');
+    assert.equal(pills[0].textContent.trim(), '最新');
+
+    for (const entry of others) {
+        const version = versionOf(entry);
+        assert.ok(!entry.classList.contains('is-latest'), `${version} 不是最新一版，不該有 is-latest`);
+        assert.ok(!entry.hasAttribute('open'), `${version} 不是最新一版，不該一打開就展開`);
+        assert.ok(entry.querySelector('.changelog-latest') === null, `${version} 不是最新一版，不該標「最新」`);
+    }
+});
+
+test('兩條以上的版本是可以展開的 details，只有一條的舊版本是單行', () => {
+    const { all } = entries();
+    let folded = 0;
+    let singles = 0;
+    all.forEach((entry, index) => {
+        const version = versionOf(entry);
+        const count = itemsOf(entry).length;
+        if (count >= 2 || index === 0) {
+            assert.ok(entry.tagName === 'DETAILS', `${version} 有 ${count} 條${index === 0 ? '（最新一版）' : ''}，要是 <details>，實際是 <${entry.tagName.toLowerCase()}>`);
+            assert.ok(entry.firstElementChild.tagName === 'SUMMARY', `${version} 的 <summary> 要是 <details> 的第一個子元素`);
+            assert.ok(entry.querySelector('summary > .changelog-meta') !== null, `${version} 的 <summary> 裡要有 .changelog-meta`);
+            const headline = entry.querySelector('summary > .changelog-headline');
+            assert.ok(headline !== null, `${version} 的 <summary> 裡要有 .changelog-headline`);
+            assert.notEqual(headline.textContent.trim(), '', `${version} 的標題是空的`);
+            assert.ok(entry.querySelectorAll('.changelog-items > li').length === count, `${version} 的每一條都要在 ul.changelog-items 裡（共 ${count} 條）`);
+            folded += 1;
+        } else {
+            assert.ok(entry.tagName === 'DIV', `${version} 只有一條，要是單行的 <div>，實際是 <${entry.tagName.toLowerCase()}>`);
+            assert.ok(entry.classList.contains('changelog-entry-single'), `${version} 要有 changelog-entry-single`);
+            assert.ok(entry.querySelector('.changelog-meta') !== null, `${version} 要有 .changelog-meta`);
+            assert.ok(entry.querySelectorAll('p.changelog-single-item').length === 1, `${version} 要剛好有一個 p.changelog-single-item`);
+            assert.ok(entry.querySelector('.changelog-headline') === null, `${version} 只有一條，那一條直接寫出來，不該另外有標題`);
+            singles += 1;
+        }
+    });
+    // 條目總數不寫死（轉換有沒有漏由一次性的前後核對確認）；這裡只擋解析失效
+    assert.ok(folded >= 29, `只找到 ${folded} 個 <details> 版本，解析可能失效（兩條以上的舊版本就有 29 版）`);
+    assert.ok(singles >= 18, `只找到 ${singles} 個單行版本，解析可能失效（只有一條的舊版本有 18 版）`);
+});
+
+test('每一版的 id 照舊格式而且不重複', () => {
+    const { dom, all } = entries();
+    const seen = new Set();
+    for (const entry of all) {
+        const version = versionOf(entry);
+        assert.equal(entry.id, expectedId(version), `${version} 的 id`);
+        assert.ok(!seen.has(entry.id), `id「${entry.id}」重複了`);
+        seen.add(entry.id);
+    }
+    // 以前分享出去的連結還要找得到
+    for (const id of ['version-v2260', 'version-v250v252', 'version-start']) {
+        assert.ok(dom.document.getElementById(id) !== null, `找不到 ${id}`);
+    }
+});
+
+test('月份區塊裡只放月份標題和版本：#changelogEntries 底下只有 section.changelog-month，每一區塊的第一個子元素是月份標題，其餘都是版本', () => {
+    const { list } = entries();
+    const sections = list.children;
+    assert.ok(sections.length >= 12, `只找到 ${sections.length} 個月份區塊，解析可能失效`);
+
+    // 同一個月的收合列靠兄弟選擇器接成一張圓角清單（見 changelog.css）：多一個元素圓角就會跑掉。
+    // 比較節點一律用 === 加訊息（assert.equal 失敗時會展開整份 fake-dom）
+    const shown = (element) => `<${element.tagName.toLowerCase()}${element.className ? ` class="${element.className}"` : ''}>`;
+    sections.forEach((section, index) => {
+        assert.ok(section.tagName === 'SECTION' && section.classList.contains('changelog-month'), `#changelogEntries 底下的第 ${index + 1} 個子元素是 ${shown(section)}，只能放 section.changelog-month`);
+
+        const month = section.querySelector('.changelog-month-title')?.textContent.trim() ?? `第 ${index + 1} 個月份區塊`;
+        const [title, ...rest] = section.children;
+        assert.ok(title !== undefined && title.tagName === 'H2' && title.classList.contains('changelog-month-title'), `${month}：第一個子元素要是 h2.changelog-month-title，實際是 ${title === undefined ? '空的' : shown(title)}`);
+        for (const child of rest) {
+            assert.ok(child.classList.contains('changelog-entry'), `${month}：月份標題後面只能放版本（.changelog-entry），卻有 ${shown(child)}`);
+        }
+    });
+});
+
+test('日期由新到舊，而且落在所屬月份', () => {
+    const { list, all } = entries();
+    assert.ok(list.querySelectorAll('section.changelog-month > .changelog-entry').length === all.length, '每一版都要直接放在 section.changelog-month 裡');
+
+    let previous = '9999-99-99';
+    for (const entry of all) {
+        const version = versionOf(entry);
+        const time = entry.querySelector('time.changelog-date');
+        assert.ok(time !== null, `${version} 沒有 <time class="changelog-date">`);
+        const datetime = time.getAttribute('datetime');
+        const parts = /^(\d{4})-(\d{2})-(\d{2})$/.exec(datetime);
+        assert.ok(parts !== null, `${version} 的 datetime「${datetime}」不是 YYYY-MM-DD`);
+        const [year, month, day] = parts.slice(1).map(Number);
+        assert.equal(time.textContent.trim(), `${month}月${day}日`, `${version} 的日期文字（月和日不補零）`);
+        assert.ok(datetime <= previous, `${version}（${datetime}）排在 ${previous} 後面，要由新到舊`);
+        previous = datetime;
+
+        const section = entry.closest('.changelog-month');
+        assert.ok(section !== null, `${version} 不在 .changelog-month 裡`);
+        assert.equal(section.querySelector('.changelog-month-title').textContent.trim(), `${year}年${month}月`, `${version}（${datetime}）所在的月份標題`);
+    }
+
+    const titles = list.querySelectorAll('section.changelog-month > h2.changelog-month-title').map((title) => title.textContent.trim());
+    assert.ok(titles.length >= 12, `只找到 ${titles.length} 個月份標題，解析可能失效`);
+    assert.equal(new Set(titles).size, titles.length, `月份標題重複了：${titles.join('、')}`);
+});
+
+test('頁面是一欄：標題、副標題、圖例、版本、關於說明依序放在最寬 800px 的容器裡', () => {
+    const html = read(PAGE);
+    const at = (needle) => {
+        const index = html.indexOf(needle);
+        assert.notEqual(index, -1, `${PAGE} 找不到 ${needle}`);
+        return index;
+    };
+    const order = ['<div class="container changelog-page">', '<h1 ', 'class="subtitle"', 'id="changelogLegend"', 'class="changelog-container" id="changelogEntries"', 'id="aboutChangelog"'].map(at);
+    assert.deepEqual(order, [...order].sort((a, b) => a - b), '順序要是容器、h1、副標題、圖例、版本清單、關於說明');
+    for (const gone of ['changelog-layout', 'changelog-content-wrapper']) assert.ok(!html.includes(gone), `${PAGE} 不該再有 ${gone}`);
+    assert.match(cssBlock(stripComments(read(CSS)), '.changelog-page'), /max-width:\s*var\(--container-narrow\)/);
+});
+
+test('拿掉目錄、目錄腳本與寫死的回到頂端連結', () => {
+    const html = read(PAGE);
+    for (const gone of ['toc-sidebar', 'tocNav', 'backToTop']) assert.ok(!html.includes(gone), `${PAGE} 不該再有 ${gone}`);
+    // 內嵌的腳本沒有了：每個 <script> 都是載入檔案
+    const scripts = [...html.matchAll(/<script\b[^>]*>/gi)].map((match) => match[0]);
+    assert.ok(scripts.length >= 8, `只找到 ${scripts.length} 個 <script>，解析可能失效`);
+    for (const script of scripts) assert.match(script, /\ssrc="/, `${script} 沒有 src，不該有內嵌腳本`);
+
+    const css = stripComments(read(CSS));
+    for (const gone of ['.toc-', '.changelog-layout']) assert.ok(!css.includes(gone), `${CSS} 不該再有 ${gone}`);
+
+    for (const lang of LANGS) {
+        const keys = translationKeySet(TRANSLATIONS, lang);
+        assert.ok(keys.has('changelog_about_title'), `${lang} 缺少還在用的 changelog_about_title（翻譯檔解析可能失效）`);
+        for (const key of ['changelog_toc_title', 'changelog_about_section']) assert.ok(!keys.has(key), `${lang} 還有不再用的 ${key}`);
+    }
+});
+
+test('「最新」三語都有', () => {
+    assert.deepEqual(LANGS.map((lang) => translationValues(TRANSLATIONS, lang).get('changelog_latest')), ['最新', 'Latest', '最新']);
+});
+
+test('手機 320px 也不會左右捲：那一行的版本號截斷，格線欄位可以縮，圖例自己換行', () => {
+    const css = stripComments(read(CSS));
+    assert.match(cssBlock(css, '.changelog-meta'), /grid-template-columns:\s*auto minmax\(0,\s*1fr\) auto/);
+    const version = cssBlock(css, '.changelog-version');
+    for (const declaration of [/min-width:\s*0/, /overflow:\s*hidden/, /text-overflow:\s*ellipsis/, /white-space:\s*nowrap/]) {
+        assert.match(version, declaration, `.changelog-version 要有 ${declaration}`);
+    }
+    // 基本的規則寫在任何 ….changelog-version { 變體之前：第一次出現的就是它
+    assert.ok(css.indexOf('.changelog-version {') === css.indexOf('\n.changelog-version {') + 1, '基本的 .changelog-version 規則要寫在任何變體之前');
+    assert.match(cssBlock(css, '.changelog-legend'), /flex-wrap:\s*wrap/);
+});
+
+test('標題換行時兩行平均，不會第二行只剩一個字', () => {
+    const headline = cssBlock(stripComments(read(CSS)), '.changelog-headline');
+    assert.match(headline, /text-wrap:\s*balance/);
+    // text-wrap 只對區塊有用：<span> 要設成 block
+    assert.match(headline, /display:\s*block/);
+});
+
+test('用鍵盤移到收起來的那一行時看得到焦點', () => {
+    const css = stripComments(read(CSS));
+    const focus = cssBlock(css, '.changelog-entry > summary:focus-visible');
+    assert.match(focus, /outline:\s*2px solid var\(--color-primary\)/);
+    assert.match(focus, /outline-offset:\s*-/, '列在圓角容器裡，外框要畫在裡面，不然會被切掉');
+    // 最新一版的色帶也是主色：外框改畫在色帶上，用色帶的前景色
+    assert.match(cssBlock(css, '.changelog-entry.is-latest > summary:focus-visible .changelog-meta'), /outline:\s*2px solid var\(--color-on-primary\)/);
+});
+
+test('收起來的列在有滑鼠的裝置上移過時有底色，最新一版的卡片不加', () => {
+    // 站長 11/7 決定加。只在 (hover: hover) 的裝置上：手機點過之後底色不會一直留著
+    const css = stripComments(read(CSS));
+    const hover = css.match(/@media \(hover: hover\) \{\s*\.changelog-entry:not\(\.is-latest\) > summary:hover \{([^}]*)\}/);
+    assert.ok(hover, '要有 @media (hover: hover) 裡的 .changelog-entry:not(.is-latest) > summary:hover');
+    assert.match(hover[1], /background:\s*var\(--color-hover\)/);
+});
+
+test('收起來的那一行沒有瀏覽器預設的三角形，右邊自己寫「N 條 ▸」，展開時是 ▾', () => {
+    const css = stripComments(read(CSS));
+    assert.match(cssBlock(css, '.changelog-entry > summary'), /list-style:\s*none/);
+    assert.match(cssBlock(css, '.changelog-entry > summary::-webkit-details-marker'), /display:\s*none/);
+    // 三角形只是裝飾：第二行把替代文字設成空的，螢幕閱讀器不念；不認得這種寫法的瀏覽器略過第二行，用第一行
+    assert.match(cssBlock(css, '.changelog-count::after'), /content:\s*' ▸';\s*content:\s*' ▸' \/ '';/);
+    assert.match(cssBlock(css, '.changelog-entry[open] .changelog-count::after'), /content:\s*' ▾';\s*content:\s*' ▾' \/ '';/);
+});
+
+test('最新一版收起來時，「N 條 ▸」留在色帶裡讓人知道還能展開，只有展開時才藏起來', () => {
+    const css = stripComments(read(CSS));
+    // 展開時條目就在下面，不用再寫「N 條」
+    assert.match(cssBlock(css, '.changelog-entry.is-latest[open] .changelog-count'), /display:\s*none/);
+
+    // 不分展開收起就藏的規則，會讓收起來的最新一版看起來像已經完整了：藏 .changelog-count 的選擇器一律要限定在 [open]
+    const hiding = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
+        .filter((match) => /(?:^|[;\s])display:\s*none/.test(match[2]))
+        .flatMap((match) => match[1].split(',').map((selector) => selector.trim()))
+        .filter((selector) => selector.endsWith('.changelog-count'));
+    assert.ok(hiding.length >= 1 && hiding.every((selector) => selector.includes('[open]')), `藏起「N 條」的選擇器都要限定在 [open]，實際有：${hiding.join('、')}`);
+
+    // 色帶上：用色帶的前景色（主色底上的 --color-muted 看不清楚）；放在第四格，日期、版本、「最新」、N 條一行放得下，不掉到第二行
+    const count = cssBlock(css, '.changelog-entry.is-latest .changelog-count');
+    assert.match(count, /(?:^|[;\s])color:\s*inherit/, '色帶上的「N 條」要沿用色帶的前景色');
+    assert.match(count, /grid-column:\s*4;/, '色帶上的「N 條」要放在第四格');
+});
+
+test('同一個月的收合列接成一張清單：第一列上圓角、最後一列下圓角，最新一版是獨立的卡片', () => {
+    const css = stripComments(read(CSS));
+    // 相鄰兩列共用一條分隔線：每一版的上框是 0（上一版的下框就是這一版的上框），清單的第一列與最新一版自己補回 1px
+    assert.match(cssBlock(css, '.changelog-entry'), /border-top-width:\s*0;/, '.changelog-entry 的上框要是 0，相鄰兩列才共用一條分隔線');
+    for (const selector of ['.changelog-month-title + .changelog-entry', '.changelog-entry.is-latest + .changelog-entry']) {
+        const bodies = ruleBodies(css, selector);
+        assert.ok(bodies.length >= 1, `找不到 ${selector} 的規則`);
+        assert.ok(bodies.some((body) => /border-top-left-radius:\s*var\(--radius-lg\)/.test(body) && /border-top-right-radius:\s*var\(--radius-lg\)/.test(body)), `${selector} 要有上圓角`);
+    }
+    const last = ruleBodies(css, '.changelog-entry:last-child');
+    assert.ok(last.some((body) => /border-bottom-left-radius:\s*var\(--radius-lg\)/.test(body) && /border-bottom-right-radius:\s*var\(--radius-lg\)/.test(body)), '.changelog-entry:last-child 要有下圓角');
+    const latest = cssBlock(css, '.changelog-entry.is-latest');
+    assert.match(latest, /border-radius:\s*var\(--radius-lg\)/);
+    assert.match(latest, /box-shadow:\s*var\(--shadow-md\)/);
+});
