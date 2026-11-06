@@ -400,6 +400,12 @@ test('按鈕與輸入框在 flex 直排裡不會被壓扁：設定 height 的元
     }
 });
 
-test('修改紀錄的版本標題沿用標頭的前景色，不被全域 h3 顏色蓋掉', () => {
-    assert.match(block(stripComments(read('assets/css/changelog.css')), '.changelog-version'), /(?:^|[;\s])color:\s*inherit/);
+test('修改紀錄最新一版的色帶用主色底，色帶上的日期與版本沿用色帶的前景色', () => {
+    const css = stripComments(read('assets/css/changelog.css'));
+    const band = block(css, '.changelog-entry.is-latest .changelog-meta');
+    assert.match(band, /(?:^|[;\s])background:\s*var\(--color-primary\)/);
+    assert.match(band, /(?:^|[;\s])color:\s*var\(--color-on-primary\)/);
+    for (const part of ['.changelog-date', '.changelog-version']) {
+        assert.match(block(css, `.changelog-entry.is-latest ${part}`), /(?:^|[;\s])color:\s*inherit/, `色帶上的 ${part} 要沿用色帶的前景色，不被全域的標題色蓋掉`);
+    }
 });

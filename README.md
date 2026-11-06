@@ -197,6 +197,7 @@ ff14.tw/
 │   │   ├── modal-manager.js  # 對話框管理
 │   │   ├── reminder-scheduler.js # 提醒排程（頁內提示、提示音、系統通知；天氣預報與特殊採集時間管理器的「提醒我」使用）
 │   │   ├── cell-popover.js # 格子旁的小選單（不是對話框；仙人微彩、宗長計算機使用）
+│   │   ├── changelog.js    # 修改紀錄頁腳本（收合列的「N 條」與網址 # 展開）
 │   │   ├── home.js         # 首頁腳本（最近使用）
 │   │   ├── not-found.js    # 404 頁腳本（工具清單）
 │   │   ├── components/     # 動態載入元件
@@ -220,7 +221,7 @@ ff14.tw/
 │   ├── add-design-links.mjs
 │   ├── remove-dark-mode-links.mjs
 │   └── replace-noscript-nav.mjs
-├── tests/                  # 52 份 node --test 測試（下列為部分範例）
+├── tests/                  # 53 份 node --test 測試（下列為部分範例）
 │   ├── design-system.test.js
 │   ├── docs.test.js
 │   ├── gathering-materials.test.js

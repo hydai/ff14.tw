@@ -11,9 +11,11 @@ const ChangelogTranslations = {
         changelog_hero_title: '修改紀錄',
         changelog_hero_subtitle: '記錄 FF14.tw 的功能更新與改進',
 
-        // TOC 側邊欄
-        changelog_toc_title: '快速導覽',
-        changelog_about_section: '關於修改紀錄',
+        // 最新一版的標記
+        changelog_latest: '最新',
+
+        // 收起來的那一行右邊的條數（{count} 由 changelog.js 換成數字）
+        changelog_item_count: '{count} 條',
 
         // 關於區塊
         changelog_about_title: '關於修改紀錄',
@@ -21,11 +23,9 @@ const ChangelogTranslations = {
         changelog_about_desc_suffix: '。',
 
         // 標籤說明
-        changelog_tag_legend_title: '標籤說明',
         changelog_tag_new: '新功能或新工具',
         changelog_tag_improve: '功能優化或體驗提升',
-        changelog_tag_fix: '錯誤修復',
-        changelog_tag_info: '重要資訊或里程碑'
+        changelog_tag_fix: '錯誤修復'
     },
     en: {
         // Page info
@@ -36,9 +36,11 @@ const ChangelogTranslations = {
         changelog_hero_title: 'Changelog',
         changelog_hero_subtitle: 'Track FF14.tw feature updates and improvements',
 
-        // TOC sidebar
-        changelog_toc_title: 'Quick Navigation',
-        changelog_about_section: 'About Changelog',
+        // Latest version marker
+        changelog_latest: 'Latest',
+
+        // Entry count on the right of a folded row ({count} is replaced by changelog.js)
+        changelog_item_count: '{count} items',
 
         // About section
         changelog_about_title: 'About Changelog',
@@ -46,11 +48,9 @@ const ChangelogTranslations = {
         changelog_about_desc_suffix: '.',
 
         // Tag legend
-        changelog_tag_legend_title: 'Tag Legend',
         changelog_tag_new: 'New features or tools',
         changelog_tag_improve: 'Feature optimization or UX improvement',
-        changelog_tag_fix: 'Bug fixes',
-        changelog_tag_info: 'Important information or milestones'
+        changelog_tag_fix: 'Bug fixes'
     },
     ja: {
         // ページ情報
@@ -61,9 +61,11 @@ const ChangelogTranslations = {
         changelog_hero_title: '更新履歴',
         changelog_hero_subtitle: 'FF14.tw の機能更新と改善を記録',
 
-        // TOC サイドバー
-        changelog_toc_title: 'クイックナビ',
-        changelog_about_section: '更新履歴について',
+        // 最新バージョンの印
+        changelog_latest: '最新',
+
+        // 折りたたんだ行の右側の件数（{count} は changelog.js が数字に置き換える）
+        changelog_item_count: '{count} 件',
 
         // About セクション
         changelog_about_title: '更新履歴について',
@@ -71,11 +73,9 @@ const ChangelogTranslations = {
         changelog_about_desc_suffix: 'をご参照ください。',
 
         // タグ凡例
-        changelog_tag_legend_title: 'タグの説明',
         changelog_tag_new: '新機能またはツール',
         changelog_tag_improve: '機能最適化またはUX改善',
-        changelog_tag_fix: 'バグ修正',
-        changelog_tag_info: '重要な情報またはマイルストーン'
+        changelog_tag_fix: 'バグ修正'
     }
 };
 

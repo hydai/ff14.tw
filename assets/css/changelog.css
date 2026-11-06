@@ -1,204 +1,237 @@
 /* ==========================================================================
    修改紀錄頁面 — 只寫版面；顏色、圓角、字級一律來自 tokens.css 與共用元件
-   標籤（新增／改善／修正）由 components/tags.css 提供
+   標籤（新增 tag-success、改善 tag-info、修正 tag-warning、里程碑 tag-outline-primary）由 components/tags.css 提供
    ========================================================================== */
 
+/* 一欄，最寬 800px 置中（置中與左右留白由 .container 提供） */
+.changelog-page {
+    max-width: var(--container-narrow);
+}
+
+.changelog-page h1 {
+    text-align: center;
+}
+
 .subtitle {
-    margin-bottom: var(--space-7);
+    margin-bottom: var(--space-3);
     font-size: var(--text-lg);
     text-align: center;
     color: var(--color-muted);
 }
 
-/* 版面：左側目錄＋內容 */
-.changelog-layout {
-    position: relative;
+/* 標籤圖例：副標題下面的一行，窄螢幕自己換行 */
+.changelog-legend {
     display: flex;
-    align-items: flex-start;
-    gap: var(--space-9);
-}
-
-.changelog-content-wrapper {
-    flex: 1;
-    min-width: 0;
-}
-
-.changelog-container {
-    max-width: 800px;
-    margin: 0 auto;
-}
-
-/* 目錄側欄 */
-.toc-sidebar {
-    position: sticky;
-    top: var(--space-7);
-    flex-shrink: 0;
-    width: 250px;
-    max-height: calc(100vh - var(--space-10));
-    overflow-y: auto;
-}
-
-.toc-container {
-    padding: var(--space-6);
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-md);
-}
-
-.toc-title {
-    margin: 0 0 var(--space-4);
-    padding-bottom: var(--space-2);
-    border-bottom: 2px solid var(--color-primary);
-    font-size: var(--text-lg);
-    font-weight: var(--weight-semibold);
-    color: var(--color-heading);
-}
-
-.toc-nav {
-    display: flex;
-    flex-direction: column;
-}
-
-.toc-link {
-    padding: var(--space-2) var(--space-3);
-    border-radius: var(--radius-sm);
-    color: var(--color-text);
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-2) var(--space-5);
+    margin-bottom: var(--space-7);
     font-size: var(--text-sm);
-    line-height: var(--leading-snug);
-    text-decoration: none;
-    transition: background-color var(--duration-base) var(--ease), color var(--duration-base) var(--ease);
-}
-
-.toc-link:hover {
-    background: var(--color-primary-tint);
-    color: var(--color-primary);
-}
-
-.toc-link.active {
-    background: var(--color-primary);
-    color: var(--color-on-primary);
-    font-weight: var(--weight-medium);
-}
-
-.toc-level-1 {
-    font-weight: var(--weight-medium);
-}
-
-.toc-level-2 {
-    margin-left: var(--space-4);
-    font-size: var(--text-xs);
     color: var(--color-muted);
 }
 
-.toc-level-2:hover {
-    color: var(--color-primary);
-}
-
-.toc-level-2.active {
-    color: var(--color-on-primary);
-}
-
-.toc-sublist {
+.changelog-legend-item {
     display: flex;
-    flex-direction: column;
-    margin-bottom: var(--space-2);
+    align-items: baseline;
+    gap: var(--space-2);
 }
 
-.toc-sidebar::-webkit-scrollbar {
-    width: 6px;
+/* 月份區塊：月份標題加這個月的版本。最新一版是最上面那個月份區塊裡的第一版 */
+.changelog-month {
+    margin-bottom: var(--space-7);
 }
 
-.toc-sidebar::-webkit-scrollbar-track {
-    background: var(--color-surface-2);
-    border-radius: var(--radius-sm);
-}
-
-.toc-sidebar::-webkit-scrollbar-thumb {
-    background: var(--color-border-strong);
-    border-radius: var(--radius-sm);
-}
-
-.toc-sidebar::-webkit-scrollbar-thumb:hover {
-    background: var(--color-muted);
-}
-
-/* 年份與版本卡片 */
-.changelog-section {
-    margin-bottom: var(--space-9);
-}
-
-.changelog-year {
-    margin-bottom: var(--space-6);
-    padding-bottom: var(--space-2);
-    border-bottom: 2px solid var(--color-primary);
-    font-size: var(--text-3xl);
+.changelog-month-title {
+    margin: 0 0 var(--space-3);
+    font-size: var(--text-xl);
     font-weight: var(--weight-semibold);
     color: var(--color-heading);
 }
 
+/* 一版：收起來是一行（日期、版本、一句標題），展開後在下面列出條目；只有一條的舊版本是不能展開的單行。
+   同一個月的幾版接成一張清單，不加外層容器（發新版只要改屬性）：每一版畫自己的邊框，上一版的下框就是這一版的上框；
+   月份標題後面或最新一版後面的第一版上圓角，最後一版下圓角 */
 .changelog-entry {
-    margin-bottom: var(--space-7);
     overflow: hidden;
     background: var(--color-surface);
     border: 1px solid var(--color-border);
+    border-top-width: 0;
+}
+
+.changelog-month-title + .changelog-entry,
+.changelog-entry.is-latest + .changelog-entry {
+    border-top-width: 1px;
+    border-top-left-radius: var(--radius-lg);
+    border-top-right-radius: var(--radius-lg);
+}
+
+.changelog-entry:last-child {
+    border-bottom-left-radius: var(--radius-lg);
+    border-bottom-right-radius: var(--radius-lg);
+}
+
+/* 最新一版：獨立的一張卡片，色帶寫日期、版本和「最新」，下面是標題與全部條目 */
+.changelog-entry.is-latest {
+    margin-bottom: var(--space-3);
+    border-top-width: 1px;
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-md);
 }
 
-.changelog-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: var(--space-5) var(--space-6);
-    background: var(--color-primary);
-    color: var(--color-on-primary);
+/* 收起來的那一行：拿掉瀏覽器預設的三角形（右邊自己寫「N 條 ▸」）。
+   外框畫在裡面：列在圓角容器裡，畫在外面會被切掉 */
+.changelog-entry > summary {
+    list-style: none;
+    cursor: pointer;
 }
 
-.changelog-version {
-    margin: 0;
-    font-size: var(--text-xl);
-    font-weight: var(--weight-semibold);
-    color: inherit;
+.changelog-entry > summary::-webkit-details-marker {
+    display: none;
+}
+
+.changelog-entry > summary:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: -2px;
+}
+
+/* 有滑鼠的裝置上，移到收起來的列時加一層底色，看得出能點（手機點過之後不會一直留著）；最新一版的卡片不加 */
+@media (hover: hover) {
+    .changelog-entry:not(.is-latest) > summary:hover {
+        background: var(--color-hover);
+    }
+}
+
+/* 日期、版本、右邊的字（最新一版是「最新」，其他是「N 條」）：一列三格；最新一版收起來時多一格放「N 條」（見最新一版的色帶）。
+   版本那一格可以縮，很長的版本號（v2.5.0 - v2.5.2）在 320px 寬也不會把版面撐寬 */
+.changelog-meta {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: baseline;
+    column-gap: var(--space-3);
+    padding: var(--space-3) var(--space-4) 0;
 }
 
 .changelog-date {
-    font-size: var(--text-sm);
-    font-weight: var(--weight-normal);
-    opacity: 0.9;
-}
-
-.changelog-content {
-    padding: var(--space-6);
-}
-
-.changelog-content h4 {
-    margin: 0 0 var(--space-3);
-    padding-bottom: var(--space-1);
-    border-bottom: 1px solid var(--color-border);
-    font-size: var(--text-lg);
     font-weight: var(--weight-semibold);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
     color: var(--color-heading);
 }
 
-.changelog-content h4:not(:first-child) {
-    margin-top: var(--space-6);
+.changelog-version {
+    min-width: 0;
+    overflow: hidden;
+    font-size: var(--text-xs);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--color-muted);
 }
 
-.changelog-content ul {
+/* 「N 條」由 changelog.js 填；三角形只是裝飾：第二行把替代文字設成空的，螢幕閱讀器不念，不認得這種寫法的瀏覽器略過第二行 */
+.changelog-count {
+    font-size: var(--text-sm);
+    white-space: nowrap;
+    color: var(--color-muted);
+}
+
+.changelog-count::after {
+    content: ' ▸';
+    content: ' ▸' / '';
+}
+
+.changelog-entry[open] .changelog-count::after {
+    content: ' ▾';
+    content: ' ▾' / '';
+}
+
+.changelog-latest {
+    padding: 0 var(--space-3);
+    border-radius: var(--radius-full);
+    background: var(--color-on-primary);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-semibold);
+    line-height: var(--leading-relaxed);
+    white-space: nowrap;
+    color: var(--color-primary);
+}
+
+/* 兩條以上的版本在 <summary> 裡的一句標題，只有一條的版本直接寫那一條 */
+.changelog-headline {
+    display: block;
+    padding: var(--space-1) var(--space-4) var(--space-3);
+    text-wrap: balance;
+}
+
+.changelog-single-item {
+    padding: var(--space-1) var(--space-4) var(--space-3);
+    line-height: var(--leading-normal);
+}
+
+.changelog-items {
     margin: 0;
-    padding: 0;
+    padding: 0 var(--space-4) var(--space-3);
     list-style: none;
 }
 
-.changelog-content li {
+.changelog-items li {
     margin: var(--space-2) 0;
     padding-left: var(--space-2);
     line-height: var(--leading-normal);
 }
 
-.changelog-content .tag {
+.changelog-items .tag,
+.changelog-single-item .tag {
     margin-right: var(--space-2);
+}
+
+/* 最新一版的色帶與標題。色帶是主色底，日期、版本沿用色帶的前景色（不被全域的標題色蓋掉） */
+.changelog-entry.is-latest .changelog-meta {
+    padding: var(--space-4);
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+}
+
+.changelog-entry.is-latest .changelog-date {
+    font-size: var(--text-lg);
+    color: inherit;
+}
+
+.changelog-entry.is-latest .changelog-version {
+    font-size: var(--text-sm);
+    color: inherit;
+}
+
+/* 收起來時「N 條 ▸」留在色帶裡，讓人知道還能展開：用色帶的前景色，放在第四格。
+   第四格只在它顯示時才存在，所以展開後「最新」照樣貼著右邊；展開時條目就在下面，不用再寫「N 條」 */
+.changelog-entry.is-latest .changelog-count {
+    grid-column: 4;
+    color: inherit;
+}
+
+.changelog-entry.is-latest[open] .changelog-count {
+    display: none;
+}
+
+.changelog-entry.is-latest .changelog-headline {
+    padding-top: var(--space-4);
+    font-size: var(--text-lg);
+    font-weight: var(--weight-semibold);
+    line-height: var(--leading-snug);
+    color: var(--color-heading);
+}
+
+.changelog-entry.is-latest .changelog-items {
+    padding-bottom: var(--space-4);
+}
+
+/* 色帶也是主色，主色的外框在色帶上看不見：焦點在最新一版時，外框改畫在色帶上，用色帶的前景色 */
+.changelog-entry.is-latest > summary:focus-visible {
+    outline: none;
+}
+
+.changelog-entry.is-latest > summary:focus-visible .changelog-meta {
+    outline: 2px solid var(--color-on-primary);
+    outline-offset: -4px;
 }
 
 /* 更新說明 */
@@ -222,6 +255,10 @@
     line-height: var(--leading-normal);
 }
 
+.update-notice p:last-child {
+    margin-bottom: 0;
+}
+
 .update-notice a {
     font-weight: var(--weight-medium);
     text-decoration: none;
@@ -231,98 +268,20 @@
     text-decoration: underline;
 }
 
-.tag-legend {
-    margin-top: var(--space-6);
-}
-
-.tag-legend h4 {
-    margin-bottom: var(--space-3);
-    font-size: var(--text-md);
-    color: var(--color-heading);
-}
-
-.tag-legend ul {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: var(--space-2);
-    margin: 0;
-    padding: 0;
-    list-style: none;
-}
-
-.tag-legend li {
-    display: flex;
-    align-items: center;
-    margin: 0;
-    padding: var(--space-1) 0;
-}
-
-.tag-legend .tag {
-    margin-right: var(--space-2);
-}
-
-/* 響應式（1024px 是目錄側欄的版面斷點，不是工具格線） */
-@media (max-width: 1024px) {
-    .toc-sidebar {
-        width: 200px;
+/* 響應式 */
+@media (min-width: 481px) {
+    .changelog-entry.is-latest .changelog-meta {
+        padding: var(--space-5) var(--space-6);
     }
 
-    .changelog-layout {
-        gap: var(--space-7);
+    .changelog-entry.is-latest .changelog-headline,
+    .changelog-entry.is-latest .changelog-items {
+        padding-inline: var(--space-6);
     }
 }
 
 @media (max-width: 768px) {
-    .changelog-layout {
-        flex-direction: column;
-    }
-
-    .toc-sidebar {
-        position: relative;
-        top: 0;
-        width: 100%;
-        max-height: none;
-        margin-bottom: var(--space-7);
-    }
-
-    .toc-container {
-        max-height: 300px;
-        overflow-y: auto;
-    }
-
-    .changelog-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: var(--space-2);
-    }
-
-    .changelog-version {
-        font-size: var(--text-lg);
-    }
-
-    .changelog-year {
-        font-size: var(--text-2xl);
-    }
-
-    .tag-legend ul {
-        grid-template-columns: 1fr;
-    }
-
     .update-notice {
         padding: var(--space-6);
-    }
-}
-
-@media (max-width: 480px) {
-    .changelog-content {
-        padding: var(--space-4);
-    }
-
-    .changelog-header {
-        padding: var(--space-4);
-    }
-
-    .changelog-year {
-        font-size: var(--text-xl);
     }
 }
