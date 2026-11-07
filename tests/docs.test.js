@@ -34,3 +34,9 @@ test('README 的副本總數與 data/dungeons.json 的實際筆數一致', () =>
     assert.ok(m, 'README 找不到「N 個副本 (2.x」這一行');
     assert.equal(Number(m[1]), dungeons.length);
 });
+
+test('README 的可見項目數與 data/dungeons.json 一致', () => {
+    const m = readme.match(/(\d+)\s*個可見項目/);
+    assert.ok(m, 'README 找不到「N 個可見項目」這一行');
+    assert.equal(Number(m[1]), dungeons.filter((dungeon) => dungeon.visible !== false).length);
+});

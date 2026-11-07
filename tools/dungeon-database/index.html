@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>副本資料庫 - FF14.tw</title>
-    <meta name="description" content="FF14副本完整資料庫，包含所有副本資訊、獎勵和攻略指南。">
+    <meta name="description" content="FF14 副本資料庫：查副本的等級、類型、機制與掉落物。" data-i18n="dungeon_db_description" data-i18n-attr="content">
     <link rel="icon" type="image/x-icon" href="../../assets/images/ff14tw.ico">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -29,82 +29,81 @@
     <main class="main">
         <div class="container">
             <h1 class="visually-hidden" data-i18n="dungeon_db_header">副本資料庫</h1>
-            <div>
-                <!-- 搜尋和過濾器 -->
-                <div class="filter-section card">
-                    <div class="search-box">
-                        <input type="text" id="searchInput" class="form-control form-control-lg" data-i18n-attr="placeholder" data-i18n="dungeon_db_search_placeholder" placeholder="搜尋副本名稱、機制說明或掉落物... (支援上下鍵導航，Enter選取)">
+
+            <div id="dungeonTool">
+                <!-- 搜尋和篩選：類型與版本是資料（中文），按鈕的字不翻譯；選取時 script.js 加 active 並把 aria-pressed 改成 true。
+                     is-collapsed 和「篩選」按鈕只在手機版面（style.css 的 @media）有用：面板收在按鈕後面，電腦版面看不到按鈕、面板一直在 -->
+                <section class="card filter-card is-collapsed" id="filterCard">
+                    <div class="search-row">
+                        <label class="visually-hidden" id="searchLabel" for="searchInput" data-i18n="dungeon_db_search_label">搜尋副本名稱、機制或掉落物</label>
+                        <input type="search" id="searchInput" class="form-control form-control-lg" placeholder="搜尋副本、機制或掉落物" data-i18n="dungeon_db_search_placeholder" data-i18n-attr="placeholder">
+                        <!-- 文字（有選篩選時加上數字）、aria-expanded 與 #filterCard 的 is-collapsed 由 script.js 照 state.filtersOpen 同步；一開始是收起的 -->
+                        <button type="button" class="btn" id="filterToggle" aria-expanded="false" aria-controls="filterPanel" data-i18n="dungeon_db_filter_toggle">篩選</button>
                     </div>
 
-                    <div class="filter-controls">
+                    <div class="filter-panel" id="filterPanel">
                         <div class="filter-group">
-                            <label data-i18n="dungeon_db_type_filter">類型過濾：</label>
-                            <div class="type-tags chip-group" id="typeTags">
-                                <button class="chip type-tag" data-type="四人迷宮">四人迷宮</button>
-                                <button class="chip type-tag" data-type="公會令">公會令</button>
-                                <button class="chip type-tag" data-type="8人大型任務">8人大型任務</button>
-                                <button class="chip type-tag" data-type="8人討伐殲滅戰">8人討伐殲滅戰</button>
-                                <button class="chip type-tag" data-type="24人大型任務">24人大型任務</button>
-                                <button class="chip type-tag" data-type="絕境戰">絕境戰</button>
-                                <button class="chip type-tag" data-type="誅滅戰">誅滅戰</button>
-                                <button class="chip type-tag" data-type="幻巧戰">幻巧戰</button>
-                                <button class="chip type-tag" data-type="異聞迷宮">異聞迷宮</button>
-                                <button class="chip type-tag" data-type="深層迷宮">深層迷宮</button>
-                            </div>
-                        </div>
-                        
-                        <div class="filter-group">
-                            <label data-i18n="dungeon_db_expansion_filter">版本過濾：</label>
-                            <div class="expansion-tags chip-group" id="expansionTags">
-                                <button class="chip expansion-tag" data-expansion="2.x">2.x (重生之境)</button>
-                                <button class="chip expansion-tag" data-expansion="3.x">3.x (蒼穹之禁城)</button>
-                                <button class="chip expansion-tag" data-expansion="4.x">4.x (紅蓮之狂潮)</button>
-                                <button class="chip expansion-tag" data-expansion="5.x">5.x (暗影之逆焰)</button>
-                                <button class="chip expansion-tag" data-expansion="6.x">6.x (曉月之終途)</button>
-                                <button class="chip expansion-tag" data-expansion="7.x">7.x (黃金之遺產)</button>
-                            </div>
-                        </div>
-                        
-                        <div class="filter-group">
-                            <label data-i18n="dungeon_db_level_filter">等級過濾：</label>
-                            <div class="level-tags chip-group" id="levelTags">
-                                <button class="chip level-tag" data-level="1-50">1-50</button>
-                                <button class="chip level-tag" data-level="51-60">51-60</button>
-                                <button class="chip level-tag" data-level="61-70">61-70</button>
-                                <button class="chip level-tag" data-level="71-80">71-80</button>
-                                <button class="chip level-tag" data-level="81-90">81-90</button>
-                                <button class="chip level-tag" data-level="91-100">91-100</button>
+                            <span class="filter-label" id="typeLabel" data-i18n="dungeon_db_type_filter">類型</span>
+                            <div class="chip-group" id="typeTags" role="group" aria-labelledby="typeLabel">
+                                <button type="button" class="chip" data-type="四人迷宮" aria-pressed="false">四人迷宮</button>
+                                <button type="button" class="chip" data-type="公會令" aria-pressed="false">公會令</button>
+                                <button type="button" class="chip" data-type="8人大型任務" aria-pressed="false">8人大型任務</button>
+                                <button type="button" class="chip" data-type="8人討伐殲滅戰" aria-pressed="false">8人討伐殲滅戰</button>
+                                <button type="button" class="chip" data-type="聯盟任務" aria-pressed="false">聯盟任務</button>
+                                <button type="button" class="chip" data-type="絕境戰" aria-pressed="false">絕境戰</button>
+                                <button type="button" class="chip" data-type="誅滅戰" aria-pressed="false">誅滅戰</button>
+                                <button type="button" class="chip" data-type="幻巧戰" aria-pressed="false">幻巧戰</button>
                             </div>
                         </div>
 
-                        <button id="resetFilters" class="btn" data-i18n="dungeon_db_reset_filters">重置過濾</button>
+                        <div class="filter-group">
+                            <span class="filter-label" id="expansionLabel" data-i18n="dungeon_db_expansion_filter">版本</span>
+                            <div class="chip-group" id="expansionTags" role="group" aria-labelledby="expansionLabel">
+                                <button type="button" class="chip" data-expansion="2.x" aria-pressed="false">2.x (重生之境)</button>
+                                <button type="button" class="chip" data-expansion="3.x" aria-pressed="false">3.x (蒼天之禁城)</button>
+                                <button type="button" class="chip" data-expansion="4.x" aria-pressed="false">4.x (紅蓮之狂潮)</button>
+                                <button type="button" class="chip" data-expansion="5.x" aria-pressed="false">5.x (暗影之逆焰)</button>
+                                <button type="button" class="chip" data-expansion="6.x" aria-pressed="false">6.x (曉月之終途)</button>
+                                <button type="button" class="chip" data-expansion="7.x" aria-pressed="false">7.x (黃金之遺產)</button>
+                            </div>
+                        </div>
+
+                        <button type="button" class="btn btn-sm" id="clearFilters" aria-disabled="true" data-i18n="dungeon_db_clear_filters">清除篩選</button>
                     </div>
-                </div>
+                </section>
 
-                <!-- 副本列表 -->
-                <div class="dungeon-list" id="dungeonList">
-                    <!-- 副本卡片將由 JavaScript 動態生成 -->
-                </div>
-                
-                <!-- 載入中提示 -->
-                <div class="loading" id="loading" style="display: none;">
+                <!-- 筆數：沒有搜尋也沒有篩選時寫共幾個，否則寫找到幾個；載入完才有字 -->
+                <p id="resultCount" aria-live="polite"></p>
+
+                <!-- 載入中提示：載入完（或失敗）就 hidden -->
+                <div class="loading" id="loading">
                     <div class="loading-spinner"></div>
                     <p data-i18n="dungeon_db_loading">載入中...</p>
                 </div>
 
-                <!-- 無結果提示 -->
-                <div class="no-results empty-state" id="noResults" style="display: none;">
-                    <p class="empty-state-text" data-i18n="dungeon_db_no_results">找不到符合條件的副本</p>
+                <!-- 副本列表：一列一個 li，由 script.js 畫 -->
+                <ul class="card dungeon-list" id="dungeonList" hidden></ul>
+
+                <!-- 找不到：載入完、真的沒有符合時才顯示。標題與兩顆按鈕由 script.js 照搜尋字與篩選決定：有搜尋字才有「清除搜尋」，有選篩選才有「清除篩選」 -->
+                <div class="empty-state" id="noResults" hidden>
+                    <p class="empty-state-title" id="noResultsTitle"></p>
+                    <button type="button" class="btn" id="clearSearch" data-i18n="dungeon_db_clear_search" hidden>清除搜尋</button>
+                    <button type="button" class="btn" id="clearFiltersEmpty" data-i18n="dungeon_db_clear_filters" hidden>清除篩選</button>
                 </div>
+
+                <button type="button" class="btn" id="showMore" hidden></button>
+
+                <!-- 載入失敗時只顯示這一則 -->
+                <div class="error-message" id="loadError" role="alert" hidden></div>
             </div>
 
             <!-- 資料來源說明 -->
-            <section class="data-source info-panel">
+            <section class="data-source info-panel" id="dataSource">
                 <div class="info-panel-icon" aria-hidden="true">📖</div>
                 <div class="data-source-content">
                     <h3 class="info-panel-title" data-i18n="dungeon_db_data_source">資料來源</h3>
                     <p class="info-panel-text"><span data-i18n="dungeon_db_data_source_text">本工具的副本資料來自</span> <a href="https://ff14.huijiwiki.com/wiki/%E5%89%AF%E6%9C%AC" target="_blank" rel="noopener noreferrer" data-i18n="dungeon_db_data_source_link">灰機Wiki</a><span data-i18n="dungeon_db_data_source_desc">，經過繁體中文化處理並使用台灣用語，提供更符合台灣玩家習慣的資訊呈現。</span></p>
-                    <p class="info-panel-text" data-i18n="dungeon_db_data_count">資料包含362個副本，涵蓋從重生之境（2.x）到黃金之遺產（7.x）的完整內容。感謝灰機Wiki社群的貢獻。</p>
+                    <p class="info-panel-text" id="dataCount"></p>
                 </div>
             </section>
         </div>
@@ -120,7 +119,7 @@
     <script src="../../assets/js/components/footer-template.js"></script>
     <script src="../../assets/js/components/layout-loader.js"></script>
     <script src="../../assets/js/common.js"></script>
-    <script src="../../assets/js/security-utils.js"></script>
+    <script src="dungeon-list.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
