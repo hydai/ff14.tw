@@ -11,7 +11,7 @@ const GuideSidebarTemplate = {
     // Sidebar navigation items configuration
     // pending: true 是還沒寫的主題，連結後面標「撰寫中」
     ITEMS: [
-        { href: 'guild.html', page: 'guild', icon: '🏠', i18nKey: 'guide_toc_guild', text: '公會', pending: true },
+        { href: 'guild.html', page: 'guild', icon: '🏠', i18nKey: 'guide_toc_guild', text: '部隊', pending: true },
         { href: 'grand-company.html', page: 'grand-company', icon: '🎖️', i18nKey: 'guide_toc_grand_company', text: '大國防聯軍' },
         { href: 'dungeon.html', page: 'dungeon', icon: '🏰', i18nKey: 'guide_toc_dungeon', text: '副本', pending: true },
         { href: 'party.html', page: 'party', icon: '👥', i18nKey: 'guide_toc_party', text: '隊伍系統' },

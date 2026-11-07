@@ -506,3 +506,118 @@ test('目錄裡的「撰寫中」：label 放不下時標籤自己換行、標�
     // 目前這一頁是主色底，標籤自己的柔和底色（深色模式是透明的）疊上去字會糊掉：換成不透明的卡片底色
     assert.match(body('.toc-link.active .toc-pending'), /background\s*:\s*var\(--color-surface\)/, '目前這一頁的標籤要用不透明的底色');
 });
+
+// ---------- 用語（TERMINOLOGY.md）----------
+// 繁中服的官方用語：Free Company 是「部隊」，Guildhest 是「公會令」，世界叫「艾歐澤亞」，主屬性 Dexterity 是「靈巧」。
+// 「公會」只能出現在「公會令」裡面。changelog.html 的舊條目是歷史，不檢查；Lodestone 查詢裡的「公會」這次不動，也不在範圍內。
+const HOME_TRANSLATIONS = 'assets/js/i18n/translations/index.js';
+const homeText = (lang) => translationValues(HOME_TRANSLATIONS, lang);
+
+// 要檢查用語的文字：[名稱, 內容]。攻略資料資料夾裡的每一個 html（之後多一頁也會被檢查）、側欄、首頁，
+// 以及兩份翻譯檔中文那一組的「值」（鍵名 guide_toc_guild 不是用語，不算）
+function terminologySources() {
+    const sources = fs.readdirSync(path.join(ROOT, GUIDE_DIR))
+        .filter((file) => file.endsWith('.html'))
+        .sort()
+        .map((file) => [`${GUIDE_DIR}/${file}`, read(`${GUIDE_DIR}/${file}`)]);
+    sources.push([`${GUIDE_DIR}/sidebar-template.js`, read(`${GUIDE_DIR}/sidebar-template.js`)], ['index.html', read('index.html')]);
+    for (const file of [GUIDE_TRANSLATIONS, HOME_TRANSLATIONS]) {
+        for (const [key, value] of translationValues(file, 'zh')) sources.push([`${file} 的 zh ${key}`, value]);
+    }
+    return sources;
+}
+
+test('用語：部隊、公會令、艾歐澤亞、靈巧', () => {
+    const sources = terminologySources();
+    // 檢查得到東西：攻略資料 8 頁都在，兩份翻譯檔的中文也解析得出字（解析不到就等於沒檢查）
+    const names = sources.map(([name]) => name);
+    for (const page of PAGES) assert.ok(names.includes(page), `${page} 沒有被檢查`);
+    for (const file of [GUIDE_TRANSLATIONS, HOME_TRANSLATIONS]) {
+        const parsed = names.filter((name) => name.startsWith(`${file} 的 zh `)).length;
+        assert.ok(parsed >= 20, `${file} 的 zh 只解析到 ${parsed} 個值，測試可能失效`);
+    }
+
+    // 全部問題收在一起，失敗時一次看到每一處
+    const problems = [];
+    const expect = (ok, message) => { if (!ok) problems.push(message); };
+
+    // 沒有指 Free Company 的「公會」（「公會令」不算）、沒有「行會令」「艾歐乍亞」
+    const WRONG = [
+        [/公會(?!令)/g, '「公會」（Free Company 是「部隊」）'],
+        [/行會令/g, '「行會令」（是「公會令」）'],
+        [/艾歐乍亞/g, '「艾歐乍亞」（是「艾歐澤亞」）']
+    ];
+    for (const [name, text] of sources) {
+        for (const [pattern, hint] of WRONG) {
+            for (const hit of text.matchAll(pattern)) {
+                const around = text.slice(Math.max(0, hit.index - 10), hit.index + hit[0].length + 10).replace(/\s+/g, ' ');
+                problems.push(`${name} 還寫著${hint}：…${around}…`);
+            }
+        }
+    }
+
+    // 組隊那一頁的主屬性是「靈巧」，不是「敏捷」（和 Lodestone 查詢一致）
+    const party = read(`${GUIDE_DIR}/party.html`);
+    expect(!party.includes('敏捷'), `${GUIDE_DIR}/party.html 還寫著「敏捷」（主屬性 Dexterity 是「靈巧」）`);
+    expect(party.includes('靈巧'), `${GUIDE_DIR}/party.html 沒有「靈巧」`);
+
+    // 首頁攻略卡片的英文、日文也不再把 Free Company 寫成 guild／ギルド
+    const en = homeText('en');
+    for (const key of ['tool_guide_desc', 'status_guide_pages_pending']) {
+        expect(en.get(key), `${HOME_TRANSLATIONS} 的 en 缺少 ${key}`);
+        expect(!/guild/i.test(en.get(key) ?? ''), `${HOME_TRANSLATIONS} 的 en ${key} 還寫著 guild：${en.get(key)}`);
+    }
+    const ja = homeText('ja').get('status_guide_pages_pending');
+    expect(ja, `${HOME_TRANSLATIONS} 的 ja 缺少 status_guide_pages_pending`);
+    expect(!(ja ?? '').includes('ギルド'), `${HOME_TRANSLATIONS} 的 ja status_guide_pages_pending 還寫著ギルド：${ja}`);
+
+    assert.deepEqual(problems, []);
+});
+
+test('部隊：改過的地方確實寫了官方名稱，主題名稱的預設文字和 zh 翻譯一樣', () => {
+    const problems = [];
+    const expect = (ok, message) => { if (!ok) problems.push(message); };
+    const zh = guideText('zh');
+
+    // 主題名稱：zh 翻譯，以及翻譯檔載入前看到的預設文字（攻略首頁的卡片、大國防聯軍的「上一篇」、部隊頁的標題、側欄）
+    for (const key of ['guide_toc_guild', 'guide_section_guild_title']) {
+        expect(zh.get(key) === '部隊', `${GUIDE_TRANSLATIONS} 的 zh ${key} 要寫「部隊」：${zh.get(key)}`);
+    }
+    let checked = 0;
+    for (const page of PAGES) {
+        const html = read(page);
+        for (const key of ['guide_toc_guild', 'guide_section_guild_title']) {
+            for (const m of html.matchAll(new RegExp(`<(\\w+)\\b[^>]*\\sdata-i18n="${key}"[^>]*>([^<]*)</\\1>`, 'g'))) {
+                checked++;
+                expect(m[2].trim() === zh.get(key), `${page} 的 ${key} 預設文字是「${m[2].trim()}」，zh 翻譯是「${zh.get(key)}」`);
+            }
+        }
+    }
+    expect(checked >= 3, `只檢查到 ${checked} 處主題名稱，解析可能失效`);
+    const guildItem = sidebarPage().template.ITEMS.find((item) => item.page === 'guild');
+    expect(guildItem.text === zh.get('guide_toc_guild'), `sidebar-template.js 的部隊預設文字是「${guildItem.text}」，zh 翻譯是「${zh.get('guide_toc_guild')}」`);
+    expect(read(`${GUIDE_DIR}/guild.html`).includes('<title>部隊 - 攻略資料 - FF14.tw</title>'), 'guild.html 的 <title> 要是「部隊 - 攻略資料 - FF14.tw」');
+
+    // 說明文字裡提到 Free Company 的地方：中文寫部隊，英文寫 Free Company，日文寫フリーカンパニー
+    const homeZh = homeText('zh');
+    for (const [what, text] of [
+        ['guide.js 的 zh guide_description', zh.get('guide_description')],
+        ['攻略首頁的 meta description', metaOf(read(`${GUIDE_DIR}/index.html`), 'description')?.content],
+        ['首頁的 zh tool_guide_desc', homeZh.get('tool_guide_desc')],
+        ['首頁的 zh status_guide_pages_pending', homeZh.get('status_guide_pages_pending')]
+    ]) expect(/部隊/.test(text ?? ''), `${what} 要寫「部隊」：${text}`);
+    expect(/Free Compan/.test(homeText('en').get('tool_guide_desc') ?? ''), '首頁的 en tool_guide_desc 要寫 Free Company');
+    expect(/Free Company/.test(homeText('en').get('status_guide_pages_pending') ?? ''), '首頁的 en status_guide_pages_pending 要寫 Free Company');
+    expect((homeText('ja').get('status_guide_pages_pending') ?? '').includes('フリーカンパニー'), '首頁的 ja status_guide_pages_pending 要寫フリーカンパニー');
+
+    // 陸行鳥頁：寄養的說明改成「部隊房屋」（陸行鳥廄那一行本來就寫部隊房屋，所以共兩處）和兩處「退出部隊」
+    const chocobo = read(`${GUIDE_DIR}/chocobo.html`);
+    expect((chocobo.match(/部隊房屋/g) || []).length >= 2, 'chocobo.html 的寄養說明要寫「部隊房屋」');
+    expect((chocobo.match(/退出部隊/g) || []).length >= 2, 'chocobo.html 要有兩處「退出部隊」');
+
+    // 「行會令」改成「公會令」、「艾歐乍亞」改成「艾歐澤亞」：換成對的字，不是只刪掉
+    expect(read(`${GUIDE_DIR}/grand-company.html`).includes('公會令'), 'grand-company.html 要寫「公會令」');
+    expect(read(`${GUIDE_DIR}/party.html`).includes('艾歐澤亞'), 'party.html 要寫「艾歐澤亞」');
+
+    assert.deepEqual(problems, []);
+});

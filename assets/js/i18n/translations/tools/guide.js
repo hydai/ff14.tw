@@ -5,7 +5,7 @@ const GuideTranslations = {
     zh: {
         // 頁面資訊
         guide_title: '攻略資料 - FF14.tw',
-        guide_description: 'FF14 新手攻略指南，包含公會系統、軍階、副本、風脈、探索筆記與專屬陸行鳥完整說明',
+        guide_description: 'FF14 新手攻略指南，包含部隊系統、軍階、副本、風脈、探索筆記與專屬陸行鳥完整說明',
 
         // 頁面標題
         guide_header: '攻略資料',
@@ -16,7 +16,7 @@ const GuideTranslations = {
 
         // 目錄
         guide_toc_title: '目錄',
-        guide_toc_guild: '公會',
+        guide_toc_guild: '部隊',
         guide_toc_grand_company: '大國防聯軍',
         guide_toc_dungeon: '副本',
         guide_toc_party: '隊伍系統',
@@ -32,7 +32,7 @@ const GuideTranslations = {
         guide_sightseeing_desc: '探索筆記機制與獎勵',
 
         // 章節標題
-        guide_section_guild_title: '公會',
+        guide_section_guild_title: '部隊',
         guide_section_grand_company_title: '大國防聯軍',
         guide_section_dungeon_title: '副本',
         guide_section_party_title: '隊伍系統',

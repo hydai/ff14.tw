@@ -72,7 +72,7 @@ const STATUS_LINES = [
 const NEW_TEXTS = {
     status_intl_only: { zh: '僅限國際版角色', en: 'Global servers only', ja: 'グローバル版キャラクターのみ' },
     status_dungeon_mechanics_pending: { zh: '部分副本的機制說明待補', en: 'Some dungeon mechanics are not written yet', ja: '一部ダンジョンのギミック解説は準備中' },
-    status_guide_pages_pending: { zh: '公會、副本、風脈、探索筆記 4 頁撰寫中', en: 'Guild, dungeon, aether current and sightseeing pages are in progress', ja: 'ギルド・ダンジョン・風脈・探検手帳の4ページは準備中' },
+    status_guide_pages_pending: { zh: '部隊、副本、風脈、探索筆記 4 頁撰寫中', en: 'Free Company, dungeon, aether current and sightseeing pages are in progress', ja: 'フリーカンパニー・ダンジョン・風脈・探検手帳の4ページは準備中' },
     tag_external_site: { zh: '外部網站 ↗', en: 'External site ↗', ja: '外部サイト ↗' },
     tool_dungeon_database_desc: { zh: '完整的FF14副本資訊查詢，包含獎勵與機制說明', en: 'Complete FF14 dungeon info with rewards and mechanics', ja: 'FF14ダンジョン情報。報酬とギミック説明を収録' },
     tool_chocobo_color_desc: { zh: '選陸行鳥現在和想要的顏色，算出要餵的水果和順序', en: 'Pick your chocobo\'s current and wanted colors to get the fruits and the feeding order', ja: 'チョコボの今の色と目標の色から、与える果物と順番を計算' }
