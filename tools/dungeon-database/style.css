@@ -7,6 +7,9 @@
    會蓋過瀏覽器內建的 [hidden] { display: none }，所以要自己寫 */
 #loading[hidden],
 #dungeonList[hidden],
+#noResults[hidden],
+#clearSearch[hidden],
+#clearFiltersEmpty[hidden],
 #showMore[hidden],
 #loadError[hidden],
 .dungeon-detail[hidden] {
@@ -20,16 +23,37 @@
     margin-bottom: var(--space-4);
 }
 
+/* 搜尋列只有搜尋框（「篩選」按鈕在下面的筆數那一行），整行寬，提示字才放得下 */
 .search-row {
     display: flex;
-    gap: var(--space-3);
 }
 
-/* 搜尋框吃剩下的寬度；min-width: 0 讓它在窄螢幕裡縮得下。appearance: none 讓 iOS 與 macOS 的 Safari 也照 .form-control 的圓角和邊框畫 */
+/* 搜尋框吃整行的寬度；min-width: 0 讓它在窄螢幕裡縮得下。appearance: none 讓 iOS 與 macOS 的 Safari 也照 .form-control 的圓角和邊框畫 */
 #searchInput {
     flex: 1 1 auto;
     min-width: 0;
     appearance: none;
+}
+
+/* type=search 的搜尋框，在 Chrome（macOS）量過：沒打字時也替清除鈕預留約 16.5px，提示字能用的寬度因此少一截（320px 寬時 212px 只剩 195.5px）；Safari 沒量過。
+   沒打字（正在顯示提示字）時把清除鈕拿掉，空間還給提示字；一打字 :placeholder-shown 就不成立，清除鈕照常出現。只動這個搜尋框 */
+#searchInput:placeholder-shown::-webkit-search-cancel-button {
+    display: none;
+}
+
+/* 「篩選」按鈕：在筆數那一行（.result-bar）的右邊，只有手機版面（最後面的 @media）看得到，電腦版面的面板一直在。
+   一般按鈕的高度（--control-md，40px），不比 40px 矮；展開時換成主色淡底，看得出面板開著 */
+#filterToggle {
+    display: none;
+    flex: 0 0 auto;
+    height: var(--control-md);
+    min-height: var(--control-md);
+}
+
+#filterToggle[aria-expanded="true"] {
+    border-color: var(--color-primary);
+    background: var(--color-primary-tint);
+    color: var(--color-primary);
 }
 
 .filter-panel {
@@ -73,10 +97,18 @@
     box-shadow: var(--ring-primary);
 }
 
-/* ---- 筆數：沒字的時候也留著一行的高度，載入完才出現字時列表不會跳動 ---- */
+/* ---- 筆數那一行（.result-bar）：手機版面（最後面的 @media）是左邊筆數、右邊「篩選」按鈕；電腦版面按鈕不顯示，只剩筆數，
+   用 order 排在面板後面（篩選按鈕下面、卡片底部，接近列表）。卡片是 flex 直排，搜尋列與面板的 order 都是 0。
+   DOM 順序是搜尋框、筆數、「篩選」、面板，Tab 與螢幕閱讀器照這個順序；電腦版面這一行裡能互動的只有按鈕，它看不到，所以換位置不影響 Tab ---- */
+.result-bar {
+    order: 1;
+}
+
+/* ---- 筆數：沒字的時候也留著一行的高度，載入完才出現字時列表不會跳動。
+   找不到時它改寫找不到的那一句並加 .visually-hidden（畫面上不重複，螢幕閱讀器照樣念） ---- */
 #resultCount {
     min-height: calc(1em * var(--leading-normal));
-    margin: 0 0 var(--space-3);
+    margin: 0;
     font-size: var(--text-sm);
     line-height: var(--leading-normal);
     color: var(--color-muted);
@@ -266,6 +298,20 @@
     color: var(--color-heading);
 }
 
+/* ---- 找不到：外觀由 .empty-state 提供；標題獨佔一行，兩顆按鈕在下面並排，放不下就換行。搜尋字可能很長，標題在任何地方換行 ---- */
+#noResults {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-3);
+}
+
+#noResultsTitle {
+    flex: 1 1 100%;
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
 /* ---- 顯示更多與載入失敗 ---- */
 #showMore {
     display: flex;
@@ -289,8 +335,39 @@
         padding: var(--space-4);
     }
 
+    /* 左右的內距收小：標題與兩顆按鈕才有寬度（320px 寬、中文的兩顆按鈕要並排放得下） */
+    #noResults {
+        padding: var(--space-6) var(--space-4);
+    }
+
     .data-source {
         margin-top: var(--space-7);
+    }
+}
+
+/* ---- 手機（條件和攻略資料的 MOBILE_QUERY 逐字相同：窄螢幕，或橫放的矮視窗）：篩選收進筆數那一行右邊的「篩選」按鈕，
+   展開時才看得到面板（在這一行下面）。收不收由 script.js 的 state.filtersOpen 決定（#filterCard 的 is-collapsed）；這個 @media 以外，按鈕不顯示、面板一直在 ---- */
+@media (max-width: 768px), (max-height: 500px) {
+    /* 一行：筆數靠左、按鈕靠右，順序照 DOM（不用電腦版面的 order）。筆數太長（窄螢幕、日文「N 件見つかりました」）時可以換行，按鈕不縮 */
+    .result-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-3);
+        order: 0;
+    }
+
+    /* margin-left: auto：找不到時筆數加了 .visually-hidden（脫離排版），這一行只剩按鈕，也要留在右邊。
+       內距收小，筆數才有地方：320px 寬、選了 2 個篩選時，英文的「10 dungeons found」與「Filters (2)」並排放得下（照 .btn 的內距會換行）；
+       日文的「10 件見つかりました」本來就放不下，換成兩行 */
+    #filterToggle {
+        display: inline-flex;
+        margin-left: auto;
+        padding: 0 var(--space-3);
+    }
+
+    #filterCard.is-collapsed #filterPanel {
+        display: none;
     }
 }
 
