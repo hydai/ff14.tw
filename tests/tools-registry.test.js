@@ -55,6 +55,7 @@ const EXPECTED = [
     ['lodestone-lookup', 'tools/lodestone-lookup/index.html', '🔍', 'tool_lodestone_title', 'Lodestone 角色查詢'],
     ['timed-gathering', 'tools/timed-gathering/index.html', '⏰', 'tool_timed_gathering_title', '特殊採集時間管理器'],
     ['guide', 'tools/guide/index.html', '📖', 'tool_guide_title', '攻略資料'],
+    ['chocobo-color', 'tools/chocobo-color/index.html', '🐤', 'tool_chocobo_color_title', '陸行鳥染色計算器'],
     ['report-generator', 'tools/report-generator/index.html', '📝', 'tool_report_generator_title', '檢舉模板產生器'],
     ['macro-converter', 'tools/macro-converter/index.html', '🔄', 'tool_macro_converter_title', '巨集轉換器'],
     ['weather-forecast', 'tools/weather-forecast/index.html', '🌤️', 'tool_weather_forecast_title', '天氣預報'],
@@ -62,7 +63,7 @@ const EXPECTED = [
 ];
 // 圖示要和 index.html 的位元組完全相同：🗺️ 是 U+1F5FA U+FE0F，🌤️ 是 U+1F324 U+FE0F
 
-test('ToolsRegistry 依首頁順序列出 13 個工具', () => {
+test('ToolsRegistry 依首頁順序列出 14 個工具', () => {
     assert.deepEqual(ToolsRegistry.tools.map(t => [t.id, t.href, t.icon, t.i18nKey, t.name]), EXPECTED);
     assert.ok(Object.isFrozen(ToolsRegistry.tools));
 });
@@ -100,7 +101,7 @@ test('工具名稱鍵在 common.js 的 zh/en/ja 都有翻譯，zh 與登錄表�
     }
 });
 
-test('index.js 不再定義登錄表的 13 個名稱鍵', () => {
+test('index.js 不再定義登錄表的 14 個名稱鍵', () => {
     for (const lang of LANGS) {
         const keys = translationKeySet(INDEX_FILE, lang);
         assert.ok(keys.size > 0, `解析不到 ${INDEX_FILE} 的 ${lang} 語系，測試可能失效`);
@@ -115,6 +116,7 @@ test('findByPath 以工具目錄比對路徑開頭', () => {
     assert.equal(id('/tools/weather-forecast/index.html'), 'weather-forecast');
     assert.equal(id('/tools/weather-forecast/'), 'weather-forecast');
     assert.equal(id('/tools/guide/chocobo.html'), 'guide');
+    assert.equal(id('/tools/chocobo-color/index.html'), 'chocobo-color');
     assert.equal(id('/tools/weather-forecast-x/'), null);
     assert.equal(id('/tools/unknown/'), null);
     for (const p of ['/', '/index.html', '/about.html', '/changelog.html', '/404.html']) assert.equal(id(p), null);

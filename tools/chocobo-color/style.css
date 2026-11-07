@@ -1,0 +1,419 @@
+/* ==========================================================================
+   陸行鳥染色計算器 — 只寫版面；顏色、圓角、字級一律來自 tokens.css 與共用元件。
+   色塊與水果色點的顏色是資料，由 script.js 設 style.background，這裡只畫形狀。
+   手機（320px）不能左右捲動：放名稱的 grid 欄都寫 minmax(0, 1fr)，名稱放不下就換行，不用 overflow-x
+   ========================================================================== */
+
+.page-header {
+    text-align: center;
+    margin-bottom: var(--space-4);
+}
+
+/* 說明文字換行時兩行的長度接近，第二行不會只剩一兩個字 */
+.page-header .description {
+    text-wrap: balance;
+}
+
+/* 一欄，最寬 760px 置中。欄寫 minmax(0, 1fr)：欄不會被裡面最長的字撐寬 */
+.chocobo-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-4);
+    max-width: 760px;
+    margin: 0 auto;
+}
+
+/* ---------- 選顏色：目前顏色 → 目標顏色 ---------- */
+
+/* 卡片外觀由 .card 提供（.card 是 flex 直排，這裡換成 grid）；兩顆按鈕各佔一欄，中間一個箭頭 */
+.color-pick-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: end;
+    gap: var(--space-2);
+    padding: var(--space-4);
+}
+
+.color-pick {
+    display: grid;
+    gap: var(--space-1);
+    min-width: 0;
+}
+
+.color-pick-label {
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    color: var(--color-muted);
+}
+
+/* 箭頭和按鈕對齊：高度同按鈕的最小高度，貼在格子的底部 */
+.color-pick-arrow {
+    display: flex;
+    align-items: center;
+    min-height: var(--control-md);
+    font-size: var(--text-lg);
+    color: var(--color-muted);
+}
+
+/* 顏色按鈕：外觀像輸入框（色塊、顏色名稱、▾）。名稱放不下就換行，按鈕跟著變高，不截斷也不撐寬；
+   高度寫 min-height 不寫 height，換行時才長得出來 */
+.color-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    width: 100%;
+    min-width: 0;
+    min-height: var(--control-md);
+    padding: var(--space-1) var(--space-3);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    color: var(--color-heading);
+    font: inherit;
+    font-weight: var(--weight-medium);
+    text-align: left;
+    cursor: pointer;
+    transition: background-color var(--duration-base) var(--ease), border-color var(--duration-base) var(--ease), box-shadow var(--duration-base) var(--ease);
+}
+
+.color-btn:hover:not(:disabled) {
+    border-color: var(--color-primary);
+    background: var(--color-surface-2);
+}
+
+.color-btn:focus-visible {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: var(--ring-primary);
+}
+
+.color-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.color-btn-name {
+    flex: 1 1 auto;
+    min-width: 0;
+    line-height: var(--leading-snug);
+    overflow-wrap: anywhere;
+}
+
+.color-btn-caret {
+    flex: none;
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+}
+
+/* 圓形色點：選顏色按鈕裡的色塊與答案裡的水果色點。邊框讓很淡的顏色（素雪白）在白底上也看得到 */
+.color-chip,
+.fruit-dot {
+    display: inline-block;
+    flex: none;
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-full);
+}
+
+.color-chip {
+    width: var(--space-5);
+    height: var(--space-5);
+}
+
+.fruit-dot {
+    width: var(--space-4);
+    height: var(--space-4);
+}
+
+/* ---------- 答案卡 ---------- */
+
+/* 答案卡一開始 hidden（資料載入前不顯示空的框）。.card 設了 display，會蓋過瀏覽器內建的 [hidden]，所以要自己寫 */
+#answerCard[hidden] {
+    display: none;
+}
+
+.answer-card {
+    gap: var(--space-4);
+    padding: var(--space-4);
+}
+
+/* 第一行：共幾顆（大字）、分幾段、已勾幾段（靠右；放不下就換到下一行，仍然靠右） */
+.answer-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-1) var(--space-3);
+}
+
+.answer-total {
+    font-size: var(--text-2xl);
+    font-weight: var(--weight-bold);
+    line-height: var(--leading-tight);
+    color: var(--color-heading);
+}
+
+.answer-segments {
+    color: var(--color-text);
+}
+
+.answer-done {
+    margin-left: auto;
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+/* 要準備：每種水果一個色點加名稱加 ×顆數，放不下就換行 */
+.answer-prepare {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-4);
+    font-size: var(--text-sm);
+}
+
+.answer-prepare-label {
+    font-weight: var(--weight-semibold);
+    color: var(--color-muted);
+}
+
+.answer-fruit {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    color: var(--color-text);
+}
+
+/* 步驟列表前面的一行標籤：標題（餵食順序）用標題色加半粗體，後半句（怎麼照著餵，兩段以上才有）用輔助色，整行 --text-sm。
+   標籤屬於它下面的列表，所以貼著列表：往下的外距是負的，把卡片的 gap（--space-4）收成 --space-1，這一行只多佔一行字加 --space-1 的高度。
+   放不下就換行（320px 的中文與英文會折成兩行），沒有不能折的長字，不會撐寬 */
+.answer-order {
+    margin: 0 0 calc(var(--space-1) - var(--space-4));
+    font-size: var(--text-sm);
+    line-height: var(--leading-snug);
+}
+
+.answer-order-title {
+    font-weight: var(--weight-semibold);
+    color: var(--color-heading);
+}
+
+.answer-order-hint {
+    color: var(--color-muted);
+}
+
+/* 每一段一列，列本身是一欄的 grid：第一行是 label 加勾選框，被跳過的段第二行多一行提醒（.answer-step-warning）。
+   勾選框與 label 疊在第一行的同一格（勾選框垂直置中在 label 那一行，浮在 label 的左內距上，z-index 讓它在 label 上面），
+   label 蓋住整行，點哪裡都能打勾；label 至少 48px 高（手機好點）。label 的欄：段號、色點、名稱（可以縮，長名稱換行）、×顆數 */
+.answer-steps {
+    display: grid;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.answer-step {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    border-top: 1px solid var(--color-border);
+}
+
+.answer-step label {
+    grid-area: 1 / 1;
+    display: grid;
+    grid-template-columns: auto auto minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: var(--space-3);
+    min-height: 48px;
+    padding: var(--space-2) var(--space-1) var(--space-2) calc(var(--space-1) + var(--space-6) + var(--space-3));
+    cursor: pointer;
+}
+
+.answer-check {
+    grid-area: 1 / 1;
+    align-self: center;
+    justify-self: start;
+    z-index: 1;
+    width: var(--space-6);
+    height: var(--space-6);
+    margin: 0 0 0 var(--space-1);
+    accent-color: var(--color-primary);
+    cursor: pointer;
+}
+
+.answer-check:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+.answer-step-no {
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    color: var(--color-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+.answer-step-text {
+    min-width: 0;
+}
+
+.answer-step-name {
+    display: block;
+    font-weight: var(--weight-medium);
+    color: var(--color-heading);
+    overflow-wrap: anywhere;
+}
+
+/* 名稱下面的一行小字：下一段那一列先寫「下一段」，檸檬那一段的「變回沙漠黃」接在後面，同一行；兩樣都沒有的列沒有這一行 */
+.answer-step-sub {
+    display: block;
+    font-size: var(--text-xs);
+    color: var(--color-muted);
+}
+
+.answer-step-next {
+    font-weight: var(--weight-semibold);
+    color: var(--color-primary);
+}
+
+/* 「下一段」後面接著「變回…」而一行放不下時（日文在 390px 就放不下），整句「變回…」換到下一行，不從字中間斷開（只剩一個字掛在第二行）。
+   inline-block 是不可分的一塊：放不進這一行就整塊換行，比這一行還寬時才在塊裡換行 */
+.answer-step-next ~ .answer-step-note {
+    display: inline-block;
+}
+
+.answer-step-count {
+    font-weight: var(--weight-bold);
+    color: var(--color-heading);
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+/* 勾了的那一列變淡（字改灰色，色點半透明），名稱加刪除線 */
+.answer-step.is-done .answer-step-name,
+.answer-step.is-done .answer-step-count {
+    color: var(--color-muted);
+}
+
+.answer-step.is-done .answer-step-name {
+    text-decoration: line-through;
+}
+
+.answer-step.is-done .fruit-dot {
+    opacity: 0.5;
+}
+
+/* 下一段（第一個還沒勾的段）：整列框起來，主色外框加淡底。外框用 outline 往裡畫，不佔版面，下一段換到別列時其他列不會跳動
+   （forced-colors 的高對比模式也看得到）。左右各往外多框 --space-2（負外距加同樣寬的內距），列裡的內容位置和別列一樣，
+   勾選框與 ×顆數才不會貼著外框。列與列之間的灰色上框線會落在外框底下，用 transparent 藏起來，下一列的也一樣，不和外框疊成兩條。
+   淡底上的字：輔助色（--color-muted）在淺色的 --color-primary-tint 上只有 4.42:1，不到 4.5，
+   所以這一列的段號改用主色，小字（檸檬的「變回…」與分隔字）改用內文色 */
+.answer-step.is-next {
+    margin: 0 calc(-1 * var(--space-2));
+    padding: 0 var(--space-2);
+    border-top-color: transparent;
+    border-radius: var(--radius-md);
+    background: var(--color-primary-tint);
+    outline: 2px solid var(--color-primary);
+    outline-offset: -2px;
+}
+
+.answer-step.is-next + .answer-step {
+    border-top-color: transparent;
+}
+
+.answer-step.is-next .answer-step-no {
+    color: var(--color-primary);
+}
+
+.answer-step.is-next .answer-step-sub {
+    color: var(--color-text);
+}
+
+/* 被跳過的段（還沒勾，後面卻有段已經勾了）在 label 下面多一行提醒：警告色的字加淡底與邊框。
+   左邊對齊段號（同 label 的左內距），放不下就換行（兩行的長度接近，第二行不會只剩一兩個字），不撐寬 */
+.answer-step-warning {
+    grid-row: 2;
+    margin: 0 var(--space-1) var(--space-2) calc(var(--space-1) + var(--space-6) + var(--space-3));
+    padding: var(--space-1) var(--space-2);
+    border: 1px solid var(--color-warning-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-warning-tint);
+    color: var(--color-warning-text);
+    font-size: var(--text-sm);
+    line-height: var(--leading-snug);
+    overflow-wrap: anywhere;
+    text-wrap: balance;
+}
+
+/* 另一個做法（小字）；同色與找不到做法時卡片裡只有一行訊息 */
+.answer-alt {
+    margin: 0;
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+}
+
+.answer-message {
+    margin: 0;
+    font-size: var(--text-lg);
+    color: var(--color-heading);
+}
+
+/* 載入失敗：共用的 .error-message 自帶上下外距，在卡片裡不需要 */
+#answerCard .error-message {
+    margin: 0;
+}
+
+/* ---------- 說明與資料來源 ---------- */
+
+.chocobo-notes {
+    display: grid;
+    gap: var(--space-1);
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+}
+
+.chocobo-notes p {
+    margin: 0;
+}
+
+/* ---------- 窄螢幕 ---------- */
+
+/* 480px 以下（手機）：第一個畫面（390×844）要看得到總顆數與每一段，三種語言都一樣。英文與日文的說明、顏色名稱、
+   第一行都比中文長，會把答案往下推，所以：
+   - 兩個選擇器上下排成兩列，每一列左邊是標籤、右邊的按鈕佔滿剩下的寬度，箭頭收起來。.color-pick 用 display: contents，
+     標籤與按鈕直接成為 .color-pick-card 這個兩欄 grid 的格子（DOM 順序不變）：第一欄 auto，兩個標籤共用比較寬的那個的寬度，
+     兩顆按鈕才對得齊；第二欄 minmax(0, 1fr)，放不下的名稱換行，整列不會被撐寬，不會左右捲動
+   - 頁面上方那一句說明視覺上隱藏，空間讓給答案。寫法同 common.css 的 .visually-hidden（螢幕閱讀器照樣讀得到，所以不用 display: none）；
+     原本隔開說明與卡片的下間距也不需要了
+   481px 以上照舊：左右排、說明照常顯示 */
+@media (max-width: 480px) {
+    .page-header {
+        margin-bottom: 0;
+    }
+
+    .page-header .description {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+    }
+
+    .color-pick-card {
+        grid-template-columns: auto minmax(0, 1fr);
+        align-items: center;
+        gap: var(--space-2) var(--space-3);
+    }
+
+    .color-pick {
+        display: contents;
+    }
+
+    .color-pick-arrow {
+        display: none;
+    }
+}

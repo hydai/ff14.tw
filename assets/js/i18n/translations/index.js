@@ -34,6 +34,8 @@ const IndexTranslations = {
 
         tool_guide_desc: 'FF14 新手攻略指南，包含公會、軍階、副本、風脈與探索筆記說明',
 
+        tool_chocobo_color_desc: '選陸行鳥現在和想要的顏色，算出要餵的水果和順序',
+
         tool_report_generator_desc: '快速產生不當行為檢舉的模板文字，協助您進行申訴',
 
         tool_macro_converter_desc: '將 FF14 巨集在繁體中文、英文、日文之間轉換',
@@ -83,6 +85,8 @@ const IndexTranslations = {
 
         tool_guide_desc: 'FF14 beginner guide covering guilds, ranks, dungeons, aether currents, and sightseeing log',
 
+        tool_chocobo_color_desc: 'Pick your chocobo\'s current and wanted colors to get the fruits and the feeding order',
+
         tool_report_generator_desc: 'Quickly generate report templates for reporting inappropriate behavior',
 
         tool_macro_converter_desc: 'Convert FF14 macros between Traditional Chinese, English, and Japanese',
@@ -131,6 +135,8 @@ const IndexTranslations = {
         tool_timed_gathering_desc: 'FF14タイムド採集を検索、リスト、マクロエクスポートで管理',
 
         tool_guide_desc: 'FF14初心者ガイド。FC、GC階級、ダンジョン、風脈、探検手帳を含む',
+
+        tool_chocobo_color_desc: 'チョコボの今の色と目標の色から、与える果物と順番を計算',
 
         tool_report_generator_desc: '不適切な行為の通報テンプレートを素早く作成',
 

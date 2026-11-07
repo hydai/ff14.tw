@@ -29,6 +29,7 @@ const ToolsRegistry = {
         { id: 'lodestone-lookup', href: 'tools/lodestone-lookup/index.html', icon: '🔍', i18nKey: 'tool_lodestone_title', name: 'Lodestone 角色查詢' },
         { id: 'timed-gathering', href: 'tools/timed-gathering/index.html', icon: '⏰', i18nKey: 'tool_timed_gathering_title', name: '特殊採集時間管理器' },
         { id: 'guide', href: 'tools/guide/index.html', icon: '📖', i18nKey: 'tool_guide_title', name: '攻略資料' },
+        { id: 'chocobo-color', href: 'tools/chocobo-color/index.html', icon: '🐤', i18nKey: 'tool_chocobo_color_title', name: '陸行鳥染色計算器' },
         { id: 'report-generator', href: 'tools/report-generator/index.html', icon: '📝', i18nKey: 'tool_report_generator_title', name: '檢舉模板產生器' },
         { id: 'macro-converter', href: 'tools/macro-converter/index.html', icon: '🔄', i18nKey: 'tool_macro_converter_title', name: '巨集轉換器' },
         { id: 'weather-forecast', href: 'tools/weather-forecast/index.html', icon: '🌤️', i18nKey: 'tool_weather_forecast_title', name: '天氣預報' },

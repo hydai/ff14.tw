@@ -218,15 +218,15 @@ function setup({ readyState = 'complete', i18n = false, storage = { getItem: () 
 
 const dispatchLoaded = (dom) => dom.document.dispatchEvent(new dom.window.CustomEvent('DOMContentLoaded'));
 
-test('renderToolList 依登錄表順序列出 13 個工具，站內用根目錄絕對路徑，水晶商城開新分頁', () => {
+test('renderToolList 依登錄表順序列出 14 個工具，站內用根目錄絕對路徑，水晶商城開新分頁', () => {
     const { dom, list } = setup();
     assert.equal(dom.window.i18n, undefined, '不設 window.i18n，名稱顯示登錄表的 zh 名稱');
-    assert.equal(ToolsRegistry.tools.length, 13);
+    assert.equal(ToolsRegistry.tools.length, 14);
 
     dom.window.NotFoundPage.renderToolList(dom.document);
     const links = list.querySelectorAll('a.not-found-tool');
-    assert.equal(links.length, 13);
-    assert.equal(list.children.length, 13, '清單裡只有這 13 個連結（載入時畫過一次，再呼叫不會疊加）');
+    assert.equal(links.length, 14);
+    assert.equal(list.children.length, 14, '清單裡只有這 14 個連結（載入時畫過一次，再呼叫不會疊加）');
 
     assert.equal(links[0].getAttribute('href'), '/tools/mini-cactpot/index.html');
     const last = links[links.length - 1];
@@ -306,7 +306,7 @@ test('工具名稱帶 data-i18n，切換語言時跟著 zh／en／ja 更新，�
         assert.deepEqual(shown(), names(lang), `切到 ${lang}`);
         assert.deepEqual(list.querySelectorAll('.not-found-tool-icon').map((icon) => icon.textContent), ToolsRegistry.tools.map((tool) => tool.icon), `切到 ${lang}，圖示還在`);
         assert.deepEqual(list.querySelectorAll('.not-found-tool-ext').map((mark) => mark.textContent), ['↗'], `切到 ${lang}，↗ 還在`);
-        assert.equal(list.querySelectorAll('a.not-found-tool').length, 13);
+        assert.equal(list.querySelectorAll('a.not-found-tool').length, 14);
     }
 
     // 玩家上次選的是日文：畫出來的當下就是日文名稱，不是先出現中文再換
@@ -319,10 +319,10 @@ test('not-found.js：文件載入中等 DOMContentLoaded 才畫，載入時文�
     const loading = setup({ readyState: 'loading' });
     assert.equal(loading.list.children.length, 0, 'DOMContentLoaded 之前還不畫');
     dispatchLoaded(loading.dom);
-    assert.equal(loading.list.querySelectorAll('a.not-found-tool').length, 13);
+    assert.equal(loading.list.querySelectorAll('a.not-found-tool').length, 14);
 
     const ready = setup({ readyState: 'interactive' });
-    assert.equal(ready.list.querySelectorAll('a.not-found-tool').length, 13);
+    assert.equal(ready.list.querySelectorAll('a.not-found-tool').length, 14);
 
     // 沒有 #notFoundTools 的頁面：載入與呼叫都不丟例外
     const bare = createFakeDom({ url: 'https://ff14.tw/404.html' });
@@ -343,8 +343,8 @@ test('「或直接選一個工具」區塊預設 hidden，畫出至少一個工�
     const loading = setup({ readyState: 'loading' });
     assert.equal(loading.section.hidden, true, 'DOMContentLoaded 之前');
     dispatchLoaded(loading.dom);
-    assert.equal(loading.list.children.length, 13);
-    assert.equal(loading.section.hidden, false, '畫出 13 個工具之後');
+    assert.equal(loading.list.children.length, 14);
+    assert.equal(loading.section.hidden, false, '畫出 14 個工具之後');
 
     // 載入時文件已經就緒：直接畫，區塊同時顯示；重複呼叫不會把它再藏起來
     const ready = setup({ readyState: 'interactive' });
@@ -377,7 +377,7 @@ test('「或直接選一個工具」區塊預設 hidden，畫出至少一個工�
     orphan.document.body.appendChild(orphanList);
     orphan.load('assets/js/components/tools-registry.js');
     assert.doesNotThrow(() => orphan.load(SCRIPT_FILE));
-    assert.equal(orphanList.children.length, 13);
+    assert.equal(orphanList.children.length, 14);
 });
 
 // ---------- 樣式 ----------
