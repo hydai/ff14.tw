@@ -2,6 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const { parseAttrs, sliceElementById } = require('./helpers/html-fragment.js');
 
 const ROOT = path.resolve(__dirname, '..');
 const raw = fs.readFileSync(path.join(ROOT, 'data/dungeons.json'), 'utf8');
@@ -83,6 +84,27 @@ test('類型與版本的筆數', () => {
         '6.x': 57,
         '7.x': 38
     });
+});
+
+// 上面兩份寫死的筆數和 index.html 的按鈕清單各自對得上也不夠：有人把某筆深層迷宮改回顯示並更新筆數，
+// 兩邊都會過，但頁面上沒有那個類型的按鈕，玩家篩不到它。這裡直接拿資料和 index.html 的按鈕對照
+test('顯示中的每一種類型與版本都有篩選按鈕，每一顆按鈕都至少有一筆', () => {
+    const html = fs.readFileSync(path.join(ROOT, 'tools/dungeon-database/index.html'), 'utf8');
+    // 一組按鈕（#typeTags、#expansionTags）裡每一顆 <button> 的 data-* 值，照頁面上的順序；少寫屬性的按鈕列成「(沒有 data-…)」，讓它出現在失敗訊息裡
+    const buttonValues = (groupId, attribute) => [...sliceElementById(html, groupId).matchAll(/<button\b[^>]*>/g)]
+        .map((match) => parseAttrs(match[0])[attribute] ?? `(沒有 ${attribute})`);
+    const check = (what, groupId, attribute, field) => {
+        const buttons = buttonValues(groupId, attribute);
+        const shown = [...new Set(visible.map((dungeon) => dungeon[field]))];
+        const withoutButton = shown.filter((value) => !buttons.includes(value));
+        const withoutDungeon = buttons.filter((value) => !shown.includes(value));
+        const repeated = buttons.filter((value, index) => buttons.indexOf(value) !== index);
+        assert.deepEqual(withoutButton, [], `顯示中的${what}沒有篩選按鈕：${withoutButton.join('、')}`);
+        assert.deepEqual(withoutDungeon, [], `${what}的篩選按鈕沒有任何一筆顯示中的副本：${withoutDungeon.join('、')}`);
+        assert.deepEqual(repeated, [], `${what}的篩選按鈕重複了：${repeated.join('、')}`);
+    };
+    check('類型', 'typeTags', 'data-type', 'type');
+    check('版本', 'expansionTags', 'data-expansion', 'expansion');
 });
 
 test('用語', () => {
