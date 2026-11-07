@@ -49,8 +49,11 @@ const GuideTranslations = {
         guide_chocobo_tool_text: '染色計算器已經獨立成一個工具：選現在和想要的顏色，算出要餵哪些水果、照什麼順序餵。',
         guide_chocobo_tool_link: '打開陸行鳥染色計算器 →',
 
-        // 準備中
-        guide_coming_soon: '本頁面內容準備中，敬請期待！'
+        // 撰寫中
+        guide_pending: '撰寫中',
+        guide_coming_soon: '這一頁還在撰寫中。',
+        guide_dungeon_db_prefix: '想查副本，可以先用',
+        guide_dungeon_db_suffix: '。'
     },
     en: {
         // Page info
@@ -99,8 +102,11 @@ const GuideTranslations = {
         guide_chocobo_tool_text: 'The color calculator is now its own tool: pick the current and wanted colors to see which fruits to feed, in what order.',
         guide_chocobo_tool_link: 'Open the Chocobo Color Calculator →',
 
-        // Coming soon
-        guide_coming_soon: 'This page is under construction. Stay tuned!'
+        // In progress
+        guide_pending: 'In progress',
+        guide_coming_soon: 'This page is still being written.',
+        guide_dungeon_db_prefix: 'To look up dungeons, try the ',
+        guide_dungeon_db_suffix: '.'
     },
     ja: {
         // ページ情報
@@ -149,8 +155,11 @@ const GuideTranslations = {
         guide_chocobo_tool_text: 'カラー計算機は独立したツールになりました。今の色と目標の色を選ぶと、与える果物と順番がわかります。',
         guide_chocobo_tool_link: 'チョコボカラー計算機を開く →',
 
-        // 準備中
-        guide_coming_soon: 'このページは準備中です。お楽しみに！'
+        // 執筆中
+        guide_pending: '執筆中',
+        guide_coming_soon: 'このページは執筆中です。',
+        guide_dungeon_db_prefix: 'ダンジョンを調べるなら',
+        guide_dungeon_db_suffix: 'をどうぞ。'
     }
 };
 
