@@ -46,20 +46,8 @@ const GuideTranslations = {
 
         // 染色計算器
         chocobo_color_calculator: '染色計算器',
-        chocobo_calculator_desc: '選擇目前與目標顏色，計算所需的餵食水果組合。',
-        chocobo_current_color: '目前顏色',
-        chocobo_target_color: '目標顏色',
-        chocobo_calculate: '計算',
-        chocobo_required_fruits: '所需水果',
-        chocobo_show_feeding_order: '顯示餵食順序',
-        chocobo_same_color: '目前顏色與目標顏色相同，無需餵食水果。',
-        chocobo_note_title: '注意：',
-        chocobo_tip_title: '提示：',
-        chocobo_feeding_note: '配方依平均 RGB 效果估算，請依建議順序逐顆餵食，避免 RGB 超出上下限。實際顏色可能需要微調；餵食後需等待 6 小時才能看到變化。',
-        chocobo_no_safe_recipe: '無法找到不超出 RGB 範圍的配方，請嘗試先染成其他顏色。',
-        chocobo_calculator_credit_prefix: '染色計算器的顏色資料來源參考自 ',
-        chocobo_calculator_credit_suffix: '，感謝原作者的貢獻。',
-        chocobo_load_error: '載入顏色資料失敗，請重新整理頁面再試。',
+        guide_chocobo_tool_text: '染色計算器已經獨立成一個工具：選現在和想要的顏色，算出要餵哪些水果、照什麼順序餵。',
+        guide_chocobo_tool_link: '打開陸行鳥染色計算器 →',
 
         // 準備中
         guide_coming_soon: '本頁面內容準備中，敬請期待！'
@@ -108,20 +96,8 @@ const GuideTranslations = {
 
         // Color Calculator
         chocobo_color_calculator: 'Color Calculator',
-        chocobo_calculator_desc: 'Select current and target colors to calculate the required fruit combination.',
-        chocobo_current_color: 'Current Color',
-        chocobo_target_color: 'Target Color',
-        chocobo_calculate: 'Calculate',
-        chocobo_required_fruits: 'Required Fruits',
-        chocobo_show_feeding_order: 'Show Feeding Order',
-        chocobo_same_color: 'Current and target colors are the same. No fruits needed.',
-        chocobo_note_title: 'Note:',
-        chocobo_tip_title: 'Tip:',
-        chocobo_feeding_note: 'Recipes use average RGB effects. Feed one fruit at a time in the suggested order to keep RGB values within their limits. The resulting color may need adjustment; changes appear 6 hours after feeding.',
-        chocobo_no_safe_recipe: 'No recipe within the RGB limits was found. Try an intermediate color first.',
-        chocobo_calculator_credit_prefix: 'Color data sourced from ',
-        chocobo_calculator_credit_suffix: '. Thanks to the original author.',
-        chocobo_load_error: 'Failed to load color data. Please refresh the page and try again.',
+        guide_chocobo_tool_text: 'The color calculator is now its own tool: pick the current and wanted colors to see which fruits to feed, in what order.',
+        guide_chocobo_tool_link: 'Open the Chocobo Color Calculator →',
 
         // Coming soon
         guide_coming_soon: 'This page is under construction. Stay tuned!'
@@ -170,20 +146,8 @@ const GuideTranslations = {
 
         // カラー計算機
         chocobo_color_calculator: 'カラー計算機',
-        chocobo_calculator_desc: '現在と目標の色を選択して、必要な餌の組み合わせを計算します。',
-        chocobo_current_color: '現在の色',
-        chocobo_target_color: '目標の色',
-        chocobo_calculate: '計算',
-        chocobo_required_fruits: '必要な餌',
-        chocobo_show_feeding_order: '餌の順序を表示',
-        chocobo_same_color: '現在の色と目標の色が同じです。餌は必要ありません。',
-        chocobo_note_title: '注意：',
-        chocobo_tip_title: 'ヒント：',
-        chocobo_feeding_note: '平均的なRGB変化量による目安です。RGB値が上下限を超えないよう、推奨順序で1個ずつ与えてください。実際の色は微調整が必要な場合があります。変化は餌やりの6時間後に現れます。',
-        chocobo_no_safe_recipe: 'RGBの範囲内で使える組み合わせが見つかりません。別の色を経由してみてください。',
-        chocobo_calculator_credit_prefix: 'カラーデータは',
-        chocobo_calculator_credit_suffix: 'を参考にしています。原作者に感謝します。',
-        chocobo_load_error: 'カラーデータの読み込みに失敗しました。ページを更新して再試行してください。',
+        guide_chocobo_tool_text: 'カラー計算機は独立したツールになりました。今の色と目標の色を選ぶと、与える果物と順番がわかります。',
+        guide_chocobo_tool_link: 'チョコボカラー計算機を開く →',
 
         // 準備中
         guide_coming_soon: 'このページは準備中です。お楽しみに！'
