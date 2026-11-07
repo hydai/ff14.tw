@@ -19,6 +19,9 @@ const DungeonDatabaseTranslations = {
         dungeon_db_type_filter: '類型',
         dungeon_db_expansion_filter: '版本',
         dungeon_db_clear_filters: '清除篩選',
+        // 手機的「篩選」按鈕：有選篩選時加上選了幾個
+        dungeon_db_filter_toggle: '篩選',
+        dungeon_db_filter_toggle_count: '篩選（{count}）',
 
         // 筆數與顯示更多（_one 只在數字是 1 時用）
         dungeon_db_count_all: '共 {count} 個副本',
@@ -43,7 +46,10 @@ const DungeonDatabaseTranslations = {
 
         // 狀態訊息
         dungeon_db_loading: '載入中...',
+        // 找不到：沒有搜尋字時寫條件，有搜尋字時寫搜尋字（原字，不轉小寫）
         dungeon_db_no_results: '找不到符合條件的副本',
+        dungeon_db_no_results_query: '找不到符合「{query}」的副本',
+        dungeon_db_clear_search: '清除搜尋',
 
         // 資料來源
         dungeon_db_data_source: '資料來源',
@@ -71,6 +77,9 @@ const DungeonDatabaseTranslations = {
         dungeon_db_type_filter: 'Type',
         dungeon_db_expansion_filter: 'Expansion',
         dungeon_db_clear_filters: 'Clear filters',
+        // The "Filters" button on phones: the number of selected filters is added when there are any
+        dungeon_db_filter_toggle: 'Filters',
+        dungeon_db_filter_toggle_count: 'Filters ({count})',
 
         // Counts and show more (_one is used only when the number is 1)
         dungeon_db_count_all: '{count} dungeons',
@@ -95,7 +104,10 @@ const DungeonDatabaseTranslations = {
 
         // Status messages
         dungeon_db_loading: 'Loading...',
+        // Nothing found: names the criteria when there is no search text, the search text (as typed, not lowercased) when there is
         dungeon_db_no_results: 'No dungeons found matching your criteria',
+        dungeon_db_no_results_query: 'No dungeons match "{query}"',
+        dungeon_db_clear_search: 'Clear search',
 
         // Data source
         dungeon_db_data_source: 'Data Source',
@@ -123,6 +135,9 @@ const DungeonDatabaseTranslations = {
         dungeon_db_type_filter: 'タイプ',
         dungeon_db_expansion_filter: 'バージョン',
         dungeon_db_clear_filters: '絞り込みを解除',
+        // スマホの「絞り込み」ボタン：絞り込みを選んでいるときは選んだ数を付ける
+        dungeon_db_filter_toggle: '絞り込み',
+        dungeon_db_filter_toggle_count: '絞り込み（{count}）',
 
         // 件数と「さらに表示」（_one は数が 1 のときだけ使う）
         dungeon_db_count_all: '全 {count} 件',
@@ -147,7 +162,10 @@ const DungeonDatabaseTranslations = {
 
         // ステータスメッセージ
         dungeon_db_loading: '読み込み中...',
+        // 見つからないとき：検索文字がなければ条件、あれば検索文字（入力したまま、小文字にしない）
         dungeon_db_no_results: '条件に一致するダンジョンが見つかりません',
+        dungeon_db_no_results_query: '「{query}」に一致するダンジョンはありません',
+        dungeon_db_clear_search: '検索をクリア',
 
         // データソース
         dungeon_db_data_source: 'データソース',

@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const { createDungeonPage } = require('./helpers/dungeon-page.js');
-const { tagAttrs } = require('./helpers/html-fragment.js');
+const { tagAttrs, sliceElementById } = require('./helpers/html-fragment.js');
 const { translationKeySet, translationValues } = require('./helpers/translation-parsers.js');
 
 const ROOT = path.join(__dirname, '..');
@@ -474,6 +474,290 @@ test('清除篩選', async () => {
     assert.deepEqual(page.consoleErrors, []);
 });
 
+test('手機：篩選收進一顆按鈕，文字寫選了幾個，點一下展開、再點收起', async () => {
+    const page = await createDungeonPage({ mobile: true });
+    assert.equal(page.app.constructor.MOBILE_QUERY, MOBILE_QUERY);
+    const toggle = page.$('filterToggle');
+    const collapsed = () => page.$('filterCard').classList.contains('is-collapsed');
+    assert.equal(toggle.textContent, '篩選');
+    assert.equal(toggle.getAttribute('aria-expanded'), 'false');
+    assert.equal(toggle.getAttribute('aria-controls'), 'filterPanel');
+    assert.ok(collapsed(), '一打開是收起的');
+    assert.equal(page.app.state.filtersOpen, false);
+
+    toggle.click();
+    assert.equal(toggle.getAttribute('aria-expanded'), 'true');
+    assert.ok(!collapsed());
+    assert.equal(page.app.state.filtersOpen, true);
+    assert.equal(toggle.textContent, '篩選', '還沒選篩選，只寫「篩選」');
+
+    page.chip('四人迷宮').click();
+    assert.equal(toggle.textContent, '篩選（1）');
+    page.chip('7.x').click();
+    assert.equal(toggle.textContent, '篩選（2）');
+    assert.equal(toggle.getAttribute('aria-expanded'), 'true', '選篩選不會把面板收起來');
+    assert.ok(!collapsed());
+
+    toggle.click();
+    assert.equal(toggle.getAttribute('aria-expanded'), 'false');
+    assert.ok(collapsed());
+    assert.equal(page.app.state.filtersOpen, false);
+    assert.equal(toggle.textContent, '篩選（2）', '收起來之後數字還在');
+    assert.equal(page.count(), '找到 10 個副本', '收起面板不影響已套用的篩選');
+
+    toggle.click();
+    page.chip('四人迷宮').click();
+    assert.equal(toggle.textContent, '篩選（1）', '取消一個，數字少一');
+    page.chip('7.x').click();
+    assert.equal(toggle.textContent, '篩選', '全部取消，回到只寫「篩選」');
+    assert.equal(page.count(), '共 362 個副本');
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('手機：「篩選」按鈕的文字與數字跟著語言，開合不變', async () => {
+    for (const [lang, plain, counted] of [['en', 'Filters', 'Filters (2)'], ['ja', '絞り込み', '絞り込み（2）']]) {
+        const page = await createDungeonPage({ lang, mobile: true });
+        assert.equal(page.$('filterToggle').textContent, plain, `${lang}：沒選篩選`);
+        page.chip('四人迷宮').click();
+        page.chip('7.x').click();
+        assert.equal(page.$('filterToggle').textContent, counted, `${lang}：選了兩個`);
+    }
+
+    // 換語言時頁面先照 data-i18n 重新翻譯（按鈕變成沒有數字的字），語言監聽再重畫：數字與開合都留著
+    const page = await createDungeonPage({ mobile: true });
+    page.$('filterToggle').click();
+    page.chip('四人迷宮').click();
+    page.chip('7.x').click();
+    page.setLang('en');
+    assert.equal(page.$('filterToggle').textContent, 'Filters (2)');
+    assert.equal(page.$('filterToggle').getAttribute('aria-expanded'), 'true');
+    assert.ok(!page.$('filterCard').classList.contains('is-collapsed'));
+    page.setLang('ja');
+    assert.equal(page.$('filterToggle').textContent, '絞り込み（2）');
+    page.setLang('zh');
+    assert.equal(page.$('filterToggle').textContent, '篩選（2）');
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('跨過斷點變成手機版面：焦點在篩選面板裡就展開，其餘維持收起', async () => {
+    const inPanel = await createDungeonPage({ mobile: false });
+    const chip = inPanel.chip('四人迷宮');
+    chip.focus();
+    isSame(inPanel.document.activeElement, chip, '前提：焦點在面板裡的按鈕上');
+    inPanel.setMobile(true);
+    assert.equal(inPanel.$('filterToggle').getAttribute('aria-expanded'), 'true');
+    assert.ok(!inPanel.$('filterCard').classList.contains('is-collapsed'));
+    assert.equal(inPanel.app.state.filtersOpen, true);
+    isSame(inPanel.document.activeElement, chip, '焦點還在那顆按鈕上');
+    inPanel.setMobile(false);
+    assert.equal(inPanel.$('filterToggle').getAttribute('aria-expanded'), 'true', '變回電腦版面不改開合');
+    inPanel.$('searchInput').focus();
+    inPanel.setMobile(true);
+    assert.equal(inPanel.$('filterToggle').getAttribute('aria-expanded'), 'true', '焦點不在面板裡，再變成手機版面也不會收起，開合是記著的');
+
+    // 面板裡的「清除篩選」也算面板裡
+    const inClear = await createDungeonPage({ mobile: false });
+    inClear.$('clearFilters').focus();
+    inClear.setMobile(true);
+    assert.equal(inClear.$('filterToggle').getAttribute('aria-expanded'), 'true');
+    isSame(inClear.document.activeElement, inClear.$('clearFilters'));
+
+    // 焦點在搜尋框（面板外）：照舊收起，焦點不動
+    const inSearch = await createDungeonPage({ mobile: false });
+    inSearch.$('searchInput').focus();
+    inSearch.setMobile(true);
+    assert.equal(inSearch.$('filterToggle').getAttribute('aria-expanded'), 'false');
+    assert.ok(inSearch.$('filterCard').classList.contains('is-collapsed'));
+    assert.equal(inSearch.app.state.filtersOpen, false);
+    isSame(inSearch.document.activeElement, inSearch.$('searchInput'));
+
+    // 沒有焦點：照舊收起
+    const nowhere = await createDungeonPage({ mobile: false });
+    nowhere.setMobile(true);
+    assert.equal(nowhere.$('filterToggle').getAttribute('aria-expanded'), 'false');
+    assert.deepEqual(inPanel.consoleErrors.concat(inClear.consoleErrors, inSearch.consoleErrors, nowhere.consoleErrors), []);
+});
+
+test('找不到：標題與按鈕照條件，清除搜尋與清除篩選都把焦點放回搜尋框', async () => {
+    const page = await createDungeonPage();
+    const none = page.$('noResults');
+    const title = () => page.$('noResultsTitle').textContent;
+    // [清除搜尋, 清除篩選] 各自有沒有顯示
+    const shown = () => [!page.$('clearSearch').hidden, !page.$('clearFiltersEmpty').hidden];
+    assert.equal(none.hidden, true, '有副本的時候不顯示');
+
+    // 只有搜尋字
+    page.type('Sastasha');
+    page.runTimeouts();
+    assert.equal(none.hidden, false);
+    assert.equal(title(), '找不到符合「Sastasha」的副本');
+    assert.deepEqual(shown(), [true, false]);
+    assert.equal(page.count(), '找到 0 個副本');
+    assert.equal(page.$('dungeonList').hidden, true);
+    assert.equal(page.$('showMore').hidden, true);
+    page.$('clearSearch').focus();
+    page.$('clearSearch').click();
+    assert.equal(page.$('searchInput').value, '');
+    assert.equal(page.count(), '共 362 個副本');
+    assert.equal(none.hidden, true);
+    assert.equal(page.$('dungeonList').hidden, false);
+    assert.equal(page.rows().length, 30);
+    isSame(page.document.activeElement, page.$('searchInput'), '按鈕隨空狀態收起，焦點回到搜尋框');
+
+    // 只有篩選
+    page.chip('絕境戰').click();
+    page.chip('2.x').click();
+    assert.equal(none.hidden, false);
+    assert.equal(title(), '找不到符合條件的副本');
+    assert.deepEqual(shown(), [false, true]);
+    assert.equal(page.count(), '找到 0 個副本');
+    page.$('clearFiltersEmpty').focus();
+    page.$('clearFiltersEmpty').click();
+    assert.equal(page.chip('絕境戰').getAttribute('aria-pressed'), 'false');
+    assert.equal(page.chip('2.x').getAttribute('aria-pressed'), 'false');
+    assert.ok(!page.chip('絕境戰').classList.contains('active') && !page.chip('2.x').classList.contains('active'));
+    assert.equal(page.count(), '共 362 個副本');
+    assert.equal(none.hidden, true);
+    isSame(page.document.activeElement, page.$('searchInput'), '焦點回到搜尋框');
+
+    // 搜尋字與篩選都有：標題寫搜尋字，兩顆按鈕都在
+    page.type('Sastasha');
+    page.runTimeouts();
+    page.chip('四人迷宮').click();
+    assert.equal(none.hidden, false);
+    assert.equal(title(), '找不到符合「Sastasha」的副本');
+    assert.deepEqual(shown(), [true, true]);
+    // 只清篩選：搜尋字還在，還是找不到，只剩「清除搜尋」
+    page.$('clearFiltersEmpty').click();
+    assert.equal(page.chip('四人迷宮').getAttribute('aria-pressed'), 'false');
+    assert.equal(page.$('searchInput').value, 'Sastasha', '只清篩選，不清搜尋字');
+    assert.equal(none.hidden, false);
+    assert.equal(title(), '找不到符合「Sastasha」的副本');
+    assert.deepEqual(shown(), [true, false]);
+    isSame(page.document.activeElement, page.$('searchInput'));
+    page.$('clearSearch').click();
+    assert.equal(none.hidden, true);
+    assert.equal(page.count(), '共 362 個副本');
+
+    // 有結果的搜尋或篩選不顯示
+    page.type('俾斯麥');
+    page.runTimeouts();
+    page.chip('8人討伐殲滅戰').click();
+    assert.equal(page.count(), '找到 2 個副本');
+    assert.equal(none.hidden, true);
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('找不到：標題的搜尋字用搜尋框去掉前後空白的原字，三種語言', async () => {
+    const page = await createDungeonPage();
+    const title = () => page.$('noResultsTitle').textContent;
+    page.type('  SASTASHA  ');
+    page.runTimeouts();
+    assert.equal(title(), '找不到符合「SASTASHA」的副本', '去掉前後空白、不轉小寫');
+    assert.equal(page.$('clearSearch').textContent, '清除搜尋');
+    assert.equal(page.$('clearFiltersEmpty').textContent, '清除篩選');
+
+    page.setLang('en');
+    assert.equal(title(), 'No dungeons match "SASTASHA"');
+    assert.equal(page.$('clearSearch').textContent, 'Clear search');
+    assert.equal(page.$('clearFiltersEmpty').textContent, 'Clear filters');
+    assert.equal(page.count(), '0 dungeons found');
+    page.setLang('ja');
+    assert.equal(title(), '「SASTASHA」に一致するダンジョンはありません');
+    assert.equal(page.$('clearSearch').textContent, '検索をクリア');
+    assert.equal(page.$('clearFiltersEmpty').textContent, '絞り込みを解除');
+
+    // 英文開著一打開就找不到：標題與按鈕都是英文
+    const en = await createDungeonPage({ lang: 'en' });
+    en.type('Sastasha');
+    en.runTimeouts();
+    assert.equal(en.$('noResultsTitle').textContent, 'No dungeons match "Sastasha"');
+    assert.equal(en.$('clearSearch').textContent, 'Clear search');
+    assert.equal(en.count(), '0 dungeons found');
+
+    // 只有篩選時的標題是原有的 dungeon_db_no_results
+    page.type('');
+    page.runTimeouts();
+    page.chip('絕境戰').click();
+    page.chip('2.x').click();
+    assert.equal(title(), '条件に一致するダンジョンが見つかりません');
+    page.setLang('en');
+    assert.equal(title(), 'No dungeons found matching your criteria');
+    page.setLang('zh');
+    assert.equal(title(), '找不到符合條件的副本');
+
+    // 搜尋字是文字，不會被當成標記，也不會碰 {參數}
+    page.chip('絕境戰').click();
+    page.chip('2.x').click();
+    for (const query of ['<b>x</b>', '{count} $& {query}']) {
+        page.type(query);
+        page.runTimeouts();
+        assert.equal(title(), `找不到符合「${query}」的副本`);
+        assert.equal(page.$('noResultsTitle').children.length, 0, '標題裡只有文字');
+    }
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('找不到：只在載入完、真的沒有符合時顯示；載入失敗只顯示錯誤訊息', async () => {
+    const page = await createDungeonPage({ fetchFails: true });
+    assert.equal(page.$('noResults').hidden, true);
+    page.chip('絕境戰').click();
+    page.type('Sastasha');
+    page.runTimeouts();
+    assert.equal(page.$('noResults').hidden, true, '載入失敗時搜尋與篩選都不會冒出找不到的畫面');
+    assert.equal(page.$('loadError').hidden, false);
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('清除搜尋：取消還沒跑的延遲搜尋，之後不會把舊的字套回來', async () => {
+    const page = await createDungeonPage();
+    page.type('Sastasha');
+    page.runTimeouts();
+    assert.equal(page.$('noResults').hidden, false);
+    page.type('Sastashaa');
+    assert.deepEqual(page.pendingDelays(), [300], '前提：還有一個沒跑的延遲搜尋');
+    page.$('clearSearch').click();
+    assert.deepEqual(page.pendingDelays(), [], '還沒跑的延遲搜尋取消了');
+    page.runTimeouts();
+    assert.equal(page.count(), '共 362 個副本');
+    assert.equal(page.$('searchInput').value, '');
+    assert.equal(page.$('noResults').hidden, true);
+    assert.equal(page.rows().length, 30);
+    assert.equal(page.app.state.query, '');
+    assert.deepEqual(page.consoleErrors, []);
+
+    // 直接呼叫也一樣：清掉搜尋框、立刻套用、焦點到搜尋框
+    page.type('Sastasha');
+    page.runTimeouts();
+    page.app.clearSearch();
+    assert.equal(page.$('searchInput').value, '');
+    assert.equal(page.count(), '共 362 個副本');
+    assert.deepEqual(page.pendingDelays(), []);
+    isSame(page.document.activeElement, page.$('searchInput'));
+});
+
+test('手機：面板收起來時，找不到的畫面照樣能清掉篩選，「篩選」的數字跟著歸零', async () => {
+    const page = await createDungeonPage({ mobile: true });
+    page.$('filterToggle').click();
+    page.chip('絕境戰').click();
+    page.chip('2.x').click();
+    page.$('filterToggle').click();
+    assert.equal(page.$('filterToggle').textContent, '篩選（2）');
+    assert.equal(page.$('filterToggle').getAttribute('aria-expanded'), 'false');
+    assert.equal(page.$('noResults').hidden, false);
+    assert.equal(page.$('noResultsTitle').textContent, '找不到符合條件的副本');
+    assert.equal(page.$('clearFiltersEmpty').hidden, false);
+
+    page.$('clearFiltersEmpty').click();
+    assert.equal(page.$('filterToggle').textContent, '篩選');
+    assert.equal(page.$('filterToggle').getAttribute('aria-expanded'), 'false', '面板還是收起的');
+    assert.ok(page.$('filterCard').classList.contains('is-collapsed'));
+    assert.equal(page.count(), '共 362 個副本');
+    assert.equal(page.$('noResults').hidden, true);
+    isSame(page.document.activeElement, page.$('searchInput'));
+    assert.deepEqual(page.consoleErrors, []);
+});
+
 test('切換語言：文字換、展開與已列出的筆數不變、焦點留在同一個副本', async () => {
     const page = await createDungeonPage();
     page.$('showMore').click();
@@ -690,6 +974,67 @@ test('index.html：類型與版本按鈕', () => {
     }
 });
 
+test('index.html：「篩選」按鈕與找不到的空狀態', () => {
+    // 篩選按鈕：在搜尋列裡、搜尋框右邊；一開始是收起的，和程式的預設一致（手機第一個畫面不會先展開再收起）
+    const searchRow = HTML.slice(HTML.indexOf('class="search-row"'), HTML.indexOf('class="filter-panel"'));
+    assert.ok(searchRow.includes('id="filterToggle"'), '「篩選」在 .search-row 裡');
+    assert.ok(searchRow.indexOf('id="searchInput"') < searchRow.indexOf('id="filterToggle"'), '「篩選」在搜尋框右邊');
+    assert.match(openTag('filterToggle'), /^<button\b/);
+    const toggle = tagAttrs(HTML, 'filterToggle');
+    assert.equal(toggle.type, 'button');
+    assert.equal(toggle.class, 'btn');
+    assert.equal(toggle['aria-expanded'], 'false');
+    assert.equal(toggle['aria-controls'], 'filterPanel');
+    assert.equal(toggle['data-i18n'], 'dungeon_db_filter_toggle', '載入前的字照語言，載入後由程式加上數字');
+    assert.equal(HTML.match(/<button\b[^>]*\sid="filterToggle"[^>]*>([^<]*)<\/button>/)[1], '篩選');
+    assert.match(tagAttrs(HTML, 'filterCard').class, /(?:^|\s)is-collapsed(?:\s|$)/, '#filterCard 一開始就是收起的');
+    assert.ok(tagAttrs(HTML, 'filterPanel'), '#filterPanel 存在');
+
+    // 找不到：在列表後面，一開始 hidden；標題一個 p，兩顆按鈕各自 hidden
+    assert.match(openTag('noResults'), /^<div\b/);
+    assert.equal(tagAttrs(HTML, 'noResults').class, 'empty-state');
+    assert.match(openTag('noResults'), /\shidden[\s>]/);
+    assert.ok(HTML.indexOf('id="dungeonList"') < HTML.indexOf('id="noResults"'), '#noResults 在 #dungeonList 後面');
+    assert.match(openTag('noResultsTitle'), /^<p\b/);
+    assert.equal(tagAttrs(HTML, 'noResultsTitle').class, 'empty-state-title');
+    assert.ok(!/\sdata-i18n=/.test(openTag('noResultsTitle')), '標題要代入搜尋字，由程式填');
+    const empty = sliceElementById(HTML, 'noResults');
+    assert.ok(empty.indexOf('id="noResultsTitle"') < empty.indexOf('id="clearSearch"') && empty.indexOf('id="clearSearch"') < empty.indexOf('id="clearFiltersEmpty"'));
+    for (const [id, key] of [['clearSearch', 'dungeon_db_clear_search'], ['clearFiltersEmpty', 'dungeon_db_clear_filters']]) {
+        assert.match(openTag(id), /^<button\b/);
+        assert.equal(tagAttrs(HTML, id).type, 'button');
+        assert.equal(tagAttrs(HTML, id).class, 'btn');
+        assert.equal(tagAttrs(HTML, id)['data-i18n'], key);
+        assert.match(openTag(id), /\shidden[\s>]/, `#${id} 預設 hidden`);
+        assert.ok(empty.includes(`id="${id}"`), `#${id} 在 #noResults 裡`);
+    }
+});
+
+test('style.css：手機的「篩選」按鈕與收起的面板、找不到的空狀態', () => {
+    // 手機版面的條件和攻略資料的 MOBILE_QUERY 逐字相同
+    assert.equal(read('tools/guide/sidebar-template.js').match(/MOBILE_QUERY:\s*'([^']*)'/)[1], MOBILE_QUERY);
+
+    // 電腦版面（@media 外）看不到「篩選」，面板也不會因為 is-collapsed 收起
+    assert.match(declarations('#filterToggle', BASE_CSS), /(?:^|[\s;])display:\s*none;/, '電腦版面看不到「篩選」');
+    assert.equal(declarations('#filterCard.is-collapsed #filterPanel', BASE_CSS), '', '電腦版面的面板一直在');
+    assert.doesNotMatch(BASE_CSS, /\.is-collapsed/, '@media 外面沒有任何依 is-collapsed 的規則');
+
+    // 手機版面：按鈕顯示，收起的面板 display: none
+    const phone = MEDIA.filter((block) => block.condition === MOBILE_QUERY);
+    assert.equal(phone.length, 1, `有一個 @media ${MOBILE_QUERY}`);
+    assert.match(declarations('#filterToggle', phone[0].body), /(?:^|[\s;])display:\s*inline-flex;/, '手機版面顯示「篩選」');
+    assert.match(declarations('#filterCard.is-collapsed #filterPanel', phone[0].body), /(?:^|[\s;])display:\s*none;/, '手機版面收起時面板 display: none');
+    // 按鈕和旁邊的搜尋框一樣高；搜尋框 .form-control-lg 是 --control-lg
+    assert.match(declarations('#filterToggle', BASE_CSS), /(?:^|[\s;])height:\s*var\(--control-lg\);/);
+    assert.match(declarations('#filterToggle', BASE_CSS), /(?:^|[\s;])min-height:\s*var\(--control-lg\);/);
+
+    // 找不到：.empty-state、.btn 設了 display，要自己寫 [hidden]；很長的搜尋字要能換行
+    for (const selector of ['#noResults', '#clearSearch', '#clearFiltersEmpty']) {
+        assert.match(declarations(`${selector}[hidden]`), /(?:^|[\s;])display:\s*none;/, `style.css 要有 ${selector}[hidden] { display: none; }`);
+    }
+    assert.match(declarations('#noResultsTitle'), /(?:^|[\s;])overflow-wrap:\s*anywhere;/, '很長的搜尋字也要能換行');
+});
+
 test('style.css：用 hidden 切換的元素、換行、一列的格線、展開記號', () => {
     for (const selector of ['#dungeonList', '#showMore', '#loading', '#loadError', '.dungeon-detail']) {
         assert.match(declarations(`${selector}[hidden]`), /(?:^|[\s;])display:\s*none;/, `style.css 要有 ${selector}[hidden] { display: none; }`);
@@ -732,7 +1077,7 @@ test('style.css：用 hidden 切換的元素、換行、一列的格線、展開
 test('翻譯檔：三語的鍵與 {參數} 一致，新文字照規格，不再用的鍵已拿掉', () => {
     const keys = Object.fromEntries(LANGS.map((lang) => [lang, translationKeySet(TRANSLATIONS, lang)]));
     const values = Object.fromEntries(LANGS.map((lang) => [lang, translationValues(TRANSLATIONS, lang)]));
-    assert.ok(keys.zh.size >= 31, `zh 只有 ${keys.zh.size} 個鍵`);
+    assert.ok(keys.zh.size >= 35, `zh 只有 ${keys.zh.size} 個鍵`);
     for (const lang of ['en', 'ja']) {
         assert.deepEqual([...keys[lang]].sort(), [...keys.zh].sort(), `${lang} 的鍵集合和 zh 一樣`);
     }
@@ -749,6 +1094,11 @@ test('翻譯檔：三語的鍵與 {參數} 一致，新文字照規格，不再�
         dungeon_db_type_filter: ['類型', 'Type', 'タイプ'],
         dungeon_db_expansion_filter: ['版本', 'Expansion', 'バージョン'],
         dungeon_db_clear_filters: ['清除篩選', 'Clear filters', '絞り込みを解除'],
+        dungeon_db_filter_toggle: ['篩選', 'Filters', '絞り込み'],
+        dungeon_db_filter_toggle_count: ['篩選（{count}）', 'Filters ({count})', '絞り込み（{count}）'],
+        dungeon_db_clear_search: ['清除搜尋', 'Clear search', '検索をクリア'],
+        dungeon_db_no_results: ['找不到符合條件的副本', 'No dungeons found matching your criteria', '条件に一致するダンジョンが見つかりません'],
+        dungeon_db_no_results_query: ['找不到符合「{query}」的副本', 'No dungeons match "{query}"', '「{query}」に一致するダンジョンはありません'],
         dungeon_db_count_all: ['共 {count} 個副本', '{count} dungeons', '全 {count} 件'],
         dungeon_db_count_all_one: ['共 1 個副本', '1 dungeon', '全 1 件'],
         dungeon_db_count_found: ['找到 {count} 個副本', '{count} dungeons found', '{count} 件見つかりました'],
@@ -774,7 +1124,7 @@ test('翻譯檔：三語的鍵與 {參數} 一致，新文字照規格，不再�
         LANGS.forEach((lang, index) => assert.equal(values[lang].get(key), texts[index], `${lang} 的 ${key}`));
     }
 
-    // 沿用不改的鍵還在（dungeon_db_no_results 留給找不到時的畫面）
+    // 沿用不改的鍵還在（dungeon_db_no_results 是只有篩選、沒有搜尋字時找不到的標題）
     const KEPT = ['dungeon_db_title', 'dungeon_db_header', 'dungeon_db_loading', 'dungeon_db_data_source', 'dungeon_db_data_source_text',
         'dungeon_db_data_source_link', 'dungeon_db_data_source_desc', 'dungeon_db_msg_load_failed', 'dungeon_db_no_results'];
     const REMOVED = ['dungeon_db_level_filter', 'dungeon_db_reset_filters', 'dungeon_db_reward', 'dungeon_db_tombstone', 'dungeon_db_special_drops',

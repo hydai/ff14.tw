@@ -7,6 +7,9 @@
    會蓋過瀏覽器內建的 [hidden] { display: none }，所以要自己寫 */
 #loading[hidden],
 #dungeonList[hidden],
+#noResults[hidden],
+#clearSearch[hidden],
+#clearFiltersEmpty[hidden],
 #showMore[hidden],
 #loadError[hidden],
 .dungeon-detail[hidden] {
@@ -30,6 +33,21 @@
     flex: 1 1 auto;
     min-width: 0;
     appearance: none;
+}
+
+/* 「篩選」按鈕：只有手機版面（最後面的 @media）看得到，電腦版面的面板一直在。和旁邊的搜尋框（.form-control-lg）一樣高；
+   展開時換成主色淡底，看得出面板開著 */
+#filterToggle {
+    display: none;
+    flex: 0 0 auto;
+    height: var(--control-lg);
+    min-height: var(--control-lg);
+}
+
+#filterToggle[aria-expanded="true"] {
+    border-color: var(--color-primary);
+    background: var(--color-primary-tint);
+    color: var(--color-primary);
 }
 
 .filter-panel {
@@ -266,6 +284,20 @@
     color: var(--color-heading);
 }
 
+/* ---- 找不到：外觀由 .empty-state 提供；標題獨佔一行，兩顆按鈕在下面並排，放不下就換行。搜尋字可能很長，標題在任何地方換行 ---- */
+#noResults {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-3);
+}
+
+#noResultsTitle {
+    flex: 1 1 100%;
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
 /* ---- 顯示更多與載入失敗 ---- */
 #showMore {
     display: flex;
@@ -289,8 +321,31 @@
         padding: var(--space-4);
     }
 
+    /* 左右的內距收小：標題與兩顆按鈕才有寬度（320px 寬、中文的兩顆按鈕要並排放得下） */
+    #noResults {
+        padding: var(--space-6) var(--space-4);
+    }
+
     .data-source {
         margin-top: var(--space-7);
+    }
+}
+
+/* ---- 手機（條件和攻略資料的 MOBILE_QUERY 逐字相同：窄螢幕，或橫放的矮視窗）：篩選收進搜尋框旁的「篩選」按鈕，
+   展開時才看得到面板。收不收由 script.js 的 state.filtersOpen 決定（#filterCard 的 is-collapsed）；這個 @media 以外，按鈕不顯示、面板一直在 ---- */
+@media (max-width: 768px), (max-height: 500px) {
+    /* 按鈕的內距與搜尋列的間距收小，搜尋框才有地方：320px 寬、日文選了 2 個篩選時，按鈕 131px、搜尋框 107px（照 .btn 的內距與原本的間距是 147px 與 87px） */
+    .search-row {
+        gap: var(--space-2);
+    }
+
+    #filterToggle {
+        display: inline-flex;
+        padding: 0 var(--space-3);
+    }
+
+    #filterCard.is-collapsed #filterPanel {
+        display: none;
     }
 }
 

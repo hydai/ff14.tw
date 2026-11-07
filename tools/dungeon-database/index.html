@@ -31,11 +31,14 @@
             <h1 class="visually-hidden" data-i18n="dungeon_db_header">副本資料庫</h1>
 
             <div id="dungeonTool">
-                <!-- 搜尋和篩選：類型與版本是資料（中文），按鈕的字不翻譯；選取時 script.js 加 active 並把 aria-pressed 改成 true -->
-                <section class="card filter-card" id="filterCard">
+                <!-- 搜尋和篩選：類型與版本是資料（中文），按鈕的字不翻譯；選取時 script.js 加 active 並把 aria-pressed 改成 true。
+                     is-collapsed 和「篩選」按鈕只在手機版面（style.css 的 @media）有用：面板收在按鈕後面，電腦版面看不到按鈕、面板一直在 -->
+                <section class="card filter-card is-collapsed" id="filterCard">
                     <div class="search-row">
                         <label class="visually-hidden" id="searchLabel" for="searchInput" data-i18n="dungeon_db_search_label">搜尋副本名稱、機制或掉落物</label>
                         <input type="search" id="searchInput" class="form-control form-control-lg" placeholder="搜尋副本、機制或掉落物" data-i18n="dungeon_db_search_placeholder" data-i18n-attr="placeholder">
+                        <!-- 文字（有選篩選時加上數字）、aria-expanded 與 #filterCard 的 is-collapsed 由 script.js 照 state.filtersOpen 同步；一開始是收起的 -->
+                        <button type="button" class="btn" id="filterToggle" aria-expanded="false" aria-controls="filterPanel" data-i18n="dungeon_db_filter_toggle">篩選</button>
                     </div>
 
                     <div class="filter-panel" id="filterPanel">
@@ -80,6 +83,13 @@
 
                 <!-- 副本列表：一列一個 li，由 script.js 畫 -->
                 <ul class="card dungeon-list" id="dungeonList" hidden></ul>
+
+                <!-- 找不到：載入完、真的沒有符合時才顯示。標題與兩顆按鈕由 script.js 照搜尋字與篩選決定：有搜尋字才有「清除搜尋」，有選篩選才有「清除篩選」 -->
+                <div class="empty-state" id="noResults" hidden>
+                    <p class="empty-state-title" id="noResultsTitle"></p>
+                    <button type="button" class="btn" id="clearSearch" data-i18n="dungeon_db_clear_search" hidden>清除搜尋</button>
+                    <button type="button" class="btn" id="clearFiltersEmpty" data-i18n="dungeon_db_clear_filters" hidden>清除篩選</button>
+                </div>
 
                 <button type="button" class="btn" id="showMore" hidden></button>
 

@@ -1,12 +1,16 @@
 // 副本資料庫
 // 規則（取出與排序、搜尋與篩選、命中了哪些欄位、標示用的切段、獎勵文字）在不碰 DOM 的 dungeon-list.js（DungeonList），這裡只管畫面與事件。
-// render() 照 state 重畫看得到的一切：篩選按鈕、筆數、前 shown 列、「顯示更多」、資料來源的筆數。
+// render() 照 state 重畫看得到的一切：篩選按鈕、手機的「篩選」按鈕、筆數、前 shown 列、找不到的畫面、「顯示更多」、資料來源的筆數。
 // 展開與收起（toggleRow）只改那一列，「顯示更多」（showMore）只在後面加新的列，兩者都不重畫已經在的列，焦點才會留在原地。
+// 手機版面（MOBILE_QUERY）把篩選面板收在搜尋框旁的「篩選」按鈕後面（state.filtersOpen）；收不收只有 style.css 的手機 @media 管，電腦版面面板一直在。
+// 找不到（載入完而且 0 個符合）時顯示 #noResults：標題寫搜尋字或「條件」，有搜尋字才有「清除搜尋」，有選篩選才有「清除篩選」。
 // 載入失敗只顯示錯誤訊息，不在 console 留東西。
 class DungeonDatabase {
     static DATA_URL = '../../data/dungeons.json';
     // 搜尋框打字後延遲幾毫秒再套用
     static SEARCH_DELAY = 300;
+    // 手機版面：窄螢幕，或橫放的矮視窗。和 tools/guide/sidebar-template.js 的 MOBILE_QUERY、style.css 的手機 @media 逐字相同
+    static MOBILE_QUERY = '(max-width: 768px), (max-height: 500px)';
 
     // 建一個元素：class 與文字（沒給就不設）
     static element(tag, className, text) {
@@ -24,19 +28,27 @@ class DungeonDatabase {
         this.loadFailed = false;
         // 目前的搜尋與篩選的結果（DungeonList.filter() 的結果，順序同 dungeons）；showMore() 從這裡接著加列
         this.results = [];
-        // query 是套用中的搜尋字（去掉前後空白，沒轉小寫）；types、versions 是選取的篩選；shown 是最多列出幾列；expanded 是展開著的副本 id
-        this.state = { query: '', types: new Set(), versions: new Set(), shown: DungeonList.BATCH, expanded: new Set() };
+        // query 是套用中的搜尋字（去掉前後空白，沒轉小寫）；types、versions 是選取的篩選；shown 是最多列出幾列；expanded 是展開著的副本 id；
+        // filtersOpen 是手機版面的篩選面板展開了沒（預設收起；電腦版面面板一直在，這個值不影響畫面）
+        this.state = { query: '', types: new Set(), versions: new Set(), shown: DungeonList.BATCH, expanded: new Set(), filtersOpen: false };
         // 還沒跑的延遲搜尋
         this.searchTimer = null;
 
         this.elements = {
             searchInput: document.getElementById('searchInput'),
+            filterCard: document.getElementById('filterCard'),
+            filterToggle: document.getElementById('filterToggle'),
+            filterPanel: document.getElementById('filterPanel'),
             typeTags: document.getElementById('typeTags'),
             expansionTags: document.getElementById('expansionTags'),
             clearFilters: document.getElementById('clearFilters'),
             resultCount: document.getElementById('resultCount'),
             loading: document.getElementById('loading'),
             list: document.getElementById('dungeonList'),
+            noResults: document.getElementById('noResults'),
+            noResultsTitle: document.getElementById('noResultsTitle'),
+            clearSearch: document.getElementById('clearSearch'),
+            clearFiltersEmpty: document.getElementById('clearFiltersEmpty'),
             showMore: document.getElementById('showMore'),
             loadError: document.getElementById('loadError'),
             dataCount: document.getElementById('dataCount')
@@ -67,12 +79,19 @@ class DungeonDatabase {
         }
 
         // 清除篩選：只清兩組篩選，不清搜尋字。沒選任何篩選時是 aria-disabled，按了什麼都不做，焦點留在按鈕上
-        this.elements.clearFilters.addEventListener('click', () => {
-            const { types, versions } = this.state;
-            if (types.size === 0 && versions.size === 0) return;
-            types.clear();
-            versions.clear();
-            this.applyConditions();
+        this.elements.clearFilters.addEventListener('click', () => this.clearFilters());
+
+        // 手機的「篩選」按鈕：展開或收起面板
+        this.elements.filterToggle.addEventListener('click', () => this.toggleFilters());
+        // 視窗變成手機版面時，焦點在面板裡就把面板展開（沒有 matchMedia 的環境不處理）
+        const phone = window.matchMedia?.(DungeonDatabase.MOBILE_QUERY);
+        if (phone) phone.addEventListener('change', (event) => this.followViewport(event.matches));
+
+        // 找不到時的出路。兩顆按鈕都隨空狀態收起，焦點不能留在上面：清完回到搜尋框
+        this.elements.clearSearch.addEventListener('click', () => this.clearSearch());
+        this.elements.clearFiltersEmpty.addEventListener('click', () => {
+            this.clearFilters();
+            this.elements.searchInput.focus();
         });
 
         // 列表：點某一列（含裡面的字）展開或收起；事件委派在列表上，重畫之後不必重新綁
@@ -128,6 +147,37 @@ class DungeonDatabase {
         this.render();
     }
 
+    // 清掉兩組篩選（不動搜尋字）並重新套用。本來就沒選任何篩選時什麼都不做
+    clearFilters() {
+        const { types, versions } = this.state;
+        if (types.size === 0 && versions.size === 0) return;
+        types.clear();
+        versions.clear();
+        this.applyConditions();
+    }
+
+    // 清除搜尋：搜尋框清空並立刻套用（applyConditions() 會取消還沒跑的延遲搜尋，之後不會把舊的字套回來），焦點回到搜尋框。
+    // 找不到時按的就是這個：按鈕隨空狀態收起，焦點不能留在上面
+    clearSearch() {
+        this.elements.searchInput.value = '';
+        this.applyConditions();
+        this.elements.searchInput.focus();
+    }
+
+    // 手機的「篩選」按鈕：展開或收起面板。面板跟著 state.filtersOpen，只改開合，不動已套用的篩選
+    toggleFilters() {
+        this.state.filtersOpen = !this.state.filtersOpen;
+        this.renderFilterToggle();
+    }
+
+    // 視窗變成手機版面（isPhone）：焦點在面板裡就把面板展開，不然面板一收起來（display: none）焦點會掉回頁面最上面；
+    // 焦點在別處就照原來的開合。變回電腦版面什麼都不用做：面板一直在，開合照舊記著
+    followViewport(isPhone) {
+        if (!isPhone || !this.elements.filterPanel.contains(document.activeElement)) return;
+        this.state.filtersOpen = true;
+        this.renderFilterToggle();
+    }
+
     // 展開或收起某一列：只改那一列的 aria-expanded 與詳情，不重畫，焦點和 li 都留在原地。不在畫面上的副本什麼都不做
     toggleRow(id) {
         const row = document.getElementById(`dungeon-row-${id}`);
@@ -163,11 +213,12 @@ class DungeonDatabase {
         if (this.loadFailed) elements.loadError.textContent = this.t('dungeon_db_msg_load_failed', '載入副本資料失敗，請重新整理頁面再試。');
 
         if (!this.loaded) {
-            // 還在載入，或載入失敗：沒有列表、筆數與「顯示更多」
+            // 還在載入，或載入失敗：沒有列表、筆數、找不到與「顯示更多」
             elements.resultCount.textContent = '';
             elements.dataCount.textContent = '';
             elements.list.textContent = '';
             elements.list.hidden = true;
+            elements.noResults.hidden = true;
             elements.showMore.hidden = true;
             return;
         }
@@ -183,6 +234,7 @@ class DungeonDatabase {
         for (const dungeon of this.results.slice(0, state.shown)) elements.list.appendChild(this.buildItem(dungeon, query));
         // 列表要先顯示出來：藏起來（display: none）的元素拿不到焦點
         elements.list.hidden = this.results.length === 0;
+        this.renderNoResults(query);
         this.renderShowMore();
 
         if (focusedId !== null) {
@@ -197,7 +249,7 @@ class DungeonDatabase {
         return active && active.classList.contains('dungeon-row') && this.elements.list.contains(active) ? Number(active.dataset.id) : null;
     }
 
-    // 篩選按鈕的選取狀態（active 與 aria-pressed）和「清除篩選」能不能按，都照 state 重設
+    // 篩選按鈕的選取狀態（active 與 aria-pressed）、「清除篩選」能不能按和手機的「篩選」按鈕，都照 state 重設
     renderFilters() {
         const { elements, state } = this;
         for (const [group, key, selected] of [[elements.typeTags, 'type', state.types], [elements.expansionTags, 'expansion', state.versions]]) {
@@ -208,6 +260,32 @@ class DungeonDatabase {
             }
         }
         elements.clearFilters.setAttribute('aria-disabled', state.types.size === 0 && state.versions.size === 0 ? 'true' : 'false');
+        this.renderFilterToggle();
+    }
+
+    // 手機的「篩選」按鈕：文字寫選了幾個篩選（沒選就只寫「篩選」），aria-expanded 與 #filterCard 的 is-collapsed 照 state.filtersOpen。
+    // 載入前後都能開合，所以不靠資料
+    renderFilterToggle() {
+        const { elements, state } = this;
+        const count = state.types.size + state.versions.size;
+        elements.filterToggle.textContent = count > 0
+            ? this.t('dungeon_db_filter_toggle_count', '篩選（{count}）', { count })
+            : this.t('dungeon_db_filter_toggle', '篩選');
+        elements.filterToggle.setAttribute('aria-expanded', state.filtersOpen ? 'true' : 'false');
+        elements.filterCard.classList.toggle('is-collapsed', !state.filtersOpen);
+    }
+
+    // 找不到：載入完而且 0 個符合才顯示。有搜尋字，標題寫搜尋字（去掉前後空白的原字）並有「清除搜尋」；沒有就寫「條件」。有選篩選才有「清除篩選」
+    renderNoResults(query) {
+        const { elements, state } = this;
+        const empty = this.results.length === 0;
+        elements.noResults.hidden = !empty;
+        if (!empty) return;
+        elements.noResultsTitle.textContent = query === ''
+            ? this.t('dungeon_db_no_results', '找不到符合條件的副本')
+            : this.t('dungeon_db_no_results_query', '找不到符合「{query}」的副本', { query: state.query });
+        elements.clearSearch.hidden = query === '';
+        elements.clearFiltersEmpty.hidden = state.types.size === 0 && state.versions.size === 0;
     }
 
     // 筆數：沒有搜尋也沒有篩選寫「共 N 個」，否則寫「找到 N 個」；剛好 1 個用 _one（不判斷語言）
