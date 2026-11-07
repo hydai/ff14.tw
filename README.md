@@ -87,8 +87,21 @@
 - 多語言支援
 
 ### 攻略資料 (`guide/`)
-- FF14 新手攻略指南，8 個子頁面：公會、大國防聯軍、副本、風脈、隊伍系統、探索筆記、專屬陸行鳥（含毛色計算機）、目錄首頁
+- FF14 新手攻略指南，8 個子頁面：部隊、大國防聯軍、副本、風脈、隊伍系統、探索筆記、專屬陸行鳥、目錄首頁
+- 部隊、副本、風脈、探索筆記 4 個主題還在撰寫中：攻略首頁的卡片與目錄都標「撰寫中」，頁面內文只有一句「還在撰寫中」（副本頁多一句連到副本資料庫），搜尋引擎先不收錄（`noindex`），寫好之後再拿掉
+- 手機上（橫放也一樣）目錄收成一行「目錄」，點開才展開，不在框裡捲動
+- 專屬陸行鳥文章裡的染色計算器已經獨立成「陸行鳥染色計算器」，原本的位置（`#color-calculator`）留著一張連到新工具的卡片
 - 多語言支援
+
+### 陸行鳥染色計算器 (`chocobo-color/`)
+- 選陸行鳥現在的顏色和想要的顏色，一打開就是答案（沒有「計算」鈕）：共幾顆、要準備哪些水果各幾顆，以及照什麼順序餵（清單上面一行寫「餵食順序：照 1 → 4 餵，一段餵完再換下一段」）
+- 同時比較「直接調色」和「先餵 1 顆拉札漢檸檬（變回沙漠黃）再調色」，用顆數少的，一樣多就用檸檬；用了檸檬時另外寫直接調色要幾顆。例如魔花綠變回沙漠黃只要 1 顆檸檬（直接調色要 80 顆）
+- 餵食順序合成幾段（連續餵同一種水果算一段，段數最少，每一步都不超出 RGB 0～255），例如沙漠黃 → 素雪白 34 顆分 4 段；每一段可以打勾，第一個還沒勾的段標成「下一段」，跳著勾時被跳過的段會提醒「第 N 段還沒勾：不照順序餵，顏色可能會跑掉」（打勾照樣自由）
+- 記住上次選的顏色和勾到哪一段；全部勾完之後，下次打開時目前顏色自動換成目標顏色（畫面寫「已經是…，不用餵。」）
+- 點「目前顏色」或「目標顏色」按鈕打開色票面板：85 色依色系分 7 組，選目標顏色時每格寫從目前顏色要餵幾顆（已經算進檸檬）；手機上面板蓋滿畫面
+- 瀏覽器封鎖網站資料時照常運作（只是不記住）
+- 多語言支援
+- 資料來源：ffxivchocobo.com（`data/chocobo-colors.json`）
 
 ### 檢舉模板產生器 (`report-generator/`)
 - 快速產生不當行為檢舉的模板文字
@@ -131,7 +144,7 @@ http://localhost:8000
 - Lodestone 角色查詢 (`lodestone-lookup/`) - 使用 logstone API
 - 特殊採集時間管理器 (`timed-gathering/`) - 載入 `/data/timed-gathering.json`
 - 巨集轉換器 (`macro-converter/`) - 載入 `/data/macro-mappings.json`
-- 攻略資料 (`guide/`) - 僅陸行鳥毛色頁面載入 `/data/chocobo-colors.json`
+- 陸行鳥染色計算器 (`chocobo-color/`) - 載入 `/data/chocobo-colors.json`
 
 **可直接開啟的工具：**
 - 仙人微彩計算機
@@ -140,6 +153,7 @@ http://localhost:8000
 - 宗長計算機
 - 檢舉模板產生器
 - 天氣預報
+- 攻略資料（8 個頁面都不載入資料檔）
 
 ### 測試與協作 API
 
@@ -221,13 +235,14 @@ ff14.tw/
 │   ├── add-design-links.mjs
 │   ├── remove-dark-mode-links.mjs
 │   └── replace-noscript-nav.mjs
-├── tests/                  # 53 份 node --test 測試（下列為部分範例）
+├── tests/                  # 55 份 node --test 測試（下列為部分範例）
 │   ├── design-system.test.js
 │   ├── docs.test.js
 │   ├── gathering-materials.test.js
 │   ├── gathering-reminders.test.js
 │   ├── helpers/            # 測試輔助模組（不是測試檔）
 │   │   ├── cactpot-page.js         # 仙人微彩頁的頁面替身
+│   │   ├── chocobo-page.js         # 陸行鳥染色計算器頁的頁面替身
 │   │   ├── gathering-page.js       # 採集頁的頁面替身
 │   │   ├── hollows-page.js         # 宗長計算機頁的頁面替身
 │   │   ├── notification-stubs.js   # Notification／AudioContext 替身
@@ -240,6 +255,7 @@ ff14.tw/
 │   └── timed-gathering-search.test.js
 └── tools/                  # 工具目錄
     ├── character-card/     # 角色卡產生器
+    ├── chocobo-color/      # 陸行鳥染色計算器
     ├── dungeon-database/   # 副本資料庫
     ├── faux-hollows-foxes/ # 宗長計算機
     ├── guide/              # 攻略資料

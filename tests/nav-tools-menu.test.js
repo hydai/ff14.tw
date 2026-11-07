@@ -45,7 +45,7 @@ test('導覽列依序是首頁、工具、修改紀錄、版權聲明，不再�
     assert.equal(nav.getAttribute('id'), 'site-nav', '手機選單的 ☰ 以 aria-controls 指向它');
 
     // 桌機的導覽項目（直屬的 a 與工具按鈕，去掉抽屜用的首頁）依 DOM 順序的 data-i18n 鍵。工具按鈕的鍵在內層 span 上；
-    // 面板裡的 13 個工具連結也是 a，但不是直屬子節點，不算在內
+    // 面板裡的 14 個工具連結也是 a，但不是直屬子節點，不算在內
     const items = nav.children.filter((element) => element.tagName === 'A' || element.classList.contains('nav-tools-toggle'));
     const keyOf = (element) => element.getAttribute('data-i18n') ?? element.querySelector('[data-i18n]').getAttribute('data-i18n');
     assert.deepEqual(
@@ -71,7 +71,7 @@ test('導覽列依序是首頁、工具、修改紀錄、版權聲明，不再�
     );
 });
 
-test('工具按鈕預設收合，面板依登錄表列出 13 個工具，沒有 i18n 時顯示 zh 名稱', () => {
+test('工具按鈕預設收合，面板依登錄表列出 14 個工具，沒有 i18n 時顯示 zh 名稱', () => {
     const { dom, toggle, menu, links } = setupHeader({ basePath: '../../' });
     assert.equal(dom.window.i18n, undefined);
 
@@ -94,9 +94,9 @@ test('工具按鈕預設收合，面板依登錄表列出 13 個工具，沒有 
     assert.equal(caret.textContent, '▾');
     assert.ok(!label.contains(caret));
 
-    // 面板裡只有 13 個工具連結，順序、網址、圖示、名稱都來自登錄表
-    assert.equal(links.length, 13);
-    assert.equal(menu.children.length, 13);
+    // 面板裡只有 14 個工具連結，順序、網址、圖示、名稱都來自登錄表
+    assert.equal(links.length, 14);
+    assert.equal(menu.children.length, 14);
     assert.ok(menu.children.every((child) => child.tagName === 'A' && child.classList.contains('tools-menu-link')));
     assert.equal(links.length, ToolsRegistry.tools.length);
 

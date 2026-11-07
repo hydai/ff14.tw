@@ -60,7 +60,8 @@ test('TARGETS 列出的工具 data-i18n／getI18nText 鍵值存在於 common.js 
         { html: 'tools/dungeon-database/index.html', js: 'tools/dungeon-database/script.js', translations: 'assets/js/i18n/translations/tools/dungeon-database.js', keyPrefix: 'dungeon_db_' },
         { html: 'tools/character-card/index.html', js: 'tools/character-card/script.js', translations: 'assets/js/i18n/translations/tools/character-card.js', keyPrefix: 'char_card_' },
         { html: 'tools/weather-forecast/index.html', js: 'tools/weather-forecast/script.js', translations: 'assets/js/i18n/translations/tools/weather-forecast.js', keyPrefix: 'weather_' },
-        { html: 'tools/macro-converter/index.html', js: 'tools/macro-converter/script.js', translations: 'assets/js/i18n/translations/tools/macro-converter.js', keyPrefix: 'macro_converter_' }
+        { html: 'tools/macro-converter/index.html', js: 'tools/macro-converter/script.js', translations: 'assets/js/i18n/translations/tools/macro-converter.js', keyPrefix: 'macro_converter_' },
+        { html: 'tools/chocobo-color/index.html', js: 'tools/chocobo-color/script.js', translations: 'assets/js/i18n/translations/tools/chocobo-color.js', keyPrefix: 'chocobo_color_' }
     ];
 
     // translationKeySet 來自 tests/helpers/translation-parsers.js（見檔案上方的 require），這裡不再重複定義
@@ -181,9 +182,9 @@ test('tools/**/*.html 與根頁面用到的 data-i18n 鍵值都能在該頁引�
             }
         }
     }
-    // 目前 24 頁裡有 23 頁貢獻了 data-i18n 鍵值（僅 report-generator 尚未使用 i18n，貢獻 0 是預期行為）。
+    // 目前 25 頁裡有 24 頁貢獻了 data-i18n 鍵值（僅 report-generator 尚未使用 i18n，貢獻 0 是預期行為）。
     // 用「精確頁數」取代寬鬆的下限，掃描邏輯若不小心漏頁會立刻在這裡發現，而不必等 checked 累積夠大的落差才觸發。
-    assert.strictEqual(pagesWithKeys, 23, `貢獻 data-i18n 鍵值的頁面數應該是 23（目前 ${pagesWithKeys}），頁面數若有變動需要一併檢視這個守門測試`);
+    assert.strictEqual(pagesWithKeys, 24, `貢獻 data-i18n 鍵值的頁面數應該是 24（目前 ${pagesWithKeys}），頁面數若有變動需要一併檢視這個守門測試`);
     // 門檻是 (頁面,語言,鍵值) 組合數的下限，用來擋住掃描整批漏頁；實際數量會隨頁面與翻譯鍵增加（失敗訊息會印出目前的值），
     // 離門檻太遠時漏掃一兩頁就抓不到，可以跟著調高
     assert.ok(checked > 1100, `檢查的 (頁面,語言,鍵值) 組合數不應該太少（目前 ${checked}）`);

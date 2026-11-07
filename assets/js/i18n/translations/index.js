@@ -32,7 +32,9 @@ const IndexTranslations = {
 
         tool_timed_gathering_desc: '管理 FF14 特殊採集時間，支援搜尋、多清單管理與巨集匯出',
 
-        tool_guide_desc: 'FF14 新手攻略指南，包含公會、軍階、副本、風脈與探索筆記說明',
+        tool_guide_desc: 'FF14 新手攻略指南，包含部隊、軍階、副本、風脈與探索筆記說明',
+
+        tool_chocobo_color_desc: '選陸行鳥現在和想要的顏色，算出要餵的水果和順序',
 
         tool_report_generator_desc: '快速產生不當行為檢舉的模板文字，協助您進行申訴',
 
@@ -49,7 +51,7 @@ const IndexTranslations = {
 
         // 說明下方寫出缺什麼
         status_dungeon_mechanics_pending: '部分副本的機制說明待補',
-        status_guide_pages_pending: '公會、副本、風脈、探索筆記 4 頁撰寫中'
+        status_guide_pages_pending: '部隊、副本、風脈、探索筆記 4 頁撰寫中'
     },
     en: {
         // Page info
@@ -81,7 +83,9 @@ const IndexTranslations = {
 
         tool_timed_gathering_desc: 'Manage FF14 timed gathering nodes with search, lists, and macro export',
 
-        tool_guide_desc: 'FF14 beginner guide covering guilds, ranks, dungeons, aether currents, and sightseeing log',
+        tool_guide_desc: 'FF14 beginner guide covering Free Companies, ranks, dungeons, aether currents, and sightseeing log',
+
+        tool_chocobo_color_desc: 'Pick your chocobo\'s current and wanted colors to get the fruits and the feeding order',
 
         tool_report_generator_desc: 'Quickly generate report templates for reporting inappropriate behavior',
 
@@ -98,7 +102,7 @@ const IndexTranslations = {
 
         // What is missing (below the description)
         status_dungeon_mechanics_pending: 'Some dungeon mechanics are not written yet',
-        status_guide_pages_pending: 'Guild, dungeon, aether current and sightseeing pages are in progress'
+        status_guide_pages_pending: 'Free Company, dungeon, aether current and sightseeing pages are in progress'
     },
     ja: {
         // ページ情報
@@ -132,6 +136,8 @@ const IndexTranslations = {
 
         tool_guide_desc: 'FF14初心者ガイド。FC、GC階級、ダンジョン、風脈、探検手帳を含む',
 
+        tool_chocobo_color_desc: 'チョコボの今の色と目標の色から、与える果物と順番を計算',
+
         tool_report_generator_desc: '不適切な行為の通報テンプレートを素早く作成',
 
         tool_macro_converter_desc: 'FF14マクロを繁体字中国語、英語、日本語間で変換',
@@ -147,7 +153,7 @@ const IndexTranslations = {
 
         // 足りない内容（説明の下）
         status_dungeon_mechanics_pending: '一部ダンジョンのギミック解説は準備中',
-        status_guide_pages_pending: 'ギルド・ダンジョン・風脈・探検手帳の4ページは準備中'
+        status_guide_pages_pending: 'フリーカンパニー・ダンジョン・風脈・探検手帳の4ページは準備中'
     }
 };
 

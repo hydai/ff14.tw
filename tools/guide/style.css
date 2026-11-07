@@ -63,6 +63,11 @@
     color: var(--color-muted);
 }
 
+/* 還沒寫的主題：「撰寫中」標籤在說明下面（標籤本身是共用的 .tag.tag-warning） */
+.guide-card-pending {
+    margin-top: var(--space-3);
+}
+
 /* ---- 版面：目錄側欄 + 文章 ---- */
 .guide-layout {
     display: flex;
@@ -96,13 +101,49 @@
     box-shadow: var(--shadow-md);
 }
 
+/* 目錄是 <details>：電腦預設展開（sidebar-template.js 加 open），標題「目錄」右邊的 ▾ 是看得到、也能按的開關，玩家可以收起來
+   （重新載入或視窗跨過斷點時又展開）；手機（窄螢幕，或橫放的矮視窗，見下面的手機版面）收成一行「目錄」，點開才列出全部。
+   標題就是 <summary>：拿掉瀏覽器的三角形，右邊自己畫 ▸／▾（第二行把替代文字設成空的，螢幕閱讀器不念；不認得這種寫法的瀏覽器略過第二行） */
 .toc-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
     margin: 0 0 var(--space-4);
     padding-bottom: var(--space-2);
     font-size: var(--text-md);
     font-weight: var(--weight-semibold);
     color: var(--color-heading);
     border-bottom: 2px solid var(--color-primary);
+    list-style: none;
+    cursor: pointer;
+}
+
+.toc-title::-webkit-details-marker {
+    display: none;
+}
+
+.toc-title::after {
+    content: '▸';
+    content: '▸' / '';
+    color: var(--color-muted);
+}
+
+.toc-container[open] > .toc-title::after {
+    content: '▾';
+    content: '▾' / '';
+}
+
+.toc-title:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+/* 收起來時只剩這一行：拿掉下面的間距與底線 */
+.toc-container:not([open]) > .toc-title {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom-color: transparent;
 }
 
 .toc-nav {
@@ -138,6 +179,28 @@
     flex-shrink: 0;
     font-size: var(--text-md);
     text-align: center;
+}
+
+/* 名稱與「撰寫中」標籤：放得下就標籤靠右；放不下（窄的側欄、英文名稱長）標籤換到下一行，不把側欄撐出橫向捲軸。
+   標籤不縮（字不換行），所以 label 最窄也有一個標籤那麼寬；名稱照樣自己換行 */
+.toc-label {
+    display: flex;
+    flex: 1;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-1) var(--space-2);
+    min-width: 0;
+}
+
+.toc-pending {
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+/* 目前這一頁是主色底：標籤的柔和底色在深色模式是透明的，疊在淺藍的主色上字會糊掉（對比 1.6:1），改用不透明的卡片底色 */
+.toc-link.active .toc-pending {
+    background: var(--color-surface);
+    border-color: var(--color-surface);
 }
 
 .back-to-landing {
@@ -269,6 +332,11 @@
     border-radius: var(--radius-lg);
 }
 
+/* 副本頁：「撰寫中」那一格下面連到副本資料庫的一句，和上面那一格一樣置中 */
+.coming-soon-link {
+    text-align: center;
+}
+
 /* ---- 上一篇 / 下一篇 ---- */
 .page-nav {
     display: flex;
@@ -344,147 +412,63 @@
     color: var(--color-info-text);
 }
 
-/* ---- 陸行鳥毛色計算機（chocobo.html） ---- */
-.color-calculator {
-    margin: var(--space-6) 0;
-    padding: var(--space-6);
-    background: var(--color-surface-2);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
-}
-
-.color-select-row {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--space-6);
-    flex-wrap: wrap;
-}
-
-.color-select-group {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2);
-}
-
-.color-select-group label {
-    font-size: var(--text-sm);
-    font-weight: var(--weight-semibold);
-    color: var(--color-heading);
-}
-
-.color-select-wrapper {
-    display: flex;
-    align-items: center;
-    gap: var(--space-3);
-}
-
-.color-select-wrapper select {
-    min-width: 180px;
-}
-
-.color-preview {
-    width: 40px;
-    height: 40px;
-    flex-shrink: 0;
-    border: 3px solid var(--color-border);
-    border-radius: var(--radius-full);
-    box-shadow: var(--shadow-sm);
-    transition: background-color var(--duration-slow) var(--ease);
-}
-
-.color-arrow {
-    flex-shrink: 0;
-    font-size: var(--text-2xl);
-    color: var(--color-muted);
-}
-
-.calculator-actions {
-    display: flex;
-    justify-content: center;
-    margin-top: var(--space-6);
-}
-
-.result-area {
-    margin-top: var(--space-6);
-    padding-top: var(--space-6);
-    border-top: 1px solid var(--color-border);
-}
-
-.result-area h4 {
-    margin: 0 0 var(--space-4);
-    font-size: var(--text-lg);
-    color: var(--color-heading);
-}
-
-.fruit-list {
-    list-style: none;
-    padding: 0;
-    margin: 0 0 var(--space-4);
-}
-
-.fruit-item {
-    display: flex;
-    align-items: center;
-    gap: var(--space-3);
-    padding: var(--space-2) 0;
-    border-bottom: 1px solid var(--color-border);
-}
-
-.fruit-item:last-child {
-    border-bottom: none;
-}
-
-.fruit-item.same-color {
-    color: var(--color-muted);
-    font-style: italic;
-}
-
-.fruit-color-dot {
-    width: 16px;
-    height: 16px;
-    flex-shrink: 0;
-    border-radius: var(--radius-full);
-    box-shadow: var(--shadow-sm);
-}
-
-.fruit-name {
-    font-weight: var(--weight-medium);
-    color: var(--color-text);
-}
-
-.fruit-count {
-    font-weight: var(--weight-semibold);
-    color: var(--color-primary);
-}
-
-.feeding-order {
-    margin-top: var(--space-4);
-}
-
-.feeding-order-container {
+/* ---- 連到獨立工具的提示卡（chocobo.html 的染色計算器）：說明在左、按鈕在右，放不下時按鈕換到下一行 ---- */
+.guide-tool-link {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--space-1);
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3) var(--space-5);
 }
 
-/* 顏色由 chocobo-color-calculator.js 以 inline style 指定（果實顏色是資料，不是主題） */
-.feeding-step {
-    padding: var(--space-1) var(--space-2);
-    border-radius: var(--radius-sm);
-    font-size: var(--text-xs);
-    font-weight: var(--weight-medium);
-    box-shadow: var(--shadow-sm);
+.guide-tool-link p {
+    flex: 1 1 16rem;
+    margin: 0;
 }
 
-.feeding-arrow {
-    padding: 0 var(--space-1);
-    font-size: var(--text-md);
-    color: var(--color-muted);
-    user-select: none;
+/* 英文、日文的按鈕字比較長：窄螢幕讓字換行（兩行平均分，箭頭不會單獨掉到第二行），不要把頁面撐出橫向捲軸 */
+.guide-tool-link .btn {
+    height: auto;
+    padding-block: var(--space-2);
+    white-space: normal;
+    text-align: center;
+    text-wrap: balance;
+    line-height: var(--leading-snug);
 }
 
 /* ---- 響應式 ---- */
+/* 手機的版面：窄螢幕（寬度 768px 以下），或橫放的手機（寬度超過 768px 但高度 500px 以下，例如 844×390）。
+   橫放的手機寬度夠，卻很矮：電腦版 sticky 側欄的框最高只有 100vh 減 --space-10（844×390 時 326px），放不下整份目錄，
+   會變成要在框裡捲的框（反目標），所以和窄螢幕一樣單欄排列、目錄收成一行。這個查詢要和 sidebar-template.js 的 MOBILE_QUERY 一模一樣。
+   只放目錄與單欄的版面；字級、內距、卡片格、上一篇／下一篇的堆疊是窄螢幕才需要的密度，留在下面 (max-width: 768px) 的區塊 */
+@media (max-width: 768px), (max-height: 500px) {
+    .guide-layout {
+        flex-direction: column;
+        align-items: stretch;
+        gap: var(--space-6);
+    }
+
+    /* 蓋掉電腦版的 sticky、寬度、max-height 與 overflow-y: auto：目錄整個展開，不是捲動容器，不在框裡捲 */
+    .toc-sidebar {
+        position: relative;
+        top: 0;
+        width: 100%;
+        max-height: none;
+        overflow: visible;
+    }
+
+    /* 目錄收成一行：整行（不只是字）都能點，至少 --control-md 高。收起來時上下的空白小一點，打開後全部展開，不在框裡捲 */
+    .toc-container:not([open]) {
+        padding-block: var(--space-2);
+    }
+
+    .toc-title {
+        min-height: var(--control-md);
+    }
+}
+
+/* 窄螢幕（寬度 768px 以下）才需要的密度：橫放的手機寬度夠，維持電腦版的卡片格、內距、字級與並排的上一篇／下一篇
+   （寬而矮的畫面把按鈕堆成兩排只是多佔高度） */
 @media (max-width: 768px) {
     .landing-title {
         font-size: var(--text-3xl);
@@ -502,24 +486,6 @@
 
     .guide-card {
         padding: var(--space-6);
-    }
-
-    .guide-layout {
-        flex-direction: column;
-        align-items: stretch;
-        gap: var(--space-6);
-    }
-
-    .toc-sidebar {
-        position: relative;
-        top: 0;
-        width: 100%;
-        max-height: none;
-    }
-
-    .toc-container {
-        max-height: 350px;
-        overflow-y: auto;
     }
 
     .guide-article {
@@ -546,19 +512,6 @@
     .page-nav-next {
         width: 100%;
         justify-content: center;
-    }
-
-    .color-select-row {
-        flex-direction: column;
-        gap: var(--space-4);
-    }
-
-    .color-arrow {
-        transform: rotate(90deg);
-    }
-
-    .color-select-wrapper select {
-        min-width: 150px;
     }
 }
 
@@ -590,19 +543,6 @@
 
     .guide-info-card {
         padding: var(--space-3) var(--space-4);
-    }
-
-    .color-calculator {
-        padding: var(--space-4);
-    }
-
-    .color-select-wrapper select {
-        min-width: 120px;
-    }
-
-    .color-preview {
-        width: 32px;
-        height: 32px;
     }
 }
 

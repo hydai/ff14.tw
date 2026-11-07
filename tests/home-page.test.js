@@ -72,9 +72,10 @@ const STATUS_LINES = [
 const NEW_TEXTS = {
     status_intl_only: { zh: '僅限國際版角色', en: 'Global servers only', ja: 'グローバル版キャラクターのみ' },
     status_dungeon_mechanics_pending: { zh: '部分副本的機制說明待補', en: 'Some dungeon mechanics are not written yet', ja: '一部ダンジョンのギミック解説は準備中' },
-    status_guide_pages_pending: { zh: '公會、副本、風脈、探索筆記 4 頁撰寫中', en: 'Guild, dungeon, aether current and sightseeing pages are in progress', ja: 'ギルド・ダンジョン・風脈・探検手帳の4ページは準備中' },
+    status_guide_pages_pending: { zh: '部隊、副本、風脈、探索筆記 4 頁撰寫中', en: 'Free Company, dungeon, aether current and sightseeing pages are in progress', ja: 'フリーカンパニー・ダンジョン・風脈・探検手帳の4ページは準備中' },
     tag_external_site: { zh: '外部網站 ↗', en: 'External site ↗', ja: '外部サイト ↗' },
-    tool_dungeon_database_desc: { zh: '完整的FF14副本資訊查詢，包含獎勵與機制說明', en: 'Complete FF14 dungeon info with rewards and mechanics', ja: 'FF14ダンジョン情報。報酬とギミック説明を収録' }
+    tool_dungeon_database_desc: { zh: '完整的FF14副本資訊查詢，包含獎勵與機制說明', en: 'Complete FF14 dungeon info with rewards and mechanics', ja: 'FF14ダンジョン情報。報酬とギミック説明を収録' },
+    tool_chocobo_color_desc: { zh: '選陸行鳥現在和想要的顏色，算出要餵的水果和順序', en: 'Pick your chocobo\'s current and wanted colors to get the fruits and the feeding order', ja: 'チョコボの今の色と目標の色から、与える果物と順番を計算' }
 };
 
 // ---------- 測試 ----------
@@ -82,10 +83,10 @@ test('首頁沒有即將推出的卡片，相關鍵也已刪除', () => {
     for (const needle of ['coming-soon', 'equipment_analyzer', 'status_coming_soon', 'status_unavailable', 'status-badge']) {
         assert.ok(!html.includes(needle), `index.html 不該再出現 ${needle}`);
     }
-    // 13 張卡都是可點的 <a>，沒有不能點的 <div class="tool-card">
+    // 14 張卡都是可點的 <a>，沒有不能點的 <div class="tool-card">
     const cardTags = [...html.matchAll(/<([a-zA-Z][\w-]*)\b([^>]*)>/g)].filter((m) => classesOf(parseAttrs(m[2])).includes('tool-card'));
-    assert.deepEqual(cardTags.map((m) => m[1]), Array(13).fill('a'));
-    assert.equal(cards.length, 13);
+    assert.deepEqual(cardTags.map((m) => m[1]), Array(14).fill('a'));
+    assert.equal(cards.length, 14);
 
     for (const lang of LANGS) {
         const index = translationKeySet(INDEX_FILE, lang);
@@ -223,7 +224,7 @@ test('工具卡的預設文字和 zh 翻譯相同（切換語言前不會閃一�
             assert.equal(el.text, zh.get(key), `${card.attrs.href} 的 ${key} 預設文字`);
         }
     }
-    assert.ok(checked >= 13 * 2, `只檢查到 ${checked} 個 data-i18n，解析可能失效`);
+    assert.ok(checked >= 14 * 2, `只檢查到 ${checked} 個 data-i18n，解析可能失效`);
 });
 
 test('首頁載入 components/tags.css，卡片用到的 .tag 變體都在裡面', () => {

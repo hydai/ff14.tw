@@ -108,57 +108,13 @@
                         <p>夥伴可裝備頭部、身體、腿部三個部位的陸行鳥裝甲。裝甲僅影響外觀，不會改變能力數值。此外，還可以透過特殊飼料改變陸行鳥的羽毛顏色。</p>
 
                         <h2 id="color-calculator" data-i18n="chocobo_color_calculator">染色計算器</h2>
-                        <p data-i18n="chocobo_calculator_desc">選擇目前與目標顏色，計算所需的餵食水果組合。</p>
-
-                        <div class="color-calculator" id="colorCalculator">
-                            <div class="color-select-row">
-                                <div class="color-select-group">
-                                    <label for="currentColorSelect" data-i18n="chocobo_current_color">目前顏色</label>
-                                    <div class="color-select-wrapper">
-                                        <select id="currentColorSelect" class="form-control"></select>
-                                        <div class="color-preview" id="currentColorPreview"></div>
-                                    </div>
-                                </div>
-
-                                <div class="color-arrow">→</div>
-
-                                <div class="color-select-group">
-                                    <label for="targetColorSelect" data-i18n="chocobo_target_color">目標顏色</label>
-                                    <div class="color-select-wrapper">
-                                        <select id="targetColorSelect" class="form-control"></select>
-                                        <div class="color-preview" id="targetColorPreview"></div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="calculator-actions">
-                                <button class="btn btn-primary" id="calculateBtn">
-                                    <span data-i18n="chocobo_calculate">計算</span>
-                                </button>
-                            </div>
-
-                            <div class="result-area" id="resultArea" style="display: none;">
-                                <h4 data-i18n="chocobo_required_fruits">所需水果</h4>
-                                <ul class="fruit-list" id="fruitList"></ul>
-
-                                <button class="btn btn-secondary btn-sm" id="showOrderBtn" style="display: none;">
-                                    <span data-i18n="chocobo_show_feeding_order">顯示餵食順序</span>
-                                </button>
-
-                                <div class="feeding-order" id="feedingOrder" style="display: none;"></div>
-                            </div>
-                        </div>
-
-                        <div class="guide-info-card guide-note">
-                            <strong data-i18n="chocobo_note_title">注意：</strong><span data-i18n="chocobo_feeding_note">配方依平均 RGB 效果估算，請依建議順序逐顆餵食，避免 RGB 超出上下限。實際顏色可能需要微調；餵食後需等待 6 小時才能看到變化。</span>
-                        </div>
-
-                        <div class="guide-info-card guide-tip">
-                            <strong data-i18n="chocobo_tip_title">提示：</strong><span data-i18n="chocobo_calculator_credit_prefix">染色計算器的顏色資料來源參考自 </span><a href="https://ffxivchocobo.com/" target="_blank" rel="noopener noreferrer">ffxivchocobo.com</a><span data-i18n="chocobo_calculator_credit_suffix">，感謝原作者的貢獻。</span>
+                        <div class="guide-info-card guide-tip guide-tool-link">
+                            <p data-i18n="guide_chocobo_tool_text">染色計算器已經獨立成一個工具：選現在和想要的顏色，算出要餵哪些水果、照什麼順序餵。</p>
+                            <a class="btn" href="../chocobo-color/index.html" data-i18n="guide_chocobo_tool_link">打開陸行鳥染色計算器 →</a>
                         </div>
 
                         <h2>寄養系統</h2>
-                        <p>擁有個人房屋、公會房屋或公寓的玩家，可在陸行鳥廄寄養夥伴進行訓練。</p>
+                        <p>擁有個人房屋、部隊房屋或公寓的玩家，可在陸行鳥廄寄養夥伴進行訓練。</p>
 
                         <h3>寄養功能</h3>
                         <ul>
@@ -168,10 +124,10 @@
                         </ul>
 
                         <h3>走失找回</h3>
-                        <p>若在失去房屋權限前未領回陸行鳥（如退出公會或房屋到期），系統會提示「夥伴陸行鳥走失了」。可前往原住宅區的房屋大叔處找回，房屋大叔通常位於住宅區傳送點附近。</p>
+                        <p>若在失去房屋權限前未領回陸行鳥（如退出部隊或房屋到期），系統會提示「夥伴陸行鳥走失了」。可前往原住宅區的房屋大叔處找回，房屋大叔通常位於住宅區傳送點附近。</p>
 
                         <div class="guide-info-card guide-warning">
-                            <strong>注意：</strong>退出公會或放棄房屋前，請記得先領回寄養的陸行鳥！
+                            <strong>注意：</strong>退出部隊或放棄房屋前，請記得先領回寄養的陸行鳥！
                         </div>
 
                         <h2>夥伴養成</h2>
@@ -255,7 +211,6 @@
     <script src="../../assets/js/components/layout-loader.js"></script>
     <script src="../../assets/js/common.js"></script>
     <script src="sidebar-template.js"></script>
-    <script src="chocobo-color-calculator.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
