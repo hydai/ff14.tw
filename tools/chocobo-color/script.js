@@ -1,7 +1,9 @@
 // 陸行鳥染色計算器
 // 資料（data/chocobo-colors.json）載入完才能選顏色。目前顏色與目標顏色一選好就直接出答案（沒有「計算」鈕）：
 // 算法在不碰 DOM 的 chocobo-solver.js（ChocoboColorSolver.plan），這裡只管畫面與記住。
-// 答案卡（#answerCard）換顏色或換語言時整張重畫；打勾只改那一列的 class、計數與存檔，不重畫，焦點才會留在勾選框上。
+// 答案卡（#answerCard）換顏色或換語言時整張重畫；打勾只改各列的 class（勾了、下一段、被跳過的提醒）、計數與存檔，不重畫，焦點才會留在勾選框上。
+// 選顏色：兩顆顏色按鈕各打開一個色票面板（#colorSheet，共用的 ModalManager 管顯示、Esc、點遮罩與還原焦點）。
+// 面板的內容每次打開都重建（名稱、組名、顆數隨語言與目前顏色而不同）；點一格就換顏色並關掉面板。
 // 記住：localStorage['ff14tw_chocobo_color'] = { from, to, done }。每一次讀寫都包 try/catch，
 // 瀏覽器封鎖網站資料時照常運作，只是不記住。
 class ChocoboColorTool {
@@ -9,6 +11,16 @@ class ChocoboColorTool {
     static DATA_URL = '../../data/chocobo-colors.json';
     // 目標顏色的預設；目前顏色的預設來自資料（data.meta.defaultColor）
     static DEFAULT_TARGET = 'snow-white';
+    // 色票面板的組名：ChocoboColorSolver.colorGroups() 的 key -> [翻譯鍵, 中文預設]
+    static GROUP_LABELS = {
+        white: ['chocobo_color_group_white', '白・灰・黑'],
+        yellow: ['chocobo_color_group_yellow', '黃・橙'],
+        red: ['chocobo_color_group_red', '紅・粉'],
+        brown: ['chocobo_color_group_brown', '棕'],
+        purple: ['chocobo_color_group_purple', '紫'],
+        blue: ['chocobo_color_group_blue', '藍'],
+        green: ['chocobo_color_group_green', '綠']
+    };
 
     // 建一個元素：class 與文字（沒給文字就不設）
     static element(tag, className, text) {
@@ -50,8 +62,19 @@ class ChocoboColorTool {
                 button: document.getElementById('toBtn'),
                 name: document.getElementById('toName'),
                 chip: document.getElementById('toChip')
+            },
+            sheet: {
+                overlay: document.getElementById('colorSheet'),
+                title: document.getElementById('colorSheetTitle'),
+                hint: document.getElementById('colorSheetHint'),
+                groups: document.getElementById('colorGroups'),
+                close: document.getElementById('colorSheetClose')
             }
         };
+
+        // 色票面板：sheetKind 是開著的那一種（'from' 目前顏色、'to' 目標顏色），沒開是 null
+        this.sheetModal = new ModalManager();
+        this.sheetKind = null;
 
         // 打勾：事件委派在答案卡上，整張卡重畫之後不必重新綁
         this.elements.card.addEventListener('change', (event) => {
@@ -59,8 +82,20 @@ class ChocoboColorTool {
             if (box) this.toggleStep(Number(box.dataset.index), box.checked);
         });
 
-        // 切換語言：按鈕、答案卡與朗讀摘要換成新的語言，選的顏色與打勾不變
-        window.i18n.onLanguageChange(() => this.render());
+        // 兩顆顏色按鈕打開面板；色票的點擊委派在 #colorGroups 上（內容每次打開都重建，不必重新綁）；關閉鈕。Esc 與點遮罩由 ModalManager 處理
+        for (const kind of ['from', 'to']) this.elements[kind].button.addEventListener('click', () => this.openSheet(kind));
+        this.elements.sheet.groups.addEventListener('click', (event) => {
+            const swatch = event.target.closest('.color-swatch');
+            if (swatch) this.pickColor(swatch.dataset.color);
+        });
+        this.elements.sheet.close.addEventListener('click', () => this.closeSheet());
+
+        // 切換語言：面板開著就先關掉（焦點回到打開它的按鈕），再讓按鈕、答案卡與朗讀摘要換成新的語言，選的顏色與打勾不變。
+        // 面板的內容每次打開都重建，所以下一次打開就是新的語言
+        window.i18n.onLanguageChange(() => {
+            this.closeSheet();
+            this.render();
+        });
 
         this.ready = this.init();
     }
@@ -172,6 +207,93 @@ class ChocoboColorTool {
         this.markSteps(order);
         this.doneElement.textContent = this.doneText();
         this.announceSkipped(before, order.skipped);
+    }
+
+    // ---------- 色票面板 ----------
+
+    // 打開選顏色的面板。kind 是 'from'（目前顏色）或 'to'（目標顏色）；不認得的種類、資料還沒載入就不理。
+    // 已經開著就先關掉再開，畫面上永遠只有一個面板
+    openSheet(kind) {
+        if (!this.data || (kind !== 'from' && kind !== 'to')) return;
+        this.closeSheet();
+        this.sheetKind = kind;
+        this.renderSheet(kind);
+        // 先把焦點放在按鈕上：Safari 與 macOS 的 Firefox 點按鈕不給焦點，ModalManager 會把 body 記成「開啟前的焦點」，關掉時焦點就沒地方回去
+        this.elements[kind].button.focus();
+        this.sheetModal.show(this.elements.sheet.overlay, { onClose: () => { this.sheetKind = null; } });
+        // ModalManager 開啟時把焦點移到第一個可聚焦的元素（標題列的關閉鈕）：改放在目前選的那一格上
+        this.elements.sheet.groups.querySelector('.color-swatch[aria-pressed="true"]')?.focus();
+    }
+
+    // 關掉面板（ModalManager 把焦點還給打開它的按鈕）；沒開著就什麼都不做
+    closeSheet() {
+        this.sheetModal.hide();
+    }
+
+    // 點一格色票：先關掉面板，再換顏色。點的是目前已選的那一格：setColors() 發現兩個顏色都沒變，什麼都不做，
+    // 就只是關掉面板，打勾不清
+    pickColor(id) {
+        const kind = this.sheetKind;
+        if (kind === null) return;
+        this.closeSheet();
+        this.setColors(kind === 'from' ? id : this.state.from, kind === 'to' ? id : this.state.to);
+    }
+
+    // 標題、提示（只有目標顏色的面板有：目前顏色的面板沒有顆數可以解釋）與 7 組色票
+    renderSheet(kind) {
+        const { title, hint, groups } = this.elements.sheet;
+        const isTarget = kind === 'to';
+        title.textContent = isTarget
+            ? this.t('chocobo_color_pick_target', '選目標顏色')
+            : this.t('chocobo_color_pick_current', '選目前顏色');
+        hint.hidden = !isTarget;
+        hint.textContent = isTarget
+            ? this.t('chocobo_color_sheet_hint', '每格是從目前的{color}要餵幾顆（已經算進檸檬）。', { color: this.nameOf(this.colors.get(this.state.from)) })
+            : '';
+        groups.textContent = '';
+        for (const group of ChocoboColorSolver.colorGroups(this.data)) groups.appendChild(this.buildGroup(group, kind));
+    }
+
+    buildGroup({ key, ids }, kind) {
+        const [labelKey, labelDefault] = ChocoboColorTool.GROUP_LABELS[key];
+        const section = ChocoboColorTool.element('section', 'color-group');
+        section.dataset.group = key;
+        section.appendChild(ChocoboColorTool.element('h3', 'color-group-title', this.t(labelKey, labelDefault)));
+        const swatches = ChocoboColorTool.element('div', 'color-group-swatches');
+        for (const id of ids) swatches.appendChild(this.buildSwatch(this.colors.get(id), kind));
+        section.appendChild(swatches);
+        return section;
+    }
+
+    // 一格色票：色塊（顏色是資料）、名稱，目標顏色的面板多一行顆數。aria-pressed 標出面板對應的那個顏色目前選的是不是這一格。
+    // aria-label 讓螢幕閱讀器念「素雪白，34 顆」；沒有顆數（目前顏色的面板、算不出做法）就只有名稱
+    buildSwatch(color, kind) {
+        const name = this.nameOf(color);
+        const button = ChocoboColorTool.element('button', 'color-swatch');
+        button.type = 'button';
+        button.dataset.color = color.id;
+        button.setAttribute('aria-pressed', color.id === this.state[kind] ? 'true' : 'false');
+
+        const chip = ChocoboColorTool.element('span', 'color-swatch-chip');
+        chip.setAttribute('aria-hidden', 'true');
+        chip.style.background = ChocoboColorTool.rgbCss(color.rgb);
+        button.appendChild(chip);
+        button.appendChild(ChocoboColorTool.element('span', 'color-swatch-name', name));
+
+        const cost = kind === 'to' ? this.costText(color.id) : null;
+        if (cost !== null) button.appendChild(ChocoboColorTool.element('span', 'color-swatch-cost', cost));
+        button.setAttribute('aria-label', cost === null ? name : this.t('chocobo_color_swatch_label', '{color}，{cost}', { color: name, cost }));
+        return button;
+    }
+
+    // 從目前顏色換成這個顏色要餵幾顆（已經算進檸檬）：目前顏色那一格寫「目前」，算不出做法（現在的資料不會有）是 null
+    costText(id) {
+        if (id === this.state.from) return this.t('chocobo_color_now', '目前');
+        const total = ChocoboColorSolver.bestTotal(this.data, this.state.from, id);
+        if (total === null) return null;
+        return total === 1
+            ? this.t('chocobo_color_count_one', '1 顆')
+            : this.t('chocobo_color_count', '{n} 顆', { n: total });
     }
 
     // ---------- 畫面 ----------

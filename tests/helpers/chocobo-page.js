@@ -1,14 +1,15 @@
-// 陸行鳥染色計算器頁的頁面替身，給 tests/chocobo-color-page.test.js 與之後的色票面板測試共用。
+// 陸行鳥染色計算器頁的頁面替身，給 tests/chocobo-color-page.test.js 共用。
 // 這是輔助模組，不是測試檔（只有 tests/*.test.js 會被 node --test 執行）。作法照 tests/helpers/cactpot-page.js 與 gathering-page.js。
 //
 //   const { createChocoboPage } = require('./helpers/chocobo-page.js');
 //   const page = await createChocoboPage({ lang: 'en', stored: { ff14tw_chocobo_color: JSON.stringify({ from, to, done }) }, storageThrows: true, fetchFails: true });
 //   page.answer(); page.check(0); page.app.setColors('soot-black', 'snow-white'); page.setLang('ja'); page.consoleErrors;
+//   page.$('toBtn').click(); page.sheet(); page.swatch('sky-blue').click(); page.key('Escape');
 //   const again = await page.reopen();
 //
-// - 照 index.html 建出 #chocoboTool（mountFromHtml），照 index.html 的 <script src> 順序載入這個工具的翻譯檔與工具目錄自己的每一個腳本
+// - 照 index.html 建出 #chocoboTool 與 #colorSheet（mountFromHtml），照 index.html 的 <script src> 順序載入這個工具的翻譯檔與工具目錄自己的每一個腳本
 //   （src 不含 /：chocobo-solver.js、script.js），最後 new ChocoboColorTool() 並等 app.ready。
-//   頁首與頁尾（layout-loader.js）、common.js、i18n-manager.js 與共用翻譯檔不載入，用到的部分改用下面的替身：
+//   頁首與頁尾（layout-loader.js）、common.js、i18n-manager.js、modal-manager.js 與共用翻譯檔不載入，用到的部分改用下面的替身：
 //   頁面程式只能用 FF14Utils.getI18nText()，不能用 SecurityUtils。頁面的 <h1> 與一句說明在 #chocoboTool 外面，不建出來
 // - i18n 替身從真正的翻譯檔取字（en、ja 找不到時退回 zh，同 I18nManager）並代入 {參數}；setLang(next) 照 I18nManager.setLanguage()
 //   先依 [data-i18n] 重新翻譯頁面，再依序呼叫登記的語言監聽。建立頁面之前先照 lang 翻譯一次（同 DOMContentLoaded 時的順序）
@@ -35,6 +36,14 @@
 //     指到不存在的 id 會丟錯，沒有 aria-describedby 是 null）}；
 //   alt：.answer-alt 的文字；message：.answer-message 的文字
 // - check(i)：點第 i 段的勾選框（#step-i）；找不到時丟錯。reopen()：用同一份 storage 的內容與目前的語言再開一次頁面
+// - ModalManager 替身：fake-dom 不支援真正 ModalManager 用到的 :not() 選擇器（ModalManager 本身由 modal-manager-stack 測試負責）。
+//   這一頁一次只開一個面板，所以沒有堆疊；其餘照 panel-page.js 的 FakeModalManager：show() 記下開啟前的焦點、加 active、
+//   焦點移到 [autofocus] 或第一個看得到的可聚焦元素（都沒有就是視窗本身）；hide() 拿掉 active、還原焦點，再呼叫 onClose。
+//   Escape 由 document 的 keydown 監聽器處理，點遮罩本身（不是裡面的內容）才關，兩者都看選項
+// - sheet() 是色票面板（#colorSheet）目前的樣子：{ open（有 .active）, title, hint（#colorSheetHint 的文字，hidden 與否另外看它的屬性）,
+//   groups: [{ key, title, count }]（每個 section.color-group）, swatches: [{ id, name, cost, pressed }]（每個 button.color-swatch，
+//   cost 是 .color-swatch-cost 的文字，沒有就是 null；pressed 是 aria-pressed="true"） }；
+//   swatch(id) 是那一格的按鈕（找不到時丟錯）；key(鍵, 目標) 在目標（預設是焦點所在的元素）上派送會冒泡的 keydown
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -65,6 +74,17 @@ const DATA_JSON = read('data/chocobo-colors.json');
 const PAGE_SCRIPTS = scriptSources(PAGE_HTML)
     .filter((src) => !src.includes('/') || src === `../../${TRANSLATIONS}`)
     .map((src) => path.posix.join(TOOL_DIR, src));
+
+// ModalManager 替身開啟時移入焦點用：同 ModalManager._getFocusableElements，依 DOM 順序列出看得到的可聚焦元素。
+// fake-dom 不支援逗號與 :not() 選擇器，所以逐一走訪子孫；「看得到」改成自己與祖先都沒有 hidden、也沒有被設成 display: none
+// （真的那個看 offsetWidth），停用的按鈕與 tabindex="-1" 跳過（同 panel-page.js）
+const isFocusable = (element) => (['BUTTON', 'INPUT', 'SELECT', 'TEXTAREA'].includes(element.tagName) && !element.disabled)
+    || (element.tagName === 'A' && element.hasAttribute('href'))
+    || (element.hasAttribute('tabindex') && element.getAttribute('tabindex') !== '-1');
+const isShown = (element) => !element.hidden && element.style.display !== 'none';
+const focusableElements = (root) => root.children.flatMap((child) => (isShown(child)
+    ? [...(isFocusable(child) ? [child] : []), ...focusableElements(child)]
+    : []));
 
 // fake-dom 的元素少了瀏覽器有的東西，建出來時補上（見檔頭說明）
 function addBrowserParts(element, win) {
@@ -110,6 +130,49 @@ async function createChocoboPage({ lang = 'zh', stored = {}, storageThrows = fal
     const createElement = dom.document.createElement.bind(dom.document);
     dom.document.createElement = (tag) => addBrowserParts(createElement(tag), win);
 
+    // ModalManager 替身（見檔頭說明）。openModal 是目前開著的那一個（沒有開就是 null）
+    let openModal = null;
+    class FakeModalManager {
+        constructor() {
+            this.activeModal = null;
+            this.previousFocus = null;
+            this.options = {};
+            this.handleOverlayClick = (event) => {
+                if (event.target === this.activeModal && this.options.closeOnOverlayClick) this.hide();
+            };
+        }
+
+        show(element, options = {}) {
+            if (this.activeModal === element) return;
+            if (this.activeModal) this.hide();
+            this.options = { onClose: null, closeOnOverlayClick: true, closeOnEsc: true, useClass: 'active', ...options };
+            this.activeModal = element;
+            this.previousFocus = dom.document.activeElement;
+            element.classList.add(this.options.useClass);
+            openModal = this;
+            element.addEventListener('click', this.handleOverlayClick);
+            (element.querySelector('[autofocus]') ?? focusableElements(element)[0] ?? element).focus();
+        }
+
+        hide() {
+            if (!this.activeModal) return;
+            const { activeModal: element, options, previousFocus } = this;
+            element.classList.remove(options.useClass);
+            openModal = null;
+            element.removeEventListener('click', this.handleOverlayClick);
+            Object.assign(this, { activeModal: null, previousFocus: null });
+            if (previousFocus && dom.document.body.contains(previousFocus)) previousFocus.focus();
+            options.onClose?.();
+        }
+    }
+    // 同 ModalManager 共用的 document keydown 監聽器：Escape 關掉開著的面板
+    dom.document.addEventListener('keydown', (event) => {
+        if (openModal && event.key === 'Escape' && openModal.options.closeOnEsc) {
+            event.preventDefault();
+            openModal.hide();
+        }
+    });
+
     // 頁面的 console 不印到真的 console：log、error、warn 都照 Node 的 console 用 util.format() 寫成一筆字串記下來
     const record = (...args) => { consoleErrors.push(util.format(...args)); };
     Object.assign(win, {
@@ -138,7 +201,8 @@ async function createChocoboPage({ lang = 'zh', stored = {}, storageThrows = fal
         // 同 assets/js/common.js：翻譯檔有這個鍵就用目前語言的字，沒有就用程式裡的中文預設文字
         FF14Utils: {
             getI18nText: (key, fallback, params) => (win.i18n.hasKey(key) ? win.i18n.getText(key, params) : fill(fallback, params))
-        }
+        },
+        ModalManager: FakeModalManager
     });
     if (storageThrows) {
         vm.runInContext("Object.defineProperty(globalThis, 'localStorage', { get() { throw new Error('SecurityError'); }, configurable: true })", win);
@@ -154,7 +218,7 @@ async function createChocoboPage({ lang = 'zh', stored = {}, storageThrows = fal
         };
     }
 
-    mountFromHtml(dom, PAGE_HTML, ['chocoboTool']);
+    mountFromHtml(dom, PAGE_HTML, ['chocoboTool', 'colorSheet']);
     for (const file of PAGE_SCRIPTS) dom.load(file);
     translatePage();
     const app = vm.runInContext('new ChocoboColorTool()', win);
@@ -198,6 +262,26 @@ async function createChocoboPage({ lang = 'zh', stored = {}, storageThrows = fal
         };
     };
 
+    const sheet = () => {
+        const root = $('colorSheet');
+        return {
+            open: root.classList.contains('active'),
+            title: textOf($('colorSheetTitle')),
+            hint: textOf($('colorSheetHint')),
+            groups: root.querySelectorAll('section.color-group').map((group) => ({
+                key: group.dataset.group,
+                title: textOf(group.querySelector('.color-group-title')),
+                count: group.querySelectorAll('button.color-swatch').length
+            })),
+            swatches: root.querySelectorAll('button.color-swatch').map((button) => ({
+                id: button.dataset.color,
+                name: textOf(button.querySelector('.color-swatch-name')),
+                cost: textOf(button.querySelector('.color-swatch-cost')),
+                pressed: button.getAttribute('aria-pressed') === 'true'
+            }))
+        };
+    };
+
     return {
         window: win,
         document: dom.document,
@@ -205,6 +289,13 @@ async function createChocoboPage({ lang = 'zh', stored = {}, storageThrows = fal
         storage,
         $,
         answer,
+        sheet,
+        swatch(id) {
+            const button = $('colorSheet').querySelector(`button.color-swatch[data-color="${id}"]`);
+            assert.ok(button, `面板裡找不到 ${id} 這一格`);
+            return button;
+        },
+        key: (key, target) => dom.key(key, target),
         check(i) {
             const box = $(`step-${i}`);
             assert.ok(box, `找不到第 ${i} 段的勾選框 #step-${i}`);

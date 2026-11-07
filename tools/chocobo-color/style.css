@@ -376,6 +376,144 @@
     margin: 0;
 }
 
+/* ---------- 選顏色的面板（色票） ---------- */
+
+/* 面板用共用的 .dialog-overlay / .dialog（外觀、遮罩、垂直捲動、焦點陷阱與 Esc）：顯示與隱藏由 ModalManager 加減 .active。
+   共用的 .dialog-overlay 本身是 display: flex，所以預設要自己藏起來。
+   整個面板只有垂直捲動（共用的 .dialog 是 overflow: auto）：色票的欄數隨寬度自動算，名稱放不下就換行，沒有東西會撐寬。
+   z-index：手機上面板蓋滿畫面，頁首的漢堡按鈕（1002）與回到頂部鈕（--z-overlay）不能壓在面板的關閉鈕上，
+   所以疊在它們上面（同寶圖搜尋器的 .map-detail-modal），在 toast 之下 */
+.color-sheet-overlay {
+    display: none;
+    z-index: calc(var(--z-modal) + 2);
+}
+
+.color-sheet-overlay.active {
+    display: flex;
+}
+
+/* 電腦：置中的對話框，最寬 700px，太高時在框裡上下捲。overscroll-behavior：捲到底不會接著捲動後面的頁面。
+   scroll-padding-top：用 Shift+Tab 往上走時，焦點格不能藏在固定的標題列後面（標題列上下內距各 16px、關閉鈕 32px 高、下框線 1px，再留 12px 的空隙） */
+.color-sheet {
+    max-width: 700px;
+    max-height: 80vh;
+    overscroll-behavior: contain;
+    scroll-padding-top: calc(var(--control-sm) + var(--space-4) * 2 + var(--space-3));
+}
+
+/* 標題列捲動時留在最上面；要有不透明的底色，不然底下的色票會從後面透出來 */
+.color-sheet .dialog-header {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--color-surface);
+}
+
+/* 提示（只有目標顏色的面板有）：目前顏色的面板用 hidden 藏起來。保險寫一條，以後有人替提示加了 display 也蓋不掉 hidden */
+.color-sheet-hint {
+    margin: 0;
+    padding: var(--space-3) var(--space-5) 0;
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+}
+
+#colorSheetHint[hidden] {
+    display: none;
+}
+
+/* 7 組色票排成一欄；欄寫 minmax(0, 1fr)，不會被裡面最長的字撐寬 */
+#colorGroups {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-5);
+    padding: var(--space-4) var(--space-5) var(--space-5);
+}
+
+.color-group-title {
+    margin: 0 0 var(--space-2);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    color: var(--color-muted);
+}
+
+/* 一組的色票：欄寬最小 68px，其餘平分，一列放得下幾格就放幾格（320px 寬 3 格、390px 寬 4 格、700px 的對話框 8 格） */
+.color-group-swatches {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(4.25rem, 1fr));
+    gap: var(--space-2);
+}
+
+/* 一格：色塊、名稱、顆數直排。同一列的格子一樣高，顆數靠底對齊；名稱放不下就換行，不截斷 */
+.color-swatch {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    min-width: 0;
+    padding: var(--space-1);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    color: var(--color-heading);
+    font: inherit;
+    text-align: center;
+    cursor: pointer;
+}
+
+.color-swatch:hover {
+    border-color: var(--color-border-strong);
+    background: var(--color-surface-2);
+}
+
+.color-swatch:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 3px;
+}
+
+/* 目前選的那一格：主色邊框加一圈外框，打開面板時焦點也在它上面。要排在 :hover 後面，同優先序時後寫的才贏 */
+.color-swatch[aria-pressed="true"] {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px var(--color-primary);
+}
+
+/* 色塊的顏色是資料，由 script.js 設 style.background。邊框讓很淡（素雪白）或很暗（煤煙黑）的顏色在底色上也看得到 */
+.color-swatch-chip {
+    display: block;
+    height: var(--space-6);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-sm);
+}
+
+.color-swatch-name {
+    font-size: var(--text-xs);
+    line-height: var(--leading-snug);
+    overflow-wrap: anywhere;
+}
+
+.color-swatch-cost {
+    margin-top: auto;
+    font-size: var(--text-xs);
+    line-height: var(--leading-snug);
+    color: var(--color-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+/* 768px 以下（手機與平板）：面板蓋滿畫面，不留遮罩的邊，也不要圓角與邊框。max-height 要放掉，不然上限還是電腦的 80vh；
+   標題列照樣留在最上面，色票在面板裡上下捲 */
+@media (max-width: 768px) {
+    .color-sheet-overlay {
+        padding: 0;
+    }
+
+    .color-sheet {
+        width: 100%;
+        max-width: none;
+        height: 100%;
+        max-height: none;
+        border: 0;
+        border-radius: 0;
+    }
+}
+
 /* ---------- 窄螢幕 ---------- */
 
 /* 480px 以下（手機）：第一個畫面（390×844）要看得到總顆數與每一段，三種語言都一樣。英文與日文的說明、顏色名稱、

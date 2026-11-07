@@ -2,6 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const vm = require('node:vm');
 
 const { createChocoboPage } = require('./helpers/chocobo-page.js');
 const { tagAttrs } = require('./helpers/html-fragment.js');
@@ -9,6 +10,16 @@ const { translationKeySet, translationValues } = require('./helpers/translation-
 
 const ROOT = path.join(__dirname, '..');
 const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
+
+// 色票面板每一格的顆數用 ChocoboColorSolver.bestTotal 算：測試自己載入 chocobo-solver.js，和頁面各載一份，
+// 不靠頁面（它和 plan().total 一致由 chocobo-color-solver.test.js 守住）。chocobo-solver.js 把 ChocoboColorSolver 掛在 window 上，
+// 所以讓 window 指向 context 本身（同 chocobo-color-solver.test.js）
+const { bestTotal, colorGroups } = (() => {
+    const context = vm.createContext({});
+    context.window = context;
+    vm.runInContext(read('tools/chocobo-color/chocobo-solver.js'), context, { filename: 'chocobo-solver.js' });
+    return context.ChocoboColorSolver;
+})();
 
 const LANGS = ['zh', 'en', 'ja'];
 const TRANSLATIONS = 'assets/js/i18n/translations/tools/chocobo-color.js';
@@ -946,6 +957,428 @@ test('窄螢幕：480px 以下兩個選擇器上下排成兩列（左標籤、�
     for (const declaration of site) assert.ok(mine.has(declaration), `說明少了 .visually-hidden 的「${declaration}」`);
 });
 
+// ---------- 色票面板 ----------
+
+const pressedIds = (page) => page.sheet().swatches.filter((swatch) => swatch.pressed).map((swatch) => swatch.id);
+const costOf = (page, id) => page.sheet().swatches.find((swatch) => swatch.id === id).cost;
+const openPanels = (page) => page.document.querySelectorAll('.color-sheet-overlay.active').length;
+
+test('點目標顏色：打開選目標顏色的面板，85 格依色系分 7 組，每格寫從目前顏色要餵幾顆', async () => {
+    const page = await createChocoboPage();
+    assert.equal(page.sheet().open, false, '一打開頁面面板是關著的');
+    assert.equal(openPanels(page), 0);
+
+    page.$('toBtn').click();
+    const sheet = page.sheet();
+    assert.equal(sheet.open, true);
+    assert.equal(sheet.title, '選目標顏色');
+    assert.equal(sheet.hint, '每格是從目前的沙漠黃要餵幾顆（已經算進檸檬）。');
+    assert.equal(page.$('colorSheetHint').hidden, false);
+    assert.deepEqual(sheet.groups.map((group) => [group.key, group.count]),
+        [['white', 7], ['yellow', 8], ['red', 11], ['brown', 17], ['purple', 8], ['blue', 17], ['green', 17]]);
+    assert.equal(sheet.groups[0].title, '白・灰・黑');
+    assert.deepEqual(sheet.groups.map((group) => group.title), ['白・灰・黑', '黃・橙', '紅・粉', '棕', '紫', '藍', '綠']);
+
+    // 85 格，照 colorGroups() 的順序（每組由亮到暗）
+    const expectedIds = Array.from(colorGroups(DATA), (group) => Array.from(group.ids)).flat();
+    assert.equal(expectedIds.length, 85);
+    assert.deepEqual(sheet.swatches.map((swatch) => swatch.id), expectedIds);
+    assert.deepEqual(sheet.swatches.map((swatch) => swatch.name), expectedIds.map((id) => DATA.colors.find((color) => color.id === id).names.zh));
+
+    // 目前選的目標（素雪白）框起來，打開時焦點就在它上面；只有這一格是 pressed
+    assert.deepEqual(pressedIds(page), ['snow-white']);
+    for (const swatch of sheet.swatches) {
+        assert.equal(page.swatch(swatch.id).getAttribute('aria-pressed'), swatch.id === 'snow-white' ? 'true' : 'false', swatch.id);
+    }
+    isSame(page.document.activeElement, page.swatch('snow-white'), '打開時焦點在目前選的那一格');
+
+    // 目前顏色（沙漠黃）那一格寫「目前」；其他 84 格是從沙漠黃到它的最少顆數（已經算進檸檬）
+    assert.equal(sheet.swatches.find((swatch) => swatch.id === 'desert-yellow').cost, '目前');
+    const others = sheet.swatches.filter((swatch) => swatch.id !== 'desert-yellow');
+    assert.equal(others.length, 84);
+    for (const swatch of others) assert.equal(swatch.cost, `${bestTotal(DATA, 'desert-yellow', swatch.id)} 顆`, swatch.id);
+    assert.equal(costOf(page, 'morbol-green'), '80 顆');
+    assert.equal(costOf(page, 'snow-white'), '34 顆', '和答案卡的總顆數一樣');
+
+    // 螢幕閱讀器聽得到名稱與顆數
+    assert.equal(page.swatch('morbol-green').getAttribute('aria-label'), '魔花綠，80 顆');
+    assert.equal(page.swatch('snow-white').getAttribute('aria-label'), '素雪白，34 顆');
+    assert.equal(page.swatch('desert-yellow').getAttribute('aria-label'), '沙漠黃，目前');
+
+    // 色塊的顏色是資料（JS 設的 style.background），只是裝飾
+    for (const color of DATA.colors) {
+        const chip = page.swatch(color.id).querySelector('.color-swatch-chip');
+        assert.equal(chip.style.background, `rgb(${color.rgb.join(', ')})`, color.id);
+        assert.equal(chip.getAttribute('aria-hidden'), 'true');
+        assert.equal(chip.textContent, '');
+        assert.equal(page.swatch(color.id).getAttribute('type'), 'button');
+    }
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('點一格：面板關掉、焦點回到目標按鈕、答案換成新的、勾選清空；再打開時內容是新的', async () => {
+    const page = await createChocoboPage();
+    page.check(0);
+    assert.deepEqual(saved(page).done, [0]);
+
+    page.$('toBtn').click();
+    // 點色票裡的字（不是按鈕本身）也算
+    page.swatch('sky-blue').querySelector('.color-swatch-name').click();
+    assert.equal(page.sheet().open, false);
+    assert.equal(openPanels(page), 0);
+    isSame(page.document.activeElement, page.$('toBtn'), '焦點回到目標按鈕');
+    assert.equal(page.$('toName').textContent, '天空藍');
+    assert.equal(page.$('toChip').style.background, 'rgb(154, 195, 232)');
+    assert.equal(page.$('fromName').textContent, '沙漠黃', '目前顏色沒動');
+    assert.equal(page.answer().total, '共 29 顆');
+    assert.ok(page.answer().steps.every((step) => !step.checked), '換顏色清空打勾');
+    assert.deepEqual(saved(page), { from: 'desert-yellow', to: 'sky-blue', done: [] });
+    assert.equal(page.$('answerAnnounce').textContent, '天空藍：共 29 顆，分 3 段');
+
+    // 每一次打開都重畫：框起來的與焦點都是新的目標
+    page.$('toBtn').click();
+    assert.deepEqual(pressedIds(page), ['sky-blue']);
+    isSame(page.document.activeElement, page.swatch('sky-blue'));
+    assert.equal(costOf(page, 'sky-blue'), '29 顆');
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('點目前已選的那一格：只關掉面板，勾選不清，答案卡也不重畫', async () => {
+    const page = await createChocoboPage();
+    page.check(0);
+    const box = page.$('step-0');
+
+    // 目標面板：素雪白是目前的目標
+    page.$('toBtn').click();
+    page.swatch('snow-white').click();
+    assert.equal(page.sheet().open, false);
+    isSame(page.document.activeElement, page.$('toBtn'), '焦點回到目標按鈕');
+    assert.deepEqual(saved(page), { from: 'desert-yellow', to: 'snow-white', done: [0] });
+    assert.equal(page.answer().steps[0].checked, true);
+    assert.equal(page.answer().done, '已勾 1／4 段');
+    isSame(page.$('step-0'), box, '答案卡沒有重畫');
+
+    // 目前顏色面板：沙漠黃是目前的目前顏色
+    page.$('fromBtn').click();
+    page.swatch('desert-yellow').click();
+    assert.equal(page.sheet().open, false);
+    isSame(page.document.activeElement, page.$('fromBtn'), '焦點回到目前顏色按鈕');
+    assert.deepEqual(saved(page), { from: 'desert-yellow', to: 'snow-white', done: [0] });
+    assert.equal(page.answer().steps[0].checked, true);
+    isSame(page.$('step-0'), box, '答案卡沒有重畫');
+});
+
+test('點目前顏色：標題與提示，色票沒有顆數；選魔花綠之後用檸檬，再開目標面板的顆數從魔花綠算起', async () => {
+    const page = await createChocoboPage();
+    page.$('fromBtn').click();
+    const sheet = page.sheet();
+    assert.equal(sheet.open, true);
+    assert.equal(sheet.title, '選目前顏色');
+    assert.equal(page.$('colorSheetHint').hidden, true, '目前顏色的面板沒有顆數，不需要那句提示');
+    assert.equal(sheet.hint, '', '藏起來的提示不留舊的字');
+    assert.equal(sheet.swatches.length, 85);
+    assert.equal(page.$('colorSheet').querySelectorAll('.color-swatch-cost').length, 0, '沒有任何一格有顆數');
+    assert.ok(sheet.swatches.every((swatch) => swatch.cost === null));
+    assert.deepEqual(pressedIds(page), ['desert-yellow'], '框起來的是目前顏色');
+    isSame(page.document.activeElement, page.swatch('desert-yellow'), '打開時焦點在目前顏色上');
+    assert.equal(page.swatch('morbol-green').getAttribute('aria-label'), '魔花綠', '色票的名稱只有顏色名稱');
+
+    page.swatch('morbol-green').click();
+    assert.equal(page.sheet().open, false);
+    isSame(page.document.activeElement, page.$('fromBtn'), '焦點回到目前顏色按鈕');
+    assert.equal(page.$('fromName').textContent, '魔花綠');
+    assert.equal(page.$('fromChip').style.background, 'rgb(25, 41, 17)');
+    assert.equal(page.$('toName').textContent, '素雪白', '目標顏色沒動');
+    const answer = page.answer();
+    assert.equal(answer.steps[0].fruit, '拉札漢檸檬');
+    assert.equal(answer.total, '共 35 顆');
+    assert.deepEqual(saved(page), { from: 'morbol-green', to: 'snow-white', done: [] });
+
+    // 目標面板的顆數、提示與「目前」都是從新的目前顏色（魔花綠）算的
+    page.$('toBtn').click();
+    assert.equal(page.sheet().hint, '每格是從目前的魔花綠要餵幾顆（已經算進檸檬）。');
+    assert.equal(costOf(page, 'morbol-green'), '目前');
+    assert.equal(costOf(page, 'desert-yellow'), '1 顆');
+    assert.equal(costOf(page, 'snow-white'), '35 顆');
+    page.key('Escape');
+
+    // 目前顏色選成和目標一樣：答案卡只寫已經是…
+    page.$('fromBtn').click();
+    page.swatch('snow-white').click();
+    assert.equal(page.answer().message, '已經是素雪白，不用餵。');
+    assert.deepEqual(saved(page), { from: 'snow-white', to: 'snow-white', done: [] });
+});
+
+test('Esc、點遮罩、關閉鈕都會關掉，焦點回到打開它的按鈕；點面板裡面不會關，什麼都沒存', async () => {
+    const page = await createChocoboPage();
+    for (const [button, title] of [['toBtn', '選目標顏色'], ['fromBtn', '選目前顏色']]) {
+        for (const [how, close] of [
+            ['Esc', () => page.key('Escape')],
+            ['點遮罩', () => page.$('colorSheet').click()],
+            ['關閉鈕', () => page.$('colorSheetClose').click()]
+        ]) {
+            page.$(button).click();
+            assert.equal(page.sheet().open, true, `#${button} 打開面板`);
+            assert.equal(page.sheet().title, title);
+            close();
+            assert.equal(page.sheet().open, false, `#${button}：${how} 關掉面板`);
+            isSame(page.document.activeElement, page.$(button), `#${button}：${how} 之後焦點回到按鈕`);
+        }
+    }
+    assert.equal(page.storage.size, 0, '只是開關面板，顏色沒變，什麼都沒存');
+    assert.equal(page.answer().total, '共 34 顆');
+
+    // 點面板裡面（標題、提示、色票之間的空白、面板本身）不是點遮罩，不會關；Esc 以外的鍵也不會
+    page.$('toBtn').click();
+    const inside = [page.$('colorSheetTitle'), page.$('colorSheetHint'), page.$('colorGroups'), page.$('colorSheet').children[0]];
+    for (const element of inside) {
+        element.click();
+        assert.equal(page.sheet().open, true, `點 ${element.id || element.className} 不會關`);
+    }
+    page.key('ArrowDown');
+    assert.equal(page.sheet().open, true);
+    page.key('Escape');
+    assert.equal(page.sheet().open, false);
+    assert.equal(page.storage.size, 0);
+});
+
+test('面板開著時切換語言：先關掉、焦點回到按鈕，再打開是新語言', async () => {
+    const page = await createChocoboPage();
+    page.$('toBtn').click();
+    page.setLang('ja');
+    assert.equal(page.sheet().open, false, '切換語言時面板先關掉');
+    assert.equal(openPanels(page), 0);
+    isSame(page.document.activeElement, page.$('toBtn'), '焦點回到打開它的按鈕');
+    assert.equal(page.$('toName').textContent, 'スノウホワイト');
+    assert.equal(page.answer().total, '合計 34個');
+    assert.equal(page.$('colorSheetClose').getAttribute('aria-label'), '閉じる', '關閉鈕的名稱也換了');
+
+    page.$('toBtn').click();
+    const sheet = page.sheet();
+    assert.equal(sheet.title, '目標の色を選ぶ');
+    assert.equal(sheet.hint, '各色は今のデザートイエローから必要な数です（レモン込み）。');
+    assert.deepEqual(sheet.groups.map((group) => group.title), ['白・灰・黒', '黄・橙', '赤・ピンク', '茶', '紫', '青', '緑']);
+    assert.equal(sheet.groups[0].title, '白・灰・黒');
+    assert.equal(sheet.swatches.find((swatch) => swatch.id === 'snow-white').name, 'スノウホワイト');
+    assert.equal(costOf(page, 'snow-white'), '34個');
+    assert.equal(costOf(page, 'desert-yellow'), '今の色');
+    assert.equal(page.swatch('snow-white').getAttribute('aria-label'), 'スノウホワイト、34個');
+    isSame(page.document.activeElement, page.swatch('snow-white'));
+
+    // 目前顏色的面板也一樣：開著時換語言先關掉
+    page.key('Escape');
+    page.$('fromBtn').click();
+    page.setLang('en');
+    assert.equal(page.sheet().open, false);
+    isSame(page.document.activeElement, page.$('fromBtn'));
+    page.$('fromBtn').click();
+    assert.equal(page.sheet().title, 'Choose the current color');
+    assert.equal(page.sheet().swatches.find((swatch) => swatch.id === 'desert-yellow').name, 'Desert Yellow');
+    assert.equal(page.$('colorSheetClose').getAttribute('aria-label'), 'Close');
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('openSheet：開著時再開另一種面板，畫面上只有一個，關掉後焦點回到最後打開的那顆按鈕', async () => {
+    const page = await createChocoboPage();
+    page.app.openSheet('to');
+    assert.equal(page.sheet().title, '選目標顏色');
+    page.app.openSheet('from');
+    assert.equal(openPanels(page), 1, '畫面上只有一個面板開著');
+    assert.equal(page.sheet().title, '選目前顏色');
+    assert.equal(page.$('colorSheetHint').hidden, true);
+    assert.ok(page.sheet().swatches.every((swatch) => swatch.cost === null));
+    assert.deepEqual(pressedIds(page), ['desert-yellow']);
+    isSame(page.document.activeElement, page.swatch('desert-yellow'));
+
+    // 點的色票換的是現在開著的那一種（目前顏色），不是先開的目標顏色
+    page.swatch('morbol-green').click();
+    assert.equal(page.$('fromName').textContent, '魔花綠');
+    assert.equal(page.$('toName').textContent, '素雪白');
+    isSame(page.document.activeElement, page.$('fromBtn'));
+
+    page.app.openSheet('to');
+    page.app.openSheet('from');
+    page.key('Escape');
+    assert.equal(page.sheet().open, false);
+    assert.equal(openPanels(page), 0);
+    isSame(page.document.activeElement, page.$('fromBtn'), '關掉後焦點回到 #fromBtn');
+
+    // 同一種再開一次：先關掉再開，面板還是只有一個
+    page.app.openSheet('to');
+    page.app.openSheet('to');
+    assert.equal(openPanels(page), 1);
+    assert.equal(page.sheet().title, '選目標顏色');
+    page.$('colorSheetClose').click();
+    assert.equal(page.sheet().open, false);
+    isSame(page.document.activeElement, page.$('toBtn'), '關掉後焦點回到 #toBtn');
+
+    // 不認得的種類不開；沒開著時關閉什麼都不做
+    page.app.openSheet('nope');
+    page.app.openSheet(undefined);
+    assert.equal(page.sheet().open, false);
+    page.app.closeSheet();
+    assert.equal(page.sheet().open, false);
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('資料沒載入：面板打不開，兩顆按鈕本來就不能按', async () => {
+    const page = await createChocoboPage({ fetchFails: true });
+    page.$('toBtn').click();
+    page.$('fromBtn').click();
+    assert.equal(page.sheet().open, false);
+    page.app.openSheet('to');
+    assert.equal(page.sheet().open, false, '直接呼叫也一樣');
+    assert.equal(page.sheet().swatches.length, 0);
+});
+
+test('量詞：中文「顆」、日文「個」、英文照數量寫 fruit／fruits，目前顏色那一格寫「目前」', async () => {
+    const en = await createChocoboPage({ lang: 'en' });
+    en.app.setColors('morbol-green', 'snow-white');
+    en.$('toBtn').click();
+    assert.equal(en.sheet().title, 'Choose the target color');
+    assert.equal(en.sheet().hint, 'Each color shows how many fruits it takes from Morbol Green (lemon included).');
+    assert.equal(costOf(en, 'desert-yellow'), '1 fruit');
+    assert.equal(costOf(en, 'snow-white'), '35 fruits');
+    assert.equal(costOf(en, 'morbol-green'), 'Current');
+    assert.equal(en.swatch('desert-yellow').getAttribute('aria-label'), 'Desert Yellow, 1 fruit');
+    assert.equal(en.swatch('snow-white').getAttribute('aria-label'), 'Snow White, 35 fruits');
+    assert.equal(en.swatch('morbol-green').getAttribute('aria-label'), 'Morbol Green, Current');
+    assert.deepEqual(en.sheet().groups.map((group) => group.title),
+        ['White, grey and black', 'Yellow and orange', 'Red and pink', 'Brown', 'Purple', 'Blue', 'Green']);
+    assert.ok(!en.sheet().swatches.some((swatch) => /\b1 fruits\b/.test(swatch.cost ?? '')), '英文 1 顆是 fruit');
+
+    // 一顆（魔花綠 → 沙漠黃）三種語言各有自己的單數寫法
+    for (const [lang, current, one, many] of [
+        ['zh', '目前', '1 顆', '35 顆'],
+        ['en', 'Current', '1 fruit', '35 fruits'],
+        ['ja', '今の色', '1個', '35個']
+    ]) {
+        const page = await createChocoboPage({ lang, stored: store({ from: 'morbol-green', to: 'snow-white' }) });
+        page.$('toBtn').click();
+        assert.equal(costOf(page, 'morbol-green'), current, lang);
+        assert.equal(costOf(page, 'desert-yellow'), one, lang);
+        assert.equal(costOf(page, 'snow-white'), many, lang);
+    }
+});
+
+test('找不到做法的顏色：色票只寫名稱，不寫顆數，也不寫成 null', async () => {
+    // 同「找不到做法的資料」：拿掉三種水果，一部分顏色算不出做法
+    const data = { ...DATA, fruits: DATA.fruits.filter((f) => !['doman-plum', 'valfruit', 'cieldalaes-pineapple'].includes(f.id)) };
+    const page = await createChocoboPage({ data });
+    page.$('toBtn').click();
+    const sheet = page.sheet();
+    const unreachable = sheet.swatches.filter((swatch) => swatch.id !== 'desert-yellow' && bestTotal(data, 'desert-yellow', swatch.id) === null);
+    assert.ok(unreachable.length > 0, '這份資料裡有算不出做法的顏色，測試才有意義');
+    assert.ok(unreachable.length < 84, '也有算得出來的');
+    for (const swatch of unreachable) {
+        assert.equal(swatch.cost, null, swatch.id);
+        assert.equal(page.swatch(swatch.id).getAttribute('aria-label'), swatch.name, swatch.id);
+    }
+    for (const swatch of sheet.swatches.filter((s) => s.id !== 'desert-yellow' && !unreachable.includes(s))) {
+        assert.equal(swatch.cost, `${bestTotal(data, 'desert-yellow', swatch.id)} 顆`, swatch.id);
+    }
+    assert.doesNotMatch(page.$('colorSheet').textContent, /null|undefined|NaN/);
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('色票面板的標記：role 與名稱在遮罩層上，標題是 h2，關閉鈕有可翻譯的名稱，ModalManager 緊接在 common.js 後面載入', async () => {
+    const overlay = tagAttrs(HTML, 'colorSheet');
+    assert.deepEqual(overlay.class.split(/\s+/).sort(), ['color-sheet-overlay', 'dialog-overlay']);
+    assert.equal(overlay.role, 'dialog');
+    assert.equal(overlay['aria-modal'], 'true');
+    assert.equal(overlay['aria-labelledby'], 'colorSheetTitle');
+    assert.doesNotMatch(openTag('colorSheet'), /\sstyle=/, '顯示與隱藏靠 class，不靠內嵌樣式');
+    assert.match(openTag('colorSheetTitle'), /^<h2\b/);
+    assert.equal(tagAttrs(HTML, 'colorSheetTitle').class, 'dialog-title');
+    assert.match(openTag('colorSheetHint'), /^<p\b/);
+    assert.equal(tagAttrs(HTML, 'colorSheetHint').class, 'color-sheet-hint');
+    assert.match(openTag('colorSheetHint'), /\shidden(?=[\s>])/);
+
+    const close = tagAttrs(HTML, 'colorSheetClose');
+    assert.match(openTag('colorSheetClose'), /^<button\b/);
+    assert.equal(close.type, 'button');
+    assert.deepEqual(close.class.split(/\s+/), ['btn', 'btn-close']);
+    assert.equal(close['aria-label'], '關閉');
+    assert.equal(close['data-i18n'], 'chocobo_color_close');
+    assert.equal(close['data-i18n-attr'], 'aria-label');
+
+    assert.ok(HTML.indexOf('id="colorSheet"') > HTML.indexOf('id="chocoboTool"'), '面板在 #chocoboTool 後面');
+    assert.doesNotMatch(HTML, /btn-primary/, '面板裡也沒有主要按鈕');
+
+    const scripts = [...HTML.matchAll(/<script src="([^"]+)"/g)].map((m) => m[1]);
+    const common = scripts.indexOf('../../assets/js/common.js');
+    const modal = scripts.indexOf('../../assets/js/modal-manager.js');
+    assert.ok(common !== -1 && modal === common + 1, 'modal-manager.js 緊接在 common.js 後面');
+    assert.ok(modal < scripts.indexOf('chocobo-solver.js') && modal < scripts.indexOf('script.js'));
+
+    // 照 index.html 建出來的結構：遮罩層 > .dialog.color-sheet（沒有 role）> 標題列、提示、色票容器
+    const page = await createChocoboPage();
+    assert.deepEqual(page.$('colorSheet').children.map((child) => child.className), ['dialog color-sheet']);
+    const dialog = page.$('colorSheet').children[0];
+    assert.equal(dialog.hasAttribute('role'), false, '內層的 .dialog 不帶 role');
+    assert.deepEqual(dialog.children.map((child) => child.id || child.className), ['dialog-header', 'colorSheetHint', 'colorGroups']);
+    assert.deepEqual(dialog.children[0].children.map((child) => child.id), ['colorSheetTitle', 'colorSheetClose']);
+    assert.equal(page.sheet().open, false);
+    assert.equal(page.$('colorSheetClose').getAttribute('aria-label'), '關閉');
+});
+
+test('色票面板的樣式：遮罩預設藏起來，電腦置中最寬 700px，手機蓋滿畫面，色票的名稱換行、格子不撐寬，沒有 overflow-x', () => {
+    // 共用的 .dialog-overlay 是 display: flex，所以預設要自己藏起來，ModalManager 加 .active 才顯示
+    assert.match(declarations('.color-sheet-overlay', BASE_CSS), /display:\s*none/);
+    assert.match(declarations('.color-sheet-overlay.active', BASE_CSS), /display:\s*flex/);
+    // 提示藏起來時：寫 display 的規則會蓋掉瀏覽器內建的 [hidden]，所以要自己寫
+    assert.match(declarations('#colorSheetHint[hidden]'), /display:\s*none/);
+
+    // 電腦：置中的對話框，最寬 700px，太高時在框裡上下捲；標題列捲動時留在最上面（要有底色，不然底下的色票會透出來）
+    assert.match(declarations('.color-sheet', BASE_CSS), /max-width:\s*700px/);
+    assert.match(declarations('.color-sheet', BASE_CSS), /max-height:\s*80vh/);
+    const header = declarations('.color-sheet .dialog-header', BASE_CSS);
+    assert.match(header, /(?:^|[\s;])position:\s*sticky/);
+    assert.match(header, /(?:^|[\s;])top:\s*0(?:[\s;]|$)/);
+    assert.match(header, /(?:^|[\s;])background:\s*var\(--color-surface\)/);
+    // 標題列固定在上面，所以用 Shift+Tab 往上走時，焦點格要留出標題列的高度，不然焦點會藏在標題列後面（實際用 Chrome 量過）
+    assert.match(declarations('.color-sheet', BASE_CSS), /scroll-padding-top:/);
+
+    // 疊放順序：手機上面板蓋滿畫面，頁首的漢堡按鈕（common.css 的 .hamburger）不能壓在關閉鈕上（z-index 比它高），也不能蓋住 toast
+    const token = (name) => Number(read('assets/css/tokens.css').match(new RegExp(`${name}:\\s*(\\d+)`))[1]);
+    const layer = declarations('.color-sheet-overlay', BASE_CSS).match(/z-index:\s*calc\(var\((--z-[a-z]+)\)\s*\+\s*(\d+)\)/);
+    assert.ok(layer, '.color-sheet-overlay 的 z-index 是 calc(var(--z-…) + n)');
+    const sheetLayer = token(layer[1]) + Number(layer[2]);
+    const hamburgerLayer = Number(declarations('.hamburger', COMMON_CSS).match(/z-index:\s*(\d+)/)[1]);
+    assert.ok(sheetLayer > hamburgerLayer, `面板的 z-index ${sheetLayer} 要比漢堡按鈕的 ${hamburgerLayer} 高`);
+    assert.ok(sheetLayer < token('--z-toast'), '面板在 toast 之下');
+
+    // 手機（768px 以下）：遮罩沒有內距，面板寬高都是 100%、不留圓角與邊框，蓋滿畫面（max-height 要放掉，不然上限還是 80vh）
+    const phone = MEDIA.filter((block) => block.condition === '(max-width: 768px)');
+    assert.equal(phone.length, 1, '768px 的 @media 只有一個');
+    assert.match(declarations('.color-sheet-overlay', phone[0].body), /(?:^|[\s;])padding:\s*0(?:[\s;]|$)/);
+    const sheet = declarations('.color-sheet', phone[0].body);
+    assert.match(sheet, /max-width:\s*none/);
+    assert.match(sheet, /max-height:\s*none/);
+    assert.match(sheet, /(?:^|[\s;])width:\s*100%/);
+    assert.match(sheet, /(?:^|[\s;])height:\s*100%/);
+    assert.match(sheet, /border-radius:\s*0/);
+    // 這個 @media 只管面板，不動選顏色那一列（那邊是 480px 的事，見上一個「窄螢幕」測試）
+    assert.doesNotMatch(phone[0].body, /\.color-pick|\.description/);
+
+    // 色票：每組一個 grid，欄寬最小值固定、其餘平分；名稱放不下就換行，格子不撐寬
+    const grid = declarations('.color-group-swatches');
+    assert.match(grid, /display:\s*grid/);
+    assert.match(grid, /grid-template-columns:\s*repeat\(auto-fill, minmax\([^)]+, 1fr\)\)/);
+    assert.match(declarations('.color-swatch'), /min-width:\s*0/);
+    assert.match(declarations('.color-swatch'), /border-radius:\s*var\(--radius-md\)/);
+    assert.match(declarations('.color-swatch-name'), /overflow-wrap:\s*anywhere/);
+    assert.match(declarations('.color-swatch-name'), /font-size:\s*var\(--text-xs\)/);
+    // 目前選的那一格框起來，不只靠顏色以外的東西（有邊框色、也有外圈）
+    const pressed = declarations('.color-swatch[aria-pressed="true"]');
+    assert.match(pressed, /border-color:\s*var\(--color-primary\)/);
+    assert.match(pressed, /box-shadow:/);
+    assert.match(declarations('.color-swatch:focus-visible'), /outline:\s*2px solid var\(--color-primary\)/);
+
+    // 整份樣式沒有左右捲動（面板只有垂直捲動：共用的 .dialog 是 overflow: auto）
+    assert.doesNotMatch(CSS, /overflow-x/);
+});
+
 test('翻譯：三語的鍵一樣，每個鍵的 {參數} 三語一樣，index.html 的預設文字等於 zh 翻譯', () => {
     const keys = Object.fromEntries(LANGS.map((lang) => [lang, translationKeySet(TRANSLATIONS, lang)]));
     const values = Object.fromEntries(LANGS.map((lang) => [lang, translationValues(TRANSLATIONS, lang)]));
@@ -963,8 +1396,38 @@ test('翻譯：三語的鍵一樣，每個鍵的 {參數} 三語一樣，index.h
         }
     }
 
-    // 頁面上有 data-i18n 的元素：靜態的預設文字和 zh 翻譯相同（I18nManager 套用前後不會閃一下別的字）
-    const found = [...HTML.matchAll(/<[a-zA-Z][\w-]*\b[^>]*\sdata-i18n="([^"]+)"[^>]*>([^<]*)</g)];
-    assert.ok(found.length >= 7, `只找到 ${found.length} 個 data-i18n，解析可能失效`);
-    for (const [, key, text] of found) assert.equal(text.trim(), values.zh.get(key), `index.html 的 ${key} 預設文字`);
+    // 頁面上有 data-i18n 的元素：靜態的預設文字和 zh 翻譯相同（I18nManager 套用前後不會閃一下別的字）。逐字比，不 trim：
+    // 資料來源那一句的翻譯值自己帶著結尾的空白（見下一個測試）。
+    // 有 data-i18n-attr 的元素換的是那個屬性（面板關閉鈕的 aria-label），文字是 ×，所以比的是屬性的預設值
+    const found = [...HTML.matchAll(/(<[a-zA-Z][\w-]*\b[^>]*\sdata-i18n="([^"]+)"[^>]*>)([^<]*)</g)];
+    assert.ok(found.length >= 8, `只找到 ${found.length} 個 data-i18n，解析可能失效`);
+    for (const [, tag, key, text] of found) {
+        const attribute = tag.match(/\sdata-i18n-attr="([^"]+)"/)?.[1];
+        const preset = attribute ? tag.match(new RegExp(`\\s${attribute}="([^"]*)"`))?.[1] : text;
+        assert.equal(preset, values.zh.get(key), `index.html 的 ${key} 預設文字`);
+    }
+    assert.ok(found.some(([, tag]) => /\sdata-i18n-attr="aria-label"/.test(tag)), '關閉鈕的 aria-label 也有翻譯');
+});
+
+test('資料來源那一行：和連結之間的空白寫在翻譯值裡，三種語言各自接得剛好（日文「：」後面不多一個空白）', async () => {
+    // 標記裡 span 和連結之間沒有空白。空白若寫在標記裡，日文會變成「色データの出典： ffxivchocobo.com」（全形冒號後面多一格）
+    const credit = HTML.match(/<span data-i18n="chocobo_color_credit">([^<]*)<\/span>(\s*)<a\b[^>]*href="https:\/\/ffxivchocobo\.com\/"/);
+    assert.ok(credit, '找不到資料來源那一行（span 後面緊接著 ffxivchocobo.com 的連結）');
+    assert.equal(credit[2], '', 'span 和連結之間不能有空白，空白是翻譯值的一部分');
+
+    // 翻譯值：中文、英文以一個空白結尾（接著連結），日文以「：」結尾、後面沒有空白
+    const credits = Object.fromEntries(LANGS.map((lang) => [lang, translationValues(TRANSLATIONS, lang).get('chocobo_color_credit')]));
+    assert.deepEqual(credits, { zh: '顏色資料參考自 ', en: 'Color data from ', ja: '色データの出典：' });
+
+    // 畫面上那一行的字（span 加連結）：一打開、切換語言之後都一樣
+    const line = (page) => page.$('chocoboTool').querySelector('[data-i18n="chocobo_color_credit"]').parentNode.textContent;
+    const page = await createChocoboPage();
+    assert.equal(line(page), '顏色資料參考自 ffxivchocobo.com');
+    page.setLang('en');
+    assert.equal(line(page), 'Color data from ffxivchocobo.com');
+    page.setLang('ja');
+    assert.equal(line(page), '色データの出典：ffxivchocobo.com');
+    page.setLang('zh');
+    assert.equal(line(page), '顏色資料參考自 ffxivchocobo.com');
+    assert.equal(line(await createChocoboPage({ lang: 'ja' })), '色データの出典：ffxivchocobo.com');
 });

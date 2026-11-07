@@ -62,11 +62,24 @@
                 <div class="chocobo-notes">
                     <p data-i18n="chocobo_color_note_range">顏色名稱涵蓋一小段 RGB。之前餵過水果的話，實際數值可能和標準值有落差，結果可能差一點；先餵檸檬是從確定的沙漠黃開始。</p>
                     <p data-i18n="chocobo_color_note_wait">一般水果餵完約 6 小時才會變色。</p>
-                    <p><span data-i18n="chocobo_color_credit">顏色資料參考自</span> <a href="https://ffxivchocobo.com/" target="_blank" rel="noopener noreferrer">ffxivchocobo.com</a></p>
+                    <p><span data-i18n="chocobo_color_credit">顏色資料參考自 </span><a href="https://ffxivchocobo.com/" target="_blank" rel="noopener noreferrer">ffxivchocobo.com</a></p>
                 </div>
             </div>
         </div>
     </main>
+
+    <!-- 選顏色的面板：標題、提示與 7 組色票由 script.js 在打開時畫。顯示與隱藏由 ModalManager 加減 .active；
+         role、aria-modal、aria-labelledby 寫在遮罩層上，內層的 .dialog 是沒有 role 的一般容器 -->
+    <div class="dialog-overlay color-sheet-overlay" id="colorSheet" role="dialog" aria-modal="true" aria-labelledby="colorSheetTitle">
+        <div class="dialog color-sheet">
+            <div class="dialog-header">
+                <h2 class="dialog-title" id="colorSheetTitle"></h2>
+                <button type="button" class="btn btn-close" id="colorSheetClose" aria-label="關閉" data-i18n="chocobo_color_close" data-i18n-attr="aria-label">×</button>
+            </div>
+            <p class="color-sheet-hint" id="colorSheetHint" hidden></p>
+            <div id="colorGroups"></div>
+        </div>
+    </div>
 
     <div id="footer-placeholder" data-base-path="../../"></div>
 
@@ -78,6 +91,7 @@
     <script src="../../assets/js/components/footer-template.js"></script>
     <script src="../../assets/js/components/layout-loader.js"></script>
     <script src="../../assets/js/common.js"></script>
+    <script src="../../assets/js/modal-manager.js"></script>
     <script src="chocobo-solver.js"></script>
     <script src="script.js"></script>
 </body>
