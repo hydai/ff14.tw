@@ -66,6 +66,11 @@ class TreasureMapFinder {
 
     async init() {
         try {
+            // 清單入口的標籤、清單頁的標題與張數帶參數，不能用 data-i18n（見 handleLanguageChange()）：先照現在的語言填一次，
+            // 不然英文、日文介面在資料載入完之前（載入失敗時就一直）是 index.html 的中文。
+            // 只換字：入口右邊的「組隊」「生成路線」要等 setupEventListeners() 掛上事件、updateListCount() 才顯示
+            this.updateListEntryLabels();
+            this.updateListLabels();
             // 一開始就顯示「載入中」：地區與傳送點資料（zoneManager）載入時也算在內
             this.showLoading(true);
             // 傳送點圖示只有詳細地圖用得到，不等它：載入慢或載入不了都不延後結果（圖示到了之後，開著的詳細地圖會重畫補上傳送點，見 loadAetheryteIcon）
@@ -912,19 +917,31 @@ class TreasureMapFinder {
         shareListBtn?.classList.toggle('hidden', count === 0);
     }
 
-    // 兩個清單入口與步驟列：依清單張數、是否在隊伍裡、是否選了等級
-    updateListEntry() {
-        const count = this.listManager.getLength();
-        const { labelKey, labelParams, action } = TreasureMapFinder.getListEntryState({
-            count,
+    // 清單入口現在的狀態：標籤與右邊的動作，依清單張數、是否在隊伍裡
+    listEntryState() {
+        return TreasureMapFinder.getListEntryState({
+            count: this.listManager.getLength(),
             inRoom: Boolean(this.roomCollaboration?.currentRoom),
             maxMaps: RoomCollaboration.CONSTANTS.MAX_MAPS
         });
-        const label = FF14Utils.getI18nText(labelKey, TreasureMapFinder.ENTRY_LABELS[labelKey], labelParams);
+    }
+
+    // 兩個清單入口的標籤（帶張數參數，不能用 data-i18n）
+    updateListEntryLabels(state = this.listEntryState()) {
+        const label = FF14Utils.getI18nText(state.labelKey, TreasureMapFinder.ENTRY_LABELS[state.labelKey], state.labelParams);
         for (const entry of [this.elements.listEntryDesktop, this.elements.listEntryMobile]) {
             entry.querySelector('.tm-entry-label').textContent = label;
+        }
+    }
+
+    // 兩個清單入口與步驟列：依清單張數、是否在隊伍裡、是否選了等級
+    updateListEntry() {
+        const count = this.listManager.getLength();
+        const state = this.listEntryState();
+        this.updateListEntryLabels(state);
+        for (const entry of [this.elements.listEntryDesktop, this.elements.listEntryMobile]) {
             for (const name of ['team', 'route']) {
-                entry.querySelector(`[data-entry="${name}"]`).classList.toggle('hidden', name !== action);
+                entry.querySelector(`[data-entry="${name}"]`).classList.toggle('hidden', name !== state.action);
             }
         }
 

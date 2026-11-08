@@ -207,6 +207,9 @@ function startFinder({ holdZones = false, iconLoads = true, failFiles = [] } = {
         maps: [],
         aetheryteIcon: null,
         elements: { treasureGrid: grid },
+        // 清單入口與清單頁的字：init() 一開始就填，這裡沒有清單，不記步驟（由 treasure-list-panel 的測試負責）
+        updateListEntryLabels: () => {},
+        updateListLabels: () => {},
         setupEventListeners: () => steps.push('events'),
         updateListCount: () => steps.push('count'),
         // 畫出結果：initFilters() 還原篩選之後由 updateFilteredMaps() 畫

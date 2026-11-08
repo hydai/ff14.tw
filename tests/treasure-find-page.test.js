@@ -1456,6 +1456,24 @@ test('詳細檢視的內容：標題、地圖與縮圖、帶 Z 的座標、最�
     assert.equal($('mapDetailModal').querySelectorAll('.map-detail-fact.hidden').length, 0);
 });
 
+test('每一張寶圖的縮圖、每個地區的詳細地圖檔都在 tools/treasure-map-finder/ 底下（227 張、28 個地區）', async () => {
+    const { finder, $ } = await createFinder('zh');
+    const exists = (src) => fs.existsSync(path.join(ROOT, 'tools/treasure-map-finder', src));
+    const missing = [];
+    const zones = new Set();
+    for (const map of finder.maps) {
+        if (!exists(map.thumbnail)) missing.push(map.thumbnail);
+        if (zones.has(map.zoneId)) continue;
+        zones.add(map.zoneId);
+        // 地區地圖的網址照詳細檢視真的組出來的（ui-dialog-manager.js 的 mapSrc），不在測試裡另寫一份路徑規則
+        finder.openMapDetail(map.id, [map.id]);
+        if (!exists($('mapDetailImage').src)) missing.push($('mapDetailImage').src);
+    }
+    assert.equal(finder.maps.length, 227);
+    assert.equal(zones.size, 28);
+    assert.deepEqual(missing, []);
+});
+
 test('其他傳送點用語言的分隔符號連接；只有一個傳送點的地區不顯示「其他傳送點」，找不到傳送點時兩列都不顯示', async () => {
     const { finder, dom, setLang, $ } = await createFinder('zh');
     const rowHidden = (id) => $(id).closest('.map-detail-fact').classList.contains('hidden');

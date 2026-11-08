@@ -2622,3 +2622,22 @@ test('複製格式的三語鍵值照設計', () => {
         for (const [key, texts] of Object.entries(expected)) assert.equal(values.get(key), texts[index], `${lang} ${key}`);
     });
 });
+
+test('資料還在載入或載入失敗時，英文、日文介面的清單入口與清單頁的標題、張數已經是那個語言（不會停在 index.html 的中文）', async () => {
+    for (const lang of ['en', 'ja']) {
+        const values = translationValues(TRANSLATIONS, lang);
+        const entry = values.get('treasure_map_entry_empty');
+        for (const data of ['pending', 'fail']) {
+            const page = await createPanelPage({ lang, data });
+            const labels = ['listEntryDesktop', 'listEntryMobile'].map((id) => page.$(id).querySelector('.tm-entry-label').textContent);
+            assert.deepEqual(labels, [entry, entry], `${lang} ${data}`);
+            assert.equal(page.$('myListPanel-title').textContent, values.get('treasure_map_my_list'), `${lang} ${data}`);
+            assert.equal(page.$('listHeaderCount').textContent, values.get('treasure_map_panel_count').replace('{count}', '0'), `${lang} ${data}`);
+            assert.equal(page.$('totalCount').textContent, values.get('treasure_map_footer_count').replace('{count}', '0'), `${lang} ${data}`);
+            // 只換字：入口右邊的「組隊」「生成路線」要等事件掛上才顯示，不然載入中、載入失敗時會多出按了沒反應的按鈕
+            const hidden = ['listEntryDesktop', 'listEntryMobile'].flatMap((id) => ['team', 'route']
+                .map((name) => page.$(id).querySelector(`[data-entry="${name}"]`).classList.contains('hidden')));
+            assert.deepEqual(hidden, [true, true, true, true], `${lang} ${data}：「組隊」「生成路線」照舊藏著`);
+        }
+    }
+});
