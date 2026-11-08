@@ -144,6 +144,20 @@ test('a type chip on a fresh page re-filters without throwing: fishing leaves it
     assert.equal(page.cards().length, 34);
 });
 
+test('篩選按鈕的 .active 與 aria-pressed 一起換：一打開都是 false，點了是 true，再點回 false（類型與版本）', async () => {
+    const page = await createGatheringPage();
+    for (const id of ['typeFilters', 'expansionFilters']) {
+        const chips = page.$(id).querySelectorAll('.chip');
+        assert.ok(chips.length > 0, id);
+        assert.deepEqual(chips.map((chip) => chip.getAttribute('aria-pressed')), chips.map(() => 'false'), `${id} 一打開`);
+        const chip = chips[0];
+        chip.click();
+        assert.deepEqual([chip.classList.contains('active'), chip.getAttribute('aria-pressed')], [true, 'true'], `${id} 點了`);
+        chip.click();
+        assert.deepEqual([chip.classList.contains('active'), chip.getAttribute('aria-pressed')], [false, 'false'], `${id} 再點`);
+    }
+});
+
 test('generating a macro fills the macro box and scrolls to it without throwing', async () => {
     const page = await createGatheringPage();
     page.cardOf('botany_cordia_resin').querySelector('.gx-add-btn').click();

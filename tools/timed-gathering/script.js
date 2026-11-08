@@ -258,18 +258,18 @@ class TimedGatheringManager {
         // 卡片清單的重排：焦點在清單裡時延後，焦點離開清單才排（見 keepOrder()）
         this.cardOrder = this.keepOrder(this.elements.itemsContainer, (now) => this.arrangeCards(now));
 
-        // 類型篩選
+        // 類型篩選：外觀（.active）與螢幕閱讀器聽到的狀態（aria-pressed）一起換
         this.elements.typeFilters.querySelectorAll('.chip').forEach(tag => {
             tag.addEventListener('click', () => {
-                tag.classList.toggle('active');
+                tag.setAttribute('aria-pressed', String(tag.classList.toggle('active')));
                 this.applyFilters();
             });
         });
 
-        // 資料片篩選
+        // 資料片篩選：同上
         this.elements.expansionFilters.querySelectorAll('.chip').forEach(tag => {
             tag.addEventListener('click', () => {
-                tag.classList.toggle('active');
+                tag.setAttribute('aria-pressed', String(tag.classList.toggle('active')));
                 this.applyFilters();
             });
         });
