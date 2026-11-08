@@ -11,9 +11,10 @@
 //   page.view(); page.profile(); page.mineName(); page.recentNames(); page.resultRows();
 //   page.type('Aoi Mizu'); page.chooseWorld('Tiamat'); page.submit(); await page.flush(); page.paste('https://na.finalfantasyxiv.com/lodestone/character/12345678/');
 //   page.requests.map((request) => request.path); page.history; page.url(); page.back(); page.forward(); page.stored('ff14tw_lodestone_mine'); page.setLang('en');
+//   page.tabs(); page.selectTab('achievements'); page.panelText('achievements'); page.key('ArrowRight');
 //
 // - 照 index.html 建出 #lodestoneTool（mountFromHtml），照 index.html 的 <script src> 順序載入這個工具的翻譯檔與工具目錄自己的每一個腳本
-//   （src 不含 /：lodestone-data.js、lodestone-model.js、lodestone-store.js、script.js），最後 new LodestoneLookup()：不帶參數，
+//   （src 不含 /：lodestone-data.js、lodestone-model.js、lodestone-store.js、lodestone-tabs.js、script.js），最後 new LodestoneLookup()：不帶參數，
 //   Worker 的網址與 localStorage 都是頁面自己的預設。建立頁面不等請求：createLodestonePage() 直接回傳，ready 是 app.ready
 //   （網址帶 ?id= 時是打開那個角色的 promise）。頁首與頁尾（layout-loader.js）、common.js、i18n-manager.js 與共用翻譯檔不載入，
 //   用到的部分改用下面的替身：頁面程式只能用 FF14Utils.getI18nText()，不能用 SecurityUtils。頁面的 <h1> 在 #lodestoneTool 外面，不建出來
@@ -57,6 +58,10 @@
 // - type(text)：設名字欄的值並派送會冒泡的 input（inputType 是 insertText：打字）；paste(text)：同樣，但 inputType 是 insertFromPaste
 //   （貼上，名字欄整個換成 text）；chooseWorld(value)：選伺服器選單（沒有這個值的選項丟錯）並派送會冒泡的 change；
 //   submit()：在找人的表單上派送 submit（同在名字欄按 Enter）；flush()：讓頁面的 promise 跑完（幾輪 setImmediate）
+// - 分頁（#tabList 的六個 role="tab"）：tabs() 是每一個分頁目前的樣子 { key（data-tab）, text, selected（aria-selected）, tabindex,
+//   active（有沒有 .active）, panelHidden（aria-controls 指到的面板是不是 hidden）}；selectTab(key) 點那個分頁（同使用者點它）；
+//   panelText(key) 是那個分頁的面板（#panel-<key>）的文字；key(name, target) 在 target（沒給是焦點所在的元素）上派送會冒泡、
+//   可以 preventDefault 的 keydown（event.key 是 name，init 是其他欄位，例如 { altKey: true }），回傳那個事件
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -359,6 +364,25 @@ function createLodestonePage({ lang = 'zh', search = '', stored = {}, storageThr
         },
         submit() {
             $('findForm').dispatchEvent(new win.Event('submit', { bubbles: true, cancelable: true }));
+        },
+        tabs: () => $('tabList').querySelectorAll('[role="tab"]').map((tab) => ({
+            key: tab.dataset.tab,
+            text: tab.textContent,
+            selected: tab.getAttribute('aria-selected'),
+            tabindex: tab.getAttribute('tabindex'),
+            active: tab.classList.contains('active'),
+            panelHidden: $(tab.getAttribute('aria-controls')).hidden
+        })),
+        selectTab(key) {
+            const tab = $(`tab-${key}`);
+            assert.ok(tab, `沒有「${key}」這個分頁`);
+            tab.click();
+        },
+        panelText: (key) => $(`panel-${key}`).textContent,
+        key(name, target = dom.document.activeElement, init = {}) {
+            const event = new win.Event('keydown', { bubbles: true, cancelable: true, ...init, key: name });
+            target.dispatchEvent(event);
+            return event;
         },
         back() {
             win.history.back();

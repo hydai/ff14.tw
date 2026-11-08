@@ -2,13 +2,14 @@
 // 三種畫面（#lodestoneTool 裡，一次只看得到一個）：
 // - 打開時（#landingView）：我的角色（有設才有）→ 找人 → 最近查過（有才有）；兩個都沒有是第一次來，上面多一句說明
 // - 搜尋結果（#searchView）：「← 找其他人」、找人（填好剛才的條件）、結果
-// - 角色（#characterView）：「← 找其他人」、標頭（#profileCard）、放分頁的容器（#tabsCard）
+// - 角色（#characterView）：「← 找其他人」、標頭（#profileCard）、六個分頁（#tabsCard，lodestone-tabs.js 的 LodestoneTabs）
 // 找人的表單（#findCard）只有一份：打開時放在我的角色與最近查過中間，搜尋結果時搬到結果上面（showView()）。
 // 規則在不碰 DOM 的 lodestone-model.js（LodestoneModel），我的角色、最近查過與名稱與成就顯示的記憶在 lodestone-store.js（LodestoneStore），
-// 這裡只管畫面、事件、請求與網址。
+// 分頁在 lodestone-tabs.js（LodestoneTabs），這裡只管畫面、事件、請求與網址。
 //
 // 請求：每一個 Worker 請求都綁在一個 context（AbortController）上（request()）。搜尋、打開角色、回到打開時、換名稱與成就顯示都先取消舊的
-// context（newContext()、cancelRequests()）；舊的回應、錯誤晚到時 isCurrent() 不成立，一律不碰畫面與記憶。
+// context（newContext()、cancelRequests()）；舊的回應、錯誤晚到時 isCurrent() 不成立，一律不碰畫面與記憶。分頁的請求也用這個角色的 context。
+// 打開角色時打標頭與職業分頁（回到職業，其他分頁第一次打開才載入）；換名稱與成就顯示時重新打標頭與目前的分頁（reloadCharacter()）。
 // 網址：只有看角色時有 ?id=（可以分享）。從別的畫面搜尋、打開角色、「← 找其他人」都新增一筆上一頁的紀錄（搜尋那一筆網址不變：
 // 搜尋條件不放進網址，記在 history.state）；上一頁、下一頁回到那個畫面，搜尋結果從記憶體拿，不在了就是打開時（restore()）。
 // 名稱與成就顯示（English／日本語）：找人卡片（#dataLang）與角色標頭各有一組，兩組永遠一樣。按過就照按的（記住），沒按過跟著介面語言；
@@ -94,7 +95,8 @@ class LodestoneLookup {
         // 目前的請求：{ controller, dataLang }；沒有在等的請求是 null
         this.context = null;
         // view：看得到的畫面。search：搜尋結果 { name, world, context, status: 'loading' | 'done' | 'failed', data, reason }；
-        // character：角色 { id, context, dataLang, status: 'loading' | 'done' | 'error', character, fetchedAt, reason }
+        // character：角色 { id, context, dataLang, status: 'loading' | 'done' | 'error', character, fetchedAt, reason, freeCompanyName }。
+        // freeCompanyName 是部隊分頁載入的部隊名稱（舊 Worker 的標頭沒有名稱時補上；換名稱與成就顯示重新打標頭時留著）
         this.state = { view: 'landing', search: null, character: null };
 
         this.elements = {
@@ -127,6 +129,22 @@ class LodestoneLookup {
             characterError: document.getElementById('characterError'),
             tabsCard: document.getElementById('tabsCard')
         };
+
+        // 六個分頁：請求綁在這個角色的 context 上（request()、isCurrent()），名稱與成就顯示是 context 的
+        this.tabs = new LodestoneTabs({
+            root: this.elements.tabsCard,
+            request: (context, path, params) => this.request(context, path, params),
+            isCurrent: (context) => this.isCurrent(context),
+            t: (key, fallback, params) => this.t(key, fallback, params),
+            uiLang: () => this.uiLang(),
+            locale: () => this.locale(),
+            jobIcon: (job) => this.jobIcon(job),
+            nowLine: (character, className) => this.nowLine(character, className),
+            personRow: (who, parts) => this.personRow(who, parts),
+            loadingBlock: () => this.loadingBlock(),
+            openCharacter: (id) => this.openCharacter(id),
+            setFreeCompanyName: (context, name) => this.setFreeCompanyName(context, name)
+        });
 
         this.fillWorlds();
         this.bindEvents();
@@ -191,8 +209,12 @@ class LodestoneLookup {
             const button = event.target.closest('button[data-lang]');
             if (button) this.setDataLang(button.dataset.lang);
         });
-        // 標頭：設成我的角色、名稱與成就顯示（和找人卡片那一組一樣）
+        // 標頭：部隊名稱（切到部隊分頁）、設成我的角色、名稱與成就顯示（和找人卡片那一組一樣）
         profileCard.addEventListener('click', (event) => {
+            if (event.target.closest('.profile-fc')) {
+                this.selectTab('fc', { focus: true });
+                return;
+            }
             const mine = event.target.closest('.profile-mine');
             if (mine) {
                 this.toggleMine(mine);
@@ -301,23 +323,28 @@ class LodestoneLookup {
     }
 
     /**
-     * 打開一個角色：先打標頭（/character/<id>）。網址換成 ?id=<id>。
+     * 打開一個角色：先打標頭（/character/<id>）與職業分頁（分頁回到職業，其他分頁第一次打開才載入）。網址換成 ?id=<id>。
      * @param {string | number} id - Lodestone 的角色 ID
-     * @param {{push?: boolean}} options - push 是 true 時新增一筆上一頁的紀錄（已經在看這個角色時照樣換掉這一筆）；
-     *   直接打開網址、上一頁或下一頁回到角色時是 false
+     * @param {{push?: boolean}} options - push 是 true 時新增一筆上一頁的紀錄（已經在看這個角色時照樣換掉這一筆，
+     *   例如在部隊成員裡點自己）；直接打開網址、上一頁或下一頁回到角色時是 false
      * @returns {Promise<void>} 標頭載入結束（成功、失敗或被更新的動作取代）
      */
     openCharacter(id, { push = true } = {}) {
         const characterId = String(id);
         const showing = this.state.view === 'character' && this.state.character?.id === characterId;
+        const active = document.activeElement;
         const context = this.newContext();
         this.state.character = {
-            id: characterId, context, dataLang: context.dataLang, status: 'loading', character: null, fetchedAt: null, reason: null
+            id: characterId, context, dataLang: context.dataLang, status: 'loading', character: null, fetchedAt: null, reason: null, freeCompanyName: ''
         };
         this.navigate({ view: 'character', id: characterId }, push && !showing);
         this.showView('character');
         this.renderCharacter();
-        return this.loadCharacter(context, characterId);
+        const loaded = this.loadCharacter(context, characterId);
+        this.tabs.open(context, characterId);
+        // 點的是分頁裡的一列（部隊成員）：那一列跟著分頁清掉、分頁也等新的標頭才出來，焦點移到「← 找其他人」，不掉到頁面最上面
+        if (active && active !== document.body && (!document.contains(active) || !LodestoneLookup.isShown(active))) this.elements.characterBack.focus();
+        return loaded;
     }
 
     async loadCharacter(context, id) {
@@ -335,6 +362,26 @@ class LodestoneLookup {
         Object.assign(this.state.character, outcome);
         if (outcome.status === 'done') this.rememberCharacter();
         this.renderCharacter();
+        // 裝備、其他與部隊分頁用標頭的資料
+        if (outcome.status === 'done') this.tabs.setCharacter(context, outcome.character);
+    }
+
+    /**
+     * 切到一個分頁（職業、成就、裝備、收藏、部隊、其他），第一次打開時載入。
+     * @param {'jobs' | 'achievements' | 'gear' | 'collections' | 'fc' | 'about'} key
+     * @param {{focus?: boolean}} options - focus 是 true 時焦點移到那個分頁
+     */
+    selectTab(key, { focus = false } = {}) {
+        this.tabs.select(key, { focus });
+    }
+
+    // 部隊分頁載入了部隊的名稱：舊 Worker 的標頭只寫「部隊」，補上名稱（同一個角色、同一個 context 才算）
+    setFreeCompanyName(context, name) {
+        const current = this.state.character;
+        if (!current || current.context !== context || typeof name !== 'string' || name.trim() === '') return;
+        current.freeCompanyName = name.trim();
+        const button = this.elements.profileCard.querySelector('.profile-fc');
+        if (button && current.character) button.textContent = this.freeCompanyLabel(current);
     }
 
     // 標頭打開成功：是我的角色就更新我的角色（設定時記下的快照），否則記進最近查過
@@ -385,16 +432,19 @@ class LodestoneLookup {
     }
 
     // 用現在的名稱與成就顯示重新打正在看的角色（網址不變，不多一筆上一頁）。已經畫出來的標頭留著（載入中）直到新的回來：
-    // 切換的按鈕就在標頭裡，不會不見，焦點也不會掉。之前是錯誤訊息或還在載入（沒有標頭）時，照一般的載入中畫
+    // 切換的按鈕就在標頭裡，不會不見，焦點也不會掉。之前是錯誤訊息或還在載入（沒有標頭）時，照一般的載入中畫。
+    // 分頁留在原本的那一個並重新載入，其他分頁下次打開再載入；部隊分頁補上的部隊名稱留著（同一個角色）
     reloadCharacter() {
         const previous = this.state.character;
         const context = this.newContext();
         this.state.character = {
             id: previous.id, context, dataLang: context.dataLang, status: 'loading',
-            character: previous.character, fetchedAt: previous.fetchedAt, reason: null
+            character: previous.character, fetchedAt: previous.fetchedAt, reason: null, freeCompanyName: previous.freeCompanyName
         };
         this.renderCharacter();
-        return this.loadCharacter(context, previous.id);
+        const loaded = this.loadCharacter(context, previous.id);
+        this.tabs.reload(context, previous.id);
+        return loaded;
     }
 
     // 上一頁、下一頁：網址有 ?id= 就打開那個角色（重新打標頭）。這一筆是搜尋結果，而且結果還在記憶體裡（最後一次的搜尋、已經回來）
@@ -486,12 +536,15 @@ class LodestoneLookup {
         this.renderLanding();
     }
 
-    // 重畫看得到的畫面（切換介面語言時）
+    // 重畫看得到的畫面（切換介面語言時）；角色畫面連打開過的分頁一起重畫（不重新打請求）
     render() {
         this.renderDataLang();
         if (this.state.view === 'landing') this.renderLanding();
         else if (this.state.view === 'search') this.renderSearch();
-        else this.renderCharacter();
+        else {
+            this.renderCharacter();
+            this.tabs.render();
+        }
     }
 
     // 名稱與成就顯示的兩組按鈕（找人卡片的 #dataLang 與角色標頭裡的那一組）一起畫，兩組永遠一樣
@@ -602,6 +655,7 @@ class LodestoneLookup {
     // 標頭裡焦點所在的那個按鈕，換成重畫之後找得到它的選擇器；焦點不在標頭的按鈕上是 null
     profileControl(element) {
         if (!element || !this.elements.profileCard.contains(element)) return null;
+        if (element.matches('.profile-fc')) return '.profile-fc';
         if (element.matches('.profile-mine')) return '.profile-mine';
         if (element.matches('.profile-lodestone')) return '.profile-lodestone';
         if (element.matches('button[data-lang]')) return `button[data-lang="${element.dataset.lang}"]`;
@@ -619,7 +673,7 @@ class LodestoneLookup {
         // 稱號是空字串（或只有空白）時和沒有稱號一樣
         const title = typeof character.Title === 'string' ? character.Title.trim() : '';
         if (title !== '') text.appendChild(LodestoneLookup.element('p', 'profile-title', title));
-        text.appendChild(this.whereLine(character, who));
+        text.appendChild(this.whereLine(current, who));
         head.appendChild(text);
         card.appendChild(head);
 
@@ -665,23 +719,30 @@ class LodestoneLookup {
         return wrapper;
     }
 
-    // 「伺服器（資料中心）・部隊 名稱」；舊 Worker 的部隊沒有名稱，只寫「部隊」；沒有加入部隊只寫伺服器
-    whereLine(character, who) {
+    // 「伺服器（資料中心）・部隊 名稱」，部隊那一段是切到部隊分頁的按鈕；沒有加入部隊只寫伺服器
+    whereLine(current, who) {
         const line = LodestoneLookup.element('p', 'profile-where', this.whereText(who.world, who.dc));
-        const fc = LodestoneModel.freeCompanyOf(character);
-        if (fc) {
+        if (LodestoneModel.freeCompanyOf(current.character)) {
             if (line.textContent !== '') line.appendChild(document.createTextNode(this.t('lodestone_sep', '・')));
-            const label = fc.name !== '' ? this.t('lodestone_fc_named', '部隊 {name}', { name: fc.name }) : this.t('lodestone_fc', '部隊');
-            line.appendChild(LodestoneLookup.element('span', 'profile-fc', label));
+            const button = LodestoneLookup.element('button', 'profile-fc', this.freeCompanyLabel(current));
+            button.type = 'button';
+            line.appendChild(button);
         }
         return line;
     }
 
-    // 「現在：<圖示> 職業 LvN」；讀不到目前職業時是 null
-    nowLine(character) {
+    // 「部隊 名稱」；舊 Worker 的部隊沒有名稱，部隊分頁載入之前只寫「部隊」（載入後用它的名稱，setFreeCompanyName()）
+    freeCompanyLabel(current) {
+        const fc = LodestoneModel.freeCompanyOf(current.character);
+        const name = fc && fc.name !== '' ? fc.name : current.freeCompanyName ?? '';
+        return name !== '' ? this.t('lodestone_fc_named', '部隊 {name}', { name }) : this.t('lodestone_fc', '部隊');
+    }
+
+    // 「現在：<圖示> 職業 LvN」（標頭與裝備分頁）；讀不到目前職業時是 null
+    nowLine(character, className = 'profile-now') {
         const job = LodestoneModel.activeJob(LodestoneModel.activeClassJobOf(character), this.uiLang());
         if (!job || (job.name === null && job.icon === null && job.level === null)) return null;
-        const line = LodestoneLookup.element('p', 'profile-now');
+        const line = LodestoneLookup.element('p', className);
         line.appendChild(LodestoneLookup.element('span', 'profile-now-label', this.t('lodestone_now', '現在：')));
         const icon = this.jobIcon(job);
         if (icon) line.appendChild(icon);

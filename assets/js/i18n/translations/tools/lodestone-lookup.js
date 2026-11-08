@@ -53,6 +53,45 @@ const LodestoneLookupTranslations = {
         lodestone_open_lodestone: '在 Lodestone 打開',
         lodestone_fetched_at: '資料時間：{time}',
 
+        // 角色畫面的六個分頁（成就與部隊的名稱是 lodestone_tab_achievements、lodestone_tab_fc）
+        lodestone_tabs_label: '角色資料',
+        lodestone_tab_jobs: '職業',
+        lodestone_tab_gear: '裝備',
+        lodestone_tab_collections: '收藏',
+        lodestone_tab_about: '其他',
+        // 分頁載入失敗時，錯誤訊息旁重新載入那個分頁的按鈕
+        lodestone_retry: '再試一次',
+
+        // 職業分頁：七組的名稱、滿級幾個（特殊內容那一行是 lodestone_special_content）
+        lodestone_role_tank: '坦克',
+        lodestone_role_healer: '治療',
+        lodestone_role_melee: '近戰',
+        lodestone_role_ranged: '遠程',
+        lodestone_role_magic: '魔法',
+        lodestone_role_crafting: '生產',
+        lodestone_role_gathering: '採集',
+        lodestone_jobs_maxed: '滿級 {count} 個',
+
+        // 成就分頁：數字後面的字、不公開
+        lodestone_achievement_unit: '個成就',
+        lodestone_point_unit: '點',
+        lodestone_achievements_private: '這個角色沒有公開成就',
+
+        // 裝備分頁（部位是 lodestone_equip_*，屬性是 lodestone_attributes 與下面的屬性標籤）
+        lodestone_gear_note: 'Lodestone 的角色頁只有裝備圖示，沒有名稱。',
+        lodestone_gear_none: '沒有裝備資料。',
+
+        // 收藏分頁（坐騎、寵物還沒載入好時的標題是 lodestone_tab_mounts、lodestone_tab_minions）
+        lodestone_mounts_total: '坐騎 {count}',
+        lodestone_minions_total: '寵物 {count}',
+        lodestone_filter_names: '篩選名稱',
+        lodestone_filter_none: '沒有符合的名稱',
+
+        // 部隊分頁（其他欄位是下面的 lodestone_fc_*）
+        lodestone_fc_none: '沒有加入部隊',
+        lodestone_fc_ranking_weekly: '每週 {rank}',
+        lodestone_fc_ranking_monthly: '每月 {rank}',
+
         // 搜尋區
         lodestone_placeholder: '請輸入 Lodestone ID (例如：12345678)',
         lodestone_dc_na: '北美資料中心',
@@ -67,27 +106,29 @@ const LodestoneLookupTranslations = {
         // 區段標題
         lodestone_basic_info: '基本資訊',
         lodestone_job_levels: '職業等級',
-        lodestone_special_content: '特殊內容',
+        lodestone_special_content: '特殊內容：{content}',
         lodestone_equipment: '裝備資訊',
-        lodestone_equip_mainhand: '主手：',
-        lodestone_equip_head: '頭部：',
-        lodestone_equip_body: '身體：',
-        lodestone_equip_hands: '手部：',
-        lodestone_equip_legs: '腿部：',
-        lodestone_equip_feet: '腳部：',
-        lodestone_equip_earrings: '耳飾：',
-        lodestone_equip_necklace: '頸飾：',
-        lodestone_equip_bracelets: '腕飾：',
-        lodestone_equip_ring1: '戒指1：',
-        lodestone_equip_ring2: '戒指2：',
-        lodestone_equip_soulcrystal: '靈魂水晶：',
-        lodestone_attributes: '角色屬性',
+        lodestone_equip_mainhand: '主手',
+        lodestone_equip_offhand: '副手',
+        lodestone_equip_head: '頭部',
+        lodestone_equip_body: '身體',
+        lodestone_equip_hands: '手部',
+        lodestone_equip_legs: '腿部',
+        lodestone_equip_feet: '腳部',
+        lodestone_equip_earrings: '耳飾',
+        lodestone_equip_necklace: '頸飾',
+        lodestone_equip_bracelets: '腕飾',
+        lodestone_equip_ring1: '戒指1',
+        lodestone_equip_ring2: '戒指2',
+        lodestone_equip_soulcrystal: '靈魂水晶',
+        lodestone_attributes: '屬性',
+        lodestone_main_attributes: '主屬性',
         lodestone_sub_attributes: '副屬性',
         lodestone_other_info: '其他資訊',
 
         // 基本資訊標籤
-        lodestone_deity: '守護神：',
-        lodestone_city: '開始城市：',
+        lodestone_deity: '守護神',
+        lodestone_city: '開始城市',
 
         // 屬性標籤
         lodestone_hp: '生命值：',
@@ -98,30 +139,30 @@ const LodestoneLookupTranslations = {
         lodestone_magic_defense: '魔法防禦力：',
 
         // 副屬性標籤
-        lodestone_strength: '力量：',
-        lodestone_dexterity: '靈巧：',
-        lodestone_vitality: '耐力：',
-        lodestone_intelligence: '智力：',
-        lodestone_mind: '精神：',
-        lodestone_critical: '爆擊：',
-        lodestone_determination: '意志：',
-        lodestone_direct_hit: '直擊：',
-        lodestone_skill_speed: '技巧速度：',
-        lodestone_spell_speed: '咏唱速度：',
-        lodestone_piety: '信仰：',
-        lodestone_tenacity: '堅韌：',
+        lodestone_strength: '力量',
+        lodestone_dexterity: '靈巧',
+        lodestone_vitality: '耐力',
+        lodestone_intelligence: '智力',
+        lodestone_mind: '精神',
+        lodestone_critical: '爆擊',
+        lodestone_determination: '意志',
+        lodestone_direct_hit: '直擊',
+        lodestone_skill_speed: '技巧速度',
+        lodestone_spell_speed: '詠唱速度',
+        lodestone_piety: '信仰',
+        lodestone_tenacity: '堅韌',
 
         // 其他資訊標籤
-        lodestone_grand_company: '大國防軍：',
-        lodestone_nameday: '生日：',
-        lodestone_bio: '個人簡介：',
+        lodestone_grand_company: '大國防聯軍',
+        lodestone_nameday: '生日',
+        lodestone_bio: '個人簡介',
 
         // 分頁
         lodestone_tab_overview: '總覽',
         lodestone_tab_achievements: '成就',
         lodestone_tab_mounts: '坐騎',
         lodestone_tab_minions: '寵物',
-        lodestone_tab_fc: '公會',
+        lodestone_tab_fc: '部隊',
         lodestone_go_to_tab: '前往{tab}分頁',
 
         // 成就區
@@ -145,15 +186,15 @@ const LodestoneLookupTranslations = {
 
         // 公會資訊
         lodestone_fc_info: '公會資訊',
-        lodestone_fc_members: '成員數：',
+        lodestone_fc_members: '人數',
         lodestone_fc_members_label: '成員數',
-        lodestone_fc_rank: '排名：',
-        lodestone_fc_recruitment: '招募狀態：',
-        lodestone_fc_estate: '公會房屋',
-        lodestone_fc_focus: '公會目標',
+        lodestone_fc_rank: '排名',
+        lodestone_fc_recruitment: '招募狀態',
+        lodestone_fc_estate: '部隊房屋',
+        lodestone_fc_focus: '活動重點',
         lodestone_fc_seeking: '招募對象',
-        lodestone_fc_reputation: '大國防軍聲望',
-        lodestone_fc_member_list: '公會成員',
+        lodestone_fc_reputation: '大國防聯軍聲望',
+        lodestone_fc_member_list: '成員',
 
         // 連結
         lodestone_view_full: '在 Lodestone 查看完整資訊 →',
@@ -243,6 +284,45 @@ const LodestoneLookupTranslations = {
         lodestone_open_lodestone: 'Open on the Lodestone',
         lodestone_fetched_at: 'Data as of {time}',
 
+        // The six tabs of the character view
+        lodestone_tabs_label: 'Character details',
+        lodestone_tab_jobs: 'Jobs',
+        lodestone_tab_gear: 'Gear',
+        lodestone_tab_collections: 'Collections',
+        lodestone_tab_about: 'Other',
+        // Next to a tab's error message: loads that tab again
+        lodestone_retry: 'Try again',
+
+        // Jobs tab: the seven groups, how many are at max level
+        lodestone_role_tank: 'Tank',
+        lodestone_role_healer: 'Healer',
+        lodestone_role_melee: 'Melee',
+        lodestone_role_ranged: 'Ranged',
+        lodestone_role_magic: 'Caster',
+        lodestone_role_crafting: 'Crafter',
+        lodestone_role_gathering: 'Gatherer',
+        lodestone_jobs_maxed: '{count} at max level',
+
+        // Achievements tab
+        lodestone_achievement_unit: 'achievements',
+        lodestone_point_unit: 'points',
+        lodestone_achievements_private: 'This character\'s achievements are not public',
+
+        // Gear tab
+        lodestone_gear_note: 'The Lodestone character page shows gear icons only, without their names.',
+        lodestone_gear_none: 'No gear data.',
+
+        // Collections tab
+        lodestone_mounts_total: 'Mounts {count}',
+        lodestone_minions_total: 'Minions {count}',
+        lodestone_filter_names: 'Filter by name',
+        lodestone_filter_none: 'No matching names',
+
+        // Free Company tab
+        lodestone_fc_none: 'Not in a Free Company',
+        lodestone_fc_ranking_weekly: 'Weekly {rank}',
+        lodestone_fc_ranking_monthly: 'Monthly {rank}',
+
         // Search section
         lodestone_placeholder: 'Enter Lodestone ID (e.g., 12345678)',
         lodestone_dc_na: 'North America DC',
@@ -257,27 +337,29 @@ const LodestoneLookupTranslations = {
         // Section titles
         lodestone_basic_info: 'Basic Information',
         lodestone_job_levels: 'Job Levels',
-        lodestone_special_content: 'Special Content',
+        lodestone_special_content: 'Special content: {content}',
         lodestone_equipment: 'Equipment',
-        lodestone_equip_mainhand: 'Main Hand:',
-        lodestone_equip_head: 'Head:',
-        lodestone_equip_body: 'Body:',
-        lodestone_equip_hands: 'Hands:',
-        lodestone_equip_legs: 'Legs:',
-        lodestone_equip_feet: 'Feet:',
-        lodestone_equip_earrings: 'Earrings:',
-        lodestone_equip_necklace: 'Necklace:',
-        lodestone_equip_bracelets: 'Bracelets:',
-        lodestone_equip_ring1: 'Ring 1:',
-        lodestone_equip_ring2: 'Ring 2:',
-        lodestone_equip_soulcrystal: 'Soul Crystal:',
+        lodestone_equip_mainhand: 'Main Hand',
+        lodestone_equip_offhand: 'Off Hand',
+        lodestone_equip_head: 'Head',
+        lodestone_equip_body: 'Body',
+        lodestone_equip_hands: 'Hands',
+        lodestone_equip_legs: 'Legs',
+        lodestone_equip_feet: 'Feet',
+        lodestone_equip_earrings: 'Earrings',
+        lodestone_equip_necklace: 'Necklace',
+        lodestone_equip_bracelets: 'Bracelets',
+        lodestone_equip_ring1: 'Ring 1',
+        lodestone_equip_ring2: 'Ring 2',
+        lodestone_equip_soulcrystal: 'Soul Crystal',
         lodestone_attributes: 'Attributes',
-        lodestone_sub_attributes: 'Sub Attributes',
+        lodestone_main_attributes: 'Main attributes',
+        lodestone_sub_attributes: 'Sub attributes',
         lodestone_other_info: 'Other Information',
 
         // Basic info labels
-        lodestone_deity: 'Guardian:',
-        lodestone_city: 'Starting City:',
+        lodestone_deity: 'Guardian',
+        lodestone_city: 'Starting city',
 
         // Attribute labels
         lodestone_hp: 'HP:',
@@ -288,23 +370,23 @@ const LodestoneLookupTranslations = {
         lodestone_magic_defense: 'Magic Defense:',
 
         // Sub attribute labels
-        lodestone_strength: 'Strength:',
-        lodestone_dexterity: 'Dexterity:',
-        lodestone_vitality: 'Vitality:',
-        lodestone_intelligence: 'Intelligence:',
-        lodestone_mind: 'Mind:',
-        lodestone_critical: 'Critical Hit:',
-        lodestone_determination: 'Determination:',
-        lodestone_direct_hit: 'Direct Hit:',
-        lodestone_skill_speed: 'Skill Speed:',
-        lodestone_spell_speed: 'Spell Speed:',
-        lodestone_piety: 'Piety:',
-        lodestone_tenacity: 'Tenacity:',
+        lodestone_strength: 'Strength',
+        lodestone_dexterity: 'Dexterity',
+        lodestone_vitality: 'Vitality',
+        lodestone_intelligence: 'Intelligence',
+        lodestone_mind: 'Mind',
+        lodestone_critical: 'Critical Hit',
+        lodestone_determination: 'Determination',
+        lodestone_direct_hit: 'Direct Hit',
+        lodestone_skill_speed: 'Skill Speed',
+        lodestone_spell_speed: 'Spell Speed',
+        lodestone_piety: 'Piety',
+        lodestone_tenacity: 'Tenacity',
 
         // Other info labels
-        lodestone_grand_company: 'Grand Company:',
-        lodestone_nameday: 'Nameday:',
-        lodestone_bio: 'Bio:',
+        lodestone_grand_company: 'Grand Company',
+        lodestone_nameday: 'Nameday',
+        lodestone_bio: 'Bio',
 
         // Tabs
         lodestone_tab_overview: 'Overview',
@@ -335,10 +417,10 @@ const LodestoneLookupTranslations = {
 
         // FC info
         lodestone_fc_info: 'Free Company Info',
-        lodestone_fc_members: 'Members:',
+        lodestone_fc_members: 'Active members',
         lodestone_fc_members_label: 'Members',
-        lodestone_fc_rank: 'Rank:',
-        lodestone_fc_recruitment: 'Recruiting:',
+        lodestone_fc_rank: 'Ranking',
+        lodestone_fc_recruitment: 'Recruitment',
         lodestone_fc_estate: 'Estate',
         lodestone_fc_focus: 'Focus',
         lodestone_fc_seeking: 'Seeking',
@@ -433,6 +515,45 @@ const LodestoneLookupTranslations = {
         lodestone_open_lodestone: 'Lodestone で開く',
         lodestone_fetched_at: 'データ取得：{time}',
 
+        // キャラクター画面の 6 つのタブ
+        lodestone_tabs_label: 'キャラクター情報',
+        lodestone_tab_jobs: 'ジョブ',
+        lodestone_tab_gear: '装備',
+        lodestone_tab_collections: 'コレクション',
+        lodestone_tab_about: 'その他',
+        // タブの読み込みに失敗したとき、エラーの横でそのタブを読み込み直すボタン
+        lodestone_retry: 'もう一度試す',
+
+        // ジョブタブ：7 つのグループ、カンストしたジョブの数
+        lodestone_role_tank: 'タンク',
+        lodestone_role_healer: 'ヒーラー',
+        lodestone_role_melee: 'メレー',
+        lodestone_role_ranged: 'レンジ',
+        lodestone_role_magic: 'キャスター',
+        lodestone_role_crafting: 'クラフター',
+        lodestone_role_gathering: 'ギャザラー',
+        lodestone_jobs_maxed: 'カンスト {count}',
+
+        // アチーブメントタブ
+        lodestone_achievement_unit: 'アチーブメント',
+        lodestone_point_unit: 'ポイント',
+        lodestone_achievements_private: 'このキャラクターはアチーブメントを公開していません',
+
+        // 装備タブ
+        lodestone_gear_note: 'Lodestone のキャラクターページには装備のアイコンだけがあり、名前はありません。',
+        lodestone_gear_none: '装備のデータがありません。',
+
+        // コレクションタブ
+        lodestone_mounts_total: 'マウント {count}',
+        lodestone_minions_total: 'ミニオン {count}',
+        lodestone_filter_names: '名前で絞り込む',
+        lodestone_filter_none: '一致する名前はありません',
+
+        // フリーカンパニータブ
+        lodestone_fc_none: 'フリーカンパニーに所属していません',
+        lodestone_fc_ranking_weekly: '週間 {rank}位',
+        lodestone_fc_ranking_monthly: '月間 {rank}位',
+
         // 検索セクション
         lodestone_placeholder: 'Lodestone IDを入力 (例：12345678)',
         lodestone_dc_na: '北米DC',
@@ -447,27 +568,29 @@ const LodestoneLookupTranslations = {
         // セクションタイトル
         lodestone_basic_info: '基本情報',
         lodestone_job_levels: 'ジョブレベル',
-        lodestone_special_content: '特殊コンテンツ',
+        lodestone_special_content: '特殊コンテンツ：{content}',
         lodestone_equipment: '装備情報',
-        lodestone_equip_mainhand: 'メインアーム：',
-        lodestone_equip_head: '頭：',
-        lodestone_equip_body: '胴：',
-        lodestone_equip_hands: '手：',
-        lodestone_equip_legs: '脚：',
-        lodestone_equip_feet: '足：',
-        lodestone_equip_earrings: '耳：',
-        lodestone_equip_necklace: '首：',
-        lodestone_equip_bracelets: '腕：',
-        lodestone_equip_ring1: '指1：',
-        lodestone_equip_ring2: '指2：',
-        lodestone_equip_soulcrystal: 'ソウルクリスタル：',
+        lodestone_equip_mainhand: 'メインアーム',
+        lodestone_equip_offhand: 'サブアーム',
+        lodestone_equip_head: '頭',
+        lodestone_equip_body: '胴',
+        lodestone_equip_hands: '手',
+        lodestone_equip_legs: '脚',
+        lodestone_equip_feet: '足',
+        lodestone_equip_earrings: '耳',
+        lodestone_equip_necklace: '首',
+        lodestone_equip_bracelets: '腕',
+        lodestone_equip_ring1: '指1',
+        lodestone_equip_ring2: '指2',
+        lodestone_equip_soulcrystal: 'ソウルクリスタル',
         lodestone_attributes: 'ステータス',
+        lodestone_main_attributes: 'メインステータス',
         lodestone_sub_attributes: 'サブステータス',
         lodestone_other_info: 'その他の情報',
 
         // 基本情報ラベル
-        lodestone_deity: '守護神：',
-        lodestone_city: '開始都市：',
+        lodestone_deity: '守護神',
+        lodestone_city: '開始都市',
 
         // ステータスラベル
         lodestone_hp: 'HP：',
@@ -478,23 +601,23 @@ const LodestoneLookupTranslations = {
         lodestone_magic_defense: '魔法防御力：',
 
         // サブステータスラベル
-        lodestone_strength: 'STR：',
-        lodestone_dexterity: 'DEX：',
-        lodestone_vitality: 'VIT：',
-        lodestone_intelligence: 'INT：',
-        lodestone_mind: 'MND：',
-        lodestone_critical: 'クリティカル：',
-        lodestone_determination: '意思力：',
-        lodestone_direct_hit: 'ダイレクトヒット：',
-        lodestone_skill_speed: 'スキルスピード：',
-        lodestone_spell_speed: 'スペルスピード：',
-        lodestone_piety: '信仰：',
-        lodestone_tenacity: '不屈：',
+        lodestone_strength: 'STR',
+        lodestone_dexterity: 'DEX',
+        lodestone_vitality: 'VIT',
+        lodestone_intelligence: 'INT',
+        lodestone_mind: 'MND',
+        lodestone_critical: 'クリティカル',
+        lodestone_determination: '意思力',
+        lodestone_direct_hit: 'ダイレクトヒット',
+        lodestone_skill_speed: 'スキルスピード',
+        lodestone_spell_speed: 'スペルスピード',
+        lodestone_piety: '信仰',
+        lodestone_tenacity: '不屈',
 
         // その他の情報ラベル
-        lodestone_grand_company: 'グランドカンパニー：',
-        lodestone_nameday: '誕生日：',
-        lodestone_bio: '自己紹介：',
+        lodestone_grand_company: 'グランドカンパニー',
+        lodestone_nameday: '誕生日',
+        lodestone_bio: '自己紹介',
 
         // タブ
         lodestone_tab_overview: '概要',
@@ -525,10 +648,10 @@ const LodestoneLookupTranslations = {
 
         // FC情報
         lodestone_fc_info: 'フリーカンパニー情報',
-        lodestone_fc_members: 'メンバー数：',
+        lodestone_fc_members: 'メンバー数',
         lodestone_fc_members_label: 'メンバー数',
-        lodestone_fc_rank: 'ランク：',
-        lodestone_fc_recruitment: '募集状態：',
+        lodestone_fc_rank: 'ランキング',
+        lodestone_fc_recruitment: '募集状態',
         lodestone_fc_estate: 'カンパニーハウス',
         lodestone_fc_focus: '活動方針',
         lodestone_fc_seeking: '募集対象',

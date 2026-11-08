@@ -113,14 +113,31 @@
                     </section>
                 </div>
 
-                <!-- 角色：「← 找其他人」、標頭（script.js 畫：載入中、名字與稱號、伺服器與部隊、目前職業、我的角色、在 Lodestone 打開、
-                     名稱與成就顯示（和找人卡片的 #dataLang 同一組按鈕）、資料時間）。
-                     標頭打不開時標頭與分頁藏起來，只留錯誤訊息與「← 找其他人」。#tabsCard 是放分頁的容器 -->
+                <!-- 角色：「← 找其他人」、標頭（script.js 畫：載入中、名字與稱號、伺服器與部隊（部隊名稱是切到部隊分頁的按鈕）、目前職業、
+                     我的角色、在 Lodestone 打開、名稱與成就顯示（和找人卡片的 #dataLang 同一組按鈕）、資料時間）、六個分頁。
+                     標頭打不開時標頭與分頁藏起來，只留錯誤訊息與「← 找其他人」 -->
                 <div id="characterView" hidden>
                     <button type="button" class="btn btn-ghost back-button" id="characterBack" data-i18n="lodestone_back">← 找其他人</button>
                     <section class="card profile-card" id="profileCard" aria-busy="false"></section>
                     <div class="error-message" id="characterError" role="alert" hidden></div>
-                    <section class="card tabs-card" id="tabsCard" hidden></section>
+                    <!-- 六個分頁（WAI-ARIA 分頁）：lodestone-tabs.js 切換 aria-selected、tabindex、.active 與面板的 hidden，
+                         左右方向鍵移動並切換、Home／End 到第一個／最後一個；面板的內容第一次打開時才載入，由 lodestone-tabs.js 畫 -->
+                    <section class="card tabs-card" id="tabsCard" hidden>
+                        <div class="tabs" id="tabList" role="tablist" aria-label="角色資料" data-i18n="lodestone_tabs_label" data-i18n-attr="aria-label">
+                            <button type="button" class="tab active" id="tab-jobs" role="tab" data-tab="jobs" aria-selected="true" aria-controls="panel-jobs" tabindex="0" data-i18n="lodestone_tab_jobs">職業</button>
+                            <button type="button" class="tab" id="tab-achievements" role="tab" data-tab="achievements" aria-selected="false" aria-controls="panel-achievements" tabindex="-1" data-i18n="lodestone_tab_achievements">成就</button>
+                            <button type="button" class="tab" id="tab-gear" role="tab" data-tab="gear" aria-selected="false" aria-controls="panel-gear" tabindex="-1" data-i18n="lodestone_tab_gear">裝備</button>
+                            <button type="button" class="tab" id="tab-collections" role="tab" data-tab="collections" aria-selected="false" aria-controls="panel-collections" tabindex="-1" data-i18n="lodestone_tab_collections">收藏</button>
+                            <button type="button" class="tab" id="tab-fc" role="tab" data-tab="fc" aria-selected="false" aria-controls="panel-fc" tabindex="-1" data-i18n="lodestone_tab_fc">部隊</button>
+                            <button type="button" class="tab" id="tab-about" role="tab" data-tab="about" aria-selected="false" aria-controls="panel-about" tabindex="-1" data-i18n="lodestone_tab_about">其他</button>
+                        </div>
+                        <div class="tab-panel" id="panel-jobs" role="tabpanel" aria-labelledby="tab-jobs" tabindex="0"></div>
+                        <div class="tab-panel" id="panel-achievements" role="tabpanel" aria-labelledby="tab-achievements" tabindex="0" hidden></div>
+                        <div class="tab-panel" id="panel-gear" role="tabpanel" aria-labelledby="tab-gear" tabindex="0" hidden></div>
+                        <div class="tab-panel" id="panel-collections" role="tabpanel" aria-labelledby="tab-collections" tabindex="0" hidden></div>
+                        <div class="tab-panel" id="panel-fc" role="tabpanel" aria-labelledby="tab-fc" tabindex="0" hidden></div>
+                        <div class="tab-panel" id="panel-about" role="tabpanel" aria-labelledby="tab-about" tabindex="0" hidden></div>
+                    </section>
                 </div>
             </div>
         </div>
@@ -139,6 +156,7 @@
     <script src="lodestone-data.js"></script>
     <script src="lodestone-model.js"></script>
     <script src="lodestone-store.js"></script>
+    <script src="lodestone-tabs.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

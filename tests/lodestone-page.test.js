@@ -1,5 +1,6 @@
 // Lodestone 角色查詢頁：打開時（我的角色 → 找人 → 最近查過）、找人與搜尋結果、角色標頭、網址與上一頁、名稱與成就顯示、
-// 舊的請求晚到（從 tests/lodestone-requests.test.js 搬來的標頭部分）。頁面替身見 tests/helpers/lodestone-page.js，假回應見 lodestone-fixtures.js
+// 六個分頁（職業、成就、裝備、收藏、部隊、其他）、舊的請求晚到（從 tests/lodestone-requests.test.js 搬來的標頭與分頁部分）。
+// 頁面替身見 tests/helpers/lodestone-page.js，假回應見 lodestone-fixtures.js
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -30,8 +31,13 @@ function deferred() {
 // 打開時看得到的部分，照畫面上的順序
 const landingParts = (page) => page.$('landingView').children.filter((child) => !child.hidden).map((child) => child.id);
 const paths = (page) => page.requests.map((request) => request.path);
-// 打開這個人的角色時，Worker 回新格式的角色
-const characterRoute = (who) => ({ [`/character/${who.id}`]: () => F.ok(F.character(who)) });
+// 打開這個人的角色時，Worker 回新格式的角色；打開角色時一起打的職業分頁回 F.classJobs()
+const characterRoute = (who) => ({
+    [`/character/${who.id}`]: () => F.ok(F.character(who)),
+    [`/character/${who.id}/classjob`]: () => F.ok(F.classJobs())
+});
+// 打開一個角色打的兩個請求：標頭與職業分頁
+const opened = (id, dc = 'na') => [`/character/${id}?dc=${dc}`, `/character/${id}/classjob?dc=${dc}`];
 const storedJson = (page, key) => JSON.parse(page.stored(key));
 const LODESTONE = (id, dc = 'na') => `https://${dc}.finalfantasyxiv.com/lodestone/character/${id}/`;
 const clean = (page) => assert.deepEqual(page.consoleErrors, [], '頁面不在 console 留東西');
@@ -42,6 +48,46 @@ const spokenText = (element) => element.childNodes.map((node) => {
 }).join('');
 // 名稱與成就顯示的按鈕（container 裡的每一顆）的 aria-pressed，照 English、日本語的順序
 const pressed = (container) => container.querySelectorAll('button[data-lang]').map((button) => button.getAttribute('aria-pressed'));
+
+// ---------- 分頁用的小工具 ----------
+const TAB_KEYS = ['jobs', 'achievements', 'gear', 'collections', 'fc', 'about'];
+// 選中的分頁（aria-selected="true" 的 data-tab）
+const selectedTab = (page) => page.tabs().filter((tab) => tab.selected === 'true').map((tab) => tab.key);
+// 打開這個人的角色時，每一個分頁的請求都有回答（Worker 的新格式）：標頭、職業、成就（照請求的頁數）、坐騎、寵物、部隊與成員（照請求的頁數）
+function allRoutes(who = F.HIKARI) {
+    const routes = {
+        ...characterRoute(who),
+        [`/character/${who.id}/achievements`]: (url) => F.ok(F.achievements({ page: Number(url.searchParams.get('page')) })),
+        [`/character/${who.id}/mounts`]: () => F.ok(F.mounts()),
+        [`/character/${who.id}/minions`]: () => F.ok(F.minions())
+    };
+    if (who.fc) {
+        routes[`/freecompany/${who.fc.id}`] = () => F.ok(F.freeCompany(who.fc));
+        routes[`/freecompany/${who.fc.id}/members`] = (url) => F.ok(F.members(Number(url.searchParams.get('page'))));
+    }
+    return routes;
+}
+// 面板裡的上一頁、下一頁與頁數；沒有換頁的按鈕時是 null
+function pagerOf(page, key) {
+    const pager = page.$(`panel-${key}`).querySelector('.pager');
+    if (!pager) return null;
+    const [prev, next] = pager.querySelectorAll('button');
+    return {
+        prev, next,
+        info: pager.querySelector('.pager-info').textContent,
+        prevDisabled: prev.getAttribute('aria-disabled') === 'true',
+        nextDisabled: next.getAttribute('aria-disabled') === 'true'
+    };
+}
+// dl 的每一列 [dt 的字, dd 的字]
+const rowsOf = (list) => list.querySelectorAll('dt').map((term) => [term.textContent, term.nextElementSibling.textContent]);
+// 在輸入框打字（設值並派送會冒泡的 input）
+function typeInto(page, input, text) {
+    input.value = text;
+    input.dispatchEvent(new page.window.Event('input', { bubbles: true }));
+}
+// 成就的日期寫法：年月日，照介面語言（同 lodestone-tabs.js 的 DATE_FORMAT）
+const dateText = (iso, locale) => new Date(iso).toLocaleDateString(locale, { year: 'numeric', month: '2-digit', day: '2-digit' });
 
 // ---------- 打開時 ----------
 
@@ -108,7 +154,7 @@ test('有我的角色與 3 個最近查過：我的角色 → 找人 → 最近�
     mine.click();
     assert.equal(page.view(), 'character');
     await page.flush();
-    assert.deepEqual(paths(page), ['/character/12345678?dc=na']);
+    assert.deepEqual(paths(page), opened('12345678'));
     assert.equal(page.url(), `${PAGE}?id=12345678`);
     assert.deepEqual(page.history.at(-1), { method: 'pushState', state: { view: 'character', id: '12345678' }, url: `${PAGE}?id=12345678` });
     assert.equal(page.profile().name, 'Hikari Senshi');
@@ -125,7 +171,7 @@ test('點最近查過的一列打開那個角色；那一列跟著打開時的�
     assert.equal(page.view(), 'character');
     isSame(page.document.activeElement, page.$('characterBack'), '焦點不會掉到頁面最上面');
     await page.flush();
-    assert.deepEqual(paths(page), ['/character/56789012?dc=na']);
+    assert.deepEqual(paths(page), opened('56789012'));
     assert.equal(page.profile().name, 'Reed Blacke');
     clean(page);
 });
@@ -273,7 +319,7 @@ test('名字欄貼角色頁網址或 ID：不打搜尋，直接打開那個角�
         page.submit();
         assert.equal(page.view(), 'character', input);
         await page.flush();
-        assert.deepEqual(paths(page), [`/character/${id}?dc=na`], input);
+        assert.deepEqual(paths(page), opened(id), input);
         assert.equal(page.url(), `${PAGE}?id=${id}`, input);
         clean(page);
     }
@@ -286,7 +332,7 @@ test('名字欄貼角色頁網址或 ID：不打搜尋，直接打開那個角�
     page.type('https://na.finalfantasyxiv.com/lodestone/character/12345678/');
     page.submit();
     await page.flush();
-    assert.deepEqual(paths(page), ['/character/12345678?dc=na']);
+    assert.deepEqual(paths(page), opened('12345678'));
     assert.equal(page.$('nameInput').value, '12345678');
     clean(page);
 });
@@ -328,7 +374,7 @@ test('只有一個結果時照樣列出、不自動打開；點那一列才打�
     assert.equal(page.view(), 'character');
     isSame(page.document.activeElement, page.$('characterBack'), '焦點移到「← 找其他人」');
     await page.flush();
-    assert.deepEqual(paths(page).slice(1), ['/character/23456789?dc=na']);
+    assert.deepEqual(paths(page).slice(1), opened('23456789'));
     assert.equal(page.url(), `${PAGE}?id=23456789`);
     assert.equal(page.history.at(-1).method, 'pushState');
 
@@ -336,7 +382,7 @@ test('只有一個結果時照樣列出、不自動打開；點那一列才打�
     await page.flush();
     assert.equal(page.view(), 'search');
     assert.equal(page.url(), PAGE);
-    assert.equal(page.requests.length, 2, '回到搜尋結果不再搜尋一次');
+    assert.equal(page.requests.length, 3, '回到搜尋結果不再搜尋一次');
     assert.deepEqual(page.resultRows().map((row) => row.name), ['Aoi Mizuno']);
     assert.equal(page.$('nameInput').value, 'Aoi Mizuno');
     assert.equal(page.$('worldSelect').value, 'Tiamat');
@@ -442,7 +488,7 @@ test('角色標頭：名字、稱號、伺服器與部隊、現在的職業、�
 
     assert.equal(page.$('characterBack').textContent, '← 找其他人');
     assert.deepEqual([page.$('characterError').hidden, page.$('tabsCard').hidden], [true, false]);
-    assert.deepEqual(paths(page), ['/character/12345678?dc=na'], '只打標頭');
+    assert.deepEqual(paths(page), opened('12345678'), '只打標頭與職業分頁');
     assert.equal(page.url(), `${PAGE}?id=12345678`);
     assert.deepEqual(page.history, [{ method: 'replaceState', state: { view: 'character', id: '12345678' }, url: `${PAGE}?id=12345678` }], '直接打開網址不新增上一頁的紀錄');
     clean(page);
@@ -582,7 +628,7 @@ test('角色打開後點「← 找其他人」：回到打開時（新增一筆�
     assert.equal(page.view(), 'character');
     await page.flush();
     assert.equal(page.url(), `${PAGE}?id=12345678`);
-    assert.deepEqual(paths(page), ['/character/12345678?dc=na', '/character/12345678?dc=na']);
+    assert.deepEqual(paths(page), [...opened('12345678'), ...opened('12345678')]);
     assert.equal(page.profile().name, 'Hikari Senshi');
     clean(page);
 });
@@ -618,7 +664,7 @@ test('上一頁：打開時 → 角色 → 上一頁回到打開時（不再打 
     await page.flush();
     assert.equal(page.view(), 'landing');
     assert.equal(page.url(), PAGE);
-    assert.equal(page.requests.length, 1);
+    assert.equal(page.requests.length, 2);
     assert.deepEqual(page.recentNames(), ['Aoi Mizuno']);
 
     const bad = createLodestonePage({ search: '?id=abc' });
@@ -785,7 +831,7 @@ test('看角色時切換會重新打標頭：按標頭裡的名稱與成就顯�
 
     profileButton('ja').focus();
     profileButton('ja').click();
-    assert.deepEqual(paths(page), ['/character/12345678?dc=na', '/character/12345678?dc=jp'], '用日本語重新打標頭');
+    assert.deepEqual(paths(page), [...opened('12345678'), ...opened('12345678', 'jp')], '用日本語重新打標頭（與目前的分頁）');
     assert.equal(page.stored(KEYS.lang), 'ja', '記住按的');
     assert.deepEqual([pressed(page.$('dataLang')), pressed(page.$('profileCard'))], [['false', 'true'], ['false', 'true']], '兩組按鈕一樣');
     // 新的還沒回來：標頭留著（載入中），按鈕不會不見，焦點留在按下去的那一顆
@@ -801,14 +847,14 @@ test('看角色時切換會重新打標頭：按標頭裡的名稱與成就顯�
 
     // 再按一次同一個語言：不重打
     profileButton('ja').click();
-    assert.equal(page.requests.length, 2);
+    assert.equal(page.requests.length, 4);
 
     // 很快地換回 English 又換成日本語：English 的回應晚到不採用
     profileButton('en').click();
     await page.flush();
-    assert.equal(page.requests[2].params.dc, 'na');
+    assert.equal(page.requests[4].params.dc, 'na');
     profileButton('ja').click();
-    assert.equal(page.requests[2].signal.aborted, true, '取消 English 的請求');
+    assert.equal(page.requests[4].signal.aborted, true, '取消 English 的請求');
     await page.flush();
     assert.equal(page.profile().title, 'Japanese Title 2');
     lateEnglish.resolve(F.character({ ...F.HIKARI, title: 'Late English Title' }));
@@ -835,7 +881,7 @@ test('標頭還在載入時換名稱與成就顯示（沒按過時切換介面�
     page.setLang('ja');
     assert.equal(page.requests[0].signal.aborted, true, '取消舊語言的請求');
     await page.flush();
-    assert.deepEqual(paths(page), ['/character/12345678?dc=na', '/character/12345678?dc=jp']);
+    assert.deepEqual(paths(page), [...opened('12345678'), ...opened('12345678', 'jp')]);
     assert.equal(page.profile().title, 'Japanese Title');
     englishBody.resolve(F.character({ ...F.HIKARI, title: 'English Title' }));
     await page.ready;
@@ -928,7 +974,7 @@ test('上一頁、下一頁：打開時 → 搜尋結果 → 角色 → 上一�
         ['pushState', PAGE],
         ['pushState', `${PAGE}?id=23456789`]
     ], '搜尋與打開角色各新增一筆，搜尋的那一筆網址不變');
-    assert.deepEqual(paths(page), ['/search/character?name=Aoi+Mizu&world=Tiamat&dc=na&page=1', '/character/23456789?dc=na']);
+    assert.deepEqual(paths(page), ['/search/character?name=Aoi+Mizu&world=Tiamat&dc=na&page=1', ...opened('23456789')]);
 
     page.back();
     assert.deepEqual([page.view(), page.url()], ['search', PAGE], '回到搜尋結果');
@@ -943,13 +989,13 @@ test('上一頁、下一頁：打開時 → 搜尋結果 → 角色 → 上一�
     page.forward();
     assert.deepEqual([page.view(), page.url()], ['search', PAGE], '下一頁回到搜尋結果');
     assert.deepEqual(page.resultRows().map((row) => row.name), ['Aoi Mizuno', 'Aoi Mizusawa']);
-    assert.equal(page.requests.length, 2, '搜尋結果從記憶體拿，不再搜尋');
+    assert.equal(page.requests.length, 3, '搜尋結果從記憶體拿，不再搜尋');
 
     page.forward();
     assert.deepEqual([page.view(), page.url()], ['character', `${PAGE}?id=23456789`]);
     await page.flush();
     assert.equal(page.profile().name, 'Aoi Mizuno');
-    assert.deepEqual(paths(page).slice(2), ['/character/23456789?dc=na'], '角色重新打標頭');
+    assert.deepEqual(paths(page).slice(3), opened('23456789'), '角色重新打標頭與職業分頁');
     assert.equal(page.history.filter((call) => call.method === 'pushState').length, 2, '上一頁、下一頁不新增紀錄');
     clean(page);
 });
@@ -1050,18 +1096,18 @@ test('沒按過名稱與成就顯示時跟著介面語言：看角色時切成�
     await page.ready;
     page.setLang('ja');
     await page.flush();
-    assert.deepEqual(paths(page), ['/character/12345678?dc=na', '/character/12345678?dc=jp']);
+    assert.deepEqual(paths(page), [...opened('12345678'), ...opened('12345678', 'jp')]);
     assert.deepEqual([pressed(page.$('dataLang')), pressed(page.$('profileCard'))], [['false', 'true'], ['false', 'true']]);
     page.setLang('en');
     await page.flush();
     assert.equal(page.requests.at(-1).params.dc, 'na');
-    assert.equal(page.requests.length, 3);
+    assert.equal(page.requests.length, 6);
 
     const chosen = createLodestonePage({ search: '?id=12345678', stored: { [KEYS.lang]: 'en' }, routes: characterRoute(F.HIKARI) });
     await chosen.ready;
     chosen.setLang('ja');
     await chosen.flush();
-    assert.equal(chosen.requests.length, 1, '按過 English 就不跟著介面語言');
+    assert.equal(chosen.requests.length, 2, '按過 English 就不跟著介面語言');
     assert.equal(chosen.profile().now, '現在：吟遊詩人 Lv100', '畫面上的字照樣換成日文');
     clean(page);
     clean(chosen);
@@ -1097,7 +1143,7 @@ test('切換介面語言：打開時、搜尋結果、角色標頭的字換成�
     assert.deepEqual(page.profile().mine, { text: '★ 我的角色', pressed: 'true' });
     assert.equal(page.profile().fetchedAt, `資料時間：${fetchedText('zh-TW')}`);
     assert.equal(page.profile().where, 'Tonberry（Elemental）・部隊 Example Company');
-    assert.equal(page.requests.length, 2, '按過 English：換介面語言不重打');
+    assert.equal(page.requests.length, 3, '按過 English：換介面語言不重打');
     clean(page);
 });
 
@@ -1216,6 +1262,1076 @@ test('搜尋 A 之後很快搜尋 B：A 的結果晚到、A 失敗都不能蓋�
     clean(page);
 });
 
+// ---------- 分頁 ----------
+
+test('分頁：#tabList 裡六個 role="tab"（data-tab、id、aria-controls），六個 role="tabpanel"（aria-labelledby，沒選中的 hidden）；一打開是職業', async () => {
+    const page = createLodestonePage({ search: '?id=12345678', routes: characterRoute(F.HIKARI) });
+    await page.ready;
+    await page.flush();
+    const list = page.$('tabList');
+    assert.deepEqual([list.getAttribute('role'), list.getAttribute('aria-label')], ['tablist', '角色資料']);
+    assert.deepEqual(list.children.map((tab) => [tab.tagName, tab.getAttribute('type'), tab.getAttribute('role'), tab.dataset.tab, tab.id, tab.getAttribute('aria-controls')]),
+        TAB_KEYS.map((key) => ['BUTTON', 'button', 'tab', key, `tab-${key}`, `panel-${key}`]));
+    assert.deepEqual(page.tabs().map((tab) => tab.text), ['職業', '成就', '裝備', '收藏', '部隊', '其他']);
+    for (const key of TAB_KEYS) {
+        const panel = page.$(`panel-${key}`);
+        assert.deepEqual([panel.getAttribute('role'), panel.getAttribute('aria-labelledby')], ['tabpanel', `tab-${key}`], key);
+    }
+    assert.deepEqual(page.tabs().map((tab) => [tab.key, tab.selected, tab.tabindex, tab.active, tab.panelHidden]), [
+        ['jobs', 'true', '0', true, false],
+        ['achievements', 'false', '-1', false, true],
+        ['gear', 'false', '-1', false, true],
+        ['collections', 'false', '-1', false, true],
+        ['fc', 'false', '-1', false, true],
+        ['about', 'false', '-1', false, true]
+    ]);
+    clean(page);
+});
+
+test('分頁第一次打開才載入：打開角色只打標頭與 /classjob；成就打 /achievements?dc=…&page=1、再點一次不再打；收藏打 /mounts 與 /minions；部隊打 /freecompany/<id> 與 /members?page=1；裝備與其他不打', async () => {
+    const page = createLodestonePage({ search: '?id=12345678', routes: allRoutes() });
+    await page.ready;
+    await page.flush();
+    assert.deepEqual(paths(page), opened('12345678'));
+
+    page.selectTab('achievements');
+    assert.deepEqual(selectedTab(page), ['achievements']);
+    await page.flush();
+    assert.deepEqual(paths(page).slice(2), ['/character/12345678/achievements?dc=na&page=1']);
+    page.selectTab('jobs');
+    page.selectTab('achievements');
+    await page.flush();
+    assert.equal(page.requests.length, 3, '再點一次不再打');
+
+    page.selectTab('gear');
+    page.selectTab('about');
+    await page.flush();
+    assert.equal(page.requests.length, 3, '裝備與其他的資料在角色回應裡');
+
+    page.selectTab('collections');
+    await page.flush();
+    assert.deepEqual(paths(page).slice(3), ['/character/12345678/mounts?dc=na', '/character/12345678/minions?dc=na']);
+
+    page.selectTab('fc');
+    await page.flush();
+    assert.deepEqual(paths(page).slice(5), ['/freecompany/9230000000000000001?dc=na', '/freecompany/9230000000000000001/members?dc=na&page=1']);
+
+    for (const key of TAB_KEYS) page.selectTab(key);
+    await page.flush();
+    assert.equal(page.requests.length, 7, '每個分頁只載入一次');
+    clean(page);
+});
+
+test('分頁鍵盤：左右方向鍵移動並切換（頭尾相接），Home／End 到第一個／最後一個，只有選中的 tabindex="0"；按著 Alt、Ctrl、⌘ 或別的鍵不處理', async () => {
+    const page = createLodestonePage({ search: '?id=12345678', routes: allRoutes() });
+    await page.ready;
+    const tab = (key) => page.$(`tab-${key}`);
+    const where = () => [selectedTab(page)[0], page.document.activeElement.id];
+    tab('jobs').focus();
+
+    const right = page.key('ArrowRight');
+    assert.equal(right.defaultPrevented, true);
+    assert.deepEqual(where(), ['achievements', 'tab-achievements'], '右鍵：下一個，焦點跟著移過去');
+    assert.deepEqual(page.tabs().map((t) => [t.selected, t.tabindex, t.active, t.panelHidden]), [
+        ['false', '-1', false, true], ['true', '0', true, false], ['false', '-1', false, true],
+        ['false', '-1', false, true], ['false', '-1', false, true], ['false', '-1', false, true]
+    ]);
+    assert.equal(page.key('End').defaultPrevented, true);
+    assert.deepEqual(where(), ['about', 'tab-about']);
+    page.key('ArrowRight');
+    assert.deepEqual(where(), ['jobs', 'tab-jobs'], '最後一個再往右回到第一個');
+    page.key('ArrowLeft');
+    assert.deepEqual(where(), ['about', 'tab-about'], '第一個再往左到最後一個');
+    page.key('ArrowLeft');
+    assert.deepEqual(where(), ['fc', 'tab-fc']);
+    assert.equal(page.key('Home').defaultPrevented, true);
+    assert.deepEqual(where(), ['jobs', 'tab-jobs']);
+    assert.deepEqual(page.tabs().map((t) => t.tabindex), ['0', '-1', '-1', '-1', '-1', '-1']);
+
+    // 瀏覽器與系統的快速鍵（Alt＋← 是上一頁）、其他的鍵：不處理
+    for (const init of [{ altKey: true }, { ctrlKey: true }, { metaKey: true }]) {
+        const event = page.key('ArrowRight', undefined, init);
+        assert.equal(event.defaultPrevented, false, JSON.stringify(init));
+        assert.deepEqual(where(), ['jobs', 'tab-jobs'], JSON.stringify(init));
+    }
+    for (const name of ['a', 'Enter', 'ArrowDown', 'constructor']) {
+        assert.equal(page.key(name).defaultPrevented, false, name);
+        assert.deepEqual(where(), ['jobs', 'tab-jobs'], name);
+    }
+    // 焦點在面板裡時，方向鍵是面板自己的
+    page.$('panel-jobs').focus();
+    assert.equal(page.key('ArrowRight').defaultPrevented, false);
+    assert.deepEqual(selectedTab(page), ['jobs']);
+    await page.flush();
+    clean(page);
+});
+
+test('換角色回到職業；換名稱與成就顯示留在原本的分頁、重新打那個分頁，其他打開過的分頁下次打開再載入', async () => {
+    const page = createLodestonePage({ search: '?id=12345678', routes: { ...allRoutes(F.HIKARI), ...allRoutes(F.AOI) } });
+    await page.ready;
+    page.selectTab('collections');
+    page.selectTab('achievements');
+    await page.flush();
+    const before = page.requests.length;
+    assert.equal(before, 5);
+
+    const japanese = page.$('profileCard').querySelector('button[data-lang="ja"]');
+    japanese.focus();
+    japanese.click();
+    assert.deepEqual(selectedTab(page), ['achievements'], '留在成就');
+    isSame(page.document.activeElement, page.$('profileCard').querySelector('button[data-lang="ja"]'), '焦點留在按下去的按鈕');
+    assert.equal(page.$('panel-achievements').getAttribute('aria-busy'), 'true', '成就重新載入');
+    await page.flush();
+    assert.deepEqual(paths(page).slice(before), ['/character/12345678?dc=jp', '/character/12345678/achievements?dc=jp&page=1'], '重新打標頭與成就，職業與收藏沒有打');
+    assert.equal(page.$('panel-achievements').getAttribute('aria-busy'), 'false');
+    page.selectTab('collections');
+    await page.flush();
+    assert.deepEqual(paths(page).slice(before + 2), ['/character/12345678/mounts?dc=jp', '/character/12345678/minions?dc=jp'], '收藏下次打開再載入');
+    page.selectTab('jobs');
+    await page.flush();
+    assert.deepEqual(paths(page).slice(before + 4), ['/character/12345678/classjob?dc=jp']);
+
+    // 換角色：回到職業，其他分頁清空
+    page.selectTab('fc');
+    await page.flush();
+    await page.app.openCharacter(F.AOI.id);
+    await page.flush();
+    assert.deepEqual(selectedTab(page), ['jobs']);
+    assert.deepEqual(page.tabs().map((t) => [t.tabindex, t.panelHidden]), [['0', false], ['-1', true], ['-1', true], ['-1', true], ['-1', true], ['-1', true]]);
+    for (const key of TAB_KEYS.slice(1)) assert.equal(page.panelText(key), '', `${key} 清空了`);
+    assert.deepEqual(paths(page).slice(-2), opened(F.AOI.id, 'jp'));
+    clean(page);
+});
+
+test('換名稱與成就顯示時開著部隊、裝備或其他：留在那個分頁，新的標頭回來之前寫載入中，回來之後用新的語言載入（部隊打 dc=jp 的部隊與成員第 1 頁，裝備與其他照新的標頭重畫）', async () => {
+    // 日本語的標頭先扣住；放行時回來的是 who（日文官網的角色）
+    const open = async (tab) => {
+        const header = deferred();
+        const page = createLodestonePage({
+            search: '?id=12345678',
+            routes: {
+                ...allRoutes(),
+                '/character/12345678': (url) => (url.searchParams.get('dc') === 'jp' ? header.promise : F.ok(F.character(F.HIKARI))),
+                '/freecompany/9230000000000000001': (url) => F.ok(url.searchParams.get('dc') === 'jp' ? F.freeCompanyJa() : F.freeCompany())
+            }
+        });
+        await page.ready;
+        page.selectTab(tab);
+        await page.flush();
+        const before = page.requests.length;
+        page.$('profileCard').querySelector('button[data-lang="ja"]').click();
+        await page.flush();
+        assert.deepEqual(selectedTab(page), [tab], `${tab}：留在原本的分頁`);
+        assert.deepEqual(paths(page).slice(before), ['/character/12345678?dc=jp'], `${tab}：先等新的標頭`);
+        assert.deepEqual([page.$(`panel-${tab}`).getAttribute('aria-busy'), page.panelText(tab)], ['true', '載入中…'], `${tab}：新的標頭回來之前`);
+        return { page, after: () => paths(page).slice(before), release: (who) => header.resolve(F.ok(F.character(who))) };
+    };
+
+    // 部隊：標頭回來之後才打部隊的資料與成員（dc=jp），畫的是日文官網的原文
+    const fc = await open('fc');
+    fc.release(F.HIKARI);
+    await fc.page.flush();
+    assert.deepEqual(fc.after(), ['/character/12345678?dc=jp', '/freecompany/9230000000000000001?dc=jp', '/freecompany/9230000000000000001/members?dc=jp&page=1']);
+    const fcPanel = fc.page.$('panel-fc');
+    assert.deepEqual([selectedTab(fc.page), fcPanel.getAttribute('aria-busy')], [['fc'], 'false']);
+    assert.deepEqual(rowsOf(fcPanel.querySelector('.fc-facts')).filter(([label]) => ['人數', '招募狀態'].includes(label)), [['人數', '42名'], ['招募狀態', '申請可']]);
+    assert.equal(fcPanel.querySelectorAll('.fc-members button.person').length, 2);
+    clean(fc.page);
+
+    // 裝備：不打請求，照新的標頭重畫（目前職業與裝備都換了）
+    const gear = await open('gear');
+    gear.release({ ...F.HIKARI, job: 'Dancer', level: 90, gear: [{ Slot: 'MainHand', Icon: F.itemIcon('chakrams'), Dyes: ['#112233'] }] });
+    await gear.page.flush();
+    assert.deepEqual(gear.after(), ['/character/12345678?dc=jp'], '裝備不打新的請求');
+    const gearPanel = gear.page.$('panel-gear');
+    assert.deepEqual([gearPanel.getAttribute('aria-busy'), gearPanel.querySelector('.gear-now').textContent], ['false', '現在：舞者 Lv90']);
+    assert.deepEqual(gearPanel.querySelectorAll('.gear-slot img').map((img) => img.src), [F.itemIcon('chakrams')]);
+    clean(gear.page);
+
+    // 其他：同樣照新的標頭重畫
+    const about = await open('about');
+    about.release({ ...F.HIKARI, details: { GrandCompany: { Name: '双蛇党', Rank: '二等双蛇兵' } } });
+    await about.page.flush();
+    assert.deepEqual(about.after(), ['/character/12345678?dc=jp']);
+    assert.deepEqual(rowsOf(about.page.$('panel-about').querySelector('dl'))[0], ['大國防聯軍', '雙蛇黨・二等双蛇兵']);
+    assert.equal(about.page.$('panel-about').getAttribute('aria-busy'), 'false');
+    clean(about.page);
+});
+
+test('職業：七組照官方順序與名稱，蝮蛇劍士與 Beastmaster（文字圖示）在近戰，繪靈法師與青魔法師在魔法；Lv100 才是滿級，青魔法師 80 不是；沒解鎖寫「—」；滿級 N 個；特殊內容照 Worker 的名稱', async () => {
+    const page = createLodestonePage({ search: '?id=12345678', routes: characterRoute(F.HIKARI) });
+    await page.ready;
+    await page.flush();
+    const panel = page.$('panel-jobs');
+    assert.equal(panel.getAttribute('aria-busy'), 'false');
+    const groups = panel.querySelectorAll('.role-group').map((group) => ({
+        label: group.querySelector('.role-label').textContent,
+        jobs: group.querySelectorAll('.job').map((job) => [job.querySelector('.job-name').textContent, job.querySelector('.job-level').textContent])
+    }));
+    assert.deepEqual(groups.map((group) => group.label), ['坦克', '治療', '近戰', '遠程', '魔法', '生產', '採集']);
+    assert.deepEqual(groups.map((group) => group.jobs.length), [4, 4, 7, 3, 5, 8, 3]);
+    assert.deepEqual(groups[0].jobs, [['騎士', '100'], ['戰士', '92'], ['暗黑騎士', '80'], ['絕槍戰士', '—']]);
+    assert.deepEqual(groups[1].jobs, [['白魔法師', '100'], ['學者', '90'], ['占星術士', '74'], ['賢者', '—']]);
+    assert.deepEqual(groups[2].jobs, [['武僧', '81'], ['龍騎士', '100'], ['忍者', '64'], ['武士', '100'], ['鐮刀客', '90'], ['蝮蛇劍士', '95'], ['Beastmaster', '50']]);
+    assert.deepEqual(groups[3].jobs, [['吟遊詩人', '100'], ['機工士', '77'], ['舞者', '88']]);
+    assert.deepEqual(groups[4].jobs, [['黑魔法師', '100'], ['召喚師', '90'], ['赤魔法師', '83'], ['繪靈法師', '100'], ['青魔法師', '80']]);
+    assert.deepEqual(groups[5].jobs.map(([name]) => name), ['刻木匠', '鍛鐵匠', '鎧甲匠', '雕金匠', '製革匠', '裁縫匠', '煉金術士', '烹調師']);
+    assert.deepEqual(groups[6].jobs, [['採礦工', '100'], ['園藝工', '100'], ['捕魚人', '72']]);
+
+    const job = (name) => panel.querySelectorAll('.job').find((item) => item.querySelector('.job-name').textContent === name);
+    const flags = (name) => [job(name).classList.contains('max'), job(name).classList.contains('none')];
+    assert.deepEqual(flags('繪靈法師'), [true, false], 'Lv100 是滿級（綠色加粗）');
+    assert.deepEqual(flags('青魔法師'), [false, false], '青魔法師的等級上限不是 100');
+    assert.deepEqual(flags('Beastmaster'), [false, false]);
+    assert.deepEqual(flags('戰士'), [false, false]);
+    assert.deepEqual(flags('賢者'), [false, true], '沒解鎖（-）變淡');
+    assert.deepEqual(flags('絕槍戰士'), [false, true], '0 級也是沒解鎖');
+    assert.deepEqual([job('騎士').querySelector('img').src, job('騎士').querySelector('img').alt], ['../../assets/images/se/FFXIVJobIcons/01_TANK/Job/Paladin.png', '']);
+    assert.equal(job('青魔法師').querySelector('img').src, '../../assets/images/se/FFXIVJobIcons/06_LIMITED/BlueMage.png');
+    assert.ok(job('Beastmaster').querySelector('img') === null, '網站沒有 Beastmaster 的圖示');
+    const textIcon = job('Beastmaster').querySelector('.job-text-icon');
+    assert.deepEqual([textIcon.textContent, textIcon.getAttribute('aria-hidden')], ['B', 'true']);
+    assert.equal(panel.querySelector('.maxed-count').textContent, '滿級 13 個');
+    assert.equal(panel.querySelector('.special-content').textContent, '特殊內容：Knowledge Level 3', '名稱照 Worker 的 Name，不照鍵名');
+    clean(page);
+
+    // 還沒轉職的騎士（官網那一列是 Gladiator）放在騎士那一格；沒有特殊內容就沒有那一行；日文的特殊內容照原文
+    const routes = (special) => ({
+        ...characterRoute(F.HIKARI),
+        '/character/12345678/classjob': () => F.ok(F.classJobs({ levels: { Paladin: '30' }, shown: { Paladin: 'Gladiator' }, special }))
+    });
+    const fresh = createLodestonePage({ search: '?id=12345678', routes: routes(null) });
+    await fresh.ready;
+    await fresh.flush();
+    const freshPanel = fresh.$('panel-jobs');
+    assert.deepEqual(freshPanel.querySelector('.job').textContent, '騎士30');
+    assert.equal(freshPanel.querySelector('.maxed-count').textContent, '滿級 0 個');
+    assert.ok(freshPanel.querySelector('.special-content') === null, '沒有特殊內容就不寫');
+    clean(fresh);
+    const occult = createLodestonePage({ search: '?id=12345678', routes: routes({ Bozja: { Name: 'ナレッジレベル', Level: '12', Mettle: '0' }, Eureka: { Name: 'Elemental Level', Level: '-' } }) });
+    await occult.ready;
+    await occult.flush();
+    assert.equal(occult.$('panel-jobs').querySelector('.special-content').textContent, '特殊內容：ナレッジレベル 12', '沒有等級的不寫');
+    clean(occult);
+});
+
+test('成就：成就數與點數、每一筆的名稱與日期（沒有日期的不寫）；上一頁／下一頁；沒有 Pagination 是一頁；403 是「這個角色沒有公開成就」；其他失敗寫原因', async () => {
+    const page = createLodestonePage({ search: '?id=12345678', routes: allRoutes() });
+    await page.ready;
+    page.selectTab('achievements');
+    const panel = page.$('panel-achievements');
+    assert.equal(panel.getAttribute('aria-busy'), 'true');
+    assert.equal(page.panelText('achievements'), '載入中…');
+    await page.flush();
+    assert.equal(panel.getAttribute('aria-busy'), 'false');
+    assert.deepEqual(panel.querySelectorAll('.achievement-stat').map((stat) => stat.textContent), ['2,567 個成就', '24,530 點']);
+    const rows = () => panel.querySelectorAll('.achievement').map((item) => {
+        const time = item.querySelector('time');
+        return [item.querySelector('.achievement-name').textContent, time ? [time.getAttribute('datetime'), time.textContent] : null];
+    });
+    assert.deepEqual(rows(), [
+        ['Tank You, Dawntrail III', ['2026-11-07T10:00:00.000Z', dateText('2026-11-07T10:00:00.000Z', 'zh-TW')]],
+        ['Mastering War VII', null]
+    ]);
+    let pager = pagerOf(page, 'achievements');
+    assert.deepEqual([pager.prev.textContent, pager.info, pager.next.textContent, pager.prevDisabled, pager.nextDisabled], ['上一頁', '第 1 頁，共 3 頁', '下一頁', true, false]);
+    assert.deepEqual([pager.prev.getAttribute('type'), pager.next.getAttribute('type')], ['button', 'button']);
+
+    pager.next.focus();
+    pager.next.click();
+    assert.equal(page.requests.at(-1).path, '/character/12345678/achievements?dc=na&page=2');
+    assert.equal(pagerOf(page, 'achievements').info, '第 2 頁，共 3 頁');
+    isSame(page.document.activeElement, pagerOf(page, 'achievements').next, '換頁時焦點留在下一頁');
+    await page.flush();
+    assert.deepEqual(rows().map(([name]) => name), ['Level with It III', 'Leaves of Grass']);
+    pager = pagerOf(page, 'achievements');
+    assert.deepEqual([pager.info, pager.prevDisabled, pager.nextDisabled], ['第 2 頁，共 3 頁', false, false]);
+    isSame(page.document.activeElement, pager.next, '新的一頁畫好之後焦點還在下一頁');
+    pager.next.click();
+    await page.flush();
+    pager = pagerOf(page, 'achievements');
+    assert.deepEqual([pager.info, pager.prevDisabled, pager.nextDisabled], ['第 3 頁，共 3 頁', false, true]);
+    assert.deepEqual(rows().map(([name]) => name), ['To Crush Your Enemies I']);
+    assert.deepEqual(panel.querySelectorAll('.achievement-stat').map((stat) => stat.textContent), ['2,567 個成就', '24,530 點']);
+    // 最後一頁的下一頁按了沒反應（aria-disabled，焦點不會掉）
+    const count = page.requests.length;
+    pager.next.focus();
+    pager.next.click();
+    assert.equal(page.requests.length, count);
+    isSame(page.document.activeElement, pager.next, '焦點留在按鈕上');
+    pager.prev.click();
+    await page.flush();
+    assert.equal(page.requests.at(-1).params.page, '2');
+    assert.equal(pagerOf(page, 'achievements').info, '第 2 頁，共 3 頁');
+    clean(page);
+
+    const open = async (route) => {
+        const other = createLodestonePage({ search: '?id=12345678', routes: { ...characterRoute(F.HIKARI), '/character/12345678/achievements': route } });
+        await other.ready;
+        other.selectTab('achievements');
+        await other.flush();
+        clean(other);
+        return other;
+    };
+    // 沒有 Pagination：只有一頁，沒有上一頁／下一頁
+    const single = await open(() => F.ok(F.achievements({ pagination: false })));
+    assert.ok(pagerOf(single, 'achievements') === null);
+    assert.equal(single.$('panel-achievements').querySelectorAll('.achievement').length, 2);
+    // 只有一頁的 Pagination 也一樣
+    assert.ok(pagerOf(await open(() => F.ok(F.achievements({ pageTotal: 1 }))), 'achievements') === null);
+    // 不公開
+    const hidden = await open(() => F.fail(403, 'private'));
+    assert.equal(hidden.panelText('achievements'), '這個角色沒有公開成就');
+    assert.ok(hidden.$('panel-achievements').querySelector('.error-message') === null, '不是錯誤');
+    assert.ok(pagerOf(hidden, 'achievements') === null);
+    // Lodestone 連不上、其他失敗
+    assert.equal((await open(() => F.fail(502, 'upstream'))).$('panel-achievements').querySelector('.error-message').textContent, 'Lodestone 暫時連不上，請稍後再試');
+    assert.equal((await open(() => F.fail(500, 'internal'))).$('panel-achievements').querySelector('.error-message').textContent, '查詢失敗');
+    assert.equal((await open(() => F.ok({ FetchedAt: F.FETCHED_AT }))).$('panel-achievements').querySelector('.error-message').textContent, '查詢失敗', '回應沒有 Achievements');
+});
+
+test('裝備：現在的職業；每一格是 Gear 的圖示（alt 空的）與部位名稱，有副手時列副手，臉部不列；染過的部位畫出顏色（最多兩色、不是 #rrggbb 的不畫）；說明一行；屬性收在 <details>', async () => {
+    const page = createLodestonePage({ search: '?id=12345678', routes: characterRoute(F.HIKARI) });
+    await page.ready;
+    page.selectTab('gear');
+    const panel = page.$('panel-gear');
+    assert.equal(panel.getAttribute('aria-busy'), 'false');
+    assert.equal(panel.querySelector('.gear-now').textContent, '現在：吟遊詩人 Lv100');
+    const slots = (p) => p.$('panel-gear').querySelectorAll('.gear-slot').map((cell) => {
+        const icon = cell.querySelector('img');
+        return {
+            name: cell.querySelector('.gear-slot-name').textContent,
+            icon: [icon.src, icon.alt],
+            dyes: cell.querySelectorAll('.dye').map((dot) => [dot.style.background, dot.getAttribute('aria-hidden')])
+        };
+    });
+    const cells = slots(page);
+    assert.deepEqual(cells.map((cell) => cell.name), ['主手', '頭部', '身體', '手部', '腿部', '腳部', '耳飾', '頸飾', '腕飾', '戒指1', '戒指2', '靈魂水晶']);
+    assert.deepEqual(cells[0].icon, [F.itemIcon('main-hand'), '']);
+    assert.ok(cells.every((cell) => cell.icon[1] === ''), '圖示的替代文字是空的，格子的名稱是部位名稱');
+    assert.deepEqual(cells.map((cell) => cell.dyes.map(([color]) => color)), [
+        ['#e69f96'], [], ['#a1b2c3', '#334455'], ['#123456'], [], ['#ABCDEF'], [], [], [], [], [], []
+    ]);
+    assert.ok(cells.flatMap((cell) => cell.dyes).every(([, hidden]) => hidden === 'true'), '色點只是畫面');
+    assert.equal(panel.querySelector('.gear-note').textContent, 'Lodestone 的角色頁只有裝備圖示，沒有名稱。');
+    assert.ok(panel.querySelector('.gear-none') === null);
+
+    const details = panel.querySelector('details');
+    assert.ok(details.classList.contains('attributes'));
+    assert.equal(details.hasAttribute('open'), false, '屬性收起來');
+    assert.equal(details.querySelector('summary').textContent, '屬性');
+    assert.deepEqual(details.querySelectorAll('.attribute-group').map((group) => [group.querySelector('h4').textContent, rowsOf(group.querySelector('dl'))]), [
+        ['主屬性', [['力量', '421'], ['靈巧', '4980'], ['耐力', '5190'], ['智力', '392'], ['精神', '1563']]],
+        ['副屬性', [['爆擊', '3174'], ['意志', '2163'], ['直擊', '1564'], ['技巧速度', '420'], ['詠唱速度', '411'], ['信仰', '440'], ['堅韌', '400']]]
+    ]);
+    assert.equal(page.requests.length, 2, '裝備不打新的請求');
+    clean(page);
+
+    // 騎士：有副手（照部位的順序，不照回應的順序）；超過兩色只畫兩色；認不得的部位不列
+    const paladin = createLodestonePage({
+        search: '?id=12345678',
+        routes: characterRoute({
+            ...F.HIKARI, job: 'Paladin',
+            gear: [
+                { Slot: 'OffHand', Icon: F.itemIcon('shield'), Dyes: ['#111111', '#222222', '#333333'] },
+                { Slot: 'MainHand', Icon: F.itemIcon('sword'), Dyes: [] },
+                { Slot: 'Waist', Icon: F.itemIcon('belt'), Dyes: [] },
+                { Slot: 'Head', Icon: '', Dyes: [] }
+            ]
+        })
+    });
+    await paladin.ready;
+    paladin.selectTab('gear');
+    assert.deepEqual(slots(paladin).map((cell) => [cell.name, cell.icon[0], cell.dyes.map(([color]) => color)]), [
+        ['主手', F.itemIcon('sword'), []],
+        ['副手', F.itemIcon('shield'), ['#111111', '#222222']]
+    ]);
+    clean(paladin);
+
+    // 舊 Worker（沒有 Gear）、Gear 是空的：寫「沒有裝備資料。」，屬性照樣有
+    for (const [label, routes] of [
+        ['舊 Worker', { '/character/12345678': () => F.ok(F.oldCharacter(F.HIKARI)) }],
+        ['Gear 是空的', characterRoute({ ...F.HIKARI, gear: [] })]
+    ]) {
+        const other = createLodestonePage({ search: '?id=12345678', routes });
+        await other.ready;
+        other.selectTab('gear');
+        const otherPanel = other.$('panel-gear');
+        assert.equal(otherPanel.querySelector('.gear-none').textContent, '沒有裝備資料。', label);
+        assert.ok(otherPanel.querySelector('.gear-slot') === null && otherPanel.querySelector('.gear-note') === null, label);
+        assert.equal(otherPanel.querySelectorAll('.attribute-group').length, 2, label);
+        clean(other);
+    }
+    // 舊 Worker 的目前職業：官網圖示加等級
+    const old = createLodestonePage({ search: '?id=12345678', routes: { '/character/12345678': () => F.ok(F.oldCharacter(F.HIKARI)) } });
+    await old.ready;
+    old.selectTab('gear');
+    const now = old.$('panel-gear').querySelector('.gear-now');
+    assert.equal(now.textContent, '現在：Lv100');
+    assert.deepEqual([now.querySelector('img').src, now.querySelector('img').alt], [F.BARD_ICON, '目前職業']);
+    clean(old);
+});
+
+test('收藏：坐騎 N、寵物 N；篩選框同時篩兩個清單（不分大小寫），一個都沒有時寫出來；一邊失敗不影響另一邊', async () => {
+    const page = createLodestonePage({ search: '?id=12345678', routes: allRoutes() });
+    await page.ready;
+    page.selectTab('collections');
+    assert.equal(page.$('panel-collections').getAttribute('aria-busy'), 'true');
+    await page.flush();
+    const panel = page.$('panel-collections');
+    assert.equal(panel.getAttribute('aria-busy'), 'false');
+    const sections = () => panel.querySelectorAll('.collection').map((section) => {
+        const none = section.querySelector('.collection-empty');
+        return {
+            title: section.querySelector('.collection-title').textContent,
+            shown: section.querySelectorAll('.collection-item').filter((item) => !item.hidden).map((item) => item.textContent),
+            none: none && !none.hidden ? none.textContent : null
+        };
+    });
+    assert.deepEqual(sections(), [
+        { title: '坐騎 103', shown: [...F.MOUNTS], none: null },
+        { title: '寵物 269', shown: [...F.MINIONS], none: null }
+    ]);
+    const icon = panel.querySelector('.collection-item img');
+    assert.deepEqual([icon.src, icon.alt], [F.itemIcon('mounts-0'), '']);
+
+    const filter = panel.querySelector('input');
+    const label = panel.querySelector('label');
+    assert.deepEqual([label.textContent, label.getAttribute('for'), filter.id, filter.getAttribute('type')], ['篩選名稱', filter.id, 'collectionFilter', 'search']);
+    typeInto(page, filter, 'CHOCO');
+    assert.deepEqual(sections().map((section) => [section.shown, section.none]), [
+        [['Company Chocobo', 'Black Chocobo'], null],
+        [['Black Chocobo Chick'], null]
+    ]);
+    typeInto(page, filter, '  behemoth ');
+    assert.deepEqual(sections().map((section) => [section.shown, section.none]), [[[], '沒有符合的名稱'], [['Baby Behemoth'], null]]);
+    assert.deepEqual(sections().map((section) => section.title), ['坐騎 103', '寵物 269'], '數字照舊是總數');
+
+    // 換到別的分頁再回來：篩選照舊，不再打
+    const count = page.requests.length;
+    page.selectTab('jobs');
+    page.selectTab('collections');
+    assert.equal(panel.querySelector('input').value, '  behemoth ');
+    assert.deepEqual(sections()[1].shown, ['Baby Behemoth']);
+    typeInto(page, panel.querySelector('input'), '');
+    assert.deepEqual(sections().map((section) => section.shown.length), [3, 4]);
+    assert.equal(page.requests.length, count);
+    clean(page);
+
+    // 坐騎失敗、寵物照常；寵物晚一點才回來，篩選框打的字不會被清掉
+    const minions = deferred();
+    const half = createLodestonePage({
+        search: '?id=12345678',
+        routes: { ...allRoutes(), '/character/12345678/mounts': () => F.fail(502, 'upstream'), '/character/12345678/minions': () => minions.promise }
+    });
+    await half.ready;
+    half.selectTab('collections');
+    await half.flush();
+    const halfPanel = half.$('panel-collections');
+    const halfFilter = halfPanel.querySelector('input');
+    halfFilter.focus();
+    typeInto(half, halfFilter, 'cait');
+    minions.resolve(F.ok(F.minions()));
+    await half.flush();
+    isSame(halfPanel.querySelector('input'), halfFilter, '篩選框還是同一個');
+    isSame(half.document.activeElement, halfFilter, '焦點還在篩選框');
+    const [mountSection, minionSection] = halfPanel.querySelectorAll('.collection');
+    assert.deepEqual([mountSection.querySelector('.collection-title').textContent, mountSection.querySelector('.error-message').textContent], ['坐騎', 'Lodestone 暫時連不上，請稍後再試']);
+    assert.deepEqual(minionSection.querySelectorAll('.collection-item').filter((item) => !item.hidden).map((item) => item.textContent), ['Cait Sith Doll']);
+    clean(half);
+});
+
+test('部隊：名稱、標語、人數、排名、招募狀態、部隊房屋、活動重點、招募對象與三國聲望（中文介面換成官方中文，英文介面是原文）；不寫 Tag 與 ActiveState；沒有加入部隊寫出來、不打請求', async () => {
+    const page = createLodestonePage({ search: '?id=12345678', routes: allRoutes() });
+    await page.ready;
+    page.selectTab('fc');
+    assert.equal(page.$('panel-fc').getAttribute('aria-busy'), 'true');
+    await page.flush();
+    const panel = page.$('panel-fc');
+    assert.equal(panel.getAttribute('aria-busy'), 'false');
+    assert.equal(panel.querySelector('.fc-name').textContent, 'Example Company');
+    assert.equal(panel.querySelector('.fc-slogan').textContent, 'Weekend raids, weekday crafting.');
+    assert.deepEqual(rowsOf(panel.querySelector('.fc-facts')), [
+        ['人數', '42'],
+        ['排名', '每週 12・每月 34'],
+        ['招募狀態', 'Open'],
+        ['部隊房屋', 'Example Manor・Plot 30, 1st Ward, Mist (Medium)'],
+        ['活動重點', '角色扮演・公會令・大型任務'],
+        ['招募對象', '坦克・治療'],
+        ['大國防聯軍聲望', '黑渦團・同盟雙蛇黨・中立不滅隊・中立']
+    ]);
+    assert.deepEqual(panel.querySelectorAll('.fc-reputation li').map((item) => item.textContent), ['黑渦團・同盟', '雙蛇黨・中立', '不滅隊・中立']);
+    for (const hidden of ['«EXMP»', 'Active', 'Welcome!']) assert.ok(!page.panelText('fc').includes(hidden), `不寫 ${hidden}`);
+    clean(page);
+
+    // 日文官網的原文（名稱與成就顯示是日本語）：中文介面一樣換成官方中文
+    const ja = createLodestonePage({
+        search: '?id=12345678', stored: { [KEYS.lang]: 'ja' },
+        routes: { ...allRoutes(), '/freecompany/9230000000000000001': () => F.ok(F.freeCompanyJa()) }
+    });
+    await ja.ready;
+    ja.selectTab('fc');
+    await ja.flush();
+    assert.equal(ja.requests.at(-2).path, '/freecompany/9230000000000000001?dc=jp');
+    assert.deepEqual(rowsOf(ja.$('panel-fc').querySelector('.fc-facts')).filter(([label]) => ['人數', '招募狀態', '活動重點', '招募對象'].includes(label)), [
+        ['人數', '42名'], ['招募狀態', '申請可'], ['活動重點', '角色扮演・公會令・大型任務'], ['招募對象', '坦克・治療']
+    ]);
+    assert.deepEqual(ja.$('panel-fc').querySelectorAll('.fc-reputation li').map((item) => item.textContent), ['黑渦團・同盟', '雙蛇黨・中立', '不滅隊・中立']);
+    clean(ja);
+
+    // 英文介面：原文
+    const en = createLodestonePage({ lang: 'en', search: '?id=12345678', routes: allRoutes() });
+    await en.ready;
+    en.selectTab('fc');
+    await en.flush();
+    assert.deepEqual(rowsOf(en.$('panel-fc').querySelector('.fc-facts')), [
+        ['Active members', '42'],
+        ['Ranking', 'Weekly 12 · Monthly 34'],
+        ['Recruitment', 'Open'],
+        ['Estate', 'Example Manor · Plot 30, 1st Ward, Mist (Medium)'],
+        ['Focus', 'Role-playing · Guildhests · Raids'],
+        ['Seeking', 'Tank · Healer'],
+        ['Grand Company Reputation', 'Maelstrom · AlliedOrder of the Twin Adder · NeutralImmortal Flames · Neutral']
+    ]);
+    clean(en);
+
+    // 沒有加入部隊：不打部隊的請求
+    const loner = createLodestonePage({ search: `?id=${F.REED.id}`, routes: allRoutes(F.REED) });
+    await loner.ready;
+    loner.selectTab('fc');
+    await loner.flush();
+    assert.equal(loner.panelText('fc'), '沒有加入部隊');
+    assert.equal(loner.$('panel-fc').getAttribute('aria-busy'), 'false');
+    assert.deepEqual(paths(loner), opened(F.REED.id));
+    clean(loner);
+});
+
+test('部隊成員：分頁換頁；點一列打開那個成員（新增一筆上一頁、回到職業、焦點在「← 找其他人」），點自己那一列是重新打開（換掉這一筆，不新增上一頁）', async () => {
+    const page = createLodestonePage({ search: '?id=12345678', routes: { ...allRoutes(F.HIKARI), ...allRoutes(F.AOI) } });
+    await page.ready;
+    page.selectTab('fc');
+    await page.flush();
+    const panel = page.$('panel-fc');
+    const rows = () => panel.querySelectorAll('.fc-members button.person').map((row) => [row.dataset.id, row.querySelector('.person-name').textContent, row.querySelector('.person-meta').textContent]);
+    assert.equal(panel.querySelector('.fc-members h3').textContent, '成員');
+    assert.deepEqual(rows(), [['12345678', 'Hikari Senshi', 'Master'], ['23456789', 'Aoi Mizuno', 'Officer']]);
+    assert.equal(spokenText(panel.querySelector('.fc-members button.person')), 'Hikari Senshi，Master', '螢幕閱讀器念的名字和部隊階級中間有停頓');
+    let pager = pagerOf(page, 'fc');
+    assert.deepEqual([pager.info, pager.prevDisabled, pager.nextDisabled], ['第 1 頁，共 3 頁', true, false]);
+    pager.next.focus();
+    pager.next.click();
+    assert.equal(page.requests.at(-1).path, '/freecompany/9230000000000000001/members?dc=na&page=2');
+    await page.flush();
+    assert.deepEqual(rows(), [['56789012', 'Reed Blacke', 'Member']]);
+    assert.equal(panel.querySelector('.fc-name').textContent, 'Example Company', '部隊的資料留著');
+    isSame(page.document.activeElement, pagerOf(page, 'fc').next, '焦點留在下一頁');
+    pagerOf(page, 'fc').prev.click();
+    await page.flush();
+    assert.deepEqual(rows().map(([id]) => id), ['12345678', '23456789']);
+
+    // 點自己那一列：已經在看這個角色，換掉這一筆（不新增上一頁），重新打標頭與職業，回到職業
+    const pushes = () => page.history.filter((call) => call.method === 'pushState').length;
+    const before = pushes();
+    const self = panel.querySelector('button.person[data-id="12345678"]');
+    self.focus();
+    self.click();
+    assert.equal(pushes(), before, '不新增上一頁');
+    assert.deepEqual(page.history.at(-1), { method: 'replaceState', state: { view: 'character', id: '12345678' }, url: `${PAGE}?id=12345678` });
+    assert.deepEqual(selectedTab(page), ['jobs']);
+    isSame(page.document.activeElement, page.$('characterBack'), '那一列跟著分頁清掉了：焦點移到「← 找其他人」');
+    await page.flush();
+    assert.deepEqual(paths(page).slice(-2), opened('12345678'));
+    assert.equal(page.profile().name, 'Hikari Senshi');
+
+    // 點別人：新增一筆上一頁，打開那個人
+    page.selectTab('fc');
+    await page.flush();
+    const aoi = page.$('panel-fc').querySelector('button.person[data-id="23456789"]');
+    aoi.focus();
+    aoi.click();
+    assert.equal(pushes(), before + 1);
+    assert.deepEqual(page.history.at(-1), { method: 'pushState', state: { view: 'character', id: '23456789' }, url: `${PAGE}?id=23456789` });
+    isSame(page.document.activeElement, page.$('characterBack'), '焦點移到「← 找其他人」');
+    await page.flush();
+    assert.equal(page.profile().name, 'Aoi Mizuno');
+    assert.deepEqual(selectedTab(page), ['jobs']);
+    assert.deepEqual(paths(page).slice(-2), opened('23456789'));
+
+    // 上一頁回到原本的角色：重新打標頭，回到職業
+    page.back();
+    await page.flush();
+    assert.equal(page.profile().name, 'Hikari Senshi');
+    assert.deepEqual(selectedTab(page), ['jobs']);
+    clean(page);
+});
+
+test('其他：大國防聯軍（官方中文加軍階原文）、生日、守護神、開始城市（官方中文）、簡介保留換行；- 與 未設定 的簡介不寫那一行；英文介面是原文', async () => {
+    const page = createLodestonePage({ search: '?id=12345678', routes: characterRoute({ ...F.HIKARI, bio: 'Weekend raids.\nWeekday crafting.' }) });
+    await page.ready;
+    page.selectTab('about');
+    const list = page.$('panel-about').querySelector('dl');
+    assert.deepEqual(rowsOf(list), [
+        ['大國防聯軍', '黑渦團・Storm Captain'],
+        ['生日', '1st Sun of the 1st Astral Moon'],
+        ['守護神', 'Menphina, the Lover'],
+        ['開始城市', '格里達尼亞'],
+        ['個人簡介', 'Weekend raids.Weekday crafting.']
+    ]);
+    const bio = list.querySelectorAll('dd').at(-1);
+    assert.deepEqual(bio.childNodes.map((node) => (node.nodeType === 1 ? node.tagName : node.textContent)), ['Weekend raids.', 'BR', 'Weekday crafting.'], '簡介的換行是 <br>');
+    assert.equal(page.requests.length, 2, '其他不打新的請求');
+    clean(page);
+
+    // 日文官網的原文：双蛇党 → 雙蛇黨、グリダニア → 格里達尼亞，軍階照原文
+    const ja = createLodestonePage({
+        search: '?id=12345678', stored: { [KEYS.lang]: 'ja' },
+        routes: characterRoute({ ...F.HIKARI, details: { GrandCompany: { Name: '双蛇党', Rank: '二等双蛇兵' }, Town: { Name: 'グリダニア' }, Nameday: '星1月1日', GuardianDeity: { Name: '月神メネフィナ' } } })
+    });
+    await ja.ready;
+    ja.selectTab('about');
+    assert.deepEqual(rowsOf(ja.$('panel-about').querySelector('dl')), [
+        ['大國防聯軍', '雙蛇黨・二等双蛇兵'], ['生日', '星1月1日'], ['守護神', '月神メネフィナ'], ['開始城市', '格里達尼亞']
+    ]);
+    clean(ja);
+
+    // 簡介沒填（官網的 -、日文版的 未設定、空白）：不寫那一行
+    for (const empty of ['-', '未設定', '', '   ']) {
+        const other = createLodestonePage({ search: '?id=12345678', routes: characterRoute({ ...F.HIKARI, bio: empty }) });
+        await other.ready;
+        other.selectTab('about');
+        assert.ok(!rowsOf(other.$('panel-about').querySelector('dl')).some(([label]) => label === '個人簡介'), JSON.stringify(empty));
+        clean(other);
+    }
+
+    // 英文介面：原文
+    const en = createLodestonePage({ lang: 'en', search: '?id=12345678', routes: characterRoute(F.HIKARI) });
+    await en.ready;
+    en.selectTab('about');
+    assert.deepEqual(rowsOf(en.$('panel-about').querySelector('dl')), [
+        ['Grand Company', 'Maelstrom · Storm Captain'], ['Nameday', '1st Sun of the 1st Astral Moon'], ['Guardian', 'Menphina, the Lover'], ['Starting city', 'Gridania']
+    ]);
+    clean(en);
+});
+
+test('標頭的部隊名稱是按鈕：切到部隊分頁、焦點移過去；舊 Worker 標頭先寫「部隊」，部隊分頁載入後補上名稱（重畫標頭、換名稱與成就顯示都留著）', async () => {
+    const page = createLodestonePage({ search: '?id=12345678', routes: allRoutes() });
+    await page.ready;
+    const button = page.$('profileCard').querySelector('.profile-fc');
+    assert.deepEqual([button.tagName, button.getAttribute('type'), button.textContent], ['BUTTON', 'button', '部隊 Example Company']);
+    button.focus();
+    button.click();
+    assert.deepEqual(selectedTab(page), ['fc']);
+    isSame(page.document.activeElement, page.$('tab-fc'), '焦點移到部隊分頁');
+    await page.flush();
+    assert.equal(page.$('panel-fc').querySelector('.fc-name').textContent, 'Example Company');
+    clean(page);
+
+    const old = createLodestonePage({ search: '?id=12345678', routes: { ...allRoutes(), '/character/12345678': () => F.ok(F.oldCharacter(F.HIKARI)) } });
+    await old.ready;
+    assert.equal(old.profile().where, 'Tonberry（Elemental）・部隊');
+    old.$('profileCard').querySelector('.profile-fc').click();
+    await old.flush();
+    assert.equal(old.profile().where, 'Tonberry（Elemental）・部隊 Example Company', '部隊分頁載入後補上名稱');
+    old.setLang('en');
+    assert.equal(old.profile().where, 'Tonberry (Elemental) · FC Example Company', '換介面語言重畫標頭也留著');
+    old.setLang('zh');
+    // 換名稱與成就顯示：重新打的舊 Worker 標頭沒有名稱，同一個角色照樣留著（部隊分頁沒有打開）
+    old.selectTab('jobs');
+    old.$('profileCard').querySelector('button[data-lang="ja"]').click();
+    await old.flush();
+    assert.equal(old.requests.at(-1).path, '/character/12345678/classjob?dc=jp');
+    assert.equal(old.profile().where, 'Tonberry（Elemental）・部隊 Example Company');
+    // 換成別的角色就沒有了
+    old.routes[`/character/${F.AOI.id}`] = () => F.ok(F.oldCharacter(F.AOI));
+    await old.app.openCharacter(F.AOI.id);
+    assert.equal(old.profile().where, 'Tiamat（Gaia）・部隊');
+    clean(old);
+});
+
+test('切換介面語言：分頁名稱、職業與分組、成就、部位與屬性、收藏、部隊與其他的字換成那個語言，不重新打請求；篩選框的字留著', async () => {
+    const page = createLodestonePage({ search: '?id=12345678', stored: { [KEYS.lang]: 'en' }, routes: allRoutes() });
+    await page.ready;
+    for (const key of TAB_KEYS) page.selectTab(key);
+    await page.flush();
+    typeInto(page, page.$('panel-collections').querySelector('input'), 'choco');
+    const count = page.requests.length;
+
+    page.setLang('en');
+    assert.deepEqual(page.tabs().map((tab) => tab.text), ['Jobs', 'Achievements', 'Gear', 'Collections', 'Free Company', 'Other']);
+    assert.equal(page.$('tabList').getAttribute('aria-label'), 'Character details');
+    const jobs = page.$('panel-jobs');
+    assert.deepEqual(jobs.querySelectorAll('.role-label').map((label) => label.textContent), ['Tank', 'Healer', 'Melee', 'Ranged', 'Caster', 'Crafter', 'Gatherer']);
+    assert.equal(jobs.querySelector('.job-name').textContent, 'Paladin');
+    assert.equal(jobs.querySelector('.maxed-count').textContent, '13 at max level');
+    assert.equal(jobs.querySelector('.special-content').textContent, 'Special content: Knowledge Level 3');
+    assert.deepEqual(page.$('panel-achievements').querySelectorAll('.achievement-stat').map((stat) => stat.textContent), ['2,567 achievements', '24,530 points']);
+    assert.equal(page.$('panel-achievements').querySelector('time').textContent, dateText('2026-11-07T10:00:00.000Z', 'en-US'));
+    assert.deepEqual([pagerOf(page, 'achievements').prev.textContent, pagerOf(page, 'achievements').info, pagerOf(page, 'achievements').next.textContent], ['Previous', 'Page 1 of 3', 'Next']);
+    const gear = page.$('panel-gear');
+    assert.equal(gear.querySelector('.gear-now').textContent, 'Now: Bard Lv100');
+    assert.deepEqual(gear.querySelectorAll('.gear-slot-name').map((name) => name.textContent).slice(0, 3), ['Main Hand', 'Head', 'Body']);
+    assert.equal(gear.querySelector('.gear-note').textContent, 'The Lodestone character page shows gear icons only, without their names.');
+    assert.equal(gear.querySelector('summary').textContent, 'Attributes');
+    assert.deepEqual(gear.querySelectorAll('h4').map((title) => title.textContent), ['Main attributes', 'Sub attributes']);
+    const collections = page.$('panel-collections');
+    assert.deepEqual(collections.querySelectorAll('.collection-title').map((title) => title.textContent), ['Mounts 103', 'Minions 269']);
+    assert.deepEqual([collections.querySelector('label').textContent, collections.querySelector('input').value], ['Filter by name', 'choco']);
+    assert.deepEqual(collections.querySelectorAll('.collection-item').filter((item) => !item.hidden).map((item) => item.textContent), ['Company Chocobo', 'Black Chocobo', 'Black Chocobo Chick']);
+    assert.equal(page.$('panel-fc').querySelector('.fc-members h3').textContent, 'Members');
+    assert.equal(rowsOf(page.$('panel-fc').querySelector('.fc-facts'))[4][1], 'Role-playing · Guildhests · Raids');
+    assert.equal(rowsOf(page.$('panel-about').querySelector('dl'))[0][1], 'Maelstrom · Storm Captain');
+
+    page.setLang('ja');
+    assert.deepEqual(page.tabs().map((tab) => tab.text), ['ジョブ', 'アチーブメント', '装備', 'コレクション', 'フリーカンパニー', 'その他']);
+    assert.equal(jobs.querySelector('.job-name').textContent, 'ナイト');
+    assert.equal(page.$('panel-fc').querySelector('.fc-members h3').textContent, 'メンバー');
+    assert.equal(page.requests.length, count, '換介面語言不重新打請求');
+    clean(page);
+});
+
+// ---------- 舊的請求晚到（從 tests/lodestone-requests.test.js 搬來的分頁部分）----------
+
+test('分頁的請求各自失敗（連不上、HTTP 錯誤、JSON 壞掉）：標頭與其他分頁照常，失敗的分頁寫原因，下次打開再試一次', async () => {
+    let classJobsBroken = true;
+    const page = createLodestonePage({
+        search: '?id=12345678',
+        routes: {
+            ...allRoutes(),
+            '/character/12345678/classjob': () => (classJobsBroken ? { status: 200, json: () => Promise.reject(new SyntaxError('invalid JSON')) } : F.ok(F.classJobs())),
+            '/character/12345678/achievements': () => F.fail(503, 'upstream'),
+            '/character/12345678/mounts': () => { throw new TypeError('network offline'); },
+            '/freecompany/9230000000000000001/members': () => { throw new TypeError('members unavailable'); }
+        }
+    });
+    await page.ready;
+    await page.flush();
+    assert.equal(page.profile().name, 'Hikari Senshi');
+    assert.deepEqual([page.$('tabsCard').hidden, page.$('characterError').hidden], [false, true]);
+    assert.equal(page.$('panel-jobs').querySelector('.error-message').textContent, '查詢失敗');
+    assert.equal(page.$('panel-jobs').getAttribute('aria-busy'), 'false');
+    page.selectTab('achievements');
+    await page.flush();
+    assert.equal(page.$('panel-achievements').querySelector('.error-message').textContent, '查詢失敗');
+    page.selectTab('collections');
+    await page.flush();
+    const [mountSection, minionSection] = page.$('panel-collections').querySelectorAll('.collection');
+    assert.equal(mountSection.querySelector('.error-message').textContent, '查詢失敗');
+    assert.equal(minionSection.querySelectorAll('.collection-item').length, 4, '寵物照常');
+    page.selectTab('fc');
+    await page.flush();
+    assert.equal(page.$('panel-fc').querySelector('.fc-name').textContent, 'Example Company', '成員失敗不丟掉部隊的資料');
+    assert.equal(page.$('panel-fc').querySelector('.fc-members .error-message').textContent, '查詢失敗');
+    page.selectTab('gear');
+    assert.equal(page.$('panel-gear').querySelectorAll('.gear-slot').length, 12);
+
+    // 下次打開再試一次（只打失敗的）
+    classJobsBroken = false;
+    const count = page.requests.length;
+    page.selectTab('jobs');
+    await page.flush();
+    assert.deepEqual(paths(page).slice(count), ['/character/12345678/classjob?dc=na']);
+    assert.equal(page.$('panel-jobs').querySelectorAll('.role-group').length, 7);
+    page.selectTab('collections');
+    page.selectTab('fc');
+    await page.flush();
+    assert.deepEqual(paths(page).slice(count + 1), ['/character/12345678/mounts?dc=na', '/freecompany/9230000000000000001/members?dc=na&page=1']);
+    page.selectTab('jobs');
+    await page.flush();
+    assert.equal(page.requests.length, count + 3, '載入好的不再打');
+    clean(page);
+});
+
+test('分頁載入失敗時有「再試一次」：重新載入那個分頁失敗的部分（用目前的名稱與成就顯示），焦點移到面板，新的內容畫在面板裡', async () => {
+    const failing = { classjob: true, mounts: true };
+    const page = createLodestonePage({
+        search: '?id=12345678',
+        routes: {
+            ...allRoutes(),
+            '/character/12345678/classjob': () => (failing.classjob ? F.fail(502, 'upstream') : F.ok(F.classJobs())),
+            '/character/12345678/mounts': () => (failing.mounts ? F.fail(500, 'internal') : F.ok(F.mounts()))
+        }
+    });
+    await page.ready;
+    await page.flush();
+    const jobs = page.$('panel-jobs');
+    assert.equal(jobs.querySelector('.error-message').textContent, 'Lodestone 暫時連不上，請稍後再試');
+    assert.deepEqual([jobs.querySelector('button[data-retry]').textContent, jobs.querySelector('button[data-retry]').getAttribute('type')], ['再試一次', 'button']);
+    // 換介面語言重畫時，焦點回到（重畫的）同一顆按鈕
+    jobs.querySelector('button[data-retry]').focus();
+    page.setLang('en');
+    isSame(page.document.activeElement, jobs.querySelector('button[data-retry]'), '焦點留在再試一次');
+    assert.equal(page.document.activeElement.textContent, 'Try again');
+    page.setLang('zh');
+    const retry = jobs.querySelector('button[data-retry]');
+    isSame(page.document.activeElement, retry);
+
+    // 職業（一打開就是它）：不用先切到別的分頁再切回來
+    failing.classjob = false;
+    const count = page.requests.length;
+    retry.click();
+    assert.deepEqual(paths(page).slice(count), ['/character/12345678/classjob?dc=na']);
+    assert.equal(jobs.getAttribute('aria-busy'), 'true');
+    isSame(page.document.activeElement, jobs, '按鈕跟著載入中不見了：焦點移到面板');
+    await page.flush();
+    assert.equal(jobs.querySelector('.maxed-count').textContent, '滿級 13 個');
+    assert.ok(jobs.querySelector('button[data-retry]') === null);
+    isSame(page.document.activeElement, jobs, '新的內容畫好之後焦點還在面板');
+    assert.deepEqual(selectedTab(page), ['jobs']);
+
+    // 收藏（第一次打開才載入）：坐騎失敗、寵物照常，再試一次只打坐騎
+    page.selectTab('collections');
+    await page.flush();
+    const collections = page.$('panel-collections');
+    const section = (kind) => collections.querySelector(`section[data-collection="${kind}"]`);
+    assert.ok(section('minions').querySelector('button[data-retry]') === null, '寵物沒有失敗');
+    failing.mounts = false;
+    const before = page.requests.length;
+    const mountsRetry = section('mounts').querySelector('button[data-retry]');
+    assert.equal(mountsRetry.textContent, '再試一次');
+    mountsRetry.focus();
+    mountsRetry.click();
+    assert.deepEqual(paths(page).slice(before), ['/character/12345678/mounts?dc=na']);
+    isSame(page.document.activeElement, collections, '焦點移到面板');
+    await page.flush();
+    assert.equal(section('mounts').querySelector('.collection-title').textContent, '坐騎 103');
+    assert.equal(section('mounts').querySelectorAll('.collection-item').length, 3);
+    assert.equal(section('minions').querySelectorAll('.collection-item').length, 4);
+    isSame(page.document.activeElement, collections, '新的內容畫好之後焦點還在面板');
+
+    // 換成日本語之後又失敗：再試一次用目前的 context（dc=jp）
+    failing.mounts = true;
+    page.$('profileCard').querySelector('button[data-lang="ja"]').click();
+    await page.flush();
+    failing.mounts = false;
+    const later = page.requests.length;
+    section('mounts').querySelector('button[data-retry]').click();
+    assert.deepEqual(paths(page).slice(later), ['/character/12345678/mounts?dc=jp']);
+    await page.flush();
+    assert.equal(section('mounts').querySelectorAll('.collection-item').length, 3);
+    clean(page);
+});
+
+test('職業分頁還在等的時候標頭已經能用：分頁看得到、職業寫載入中，設成我的角色、裝備照常', async () => {
+    const slow = deferred();
+    const page = createLodestonePage({ search: '?id=12345678', routes: { ...characterRoute(F.HIKARI), '/character/12345678/classjob': () => slow.promise } });
+    await page.ready;
+    await page.flush();
+    assert.deepEqual([page.profile().busy, page.$('tabsCard').hidden], [false, false]);
+    assert.equal(page.$('panel-jobs').getAttribute('aria-busy'), 'true');
+    assert.equal(page.panelText('jobs'), '載入中…');
+    page.$('profileCard').querySelector('.profile-mine').click();
+    assert.deepEqual(page.profile().mine, { text: '★ 我的角色', pressed: 'true' });
+    page.selectTab('gear');
+    assert.equal(page.$('panel-gear').querySelector('.gear-now').textContent, '現在：吟遊詩人 Lv100');
+    slow.resolve(F.ok(F.classJobs()));
+    await page.flush();
+    page.selectTab('jobs');
+    assert.equal(page.$('panel-jobs').getAttribute('aria-busy'), 'false');
+    assert.equal(page.$('panel-jobs').querySelector('.maxed-count').textContent, '滿級 13 個');
+    clean(page);
+});
+
+test('查 A 之後很快查 B：A 的職業、成就、坐騎、寵物、部隊與成員的回答晚到都不能蓋掉 B，也不幫 B 的標頭補部隊名稱', async () => {
+    // A 的分頁回答都已經回來、身體還在讀（不受取消影響）；B 是舊 Worker（標頭的部隊沒有名稱）
+    const gate = deferred();
+    const late = (body) => () => ({ status: 200, json: () => gate.promise.then(() => body) });
+    const page = createLodestonePage({
+        search: '?id=12345678',
+        routes: {
+            ...characterRoute(F.HIKARI),
+            '/character/12345678/classjob': late(F.classJobs({ levels: { Paladin: '1' } })),
+            '/character/12345678/achievements': late(F.achievements({ list: [['1', 'Old Achievement', ''] ] })),
+            '/character/12345678/mounts': late(F.mounts(['Old Mount'])),
+            '/character/12345678/minions': late(F.minions(['Old Minion'])),
+            '/freecompany/9230000000000000001': late(F.freeCompany()),
+            '/freecompany/9230000000000000001/members': late(F.members(1)),
+            ...allRoutes(F.AOI),
+            [`/character/${F.AOI.id}`]: () => F.ok(F.oldCharacter(F.AOI))
+        }
+    });
+    await page.ready;
+    for (const key of ['achievements', 'collections', 'fc']) page.selectTab(key);
+    await page.flush();
+    const old = page.requests.length;
+    assert.equal(old, 7, 'A 的六個分頁請求都在等');
+    const oldContext = page.app.state.character.context;
+
+    await page.app.openCharacter(F.AOI.id);
+    page.selectTab('achievements');
+    page.selectTab('collections');
+    await page.flush();
+    page.selectTab('jobs');
+    const texts = () => TAB_KEYS.map((key) => page.panelText(key));
+    const before = texts();
+    assert.equal(page.profile().where, 'Tiamat（Gaia）・部隊');
+    assert.ok(page.requests.slice(1, old).every((request) => request.signal.aborted), 'A 的分頁請求都取消了');
+
+    gate.resolve();
+    await page.flush();
+    assert.deepEqual(texts(), before, 'A 晚到的回答不畫');
+    assert.ok(!texts().join('').includes('Old'), '沒有 A 的資料');
+    assert.equal(page.profile().where, 'Tiamat（Gaia）・部隊', 'A 的部隊名稱不補到 B 的標頭');
+    // 補部隊名稱只認目前的 context（分頁傳的是發出請求時的 context）
+    page.app.setFreeCompanyName(oldContext, 'Example Company');
+    assert.equal(page.profile().where, 'Tiamat（Gaia）・部隊');
+    assert.deepEqual(selectedTab(page), ['jobs']);
+    clean(page);
+});
+
+test('換頁用當下的名稱與成就顯示；較舊的頁數晚到不能蓋掉最後選的那一頁（成就與部隊成員）', async () => {
+    // 測試扣住的回答：`${種類}:${dc}:${頁數}` → deferred（已經回來、身體還在讀）
+    const held = new Map();
+    const hold = (name) => {
+        const gate = deferred();
+        held.set(name, gate);
+        return gate;
+    };
+    const route = (kind, make) => (url) => {
+        const number = Number(url.searchParams.get('page'));
+        const body = make(number);
+        const gate = held.get(`${kind}:${url.searchParams.get('dc')}:${number}`);
+        if (!gate) return F.ok(body);
+        held.delete(`${kind}:${url.searchParams.get('dc')}:${number}`);
+        return { status: 200, json: () => gate.promise.then(() => body) };
+    };
+    const page = createLodestonePage({
+        search: '?id=12345678', stored: { [KEYS.lang]: 'ja' },
+        routes: {
+            ...allRoutes(),
+            '/character/12345678/achievements': route('achievements', (number) => F.achievements({ page: number })),
+            '/freecompany/9230000000000000001/members': route('members', (number) => F.members(number))
+        }
+    });
+    await page.ready;
+    const memberIds = () => page.$('panel-fc').querySelectorAll('.fc-members button.person').map((row) => row.dataset.id);
+    const achievementNames = () => page.$('panel-achievements').querySelectorAll('.achievement-name').map((name) => name.textContent);
+
+    // 部隊成員：第 2 頁晚到，已經換到第 3 頁
+    page.selectTab('fc');
+    await page.flush();
+    const lateMembers = hold('members:jp:2');
+    pagerOf(page, 'fc').next.click();
+    pagerOf(page, 'fc').next.click();
+    await page.flush();
+    assert.deepEqual([memberIds(), pagerOf(page, 'fc').info], [[F.KAEDE.id], '第 3 頁，共 3 頁']);
+    lateMembers.resolve();
+    await page.flush();
+    assert.deepEqual([memberIds(), pagerOf(page, 'fc').info], [[F.KAEDE.id], '第 3 頁，共 3 頁'], '較舊的第 2 頁不蓋掉第 3 頁');
+
+    // 成就：同樣
+    page.selectTab('achievements');
+    await page.flush();
+    const lateAchievements = hold('achievements:jp:2');
+    pagerOf(page, 'achievements').next.click();
+    pagerOf(page, 'achievements').next.click();
+    await page.flush();
+    lateAchievements.resolve();
+    await page.flush();
+    assert.deepEqual([achievementNames(), pagerOf(page, 'achievements').info], [['To Crush Your Enemies I'], '第 3 頁，共 3 頁']);
+    const pageRequests = page.requests.filter((request) => request.params.page !== undefined);
+    assert.equal(pageRequests.length, 6);
+    assert.ok(pageRequests.every((request) => request.params.dc === 'jp'), '日本語時換頁都帶 dc=jp');
+
+    // 日本語的第 2 頁還在等，換成 English：留在成就、重新打第 1 頁（dc=na）；日本語的晚到不採用；之後換頁帶 dc=na
+    const lateJapanese = hold('achievements:jp:2');
+    pagerOf(page, 'achievements').prev.click();
+    page.$('profileCard').querySelector('button[data-lang="en"]').click();
+    await page.flush();
+    assert.equal(page.requests.at(-1).path, '/character/12345678/achievements?dc=na&page=1');
+    lateJapanese.resolve();
+    await page.flush();
+    assert.deepEqual([achievementNames(), pagerOf(page, 'achievements').info], [['Tank You, Dawntrail III', 'Mastering War VII'], '第 1 頁，共 3 頁']);
+    pagerOf(page, 'achievements').next.click();
+    assert.equal(page.requests.at(-1).path, '/character/12345678/achievements?dc=na&page=2');
+    await page.flush();
+    assert.deepEqual(achievementNames(), ['Level with It III', 'Leaves of Grass']);
+    clean(page);
+});
+
+test('舊角色的換頁回答與舊的換頁按鈕不能污染新角色', async () => {
+    const gates = { achievements: deferred(), members: deferred() };
+    const page = createLodestonePage({
+        search: '?id=12345678',
+        routes: {
+            ...allRoutes(F.HIKARI),
+            '/character/12345678/achievements': (url) => (url.searchParams.get('page') === '2'
+                ? { status: 200, json: () => gates.achievements.promise.then(() => F.achievements({ page: 2 })) }
+                : F.ok(F.achievements())),
+            '/freecompany/9230000000000000001/members': (url) => (url.searchParams.get('page') === '2'
+                ? { status: 200, json: () => gates.members.promise.then(() => F.members(2)) }
+                : F.ok(F.members(1))),
+            ...allRoutes(F.AOI)
+        }
+    });
+    await page.ready;
+    page.selectTab('achievements');
+    await page.flush();
+    pagerOf(page, 'achievements').next.click();
+    const oldAchievementsNext = pagerOf(page, 'achievements').next;
+    page.selectTab('fc');
+    await page.flush();
+    pagerOf(page, 'fc').next.click();
+    const oldMembersNext = pagerOf(page, 'fc').next;
+
+    await page.app.openCharacter(F.AOI.id);
+    page.selectTab('achievements');
+    page.selectTab('fc');
+    await page.flush();
+    const texts = () => TAB_KEYS.map((key) => page.panelText(key));
+    const before = texts();
+    assert.deepEqual(page.$('panel-fc').querySelectorAll('.fc-members button.person').map((row) => row.dataset.id), [F.HIKARI.id, F.AOI.id], 'B 的成員第 1 頁');
+
+    gates.achievements.resolve();
+    gates.members.resolve();
+    await page.flush();
+    assert.deepEqual(texts(), before, 'A 的第 2 頁晚到不畫');
+    assert.equal(pagerOf(page, 'achievements').info, '第 1 頁，共 3 頁');
+    assert.equal(pagerOf(page, 'fc').info, '第 1 頁，共 3 頁');
+
+    // A 的舊按鈕（已經不在頁面上）按了也不打請求
+    const count = page.requests.length;
+    oldAchievementsNext.click();
+    oldMembersNext.click();
+    await page.flush();
+    assert.equal(page.requests.length, count);
+    assert.deepEqual(texts(), before);
+    clean(page);
+});
+
+test('新的角色清掉舊角色的特殊內容與分頁狀態：成就回到第 1 頁，部隊分頁沒有舊的成員與頁數', async () => {
+    const page = createLodestonePage({
+        search: '?id=12345678',
+        routes: {
+            ...allRoutes(F.HIKARI),
+            ...allRoutes(F.REED),
+            [`/character/${F.REED.id}/classjob`]: () => F.ok(F.classJobs({ special: null }))
+        }
+    });
+    await page.ready;
+    await page.flush();
+    assert.ok(page.$('panel-jobs').querySelector('.special-content') !== null);
+    page.selectTab('achievements');
+    await page.flush();
+    pagerOf(page, 'achievements').next.click();
+    page.selectTab('fc');
+    await page.flush();
+    pagerOf(page, 'fc').next.click();
+    await page.flush();
+    assert.equal(pagerOf(page, 'fc').info, '第 2 頁，共 3 頁');
+
+    await page.app.openCharacter(F.REED.id);
+    await page.flush();
+    assert.ok(page.$('panel-jobs').querySelector('.special-content') === null, '沒有舊角色的特殊內容');
+    page.selectTab('achievements');
+    assert.equal(page.requests.at(-1).path, `/character/${F.REED.id}/achievements?dc=na&page=1`);
+    await page.flush();
+    assert.equal(pagerOf(page, 'achievements').info, '第 1 頁，共 3 頁');
+    page.selectTab('fc');
+    assert.equal(page.panelText('fc'), '沒有加入部隊');
+    assert.ok(pagerOf(page, 'fc') === null && page.$('panel-fc').querySelector('.person') === null);
+    clean(page);
+});
+
 // ---------- 標記與資料 ----------
 
 test('index.html：#lodestoneTool 裡的三種畫面與找人表單；腳本順序；整頁只有一顆 .btn-primary；不載入 security-utils.js', async () => {
@@ -1230,13 +2346,14 @@ test('index.html：#lodestoneTool 裡的三種畫面與找人表單；腳本順�
     for (const id of ['nameInput', 'worldSelect', 'searchButton', 'dataLang']) assert.ok(form.contains(page.$(id)), `#${id} 在 #findForm 裡`);
     assert.ok(page.$('findCard').contains(form));
     assert.deepEqual(page.$('dataLang').querySelectorAll('button').map((button) => button.getAttribute('type')), ['button', 'button'], '不會送出表單');
-    assert.equal(page.$('tabsCard').children.length, 0, '分頁之後才放進來');
+    assert.deepEqual(page.$('tabsCard').children.map((child) => child.id), ['tabList', ...TAB_KEYS.map((key) => `panel-${key}`)], '分頁列在前，六個面板在後');
+    for (const key of TAB_KEYS) assert.equal(page.$(`panel-${key}`).children.length, 0, `#panel-${key} 的內容由 lodestone-tabs.js 畫`);
 
     assert.equal((HTML.match(/btn-primary/g) || []).length, 1, '這一頁只有一顆 .btn-primary');
     assert.ok(!HTML.includes('security-utils.js'));
     const sources = [...HTML.matchAll(/<script src="([^"]+)"/g)].map((m) => m[1]);
-    assert.deepEqual(sources.slice(-4), ['lodestone-data.js', 'lodestone-model.js', 'lodestone-store.js', 'script.js']);
-    assert.equal(sources.at(-5), '../../assets/js/common.js');
+    assert.deepEqual(sources.slice(-5), ['lodestone-data.js', 'lodestone-model.js', 'lodestone-store.js', 'lodestone-tabs.js', 'script.js']);
+    assert.equal(sources.at(-6), '../../assets/js/common.js');
 
     // 舊頁面的全域都拿掉了，職業圖示的舊表也是（職業的圖示路徑寫在 LODESTONE_JOBS 裡）
     for (const name of ['LODESTONE_JOB_ICONS', 'LODESTONE_TRANSLATIONS', 'LODESTONE_ROLE_COLORS', 'LODESTONE_ROLE_TEXT_COLORS']) assert.equal(page.window[name], undefined, name);
@@ -1249,10 +2366,12 @@ test('index.html 的 meta description 與 og:description：用名字和伺服器
     assert.equal(HTML.match(/<meta property="og:description" content="([^"]*)"/)[1], DESCRIPTION);
 });
 
-test('script.js 不用 SecurityUtils、不寫 console，翻譯鍵都是寫死的字串', () => {
-    const script = read('tools/lodestone-lookup/script.js');
-    assert.ok(!script.includes('SecurityUtils'));
-    assert.doesNotMatch(script, /console\./);
-    // 翻譯鍵不用樣板字串或接字串組出來（之後檢查「每個鍵都有用到」才看得到）
-    assert.doesNotMatch(script, /['"`]lodestone_[a-z0-9_]*['"`]\s*\+|`lodestone_[a-z0-9_]*\$\{/);
+test('script.js 與 lodestone-tabs.js 不用 SecurityUtils、不寫 console，翻譯鍵都是寫死的字串', () => {
+    for (const file of ['tools/lodestone-lookup/script.js', 'tools/lodestone-lookup/lodestone-tabs.js']) {
+        const script = read(file);
+        assert.ok(!script.includes('SecurityUtils'), file);
+        assert.doesNotMatch(script, /console\./, file);
+        // 翻譯鍵不用樣板字串或接字串組出來（之後檢查「每個鍵都有用到」才看得到）
+        assert.doesNotMatch(script, /['"`]lodestone_[a-z0-9_]*['"`]\s*\+|`lodestone_[a-z0-9_]*\$\{/, file);
+    }
 });
