@@ -1,17 +1,65 @@
 /* ==========================================================================
    副本資料庫 — 只寫版面；顏色、圓角、字級一律來自 tokens.css 與共用元件
+   手機（768px 以下）一列兩行，電腦（769px 以上）一列一行；詳情在那一列下面展開
    ========================================================================== */
 
-/* 篩選面板：外觀由 .card 提供，這裡只補內距 */
-.filter-section {
-    padding: var(--space-7);
-    margin-bottom: var(--space-7);
+/* 用 hidden 切換的元素：.loading、.card、.btn 等共用樣式與下面的規則設了 display，
+   會蓋過瀏覽器內建的 [hidden] { display: none }，所以要自己寫 */
+#loading[hidden],
+#dungeonList[hidden],
+#noResults[hidden],
+#clearSearch[hidden],
+#clearFiltersEmpty[hidden],
+#showMore[hidden],
+#loadError[hidden],
+.dungeon-detail[hidden] {
+    display: none;
 }
 
-.filter-controls {
+/* ---- 搜尋與篩選：外觀由 .card 提供，這裡只補內距與間距 ---- */
+.filter-card {
+    gap: var(--space-4);
+    padding: var(--space-5);
+    margin-bottom: var(--space-4);
+}
+
+/* 搜尋列只有搜尋框（「篩選」按鈕在下面的筆數那一行），整行寬，提示字才放得下 */
+.search-row {
+    display: flex;
+}
+
+/* 搜尋框吃整行的寬度；min-width: 0 讓它在窄螢幕裡縮得下。appearance: none 讓 iOS 與 macOS 的 Safari 也照 .form-control 的圓角和邊框畫 */
+#searchInput {
+    flex: 1 1 auto;
+    min-width: 0;
+    appearance: none;
+}
+
+/* type=search 的搜尋框，在 Chrome（macOS）量過：沒打字時也替清除鈕預留約 16.5px，提示字能用的寬度因此少一截（320px 寬時 212px 只剩 195.5px）；Safari 沒量過。
+   沒打字（正在顯示提示字）時把清除鈕拿掉，空間還給提示字；一打字 :placeholder-shown 就不成立，清除鈕照常出現。只動這個搜尋框 */
+#searchInput:placeholder-shown::-webkit-search-cancel-button {
+    display: none;
+}
+
+/* 「篩選」按鈕：在筆數那一行（.result-bar）的右邊，只有手機版面（最後面的 @media）看得到，電腦版面的面板一直在。
+   一般按鈕的高度（--control-md，40px），不比 40px 矮；展開時換成主色淡底，看得出面板開著 */
+#filterToggle {
+    display: none;
+    flex: 0 0 auto;
+    height: var(--control-md);
+    min-height: var(--control-md);
+}
+
+#filterToggle[aria-expanded="true"] {
+    border-color: var(--color-primary);
+    background: var(--color-primary-tint);
+    color: var(--color-primary);
+}
+
+.filter-panel {
     display: flex;
     flex-direction: column;
-    gap: var(--space-6);
+    gap: var(--space-4);
 }
 
 .filter-group {
@@ -20,148 +68,259 @@
     gap: var(--space-2);
 }
 
-.filter-group label {
+.filter-label {
     font-size: var(--text-sm);
     font-weight: var(--weight-medium);
     color: var(--color-heading);
 }
 
-#resetFilters {
+#clearFilters {
     align-self: flex-start;
 }
 
-/* 副本列表 */
-.dungeon-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-    gap: var(--space-6);
+/* 不能按：外觀照 .btn:disabled，但用 aria-disabled，按下去什麼都不做，焦點還在按鈕上 */
+#clearFilters[aria-disabled="true"] {
+    opacity: 0.55;
+    cursor: not-allowed;
 }
 
-/* 卡片：外觀由 .card.hoverable.clickable 提供 */
-.dungeon-card {
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
+/* .btn 的 hover／active 只排除 :disabled：這裡拿掉它們的底色、浮起與陰影 */
+#clearFilters[aria-disabled="true"]:hover,
+#clearFilters[aria-disabled="true"]:active {
+    background: var(--color-surface);
+    transform: none;
+    box-shadow: none;
 }
 
-/* 鍵盤導覽的目前卡片 */
-.dungeon-card.card-focused,
-.dungeon-card.card-focused:hover {
-    transform: translateY(-4px);
-    border-color: var(--color-primary);
-    box-shadow: var(--shadow-lg), var(--ring-primary);
+/* 焦點還在這顆按鈕上，鍵盤焦點的外框照樣看得到 */
+#clearFilters[aria-disabled="true"]:focus-visible {
+    box-shadow: var(--ring-primary);
 }
 
-.dungeon-image {
-    position: relative;
-    height: 150px;
-    overflow: hidden;
+/* ---- 筆數那一行（.result-bar）：手機版面（最後面的 @media）是左邊筆數、右邊「篩選」按鈕；電腦版面按鈕不顯示，只剩筆數，
+   用 order 排在面板後面（篩選按鈕下面、卡片底部，接近列表）。卡片是 flex 直排，搜尋列與面板的 order 都是 0。
+   DOM 順序是搜尋框、筆數、「篩選」、面板，Tab 與螢幕閱讀器照這個順序；電腦版面這一行裡能互動的只有按鈕，它看不到，所以換位置不影響 Tab ---- */
+.result-bar {
+    order: 1;
 }
 
-.dungeon-image img {
-    display: block;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.image-placeholder {
-    position: absolute;
-    inset: 0;
-}
-
-.dungeon-content {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-3);
-    padding: var(--space-5);
-}
-
-.dungeon-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: var(--space-3);
-}
-
-.dungeon-title {
+/* ---- 筆數：沒字的時候也留著一行的高度，載入完才出現字時列表不會跳動。
+   找不到時它改寫找不到的那一句並加 .visually-hidden（畫面上不重複，螢幕閱讀器照樣念） ---- */
+#resultCount {
+    min-height: calc(1em * var(--leading-normal));
     margin: 0;
-    font-size: var(--text-xl);
-    font-weight: var(--weight-semibold);
-    line-height: var(--leading-snug);
-    color: var(--color-heading);
-}
-
-.dungeon-level {
-    flex-shrink: 0;
-    white-space: nowrap;
-}
-
-.dungeon-meta,
-.drops-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-}
-
-/* 掉落物名稱可能很長：允許換行 */
-.drop-item {
-    height: auto;
-    min-height: 22px;
-    padding: 2px var(--space-2);
-    white-space: normal;
-}
-
-.dungeon-rewards h4,
-.special-drops h4 {
-    margin: 0 0 var(--space-1);
-    font-size: var(--text-xs);
-    font-weight: var(--weight-semibold);
-    letter-spacing: 0.04em;
-    color: var(--color-muted);
-}
-
-.reward-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: var(--space-3);
-    font-size: var(--text-sm);
-}
-
-.reward-name {
-    color: var(--color-muted);
-}
-
-.reward-value {
-    font-weight: var(--weight-medium);
-    color: var(--color-text);
-}
-
-.dungeon-description {
     font-size: var(--text-sm);
     line-height: var(--leading-normal);
     color: var(--color-muted);
 }
 
-.dungeon-description strong {
-    color: var(--color-text);
+/* ---- 副本列表：外觀由 .card 提供（圓角、邊框、overflow: hidden），每一列用分隔線隔開 ---- */
+.dungeon-list {
+    list-style: none;
 }
 
-/* 搜尋關鍵字標示：字用標題色，跟著周圍的話，說明的淡色字在底色上對比不夠 */
-.dungeon-card mark {
+.dungeon-item + .dungeon-item {
+    border-top: 1px solid var(--color-border);
+}
+
+/* 一列是一顆按鈕，也是一個格線：手機第一行名稱與等級、第二行「類型 · 版本」與展開記號，命中行各佔一整行 */
+.dungeon-row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--space-1) var(--space-2);
+    width: 100%;
+    min-height: var(--control-lg);
+    padding: var(--space-3) var(--space-4);
+    border: 0;
+    background: transparent;
+    color: var(--color-text);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease);
+}
+
+.dungeon-row:hover {
+    background: var(--color-surface-2);
+}
+
+/* 焦點外框畫在按鈕裡面：列表是 overflow: hidden，畫在外面會被切掉 */
+.dungeon-row:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: -2px;
+}
+
+/* 名稱可能很長：在任何地方換行，不截斷、不撐寬 */
+.dungeon-name {
+    grid-column: 1 / 3;
+    grid-row: 1;
+    align-self: start;
+    font-size: var(--text-md);
+    font-weight: var(--weight-semibold);
+    line-height: var(--leading-snug);
+    color: var(--color-heading);
+    overflow-wrap: anywhere;
+}
+
+.dungeon-type,
+.dungeon-version {
+    grid-row: 2;
+    font-size: var(--text-sm);
+    line-height: var(--leading-snug);
+    color: var(--color-muted);
+}
+
+.dungeon-type {
+    grid-column: 1;
+}
+
+/* 版本跨到等級那一欄底下：第二行右邊只有 8px 寬的展開記號，用不著留一整個等級的寬度，320px 寬的手機「類型 · 版本」才放得進一行。
+   padding-right 把文字擋在展開記號左邊（記號畫在這一格的最右邊） */
+.dungeon-version {
+    grid-column: 2 / 4;
+    padding-right: var(--space-5);
+}
+
+/* 「·」只是裝飾：第二行把替代文字設成空的，螢幕閱讀器不念；不認得這種寫法的瀏覽器略過第二行，用第一行 */
+.dungeon-version::before {
+    content: '·';
+    content: '·' / '';
+    margin-right: var(--space-2);
+}
+
+.dungeon-level {
+    grid-column: 3;
+    grid-row: 1;
+    align-self: start;
+    justify-self: end;
+}
+
+/* 展開記號：用邊框畫的箭頭，展開時轉向 */
+.dungeon-chevron {
+    grid-column: 3;
+    grid-row: 2;
+    justify-self: end;
+    width: 8px;
+    height: 8px;
+    border-right: 2px solid var(--color-muted);
+    border-bottom: 2px solid var(--color-muted);
+    transform: rotate(45deg);
+    transition: transform var(--duration-base) var(--ease);
+}
+
+.dungeon-row[aria-expanded="true"] .dungeon-chevron {
+    transform: rotate(225deg);
+}
+
+/* 搜尋命中的欄位：每一種命中各一行，標籤和「還有 N 項」用淡色，資料的字用內文色 */
+.dungeon-hit {
+    grid-column: 1 / -1;
+    font-size: var(--text-sm);
+    line-height: var(--leading-normal);
+    color: var(--color-text);
+    overflow-wrap: anywhere;
+}
+
+.dungeon-hit-label,
+.dungeon-hit-more {
+    color: var(--color-muted);
+}
+
+.dungeon-hit-label {
+    font-weight: var(--weight-medium);
+}
+
+/* ---- 展開的詳情：dt 一欄、dd 一欄 ---- */
+.dungeon-detail {
+    padding: var(--space-4);
+    border-top: 1px solid var(--color-border);
+    background: var(--color-surface-2);
+}
+
+.dungeon-fields {
+    display: grid;
+    gap: var(--space-3);
+    margin: 0;
+}
+
+.dungeon-field {
+    display: grid;
+    grid-template-columns: 5rem minmax(0, 1fr);
+    gap: var(--space-3);
+}
+
+.dungeon-field dt {
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    color: var(--color-muted);
+    overflow-wrap: anywhere;
+}
+
+.dungeon-field dd {
+    margin: 0;
+    font-size: var(--text-sm);
+    line-height: var(--leading-normal);
+    color: var(--color-text);
+    overflow-wrap: anywhere;
+}
+
+.dungeon-none {
+    color: var(--color-muted);
+}
+
+/* 掉落物：每一項一個 .tag，換行排列。名稱可能很長，所以 .tag 的固定高度和不換行都要拿掉；
+   用一般的區塊（不是 .tag 的 inline-flex），命中的 <mark> 才會和前後的字連在同一行 */
+.dungeon-drops {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.dungeon-drops li {
+    display: block;
+    height: auto;
+    min-height: 22px;
+    padding: 2px var(--space-2);
+    line-height: var(--leading-snug);
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+/* 搜尋命中的字：字用標題色，跟著周圍的話，淡色的字在底色上對比不夠 */
+.dungeon-item mark {
     padding: 0 2px;
     border-radius: var(--radius-sm);
     background: var(--color-mark);
     color: var(--color-heading);
 }
 
-/* 無結果：外觀由 .empty-state 提供 */
-.no-results {
-    margin-top: var(--space-6);
+/* ---- 找不到：外觀由 .empty-state 提供；標題獨佔一行，兩顆按鈕在下面並排，放不下就換行。搜尋字可能很長，標題在任何地方換行 ---- */
+#noResults {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-3);
 }
 
-/* 資料來源：外觀由 .info-panel 提供 */
+#noResultsTitle {
+    flex: 1 1 100%;
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+/* ---- 顯示更多與載入失敗 ---- */
+#showMore {
+    display: flex;
+    width: 100%;
+    max-width: 20rem;
+    margin: var(--space-5) auto 0;
+}
+
+/* ---- 資料來源：外觀由 .info-panel 提供 ---- */
 .data-source {
     margin-top: var(--space-9);
 }
@@ -170,20 +329,15 @@
     margin-top: var(--space-2);
 }
 
-/* 響應式 */
+/* ---- 手機（768px 以下） ---- */
 @media (max-width: 768px) {
-    .filter-section {
-        padding: var(--space-6);
+    .filter-card {
+        padding: var(--space-4);
     }
 
-    .dungeon-list {
-        grid-template-columns: 1fr;
-        gap: var(--space-4);
-    }
-
-    .dungeon-header {
-        flex-direction: column;
-        gap: var(--space-2);
+    /* 左右的內距收小：標題與兩顆按鈕才有寬度（320px 寬、中文的兩顆按鈕要並排放得下） */
+    #noResults {
+        padding: var(--space-6) var(--space-4);
     }
 
     .data-source {
@@ -191,16 +345,86 @@
     }
 }
 
-@media (max-width: 480px) {
-    .filter-section {
-        padding: var(--space-5);
+/* ---- 手機（條件和攻略資料的 MOBILE_QUERY 逐字相同：窄螢幕，或橫放的矮視窗）：篩選收進筆數那一行右邊的「篩選」按鈕，
+   展開時才看得到面板（在這一行下面）。收不收由 script.js 的 state.filtersOpen 決定（#filterCard 的 is-collapsed）；這個 @media 以外，按鈕不顯示、面板一直在 ---- */
+@media (max-width: 768px), (max-height: 500px) {
+    /* 一行：筆數靠左、按鈕靠右，順序照 DOM（不用電腦版面的 order）。筆數太長（窄螢幕、日文「N 件見つかりました」）時可以換行，按鈕不縮 */
+    .result-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-3);
+        order: 0;
     }
 
-    .dungeon-list {
-        gap: var(--space-2);
+    /* margin-left: auto：找不到時筆數加了 .visually-hidden（脫離排版），這一行只剩按鈕，也要留在右邊。
+       內距收小，筆數才有地方：320px 寬、選了 2 個篩選時，英文的「10 dungeons found」與「Filters (2)」並排放得下（照 .btn 的內距會換行）；
+       日文的「10 件見つかりました」本來就放不下，換成兩行 */
+    #filterToggle {
+        display: inline-flex;
+        margin-left: auto;
+        padding: 0 var(--space-3);
     }
 
-    .dungeon-content {
-        padding: var(--space-4);
+    #filterCard.is-collapsed #filterPanel {
+        display: none;
+    }
+}
+
+/* ---- 電腦（769px 以上）：一列一行，類型、版本、等級的欄寬固定，上下對齊；篩選的組名在按鈕左邊 ---- */
+@media (min-width: 769px) {
+    .dungeon-row {
+        grid-template-columns: minmax(0, 1fr) 8rem 9rem 3.5rem 1.5rem;
+        column-gap: var(--space-4);
+        padding: var(--space-3) var(--space-5);
+    }
+
+    .dungeon-name {
+        grid-column: 1;
+        grid-row: 1;
+        align-self: center;
+    }
+
+    .dungeon-type {
+        grid-column: 2;
+        grid-row: 1;
+    }
+
+    .dungeon-version {
+        grid-column: 3;
+        grid-row: 1;
+        padding-right: 0;
+    }
+
+    .dungeon-version::before {
+        content: none;
+    }
+
+    .dungeon-level {
+        grid-column: 4;
+        grid-row: 1;
+        align-self: center;
+        justify-self: start;
+    }
+
+    .dungeon-chevron {
+        grid-column: 5;
+        grid-row: 1;
+        justify-self: center;
+    }
+
+    .dungeon-detail {
+        padding: var(--space-4) var(--space-5);
+    }
+
+    .filter-group {
+        flex-direction: row;
+        align-items: flex-start;
+        gap: var(--space-4);
+    }
+
+    .filter-label {
+        flex: 0 0 5rem;
+        line-height: var(--control-sm);
     }
 }

@@ -8,7 +8,7 @@
       "四人迷宮": "標準4人副本",
       "8人大型任務": "8人團隊任務",
       "8人討伐殲滅戰": "8人戰鬥副本",
-      "24人大型任務": "大型團隊副本",
+      "聯盟任務": "大型團隊副本",
       "公會令": "公會任務",
       "誅滅戰": "蠻神討伐戰",
       "絕境戰": "極限難度挑戰",
@@ -18,7 +18,7 @@
     },
     "expansions": {
       "2.x": "重生之境",
-      "3.x": "蒼穹之禁城",
+      "3.x": "蒼天之禁城",
       "4.x": "紅蓮之狂潮",
       "5.x": "暗影之逆焰",
       "6.x": "曉月之終途",
@@ -29,7 +29,7 @@
         "四人迷宮": 484,
         "公會令": 26,
         "8人討伐殲滅戰": 101,
-        "24人大型任務": 16,
+        "聯盟任務": 16,
         "8人大型任務": 131,
         "絕境戰": 6,
         "幻巧戰": 2,
@@ -46,8 +46,8 @@
         "7.x": 42
       }
     },
-    "visible_count": 640,
-    "hidden_count": 163
+    "visible_count": 362,
+    "hidden_count": 441
   },
   "dungeons": [
     {
@@ -1360,7 +1360,7 @@
       "name": "水晶塔 古代人迷宮",
       "shortCode": "l1r1",
       "level": 50,
-      "type": "24人大型任務",
+      "type": "聯盟任務",
       "expansion": "2.x",
       "image": "images/79.jpg",
       "tombstoneReward": "詩學古典神典石: 100",
@@ -1380,7 +1380,7 @@
       "name": "水晶塔 希爾科斯塔",
       "shortCode": "l1r2",
       "level": 50,
-      "type": "24人大型任務",
+      "type": "聯盟任務",
       "expansion": "2.x",
       "image": "images/80.jpg",
       "tombstoneReward": "詩學古典神典石: 100",
@@ -1402,7 +1402,7 @@
       "name": "水晶塔 闇之世界",
       "shortCode": null,
       "level": 50,
-      "type": "24人大型任務",
+      "type": "聯盟任務",
       "expansion": "2.x",
       "image": "images/81.jpg",
       "tombstoneReward": "詩學古典神典石: 100",
@@ -2296,7 +2296,7 @@
       "name": "魔航船虛無方舟",
       "shortCode": "z2r1",
       "level": 60,
-      "type": "24人大型任務",
+      "type": "聯盟任務",
       "expansion": "3.x",
       "image": "images/131.jpg",
       "tombstoneReward": "暮輝古典神典石: 100 60 8",
@@ -2314,7 +2314,7 @@
       "name": "禁忌城邦瑪哈",
       "shortCode": "z2r2",
       "level": 60,
-      "type": "24人大型任務",
+      "type": "聯盟任務",
       "expansion": "3.x",
       "image": "images/132.jpg",
       "tombstoneReward": "暮輝古典神典石: 100 60 8",
@@ -2332,7 +2332,7 @@
       "name": "影之國",
       "shortCode": "z2r3",
       "level": 60,
-      "type": "24人大型任務",
+      "type": "聯盟任務",
       "expansion": "3.x",
       "image": "images/133.jpg",
       "tombstoneReward": "暮輝古典神典石: 100 80 10",
@@ -3285,7 +3285,7 @@
       "name": "失落之都拉巴納斯塔",
       "shortCode": "z3r1",
       "level": 70,
-      "type": "24人大型任務",
+      "type": "聯盟任務",
       "expansion": "4.x",
       "image": "images/190.jpg",
       "tombstoneReward": "紅蓮古典神典石: 100 80 10",
@@ -3305,7 +3305,7 @@
       "name": "封閉聖塔黎鐸拉納大燈塔",
       "shortCode": "z3r2",
       "level": 70,
-      "type": "24人大型任務",
+      "type": "聯盟任務",
       "expansion": "4.x",
       "image": "images/191.jpg",
       "tombstoneReward": "紅蓮古典神典石: 100 80 10",
@@ -3325,7 +3325,7 @@
       "name": "樂慾之所甌博訥修道院",
       "shortCode": "z3r3",
       "level": 70,
-      "type": "24人大型任務",
+      "type": "聯盟任務",
       "expansion": "4.x",
       "image": "images/192.jpg",
       "tombstoneReward": "紅蓮古典神典石: 100 100 12",
@@ -4251,7 +4251,7 @@
       "name": "複製工廠廢墟",
       "shortCode": "n4r1",
       "level": 80,
-      "type": "24人大型任務",
+      "type": "聯盟任務",
       "expansion": "5.x",
       "image": "images/247.jpg",
       "tombstoneReward": "暗影古典神典石: 100 100 12",
@@ -4275,7 +4275,7 @@
       "name": "人偶軍事基地",
       "shortCode": "n4r2",
       "level": 80,
-      "type": "24人大型任務",
+      "type": "聯盟任務",
       "expansion": "5.x",
       "image": "images/248.jpg",
       "tombstoneReward": "暗影古典神典石: 100 100 12",
@@ -4297,7 +4297,7 @@
       "name": "希望之砲臺：「塔」",
       "shortCode": null,
       "level": 80,
-      "type": "24人大型任務",
+      "type": "聯盟任務",
       "expansion": "5.x",
       "image": "images/249.jpg",
       "tombstoneReward": "暗影古典神典石: 100 120 15",
@@ -5212,7 +5212,7 @@
       "name": "燦爛神域阿格萊亞",
       "shortCode": "z5r1",
       "level": 90,
-      "type": "24人大型任務",
+      "type": "聯盟任務",
       "expansion": "6.x",
       "image": "images/303.jpg",
       "tombstoneReward": "曉月古典神典石: 100 100 12",
@@ -5232,7 +5232,7 @@
       "name": "喜悅神域歐芙洛緒涅",
       "shortCode": "z5r2",
       "level": 90,
-      "type": "24人大型任務",
+      "type": "聯盟任務",
       "expansion": "6.x",
       "image": "images/304.jpg",
       "tombstoneReward": "曉月古典神典石: 100 100 12",
@@ -5252,7 +5252,7 @@
       "name": "榮華神域塔利亞",
       "shortCode": "z5r3",
       "level": 90,
-      "type": "24人大型任務",
+      "type": "聯盟任務",
       "expansion": "6.x",
       "image": "images/305.jpg",
       "tombstoneReward": "曉月古典神典石: 100 120 15",
@@ -5894,7 +5894,7 @@
       "name": "朱諾：第一巡行",
       "shortCode": "z6r1",
       "level": 100,
-      "type": "24人大型任務",
+      "type": "聯盟任務",
       "expansion": "7.x",
       "image": "images/344.jpg",
       "tombstoneReward": "黃金古典神典石: 150 20",
@@ -6364,7 +6364,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 375,
@@ -6378,7 +6378,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 377,
@@ -6392,7 +6392,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 378,
@@ -6406,7 +6406,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 379,
@@ -6420,7 +6420,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 380,
@@ -6434,7 +6434,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 381,
@@ -6448,7 +6448,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 382,
@@ -6476,7 +6476,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 384,
@@ -6490,7 +6490,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 385,
@@ -6504,7 +6504,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 386,
@@ -6518,7 +6518,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 387,
@@ -6532,7 +6532,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 388,
@@ -6546,7 +6546,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 389,
@@ -6560,7 +6560,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 390,
@@ -6574,7 +6574,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 391,
@@ -6602,7 +6602,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 393,
@@ -6616,7 +6616,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 394,
@@ -6630,7 +6630,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 395,
@@ -6644,7 +6644,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 396,
@@ -6672,7 +6672,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 398,
@@ -6686,7 +6686,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 399,
@@ -6700,7 +6700,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 400,
@@ -6714,7 +6714,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 401,
@@ -6728,7 +6728,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 402,
@@ -6742,7 +6742,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 403,
@@ -6756,7 +6756,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 404,
@@ -6770,7 +6770,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 405,
@@ -6784,7 +6784,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 406,
@@ -6798,7 +6798,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 407,
@@ -6812,7 +6812,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 408,
@@ -6826,7 +6826,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 409,
@@ -6840,7 +6840,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 410,
@@ -6854,7 +6854,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 411,
@@ -6868,7 +6868,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 412,
@@ -6882,7 +6882,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 413,
@@ -6896,7 +6896,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 414,
@@ -6910,7 +6910,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 415,
@@ -6924,7 +6924,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 416,
@@ -6938,7 +6938,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 417,
@@ -6952,7 +6952,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 418,
@@ -6966,7 +6966,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 419,
@@ -6980,7 +6980,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 420,
@@ -6994,7 +6994,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 421,
@@ -7008,7 +7008,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 422,
@@ -7022,7 +7022,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 423,
@@ -7036,7 +7036,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 424,
@@ -7050,7 +7050,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 425,
@@ -7064,7 +7064,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 426,
@@ -7078,7 +7078,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 427,
@@ -7092,7 +7092,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 428,
@@ -7106,7 +7106,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 429,
@@ -7120,7 +7120,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 430,
@@ -7134,7 +7134,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 431,
@@ -7148,7 +7148,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 432,
@@ -7162,7 +7162,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 433,
@@ -7176,7 +7176,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 434,
@@ -7190,7 +7190,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 435,
@@ -7204,7 +7204,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 436,
@@ -7218,7 +7218,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 437,
@@ -7232,7 +7232,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 438,
@@ -7246,7 +7246,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 439,
@@ -7260,7 +7260,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 440,
@@ -7274,7 +7274,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 441,
@@ -7288,7 +7288,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 442,
@@ -7302,7 +7302,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 443,
@@ -7316,7 +7316,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 444,
@@ -7330,7 +7330,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 445,
@@ -7344,7 +7344,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 446,
@@ -7358,7 +7358,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 447,
@@ -7372,7 +7372,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 448,
@@ -7386,7 +7386,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 449,
@@ -7400,7 +7400,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 450,
@@ -7414,7 +7414,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 451,
@@ -7428,7 +7428,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 452,
@@ -7442,7 +7442,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 453,
@@ -7456,7 +7456,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 454,
@@ -7470,7 +7470,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 455,
@@ -7484,7 +7484,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 456,
@@ -7498,7 +7498,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 457,
@@ -7512,7 +7512,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 458,
@@ -7526,7 +7526,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 459,
@@ -7540,7 +7540,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 460,
@@ -7554,7 +7554,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 461,
@@ -7582,7 +7582,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 463,
@@ -7610,7 +7610,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 465,
@@ -7624,7 +7624,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 466,
@@ -7638,7 +7638,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 467,
@@ -7652,7 +7652,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 468,
@@ -7666,7 +7666,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 469,
@@ -7680,7 +7680,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 470,
@@ -7694,7 +7694,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 471,
@@ -7708,7 +7708,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 472,
@@ -7722,7 +7722,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 473,
@@ -7736,7 +7736,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 474,
@@ -7750,7 +7750,7 @@
       "specialDrops": [],
       "mechanics": "依照指示完成目標。",
       "description": "公會令任務，通過完成特定目標來獲得獎勵。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 475,
@@ -7764,7 +7764,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 476,
@@ -8338,7 +8338,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 517,
@@ -8352,7 +8352,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 518,
@@ -8366,7 +8366,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 519,
@@ -8380,7 +8380,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 520,
@@ -8394,7 +8394,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 521,
@@ -8408,7 +8408,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 522,
@@ -8422,7 +8422,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 523,
@@ -8436,7 +8436,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 524,
@@ -8450,7 +8450,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 525,
@@ -8464,7 +8464,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 526,
@@ -8478,7 +8478,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 527,
@@ -8492,7 +8492,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 528,
@@ -8506,7 +8506,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 529,
@@ -8520,7 +8520,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 530,
@@ -8534,7 +8534,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 531,
@@ -8548,7 +8548,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 532,
@@ -8562,7 +8562,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 533,
@@ -8576,7 +8576,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 534,
@@ -8590,7 +8590,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 535,
@@ -8604,7 +8604,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 536,
@@ -8618,7 +8618,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 537,
@@ -8632,7 +8632,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 538,
@@ -8646,7 +8646,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 539,
@@ -8660,7 +8660,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 540,
@@ -8674,7 +8674,7 @@
       "specialDrops": [],
       "mechanics": "8人團隊戰鬥，注意BOSS機制和時間軸。",
       "description": "高難度8人戰鬥，需要良好的團隊配合。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 541,
@@ -8688,7 +8688,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 542,
@@ -8702,7 +8702,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 543,
@@ -8716,7 +8716,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 544,
@@ -8730,7 +8730,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 545,
@@ -8744,7 +8744,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 546,
@@ -8758,7 +8758,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 547,
@@ -8772,7 +8772,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 548,
@@ -8814,7 +8814,7 @@
       "specialDrops": [],
       "mechanics": "依照指示完成目標。",
       "description": "公會令任務，通過完成特定目標來獲得獎勵。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 551,
@@ -8828,7 +8828,7 @@
       "specialDrops": [],
       "mechanics": "依照指示完成目標。",
       "description": "公會令任務，通過完成特定目標來獲得獎勵。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 552,
@@ -8842,7 +8842,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 553,
@@ -8856,7 +8856,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 554,
@@ -8870,7 +8870,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 555,
@@ -8884,7 +8884,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 556,
@@ -8898,7 +8898,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 557,
@@ -8912,7 +8912,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 558,
@@ -8926,7 +8926,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 559,
@@ -8940,7 +8940,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 560,
@@ -8954,7 +8954,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 561,
@@ -9094,7 +9094,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 571,
@@ -9108,7 +9108,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 572,
@@ -9122,7 +9122,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 573,
@@ -9136,7 +9136,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 574,
@@ -9150,7 +9150,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 575,
@@ -9164,7 +9164,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 576,
@@ -9178,7 +9178,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 577,
@@ -9192,7 +9192,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 578,
@@ -9206,7 +9206,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 579,
@@ -9220,7 +9220,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 580,
@@ -9234,7 +9234,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 581,
@@ -9248,7 +9248,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 582,
@@ -9262,7 +9262,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 583,
@@ -9276,7 +9276,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 584,
@@ -9290,7 +9290,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 585,
@@ -9304,7 +9304,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 586,
@@ -9318,7 +9318,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 587,
@@ -9332,7 +9332,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 588,
@@ -9346,7 +9346,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 589,
@@ -9360,7 +9360,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 590,
@@ -9374,7 +9374,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 591,
@@ -9388,7 +9388,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 592,
@@ -9402,7 +9402,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 593,
@@ -9416,7 +9416,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 594,
@@ -9430,7 +9430,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 595,
@@ -9444,7 +9444,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 596,
@@ -9458,7 +9458,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 597,
@@ -9514,7 +9514,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 601,
@@ -9528,7 +9528,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 602,
@@ -9542,7 +9542,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 603,
@@ -9556,7 +9556,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 604,
@@ -9570,7 +9570,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 605,
@@ -9584,7 +9584,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 606,
@@ -9598,7 +9598,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 607,
@@ -9612,7 +9612,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 608,
@@ -9626,7 +9626,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 609,
@@ -9640,7 +9640,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 610,
@@ -9654,7 +9654,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 611,
@@ -9668,7 +9668,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 612,
@@ -9682,7 +9682,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 613,
@@ -9696,7 +9696,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 614,
@@ -9710,7 +9710,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 615,
@@ -9724,7 +9724,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 616,
@@ -9738,7 +9738,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 617,
@@ -9752,7 +9752,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 618,
@@ -9766,7 +9766,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 619,
@@ -9780,7 +9780,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 620,
@@ -9794,7 +9794,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 621,
@@ -9962,7 +9962,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 633,
@@ -9976,7 +9976,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 634,
@@ -10060,7 +10060,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 640,
@@ -10116,7 +10116,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 644,
@@ -10130,7 +10130,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 645,
@@ -10158,7 +10158,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 647,
@@ -10172,7 +10172,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 648,
@@ -10186,7 +10186,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 649,
@@ -10200,7 +10200,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 650,
@@ -10214,7 +10214,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 651,
@@ -10228,7 +10228,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 652,
@@ -10242,7 +10242,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 653,
@@ -10256,7 +10256,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 654,
@@ -10270,7 +10270,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 655,
@@ -10284,7 +10284,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 656,
@@ -10298,7 +10298,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 657,
@@ -10410,7 +10410,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 665,
@@ -10424,7 +10424,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 666,
@@ -10438,7 +10438,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 667,
@@ -10452,7 +10452,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 668,
@@ -10466,7 +10466,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 669,
@@ -10480,7 +10480,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 670,
@@ -10494,7 +10494,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 671,
@@ -10508,7 +10508,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 672,
@@ -10522,7 +10522,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 673,
@@ -10536,7 +10536,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 674,
@@ -10550,7 +10550,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 675,
@@ -10564,7 +10564,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 676,
@@ -10578,7 +10578,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 677,
@@ -10592,7 +10592,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 678,
@@ -10606,7 +10606,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 679,
@@ -10620,7 +10620,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 680,
@@ -10634,7 +10634,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 681,
@@ -10648,7 +10648,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 682,
@@ -10662,7 +10662,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 683,
@@ -10676,7 +10676,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 684,
@@ -10690,7 +10690,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 685,
@@ -10704,7 +10704,7 @@
       "specialDrops": [],
       "mechanics": "8人團隊戰鬥，注意BOSS機制和時間軸。",
       "description": "高難度8人戰鬥，需要良好的團隊配合。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 686,
@@ -10718,7 +10718,7 @@
       "specialDrops": [],
       "mechanics": "8人團隊戰鬥，注意BOSS機制和時間軸。",
       "description": "高難度8人戰鬥，需要良好的團隊配合。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 687,
@@ -10858,7 +10858,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 697,
@@ -10872,7 +10872,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 698,
@@ -11138,7 +11138,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 717,
@@ -11152,7 +11152,7 @@
       "specialDrops": [],
       "mechanics": "8人團隊戰鬥，注意BOSS機制和時間軸。",
       "description": "高難度8人戰鬥，需要良好的團隊配合。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 718,
@@ -11166,7 +11166,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 719,
@@ -11180,7 +11180,7 @@
       "specialDrops": [],
       "mechanics": "8人團隊戰鬥，注意BOSS機制和時間軸。",
       "description": "高難度8人戰鬥，需要良好的團隊配合。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 720,
@@ -11194,7 +11194,7 @@
       "specialDrops": [],
       "mechanics": "8人團隊戰鬥，注意BOSS機制和時間軸。",
       "description": "高難度8人戰鬥，需要良好的團隊配合。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 721,
@@ -11208,7 +11208,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 722,
@@ -11222,7 +11222,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 723,
@@ -11236,7 +11236,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 724,
@@ -11250,7 +11250,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 725,
@@ -11264,7 +11264,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 726,
@@ -11278,7 +11278,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 727,
@@ -11292,7 +11292,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 728,
@@ -11306,7 +11306,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 729,
@@ -11320,7 +11320,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 730,
@@ -11334,7 +11334,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 731,
@@ -11348,7 +11348,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 732,
@@ -11362,7 +11362,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 733,
@@ -11376,7 +11376,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 734,
@@ -11390,7 +11390,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 735,
@@ -11404,7 +11404,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 736,
@@ -11418,7 +11418,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 737,
@@ -11432,7 +11432,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 738,
@@ -11614,7 +11614,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 751,
@@ -11754,7 +11754,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 761,
@@ -11768,7 +11768,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 762,
@@ -11782,7 +11782,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 763,
@@ -11796,7 +11796,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 764,
@@ -11894,7 +11894,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 771,
@@ -11908,7 +11908,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 772,
@@ -11922,7 +11922,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 773,
@@ -11936,7 +11936,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 774,
@@ -11950,7 +11950,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 775,
@@ -12132,7 +12132,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 788,
@@ -12146,7 +12146,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 789,
@@ -12160,7 +12160,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 790,
@@ -12174,7 +12174,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 791,
@@ -12188,7 +12188,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 792,
@@ -12202,7 +12202,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 793,
@@ -12216,7 +12216,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 794,
@@ -12230,7 +12230,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 795,
@@ -12244,7 +12244,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 796,
@@ -12258,7 +12258,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 797,
@@ -12272,7 +12272,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 798,
@@ -12286,7 +12286,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 799,
@@ -12300,7 +12300,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 800,
@@ -12314,7 +12314,7 @@
       "specialDrops": [],
       "mechanics": "8人團隊戰鬥，注意BOSS機制和時間軸。",
       "description": "高難度8人戰鬥，需要良好的團隊配合。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 801,
@@ -12328,7 +12328,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 802,
@@ -12342,7 +12342,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 803,
@@ -12356,7 +12356,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     },
     {
       "id": 804,
@@ -12370,7 +12370,7 @@
       "specialDrops": [],
       "mechanics": "待補充機制說明。",
       "description": "待補充副本描述。",
-      "visible": true
+      "visible": false
     }
   ]
 }

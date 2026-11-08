@@ -40,12 +40,32 @@
                 <!-- 2026年11月 -->
                 <section class="changelog-month">
                     <h2 class="changelog-month-title">2026年11月</h2>
-                    <details class="changelog-entry is-latest" id="version-v2280" open>
+                    <details class="changelog-entry is-latest" id="version-v2290" open>
+                        <summary>
+                            <span class="changelog-meta">
+                                <time class="changelog-date" datetime="2026-11-07">11月7日</time>
+                                <span class="changelog-version">v2.29.0</span>
+                                <span class="changelog-latest" data-i18n="changelog_latest">最新</span>
+                            </span>
+                            <span class="changelog-headline">副本資料庫改成精簡列表，點一下就展開機制與掉落物</span>
+                        </summary>
+                        <ul class="changelog-items">
+                            <li><span class="tag tag-info">改善</span> 副本資料庫改成精簡列表：一列一個副本，寫名稱、類型、版本和等級，不再放圖片（以前每張卡片的圖片區其實都沒有圖）；版本由新到舊排（7.x 在最前面），先列 30 個，按「顯示更多」再加 30 個</li>
+                            <li><span class="tag tag-info">改善</span> 點一列就在原地展開名稱、簡介、機制、掉落物和獎勵，名稱可以選取複製，再點一下收起；可以同時展開好幾列，換搜尋、篩選或語言之後，原本展開的還是展開著</li>
+                            <li><span class="tag tag-info">改善</span> 搜尋時，命中的掉落物、機制或簡介會直接寫在那一列上，命中的字標出來，不用一個一個展開來找；掉落物有好幾項符合時只列第一項，後面寫「還有 N 項也符合」；列表上方寫找到幾個副本</li>
+                            <li><span class="tag tag-info">改善</span> 手機上，篩選收進筆數那一行右邊的「篩選」按鈕，點開才展開，選了篩選會寫成「篩選（2）」，不用先捲過一大片按鈕才看到列表；橫放的手機也一樣</li>
+                            <li><span class="tag tag-info">改善</span> 拿掉等級篩選：它的六個等級區間和六個版本一一對應，選版本就好</li>
+                            <li><span class="tag tag-info">改善</span> 找不到的時候會寫出找不到什麼：有搜尋字時寫「找不到符合「X」的副本」並附「清除搜尋」；搜尋字和篩選都有時，改寫「在選了的篩選裡找不到「X」」，兩顆按鈕都附上；只有篩選時附「清除篩選」，按下去游標就回到搜尋框（以前只寫「找不到符合條件的副本」）</li>
+                            <li><span class="tag tag-warning">修正</span> 先藏起 278 個只有範本文字或重複的項目（例如教學關卡、PvP、小遊戲，以及深層迷宮、多變迷宮、異聞迷宮這些還沒有資料的內容），列表只留下有內容的 362 個</li>
+                            <li><span class="tag tag-warning">修正</span> 用語照官方改成「聯盟任務」（以前寫「24人大型任務」）和「蒼天之禁城」（以前寫「蒼穹之禁城」）；頁面下方資料來源寫的副本數，改成照實際列出的數量填入（以前是固定的數字，和列表對不上）</li>
+                        </ul>
+                    </details>
+
+                    <details class="changelog-entry" id="version-v2280">
                         <summary>
                             <span class="changelog-meta">
                                 <time class="changelog-date" datetime="2026-11-07">11月7日</time>
                                 <span class="changelog-version">v2.28.0</span>
-                                <span class="changelog-latest" data-i18n="changelog_latest">最新</span>
                             </span>
                             <span class="changelog-headline">陸行鳥染色計算器獨立成工具：會算檸檬，餵食順序分成幾段</span>
                         </summary>
