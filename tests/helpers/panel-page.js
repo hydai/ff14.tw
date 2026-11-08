@@ -99,7 +99,9 @@ function allowSelectorLists(document) {
 //   request() 換成 respond(path, { method, body, authenticated })：回傳值就是伺服器的回應，丟出的錯誤就是失敗；polling 是 false 時不輪詢。
 //   回傳的物件多 client 與 settle()。team() 與 party 不要混用（兩個都會換掉 finder.roomCollaboration）
 // - realisticFocus：掛載時存在的每個 button、input 照 Chrome 的行為處理停用與隱藏（見 makeFocusRealistic）
-async function createPanelPage({ url = 'https://ff14.tw/tools/treasure-map-finder/', lang = 'zh', stored = {}, storageThrows = false, clipboard = 'ok', party = null, realisticFocus = false } = {}) {
+// - data：'ok'（預設）三份資料照常回來；'pending' 一直不回來（還在載入，不等 ready 就回傳頁面）；'fail' 每一份都載入失敗
+//   （init() 走錯誤、結果格是錯誤訊息，不當成替身壞掉）
+async function createPanelPage({ url = 'https://ff14.tw/tools/treasure-map-finder/', lang = 'zh', stored = {}, storageThrows = false, clipboard = 'ok', party = null, realisticFocus = false, data = 'ok' } = {}) {
     const dom = createFakeDom({ url });
     const storage = new Map(Object.entries(stored));
     const toasts = [];
@@ -188,6 +190,8 @@ async function createPanelPage({ url = 'https://ff14.tw/tools/treasure-map-finde
         history: { state: null, replaceState: navigate('replaceState'), pushState: navigate('pushState') },
         fetch: async (fetchUrl) => {
             if (!Object.hasOwn(DATA_FILES, fetchUrl)) throw new Error(`createPanelPage 沒有準備 ${fetchUrl}`);
+            if (data === 'pending') return new Promise(() => {});
+            if (data === 'fail') throw new TypeError('Failed to fetch');
             return { ok: true, status: 200, json: async () => JSON.parse(DATA_FILES[fetchUrl]) };
         },
         // 一設定 src 就載入完成；onload 在下一個 microtask 才呼叫（程式是先設 src、再設 onload）
@@ -249,8 +253,8 @@ async function createPanelPage({ url = 'https://ff14.tw/tools/treasure-map-finde
     for (const file of PAGE_SCRIPTS) dom.load(file);
     translatePage();
     const finder = vm.runInContext('new TreasureMapFinder()', dom.window);
-    await finder.ready;
-    if (finder.elements.treasureGrid.querySelector('.error-message')) {
+    if (data !== 'pending') await finder.ready;
+    if (data === 'ok' && finder.elements.treasureGrid.querySelector('.error-message')) {
         throw new Error(`寶圖搜尋器沒有載入成功：${logged.map((args) => args.join(' ')).join('；')}`);
     }
 
