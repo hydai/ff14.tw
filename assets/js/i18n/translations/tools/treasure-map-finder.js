@@ -81,6 +81,8 @@ const TreasureMapTranslations = {
         // 資料來源
         treasure_map_data_source: '資料來源',
         treasure_map_data_source_intro: '本工具的座標資料來源於',
+        treasure_map_data_source_suffix: '：',
+        treasure_map_source_map_suffix: '地圖：',
 
         // 面板操作
         treasure_map_import: '匯入',
@@ -379,6 +381,8 @@ const TreasureMapTranslations = {
         // Data source
         treasure_map_data_source: 'Data Source',
         treasure_map_data_source_intro: 'Coordinate data sourced from',
+        treasure_map_data_source_suffix: ':',
+        treasure_map_source_map_suffix: ' Map: ',
 
         // Panel actions
         treasure_map_import: 'Import',
@@ -677,6 +681,9 @@ const TreasureMapTranslations = {
         // データソース
         treasure_map_data_source: 'データソース',
         treasure_map_data_source_intro: '座標データの出典：',
+        // 介紹本身以「：」結尾，Game8 後面不再接冒號
+        treasure_map_data_source_suffix: '',
+        treasure_map_source_map_suffix: ' の地図：',
 
         // パネルアクション
         treasure_map_import: 'インポート',
