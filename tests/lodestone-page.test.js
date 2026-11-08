@@ -1,5 +1,6 @@
 // Lodestone 角色查詢頁：打開時（我的角色 → 找人 → 最近查過）、找人與搜尋結果、角色標頭、網址與上一頁、名稱與成就顯示、
-// 六個分頁（職業、成就、裝備、收藏、部隊、其他）、舊的請求晚到（從 tests/lodestone-requests.test.js 搬來的標頭與分頁部分）。
+// 六個分頁（職業、成就、裝備、收藏、部隊、其他）、舊的請求晚到（從 tests/lodestone-requests.test.js 搬來的標頭與分頁部分），
+// 以及 styles.css 的版面規則、官方用語與翻譯檔。
 // 頁面替身見 tests/helpers/lodestone-page.js，假回應見 lodestone-fixtures.js
 const test = require('node:test');
 const assert = require('node:assert/strict');
@@ -7,6 +8,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const { createLodestonePage } = require('./helpers/lodestone-page.js');
+const { translationKeySet, translationValues } = require('./helpers/translation-parsers.js');
 const F = require('./helpers/lodestone-fixtures.js');
 
 const ROOT = path.join(__dirname, '..');
@@ -2373,5 +2375,174 @@ test('script.js 與 lodestone-tabs.js 不用 SecurityUtils、不寫 console，�
         assert.doesNotMatch(script, /console\./, file);
         // 翻譯鍵不用樣板字串或接字串組出來（之後檢查「每個鍵都有用到」才看得到）
         assert.doesNotMatch(script, /['"`]lodestone_[a-z0-9_]*['"`]\s*\+|`lodestone_[a-z0-9_]*\$\{/, file);
+    }
+});
+
+// ---------- 版面、用語與翻譯 ----------
+
+const TOOL = 'tools/lodestone-lookup';
+const TRANSLATIONS = 'assets/js/i18n/translations/tools/lodestone-lookup.js';
+const LANGS = ['zh', 'en', 'ja'];
+// 頁面自己的腳本（index.html 載入的順序）
+const TOOL_SCRIPTS = ['lodestone-data.js', 'lodestone-model.js', 'lodestone-store.js', 'lodestone-tabs.js', 'script.js'];
+// styles.css（拿掉註解）
+const CSS = read(`${TOOL}/styles.css`).replace(/\/\*[\s\S]*?\*\//g, '');
+// CSS 裡選擇器清單含 selector 的每一條規則的宣告區，接在一起；@media 裡的規則也算，找不到是空字串（同 dungeon-database-page.test.js）
+const declarations = (selector, source = CSS) => [...source.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
+    .filter((rule) => rule[1].split(',').map((s) => s.trim()).includes(selector))
+    .map((rule) => rule[2])
+    .join('\n');
+// 色碼與顏色的名稱（同 tests/design-system.test.js 的 token-clean 檢查）
+const COLOR_LITERAL = /#[0-9a-f]{3,8}\b|rgba?\(|hsla?\(|(?<![\w-])(white|black|red|green|blue|gray|grey|orange|yellow|purple|pink|brown|gold|silver|navy|teal|cyan|magenta|lime|maroon|olive|aqua|fuchsia|crimson|salmon|khaki|indigo|violet|beige|ivory|tan)(?![\w-])/i;
+// 舊用語 → 官方用語（TERMINOLOGY.md）。只檢查中文：日文的官方職業名（白魔道士、召喚士…）本來就是這幾個字
+const OLD_TERMS = [
+    [/公會(?!令)/u, '「公會」要寫「部隊」（Guildhest 的官方名稱「公會令」照樣可以用）'],
+    [/大國防軍/u, '「大國防軍」要寫「大國防聯軍」'],
+    [/恆輝隊/u, '「恆輝隊」要寫「不滅隊」'],
+    [/白魔道士/u, '「白魔道士」要寫「白魔法師」'],
+    [/黑魔道士/u, '「黑魔道士」要寫「黑魔法師」'],
+    [/赤魔道士/u, '「赤魔道士」要寫「赤魔法師」'],
+    [/青魔道士/u, '「青魔道士」要寫「青魔法師」'],
+    [/召喚士/u, '「召喚士」要寫「召喚師」'],
+    [/鐮刀師/u, '「鐮刀師」要寫「鐮刀客」'],
+    [/毒蛇使/u, '「毒蛇使」要寫「蝮蛇劍士」']
+];
+// 一段文字裡連在一起的漢字（中文）
+const HAN = /\p{Script=Han}+/gu;
+
+test('styles.css：每一個用 hidden 切換的元素都有 [hidden] { display: none; }（面板用 id，收藏的每一列與「沒有符合的名稱」用 class）', () => {
+    // fake-dom 看不出「設了 hidden 卻沒藏起來」：.card、.btn 等共用樣式與 styles.css 自己設了 display，會蓋過瀏覽器內建的 [hidden]
+    const hiddenRule = (selector) => /(?:^|[\s;])display:\s*none;/.test(declarations(`${selector}[hidden]`));
+    // index.html 裡一開始就有 hidden 屬性的元素
+    const startTags = HTML.match(/<[a-zA-Z][^>]*>/g).filter((tag) => /\shidden(?=[\s>])/.test(tag));
+    const inHtml = startTags.map((tag) => tag.match(/\sid="([^"]+)"/)?.[1]);
+    assert.ok(inHtml.length >= 10 && inHtml.every(Boolean), `index.html 裡有 hidden 的元素都有 id：${startTags.join(' ')}`);
+    // script.js 用 .hidden 切換的元素：this.elements 的名稱 → id
+    const script = read(`${TOOL}/script.js`);
+    const idOf = Object.fromEntries([...script.matchAll(/(\w+): document\.getElementById\('([^']+)'\)/g)].map((match) => [match[1], match[2]]));
+    const toggled = [...new Set([...script.matchAll(/(\w+)\.hidden\s*=(?!=)/g)].map((match) => match[1]))];
+    assert.ok(toggled.length >= 10, `script.js 用 hidden 切換的元素：${toggled.join('、')}`);
+    for (const name of toggled) assert.ok(Object.hasOwn(idOf, name), `script.js 切換 ${name}.hidden，但它不是 this.elements 裡的元素（這個測試要跟著改）`);
+    // lodestone-tabs.js：六個面板（select()）、收藏的每一列與「沒有符合的名稱」（篩選）；多了別的就要在這裡補上
+    const tabsScript = read(`${TOOL}/lodestone-tabs.js`);
+    assert.deepEqual([...tabsScript.matchAll(/([\w.()]+)\.hidden\s*=(?!=)/g)].map((match) => match[1]), ['this.panels.get(tabKey)', 'row', 'view.empty']);
+
+    const ids = [...new Set([...inHtml, ...toggled.map((name) => idOf[name]), ...TAB_KEYS.map((key) => `panel-${key}`)])];
+    for (const id of ids) {
+        assert.ok(HTML.includes(` id="${id}"`), `index.html 要有 #${id}`);
+        assert.ok(hiddenRule(`#${id}`), `styles.css 要有 #${id}[hidden] { display: none; }`);
+    }
+    for (const selector of ['.collection-item', '.collection-empty']) assert.ok(hiddenRule(selector), `styles.css 要有 ${selector}[hidden] { display: none; }`);
+});
+
+test('styles.css：只寫版面，沒有 overflow-x、色碼、@import 與 !important；分頁放不下就換行，職業格子照草稿，我的角色卡片主色框與淡底', () => {
+    // 手機不能左右捲：左右滑會觸發瀏覽器的上一頁、下一頁。放不下的東西換行或截斷，不捲
+    // 用 assert.ok：doesNotMatch 失敗時會印出整份 styles.css
+    assert.ok(!/overflow-x/.test(CSS), '整份 styles.css 沒有 overflow-x');
+    assert.equal(CSS.replace(/url\([^)]*\)/g, 'url()').match(COLOR_LITERAL)?.[0], undefined, '顏色一律用 tokens.css 的 token');
+    assert.ok(!/@import|!important/.test(CSS), 'styles.css 沒有 @import 與 !important');
+    // 分頁：一行放不下時換行（390 寬一行、320 寬兩行）
+    assert.match(declarations('#tabList'), /(?:^|[\s;])flex-wrap:\s*wrap;/, '分頁列放不下就換行');
+    // 職業：一組一行，左邊職能、右邊職業格子
+    assert.match(declarations('.job-list'), /(?:^|[\s;])grid-template-columns:\s*repeat\(auto-fill,\s*minmax\(6\.6em,\s*1fr\)\);/);
+    // 我的角色：整張卡片是按鈕，主色框與淡底
+    assert.match(declarations('.mine-card'), /(?:^|[\s;])border:\s*2px solid var\(--color-primary\);/);
+    assert.match(declarations('.mine-card'), /(?:^|[\s;])background:\s*var\(--color-primary-tint\);/);
+});
+
+test('styles.css：職業名稱放不下時換到第二行、不截斷；格子放寬到每種語言最長的名稱連同等級放得進一行（英文、日文；中文 481px 以上），等級靠右', () => {
+    const name = declarations('.job-name');
+    assert.ok(!/white-space:\s*nowrap|text-overflow|overflow:\s*hidden/.test(name), `職業名稱不截斷：${name}`);
+    assert.match(name, /(?:^|[\s;])overflow-wrap:\s*break-word;/, '放不下時換到第二行');
+    assert.match(name, /(?:^|[\s;])min-width:\s*0;/, '名稱可以縮到比一個字還窄，才換得了行，不撐寬格子');
+    assert.match(declarations('.job-level'), /(?:^|[\s;])margin-left:\s*auto;/, '等級靠右，同一列的等級對齊');
+    // 英文最長的是 Leatherworker、日文是ピクトマンサー（連同圖示與三位數的等級）；比畫面還窄時是整行寬，不左右捲
+    assert.match(declarations('.job-list:lang(en)'), /(?:^|[\s;])grid-template-columns:\s*repeat\(auto-fill,\s*minmax\(min\(100%,\s*9\.25em\),\s*1fr\)\);/);
+    assert.match(declarations('.job-list:lang(ja)'), /(?:^|[\s;])grid-template-columns:\s*repeat\(auto-fill,\s*minmax\(min\(100%,\s*9\.5em\),\s*1fr\)\);/);
+    // 中文：手機照草稿（6.6em，390 寬兩欄）；481px 以上放寬到 Beastmaster（中文介面唯一的英文名稱）放得進一行
+    const wide = CSS.match(/@media \(min-width: 481px\) \{([\s\S]*?)\n\}/);
+    assert.ok(wide, 'styles.css 要有 @media (min-width: 481px)');
+    assert.match(declarations('.job-list', wide[1]), /(?:^|[\s;])grid-template-columns:\s*repeat\(auto-fill,\s*minmax\(7\.75em,\s*1fr\)\);/);
+});
+
+test('styles.css：名字下面那一行的每一段放不下時整段換到下一行（不從「吟遊／詩人」的中間斷開），一段比整行還寬時才在段裡換行', () => {
+    const part = declarations('.person-meta-part');
+    assert.match(part, /(?:^|[\s;])display:\s*inline-block;/, '一段是 inline-block：換行只在段與段中間');
+    assert.match(part, /(?:^|[\s;])max-width:\s*100%;/, '一段最寬是整行，不撐寬畫面');
+    assert.match(declarations('.person-meta'), /(?:^|[\s;])overflow-wrap:\s*anywhere;/, '很長的一段（部隊名稱）照樣能換行');
+});
+
+test('用語：這個工具的中文不出現舊用語（公會、大國防軍、恆輝隊與 7 個舊職業名），日文的官方職業名不算', async () => {
+    // 檢查本身：舊用語抓得到，Guildhest 的「公會令」不算
+    assert.match('公會資訊', OLD_TERMS[0][0]);
+    assert.doesNotMatch('公會令', OLD_TERMS[0][0]);
+
+    const page = createLodestonePage();
+    await page.ready;
+    const { LODESTONE_JOBS, LODESTONE_TERMS } = page.window;
+    // 日文的官方職業名本來就有這幾個字（所以職業與原文對照表只看中文）
+    assert.ok(LODESTONE_JOBS.some((job) => /召喚士|魔道士/u.test(job.names.ja)), '日文的職業名有「召喚士」「魔道士」');
+    assert.ok(LODESTONE_JOBS.every((job) => typeof job.names.zh === 'string' && job.names.zh !== ''), '每個職業都有中文名稱');
+
+    // 每一份要檢查的中文：翻譯檔只看 zh 的值；lodestone-data.js 只看職業的中文名稱與原文對照表的中文（不看 en、ja 與表的鍵，那是官網的原文）；
+    // 其他檔案看整份檔案裡的中文（字串、標記與註解）
+    const sources = {
+        '翻譯檔的 zh': [...translationValues(TRANSLATIONS, 'zh').values()],
+        'LODESTONE_JOBS 的 names.zh': LODESTONE_JOBS.map((job) => job.names.zh),
+        'LODESTONE_TERMS 的中文': Object.values(LODESTONE_TERMS).flatMap((group) => Object.values(group))
+    };
+    for (const file of ['index.html', 'script.js', 'lodestone-tabs.js', 'lodestone-model.js', 'lodestone-store.js']) {
+        sources[file] = read(`${TOOL}/${file}`).match(HAN) ?? [];
+    }
+    for (const [name, texts] of Object.entries(sources)) {
+        // 解析壞了（一個中文字都沒拿到）就大聲失敗，不默默通過
+        assert.ok(texts.some((text) => /\p{Script=Han}/u.test(text)), `${name}：沒有讀到任何中文，檢查不到東西`);
+        for (const text of texts) {
+            for (const [pattern, official] of OLD_TERMS) assert.doesNotMatch(text, pattern, `${name}：「${text}」用了舊用語，${official}`);
+        }
+    }
+    clean(page);
+});
+
+test('翻譯檔：三語的鍵與 {參數} 一致；每個鍵都有被 index.html、script.js 或 lodestone-tabs.js 用到，用到的鍵也都在翻譯檔裡', () => {
+    const keys = Object.fromEntries(LANGS.map((lang) => [lang, translationKeySet(TRANSLATIONS, lang)]));
+    const values = Object.fromEntries(LANGS.map((lang) => [lang, translationValues(TRANSLATIONS, lang)]));
+    assert.ok(keys.zh.size >= 100, `zh 只有 ${keys.zh.size} 個鍵`);
+    for (const lang of ['en', 'ja']) assert.deepEqual([...keys[lang]].sort(), [...keys.zh].sort(), `${lang} 的鍵和 zh 一樣`);
+    for (const lang of LANGS) assert.equal(values[lang].size, keys[lang].size, `${lang}：每個鍵都解析得出字串值`);
+    const params = (text) => [...text.matchAll(/\{(\w+)\}/g)].map((match) => match[1]).sort().join(',');
+    for (const key of keys.zh) {
+        for (const lang of ['en', 'ja']) assert.equal(params(values[lang].get(key)), params(values.zh.get(key)), `${key} 的 {參數} 在 ${lang} 和 zh 不一樣`);
+    }
+
+    // 鍵一律以完整的字串寫在這三個檔案裡（index.html 的 data-i18n、data-i18n-attr 與 data-tool-name-key，腳本裡的字串與對照表）
+    const sources = ['index.html', 'script.js', 'lodestone-tabs.js'].map((file) => read(`${TOOL}/${file}`)).join('\n');
+    const unused = [...keys.zh].filter((key) => !sources.includes(`'${key}'`) && !sources.includes(`"${key}"`));
+    assert.deepEqual(unused, [], '沒有人讀的鍵三語一起拿掉');
+    const missing = [...new Set(sources.match(/\blodestone_[a-z0-9_]+\b/g))].filter((key) => !keys.zh.has(key));
+    assert.deepEqual(missing, [], '頁面讀的鍵都在翻譯檔裡');
+
+    // 舊頁面的鍵拿掉了（還寫著「Lodestone ID」與「公會」）；裝備分頁的部位名稱留著
+    for (const lang of LANGS) {
+        for (const key of ['lodestone_description', 'lodestone_equipment', 'lodestone_error_no_equipment', 'lodestone_fc_info', 'lodestone_usage_title']) {
+            assert.ok(!keys[lang].has(key), `${lang} 不該再有 ${key}`);
+        }
+        for (const slot of ['mainhand', 'offhand', 'head', 'body', 'hands', 'legs', 'feet', 'earrings', 'necklace', 'bracelets', 'ring1', 'ring2', 'soulcrystal']) {
+            assert.ok(keys[lang].has(`lodestone_equip_${slot}`), `${lang} 要有 lodestone_equip_${slot}`);
+        }
+    }
+});
+
+test('這一頁只有一顆 .btn-primary（#searchButton）；腳本不用 innerHTML、不另外建 .btn-primary；沒有內嵌 style=，腳本只替染色的色點設顏色', () => {
+    assert.deepEqual(HTML.match(/<[a-zA-Z][^>]*\bbtn-primary\b[^>]*>/g).map((tag) => tag.match(/\sid="([^"]+)"/)?.[1]), ['searchButton']);
+    // index.html 的 style=：只允許 JS 控制顯示用的 display: none（同 tests/pages.test.js）
+    for (const match of HTML.matchAll(/\sstyle="([^"]*)"/g)) assert.match(match[1].trim(), /^display:\s*none;?$/, `index.html 的內嵌樣式：${match[1]}`);
+    for (const file of TOOL_SCRIPTS) {
+        const code = read(`${TOOL}/${file}`);
+        assert.doesNotMatch(code, /btn-primary/, `${file} 不另外建 .btn-primary`);
+        assert.doesNotMatch(code, /\.(innerHTML|outerHTML)\s*\+?=(?!=)|\.insertAdjacentHTML\s*\(|\[\s*['"](?:inner|outer)HTML['"]\s*\]\s*\+?=/, `${file} 不用 innerHTML`);
+        // 顏色由 styles.css 的 token 決定；只有染色的顏色是資料（#rrggbb），由腳本設在色點上
+        const inline = [...code.matchAll(/[\w.]+\.style\.[\w-]+\s*=(?!=)|\.style\s*=(?!=)|\.cssText\b|setAttribute\(\s*['"]style['"]/g)].map((match) => match[0]);
+        assert.deepEqual(inline, file === 'lodestone-tabs.js' ? ['dot.style.background ='] : [], `${file} 的內嵌樣式`);
     }
 });
