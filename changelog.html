@@ -40,12 +40,37 @@
                 <!-- 2026年11月 -->
                 <section class="changelog-month">
                     <h2 class="changelog-month-title">2026年11月</h2>
-                    <details class="changelog-entry is-latest" id="version-v2290" open>
+                    <details class="changelog-entry is-latest" id="version-v2300" open>
+                        <summary>
+                            <span class="changelog-meta">
+                                <time class="changelog-date" datetime="2026-11-09">11月9日</time>
+                                <span class="changelog-version">v2.30.0</span>
+                                <span class="changelog-latest" data-i18n="changelog_latest">最新</span>
+                            </span>
+                            <span class="changelog-headline">Lodestone 角色查詢改版：用名字找人，記住我的角色，查到之後分頁看</span>
+                        </summary>
+                        <ul class="changelog-items">
+                            <li><span class="tag tag-success">新增</span> 用名字找人：輸入角色名字、選伺服器（也可以選資料中心或全部伺服器），直接列出符合的角色，寫出伺服器和部隊，點一下就打開，不用再先去 Lodestone 官網搜尋、從網址抄 ID；名字欄也可以貼上 Lodestone 角色頁的網址或 ID，直接打開那個角色；搜尋暫時不能用時會寫出原因，並附上到 Lodestone 官網搜尋的連結</li>
+                            <li><span class="tag tag-success">新增</span> 我的角色與最近查過：在角色頁按「設成我的角色」，之後一打開這個工具，最上面就是你的角色，點一下就打開；查過的人（最近 5 個）列在下面。這些只記在你自己的瀏覽器裡</li>
+                            <li><span class="tag tag-success">新增</span> 裝備分頁列出每一格裝備的圖示，染過色的畫出染色的顏色（最多兩色）；Lodestone 的角色頁本來就沒有裝備名稱，所以這裡只有圖示，沒有名稱</li>
+                            <li><span class="tag tag-success">新增</span> 收藏分頁可以用名稱篩選坐騎和寵物</li>
+                            <li><span class="tag tag-info">改善</span> 查到的角色改成分頁：上面是角色資料卡（名字、稱號、伺服器與部隊、現在的職業、資料時間），下面分成職業、成就、裝備、收藏、部隊、其他六個分頁，一開始看的是職業；點到哪個分頁才載入哪一個，不用再一路往下捲。角色立繪拿掉了；屬性只留主屬性和副屬性（生命值、MP、攻擊力、防禦力不再列），收在裝備分頁下面，點開才看</li>
+                            <li><span class="tag tag-info">改善</span> 「北美／日本資料中心」改成「名稱與成就顯示：English／日本語」（兩邊的角色資料是同一份，差別只在回來的文字是英文還是日文），會記住你的選擇；沒選過時，日文介面用日本語，其他用 English。看角色時，角色資料卡上也有同樣的按鈕，切換後目前的分頁會用新的語言重新載入</li>
+                            <li><span class="tag tag-info">改善</span> 看角色時網址會帶著角色的 ID，可以直接把網址傳給別人；瀏覽器的上一頁、下一頁會在一開始的畫面、搜尋結果和角色之間切換，不會直接離開這個工具</li>
+                            <li><span class="tag tag-info">改善</span> 錯誤寫得更清楚：找不到這個角色、Lodestone 暫時連不上、這個角色沒有公開成就各有各的說法；某個分頁載入失敗時，只有那個分頁寫原因並附「再試一次」，角色資料卡和其他分頁照常看</li>
+                            <li><span class="tag tag-warning">修正</span> 部隊看得到了：角色資料卡寫部隊名稱，點一下切到部隊分頁；部隊分頁有名稱、標語、人數、排名、招募狀態、部隊房屋、活動重點、招募對象、大國防聯軍聲望和成員列表，點成員就能打開那個角色（以前一直寫「無」，部隊分頁是空的）</li>
+                            <li><span class="tag tag-warning">修正</span> 坐騎和寵物顯示真正的名稱（以前只有一串看不懂的代號）</li>
+                            <li><span class="tag tag-warning">修正</span> 職業補上蝮蛇劍士、繪靈法師和 Beastmaster（以前沒有列出）；青魔法師以前顯示的其實是繪靈法師的等級，現在是自己的等級</li>
+                            <li><span class="tag tag-warning">修正</span> 選日本語時，成就以前其實還是英文，現在真的是日文；坐騎、寵物、部隊與職業分頁的特殊內容也會是日文</li>
+                            <li><span class="tag tag-warning">修正</span> 用語照官方：「公會」改成「部隊」、「大國防軍」改成「大國防聯軍」、「恆輝隊」改成「不滅隊」，7 個職業名（例如鐮刀客、蝮蛇劍士、召喚師）也改成官方寫法</li>
+                        </ul>
+                    </details>
+
+                    <details class="changelog-entry" id="version-v2290">
                         <summary>
                             <span class="changelog-meta">
                                 <time class="changelog-date" datetime="2026-11-07">11月7日</time>
                                 <span class="changelog-version">v2.29.0</span>
-                                <span class="changelog-latest" data-i18n="changelog_latest">最新</span>
                             </span>
                             <span class="changelog-headline">副本資料庫改成精簡列表，點一下就展開機制與掉落物</span>
                         </summary>

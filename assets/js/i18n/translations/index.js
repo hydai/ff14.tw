@@ -28,7 +28,7 @@ const IndexTranslations = {
 
         tool_treasure_map_desc: '快速查詢寶圖位置，支援多條件篩選與個人清單管理',
 
-        tool_lodestone_desc: '使用 Lodestone ID 查詢 FF14 角色資訊，查看職業等級與成就',
+        tool_lodestone_desc: '用名字或 Lodestone ID 查 FF14 國際版角色的職業等級、成就與收藏',
 
         tool_timed_gathering_desc: '管理 FF14 特殊採集時間，支援搜尋、多清單管理與巨集匯出',
 
@@ -79,7 +79,7 @@ const IndexTranslations = {
 
         tool_treasure_map_desc: 'Quickly find treasure map locations with filters and personal lists',
 
-        tool_lodestone_desc: 'Look up FF14 character info by Lodestone ID, view job levels and achievements',
+        tool_lodestone_desc: 'Look up FF14 global-server characters by name or Lodestone ID: job levels, achievements and collections',
 
         tool_timed_gathering_desc: 'Manage FF14 timed gathering nodes with search, lists, and macro export',
 
@@ -130,7 +130,7 @@ const IndexTranslations = {
 
         tool_treasure_map_desc: '宝の地図の位置をフィルターと個人リストで素早く検索',
 
-        tool_lodestone_desc: 'Lodestone ID でFF14キャラクター情報を検索、ジョブレベルと実績を表示',
+        tool_lodestone_desc: '名前か Lodestone ID でFF14グローバル版キャラクターのジョブレベル・アチーブメント・コレクションを検索',
 
         tool_timed_gathering_desc: 'FF14タイムド採集を検索、リスト、マクロエクスポートで管理',
 
