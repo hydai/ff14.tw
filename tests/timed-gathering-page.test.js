@@ -1952,6 +1952,25 @@ test('每個輸入框都有名稱：搜尋框有看不到的 <label>（三語）
     }
 });
 
+test('每個 <label> 都對到一個欄位；篩選區兩排按鈕是 role="group"，名稱是前面的「類型：」「版本：」（三語）', async () => {
+    const page = await createGatheringPage();
+    const labels = page.document.querySelectorAll('label');
+    assert.ok(labels.length > 0);
+    for (const label of labels) {
+        const forId = label.getAttribute('for');
+        const target = forId ? page.document.getElementById(forId) : ['input', 'select', 'textarea'].map((tag) => label.querySelector(tag)).find(Boolean);
+        assert.ok(target && ['INPUT', 'SELECT', 'TEXTAREA'].includes(target.tagName), `<label>${label.textContent.trim()}</label> 沒有對到欄位`);
+    }
+    for (const lang of ['zh', 'en', 'ja']) {
+        page.setLang(lang);
+        const values = translationValues(TRANSLATIONS, lang);
+        for (const [id, key] of [['typeFilters', 'filterType'], ['expansionFilters', 'filterVersion']]) {
+            assert.equal(page.$(id).getAttribute('role'), 'group', id);
+            assert.equal(fieldName(page.document, page.$(id)), values.get(key), `${lang} ${id}`);
+        }
+    }
+});
+
 test('index.html：三張時鐘卡拿掉、用語是艾歐澤亞；腳本順序；不再載入 notification-manager.js', async () => {
     const html = read('tools/timed-gathering/index.html');
     assert.ok(!html.includes('time-display-container'));

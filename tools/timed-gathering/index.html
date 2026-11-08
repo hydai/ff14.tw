@@ -71,8 +71,8 @@
                 <!-- 篩選標籤 -->
                 <div class="filter-section">
                     <div class="filter-group">
-                        <label class="filter-label" data-i18n="filterType">類型：</label>
-                        <div class="filter-tags" id="typeFilters">
+                        <span class="filter-label" id="typeFilterLabel" data-i18n="filterType">類型：</span>
+                        <div class="filter-tags" id="typeFilters" role="group" aria-labelledby="typeFilterLabel">
                             <button class="chip" data-type="mining" data-i18n-html="typeMining">
                                 <span class="tag-icon">⛏️</span> 採礦
                             </button>
@@ -85,8 +85,8 @@
                         </div>
                     </div>
                     <div class="filter-group">
-                        <label class="filter-label" data-i18n="filterVersion">版本：</label>
-                        <div class="filter-tags" id="expansionFilters">
+                        <span class="filter-label" id="expansionFilterLabel" data-i18n="filterVersion">版本：</span>
+                        <div class="filter-tags" id="expansionFilters" role="group" aria-labelledby="expansionFilterLabel">
                             <button class="chip" data-expansion="7.0">v7.0</button>
                             <button class="chip" data-expansion="7.1">v7.1</button>
                             <button class="chip" data-expansion="7.2">v7.2</button>
