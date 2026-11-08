@@ -144,6 +144,20 @@ test('a type chip on a fresh page re-filters without throwing: fishing leaves it
     assert.equal(page.cards().length, 34);
 });
 
+test('篩選按鈕的 .active 與 aria-pressed 一起換：一打開都是 false，點了是 true，再點回 false（類型與版本）', async () => {
+    const page = await createGatheringPage();
+    for (const id of ['typeFilters', 'expansionFilters']) {
+        const chips = page.$(id).querySelectorAll('.chip');
+        assert.ok(chips.length > 0, id);
+        assert.deepEqual(chips.map((chip) => chip.getAttribute('aria-pressed')), chips.map(() => 'false'), `${id} 一打開`);
+        const chip = chips[0];
+        chip.click();
+        assert.deepEqual([chip.classList.contains('active'), chip.getAttribute('aria-pressed')], [true, 'true'], `${id} 點了`);
+        chip.click();
+        assert.deepEqual([chip.classList.contains('active'), chip.getAttribute('aria-pressed')], [false, 'false'], `${id} 再點`);
+    }
+});
+
 test('generating a macro fills the macro box and scrolls to it without throwing', async () => {
     const page = await createGatheringPage();
     page.cardOf('botany_cordia_resin').querySelector('.gx-add-btn').click();
@@ -1949,6 +1963,25 @@ test('每個輸入框都有名稱：搜尋框有看不到的 <label>（三語）
         const values = translationValues(TRANSLATIONS, lang);
         assert.equal(fieldName(page.document, page.$('searchInput')), values.get('searchLabel'), lang);
         assert.equal(fieldName(page.document, page.$('macroText')), values.get('macroSectionTitle'), lang);
+    }
+});
+
+test('每個 <label> 都對到一個欄位；篩選區兩排按鈕是 role="group"，名稱是前面的「類型：」「版本：」（三語）', async () => {
+    const page = await createGatheringPage();
+    const labels = page.document.querySelectorAll('label');
+    assert.ok(labels.length > 0);
+    for (const label of labels) {
+        const forId = label.getAttribute('for');
+        const target = forId ? page.document.getElementById(forId) : ['input', 'select', 'textarea'].map((tag) => label.querySelector(tag)).find(Boolean);
+        assert.ok(target && ['INPUT', 'SELECT', 'TEXTAREA'].includes(target.tagName), `<label>${label.textContent.trim()}</label> 沒有對到欄位`);
+    }
+    for (const lang of ['zh', 'en', 'ja']) {
+        page.setLang(lang);
+        const values = translationValues(TRANSLATIONS, lang);
+        for (const [id, key] of [['typeFilters', 'filterType'], ['expansionFilters', 'filterVersion']]) {
+            assert.equal(page.$(id).getAttribute('role'), 'group', id);
+            assert.equal(fieldName(page.document, page.$(id)), values.get(key), `${lang} ${id}`);
+        }
     }
 });
 

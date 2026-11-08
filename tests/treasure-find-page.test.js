@@ -422,9 +422,35 @@ test('寶圖工具的 JS 沒有 console.log，也沒有指向不存在檔案的�
     assert.doesNotMatch(read(`${dir}/room-collaboration.js`), /roomActions/);
 });
 
-test('資料來源清單有 G18', () => {
-    assert.ok(read('tools/treasure-map-finder/index.html').includes(
-        '<li>G18 巨獸革地圖：<a href="https://game8.jp/ff14/709398" target="_blank" rel="noopener noreferrer">https://game8.jp/ff14/709398</a></li>'));
+test('資料來源：7 行由 G8 到 G18，地圖名稱用等級 chip 的翻譯鍵再接「地圖：」，Game8 後面的冒號也由翻譯檔來，沒有寫死的字', () => {
+    const html = read('tools/treasure-map-finder/index.html');
+    const start = html.indexOf('<div class="source-section card">');
+    assert.notEqual(start, -1);
+    const section = html.slice(start, html.indexOf('</ul>', start));
+    const items = [...section.matchAll(/<li>([\s\S]*?)<\/li>/g)].map((m) => m[1]);
+    assert.deepEqual(items.map((item) => item.match(/data-i18n="treasure_map_grade_(g\d+)"/)?.[1]), [...GRADES].reverse());
+    for (const item of items) {
+        assert.match(item, /^<span data-i18n="treasure_map_grade_g\d+">[^<]+<\/span><span data-i18n="treasure_map_source_map_suffix">[^<]+<\/span><a href="https:\/\/game8\.jp\/ff14\/\d+" target="_blank" rel="noopener noreferrer">https:\/\/game8\.jp\/ff14\/\d+<\/a>$/);
+    }
+    assert.ok(items.some((item) => item.includes('href="https://game8.jp/ff14/709398"')), 'G18 的來源還在');
+    assert.match(section, /<\/a><span data-i18n="treasure_map_data_source_suffix">：<\/span><\/p>/);
+    // 標籤之間的字：在有 data-i18n 的元素或連結裡面的不算（這一段裡它們都只包著字），其他的只能是空白，英日文介面才不會留下中文
+    const stray = [];
+    let inside = false;
+    for (const [token] of section.matchAll(/<[^>]*>|[^<]+/g)) {
+        if (token.startsWith('</')) inside = false;
+        else if (token.startsWith('<')) inside = /\sdata-i18n=|^<a\s/.test(token);
+        else if (!inside && token.trim()) stray.push(token.trim());
+    }
+    assert.deepEqual(stray, []);
+    const line = (lang, grade) => {
+        const values = translationValues(TRANSLATIONS, lang);
+        return values.get(`treasure_map_grade_${grade}`) + values.get('treasure_map_source_map_suffix');
+    };
+    assert.deepEqual(['zh', 'en', 'ja'].map((lang) => line(lang, 'g8')), ['G8 巨龍革地圖：', 'G8 Dragonskin Map: ', 'G8 の地図：']);
+    assert.deepEqual(['zh', 'en', 'ja'].map((lang) => line(lang, 'g18')), ['G18 巨獸革地圖：', 'G18 Gargantuaskin Map: ', 'G18 の地図：']);
+    // 日文的介紹本身以「：」結尾，Game8 後面不再接冒號
+    assert.deepEqual(['zh', 'en', 'ja'].map((lang) => translationValues(TRANSLATIONS, lang).get('treasure_map_data_source_suffix')), ['：', ':', '']);
 });
 
 test('篩選與結果區：新結構在，舊的地圖群組、重置、載入更多都拿掉', () => {
