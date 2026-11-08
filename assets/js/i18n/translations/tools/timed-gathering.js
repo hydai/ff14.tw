@@ -9,6 +9,7 @@ window.TimedGatheringTranslations = {
 
         // 搜尋和篩選
         searchPlaceholder: '用中文、日文或英文搜尋',
+        searchLabel: '搜尋採集物',
         clearButton: '清除',
         filterType: '類型：',
         filterExpansion: '資料片：',
@@ -181,6 +182,7 @@ window.TimedGatheringTranslations = {
 
         // 搜尋和篩選
         searchPlaceholder: '日・英・中国語で検索',
+        searchLabel: '採集物を検索',
         clearButton: 'クリア',
         filterType: 'タイプ：',
         filterExpansion: 'パッチ：',
@@ -353,6 +355,7 @@ window.TimedGatheringTranslations = {
 
         // Search and filter
         searchPlaceholder: 'Search in EN, JP or ZH-TW',
+        searchLabel: 'Search gatherables',
         clearButton: 'Clear',
         filterType: 'Type:',
         filterExpansion: 'Expansion:',

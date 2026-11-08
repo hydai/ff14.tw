@@ -62,6 +62,7 @@
                 <!-- 頂部工具列 -->
                 <div class="toolbar">
                     <div class="search-section">
+                        <label for="searchInput" class="visually-hidden" data-i18n="searchLabel">搜尋採集物</label>
                         <input type="text" id="searchInput" class="form-control" placeholder="用中文、日文或英文搜尋" data-i18n="searchPlaceholder" data-i18n-attr="placeholder">
                         <button id="clearSearchBtn" class="btn btn-secondary btn-sm" data-i18n="clearButton">清除</button>
                     </div>
@@ -157,7 +158,7 @@
                             <!-- 巨集匯出區 -->
                             <div class="macro-section">
                                 <div class="macro-header">
-                                    <h3 data-i18n="macroSectionTitle">巨集匯出</h3>
+                                    <h3 id="macroSectionTitle" data-i18n="macroSectionTitle">巨集匯出</h3>
                                     <button id="generateMacroBtn" class="btn btn-success btn-sm" data-i18n-html="generateMacroButton">
                                         <span class="btn-icon">⚙️</span> 生成巨集
                                     </button>
@@ -173,7 +174,7 @@
                                     </label>
                                 </div>
                                 <div class="macro-output" id="macroOutput" style="display: none;">
-                                    <textarea id="macroText" class="form-control" rows="10" readonly></textarea>
+                                    <textarea id="macroText" class="form-control" rows="10" readonly aria-labelledby="macroSectionTitle"></textarea>
                                     <button id="copyMacroBtn" class="btn btn-primary btn-block" data-i18n-html="copyMacroButton">
                                         <span class="btn-icon">📋</span> 複製到剪貼簿
                                     </button>

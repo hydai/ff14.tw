@@ -1926,6 +1926,32 @@ test('採集物資料載入失敗：我的提醒不出現，也不動存著的�
     assert.equal(savedReminders(later).enabled, true);
 });
 
+// 輸入框的名稱，照瀏覽器算名稱的先後：aria-labelledby 指到的元素的字、aria-label、<label for="id">、包住它的 <label>
+const fieldName = (document, field) => {
+    const ids = (field.getAttribute('aria-labelledby') || '').split(/\s+/).filter(Boolean);
+    if (ids.length > 0) return ids.map((id) => document.getElementById(id)?.textContent.trim() ?? '').join(' ').trim();
+    if (field.getAttribute('aria-label')) return field.getAttribute('aria-label').trim();
+    const label = field.id ? document.querySelector(`label[for="${field.id}"]`) : null;
+    if (label) return label.textContent.trim();
+    return field.closest('label')?.textContent.trim() ?? '';
+};
+
+test('每個輸入框都有名稱：搜尋框有看不到的 <label>（三語），巨集文字框用 aria-labelledby 指向「巨集匯出」標題', async () => {
+    const page = await createGatheringPage();
+    const fields = ['input', 'select', 'textarea'].flatMap((tag) => page.document.querySelectorAll(tag))
+        .filter((field) => field.getAttribute('type') !== 'hidden');
+    assert.ok(fields.length > 0);
+    for (const field of fields) assert.ok(fieldName(page.document, field), `#${field.id || field.tagName} 沒有名稱`);
+    const label = page.document.querySelector('label[for="searchInput"]');
+    assert.ok(label && label.classList.contains('visually-hidden'), '搜尋框的 <label> 要是看不到的（畫面上已經有提示字）');
+    for (const lang of ['zh', 'en', 'ja']) {
+        page.setLang(lang);
+        const values = translationValues(TRANSLATIONS, lang);
+        assert.equal(fieldName(page.document, page.$('searchInput')), values.get('searchLabel'), lang);
+        assert.equal(fieldName(page.document, page.$('macroText')), values.get('macroSectionTitle'), lang);
+    }
+});
+
 test('index.html：三張時鐘卡拿掉、用語是艾歐澤亞；腳本順序；不再載入 notification-manager.js', async () => {
     const html = read('tools/timed-gathering/index.html');
     assert.ok(!html.includes('time-display-container'));
