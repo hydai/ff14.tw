@@ -2,8 +2,8 @@
  * Lodestone 角色查詢的瀏覽器記憶：「我的角色」（一個）、「最近查過」（最多 5 個）、名稱與成就顯示的語言（English／日本語）。
  * 只存在玩家自己的瀏覽器裡，不碰 DOM。
  *
- * 每個函式的第一個參數是 storage（頁面傳 window.localStorage，測試傳替身），store 不自己去拿 localStorage；
- * 頁面拿不到的時候（Chrome 封鎖網站資料時，光是讀 window.localStorage 就丟例外）傳 null，等於沒有儲存空間。
+ * 每個函式的第一個參數是 storage（頁面傳 localStorage 加上記憶體一層的替身，見 script.js 的 pageStorage()；測試傳替身），
+ * store 不自己去拿 localStorage；傳 null 等於沒有儲存空間。
  * 函式都不靠 this，所以頁面可以解構出來單獨呼叫；也不改傳進來的東西（傳深層凍結的資料也行）。
  *
  * 存的位置（KEYS）：

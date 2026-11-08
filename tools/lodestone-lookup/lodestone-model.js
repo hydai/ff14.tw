@@ -1,7 +1,7 @@
 /**
  * Lodestone 角色查詢的規則：不碰 DOM、不讀時鐘、不碰 localStorage。
  * 搜尋框的判斷、職業分組與滿級數、目前職業、名稱與成就顯示用哪個資料中心、Lodestone 的網址、
- * 「我的角色」與「最近查過」存的那一筆、官網原文換官方繁中、簡介有沒有填、名稱篩選、伺服器選單的字。
+ * 「我的角色」存的那一筆、官網原文換官方繁中、簡介有沒有填、名稱篩選、伺服器選單的字。
  *
  * 資料在 lodestone-data.js（LODESTONE_JOBS、LODESTONE_BASE_CLASSES、LODESTONE_TERMS），要比這支先載入。
  * 所有函式都不改傳進來的東西（傳深層凍結的資料也行），也不靠 this，所以頁面可以解構出來單獨呼叫。
@@ -11,7 +11,7 @@
  * - activeJob()：角色頁的目前職業換成網站的名稱與圖示
  * - activeClassJobOf()、freeCompanyOf()：角色回應的目前職業、角色回應或搜尋結果的部隊（新舊 Worker 的回應都換成同一個樣子）
  * - dcOf()、defaultDataLang()、characterUrl()、officialSearchUrl()：名稱與成就顯示（English／日本語）與 Lodestone 的網址
- * - person()：角色回應 → 「我的角色」「最近查過」存的那一筆
+ * - person()：角色回應 → 「我的角色」存的那一筆（記進「最近查過」時，LodestoneStore 只留其中五個欄位）
  * - term()：部隊活動重點、招募對象、大國防聯軍、聲望、開始城市的原文 → 官方繁中
  * - isEmptyBio()、filterByName()、worldLabel()：簡介有沒有填、收藏的名稱篩選、伺服器選單的字
  *
@@ -224,8 +224,9 @@ const LodestoneModel = (() => {
     // ---------- 人的摘要 ----------
 
     /**
-     * 角色回應換成「我的角色」與「最近查過」存的那一筆。job 存 Worker 給的職業鍵（ActiveClassJob.Key，可能是基本職業，
-     * 認不出時是 null），不存名稱：名稱在畫面上用目前的介面語言查（activeJob()），換語言後存著的卡片才不會是舊語言。
+     * 角色回應換成「我的角色」存的那一筆；記進「最近查過」時 LodestoneStore 只留 id、name、world、dc、avatar 五個欄位。
+     * job 存 Worker 給的職業鍵（ActiveClassJob.Key，可能是基本職業，認不出時是 null），不存名稱：名稱在畫面上用目前的介面語言查
+     * （activeJob()），換語言後存著的卡片才不會是舊語言。
      * 缺的欄位是空字串（存進 localStorage 的內容不能少欄位）。目前職業照 activeClassJobOf()，和標頭寫的一樣：舊 Worker 沒有
      * ActiveClassJob 時 job 是 null（認不出職業）、level 照官網的等級；兩種都沒有時 job 與 level 是 null。
      * @param {object} character - Worker 角色回應的 Character

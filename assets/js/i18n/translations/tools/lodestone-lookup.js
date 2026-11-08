@@ -11,16 +11,58 @@ const LodestoneLookupTranslations = {
         lodestone_header: 'Lodestone 角色查詢',
         lodestone_subtitle: '輸入角色的 Lodestone ID 來查詢詳細資訊',
 
+        // 打開時：我的角色、找人、最近查過
+        lodestone_intro: '輸入名字和伺服器，查國際版角色的職業等級、成就與收藏。',
+        lodestone_mine: '我的角色',
+        lodestone_open: '打開 →',
+        lodestone_find: '找人',
+        lodestone_name_label: '角色名字',
+        lodestone_name_placeholder: '例如 Aoi Mizuno',
+        lodestone_world: '伺服器',
+        lodestone_world_all: '全部伺服器',
+        lodestone_dcs: '資料中心',
+        lodestone_find_note: '也可以直接貼上 Lodestone 角色頁的網址或 ID。只能查國際版的角色。',
+        lodestone_data_lang: '名稱與成就顯示',
+        lodestone_recent: '最近查過',
+        lodestone_back: '← 找其他人',
+
+        // 人的一列與角色標頭：伺服器（資料中心）・部隊、職業與等級
+        lodestone_where: '{world}（{dc}）',
+        lodestone_sep: '・',
+        lodestone_level: 'Lv{level}',
+        lodestone_fc: '部隊',
+        lodestone_fc_named: '部隊 {name}',
+        // 人的一列：名字和下面那一行之間給螢幕閱讀器的停頓（畫面上看不到）
+        lodestone_spoken_sep: '，',
+
+        // 搜尋結果
+        lodestone_search_found_in: '在 {where} 找到 {count} 個「{name}」',
+        lodestone_search_found: '找到 {count} 個「{name}」',
+        lodestone_search_none_in: '在 {where} 找不到「{name}」',
+        lodestone_search_none: '找不到「{name}」',
+        lodestone_search_hint: '確認伺服器，或貼上他在 Lodestone 的角色頁網址',
+        lodestone_search_more: '還有更多結果，請把名字打完整或選伺服器',
+        lodestone_search_official: '到 Lodestone 官網搜尋「{name}」',
+        lodestone_error_upstream: 'Lodestone 暫時連不上，請稍後再試',
+
+        // 角色標頭
+        lodestone_now: '現在：',
+        lodestone_active_job: '目前職業',
+        lodestone_set_mine: '☆ 設成我的角色',
+        lodestone_is_mine: '★ 我的角色',
+        lodestone_open_lodestone: '在 Lodestone 打開',
+        lodestone_fetched_at: '資料時間：{time}',
+
         // 搜尋區
         lodestone_placeholder: '請輸入 Lodestone ID (例如：12345678)',
         lodestone_dc_na: '北美資料中心',
         lodestone_dc_jp: '日本資料中心',
-        lodestone_search: '查詢',
+        lodestone_search: '搜尋',
         lodestone_hint: '提示：您可以在 Lodestone 官方網站的角色頁面 URL 中找到角色 ID',
         lodestone_example: '例如：https://na.finalfantasyxiv.com/lodestone/character/',
 
         // 載入狀態
-        lodestone_loading: '正在查詢角色資訊...',
+        lodestone_loading: '載入中…',
 
         // 區段標題
         lodestone_basic_info: '基本資訊',
@@ -130,8 +172,8 @@ const LodestoneLookupTranslations = {
         // 錯誤訊息
         lodestone_error_no_id: '請輸入角色 ID',
         lodestone_error_invalid_id: '角色 ID 必須是數字',
-        lodestone_error_not_found: '找不到此角色，請確認 ID 是否正確',
-        lodestone_error_query_failed: '查詢失敗 ({status}): {statusText}',
+        lodestone_error_not_found: '找不到這個角色',
+        lodestone_error_query_failed: '查詢失敗',
         lodestone_error_format: '伺服器回應格式錯誤',
         lodestone_error_no_data: '無法取得角色資料',
         lodestone_error_job_list_loading: '載入詳細職業列表中...',
@@ -159,6 +201,48 @@ const LodestoneLookupTranslations = {
         lodestone_header: 'Lodestone Lookup',
         lodestone_subtitle: 'Enter character Lodestone ID to view detailed information',
 
+        // Landing: my character, find a character, recently viewed
+        lodestone_intro: 'Enter a name and a world to look up the job levels, achievements and collections of a character on the global servers.',
+        lodestone_mine: 'My character',
+        lodestone_open: 'Open →',
+        lodestone_find: 'Find a character',
+        lodestone_name_label: 'Character name',
+        lodestone_name_placeholder: 'e.g. Aoi Mizuno',
+        lodestone_world: 'World',
+        lodestone_world_all: 'All worlds',
+        lodestone_dcs: 'Data centers',
+        lodestone_find_note: 'You can also paste a Lodestone character page URL or ID. Global servers only.',
+        lodestone_data_lang: 'Names and achievements in',
+        lodestone_recent: 'Recently viewed',
+        lodestone_back: '← Find someone else',
+
+        // A person row and the character header: world (data center) · FC, job and level
+        lodestone_where: '{world} ({dc})',
+        lodestone_sep: ' · ',
+        lodestone_level: 'Lv{level}',
+        lodestone_fc: 'FC',
+        lodestone_fc_named: 'FC {name}',
+        // A person row: a pause for screen readers between the name and the line under it (not shown)
+        lodestone_spoken_sep: ', ',
+
+        // Search results
+        lodestone_search_found_in: 'Found {count} for “{name}” on {where}',
+        lodestone_search_found: 'Found {count} for “{name}”',
+        lodestone_search_none_in: 'No “{name}” found on {where}',
+        lodestone_search_none: 'No “{name}” found',
+        lodestone_search_hint: 'Check the world, or paste their Lodestone character page URL',
+        lodestone_search_more: 'There are more results. Type the full name or choose a world',
+        lodestone_search_official: 'Search for “{name}” on the Lodestone',
+        lodestone_error_upstream: 'The Lodestone can\'t be reached right now. Please try again later',
+
+        // Character header
+        lodestone_now: 'Now: ',
+        lodestone_active_job: 'Current job',
+        lodestone_set_mine: '☆ Set as my character',
+        lodestone_is_mine: '★ My character',
+        lodestone_open_lodestone: 'Open on the Lodestone',
+        lodestone_fetched_at: 'Data as of {time}',
+
         // Search section
         lodestone_placeholder: 'Enter Lodestone ID (e.g., 12345678)',
         lodestone_dc_na: 'North America DC',
@@ -168,7 +252,7 @@ const LodestoneLookupTranslations = {
         lodestone_example: 'Example: https://na.finalfantasyxiv.com/lodestone/character/',
 
         // Loading state
-        lodestone_loading: 'Loading character information...',
+        lodestone_loading: 'Loading…',
 
         // Section titles
         lodestone_basic_info: 'Basic Information',
@@ -278,8 +362,8 @@ const LodestoneLookupTranslations = {
         // Error messages
         lodestone_error_no_id: 'Please enter character ID',
         lodestone_error_invalid_id: 'Character ID must be a number',
-        lodestone_error_not_found: 'Character not found, please check if ID is correct',
-        lodestone_error_query_failed: 'Query failed ({status}): {statusText}',
+        lodestone_error_not_found: 'Character not found',
+        lodestone_error_query_failed: 'Lookup failed',
         lodestone_error_format: 'Server response format error',
         lodestone_error_no_data: 'Unable to get character data',
         lodestone_error_job_list_loading: 'Loading detailed job list...',
@@ -307,6 +391,48 @@ const LodestoneLookupTranslations = {
         lodestone_header: 'Lodestone 検索',
         lodestone_subtitle: 'Lodestone IDを入力してキャラクター情報を表示',
 
+        // 最初の画面：マイキャラクター、キャラクターを探す、最近見たキャラクター
+        lodestone_intro: '名前とワールドを入力して、グローバル版キャラクターのジョブレベル・アチーブメント・コレクションを調べます。',
+        lodestone_mine: 'マイキャラクター',
+        lodestone_open: '開く →',
+        lodestone_find: 'キャラクターを探す',
+        lodestone_name_label: 'キャラクター名',
+        lodestone_name_placeholder: '例：Aoi Mizuno',
+        lodestone_world: 'ワールド',
+        lodestone_world_all: 'すべてのワールド',
+        lodestone_dcs: 'データセンター',
+        lodestone_find_note: 'Lodestone のキャラクターページの URL や ID を貼り付けることもできます。グローバル版のキャラクターのみ検索できます。',
+        lodestone_data_lang: '名前とアチーブメントの表示',
+        lodestone_recent: '最近見たキャラクター',
+        lodestone_back: '← 他の人を探す',
+
+        // キャラクターの一行とヘッダー：ワールド（データセンター）・FC、ジョブとレベル
+        lodestone_where: '{world}（{dc}）',
+        lodestone_sep: '・',
+        lodestone_level: 'Lv{level}',
+        lodestone_fc: 'FC',
+        lodestone_fc_named: 'FC {name}',
+        // 人の一行：名前と下の行のあいだに入れるスクリーンリーダー用の区切り（画面には出ない）
+        lodestone_spoken_sep: '、',
+
+        // 検索結果
+        lodestone_search_found_in: '{where}で「{name}」が{count}件見つかりました',
+        lodestone_search_found: '「{name}」が{count}件見つかりました',
+        lodestone_search_none_in: '{where}に「{name}」は見つかりませんでした',
+        lodestone_search_none: '「{name}」は見つかりませんでした',
+        lodestone_search_hint: 'ワールドを確認するか、Lodestone のキャラクターページの URL を貼り付けてください',
+        lodestone_search_more: 'ほかにも結果があります。名前を最後まで入力するか、ワールドを選んでください',
+        lodestone_search_official: 'Lodestone 公式サイトで「{name}」を検索',
+        lodestone_error_upstream: 'Lodestone に接続できません。しばらくしてからもう一度お試しください',
+
+        // キャラクターのヘッダー
+        lodestone_now: '現在：',
+        lodestone_active_job: '現在のジョブ',
+        lodestone_set_mine: '☆ マイキャラクターに設定',
+        lodestone_is_mine: '★ マイキャラクター',
+        lodestone_open_lodestone: 'Lodestone で開く',
+        lodestone_fetched_at: 'データ取得：{time}',
+
         // 検索セクション
         lodestone_placeholder: 'Lodestone IDを入力 (例：12345678)',
         lodestone_dc_na: '北米DC',
@@ -316,7 +442,7 @@ const LodestoneLookupTranslations = {
         lodestone_example: '例：https://jp.finalfantasyxiv.com/lodestone/character/',
 
         // 読み込み状態
-        lodestone_loading: 'キャラクター情報を取得中...',
+        lodestone_loading: '読み込み中…',
 
         // セクションタイトル
         lodestone_basic_info: '基本情報',
@@ -426,8 +552,8 @@ const LodestoneLookupTranslations = {
         // エラーメッセージ
         lodestone_error_no_id: 'キャラクターIDを入力してください',
         lodestone_error_invalid_id: 'キャラクターIDは数字でなければなりません',
-        lodestone_error_not_found: 'キャラクターが見つかりません。IDが正しいか確認してください',
-        lodestone_error_query_failed: '検索に失敗しました ({status}): {statusText}',
+        lodestone_error_not_found: 'キャラクターが見つかりません',
+        lodestone_error_query_failed: '検索に失敗しました',
         lodestone_error_format: 'サーバーレスポンス形式エラー',
         lodestone_error_no_data: 'キャラクター情報を取得できませんでした',
         lodestone_error_job_list_loading: '詳細ジョブリストを読み込み中...',

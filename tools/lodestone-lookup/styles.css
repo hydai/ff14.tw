@@ -2,6 +2,22 @@
    Lodestone 角色查詢 — 只寫版面；顏色、圓角、字級一律來自 tokens.css 與共用元件
    ========================================================================== */
 
+/* 用 hidden 切換的元素：.card、.btn 等共用樣式設了 display，會蓋過瀏覽器內建的 [hidden] { display: none }，所以要自己寫 */
+#landingView[hidden],
+#firstVisitIntro[hidden],
+#mineCard[hidden],
+#recentCard[hidden],
+#searchView[hidden],
+#searchHint[hidden],
+#searchMore[hidden],
+#searchFallback[hidden],
+#characterView[hidden],
+#profileCard[hidden],
+#characterError[hidden],
+#tabsCard[hidden] {
+    display: none;
+}
+
 .page-header {
     text-align: center;
     margin-bottom: var(--space-9);

@@ -326,7 +326,7 @@ test('資料與模組都是凍結的（深層）', () => {
 });
 
 test('lodestone-data.js 提供目前的 script.js 用到的每一個 LODESTONE_ 全域', () => {
-    // 舊頁面還在讀 LODESTONE_JOB_ICONS 等舊的全域，重寫頁面之前不能拿掉；重寫之後這個測試照樣成立
+    // 頁面讀的資料都要由 lodestone-data.js 提供；拿掉資料檔裡的全域之前，這個測試擋住頁面還在讀它的情況
     const script = fs.readFileSync(path.join(TOOL_DIR, 'script.js'), 'utf8');
     for (const name of new Set(script.match(/\bLODESTONE_[A-Z_]+\b/g) || [])) {
         assert.notEqual(context[name], undefined, `script.js 用到 ${name}，lodestone-data.js 要提供`);
@@ -645,7 +645,7 @@ test('officialSearchUrl：官網角色搜尋的網址，名字原樣送過去（
 
 // ---------- 人的摘要 ----------
 
-test('person：角色回應換成「我的角色」與「最近查過」存的那一筆，職業存職業鍵（名稱在畫面上才查）', () => {
+test('person：角色回應換成「我的角色」存的那一筆（最近查過只留其中五個欄位），職業存職業鍵（名稱在畫面上才查）', () => {
     const character = {
         ID: 12345678,
         Name: 'Hikari Senshi',
