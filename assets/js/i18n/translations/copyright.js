@@ -42,7 +42,7 @@ const CopyrightTranslations = {
         copyright_jp_p1: '記載されている会社名・製品名・システム名などは、各社の商標、または登録商標です。',
 
         copyright_se_title: 'SQUARE ENIX 版權聲明',
-        copyright_se_p1: 'Copyright (C) 2010 - 2025 SQUARE ENIX CO., LTD. All Rights Reserved.',
+        copyright_se_p1: 'FINAL FANTASY XIV © SQUARE ENIX',
 
         copyright_contact_title: '聯絡方式',
         copyright_contact_p1: '如對本網站有任何版權相關問題或建議，歡迎透過',
@@ -89,7 +89,7 @@ const CopyrightTranslations = {
         copyright_jp_p1: '記載されている会社名・製品名・システム名などは、各社の商標、または登録商標です。',
 
         copyright_se_title: 'SQUARE ENIX Copyright',
-        copyright_se_p1: 'Copyright (C) 2010 - 2025 SQUARE ENIX CO., LTD. All Rights Reserved.',
+        copyright_se_p1: 'FINAL FANTASY XIV © SQUARE ENIX',
 
         copyright_contact_title: 'Contact Us',
         copyright_contact_p1: 'For any copyright-related questions or suggestions, please contact us via',
@@ -136,7 +136,7 @@ const CopyrightTranslations = {
         copyright_jp_p1: '記載されている会社名・製品名・システム名などは、各社の商標、または登録商標です。',
 
         copyright_se_title: 'SQUARE ENIX 著作権',
-        copyright_se_p1: 'Copyright (C) 2010 - 2025 SQUARE ENIX CO., LTD. All Rights Reserved.',
+        copyright_se_p1: 'FINAL FANTASY XIV © SQUARE ENIX',
 
         copyright_contact_title: 'お問い合わせ',
         copyright_contact_p1: '著作権に関するご質問やご提案がありましたら、',
