@@ -48,6 +48,62 @@ test('網站的頁面與翻譯檔不再有停在 2025 年的舊版權寫法', ()
     }
 });
 
+// ---------- 拼起來的句子（copyright.html 加上翻譯檔） ----------
+// 有連結的句子是「翻譯的前半句 + 連結 + 翻譯的後半句」。照 I18nManager 的做法，把帶 data-i18n 的元素換成那個語言的翻譯，
+// 其他文字與連結的字照抄，組出玩家看到的整句；values 是 null 時用 HTML 的預設字（沒有 JavaScript 時看到的）。
+// 逐一走過標籤與文字片段，不用 replace() 拔標籤
+function composeParagraph(html, values) {
+    let text = '';
+    let replaced = null; // 正在被翻譯取代的元素的標籤名稱，它裡面的預設字不算
+    for (const [token] of html.matchAll(/<[^>]*>|[^<]+/g)) {
+        if (token.startsWith('</')) {
+            if (replaced && token.slice(2, -1).trim() === replaced) replaced = null;
+        } else if (token.startsWith('<')) {
+            const m = values && token.match(/^<(\w+)\b[^>]*\sdata-i18n="([^"]+)"/);
+            if (m) {
+                assert.ok(values.has(m[2]), `翻譯檔沒有 ${m[2]}`);
+                text += values.get(m[2]);
+                replaced = m[1];
+            }
+        } else if (!replaced) {
+            text += token;
+        }
+    }
+    return text.replace(/\s+/g, ' ').trim();
+}
+
+// 有連結的兩句，三種語言與 HTML 預設字（＝中文）組起來應該是這樣
+const LINKED_SENTENCES = {
+    copyright_icon_p1: {
+        zh: '本網站所使用的 Final Fantasy XIV 相關圖示來自 FFXIV Fan Kit。',
+        en: 'Final Fantasy XIV icons used on this website are from the FFXIV Fan Kit.',
+        ja: 'このサイトで使用されている FFXIV アイコンは FFXIV Fan Kit からのものです。'
+    },
+    copyright_contact_p1: {
+        zh: '如對本網站有任何版權相關問題或建議，歡迎透過 GitHub Issues 與我們聯繫。',
+        en: 'For any copyright-related questions or suggestions, please contact us via GitHub Issues.',
+        ja: '著作権に関するご質問やご提案がありましたら、 GitHub Issues よりご連絡ください。'
+    }
+};
+
+test('有連結的句子在三種語言都是完整的一句：連結的字只出現一次，標點前面不多空格', () => {
+    const paragraphs = [...read('copyright.html').matchAll(/<p\b[^>]*>[\s\S]*?<\/p>/g)].map((m) => m[0]).filter((p) => p.includes('<a '));
+    assert.equal(paragraphs.length, 2, '版權聲明頁有連結的句子應該是「FF14 圖示來源」與「聯絡方式」兩句');
+
+    for (const [key, sentences] of Object.entries(LINKED_SENTENCES)) {
+        const html = paragraphs.find((p) => p.includes(`data-i18n="${key}"`));
+        assert.ok(html, `copyright.html 找不到 ${key} 那一句`);
+        const linkText = html.match(/<a\b[^>]*>([^<]*)<\/a>/)[1];
+
+        assert.equal(composeParagraph(html, null), sentences.zh, `${key} 的 HTML 預設字`);
+        for (const lang of ['zh', 'en', 'ja']) {
+            const sentence = composeParagraph(html, translationValues(TRANSLATIONS, lang));
+            assert.equal(sentence.split(linkText).length - 1, 1, `${lang} 的 ${key}：「${linkText}」應該只出現一次（現在是「${sentence}」）`);
+            assert.equal(sentence, sentences[lang], `${lang} 的 ${key}`);
+        }
+    }
+});
+
 // ---------- 版面（assets/css/pages.css） ----------
 // 關於頁與版權聲明頁共用 pages.css 的規則：版權聲明頁改版面時，關於頁要照舊。
 // stripComments、cssRules、declarations 照抄 tests/home-page.test.js（各測試檔自己帶一份，不共用），declarations 讀的是 pages.css
