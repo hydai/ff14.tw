@@ -1,20 +1,76 @@
 /* ==========================================================================
-   巨集轉換器 — 只寫版面；顏色、圓角、字級一律來自 tokens.css 與共用元件
+   巨集轉換器 — 只寫版面；顏色、圓角、字級一律來自 tokens.css 與共用元件。
+   手機（768px 以下）輸入在上、輸出在下，一欄；769px 以上左右兩欄（中間沒有「轉換」鈕）。
+   手機不能左右捲動：欄寫 minmax(0, 1fr)，長的字換行，不用 overflow-x
    ========================================================================== */
 
-/* 目標語言 */
+/* 頁首：說明與範圍兩行置中。手機的第一個畫面要放得下輸出的開頭，所以上下留白收小（工具區塊上面也不留白） */
+.page-header {
+    text-align: center;
+    margin-bottom: var(--space-4);
+}
+
+.page-header .description {
+    margin-bottom: var(--space-1);
+}
+
+.scope-note {
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+}
+
+/* 說明與範圍換行時兩行的長度接近 */
+.page-header .description,
+.scope-note {
+    text-wrap: balance;
+}
+
+/* 中文只在標點後斷行（不斷成「生產巨／集」）；真的放不下時 anywhere 照樣能在任意處斷行，不溢出。
+   日文、英文照一般的斷行規則：日文套 keep-all 會把一句變成不能斷的詞，放不下時句號會單獨掉到下一行 */
+.page-header .description:lang(zh),
+.scope-note:lang(zh) {
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+}
+
+.tool-content {
+    padding: 0 0 var(--space-7);
+}
+
+/* 載入中、載入失敗：在工具最上面 */
+.tool-content .loading {
+    padding: var(--space-4);
+}
+
+.load-error {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    margin: 0 0 var(--space-4);
+}
+
+/* .loading、.error-message 設了 display，會蓋掉瀏覽器內建的 [hidden]，所以要自己寫 */
+#loadingIndicator[hidden],
+#loadError[hidden],
+#macroWarnings[hidden] {
+    display: none;
+}
+
+/* 目標語言：標籤在左、下拉選單佔滿剩下的寬度；電腦版置中、不要太寬 */
 .language-selectors {
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--space-2);
-    margin-bottom: var(--space-7);
+    justify-content: center;
+    margin-bottom: var(--space-4);
 }
 
 .language-selectors .form-group {
     display: flex;
     align-items: center;
-    gap: var(--space-4);
+    gap: var(--space-3);
+    width: 100%;
+    max-width: 360px;
     margin-bottom: 0;
 }
 
@@ -25,99 +81,93 @@
 }
 
 .target-lang-group select {
-    min-width: 180px;
+    flex: 1 1 auto;
+    min-width: 0;
 }
 
-.auto-detect-hint {
-    margin: 0;
-    font-size: var(--text-sm);
-    color: var(--color-muted);
-}
-
-/* 輸入 / 轉換 / 輸出 三欄 */
+/* 輸入、輸出：手機一欄（輸入在上、輸出在下，照 DOM 的順序） */
 .macro-panels {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-    gap: var(--space-6);
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-4);
     align-items: stretch;
 }
 
 /* 外觀由 .card 提供，這裡只補內距 */
 .macro-panel {
-    padding: var(--space-5);
+    padding: var(--space-4);
 }
 
+/* 標題列：標題在左、按鈕在右。一行放不下（320px 寬的日文、英文）時按鈕換到下一行靠右，不把標題擠成「入力マク／ロ」 */
 .panel-header {
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
     align-items: center;
+    gap: var(--space-2) var(--space-3);
     margin-bottom: var(--space-3);
 }
 
-.panel-header label {
+.panel-title {
+    min-width: 0;
     font-weight: var(--weight-semibold);
     color: var(--color-heading);
+    overflow-wrap: anywhere;
 }
 
+.panel-actions {
+    display: flex;
+    gap: var(--space-2);
+    margin-left: auto;
+}
+
+/* 兩個框一樣高；列數寫在標記裡（rows），手機約 8 行 */
 .macro-textarea {
-    flex: 1;
-    min-height: 250px;
+    flex: 1 1 auto;
     font-family: var(--font-mono);
     font-size: var(--text-sm);
     line-height: 1.5;
 }
 
-.panel-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: var(--space-2);
-    margin-top: var(--space-3);
+/* 轉換結果是這一頁的答案，不能看起來像提示字：共用的 .form-control[readonly] 把字設成輔助色（和提示字同一個顏色）、
+   游標設成 not-allowed（那是給不能用的欄位），這裡只在輸出框蓋掉這兩樣，改用內文色與文字游標；唯讀的底色照舊。
+   用 id：它比 .form-control[readonly] 具體，不靠樣式表的先後 */
+#outputMacro {
+    color: var(--color-text);
+    cursor: text;
 }
 
-.convert-button-container {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+/* 要注意的行：.warning-message 的外觀，一條一行，放在標題列與輸出框之間；沒有問題時整塊 hidden（見上面） */
+.macro-warnings {
+    display: grid;
+    gap: var(--space-1);
+    margin: 0 0 var(--space-2);
+    list-style: none;
 }
 
-.convert-btn {
-    white-space: nowrap;
+.macro-warnings li {
+    position: relative;
+    padding-left: var(--space-5);
+    overflow-wrap: anywhere;
 }
 
-.warning-message {
-    margin-top: var(--space-6);
+/* ⚠ 只是記號：支援替代文字的瀏覽器讓螢幕閱讀器略過它（不支援的瀏覽器會忽略第二行，留下第一行） */
+.macro-warnings li::before {
+    content: "⚠";
+    content: "⚠" / "";
+    position: absolute;
+    left: 0;
 }
 
-/* 響應式 */
-@media (max-width: 768px) {
+/* 電腦：左右兩欄（中間沒有「轉換」鈕），框高到放得下一個巨集的 15 行 */
+@media (min-width: 769px) {
     .macro-panels {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--space-6);
     }
 
-    .macro-panel:first-child {
-        order: 0;
-    }
-
-    .convert-button-container {
-        order: 1;
-    }
-
-    .macro-panel:last-child {
-        order: 2;
-    }
-
-    .convert-btn {
-        width: 100%;
-    }
-}
-
-@media (max-width: 480px) {
-    .language-selectors .form-group {
-        flex-direction: column;
-        gap: var(--space-2);
-    }
-
-    .macro-textarea {
-        min-height: 200px;
+    /* 遊戲裡一個巨集最多 15 行。共用的 textarea.form-control 比 .macro-textarea 具體，所以要寫 textarea.macro-textarea */
+    textarea.macro-textarea {
+        min-height: 21rem;
     }
 }

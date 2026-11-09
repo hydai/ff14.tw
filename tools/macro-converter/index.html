@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>巨集轉換器 - FF14.tw</title>
-    <meta name="description" content="FF14 巨集語言轉換工具，支援繁體中文、英文、日文巨集互相轉換">
+    <meta name="description" content="把英文、日文攻略的 FF14 生產巨集換成繁體中文；支援生產技能與文字指令。">
     <link rel="icon" type="image/x-icon" href="../../assets/images/ff14tw.ico">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -30,67 +30,64 @@
         <div class="container">
             <div class="page-header">
                 <h1 class="visually-hidden" data-i18n="macro_converter_header">巨集轉換器</h1>
-                <p class="description" data-i18n="macro_converter_desc">將 FF14 巨集在繁體中文、英文、日文之間轉換</p>
+                <p class="description" data-i18n="macro_converter_desc">貼上英文或日文的生產巨集，馬上換成繁體中文。</p>
+                <p class="scope-note" data-i18n="macro_converter_scope">支援生產技能與文字指令；戰鬥、採集技能還沒有收錄。</p>
             </div>
 
-            <div class="tool-content">
-                <!-- Language Selector -->
+            <div class="tool-content" id="macroTool">
+                <!-- 資料載入中：script.js 在載入的期間拿掉 hidden -->
+                <div id="loadingIndicator" class="loading" hidden>
+                    <div class="loading-spinner"></div>
+                    <p data-i18n="macro_converter_loading">載入翻譯資料中...</p>
+                </div>
+
+                <!-- 資料載入失敗：錯誤訊息與「重試」 -->
+                <div id="loadError" class="error-message load-error" role="alert" hidden>
+                    <p data-i18n="macro_converter_load_error">載入翻譯資料失敗，請按「重試」再試一次。</p>
+                    <button type="button" class="btn btn-secondary btn-sm" id="retryLoad" data-i18n="macro_converter_retry">重試</button>
+                </div>
+
+                <!-- 目標語言 -->
                 <div class="language-selectors">
                     <div class="form-group target-lang-group">
                         <label for="targetLang" data-i18n="macro_converter_target_lang">目標語言</label>
-                        <select id="targetLang" class="form-control">
+                        <select id="targetLang" class="form-control" autocomplete="off">
                             <option value="zh">繁體中文</option>
                             <option value="en">English</option>
                             <option value="ja">日本語</option>
                         </select>
                     </div>
-                    <p class="auto-detect-hint" data-i18n="macro_converter_auto_detect_hint">自動偵測每個指令的語言並轉換</p>
                 </div>
 
-                <!-- Macro Panels -->
+                <!-- 輸入在上、輸出在下（769px 以上左右兩欄）；貼上或打字就立刻轉換，沒有「轉換」鈕 -->
                 <div class="macro-panels">
                     <div class="macro-panel card">
                         <div class="panel-header">
-                            <label for="inputMacro" data-i18n="macro_converter_input">輸入巨集</label>
+                            <label class="panel-title" for="inputMacro" data-i18n="macro_converter_input">輸入巨集</label>
+                            <div class="panel-actions">
+                                <button type="button" class="btn btn-secondary btn-sm" id="pasteInput" data-i18n="macro_converter_paste">貼上</button>
+                                <button type="button" class="btn btn-secondary btn-sm" id="clearInput" data-i18n="macro_converter_clear">清除</button>
+                            </div>
                         </div>
-                        <textarea id="inputMacro" class="form-control macro-textarea" rows="12"
-                            placeholder="/ac &quot;精修&quot; &lt;wait.3&gt;&#10;/ac &quot;Basic Synthesis&quot; &lt;wait.3&gt;&#10;/アクション &quot;マスターズメンド&quot; &lt;wait.3&gt;&#10;/技能 &quot;加工&quot; &lt;wait.2&gt;"></textarea>
-                        <div class="panel-actions">
-                            <button class="btn btn-secondary btn-sm" id="clearInput" data-i18n="macro_converter_clear">清除</button>
-                            <button class="btn btn-secondary btn-sm" id="pasteInput" data-i18n="macro_converter_paste">貼上</button>
-                        </div>
-                    </div>
-
-                    <div class="convert-button-container">
-                        <button class="btn btn-primary btn-lg convert-btn" id="convertBtn" data-i18n="macro_converter_convert">
-                            轉換 →
-                        </button>
+                        <!-- 提示字是三行範例（英文、日文、繁中各一行）。換行寫在屬性值裡，所以後兩行不縮排 -->
+                        <textarea id="inputMacro" class="form-control macro-textarea" rows="8" spellcheck="false" autocomplete="off"
+placeholder="/ac &quot;Muscle Memory&quot; &lt;wait.3&gt;
+/ac &quot;確信&quot; &lt;wait.3&gt;
+/ac &quot;堅信&quot; &lt;wait.3&gt;"></textarea>
                     </div>
 
                     <div class="macro-panel card">
                         <div class="panel-header">
-                            <label for="outputMacro" data-i18n="macro_converter_output">輸出結果</label>
+                            <label class="panel-title" for="outputMacro" id="outputTitle">繁體中文</label>
+                            <div class="panel-actions">
+                                <button type="button" class="btn btn-primary btn-sm" id="copyOutput" data-i18n="macro_converter_copy">複製</button>
+                            </div>
                         </div>
-                        <textarea id="outputMacro" class="form-control macro-textarea" rows="12" readonly></textarea>
-                        <div class="panel-actions">
-                            <button class="btn btn-primary btn-sm" id="copyOutput" data-i18n="macro_converter_copy">複製</button>
-                        </div>
+                        <!-- 要注意的行：沒有問題時整塊隱藏；不是 live region，螢幕閱讀器靠輸出框的 aria-describedby 讀到 -->
+                        <ul id="macroWarnings" class="warning-message macro-warnings" role="list" hidden></ul>
+                        <textarea id="outputMacro" class="form-control macro-textarea" rows="8" spellcheck="false" autocomplete="off" readonly aria-describedby="macroWarnings"></textarea>
                     </div>
                 </div>
-
-                <!-- Warning Message -->
-                <div id="warningMessage" class="warning-message" style="display: none;">
-                    <span data-i18n="macro_converter_warning">部分指令無法翻譯</span>
-                </div>
-
-                <!-- Loading Indicator -->
-                <div id="loadingIndicator" class="loading" style="display: none;">
-                    <div class="loading-spinner"></div>
-                    <p data-i18n="macro_converter_loading">載入翻譯資料中...</p>
-                </div>
-
-                <!-- Error Message -->
-                <div id="errorMessage" class="error-message" style="display: none;"></div>
             </div>
         </div>
     </main>
@@ -105,7 +102,6 @@
     <script src="../../assets/js/components/footer-template.js"></script>
     <script src="../../assets/js/components/layout-loader.js"></script>
     <script src="../../assets/js/common.js"></script>
-    <script src="../../assets/js/security-utils.js"></script>
     <script src="conversion-engine.js"></script>
     <script src="script.js"></script>
 </body>

@@ -1,237 +1,212 @@
 /**
- * Macro Converter Tool
- * Main controller for the macro conversion UI
+ * 巨集轉換器
+ * 貼上或打字就立刻轉換，沒有「轉換」鈕：輸入框的 input 事件與目標語言的 change 都直接重轉，不 debounce。
+ * 轉換規則在 conversion-engine.js，這裡只管畫面：輸出框、輸出標題列（目標語言與行數）與要注意的行。
+ * 目標語言預設繁體中文，改了就記在 localStorage；網站介面語言只影響介面文字，不改目標語言。
+ * 每一次讀寫 localStorage 都包 try/catch，瀏覽器封鎖網站資料時照常運作，只是不記住。
  */
 class MacroConverter {
     static DATA_FILE = '../../data/macro-mappings.json';
-    static DEFAULT_EXAMPLE = `/ac "精修" <wait.3>
-/ac "Basic Synthesis" <wait.3>
-/アクション "マスターズメンド" <wait.3>
-/技能 "加工" <wait.2>`;
+    static STORAGE_KEY = 'ff14tw_macro_target_lang';
+    static TARGET_LANGS = ['zh', 'en', 'ja'];
+    static DEFAULT_TARGET_LANG = 'zh';
+    // 遊戲裡一個巨集最多 15 行
+    static MAX_MACRO_LINES = 15;
+    // 輸出標題列的語言名稱（跟著網站介面語言）：目標語言 -> [翻譯鍵, 中文預設]
+    static LANG_NAMES = {
+        zh: ['macro_converter_lang_zh', '繁體中文'],
+        en: ['macro_converter_lang_en', '英文'],
+        ja: ['macro_converter_lang_ja', '日文']
+    };
+    // 要注意的行的三種問題（引擎的 problems 的 kind）：種類 -> [翻譯鍵, 中文預設]。
+    // action：技能名沒有收錄；command：指令不認得；text：不是 / 開頭的行（貼上的標題、表格的編號、# 備註），遊戲裡會當成聊天訊息送出
+    static WARNINGS = {
+        action: ['macro_converter_warn_action', '第 {line} 行：「{text}」沒有收錄，照原文保留'],
+        command: ['macro_converter_warn_command', '第 {line} 行：「{text}」不是認得的指令，照原文保留'],
+        text: ['macro_converter_warn_text', '第 {line} 行：「{text}」不是指令，遊戲裡會當成聊天訊息送出']
+    };
 
     constructor() {
-        this.mappings = null;
         this.engine = null;
+        // 最近一次轉換的結果：到最後一個非空行為止的行數，與每個轉不了的詞或不是指令的行 { line, kind, text }（依行號排，
+        // kind 見 WARNINGS）。切換網站介面語言時照這份重畫標題列與要注意的行，不重轉、不動輸出框
+        this.lineCount = 0;
+        this.problems = [];
 
-        // Cache DOM elements
         this.elements = {
             inputMacro: document.getElementById('inputMacro'),
             outputMacro: document.getElementById('outputMacro'),
+            outputTitle: document.getElementById('outputTitle'),
             targetLang: document.getElementById('targetLang'),
-            convertBtn: document.getElementById('convertBtn'),
             copyOutput: document.getElementById('copyOutput'),
             clearInput: document.getElementById('clearInput'),
             pasteInput: document.getElementById('pasteInput'),
-            warningMessage: document.getElementById('warningMessage'),
+            warnings: document.getElementById('macroWarnings'),
             loadingIndicator: document.getElementById('loadingIndicator'),
-            errorMessage: document.getElementById('errorMessage')
+            loadError: document.getElementById('loadError')
         };
 
-        this.init();
+        this.elements.targetLang.value = this.readTargetLang();
+        // 切換網站介面語言：只換字（標題列、要注意的行、輸出框的提示字），目標語言與輸出都不動
+        window.i18n.onLanguageChange(() => this.renderStatus());
+        this.renderStatus();
+
+        // ready：目前這一次載入完成（或失敗）之後 resolve
+        this.ready = this.load();
     }
 
-    /**
-     * Initialize the tool
-     */
-    async init() {
-        this.showLoading(true);
+    t(key, fallback, params) {
+        return FF14Utils.getI18nText(key, fallback, params);
+    }
 
+    // ---------- 目標語言 ----------
+
+    // 存著的值不是三種語言之一（壞掉、沒存過、讀不到）就用繁體中文
+    readTargetLang() {
         try {
-            await this.loadMappings();
-            this.engine = new ConversionEngine(this.mappings);
-            this.bindEvents();
-            this.setOutputPlaceholder();
-            this.syncTargetLangWithI18n();
-            this.loadDefaultExample();
-        } catch (error) {
-            console.error('Initialization failed:', error);
-            this.showError(FF14Utils.getI18nText('macro_converter_load_error', '載入翻譯資料失敗，請重新整理頁面再試。'));
+            const saved = localStorage.getItem(MacroConverter.STORAGE_KEY);
+            if (MacroConverter.TARGET_LANGS.includes(saved)) return saved;
+        } catch { /* 封鎖網站資料時讀不到：用預設 */ }
+        return MacroConverter.DEFAULT_TARGET_LANG;
+    }
+
+    saveTargetLang(lang) {
+        try {
+            localStorage.setItem(MacroConverter.STORAGE_KEY, lang);
+        } catch { /* 封鎖網站資料或寫不進去：這次照常用，只是記不住 */ }
+    }
+
+    // ---------- 載入資料 ----------
+
+    async load() {
+        const { loadingIndicator, loadError } = this.elements;
+        loadError.hidden = true;
+        loadingIndicator.hidden = false;
+        try {
+            const response = await fetch(MacroConverter.DATA_FILE);
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            this.engine = new ConversionEngine(await response.json());
+        } catch {
+            loadError.hidden = false;
+            return;
         } finally {
-            this.showLoading(false);
+            loadingIndicator.hidden = true;
         }
-    }
-
-    /**
-     * Sets the target language in the dropdown.
-     * @param {string} lang The language code.
-     */
-    _setTargetLang(lang) {
-        if (lang && this.elements.targetLang) {
-            this.elements.targetLang.value = lang;
-        }
-    }
-
-    /**
-     * Sync target language with i18n language
-     */
-    syncTargetLangWithI18n() {
-        if (window.i18n) {
-            // Set initial target language and listen for changes
-            this._setTargetLang(window.i18n.getCurrentLanguage());
-            window.i18n.onLanguageChange((newLang) => {
-                this._setTargetLang(newLang);
-                this.setOutputPlaceholder();
-                // Setting the dropdown from code fires no change event, so convert again here
-                this.convert();
-            });
-        }
-    }
-
-    /**
-     * Load default example and convert
-     */
-    loadDefaultExample() {
-        this.elements.inputMacro.value = MacroConverter.DEFAULT_EXAMPLE;
+        this.bindEvents();
+        // 瀏覽器可能在載入前就還原了輸入框的內容（上一頁、重新整理），載入完先轉一次
         this.convert();
     }
 
-    /**
-     * Load mapping data from JSON file
-     */
-    async loadMappings() {
-        const response = await fetch(MacroConverter.DATA_FILE);
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        this.mappings = await response.json();
-    }
-
-    /**
-     * Bind all event listeners
-     */
     bindEvents() {
-        // Convert button
-        this.elements.convertBtn.addEventListener('click', () => this.convert());
-
-        // Changing the target language converts again, so the output never keeps the old language
-        this.elements.targetLang.addEventListener('change', () => this.convert());
-
-        // Copy output
-        this.elements.copyOutput.addEventListener('click', () => this.copyToClipboard());
-
-        // Clear input
-        this.elements.clearInput.addEventListener('click', () => this.clearInput());
-
-        // Paste input
-        this.elements.pasteInput.addEventListener('click', () => this.pasteFromClipboard());
-
-        // Keyboard shortcut: Ctrl/Cmd + Enter to convert
-        this.elements.inputMacro.addEventListener('keydown', (e) => {
-            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-                e.preventDefault();
-                this.convert();
-            }
+        const { inputMacro, targetLang, copyOutput, clearInput, pasteInput } = this.elements;
+        // 打字、貼上、刪除都會觸發 input；改目標語言也立刻重轉，輸出不會停在舊的語言
+        inputMacro.addEventListener('input', () => this.convert());
+        targetLang.addEventListener('change', () => {
+            this.saveTargetLang(targetLang.value);
+            this.convert();
         });
+        copyOutput.addEventListener('click', () => this.copyToClipboard());
+        clearInput.addEventListener('click', () => this.clearInput());
+        pasteInput.addEventListener('click', () => this.pasteFromClipboard());
     }
 
-    /**
-     * Perform the conversion (auto-detect source language per token)
-     */
+    // ---------- 轉換 ----------
+
+    // 把輸入框現在的內容轉成目標語言（每一行自動判斷語言），再重畫標題列與要注意的行
     convert() {
         const input = this.elements.inputMacro.value;
+        const results = input.trim() ? this.engine.convert(input, this.elements.targetLang.value) : [];
 
-        if (!input.trim()) {
-            this.clearOutput();
+        this.elements.outputMacro.value = results.map((result) => result.output).join('\n');
+
+        // 行數只算到最後一個非空行：貼上的巨集結尾常帶著幾個空行，不能因此多跳「超過 15 行」
+        let lineCount = results.length;
+        while (lineCount > 0 && !results[lineCount - 1].output.trim()) lineCount -= 1;
+        this.lineCount = lineCount;
+        // 行號由陣列位置算（1 起算），空行也占一個行號
+        this.problems = results.flatMap((result, index) => result.problems
+            .map((problem) => ({ line: index + 1, kind: problem.kind, text: problem.text })));
+
+        this.renderStatus();
+    }
+
+    // 標題列、要注意的行與輸出框的提示字：這三樣會跟著網站介面語言換字，轉換的結果換了也要重畫
+    renderStatus() {
+        this.renderTitle();
+        this.renderWarnings();
+        this.elements.outputMacro.placeholder = this.t('macro_converter_output_placeholder', '轉換結果會出現在這裡');
+    }
+
+    // 「繁體中文・13 行」（英文是 Traditional Chinese · 13 lines）：語言名稱與行數中間的符號是每種語言自己的翻譯
+    // （macro_converter_output_title）。輸入是空的（沒有任何非空行）時只寫語言名稱
+    renderTitle() {
+        const [key, fallback] = MacroConverter.LANG_NAMES[this.elements.targetLang.value];
+        const lang = this.t(key, fallback);
+        if (this.lineCount === 0) {
+            this.elements.outputTitle.textContent = lang;
             return;
         }
-
-        const targetLang = this.elements.targetLang.value;
-
-        // Perform conversion (source language is auto-detected per token)
-        const results = this.engine.convert(input, targetLang);
-
-        // Display results
-        this.displayResults(results);
+        const lines = this.lineCount === 1
+            ? this.t('macro_converter_line_one', '{count} 行', { count: this.lineCount })
+            : this.t('macro_converter_lines', '{count} 行', { count: this.lineCount });
+        this.elements.outputTitle.textContent = this.t('macro_converter_output_title', '{lang}・{lines}', { lang, lines });
     }
 
-    /**
-     * Display conversion results
-     * @param {object[]} results - Array of conversion results
-     */
-    displayResults(results) {
-        const outputLines = results.map(result => result.output);
-        const hasWarnings = results.some(result => result.problems.length > 0);
+    // 每個轉不了的詞、每一行不是指令的行各一條，依行號排；超過 15 行的提醒放在最後。一條一個 li，文字用 textContent
+    // （問題的文字是玩家貼上的原文，可能有 <me> 這類尖括號）。沒有任何一條時整塊 hidden
+    renderWarnings() {
+        const list = this.elements.warnings;
+        const texts = this.problems.map(({ line, kind, text }) => {
+            // 不認得的種類當成沒有收錄（引擎只會給 WARNINGS 裡的三種）
+            const [key, fallback] = MacroConverter.WARNINGS[kind] ?? MacroConverter.WARNINGS.action;
+            return this.t(key, fallback, { line, text });
+        });
+        if (this.lineCount > MacroConverter.MAX_MACRO_LINES) {
+            texts.push(this.t('macro_converter_warn_too_long', '共 {lines} 行：遊戲裡一個巨集最多 15 行，要分成 {macros} 個巨集', {
+                lines: this.lineCount,
+                macros: Math.ceil(this.lineCount / MacroConverter.MAX_MACRO_LINES)
+            }));
+        }
 
-        // Set textarea value
-        this.elements.outputMacro.value = outputLines.join('\n');
-
-        // Show/hide warning message
-        this.elements.warningMessage.style.display = hasWarnings ? 'flex' : 'none';
+        list.textContent = '';
+        for (const text of texts) {
+            const item = document.createElement('li');
+            item.textContent = text;
+            list.appendChild(item);
+        }
+        list.hidden = texts.length === 0;
     }
 
-    /**
-     * Clear the output area
-     */
-    clearOutput() {
-        this.elements.outputMacro.value = '';
-        this.elements.warningMessage.style.display = 'none';
-    }
+    // ---------- 按鈕 ----------
 
-    /**
-     * Clear the input
-     */
     clearInput() {
         this.elements.inputMacro.value = '';
-        this.clearOutput();
+        this.convert();
     }
 
-    /**
-     * Paste from clipboard
-     */
     async pasteFromClipboard() {
+        let text;
         try {
-            const text = await navigator.clipboard.readText();
-            this.elements.inputMacro.value = text;
-        } catch (err) {
-            console.error('Failed to read clipboard:', err);
-            FF14Utils.showToast(FF14Utils.getI18nText('macro_converter_paste_error', '無法讀取剪貼簿'), 'error');
-        }
-    }
-
-    /**
-     * Copy output to clipboard
-     */
-    async copyToClipboard() {
-        const text = this.elements.outputMacro.value;
-
-        if (!text) {
-            FF14Utils.showToast(FF14Utils.getI18nText('macro_converter_nothing_to_copy', '沒有內容可複製'), 'error');
+            text = await navigator.clipboard.readText();
+        } catch {
+            FF14Utils.showToast(this.t('macro_converter_paste_error', '沒辦法讀取剪貼簿，請直接在框裡貼上（Ctrl+V 或長按）'), 'error');
             return;
         }
+        // 程式改輸入框的值不會觸發 input 事件，所以自己轉
+        this.elements.inputMacro.value = text;
+        this.convert();
+    }
 
+    async copyToClipboard() {
+        const text = this.elements.outputMacro.value;
+        if (!text) return;
         try {
             await navigator.clipboard.writeText(text);
-            FF14Utils.showToast(FF14Utils.getI18nText('macro_converter_copied', '已複製到剪貼簿'), 'success');
-        } catch (err) {
-            console.error('Failed to copy:', err);
-            FF14Utils.showToast(FF14Utils.getI18nText('macro_converter_copy_error', '複製失敗'), 'error');
+        } catch {
+            FF14Utils.showToast(this.t('macro_converter_copy_error', '複製失敗，請手動選取文字'), 'error');
+            return;
         }
-    }
-
-    /**
-     * Set placeholder for output area
-     */
-    setOutputPlaceholder() {
-        this.elements.outputMacro.placeholder =
-            FF14Utils.getI18nText('macro_converter_output_placeholder', '轉換結果將顯示在這裡...');
-    }
-
-    /**
-     * Show/hide loading indicator
-     * @param {boolean} show
-     */
-    showLoading(show) {
-        this.elements.loadingIndicator.style.display = show ? 'flex' : 'none';
-        this.elements.convertBtn.disabled = show;
-    }
-
-    /**
-     * Show error message
-     * @param {string} message
-     */
-    showError(message) {
-        this.elements.errorMessage.textContent = message;
-        this.elements.errorMessage.style.display = 'block';
+        FF14Utils.showToast(this.t('macro_converter_copied', '已複製'), 'success');
     }
 }
 
