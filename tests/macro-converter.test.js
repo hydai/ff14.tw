@@ -1284,3 +1284,34 @@ test('翻譯檔：三語的鍵與 {參數} 一致，拿掉的鍵不在了，頁�
     assert.ok(found.length >= 8, `只找到 ${found.length} 個 data-i18n，解析可能失效`);
     for (const [, , key, text] of found) assert.equal(text, values.zh.get(key), `index.html 的 ${key} 預設文字`);
 });
+
+// 首頁（根目錄的 index.html）上巨集轉換器那一張卡片：工具只支援生產巨集，首頁的說明也要看得出範圍
+test('首頁卡片的說明寫出範圍：預設字與 zh 翻譯都是「把英文、日文攻略的生產巨集換成繁體中文」，en、ja 跟著改', () => {
+    const INDEX_TRANSLATIONS = 'assets/js/i18n/translations/index.js';
+    const CARD_KEY = 'tool_macro_converter_desc';
+    const CARD_ZH = '把英文、日文攻略的生產巨集換成繁體中文';
+    // 改版前 en、ja 都寫「在繁體中文、英文、日文之間轉換」：看不出範圍只有生產巨集
+    const OLD = {
+        en: 'Convert FF14 macros between Traditional Chinese, English, and Japanese',
+        ja: 'FF14マクロを繁体字中国語、英語、日本語間で変換'
+    };
+
+    // 預設字：連到 tools/macro-converter/index.html 的那張卡片（卡片裡沒有巢狀的 <a>）裡的說明
+    const card = read('index.html').match(/<a\b[^>]*\shref="tools\/macro-converter\/index\.html"[^>]*>[\s\S]*?<\/a>/);
+    assert.ok(card, '首頁找不到巨集轉換器的卡片');
+    const description = card[0].match(new RegExp(`<p\\b[^>]*\\sdata-i18n="${CARD_KEY}"[^>]*>([^<]*)</p>`));
+    assert.ok(description, `卡片裡找不到 data-i18n="${CARD_KEY}" 的說明`);
+    assert.equal(description[1], CARD_ZH, '首頁的預設字');
+
+    // zh 翻譯和預設字一樣（切換語言前不會閃一下別的字）
+    const values = Object.fromEntries(LANGS.map((lang) => [lang, translationValues(INDEX_TRANSLATIONS, lang).get(CARD_KEY)]));
+    assert.equal(values.zh, CARD_ZH, 'zh 翻譯');
+
+    // en、ja 有值、和舊的不同，一樣寫出生產巨集（英文 crafting、日文 製作マクロ），照意思寫、不用和 zh 逐字相同
+    for (const lang of ['en', 'ja']) {
+        assert.ok(values[lang] && values[lang].trim(), `${lang} 有說明`);
+        assert.notEqual(values[lang], OLD[lang], `${lang} 的說明還是改版前的「在繁體中文、英文、日文之間轉換」`);
+    }
+    assert.match(values.en, /crafting/i, 'en 寫出生產巨集（crafting macros）');
+    assert.match(values.ja, /製作マクロ/, 'ja 寫出製作マクロ');
+});
