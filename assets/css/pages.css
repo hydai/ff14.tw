@@ -40,9 +40,12 @@
     color: var(--color-primary);
 }
 
+/* keep-all：中文標題只在空格斷行，手機上不會剩一個字掉到下一行（例如「SQUARE ENIX 版權聲／明」）；整段放不下時 anywhere 照樣能斷 */
 .copyright-section h2 {
     gap: var(--space-2);
     font-size: var(--text-xl);
+    word-break: keep-all;
+    overflow-wrap: anywhere;
 }
 
 .about-section h2::before {
@@ -77,6 +80,14 @@
 .about-section a:hover,
 .copyright-section a:hover {
     border-bottom-color: var(--color-primary);
+}
+
+/* 手機上名字不從中間斷開：粗體的名字（SQUARE ENIX、宇峻奧汀、智寶國際）、連結（FFXIV Fan Kit、GitHub Issues）
+   與遊戲名稱（.nobr）整個留在同一行。SQUARE ENIX 那一段的整句要能換行（下面的 text-wrap: balance），所以不包含在內 */
+.copyright-section:not(.square-enix-copyright) strong,
+.copyright-section a,
+.copyright-section .nobr {
+    white-space: nowrap;
 }
 
 /* 主題色區塊：語意 tint 純色（原本的雙色漸層攤平） */

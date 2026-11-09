@@ -165,3 +165,21 @@ test('768px 以下版權聲明頁的標題和電腦一樣排成一行靠左，SE
     assert.match(declarations('.about-section h2', MOBILE), /flex-direction:\s*column/);
     assert.match(declarations('.about-section h2', MOBILE), /text-align:\s*center/);
 });
+
+test('手機上名字不從中間斷開：標題不在中文字之間斷行，內文的粗體名字、連結與遊戲名稱整個留在同一行', () => {
+    // 320px 時「SQUARE ENIX 版權聲明」原本斷成「SQUARE ENIX 版權聲」／「明」：keep-all 讓中文只在空格斷，整段放不下時 anywhere 照樣能斷
+    assert.match(declarations('.copyright-section h2'), /word-break:\s*keep-all/);
+    assert.match(declarations('.copyright-section h2'), /overflow-wrap:\s*anywhere/);
+    // SQUARE ENIX、宇峻奧汀、智寶國際（粗體）、FFXIV Fan Kit、GitHub Issues（連結）與「FF14 圖示來源」那一句的遊戲名稱（.nobr）
+    for (const selector of ['.copyright-section:not(.square-enix-copyright) strong', '.copyright-section a', '.copyright-section .nobr']) {
+        assert.match(declarations(selector), /white-space:\s*nowrap/, `${selector} 要 white-space: nowrap`);
+    }
+    // SQUARE ENIX 那一段的整句要能換行（text-wrap: balance 讓它斷在「© SQUARE ENIX」前面），不能整句不換行
+    assert.ok(
+        !pagesRules.some((r) => r.selectors.some((s) => s.includes('.square-enix-copyright') && !s.includes(':not(')) && /white-space:\s*nowrap/.test(r.body)),
+        'SQUARE ENIX 那一段不能 white-space: nowrap'
+    );
+    // 遊戲名稱各語言自己寫（zh、en 是 Final Fantasy XIV，ja 是 FFXIV），放在 .nobr 裡
+    assert.match(read('copyright.html'), /<span class="nobr" data-i18n="copyright_icon_p1_game">Final Fantasy XIV<\/span>/);
+    assert.deepEqual(['zh', 'en', 'ja'].map((lang) => translationValues(TRANSLATIONS, lang).get('copyright_icon_p1_game')), ['Final Fantasy XIV', 'Final Fantasy XIV', 'FFXIV']);
+});
