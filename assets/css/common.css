@@ -635,7 +635,7 @@ textarea:focus {
     color: var(--header-text);
 }
 
-/* 頁尾三列：連結、免責聲明、版權與製作者（置中直排） */
+/* 頁尾四列：連結、免責聲明、SQUARE ENIX 的版權標示、版權與製作者（置中直排） */
 .footer .container {
     display: flex;
     flex-direction: column;
@@ -649,6 +649,11 @@ textarea:focus {
     justify-content: center;
     gap: var(--space-1) var(--space-5);
     list-style: none;
+}
+
+/* 免責聲明的公司名稱與後半句整個留在同一行：手機上英文不會切成「Square」／「Enix」，日文不會剩「係」一個字 */
+.footer-nowrap {
+    white-space: nowrap;
 }
 
 /* 漢堡選單按鈕 */

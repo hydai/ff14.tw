@@ -34,7 +34,10 @@ const CopyrightTranslations = {
         copyright_image_p2: '所有遊戲相關圖片僅用於學習、研究和非商業用途，如有侵權請聯繫我們立即移除。',
 
         copyright_icon_title: 'FF14 圖示來源',
-        copyright_icon_p1: '本網站所使用的 Final Fantasy XIV 相關圖示來自 FFXIV Fan Kit。',
+        copyright_icon_p1_prefix: '本網站所使用的',
+        copyright_icon_p1_game: 'Final Fantasy XIV',
+        copyright_icon_p1: '相關圖示來自',
+        copyright_icon_p1_suffix: '。',
         copyright_icon_p2_prefix: '所有圖示的使用方式皆按照該網站上所載明的版權協議為主，遵循 ',
         copyright_icon_p2_suffix: ' 官方的使用條款與規範。',
 
@@ -42,11 +45,11 @@ const CopyrightTranslations = {
         copyright_jp_p1: '記載されている会社名・製品名・システム名などは、各社の商標、または登録商標です。',
 
         copyright_se_title: 'SQUARE ENIX 版權聲明',
-        copyright_se_p1: 'Copyright (C) 2010 - 2025 SQUARE ENIX CO., LTD. All Rights Reserved.',
+        copyright_se_p1: 'FINAL FANTASY XIV © SQUARE ENIX',
 
         copyright_contact_title: '聯絡方式',
         copyright_contact_p1: '如對本網站有任何版權相關問題或建議，歡迎透過',
-        copyright_contact_p1_suffix: '與我們聯繫。',
+        copyright_contact_p1_suffix: ' 與我們聯繫。',
         copyright_contact_p2: '我們承諾會在收到合理要求後，盡快處理相關事宜。'
     },
     en: {
@@ -81,7 +84,10 @@ const CopyrightTranslations = {
         copyright_image_p2: 'All game-related images are used for educational, research, and non-commercial purposes only. Please contact us for removal if needed.',
 
         copyright_icon_title: 'FF14 Icon Source',
-        copyright_icon_p1: 'Final Fantasy XIV icons used on this website are from the FFXIV Fan Kit.',
+        copyright_icon_p1_prefix: '',
+        copyright_icon_p1_game: 'Final Fantasy XIV',
+        copyright_icon_p1: 'icons used on this website are from the',
+        copyright_icon_p1_suffix: '.',
         copyright_icon_p2_prefix: 'All icons are used in accordance with the copyright terms specified on that website, following ',
         copyright_icon_p2_suffix: ' official terms and conditions.',
 
@@ -89,7 +95,7 @@ const CopyrightTranslations = {
         copyright_jp_p1: '記載されている会社名・製品名・システム名などは、各社の商標、または登録商標です。',
 
         copyright_se_title: 'SQUARE ENIX Copyright',
-        copyright_se_p1: 'Copyright (C) 2010 - 2025 SQUARE ENIX CO., LTD. All Rights Reserved.',
+        copyright_se_p1: 'FINAL FANTASY XIV © SQUARE ENIX',
 
         copyright_contact_title: 'Contact Us',
         copyright_contact_p1: 'For any copyright-related questions or suggestions, please contact us via',
@@ -128,7 +134,10 @@ const CopyrightTranslations = {
         copyright_image_p2: 'すべてのゲーム関連画像は教育、研究、非商用目的にのみ使用されています。削除が必要な場合はご連絡ください。',
 
         copyright_icon_title: 'FF14 アイコンソース',
-        copyright_icon_p1: 'このサイトで使用されている FFXIV アイコンは FFXIV Fan Kit からのものです。',
+        copyright_icon_p1_prefix: 'このサイトで使用されている',
+        copyright_icon_p1_game: 'FFXIV',
+        copyright_icon_p1: 'アイコンは',
+        copyright_icon_p1_suffix: ' からのものです。',
         copyright_icon_p2_prefix: 'すべてのアイコンは、そのサイトに記載されている著作権条項に従い、',
         copyright_icon_p2_suffix: ' 公式の利用規約に従って使用されています。',
 
@@ -136,11 +145,11 @@ const CopyrightTranslations = {
         copyright_jp_p1: '記載されている会社名・製品名・システム名などは、各社の商標、または登録商標です。',
 
         copyright_se_title: 'SQUARE ENIX 著作権',
-        copyright_se_p1: 'Copyright (C) 2010 - 2025 SQUARE ENIX CO., LTD. All Rights Reserved.',
+        copyright_se_p1: 'FINAL FANTASY XIV © SQUARE ENIX',
 
         copyright_contact_title: 'お問い合わせ',
         copyright_contact_p1: '著作権に関するご質問やご提案がありましたら、',
-        copyright_contact_p1_suffix: 'よりご連絡ください。',
+        copyright_contact_p1_suffix: ' よりご連絡ください。',
         copyright_contact_p2: '合理的な要求には可能な限り早く対応いたします。'
     }
 };

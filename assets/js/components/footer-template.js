@@ -4,7 +4,7 @@
  */
 const FooterTemplate = {
     /**
-     * 建立頁尾 DOM 結構：站務連結、免責聲明、版權與製作者（三列）
+     * 建立頁尾 DOM 結構，共四列：站務連結、免責聲明、SQUARE ENIX 的版權標示、版權與製作者
      * @param {Object} options - 配置選項
      * @param {string} options.basePath - 基礎路徑（預設為 '/'）
      * @param {number} options.year - 版權的結束年份（預設為今年）
@@ -55,12 +55,28 @@ const FooterTemplate = {
         addLink('https://github.com/hydai/ff14.tw', 'GitHub', true).setAttribute('data-i18n', 'nav_github');
         container.appendChild(links);
 
-        // 免責聲明
+        // 免責聲明：前半句、公司名稱、後半句三段各自翻譯（data-i18n 放在三個 span 上）。
+        // 名稱與後半句是 span.footer-nowrap，手機上整個留在同一行：英文不會切成「Square」／「Enix」，日文不會剩「係」一個字
         const disclaimer = document.createElement('p');
         disclaimer.className = 'footer-disclaimer';
-        disclaimer.setAttribute('data-i18n', 'footer_copyright');
-        disclaimer.textContent = '本站非官方網站，與 Square Enix 無關';
+        [
+            ['footer_copyright_prefix', '本站非官方網站，與 ', false],
+            ['footer_copyright_name', 'Square Enix', true],
+            ['footer_copyright_suffix', ' 無關', true]
+        ].forEach(([key, text, keepTogether]) => {
+            const part = document.createElement('span');
+            if (keepTogether) part.className = 'footer-nowrap';
+            part.setAttribute('data-i18n', key);
+            part.textContent = text;
+            disclaimer.appendChild(part);
+        });
         container.appendChild(disclaimer);
+
+        // SQUARE ENIX 的版權標示：三語相同、不翻譯，所以不帶 data-i18n（切換語言時 I18nManager 不會改寫它）
+        const seCopyright = document.createElement('p');
+        seCopyright.className = 'footer-se-copyright';
+        seCopyright.textContent = 'FINAL FANTASY XIV © SQUARE ENIX';
+        container.appendChild(seCopyright);
 
         // 版權年份與製作者資訊
         const meta = document.createElement('p');

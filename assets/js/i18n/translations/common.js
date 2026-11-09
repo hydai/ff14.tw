@@ -14,7 +14,9 @@ const CommonTranslations = {
         nav_changelog: '修改紀錄',
 
         // 頁尾
-        footer_copyright: '本站非官方網站，與 Square Enix 無關',
+        footer_copyright_prefix: '本站非官方網站，與 ',
+        footer_copyright_name: 'Square Enix',
+        footer_copyright_suffix: ' 無關',
         footer_made_with: 'Made with ❤️ by hydai',
         footer_report_issue: '回報問題',
 
@@ -103,7 +105,9 @@ const CommonTranslations = {
         nav_changelog: 'Changelog',
 
         // Footer
-        footer_copyright: 'Unofficial site, not affiliated with Square Enix',
+        footer_copyright_prefix: 'Unofficial site, not affiliated with ',
+        footer_copyright_name: 'Square Enix',
+        footer_copyright_suffix: '',
         footer_made_with: 'Made with ❤️ by hydai',
         footer_report_issue: 'Report an issue',
 
@@ -191,7 +195,9 @@ const CommonTranslations = {
         nav_changelog: '更新履歴',
 
         // フッター
-        footer_copyright: '非公式サイト、スクウェア・エニックスとは無関係',
+        footer_copyright_prefix: '非公式サイト、',
+        footer_copyright_name: 'スクウェア・エニックス',
+        footer_copyright_suffix: 'とは無関係',
         footer_made_with: 'Made with ❤️ by hydai',
         footer_report_issue: '不具合を報告',
 
