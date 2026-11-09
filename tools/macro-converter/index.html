@@ -35,13 +35,7 @@
             </div>
 
             <div class="tool-content" id="macroTool">
-                <!-- 資料載入中：script.js 在載入的期間拿掉 hidden -->
-                <div id="loadingIndicator" class="loading" hidden>
-                    <div class="loading-spinner"></div>
-                    <p data-i18n="macro_converter_loading">載入翻譯資料中...</p>
-                </div>
-
-                <!-- 資料載入失敗：錯誤訊息與「重試」 -->
+                <!-- 資料載入失敗：錯誤訊息與「重試」，在工具最上面 -->
                 <div id="loadError" class="error-message load-error" role="alert" hidden>
                     <p data-i18n="macro_converter_load_error">載入翻譯資料失敗，請按「重試」再試一次。</p>
                     <button type="button" class="btn btn-secondary btn-sm" id="retryLoad" data-i18n="macro_converter_retry">重試</button>
@@ -65,12 +59,13 @@
                         <div class="panel-header">
                             <label class="panel-title" for="inputMacro" data-i18n="macro_converter_input">輸入巨集</label>
                             <div class="panel-actions">
-                                <button type="button" class="btn btn-secondary btn-sm" id="pasteInput" data-i18n="macro_converter_paste">貼上</button>
+                                <button type="button" class="btn btn-secondary btn-sm" id="pasteInput" disabled data-i18n="macro_converter_paste">貼上</button>
                                 <button type="button" class="btn btn-secondary btn-sm" id="clearInput" data-i18n="macro_converter_clear">清除</button>
                             </div>
                         </div>
-                        <!-- 提示字是三行範例（英文、日文、繁中各一行）。換行寫在屬性值裡，所以後兩行不縮排 -->
-                        <textarea id="inputMacro" class="form-control macro-textarea" rows="8" spellcheck="false" autocomplete="off"
+                        <!-- 提示字是三行範例（英文、日文、繁中各一行）。換行寫在屬性值裡，所以後兩行不縮排。
+                             一開始就是停用的：資料載入完 script.js 才拿掉（「貼上」同理） -->
+                        <textarea id="inputMacro" class="form-control macro-textarea" rows="8" spellcheck="false" autocomplete="off" disabled
 placeholder="/ac &quot;Muscle Memory&quot; &lt;wait.3&gt;
 /ac &quot;確信&quot; &lt;wait.3&gt;
 /ac &quot;堅信&quot; &lt;wait.3&gt;"></textarea>
@@ -80,12 +75,21 @@ placeholder="/ac &quot;Muscle Memory&quot; &lt;wait.3&gt;
                         <div class="panel-header">
                             <label class="panel-title" for="outputMacro" id="outputTitle">繁體中文</label>
                             <div class="panel-actions">
-                                <button type="button" class="btn btn-primary btn-sm" id="copyOutput" data-i18n="macro_converter_copy">複製</button>
+                                <!-- 沒有輸出時 aria-disabled（不用 disabled：按鈕變灰時焦點留在原地），script.js 依輸出加上或拿掉 -->
+                                <button type="button" class="btn btn-primary btn-sm" id="copyOutput" aria-disabled="true" data-i18n="macro_converter_copy">複製</button>
                             </div>
                         </div>
                         <!-- 要注意的行：沒有問題時整塊隱藏；不是 live region，螢幕閱讀器靠輸出框的 aria-describedby 讀到 -->
                         <ul id="macroWarnings" class="warning-message macro-warnings" role="list" hidden></ul>
-                        <textarea id="outputMacro" class="form-control macro-textarea" rows="8" spellcheck="false" autocomplete="off" readonly aria-describedby="macroWarnings"></textarea>
+                        <!-- 輸出框與載入中的提示在同一個容器裡：提示蓋在輸出框上面、不占版面，出現與收起時其他東西都不會移動 -->
+                        <div class="macro-output">
+                            <textarea id="outputMacro" class="form-control macro-textarea" rows="8" spellcheck="false" autocomplete="off" readonly aria-describedby="macroWarnings"></textarea>
+                            <!-- 資料載入中：script.js 在載入的期間拿掉 hidden -->
+                            <div id="loadingIndicator" class="loading" hidden>
+                                <div class="loading-spinner"></div>
+                                <p data-i18n="macro_converter_loading">載入翻譯資料中...</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

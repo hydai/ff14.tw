@@ -4,6 +4,8 @@
  * 轉換規則在 conversion-engine.js，這裡只管畫面：輸出框、輸出標題列（目標語言與行數）與要注意的行。
  * 目標語言預設繁體中文，改了就記在 localStorage；網站介面語言只影響介面文字，不改目標語言。
  * 每一次讀寫 localStorage 都包 try/catch，瀏覽器封鎖網站資料時照常運作，只是不記住。
+ * 資料（macro-mappings.json）載入完才轉得了：標記裡一開始就是載入中（輸入框與「貼上」停用、「複製」aria-disabled），
+ * 載入完拿掉停用；失敗時在工具最上面顯示錯誤與「重試」，控制項維持停用。事件一開始就綁好，其他按鈕與目標語言的選單沒有停用，所以載入前後都要能用。
  */
 class MacroConverter {
     static DATA_FILE = '../../data/macro-mappings.json';
@@ -12,6 +14,8 @@ class MacroConverter {
     static DEFAULT_TARGET_LANG = 'zh';
     // 遊戲裡一個巨集最多 15 行
     static MAX_MACRO_LINES = 15;
+    // 複製成功後，按鈕寫「✓ 已複製」的毫秒數
+    static COPIED_FEEDBACK_MS = 2000;
     // 輸出標題列的語言名稱（跟著網站介面語言）：目標語言 -> [翻譯鍵, 中文預設]
     static LANG_NAMES = {
         zh: ['macro_converter_lang_zh', '繁體中文'],
@@ -32,6 +36,9 @@ class MacroConverter {
         // kind 見 WARNINGS）。切換網站介面語言時照這份重畫標題列與要注意的行，不重轉、不動輸出框
         this.lineCount = 0;
         this.problems = [];
+        // 複製成功後按鈕暫時寫「✓ 已複製」：copied 是現在是不是這個狀態，copiedTimer 是變回來的計時
+        this.copied = false;
+        this.copiedTimer = null;
 
         this.elements = {
             inputMacro: document.getElementById('inputMacro'),
@@ -43,15 +50,17 @@ class MacroConverter {
             pasteInput: document.getElementById('pasteInput'),
             warnings: document.getElementById('macroWarnings'),
             loadingIndicator: document.getElementById('loadingIndicator'),
-            loadError: document.getElementById('loadError')
+            loadError: document.getElementById('loadError'),
+            retryLoad: document.getElementById('retryLoad')
         };
 
         this.elements.targetLang.value = this.readTargetLang();
-        // 切換網站介面語言：只換字（標題列、要注意的行、輸出框的提示字），目標語言與輸出都不動
+        this.bindEvents();
+        // 切換網站介面語言：只換字（標題列、要注意的行、複製鈕、輸出框的提示字），目標語言與輸出都不動
         window.i18n.onLanguageChange(() => this.renderStatus());
         this.renderStatus();
 
-        // ready：目前這一次載入完成（或失敗）之後 resolve
+        // ready：目前這一次載入完成（或失敗）之後 resolve；按「重試」時換成新的那一次
         this.ready = this.load();
     }
 
@@ -78,8 +87,12 @@ class MacroConverter {
 
     // ---------- 載入資料 ----------
 
+    // 每一次都從載入中開始：錯誤訊息收起、提示出現；成功就拿掉輸入框與「貼上」的停用，失敗就顯示錯誤。「重試」重新跑這一段
     async load() {
-        const { loadingIndicator, loadError } = this.elements;
+        const { loadingIndicator, loadError, inputMacro, pasteInput, retryLoad } = this.elements;
+        // 「重試」在錯誤訊息裡：按下去錯誤訊息收起來，按鈕跟著不見，鍵盤焦點會掉走，所以載入完要把焦點接住。
+        // 滑鼠點的時候焦點可能不在它上面（Safari 與 macOS 的 Firefox 點按鈕不給焦點），那就不去動焦點
+        const restoreFocus = loadError.contains(document.activeElement);
         loadError.hidden = true;
         loadingIndicator.hidden = false;
         try {
@@ -87,18 +100,22 @@ class MacroConverter {
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             this.engine = new ConversionEngine(await response.json());
         } catch {
+            // 失敗：輸入框與「貼上」維持停用，錯誤訊息與「重試」留在工具最上面；不留任何除錯訊息
             loadError.hidden = false;
+            if (restoreFocus) retryLoad.focus();
             return;
         } finally {
             loadingIndicator.hidden = true;
         }
-        this.bindEvents();
+        inputMacro.disabled = false;
+        pasteInput.disabled = false;
         // 瀏覽器可能在載入前就還原了輸入框的內容（上一頁、重新整理），載入完先轉一次
         this.convert();
+        if (restoreFocus) inputMacro.focus();
     }
 
     bindEvents() {
-        const { inputMacro, targetLang, copyOutput, clearInput, pasteInput } = this.elements;
+        const { inputMacro, targetLang, copyOutput, clearInput, pasteInput, retryLoad } = this.elements;
         // 打字、貼上、刪除都會觸發 input；改目標語言也立刻重轉，輸出不會停在舊的語言
         inputMacro.addEventListener('input', () => this.convert());
         targetLang.addEventListener('change', () => {
@@ -108,16 +125,23 @@ class MacroConverter {
         copyOutput.addEventListener('click', () => this.copyToClipboard());
         clearInput.addEventListener('click', () => this.clearInput());
         pasteInput.addEventListener('click', () => this.pasteFromClipboard());
+        retryLoad.addEventListener('click', () => { this.ready = this.load(); });
     }
 
     // ---------- 轉換 ----------
 
-    // 把輸入框現在的內容轉成目標語言（每一行自動判斷語言），再重畫標題列與要注意的行
+    // 把輸入框現在的內容轉成目標語言（每一行自動判斷語言），再重畫標題列與要注意的行。
+    // 資料還沒載入（載入中、載入失敗）時沒有東西可以轉：輸入框停用，所以通常也沒有輸入，瀏覽器還原的字等載入完再轉
     convert() {
         const input = this.elements.inputMacro.value;
-        const results = input.trim() ? this.engine.convert(input, this.elements.targetLang.value) : [];
+        const results = input.trim() && this.engine ? this.engine.convert(input, this.elements.targetLang.value) : [];
 
-        this.elements.outputMacro.value = results.map((result) => result.output).join('\n');
+        const output = results.map((result) => result.output).join('\n');
+        // 「✓ 已複製」說的是剛才複製的那一份輸出：輸出變了（打字、改目標語言、貼上、清除）它就不對了，馬上變回「複製」，
+        // 不等 2 秒（清除之後還寫著它，複製鈕卻是 aria-disabled，更奇怪）；輸出沒變（例如多打了空白，轉出來一樣）就留著
+        const changed = output !== this.elements.outputMacro.value;
+        this.elements.outputMacro.value = output;
+        if (changed && this.copied) this.resetCopied();
 
         // 行數只算到最後一個非空行：貼上的巨集結尾常帶著幾個空行，不能因此多跳「超過 15 行」
         let lineCount = results.length;
@@ -130,11 +154,24 @@ class MacroConverter {
         this.renderStatus();
     }
 
-    // 標題列、要注意的行與輸出框的提示字：這三樣會跟著網站介面語言換字，轉換的結果換了也要重畫
+    // 標題列、要注意的行、複製鈕與輸出框的提示字：這四樣會跟著網站介面語言換字，轉換的結果換了也要重畫
     renderStatus() {
         this.renderTitle();
         this.renderWarnings();
+        this.renderCopyButton();
         this.elements.outputMacro.placeholder = this.t('macro_converter_output_placeholder', '轉換結果會出現在這裡');
+    }
+
+    // 複製鈕：沒有輸出時 aria-disabled（不用 disabled：按鈕變灰時焦點留在原地）；複製成功後暫時寫「✓ 已複製」。
+    // 文字每次都照目前的狀態與介面語言重畫：切換語言時 I18nManager 會把有 data-i18n 的按鈕改回「複製」，這裡接著補回「✓ 已複製」
+    renderCopyButton() {
+        const { copyOutput, outputMacro } = this.elements;
+        const label = this.copied
+            ? this.t('macro_converter_copied_button', '✓ 已複製')
+            : this.t('macro_converter_copy', '複製');
+        if (copyOutput.textContent !== label) copyOutput.textContent = label;
+        if (outputMacro.value === '') copyOutput.setAttribute('aria-disabled', 'true');
+        else copyOutput.removeAttribute('aria-disabled');
     }
 
     // 「繁體中文・13 行」（英文是 Traditional Chinese · 13 lines）：語言名稱與行數中間的符號是每種語言自己的翻譯
@@ -179,34 +216,60 @@ class MacroConverter {
 
     // ---------- 按鈕 ----------
 
+    // 清除：清空輸入與輸出，焦點放回輸入框（玩家接著就是貼上或打字）
     clearInput() {
         this.elements.inputMacro.value = '';
         this.convert();
+        this.elements.inputMacro.focus();
     }
 
     async pasteFromClipboard() {
-        let text;
+        let text = '';
         try {
             text = await navigator.clipboard.readText();
-        } catch {
+        } catch { /* 讀不到：和下面「沒有字」一起處理 */ }
+        // 讀不到（玩家沒給權限、瀏覽器不支援），或讀到的是沒有字的東西（空字串、只有空白，例如複製的是圖片）：
+        // 輸入框一個字都不動（玩家已經有的字不能被換成空的，沒有復原），提示直接貼上，
+        // 焦點放進輸入框，玩家馬上能按 Ctrl+V 或長按
+        if (typeof text !== 'string' || !text.trim()) {
             FF14Utils.showToast(this.t('macro_converter_paste_error', '沒辦法讀取剪貼簿，請直接在框裡貼上（Ctrl+V 或長按）'), 'error');
+            this.elements.inputMacro.focus();
             return;
         }
-        // 程式改輸入框的值不會觸發 input 事件，所以自己轉
+        // 程式改輸入框的值不會觸發 input 事件，所以自己轉。成功時焦點留在「貼上」，不彈出手機的鍵盤
         this.elements.inputMacro.value = text;
         this.convert();
     }
 
     async copyToClipboard() {
+        // 沒有輸出時按鈕是 aria-disabled，click 照樣會送出，所以這裡自己擋
         const text = this.elements.outputMacro.value;
         if (!text) return;
         try {
             await navigator.clipboard.writeText(text);
         } catch {
             FF14Utils.showToast(this.t('macro_converter_copy_error', '複製失敗，請手動選取文字'), 'error');
+            // 「✓ 已複製」是成功的意思：2 秒內再按一次而這次失敗時，不能和失敗的 toast 同時出現，馬上變回「複製」
+            this.resetCopied();
             return;
         }
         FF14Utils.showToast(this.t('macro_converter_copied', '已複製'), 'success');
+        this.showCopied();
+    }
+
+    // 按鈕暫時寫「✓ 已複製」，2 秒後變回「複製」；期間再按一次，前一次的計時取消，重新算 2 秒
+    showCopied() {
+        clearTimeout(this.copiedTimer);
+        this.copied = true;
+        this.renderCopyButton();
+        this.copiedTimer = setTimeout(() => this.resetCopied(), MacroConverter.COPIED_FEEDBACK_MS);
+    }
+
+    // 變回「複製」並取消還沒到的計時：2 秒到了，或複製失敗的時候
+    resetCopied() {
+        clearTimeout(this.copiedTimer);
+        this.copied = false;
+        this.renderCopyButton();
     }
 }
 

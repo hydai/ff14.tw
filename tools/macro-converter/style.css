@@ -37,11 +37,7 @@
     padding: 0 0 var(--space-7);
 }
 
-/* 載入中、載入失敗：在工具最上面 */
-.tool-content .loading {
-    padding: var(--space-4);
-}
-
+/* 載入失敗：錯誤訊息與「重試」在工具最上面（只有失敗才出現，載入中的提示蓋在輸出框上，見 .macro-output） */
 .load-error {
     display: flex;
     flex-wrap: wrap;
@@ -119,6 +115,51 @@
     display: flex;
     gap: var(--space-2);
     margin-left: auto;
+}
+
+/* 「複製」與「✓ 已複製」是同一顆按鈕：最小寬度 10.5em（字級 14px 時是 147px）放得下三種語言裡最長的「✓ コピーしました」（145px），
+   換字時按鈕不變寬，靠右的左邊緣不會跳，標題列也不會在複製的那 2 秒換行、把輸出框往下推 */
+#copyOutput {
+    min-width: 10.5em;
+}
+
+/* 複製沒有輸出時：外觀照 .btn:disabled（半透明、not-allowed），但用 aria-disabled，按下去什麼都不做，按鈕變灰時焦點還在原地 */
+#copyOutput[aria-disabled="true"] {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+/* .btn 與 .btn-primary 的 hover／active 只排除 :disabled：這裡拿掉它們的底色變化、浮起與陰影，維持主要按鈕的底色 */
+#copyOutput[aria-disabled="true"]:hover,
+#copyOutput[aria-disabled="true"]:active {
+    background: var(--color-primary);
+    transform: none;
+    box-shadow: none;
+}
+
+/* 焦點還在這顆按鈕上，鍵盤焦點的外框照樣看得到 */
+#copyOutput[aria-disabled="true"]:focus-visible {
+    box-shadow: var(--ring-primary);
+}
+
+/* 輸出框與載入中的提示在同一個容器裡。提示蓋在輸出框上面（資料載入前輸出框本來就沒有東西可以看），所以它出現與收起都不占版面：
+   目標語言、輸入框、兩個標題列和下面的東西都不會移動，不會在載入的瞬間誤點到跳動中的按鈕。
+   容器像原本直接放在卡片裡的輸出框一樣吃滿卡片剩下的高度，兩個框一樣高 */
+.macro-output {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+}
+
+/* .loading 的內距是給整塊載入畫面用的，這裡只是輸出框大小的一塊，內距收小；底色與框線照唯讀的輸出框 */
+#loadingIndicator {
+    position: absolute;
+    inset: 0;
+    padding: var(--space-4);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-2);
 }
 
 /* 兩個框一樣高；列數寫在標記裡（rows），手機約 8 行 */

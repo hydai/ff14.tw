@@ -2,8 +2,9 @@
 // 這是輔助模組，不是測試檔（只有 tests/*.test.js 會被 node --test 執行）。作法照 tests/helpers/chocobo-page.js。
 //
 //   const { createMacroPage } = require('./helpers/macro-page.js');
-//   const page = await createMacroPage({ lang: 'en', stored: { ff14tw_macro_target_lang: 'ja' }, storageThrows: true, fetchResults: ['fail'] });
+//   const page = await createMacroPage({ lang: 'en', stored: { ff14tw_macro_target_lang: 'ja' }, storageThrows: true, fetchResults: ['fail'], clipboard: 'reject' });
 //   page.type('/ac "Muscle Memory" <wait.3>'); page.output(); page.outputTitle(); page.warnings(); page.setLang('ja'); page.toasts; page.consoleErrors;
+//   page.$('copyOutput').click(); await page.settle(); page.clipboard; page.pendingDelays(); page.runTimeouts();
 //   const again = await page.reopen();
 //
 // - 照 index.html 建出 #macroTool（mountFromHtml），照 index.html 的 <script src> 順序載入這個工具的翻譯檔與工具目錄自己的每一個腳本
@@ -24,6 +25,22 @@
 // - type(text)：把輸入框（#inputMacro）的值設成 text 並派送 input（打字、貼上、刪除都是這個事件）；
 //   output() 是輸出框（#outputMacro）的值，outputTitle() 是輸出標題列（#outputTitle）的文字，
 //   warnings() 是要注意的行（#macroWarnings）每個 li 的文字，整塊 hidden 時是 []
+// - clipboard：'ok'（預設）或 'reject'。navigator.clipboard 的 writeText() 與 readText() 都是 async：'ok' 時 writeText(text) 把 text 記在
+//   clipboard（寫入的每一筆，照順序）並成為剪貼簿目前的內容，readText() 回傳剪貼簿目前的內容；'reject' 時兩個都回傳被拒絕的 Promise
+//   （瀏覽器沒給權限或不支援），什麼都不記。clipboardMode 可讀可寫，是現在的模式（'ok' 或 'reject'；先成功、再失敗的情況在測試裡改它）。
+//   clipboardText 可讀可寫，是剪貼簿目前的內容（一開始是 ''；測試要「貼上」的字先寫在這裡，'ok' 時 readText() 就是回傳它：
+//   空字串、只有空白的字也一樣照實回傳，像複製的是圖片時 readText() 讀到的是空字串）
+// - setTimeout／clearTimeout 只記下、不真的計時（複製成功後按鈕暫時寫「✓ 已複製」用的是它）：runTimeouts() 把呼叫當下排著的
+//   （沒清掉、還沒跑過的）各跑一次，跑的時候新排的留到下一次；pendingDelays() 是排著的計時器的延遲毫秒數（沒清掉、還沒跑過的，照排的順序）。
+//   settle() 等 await 跑完（按鈕的 click 處理裡等剪貼簿的回答）
+// - fake-dom 的元素少了瀏覽器有的三樣東西，這份 document 建出來的每個元素（mountFromHtml 建的與頁面自己建的）都補上
+//   （只換這份 document 的 createElement，不動 fake-dom 的元素類別；換 createElement 一定要在 mountFromHtml 之前）：
+//   disabled 的元素 click() 什麼都不做（aria-disabled 的不算：瀏覽器照樣送出 click，要由頁面自己擋）；
+//   元素本身或祖先有 hidden（頁面都有寫 display: none）、或 disabled 的元素 focus() 什麼都不做（瀏覽器拿不到焦點；fake-dom 的 focus() 只檢查 inert）；
+//   hidden 設成 true 時，焦點在這個元素（或它的子孫）上就掉到 body（瀏覽器的行為；fake-dom 藏起來焦點照樣留著，
+//   「焦點回到某個元素」的測試就永遠不會失敗，例如重試鈕跟著錯誤訊息收起來之後）。disabled 設成 true 不模擬焦點掉走：
+//   頁面用 aria-disabled 的地方，測試直接檢查沒有 disabled。
+//   type() 不檢查輸入框能不能用：它只是派送 input 事件，要確認輸入框停用就直接看 disabled
 // - reopen(overrides)：用同一份 storage 的內容與目前的介面語言再開一次頁面，overrides 蓋掉其他選項（例如 fetchResults）
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -42,6 +59,7 @@ const TRANSLATIONS = 'assets/js/i18n/translations/tools/macro-converter.js';
 const PAGE_URL = 'https://ff14.tw/tools/macro-converter/index.html';
 const DATA_URL = '../../data/macro-mappings.json';
 const FETCH_RESULTS = ['ok', 'fail', 'pending'];
+const CLIPBOARD_MODES = ['ok', 'reject'];
 
 // 頁面裡每一個 <script> 開始標籤的 src，照出現的順序（同 chocobo-page.js）
 function scriptSources(html) {
@@ -57,16 +75,52 @@ const PAGE_SCRIPTS = scriptSources(PAGE_HTML)
     .filter((src) => !src.includes('/') || src === `../../${TRANSLATIONS}`)
     .map((src) => path.posix.join(TOOL_DIR, src));
 
-async function createMacroPage({ lang = 'zh', stored = {}, storageThrows = false, fetchResults = ['ok'] } = {}) {
+// fake-dom 的元素少了瀏覽器有的東西，建出來時補上（見檔頭說明）
+function addBrowserParts(element) {
+    const click = element.click.bind(element);
+    const focus = element.focus.bind(element);
+    element.click = () => {
+        if (element.disabled === true) return;
+        click();
+    };
+    element.focus = () => {
+        if (element.disabled === true) return;
+        for (let node = element; node && node.nodeType === 1; node = node.parentNode) if (node.hidden) return;
+        focus();
+    };
+    // 焦點所在的元素（或它的祖先）被藏起來時，瀏覽器把焦點丟掉，document.activeElement 變成 body。fake-dom 只看元素還在不在文件裡，
+    // 藏起來焦點照樣留著：那樣「藏起來、再顯示、把焦點放回去」的程式，拿掉放回去的那一行測試也不會失敗。所以 hidden 設成 true 時照瀏覽器做
+    // （瀏覽器其實是下一次繪製前才處理；頁面在 await 資料之後才再動焦點，所以這裡當下做也一樣）
+    const { get, set } = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(element), 'hidden');
+    Object.defineProperty(element, 'hidden', {
+        configurable: true,
+        get: () => get.call(element),
+        set: (value) => {
+            set.call(element, value);
+            const active = element.ownerDocument.activeElement;
+            if (value && element.contains(active)) active.blur();
+        }
+    });
+    return element;
+}
+
+async function createMacroPage({
+    lang = 'zh', stored = {}, storageThrows = false, fetchResults = ['ok'], clipboard = 'ok'
+} = {}) {
     assert.ok(fetchResults.length > 0 && fetchResults.every((result) => FETCH_RESULTS.includes(result)),
         `fetchResults 只能是 ${FETCH_RESULTS.join('、')}，而且至少一個`);
+    assert.ok(CLIPBOARD_MODES.includes(clipboard), `不認得的 clipboard：${clipboard}`);
+    let clipboardMode = clipboard;
     const dom = createFakeDom({ url: PAGE_URL });
     const win = dom.window;
     const storage = new Map(Object.entries(stored));
     const consoleErrors = [];
     const toasts = [];
+    const clipboardWrites = [];
+    const timeouts = [];
     const languageListeners = [];
     const translations = { zh: {}, en: {}, ja: {} };
+    let systemClipboard = '';
     let currentLang = lang;
     let fetchCount = 0;
     const lookup = (key) => [currentLang, 'zh'].map((l) => translations[l][key]).find((text) => text !== undefined);
@@ -80,10 +134,29 @@ async function createMacroPage({ lang = 'zh', stored = {}, storageThrows = false
         }
     };
 
+    // 這份 document 建出來的每個元素都補上 addBrowserParts()；一定要在 mountFromHtml 之前換
+    const createElement = dom.document.createElement.bind(dom.document);
+    dom.document.createElement = (tag) => addBrowserParts(createElement(tag));
+
     // 頁面的 console 不印到真的 console：log、error、warn 都照 Node 的 console 用 util.format() 寫成一筆字串記下來
     const record = (...args) => { consoleErrors.push(util.format(...args)); };
     Object.assign(win, {
         console: { log: record, error: record, warn: record },
+        setTimeout: (callback, delay) => { timeouts.push({ callback, delay, cleared: false, done: false }); return timeouts.length; },
+        clearTimeout: (id) => { if (timeouts[id - 1]) timeouts[id - 1].cleared = true; },
+        navigator: {
+            clipboard: {
+                writeText: async (text) => {
+                    if (clipboardMode === 'reject') throw new Error('NotAllowedError');
+                    clipboardWrites.push(text);
+                    systemClipboard = text;
+                },
+                readText: async () => {
+                    if (clipboardMode === 'reject') throw new Error('NotAllowedError');
+                    return systemClipboard;
+                }
+            }
+        },
         fetch: async (url) => {
             if (url !== DATA_URL) throw new Error(`createMacroPage 沒有準備 ${url}`);
             const result = fetchResults[Math.min(fetchCount, fetchResults.length - 1)];
@@ -143,6 +216,14 @@ async function createMacroPage({ lang = 'zh', stored = {}, storageThrows = false
         storage,
         toasts,
         consoleErrors,
+        clipboard: clipboardWrites,
+        get clipboardMode() { return clipboardMode; },
+        set clipboardMode(mode) {
+            assert.ok(CLIPBOARD_MODES.includes(mode), `不認得的 clipboard：${mode}`);
+            clipboardMode = mode;
+        },
+        get clipboardText() { return systemClipboard; },
+        set clipboardText(text) { systemClipboard = String(text); },
         $,
         type(text) {
             const input = $('inputMacro');
@@ -152,13 +233,22 @@ async function createMacroPage({ lang = 'zh', stored = {}, storageThrows = false
         output: () => $('outputMacro').value,
         outputTitle: () => $('outputTitle').textContent,
         warnings: () => ($('macroWarnings').hidden ? [] : $('macroWarnings').querySelectorAll('li').map((item) => item.textContent)),
+        runTimeouts() {
+            for (const timeout of [...timeouts]) {
+                if (timeout.cleared || timeout.done) continue;
+                timeout.done = true;
+                timeout.callback();
+            }
+        },
+        pendingDelays: () => timeouts.filter((timeout) => !timeout.cleared && !timeout.done).map((timeout) => timeout.delay),
+        settle: () => new Promise((resolve) => setImmediate(resolve)),
         setLang(next) {
             currentLang = next;
             translatePage();
             for (const listener of [...languageListeners]) listener(next);
         },
         reopen: (overrides = {}) => createMacroPage({
-            lang: currentLang, stored: Object.fromEntries(storage), storageThrows, fetchResults, ...overrides
+            lang: currentLang, stored: Object.fromEntries(storage), storageThrows, fetchResults, clipboard: clipboardMode, ...overrides
         })
     };
 }

@@ -21,6 +21,14 @@ const MUSCLE_MEMORY = '/ac "Muscle Memory" <wait.3>';
 // 一行有技能沒收錄（第 2 行）、一行指令不認得（第 3 行）的巨集
 const WITH_PROBLEMS = '/ac "Muscle Memory"\n/ac Final Appraisal <wait.2>\n/foo bar';
 
+// 比較元素一律用 ===：assert.equal 失敗時會展開整份 fake-dom 而卡住不報錯，改成 === 加訊息才報得出來（同 mini-cactpot-page.test.js）
+const isSame = (a, b, message) => assert.ok(a === b, message);
+// 翻譯檔每一種語言的字：toast 與按鈕的文字跟著網站介面語言，en、ja 的長句不在測試裡再寫一份
+const TEXT = Object.fromEntries(LANGS.map((lang) => [lang, translationValues(TRANSLATIONS, lang)]));
+const text = (lang, key) => TEXT[lang].get(key);
+// 全形空白（U+3000）：String.prototype.trim() 也把它當空白。用 fromCharCode 寫：看得出這一個字是什麼
+const IDEOGRAPHIC_SPACE = String.fromCharCode(0x3000);
+
 // 在 #targetLang 選一個語言並派送 change（同使用者操作下拉選單）
 function chooseTarget(page, lang) {
     const select = page.$('targetLang');
@@ -442,6 +450,618 @@ test('載入資料：載入中顯示 .loading，失敗時顯示錯誤，console 
     assert.equal(failed.$('loadError').querySelector('p').textContent, 'Failed to load the translation data. Press "Retry" to try again.');
     assert.deepEqual(failed.consoleErrors, []);
     assert.deepEqual(pending.consoleErrors, []);
+});
+
+test('輸入是空的時改目標語言：輸出還是空的，標題列只換語言名稱', async () => {
+    const page = await createMacroPage();
+    for (const target of ['en', 'ja', 'zh']) {
+        chooseTarget(page, target);
+        assert.equal(page.output(), '', `目標 ${target}：沒有輸入就沒有輸出`);
+        assert.equal(page.outputTitle(), { zh: '繁體中文', en: '英文', ja: '日文' }[target]);
+        assert.deepEqual(page.warnings(), []);
+        assert.equal(page.$('copyOutput').getAttribute('aria-disabled'), 'true', `目標 ${target}：還是沒有輸出可以複製`);
+    }
+    // 只有空白也一樣：不會變成一個沒有字的輸出
+    page.type('\n  \t\n');
+    chooseTarget(page, 'en');
+    assert.equal(page.output(), '');
+    assert.equal(page.outputTitle(), '英文');
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('複製：唯一的主要按鈕，沒有輸出時 aria-disabled，按了沒反應，有輸出才能按', async () => {
+    const page = await createMacroPage();
+    const copy = page.$('copyOutput');
+    assert.deepEqual(page.$('macroTool').querySelectorAll('.btn-primary').map((button) => button.id), ['copyOutput'], '整頁只有複製是主要按鈕');
+
+    // 沒有輸出：aria-disabled（不用 disabled：焦點留得在按鈕上），按了沒有任何反應
+    assert.equal(copy.getAttribute('aria-disabled'), 'true', '一打開還沒有輸出');
+    assert.ok(copy.disabled !== true, '用 aria-disabled，不用 disabled');
+    copy.focus();
+    copy.click();
+    await page.settle();
+    assert.deepEqual(page.clipboard, [], '沒有寫進剪貼簿');
+    assert.deepEqual(page.toasts, [], '沒有 toast');
+    assert.equal(copy.textContent, '複製', '按鈕文字不變');
+    assert.deepEqual(page.pendingDelays(), [], '沒有排任何計時');
+    isSame(page.document.activeElement, copy, '焦點還在按鈕上');
+
+    // 有輸出之後拿掉 aria-disabled；輸出又沒有了就回來（刪光、只有空白、按清除都算）
+    page.type(MUSCLE_MEMORY);
+    assert.equal(copy.getAttribute('aria-disabled'), null, '有輸出了');
+    page.type('');
+    assert.equal(copy.getAttribute('aria-disabled'), 'true', '輸入刪光');
+    page.type('\n  \t\n');
+    assert.equal(copy.getAttribute('aria-disabled'), 'true', '只有空白也沒有輸出');
+    page.type('/mlock');
+    assert.equal(copy.getAttribute('aria-disabled'), null);
+    page.$('clearInput').click();
+    assert.equal(copy.getAttribute('aria-disabled'), 'true', '按清除之後');
+    copy.click();
+    await page.settle();
+    assert.deepEqual(page.clipboard, []);
+    assert.deepEqual(page.toasts, []);
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('複製成功：寫入輸出、按鈕暫時寫「✓ 已複製」、跳 toast「已複製」，2 秒後按鈕變回「複製」', async () => {
+    const page = await createMacroPage();
+    const copy = page.$('copyOutput');
+    page.type(`${MUSCLE_MEMORY}\n/mlock`);
+    copy.focus();
+    copy.click();
+    await page.settle();
+    assert.deepEqual(page.clipboard, [page.output()], '寫進剪貼簿的就是輸出框裡的字');
+    assert.equal(page.output(), '/ac "堅信" <wait.3>\n/mlock');
+    assert.deepEqual(page.toasts, [{ message: '已複製', type: 'success' }]);
+    assert.equal(copy.textContent, '✓ 已複製');
+    assert.equal(copy.getAttribute('aria-disabled'), null, '複製之後照樣能按');
+    isSame(page.document.activeElement, copy, '焦點不動');
+    assert.deepEqual(page.pendingDelays(), [2000], '2 秒後變回來');
+
+    page.runTimeouts();
+    assert.equal(copy.textContent, '複製');
+    assert.deepEqual(page.pendingDelays(), []);
+    assert.equal(page.toasts.length, 1, 'toast 只在複製的時候跳一次，按鈕變回來不再跳');
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('複製：2 秒內再按一次，複製的還是現在的輸出，並重新算 2 秒', async () => {
+    const page = await createMacroPage();
+    const copy = page.$('copyOutput');
+    page.type(MUSCLE_MEMORY);
+    copy.click();
+    await page.settle();
+    assert.equal(copy.textContent, '✓ 已複製');
+    assert.deepEqual(page.pendingDelays(), [2000]);
+
+    // 輸出沒變、按鈕還寫著「✓ 已複製」時再按一次：再寫一次剪貼簿，而且再跳一次 toast
+    copy.click();
+    await page.settle();
+    assert.deepEqual(page.clipboard, ['/ac "堅信" <wait.3>', '/ac "堅信" <wait.3>']);
+    assert.equal(page.toasts.length, 2);
+    assert.equal(copy.textContent, '✓ 已複製');
+    // 前一次的計時取消了、重新排一個 2 秒的：只剩一個，跑下去只變回來一次（不然第一個計時會提早把按鈕變回來）
+    assert.deepEqual(page.pendingDelays(), [2000]);
+    page.runTimeouts();
+    assert.equal(copy.textContent, '複製');
+    assert.deepEqual(page.pendingDelays(), []);
+
+    // 輸出變了：按鈕馬上變回「複製」（見下一個測試），再按一次複製的是新的輸出，照常暫時寫「✓ 已複製」
+    page.type('/ac Innovation <wait.2>');
+    copy.click();
+    await page.settle();
+    assert.deepEqual(page.clipboard, ['/ac "堅信" <wait.3>', '/ac "堅信" <wait.3>', '/ac "改革" <wait.2>']);
+    assert.equal(page.toasts.length, 3);
+    assert.equal(copy.textContent, '✓ 已複製');
+    assert.deepEqual(page.pendingDelays(), [2000]);
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('複製之後輸出變了（改目標語言、打字、貼上、清除）：按鈕馬上變回「複製」，不等 2 秒', async () => {
+    const page = await createMacroPage();
+    const copy = page.$('copyOutput');
+    // 複製成功：按鈕寫「✓ 已複製」，排了 2 秒的計時
+    const copyNow = async () => {
+        copy.click();
+        await page.settle();
+        assert.equal(copy.textContent, '✓ 已複製', '複製成功');
+        assert.deepEqual(page.pendingDelays(), [2000]);
+    };
+    // 「✓ 已複製」說的是剛才複製的那一份輸出：輸出變了就不是它了，按鈕變回「複製」，前一次的計時也取消（之後不會再有計時去改按鈕）
+    const assertBack = (when) => {
+        assert.equal(copy.textContent, '複製', `${when}：按鈕變回「複製」`);
+        assert.deepEqual(page.pendingDelays(), [], `${when}：計時取消了`);
+    };
+
+    page.type(MUSCLE_MEMORY);
+    await copyNow();
+    chooseTarget(page, 'en');
+    assert.equal(page.output(), MUSCLE_MEMORY, '改目標語言之後輸出是英文，不是剛才複製的繁中');
+    assertBack('改目標語言');
+    assert.equal(copy.getAttribute('aria-disabled'), null, '還有輸出，複製還能按');
+
+    await copyNow();
+    page.type('/ac Innovation <wait.2>');
+    assertBack('打字');
+
+    await copyNow();
+    page.clipboardText = '/mlock';
+    page.$('pasteInput').click();
+    await page.settle();
+    assert.equal(page.output(), '/mlock', '貼上換掉了輸入與輸出');
+    assertBack('貼上');
+
+    // 清除：輸出清空，沒有東西可以複製，複製是 aria-disabled，不能同時寫「✓ 已複製」又不能按
+    await copyNow();
+    page.$('clearInput').click();
+    assert.equal(page.output(), '');
+    assertBack('清除');
+    assert.equal(copy.getAttribute('aria-disabled'), 'true', '沒有輸出了');
+
+    // 變回來的是現在的介面語言的「複製」；再打字、再複製照常
+    page.type('/mlock');
+    await copyNow();
+    page.setLang('ja');
+    assert.equal(copy.textContent, text('ja', 'macro_converter_copied_button'));
+    page.type('/merror off');
+    assert.equal(copy.textContent, text('ja', 'macro_converter_copy'), '日文介面：變回日文的「複製」');
+    assert.deepEqual(page.pendingDelays(), []);
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('複製之後輸出沒變（多打空白轉出來一樣、選同一個目標語言、切換網站介面語言）：按鈕還是「✓ 已複製」，計時照舊', async () => {
+    const page = await createMacroPage();
+    const copy = page.$('copyOutput');
+    page.type(MUSCLE_MEMORY);
+    copy.click();
+    await page.settle();
+    assert.equal(copy.textContent, '✓ 已複製');
+    assert.deepEqual(page.pendingDelays(), [2000]);
+
+    // 輸入換了，轉出來的輸出一樣（技能名後面多打幾個空白）：剛才複製的就是現在的輸出，按鈕與計時都不動
+    page.type('/ac "Muscle Memory"   <wait.3>');
+    assert.equal(page.output(), '/ac "堅信" <wait.3>', '輸出一樣');
+    assert.equal(copy.textContent, '✓ 已複製');
+    assert.deepEqual(page.pendingDelays(), [2000]);
+    // 選同一個目標語言：change 事件照樣送出，重轉出來一樣
+    chooseTarget(page, 'zh');
+    assert.equal(copy.textContent, '✓ 已複製');
+    assert.deepEqual(page.pendingDelays(), [2000]);
+    // 切換網站介面語言：輸出不變，按鈕換成那個語言的「✓ 已複製」，不是變回「複製」
+    page.setLang('en');
+    assert.equal(copy.textContent, text('en', 'macro_converter_copied_button'));
+    assert.deepEqual(page.pendingDelays(), [2000]);
+
+    // 2 秒到了才變回來
+    page.runTimeouts();
+    assert.equal(copy.textContent, text('en', 'macro_converter_copy'));
+    assert.deepEqual(page.pendingDelays(), []);
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('複製失敗：toast「複製失敗，請手動選取文字」，按鈕不變，輸出還在讓玩家自己選取', async () => {
+    const page = await createMacroPage({ clipboard: 'reject' });
+    const copy = page.$('copyOutput');
+    page.type(MUSCLE_MEMORY);
+    copy.click();
+    await page.settle();
+    assert.deepEqual(page.toasts, [{ message: '複製失敗，請手動選取文字', type: 'error' }]);
+    assert.deepEqual(page.clipboard, []);
+    assert.equal(copy.textContent, '複製', '失敗時按鈕不寫「已複製」');
+    assert.deepEqual(page.pendingDelays(), [], '也沒有排計時');
+    assert.equal(copy.getAttribute('aria-disabled'), null, '還能再試');
+    assert.equal(page.output(), '/ac "堅信" <wait.3>', '輸出還在');
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('複製失敗時「✓ 已複製」還沒變回來：按鈕馬上變回「複製」，前一次的計時取消', async () => {
+    const page = await createMacroPage();
+    const copy = page.$('copyOutput');
+    page.type(MUSCLE_MEMORY);
+    copy.focus();
+    copy.click();
+    await page.settle();
+    assert.equal(copy.textContent, '✓ 已複製');
+    assert.deepEqual(page.pendingDelays(), [2000]);
+
+    // 2 秒內再按一次，這次剪貼簿拒絕了：「✓ 已複製」是成功的意思，不能和失敗的 toast 同時出現，所以失敗的當下就變回「複製」
+    page.clipboardMode = 'reject';
+    copy.click();
+    await page.settle();
+    assert.deepEqual(page.toasts, [
+        { message: '已複製', type: 'success' },
+        { message: '複製失敗，請手動選取文字', type: 'error' }
+    ]);
+    assert.equal(copy.textContent, '複製', '不等 2 秒，失敗的當下就變回來');
+    assert.deepEqual(page.pendingDelays(), [], '前一次的計時取消了，之後不會再有計時去改按鈕');
+    assert.equal(copy.getAttribute('aria-disabled'), null, '還能再試');
+    isSame(page.document.activeElement, copy, '焦點不動');
+    assert.deepEqual(page.clipboard, [page.output()], '失敗的那一次沒有寫進剪貼簿');
+    page.runTimeouts();
+    assert.equal(copy.textContent, '複製', '沒有計時可跑，按鈕還是「複製」');
+
+    // 剪貼簿又能用了：照常暫時寫「✓ 已複製」、重新算 2 秒
+    page.clipboardMode = 'ok';
+    copy.click();
+    await page.settle();
+    assert.equal(copy.textContent, '✓ 已複製');
+    assert.deepEqual(page.pendingDelays(), [2000]);
+    page.runTimeouts();
+    assert.equal(copy.textContent, '複製');
+    assert.deepEqual(page.consoleErrors, []);
+
+    // 換成別的介面語言：失敗之後變回來的是那個語言的「複製」
+    const english = await createMacroPage({ lang: 'en' });
+    english.type(MUSCLE_MEMORY);
+    english.$('copyOutput').click();
+    await english.settle();
+    assert.equal(english.$('copyOutput').textContent, text('en', 'macro_converter_copied_button'));
+    english.clipboardMode = 'reject';
+    english.$('copyOutput').click();
+    await english.settle();
+    assert.equal(english.$('copyOutput').textContent, text('en', 'macro_converter_copy'));
+});
+
+test('複製與貼上的 toast、按鈕文字在剪貼簿的結果回來時才取字，用那時的網站介面語言', async () => {
+    for (const lang of ['en', 'ja']) {
+        // 一打開是中文，載入完才切換語言：文字要在用的時候（剪貼簿的結果回來時）才取，不能在建立頁面時就定下來
+        const copied = await createMacroPage();
+        copied.type(MUSCLE_MEMORY);
+        copied.setLang(lang);
+        copied.$('copyOutput').click();
+        await copied.settle();
+        assert.deepEqual(copied.toasts, [{ message: text(lang, 'macro_converter_copied'), type: 'success' }], lang);
+        assert.equal(copied.$('copyOutput').textContent, text(lang, 'macro_converter_copied_button'), `${lang}：複製之後`);
+        copied.runTimeouts();
+        assert.equal(copied.$('copyOutput').textContent, text(lang, 'macro_converter_copy'), `${lang}：變回來`);
+
+        // 「✓ 已複製」的 2 秒內切換語言：按鈕換成那個語言的「✓ 已複製」（不能被語言切換改回「複製」），變回來時也是新語言的「複製」
+        const during = await createMacroPage();
+        during.type(MUSCLE_MEMORY);
+        during.$('copyOutput').click();
+        await during.settle();
+        during.setLang(lang);
+        assert.equal(during.$('copyOutput').textContent, text(lang, 'macro_converter_copied_button'), `${lang}：2 秒內切換語言`);
+        during.runTimeouts();
+        assert.equal(during.$('copyOutput').textContent, text(lang, 'macro_converter_copy'), `${lang}：2 秒後`);
+
+        // 按下去之後、剪貼簿的結果回來之前切換語言（click 處理到 await 為止是同步的，結果在下一個微任務才回來）：
+        // toast 與按鈕用結果回來時的語言，不是按下去那一刻的
+        const between = await createMacroPage();
+        between.type(MUSCLE_MEMORY);
+        between.$('copyOutput').click();
+        between.setLang(lang);
+        await between.settle();
+        assert.deepEqual(between.toasts, [{ message: text(lang, 'macro_converter_copied'), type: 'success' }], `${lang}：結果回來時的語言`);
+        assert.equal(between.$('copyOutput').textContent, text(lang, 'macro_converter_copied_button'), `${lang}：按鈕也是`);
+
+        const rejected = await createMacroPage({ clipboard: 'reject' });
+        rejected.type(MUSCLE_MEMORY);
+        rejected.setLang(lang);
+        rejected.$('copyOutput').click();
+        rejected.$('pasteInput').click();
+        await rejected.settle();
+        assert.deepEqual(rejected.toasts, [
+            { message: text(lang, 'macro_converter_copy_error'), type: 'error' },
+            { message: text(lang, 'macro_converter_paste_error'), type: 'error' }
+        ], lang);
+        assert.deepEqual(rejected.consoleErrors, []);
+    }
+});
+
+test('貼上：讀到剪貼簿就放進輸入框並立刻轉換，不搶走焦點', async () => {
+    const page = await createMacroPage();
+    const paste = page.$('pasteInput');
+    // 輸入框裡本來有字（還有一條不認得的指令）：貼上整個換掉；從 Windows 的網頁複製的巨集是 \r\n 換行，結尾還帶著空行
+    page.type('/foo');
+    assert.equal(page.warnings().length, 1);
+    const clipboard = `${MUSCLE_MEMORY}\r\n/ac Innovation <wait.2>\r\n`;
+    page.clipboardText = clipboard;
+    paste.focus();
+    paste.click();
+    await page.settle();
+    assert.equal(page.$('inputMacro').value, clipboard, '放進輸入框的是剪貼簿原本的字');
+    assert.equal(page.output(), '/ac "堅信" <wait.3>\n/ac "改革" <wait.2>\n', '立刻轉換，輸出不帶 \\r');
+    assert.equal(page.outputTitle(), '繁體中文・2 行');
+    assert.deepEqual(page.warnings(), [], '原本的提醒不在了');
+    assert.equal(page.$('copyOutput').getAttribute('aria-disabled'), null, '有輸出了');
+    assert.deepEqual(page.toasts, [], '成功時沒有 toast');
+    isSame(page.document.activeElement, paste, '焦點還在貼上鈕上（不彈出手機的鍵盤）');
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('貼上讀不到剪貼簿：toast 提示直接貼上，焦點移到輸入框，輸入框原本的字不動', async () => {
+    const page = await createMacroPage({ clipboard: 'reject' });
+    const paste = page.$('pasteInput');
+    page.type(MUSCLE_MEMORY);
+    paste.focus();
+    paste.click();
+    await page.settle();
+    assert.deepEqual(page.toasts, [{ message: '沒辦法讀取剪貼簿，請直接在框裡貼上（Ctrl+V 或長按）', type: 'error' }]);
+    isSame(page.document.activeElement, page.$('inputMacro'), '焦點進輸入框，玩家馬上能按 Ctrl+V 或長按');
+    assert.equal(page.$('inputMacro').value, MUSCLE_MEMORY, '輸入框原本的字不動');
+    assert.equal(page.output(), '/ac "堅信" <wait.3>');
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('貼上時剪貼簿裡沒有字（空的、只有空白）：輸入框與輸出一個字都不動，和讀不到一樣提示直接貼上、焦點移到輸入框', async () => {
+    const page = await createMacroPage();
+    const paste = page.$('pasteInput');
+    // 玩家已經有的字不能被換成空的（沒有復原）：複製的是圖片時 readText() 讀到的是空字串
+    const typed = `${MUSCLE_MEMORY}\n/foo`;
+    page.type(typed);
+    const before = { output: page.output(), title: page.outputTitle(), warnings: page.warnings() };
+    assert.equal(before.warnings.length, 1, '輸入框裡有一條不認得的指令，才看得出提醒有沒有被洗掉');
+
+    // 空字串，空白、換行、tab、全形空白也一樣沒有字
+    const blanks = ['', ' ', '   ', '\n', '\r\n', ' \t\r\n ', IDEOGRAPHIC_SPACE, `\n${IDEOGRAPHIC_SPACE}\n`];
+    for (const [index, blank] of blanks.entries()) {
+        const label = JSON.stringify(blank);
+        page.clipboardText = blank;
+        paste.focus();
+        isSame(page.document.activeElement, paste, `${label}：按之前焦點在「貼上」上`);
+        paste.click();
+        await page.settle();
+        assert.equal(page.$('inputMacro').value, typed, `${label}：輸入框一個字都不動`);
+        assert.equal(page.output(), before.output, `${label}：輸出不動`);
+        assert.equal(page.outputTitle(), before.title, `${label}：標題列不動`);
+        assert.deepEqual(page.warnings(), before.warnings, `${label}：要注意的行不動`);
+        assert.equal(page.$('copyOutput').getAttribute('aria-disabled'), null, `${label}：輸出還在，複製還能按`);
+        isSame(page.document.activeElement, page.$('inputMacro'), `${label}：焦點移到輸入框，玩家馬上能按 Ctrl+V 或長按`);
+        assert.equal(page.toasts.length, index + 1, `${label}：跳一次 toast`);
+    }
+    // 提示和讀不到剪貼簿的時候是同一句（macro_converter_paste_error）
+    assert.deepEqual(page.toasts, blanks.map(() => ({ message: '沒辦法讀取剪貼簿，請直接在框裡貼上（Ctrl+V 或長按）', type: 'error' })));
+
+    // 有字就照樣整個換掉，前後的空白、結尾的空行原樣留著（只有「沒有字」才不貼）
+    const pasted = '/mlock\n\n';
+    page.clipboardText = pasted;
+    paste.focus();
+    paste.click();
+    await page.settle();
+    assert.equal(page.$('inputMacro').value, pasted, '貼上的字不 trim');
+    assert.equal(page.output(), '/mlock\n\n');
+    assert.equal(page.outputTitle(), '繁體中文・1 行');
+    assert.equal(page.toasts.length, blanks.length, '成功不再跳 toast');
+    isSame(page.document.activeElement, paste, '成功時焦點還在「貼上」');
+
+    // 輸入框本來就是空的，剪貼簿也沒有字：一樣提示、焦點進輸入框，輸入框還是空的
+    const empty = await createMacroPage();
+    empty.clipboardText = '';
+    empty.$('pasteInput').click();
+    await empty.settle();
+    assert.equal(empty.$('inputMacro').value, '');
+    assert.deepEqual(empty.toasts, [{ message: '沒辦法讀取剪貼簿，請直接在框裡貼上（Ctrl+V 或長按）', type: 'error' }]);
+    isSame(empty.document.activeElement, empty.$('inputMacro'));
+    assert.deepEqual(empty.consoleErrors, []);
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('清除：清空輸入與輸出，標題列只剩語言名稱，要注意的行收起來，焦點回到輸入框', async () => {
+    const page = await createMacroPage();
+    const clear = page.$('clearInput');
+    chooseTarget(page, 'ja');
+    // 18 行：第 1 行指令不認得，加上超過 15 行的提醒，兩條要注意的行
+    page.type(`/foo\n${macroLines(17)}`);
+    assert.equal(page.outputTitle(), '日文・18 行');
+    assert.equal(page.warnings().length, 2);
+    assert.equal(page.$('copyOutput').getAttribute('aria-disabled'), null);
+
+    clear.focus();
+    clear.click();
+    assert.equal(page.$('inputMacro').value, '');
+    assert.equal(page.output(), '');
+    assert.equal(page.outputTitle(), '日文', '行數拿掉，只剩語言名稱（目標語言不變）');
+    assert.equal(page.$('targetLang').value, 'ja');
+    assert.deepEqual(page.warnings(), []);
+    assert.equal(page.$('macroWarnings').hidden, true, '要注意的行整塊隱藏');
+    assert.equal(page.$('macroWarnings').querySelectorAll('li').length, 0, '舊的 li 不留');
+    assert.equal(page.$('copyOutput').getAttribute('aria-disabled'), 'true', '沒有輸出了');
+    isSame(page.document.activeElement, page.$('inputMacro'), '焦點回到輸入框');
+    assert.deepEqual(page.toasts, []);
+
+    // 輸入框已經是空的，再按一次也一樣，不丟錯
+    clear.click();
+    assert.equal(page.outputTitle(), '日文');
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('資料載入中：輸入框與貼上停用、複製 aria-disabled，提示看得到，目標語言的選單照常能用', async () => {
+    const page = await createMacroPage({ fetchResults: ['pending'] });
+    assert.equal(page.$('loadingIndicator').hidden, false, '載入中的提示看得到');
+    assert.equal(page.$('loadError').hidden, true);
+    assert.equal(page.$('inputMacro').disabled, true, '輸入框停用');
+    assert.equal(page.$('pasteInput').disabled, true, '貼上停用');
+    assert.equal(page.$('copyOutput').getAttribute('aria-disabled'), 'true', '複製 aria-disabled');
+    assert.ok(page.app.engine === null);
+    assert.equal(page.$('retryLoad').closest('#loadError').hidden, true, '「重試」跟著錯誤訊息藏著');
+
+    // 停用的按鈕按了什麼都不做；複製是 aria-disabled，click 照樣送出，由頁面自己擋
+    page.clipboardText = MUSCLE_MEMORY;
+    page.$('pasteInput').click();
+    page.$('copyOutput').click();
+    await page.settle();
+    assert.equal(page.$('inputMacro').value, '', '貼上沒有動作');
+    assert.deepEqual(page.clipboard, []);
+    assert.deepEqual(page.toasts, []);
+
+    // 目標語言的選單沒有停用，所以要照常運作：記住、標題列換成那個語言（載入完就用它轉換，見重試的測試）
+    assert.ok(page.$('targetLang').disabled !== true);
+    chooseTarget(page, 'en');
+    assert.equal(page.storage.get(KEY), 'en');
+    assert.equal(page.outputTitle(), '英文');
+    page.setLang('ja');
+    assert.equal(page.$('loadingIndicator').querySelector('p').textContent, text('ja', 'macro_converter_loading'), '切換語言時提示跟著換');
+    assert.deepEqual(page.consoleErrors, []);
+    assert.deepEqual(page.toasts, []);
+});
+
+test('資料載入失敗：最上面顯示錯誤與「重試」，輸入框與貼上停用，複製 aria-disabled，console 是空的', async () => {
+    const page = await createMacroPage({ fetchResults: ['fail'] });
+    assert.equal(page.$('loadError').hidden, false, '錯誤訊息看得到');
+    assert.equal(page.$('loadError').querySelector('p').textContent, '載入翻譯資料失敗，請按「重試」再試一次。');
+    assert.equal(page.$('retryLoad').textContent, '重試');
+    assert.equal(page.$('loadingIndicator').hidden, true, '載入中的提示收起來');
+    isSame(page.$('macroTool').firstElementChild, page.$('loadError'), '錯誤訊息在工具最上面');
+    assert.equal(page.$('inputMacro').disabled, true);
+    assert.equal(page.$('pasteInput').disabled, true);
+    assert.equal(page.$('copyOutput').getAttribute('aria-disabled'), 'true');
+
+    // 沒有資料就什麼都轉不了：複製、貼上沒有反應；選單改了語言照樣記住，輸入框裡就算有字（瀏覽器還原的）也不丟錯
+    page.clipboardText = MUSCLE_MEMORY;
+    page.$('pasteInput').click();
+    page.$('copyOutput').click();
+    page.$('inputMacro').value = '/ac Innovation <wait.2>';
+    chooseTarget(page, 'ja');
+    await page.settle();
+    assert.equal(page.$('inputMacro').value, '/ac Innovation <wait.2>', '貼上沒有動作');
+    assert.equal(page.output(), '', '沒有資料就沒有輸出');
+    assert.deepEqual(page.clipboard, []);
+    assert.equal(page.storage.get(KEY), 'ja');
+    assert.equal(page.outputTitle(), '日文');
+    assert.deepEqual(page.toasts, [], '失敗的訊息在頁面上，不跳 toast');
+    assert.deepEqual(page.consoleErrors, [], '失敗時不在 console 留東西');
+
+    // 切換介面語言：錯誤訊息與「重試」換字
+    page.setLang('ja');
+    assert.equal(page.$('loadError').querySelector('p').textContent, text('ja', 'macro_converter_load_error'));
+    assert.equal(page.$('retryLoad').textContent, text('ja', 'macro_converter_retry'));
+});
+
+test('按「重試」：重新載入，成功後錯誤收起、輸入框與貼上恢復、可以輸入並轉換，焦點移到輸入框', async () => {
+    const page = await createMacroPage({ fetchResults: ['fail', 'ok'] });
+    const first = page.app.ready;
+    // 失敗的時候改了目標語言；輸入框裡有字（沒有 input 事件，像瀏覽器還原的）：載入完要用得上
+    chooseTarget(page, 'en');
+    page.$('inputMacro').value = '/ac Innovation <wait.2>';
+    page.$('retryLoad').focus();
+    page.$('retryLoad').click();
+
+    // 載入中：錯誤收起來（重試鈕跟著不見）、提示出現、控制項維持停用；app.ready 換成這一次載入的 promise
+    assert.equal(page.$('loadError').hidden, true);
+    assert.equal(page.$('loadingIndicator').hidden, false);
+    assert.equal(page.$('inputMacro').disabled, true);
+    assert.equal(page.$('pasteInput').disabled, true);
+    assert.ok(page.app.ready !== first, 'app.ready 是這一次載入的 promise');
+    await page.app.ready;
+
+    assert.equal(page.$('loadError').hidden, true, '錯誤收起');
+    assert.equal(page.$('loadingIndicator').hidden, true);
+    assert.ok(page.app.engine, '資料載入了');
+    assert.equal(page.$('inputMacro').disabled, false);
+    assert.equal(page.$('pasteInput').disabled, false);
+    assert.equal(page.output(), '/ac "Innovation" <wait.2>', '輸入框裡原本的字用失敗時選的目標語言（英文）轉好了');
+    isSame(page.document.activeElement, page.$('inputMacro'), '重試鈕收起來，焦點移到輸入框');
+
+    page.type(MUSCLE_MEMORY);
+    assert.equal(page.output(), MUSCLE_MEMORY, '目標語言是英文');
+    chooseTarget(page, 'zh');
+    assert.equal(page.output(), '/ac "堅信" <wait.3>');
+    assert.equal(page.$('copyOutput').getAttribute('aria-disabled'), null, '有輸出，複製能按');
+    page.clipboardText = '/mlock';
+    page.$('pasteInput').click();
+    await page.settle();
+    assert.equal(page.$('inputMacro').value, '/mlock', '貼上也能用了');
+    assert.equal(page.output(), '/mlock');
+    assert.deepEqual(page.toasts, []);
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('按「重試」又失敗：錯誤訊息再出現、焦點回到「重試」，可以再按；滑鼠點的時候不去搶焦點', async () => {
+    const page = await createMacroPage({ fetchResults: ['fail', 'fail', 'ok'] });
+
+    // 第一次重試：載入的時候錯誤收起，又失敗就再出現，輸入框與貼上維持停用，焦點回到「重試」讓鍵盤能再按一次
+    page.$('retryLoad').focus();
+    page.$('retryLoad').click();
+    assert.equal(page.$('loadError').hidden, true, '載入中：錯誤收起');
+    assert.equal(page.$('loadingIndicator').hidden, false);
+    // 「重試」在錯誤訊息裡：錯誤訊息一收起來焦點就掉到頁面上（瀏覽器的行為，macro-page.js 照做）。
+    // 沒有這一步，焦點一直留在「重試」上，下面的「焦點回到「重試」」不管程式有沒有把焦點放回去都會過
+    isSame(page.document.activeElement, page.document.body, '「重試」跟著錯誤訊息收起來，焦點掉到頁面上');
+    await page.app.ready;
+    assert.equal(page.$('loadError').hidden, false, '又失敗：錯誤訊息再出現');
+    assert.equal(page.$('loadingIndicator').hidden, true);
+    assert.equal(page.$('inputMacro').disabled, true);
+    assert.equal(page.$('pasteInput').disabled, true);
+    assert.equal(page.$('copyOutput').getAttribute('aria-disabled'), 'true');
+    isSame(page.document.activeElement, page.$('retryLoad'), '焦點回到「重試」');
+    assert.deepEqual(page.consoleErrors, [], '再失敗也不在 console 留東西');
+    assert.deepEqual(page.toasts, []);
+
+    // 第二次重試成功
+    page.$('retryLoad').click();
+    await page.app.ready;
+    assert.equal(page.$('loadError').hidden, true);
+    assert.equal(page.$('inputMacro').disabled, false);
+    page.type(MUSCLE_MEMORY);
+    assert.equal(page.output(), '/ac "堅信" <wait.3>');
+
+    // 滑鼠點的時候焦點可能不在「重試」上（Safari 與 macOS 的 Firefox 點按鈕不給焦點）：載入完不去搶焦點
+    const mouse = await createMacroPage({ fetchResults: ['fail', 'ok'] });
+    mouse.$('retryLoad').click();
+    await mouse.app.ready;
+    isSame(mouse.document.activeElement, mouse.document.body, '焦點不在「重試」時，載入完也不移動焦點');
+    assert.equal(mouse.$('inputMacro').disabled, false);
+    assert.deepEqual(mouse.consoleErrors, []);
+});
+
+test('index.html：一開始就是載入中的狀態，載入中的提示蓋在輸出框上，錯誤訊息在工具最上面', async () => {
+    // 腳本還沒跑、資料還沒載入的時候就已經停用：輸入框與貼上 disabled；複製沒有輸出，aria-disabled（不用 disabled，焦點留得在按鈕上）
+    for (const id of ['inputMacro', 'pasteInput']) assert.match(openTag(id), /\sdisabled(?=[\s>])/, `#${id} 一開始就停用`);
+    assert.equal(tagAttrs(HTML, 'copyOutput')['aria-disabled'], 'true');
+    for (const id of ['copyOutput', 'clearInput', 'targetLang', 'outputMacro', 'retryLoad']) {
+        assert.doesNotMatch(openTag(id), /\sdisabled(?=[\s>])/, `#${id} 不停用`);
+    }
+
+    const page = await createMacroPage();
+    const loading = page.$('loadingIndicator');
+    // 錯誤訊息是工具的第一個元素（設計：錯誤在工具最上面）
+    isSame(page.$('macroTool').firstElementChild, page.$('loadError'), '#loadError 是 #macroTool 的第一個元素');
+    // 載入中的提示在輸出卡片裡、和輸出框同一個容器：它蓋在輸出框上，出現與收起時目標語言、輸入框與兩個標題列都不會移動
+    // （以前它是工具的第一個元素：每次打開頁面都出現在最上面再收起，整個版面跟著往下推再彈回來）
+    const outputCard = page.$('outputMacro').closest('.macro-panel');
+    assert.ok(outputCard.contains(loading), '在輸出卡片裡');
+    assert.ok(!page.$('inputMacro').closest('.macro-panel').contains(loading), '不在輸入卡片裡');
+    isSame(loading.parentNode, page.$('outputMacro').parentNode, '和輸出框同一個容器');
+    assert.ok(loading.parentNode.classList.contains('macro-output'));
+    assert.ok(!page.$('loadError').contains(loading), '不在錯誤訊息裡');
+    const at = (id) => HTML.indexOf(`id="${id}"`);
+    assert.ok(at('outputTitle') < at('loadingIndicator'), '在輸出卡片的標題列後面');
+    assert.ok(at('targetLang') < at('loadingIndicator') && at('inputMacro') < at('loadingIndicator'), '在目標語言與輸入框後面');
+    assert.ok(at('loadError') < at('targetLang'), '錯誤訊息在目標語言前面');
+});
+
+test('style.css：載入中的提示不占版面，複製鈕沒有輸出時看得出不能按', () => {
+    // 提示蓋在輸出框上面：容器 relative、提示 absolute 填滿它，出現與收起都不改變任何東西的位置與大小
+    const container = declarations('.macro-output');
+    assert.match(container, /position:\s*relative/);
+    assert.match(container, /display:\s*flex/);
+    assert.match(container, /flex-direction:\s*column/);
+    assert.match(container, /flex:\s*1 1 auto/, '像原本的輸出框一樣吃滿卡片剩下的高度，兩個框一樣高');
+    const loading = declarations('#loadingIndicator');
+    assert.match(loading, /position:\s*absolute/);
+    assert.match(loading, /inset:\s*0\s*;/);
+    assert.doesNotMatch(loading, /(?:^|[\s;])(?:margin|height|min-height)\s*:/, '蓋在上面，大小由容器決定');
+    assert.doesNotMatch(CSS, /\.tool-content \.loading/, '不再有「在工具最上面」的載入中樣式');
+
+    // 「複製」與「✓ 已複製」是同一顆按鈕：最小寬度 10.5em（字級 14px 時 147px）放得下三種語言裡最長的「✓ コピーしました」（145px），
+    // 換字時按鈕不變寬，標題列不會在複製的那 2 秒換行、把輸出框往下推（用 Chrome 量過：360×800、375×667、390×844 的三種介面語言，
+    // 正常與複製的狀態標題列高度、按鈕的位置與寬度完全一樣；沒有自動測試守住版面，這裡只守住規則）
+    assert.match(declarations('#copyOutput'), /(?:^|[\s;])min-width:\s*10\.5em\s*;/, '複製鈕的最小寬度');
+
+    // 沒有輸出時：外觀照 .btn:disabled（半透明、not-allowed），但用 aria-disabled（焦點留在按鈕上），
+    // 所以 .btn 與 .btn-primary 的 hover／active（只排除 :disabled）要拿掉底色變化、浮起與陰影，維持主要按鈕的底色
+    const off = declarations('#copyOutput[aria-disabled="true"]');
+    assert.match(off, /opacity:\s*0\.55\s*;/);
+    assert.match(off, /cursor:\s*not-allowed\s*;/);
+    for (const state of ['hover', 'active']) {
+        const rule = declarations(`#copyOutput[aria-disabled="true"]:${state}`);
+        assert.match(rule, /background:\s*var\(--color-primary\)\s*;/, `${state}：主要按鈕的底色不變`);
+        assert.match(rule, /transform:\s*none\s*;/, `${state}：不浮起`);
+        assert.match(rule, /box-shadow:\s*none\s*;/, `${state}：沒有陰影`);
+    }
+    assert.match(declarations('#copyOutput[aria-disabled="true"]:focus-visible'), /box-shadow:\s*var\(--ring-primary\)\s*;/, '鍵盤焦點的外框還在');
 });
 
 test('index.html：沒有轉換鈕與預設內容，說明與範圍文字，輸出框連到要注意的行', async () => {
