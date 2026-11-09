@@ -49,17 +49,16 @@
     font-size: var(--text-2xl);
 }
 
-.copyright-section h2::before {
-    content: "📄";
-    font-size: var(--text-xl);
-}
-
 .about-section p,
 .copyright-section p {
     margin-bottom: var(--space-5);
     line-height: var(--leading-relaxed);
-    text-align: justify;
     color: var(--color-text);
+}
+
+/* 版權聲明頁不左右對齊，中英混排會拉出大空隙；左右對齊只給關於頁 */
+.about-section p {
+    text-align: justify;
 }
 
 .about-section p:last-child,
@@ -93,14 +92,6 @@
     content: "👥";
 }
 
-.japanese-section h2::before {
-    content: "🌸";
-}
-
-.square-enix-copyright h2::before {
-    content: "©️";
-}
-
 .mission-section,
 .japanese-section {
     background: var(--color-warning-tint);
@@ -115,7 +106,6 @@
 .japanese-section p {
     font-size: var(--text-sm);
     font-style: italic;
-    text-align: center;
 }
 
 .vision-section,
@@ -138,10 +128,12 @@
     justify-content: center;
 }
 
+/* text-wrap: balance 讓手機上這一行斷在「FINAL FANTASY XIV」與「© SQUARE ENIX」之間，不從名字中間斷開；不支援的瀏覽器照舊 */
 .square-enix-copyright p {
     font-size: var(--text-lg);
     font-weight: var(--weight-semibold);
     text-align: center;
+    text-wrap: balance;
     color: var(--color-danger-text);
 }
 
@@ -205,8 +197,7 @@
         margin-bottom: var(--space-6);
     }
 
-    .about-section h2,
-    .copyright-section h2 {
+    .about-section h2 {
         flex-direction: column;
         gap: var(--space-2);
         font-size: var(--text-xl);
