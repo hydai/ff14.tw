@@ -651,6 +651,11 @@ textarea:focus {
     list-style: none;
 }
 
+/* 免責聲明的公司名稱與後半句整個留在同一行：手機上英文不會切成「Square」／「Enix」，日文不會剩「係」一個字 */
+.footer-nowrap {
+    white-space: nowrap;
+}
+
 /* 漢堡選單按鈕 */
 .hamburger {
     display: none;

@@ -91,8 +91,18 @@ test('沒有 i18n 時頁尾顯示 zh 文字', () => {
         ['修改紀錄', '回報問題 ↗', '關於', '版權聲明', 'GitHub ↗']
     );
 
+    // 免責聲明分成前半句、公司名稱、後半句三段翻譯：名稱與後半句是 span.footer-nowrap，手機上整個留在同一行
+    // （英文不會切成「Square」／「Enix」，日文不會剩「係」一個字）
     const disclaimer = container.querySelector('.footer-disclaimer');
-    assert.equal(disclaimer.getAttribute('data-i18n'), 'footer_copyright');
+    assert.ok(!disclaimer.hasAttribute('data-i18n'), '免責聲明的 data-i18n 要放在三段 span 上，不在 <p> 上');
+    assert.deepEqual(
+        disclaimer.children.map((part) => [part.tagName, part.getAttribute('data-i18n'), part.getAttribute('class'), part.textContent]),
+        [
+            ['SPAN', 'footer_copyright_prefix', null, '本站非官方網站，與 '],
+            ['SPAN', 'footer_copyright_name', 'footer-nowrap', 'Square Enix'],
+            ['SPAN', 'footer_copyright_suffix', 'footer-nowrap', ' 無關']
+        ]
+    );
     assert.equal(disclaimer.textContent, '本站非官方網站，與 Square Enix 無關');
 
     assert.equal(container.querySelector('.footer-se-copyright').textContent, SE_NOTICE);
@@ -138,13 +148,20 @@ test('切換語言時免責聲明換字，SQUARE ENIX 的標示原封不動', ()
     assert.equal(disclaimer.textContent, DISCLAIMERS.zh, '還沒切換語言時顯示 zh');
     assert.equal(seRow.textContent, SE_NOTICE);
 
+    const NAMES = { zh: 'Square Enix', en: 'Square Enix', ja: 'スクウェア・エニックス' };
     for (const lang of ['en', 'ja', 'zh']) {
         i18n.setLanguage(lang);
         assert.equal(i18n.getCurrentLanguage(), lang);
         assert.equal(disclaimer.textContent, DISCLAIMERS[lang], `切到 ${lang}，免責聲明要換成那個語言`);
+        assert.equal(disclaimer.querySelector('.footer-nowrap').textContent, NAMES[lang], `切到 ${lang}，公司名稱要整個在不換行的那一段裡`);
         // 每次切換之後重新從文件找：沿用一開始抓到的 seRow，那一列被拿掉之後它的字還在，測試照樣通過
         const row = dom.document.querySelector('.footer-se-copyright');
         assert.ok(row, `切到 ${lang}，頁尾的 SQUARE ENIX 標示不見了`);
         assert.equal(row.textContent, SE_NOTICE, `切到 ${lang}，SQUARE ENIX 的標示要原封不動`);
     }
+});
+
+test('免責聲明的公司名稱與後半句在手機上不換行：.footer-nowrap 是 white-space: nowrap', () => {
+    const css = fs.readFileSync(path.join(ROOT, 'assets/css/common.css'), 'utf8');
+    assert.match(css, /\.footer-nowrap\s*\{[^}]*white-space:\s*nowrap/, 'common.css 要有 .footer-nowrap { white-space: nowrap; }');
 });
