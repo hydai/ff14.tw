@@ -97,7 +97,10 @@ class MacroConverter {
         const { loadingIndicator, loadError, inputMacro, pasteInput, retryLoad } = this.elements;
         // 「重試」在錯誤訊息裡：按下去錯誤訊息收起來，按鈕跟著不見，鍵盤焦點會掉走，所以載入完要把焦點接住。
         // 滑鼠點的時候焦點可能不在它上面（Safari 與 macOS 的 Firefox 點按鈕不給焦點），那就不去動焦點
-        const restoreFocus = loadError.contains(document.activeElement);
+        const fromRetry = loadError.contains(document.activeElement);
+        // 載入的期間玩家可能已經自己移到別的地方（按 Tab 到目標語言的選單、點了「清除」）：載入完只在焦點還掉在頁面上（body）時才接住，
+        // 不然接著按的鍵會跑到搬過去的地方
+        const focusLost = () => fromRetry && (!document.activeElement || document.activeElement === document.body);
         loadError.hidden = true;
         loadingIndicator.hidden = false;
         try {
@@ -107,7 +110,7 @@ class MacroConverter {
         } catch {
             // 失敗：輸入框與「貼上」維持停用，錯誤訊息與「重試」留在工具最上面；不留任何除錯訊息
             loadError.hidden = false;
-            if (restoreFocus) retryLoad.focus();
+            if (focusLost()) retryLoad.focus();
             return;
         } finally {
             loadingIndicator.hidden = true;
@@ -116,7 +119,7 @@ class MacroConverter {
         pasteInput.disabled = false;
         // 瀏覽器可能在載入前就還原了輸入框的內容（上一頁、重新整理），載入完先轉一次
         this.convert();
-        if (restoreFocus) inputMacro.focus();
+        if (focusLost()) inputMacro.focus();
     }
 
     bindEvents() {

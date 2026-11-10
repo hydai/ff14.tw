@@ -1240,6 +1240,22 @@ test('按「重試」又失敗：錯誤訊息再出現、焦點回到「重試�
     assert.deepEqual(mouse.consoleErrors, []);
 });
 
+test('按「重試」之後、載入完之前自己移到別的地方（Tab 到目標語言、清除）：載入完不搶走焦點，成功與又失敗都一樣', async () => {
+    // 焦點掉到頁面上才接住：玩家已經移到別的控制項時，載入完把焦點搬到輸入框或「重試」，接著按的鍵就會跑到不對的地方
+    for (const [result, id] of [['ok', 'targetLang'], ['fail', 'targetLang'], ['ok', 'clearInput'], ['fail', 'clearInput']]) {
+        const page = await createMacroPage({ fetchResults: ['fail', result] });
+        page.$('retryLoad').focus();
+        page.$('retryLoad').click();
+        isSame(page.document.activeElement, page.document.body, `${result}：「重試」收起來，焦點掉到頁面上`);
+        page.$(id).focus();
+        isSame(page.document.activeElement, page.$(id), `${result}：載入的期間移到 #${id}`);
+        await page.app.ready;
+        assert.equal(page.$('loadError').hidden, result === 'ok', `${result}：載入${result === 'ok' ? '成功' : '又失敗'}了`);
+        isSame(page.document.activeElement, page.$(id), `${result}：焦點留在 #${id}`);
+        assert.deepEqual(page.consoleErrors, []);
+    }
+});
+
 test('index.html：一開始就是載入中的狀態，載入中的提示蓋在輸出框上，錯誤訊息在工具最上面', async () => {
     // 腳本還沒跑、資料還沒載入的時候就已經停用：輸入框與貼上 disabled；複製沒有輸出，aria-disabled（不用 disabled，焦點留得在按鈕上）
     for (const id of ['inputMacro', 'pasteInput']) assert.match(openTag(id), /\sdisabled(?=[\s>])/, `#${id} 一開始就停用`);
