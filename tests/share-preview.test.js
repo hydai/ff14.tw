@@ -1,9 +1,11 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const crypto = require('node:crypto');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const vm = require('node:vm');
+const zlib = require('node:zlib');
 const { spawnSync } = require('node:child_process');
 const { pathToFileURL } = require('node:url');
 
@@ -16,6 +18,8 @@ const importSite = async () => (siteModule ??= await import(pathToFileURL(path.j
 // loadSite() 只讀檔案、不改任何東西，整份測試共用一份結果（測試不得改動它）
 let siteCache = null;
 const loadSite = async () => (siteCache ??= (await importSite()).loadSite());
+let pngModule = null;
+const importPng = async () => (pngModule ??= await import(pathToFileURL(path.join(ROOT, 'scripts/share-preview/png.mjs')).href));
 
 // 設計文件「每一頁 <head> 多的一段」的範例（天氣預報）：16 行，含開頭、結尾註解，在 HTML 裡縮 4 格。
 // 設計文件原本的範例有 og:url 那一行，總審查之後每一頁都不寫（Facebook 把 og:url 當正式網址，分享連結的 ?room=、?maps=、#… 會被導回沒有狀態的頁面）
@@ -731,4 +735,392 @@ test('loadSite：有工具不在 TOOL_COLORS、token 不存在、頁面沒有說
         fs.writeFileSync(indexFile, index.replace(/ *tool_weather_forecast_desc: [^\n]*\n/, ''));
         assert.throws(() => load(dir), /tool_weather_forecast_desc/);
     });
+});
+
+// ---------- PNG 工具（scripts/share-preview/png.mjs） ----------
+
+const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+const MARK_PNG = 'assets/images/ui/mark.png';
+
+// 組一個區塊。CRC 用 Node 內建的 zlib.crc32，不用 png.mjs 自己算的表：兩邊算出來一樣才算對
+function pngChunk(type, data = Buffer.alloc(0)) {
+    const body = Buffer.concat([Buffer.from(type, 'latin1'), data]);
+    const length = Buffer.alloc(4);
+    length.writeUInt32BE(data.length);
+    const crc = Buffer.alloc(4);
+    crc.writeUInt32BE(zlib.crc32(body));
+    return Buffer.concat([length, body, crc]);
+}
+
+// 逐個區塊讀出來，同時檢查簽章、長度與每個區塊的 CRC（和 png.mjs 無關）
+function pngChunks(png) {
+    assert.deepEqual(png.subarray(0, 8), PNG_SIGNATURE, 'PNG 簽章');
+    const chunks = [];
+    let offset = 8;
+    while (offset < png.length) {
+        const length = png.readUInt32BE(offset);
+        const type = png.toString('latin1', offset + 4, offset + 8);
+        assert.equal(png.readUInt32BE(offset + 8 + length), zlib.crc32(png.subarray(offset + 4, offset + 8 + length)), `${type} 區塊的 CRC`);
+        chunks.push({ type, data: png.subarray(offset + 8, offset + 8 + length) });
+        offset += 12 + length;
+    }
+    assert.equal(offset, png.length, '區塊剛好排到檔案結尾');
+    return chunks;
+}
+
+// 照指定的內容組一個 PNG（不經過 png.mjs）。rows 是每一列「filter 位元組＋濾過的資料」；
+// before、after 是 IDAT 前後額外放的區塊；idatCount 把壓縮資料切成幾個 IDAT；idat 直接指定 IDAT 的內容
+function makePng({ width, height, colorType = 6, bitDepth = 8, interlace = 0, rows, level = 9, idatCount = 1, idat, before = [], after = [] }) {
+    const header = Buffer.alloc(13);
+    header.writeUInt32BE(width, 0);
+    header.writeUInt32BE(height, 4);
+    header.set([bitDepth, colorType, 0, 0, interlace], 8);
+    const compressed = idat ?? zlib.deflateSync(Buffer.concat(rows), { level });
+    const size = Math.ceil(compressed.length / idatCount);
+    const idats = [];
+    for (let offset = 0; offset < compressed.length; offset += size) idats.push(pngChunk('IDAT', compressed.subarray(offset, offset + size)));
+    return Buffer.concat([PNG_SIGNATURE, pngChunk('IHDR', header), ...before, ...idats, ...after, pngChunk('IEND')]);
+}
+// filter 全是 0（None）的列
+const plainRows = ({ width, height, channels, pixels }) => Array.from({ length: height }, (_, y) => Buffer.concat([Buffer.from([0]), pixels.subarray(y * width * channels, (y + 1) * width * channels)]));
+const textChunk = (keyword, value) => pngChunk('tEXt', Buffer.concat([Buffer.from(keyword, 'latin1'), Buffer.from([0]), Buffer.from(value, 'latin1')]));
+
+// 每一列用的 filter：把 IDAT 接起來解壓縮，取每一列的第一個位元組
+function filterTypesOf(png, { width, height, channels }) {
+    const raw = zlib.inflateSync(Buffer.concat(pngChunks(png).filter((chunk) => chunk.type === 'IDAT').map((chunk) => chunk.data)));
+    const stride = 1 + width * channels;
+    assert.equal(raw.length, stride * height, 'IDAT 解壓縮之後的長度');
+    return Array.from({ length: height }, (_, y) => raw[y * stride]);
+}
+
+// 固定種子的偽亂數位元組（測試資料，不是密碼用途）
+function lcgBytes(seed, length) {
+    let state = seed >>> 0;
+    const bytes = Buffer.alloc(length);
+    for (let i = 0; i < length; i++) {
+        state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
+        bytes[i] = state >>> 24;
+    }
+    return bytes;
+}
+
+// 7×5 的固定內容，每一列留給一種 filter（None、Sub、Up、Average、Paeth 各一列），所以每種 filter 都會被選到：
+//   第 0 列數值很小又不平滑（None）；第 1 列是由左到右的漸層（Sub）；第 2 列和第 1 列一樣（Up）；
+//   第 3 列的每個位元組恰好是左邊和上面的平均（Average 的差值全是 0）；
+//   第 4 列除了第一個像素比上面多 40，每個位元組都是 Paeth 的預測：前半段等於左邊、後半段等於上面，
+//   只有 Paeth 兩段都預測得到（Sub 在後半段、Up 在前半段都有差值）。第一個像素不加 40 的話整列會和第 3 列一模一樣，
+//   Up 也全是 0，同分時輸給編號小的 Up
+function filterFixture(channels) {
+    const [width, height] = [7, 5];
+    const stride = width * channels;
+    const pixels = Buffer.alloc(stride * height);
+    const paeth = (a, b, c) => {
+        const p = a + b - c;
+        const [pa, pb, pc] = [Math.abs(p - a), Math.abs(p - b), Math.abs(p - c)];
+        return pa <= pb && pa <= pc ? a : pb <= pc ? b : c;
+    };
+    const rule = [
+        ({ x }) => (x % 2) * 3,
+        ({ x, k }) => (40 + 50 * k + 9 * x) & 255,
+        ({ b }) => b,
+        ({ a, b }) => (a + b) >> 1,
+        ({ x, a, b, c }) => (x === 0 ? b + 40 : paeth(a, b, c)) & 255
+    ];
+    for (let y = 0; y < height; y++) {
+        for (let i = 0; i < stride; i++) {
+            const at = y * stride + i;
+            const a = i >= channels ? pixels[at - channels] : 0;
+            const b = y > 0 ? pixels[at - stride] : 0;
+            const c = y > 0 && i >= channels ? pixels[at - stride - channels] : 0;
+            pixels[at] = rule[y]({ x: Math.floor(i / channels), k: i % channels, a, b, c });
+        }
+    }
+    return { width, height, channels, pixels };
+}
+
+// 平滑的漸層，每 4 列一樣（有重複列），像螢幕截圖一樣壓得動
+function gradient(width, height, channels) {
+    const pixels = Buffer.alloc(width * height * channels);
+    for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+            const row = y - (y % 4);
+            pixels.set([x * 4, row * 5, (x + row) * 2, 255].slice(0, channels), (y * width + x) * channels);
+        }
+    }
+    return { width, height, channels, pixels };
+}
+
+// 另一個編碼器（ffmpeg 的 PNG 編碼器，不是 png.mjs）把同一張 7×5 RGB 圖（lcgBytes(20261110, 105)）各用一種固定的 filter 存出來的檔案：
+//   ffmpeg -f rawvideo -pix_fmt rgb24 -s 7x5 -i 圖.raw -frames:v 1 -c:v png -pred <none|sub|up|avg|paeth> 檔名.png
+// 用另一份實作存出來的檔案，才擋得住 png.mjs 的編碼與解碼算錯得一樣（那樣來回一趟還是會原樣回來，但別的程式讀不對）
+const FFMPEG_PNGS = {
+    none: 'iVBORw0KGgoAAAANSUhEUgAAAAcAAAAFCAIAAAAG+GGPAAAACXBIWXMAAAAAAAAAAQCEeRdzAAAAeUlEQVR4nAFuAJH/AHo9cVSLvxGTyNQRcJtv+R8MfvaE7wCFs6InSykpz3/XNkiQ5Y51LUL8oBgAu4zSSoXRp5vTfdRZZdbwjC3zQthtAMOOL/wyMMaLEAcHEXzycMbu3I9PNgCumfoGl0U30HjpqRl4BH6K/7HgXqOLYzaR5u6i8QAAAABJRU5ErkJggg==',
+    sub: 'iVBORw0KGgoAAAANSUhEUgAAAAcAAAAFCAIAAAAG+GGPAAAACXBIWXMAAAAAAAAAAQCEeRdzAAAAeUlEQVR4nAFuAJH/AXo9cdpOTr0ICcN+qMdeiYSdhdd4cQGFs6KimIcChFauZ8m5r0blSLSHc9YBu4zSj/n/XRYC1jmG6AKXJ1cDtqt6AcOOLzmkAcpZ4EF8AXXrX0r8bMlhWgGumfpY/ksxOTOy2aGPW2US+zNWX/KZNjWfhLRg3gAAAABJRU5ErkJggg==',
+    up: 'iVBORw0KGgoAAAANSUhEUgAAAAcAAAAFCAIAAAAG+GGPAAAACXBIWXMAAAAAAAAAAQCEeRdzAAAAeUlEQVR4nAFuAJH/AXo9cdpOTr0ICcN+qMdeiYSdhdd4cQILdjHTwGoYPLcDJdj1dpVWIcQGHCkCNtkwIzqofsxUpp4R1fFiFwCxRjhVAggCXbKtXx/wPYozuBccgDrB6U13yQLrC8sKZRVxRWjiogj8Eg7EEdVRD23zKS05BzdDpAAAAABJRU5ErkJggg==',
+    avg: 'iVBORw0KGgoAAAANSUhEUgAAAAcAAAAFCAIAAAAG+GGPAAAACXBIWXMAAAAAAAAAAQCEeRdzAAAAeUlEQVR4nAFuAJH/AXo9cdpOTr0ICcN+qMdeiYSdhdd4cQNIlWq7rHkNYAdZxtHXk+4etbxHSIADeTOB2RpUbvErvmzM3/p9H6xafnLoA2ZIxnapsPUlj2ZY3UaE8EJfKwtskgNNUuMxMrDRP07KPtXGNzrrhgRUtzBPpTQMlF+BOQAAAABJRU5ErkJggg==',
+    paeth: 'iVBORw0KGgoAAAANSUhEUgAAAAcAAAAFCAIAAAAG+GGPAAAACXBIWXMAAAAAAAAAAQCEeRdzAAAAeUlEQVR4nAFuAJH/AXo9cdpOTr0ICcN+qMdeiYSdhdd4cQQLdjHTmGoYhFYDJdj1dpVWvsQGHJoENtkwxTqoXcwCpp7a6PFiJwBlRjh6BAgCXbKtAcpZ4GAzAXXrgDrBbANhyQTrC8sKZUsxOUjiHqGPEg7E+9VWD21cMi8r6zAMswAAAABJRU5ErkJggg=='
+};
+// 第一列上面沒有東西，ffmpeg 在 up、avg、paeth 時第一列改用 sub
+const FFMPEG_FILTERS = { none: [0, 0, 0, 0, 0], sub: [1, 1, 1, 1, 1], up: [1, 2, 2, 2, 2], avg: [1, 3, 3, 3, 3], paeth: [1, 4, 4, 4, 4] };
+// mark.png 的像素（27×29 RGBA，3,132 位元組）的 SHA-256：
+//   ffmpeg -i assets/images/ui/mark.png -f rawvideo -pix_fmt rgba - | shasum -a 256   （ImageMagick 的 magick … -depth 8 rgba:- 算出來一樣）
+const MARK_PIXELS_SHA256 = 'dcec6fce9473df2282a93bb8e83e32c0f01a585e0665285f892d4212e8fde07f';
+
+test('readPngInfo：assets/images/ui/mark.png 是 27×29，沒有文字區塊', async () => {
+    const { readPngInfo } = await importPng();
+    const info = readPngInfo(fs.readFileSync(path.join(ROOT, MARK_PNG)));
+    assert.equal(info.width, 27);
+    assert.equal(info.height, 29);
+    assert.ok(info.text instanceof Map);
+    assert.equal(info.text.size, 0);
+});
+
+test('readPngInfo：調色盤的圖也讀得出尺寸；好幾個 tEXt（IDAT 前後都有）依序讀成 Map，文字是 Latin-1', async () => {
+    const { readPngInfo } = await importPng();
+    const png = makePng({
+        width: 3,
+        height: 2,
+        colorType: 3,
+        rows: [Buffer.alloc(4), Buffer.alloc(4)],
+        before: [pngChunk('PLTE', Buffer.alloc(3)), textChunk('Title', 'caf\u00e9'), textChunk('Empty', '')],
+        after: [textChunk('ff14tw-source', 'abc')]
+    });
+    const info = readPngInfo(png);
+    assert.equal(info.width, 3);
+    assert.equal(info.height, 2);
+    assert.deepEqual([...info.text], [['Title', 'caf\u00e9'], ['Empty', ''], ['ff14tw-source', 'abc']]);
+});
+
+test('readPngInfo：IEND 後面多出來的位元組不管；tEXt 裡 keyword 後面沒有 NUL 就丟錯', async () => {
+    const { readPngInfo, decodePng, encodePng } = await importPng();
+    const image = filterFixture(3);
+    const png = Buffer.concat([encodePng(image), Buffer.from('extra bytes after IEND')]);
+    assert.equal(readPngInfo(png).width, 7);
+    assert.deepEqual(decodePng(png), image);
+    const noSeparator = makePng({ ...image, colorType: 2, rows: plainRows(image), before: [pngChunk('tEXt', Buffer.from('no separator'))] });
+    assert.throws(() => readPngInfo(noSeparator), /tEXt/);
+});
+
+test('PNG 檔壞掉時 readPngInfo、decodePng、withTextChunk 都丟錯：簽章不對、被截斷、CRC 不符', async () => {
+    const { encodePng, readPngInfo, decodePng, withTextChunk } = await importPng();
+    const good = encodePng(filterFixture(4));
+    const flipped = Buffer.from(good);
+    flipped[8 + 25 + 8] ^= 0xff; // 簽章 8 個位元組、IHDR 區塊 25 個、IDAT 的長度與類型 8 個之後，是壓縮資料的第一個位元組
+    const cases = [
+        ['空的', Buffer.alloc(0), /簽章/],
+        ['不是 PNG', Buffer.from('GIF89a, definitely not a png'), /簽章/],
+        ['只有簽章', good.subarray(0, 8), /截斷/],
+        ['IDAT 讀到一半', good.subarray(0, 40), /截斷/],
+        ['少了 IEND', good.subarray(0, good.length - 12), /截斷/],
+        ['第一個區塊不是 IHDR', Buffer.concat([PNG_SIGNATURE, pngChunk('IEND')]), /IHDR/],
+        ['壓縮資料裡有一個位元組不對', flipped, /CRC/]
+    ];
+    const actions = { readPngInfo, decodePng, withTextChunk: (png) => withTextChunk(png, 'k', 'v') };
+    for (const [action, run] of Object.entries(actions)) {
+        for (const [name, png, message] of cases) assert.throws(() => run(png), message, `${action}：${name}`);
+    }
+});
+
+test('encodePng → decodePng：RGB 與 RGBA 的像素原樣回來，五種 filter 都被選到、也都解得回來', async () => {
+    const { encodePng, decodePng } = await importPng();
+    for (const channels of [3, 4]) {
+        const image = filterFixture(channels);
+        const png = encodePng(image);
+        // 每一列各用一種 filter（五列、五種）；同分取編號小的（第 0 列 None 和 Up 一樣好，第 1 列 Sub 和 Paeth 一樣好，第 2 列 Up 和 Paeth 一樣好）
+        assert.deepEqual(filterTypesOf(png, image), [0, 1, 2, 3, 4], `${channels} 色版`);
+        assert.deepEqual(decodePng(png), image, `${channels} 色版`);
+    }
+});
+
+test('encodePng → decodePng：寬或高只有 1 像素、隨機內容也原樣回來', async () => {
+    const { encodePng, decodePng } = await importPng();
+    for (const [width, height] of [[1, 1], [1, 6], [6, 1], [2, 2], [3, 5], [13, 11]]) {
+        for (const channels of [3, 4]) {
+            const image = { width, height, channels, pixels: lcgBytes(width * 100 + height, width * height * channels) };
+            assert.deepEqual(decodePng(encodePng(image)), image, `${width}×${height}、${channels} 色版`);
+        }
+    }
+});
+
+test('encodePng：filter 的差值當成有號數比大小（往下降的漸層選 Sub，不選 None）', async () => {
+    const { encodePng, decodePng } = await importPng();
+    // 一列 7 個像素，每個色版由 100、90、80 開始每個像素降 3：Sub 的差值是 -3（位元組 253），當成有號數的絕對值只有 3，
+    // 當成 0～255 的數字加起來（100 + 6 × 253）卻比 None（637）大很多
+    const pixels = Buffer.alloc(7 * 3);
+    for (let x = 0; x < 7; x++) pixels.set([100 - 3 * x, 90 - 3 * x, 80 - 3 * x], x * 3);
+    const image = { width: 7, height: 1, channels: 3, pixels };
+    const png = encodePng(image);
+    assert.deepEqual(filterTypesOf(png, image), [1]);
+    assert.deepEqual(decodePng(png), image);
+});
+
+test('encodePng：輸出是格式正確的 PNG（簽章、IHDR、一個 IDAT、IEND、每個區塊的 CRC），同樣的圖編出同樣的位元組', async () => {
+    const { encodePng } = await importPng();
+    const image = filterFixture(4);
+    const png = encodePng(image);
+    const chunks = pngChunks(png); // 簽章、長度與每個區塊的 CRC 都在這裡用 zlib.crc32 檢查過
+    assert.deepEqual(chunks.map((chunk) => chunk.type), ['IHDR', 'IDAT', 'IEND']);
+    // IHDR：寬 7、高 5、8 位元、color type 6（RGBA）、壓縮方法 0、filter 方法 0、不交錯
+    assert.deepEqual([...chunks[0].data], [0, 0, 0, 7, 0, 0, 0, 5, 8, 6, 0, 0, 0]);
+    assert.equal(png.subarray(-12).toString('hex'), '0000000049454e44ae426082', 'IEND 的 12 個位元組是固定的');
+    assert.equal(chunks[1].data[1] >> 6, 3, 'zlib 資料第二個位元組的壓縮等級旗標是 3（level 7～9；預設的 level 6 是 2）');
+    assert.equal(pngChunks(encodePng(filterFixture(3)))[0].data[9], 2, 'RGB 的 color type 是 2');
+    assert.deepEqual(encodePng(image), png);
+});
+
+test('encodePng：尺寸、色版數或像素長度不對就丟錯', async () => {
+    const { encodePng } = await importPng();
+    const ok = { width: 2, height: 2, channels: 4, pixels: Buffer.alloc(16) };
+    assert.doesNotThrow(() => encodePng(ok));
+    const cases = [
+        [{ ...ok, pixels: Buffer.alloc(15) }, /像素有 15 個位元組/],
+        [{ ...ok, channels: 2 }, /channels/],
+        [{ ...ok, channels: 1 }, /channels/],
+        [{ ...ok, width: 0, pixels: Buffer.alloc(0) }, /寬和高/],
+        [{ ...ok, height: 1.5 }, /寬和高/],
+        [{ ...ok, width: -2 }, /寬和高/]
+    ];
+    for (const [image, message] of cases) assert.throws(() => encodePng(image), message, JSON.stringify({ ...image, pixels: image.pixels.length }));
+});
+
+test('recompressPng：一張 RGBA PNG 壓過之後像素不變、檔案變小，原本的 tEXt 與其他附屬區塊不帶過來', async () => {
+    const { recompressPng, encodePng, decodePng, readPngInfo, SOURCE_KEYWORD } = await importPng();
+    const image = gradient(64, 48, 4);
+    // 輸入：沒壓縮（zlib level 0）、每一列 filter 都是 None，還有舊的 tEXt 與 pHYs
+    const input = makePng({ ...image, rows: plainRows(image), level: 0, before: [pngChunk('pHYs', Buffer.alloc(9))], after: [textChunk(SOURCE_KEYWORD, 'stale')] });
+    assert.equal(readPngInfo(input).text.get(SOURCE_KEYWORD), 'stale', '輸入帶著舊的 tEXt');
+    assert.deepEqual(decodePng(input), image, '輸入本身是一張解得開的圖');
+
+    const output = recompressPng(input);
+    assert.ok(output.length < input.length / 2, `壓過之後 ${output.length} 個位元組，輸入有 ${input.length} 個`);
+    assert.deepEqual(decodePng(output), image, '像素不變');
+    assert.equal(readPngInfo(output).text.size, 0, '舊的 tEXt 不帶過來');
+    assert.deepEqual(pngChunks(output).map((chunk) => chunk.type), ['IHDR', 'IDAT', 'IEND']);
+    assert.deepEqual(output, encodePng(decodePng(input)), 'recompressPng 就是 encodePng(decodePng(…))');
+});
+
+test('withTextChunk：寫進去讀得回來；同一個 keyword 寫兩次只留最後一個；別的 keyword 不動；圖片照樣解得開', async () => {
+    const { withTextChunk, readPngInfo, decodePng, encodePng, SOURCE_KEYWORD } = await importPng();
+    assert.equal(SOURCE_KEYWORD, 'ff14tw-source');
+    const image = filterFixture(4);
+    const png = encodePng(image);
+    const original = Buffer.from(png);
+    const hash = crypto.createHash('sha256').update('source').digest('hex');
+
+    const tagged = withTextChunk(png, SOURCE_KEYWORD, hash);
+    assert.equal(readPngInfo(tagged).text.get(SOURCE_KEYWORD), hash);
+    assert.deepEqual(decodePng(tagged), image, '圖片照樣解得開');
+    assert.deepEqual(png, original, '傳進去的 Buffer 沒被改');
+
+    // 新的 tEXt 在 IEND 前面；其他區塊（尤其是壓縮好的 IDAT）一個位元組都沒動，不重新壓縮
+    const chunks = pngChunks(tagged);
+    assert.deepEqual(chunks.map((chunk) => chunk.type), ['IHDR', 'IDAT', 'tEXt', 'IEND']);
+    assert.deepEqual(tagged.subarray(0, png.length - 12), png.subarray(0, png.length - 12));
+    assert.deepEqual(tagged.subarray(-12), png.subarray(-12));
+
+    // 同一個 keyword 寫兩次：只留最後一個
+    const twice = withTextChunk(withTextChunk(png, SOURCE_KEYWORD, 'old'), SOURCE_KEYWORD, 'new');
+    assert.deepEqual(pngChunks(twice).map((chunk) => chunk.type), ['IHDR', 'IDAT', 'tEXt', 'IEND']);
+    assert.deepEqual([...readPngInfo(twice).text], [[SOURCE_KEYWORD, 'new']]);
+    assert.deepEqual(decodePng(twice), image);
+
+    // 別的 keyword 留著（順序不變），舊的同名 tEXt 不論在 IDAT 前面或後面都拿掉
+    const messy = makePng({ ...image, colorType: 6, rows: plainRows(image), before: [textChunk(SOURCE_KEYWORD, 'before IDAT'), textChunk('Title', 'caf\u00e9')], after: [textChunk(SOURCE_KEYWORD, 'after IDAT'), textChunk('Comment', 'kept')] });
+    const cleaned = withTextChunk(messy, SOURCE_KEYWORD, 'fresh');
+    assert.deepEqual(pngChunks(cleaned).map((chunk) => chunk.type), ['IHDR', 'tEXt', 'IDAT', 'tEXt', 'tEXt', 'IEND']);
+    assert.deepEqual([...readPngInfo(cleaned).text], [['Title', 'caf\u00e9'], ['Comment', 'kept'], [SOURCE_KEYWORD, 'fresh']]);
+    assert.deepEqual(decodePng(cleaned), image);
+});
+
+test('withTextChunk：keyword 或文字不合 PNG 的規定（不是字串、空的、太長、前後或連續的空格、含 NUL、不是 Latin-1）就丟錯', async () => {
+    const { withTextChunk, readPngInfo, encodePng } = await importPng();
+    const png = encodePng(filterFixture(3));
+    for (const keyword of ['', 'a'.repeat(80), ' lead', 'trail ', 'two  spaces', 'nul\0in', '中文', undefined, 42]) {
+        assert.throws(() => withTextChunk(png, keyword, 'x'), /keyword/, String(keyword));
+    }
+    for (const text of ['nul\0in', '中文', undefined, 42]) assert.throws(() => withTextChunk(png, 'k', text), /Latin-1/, String(text));
+    // 規定內的邊界：79 個字元的 keyword、keyword 中間有單一空格、空的文字、Latin-1 的字
+    const written = withTextChunk(png, `${'a'.repeat(39)} ${'b'.repeat(39)}`, '');
+    assert.equal(readPngInfo(written).text.get(`${'a'.repeat(39)} ${'b'.repeat(39)}`), '');
+    assert.equal(readPngInfo(withTextChunk(png, 'Author', 'Ren\u00e9')).text.get('Author'), 'Ren\u00e9');
+});
+
+test('decodePng：調色盤（color type 3）、灰階、16 位元、交錯的 PNG 丟錯，說明哪裡不支援', async () => {
+    const { decodePng } = await importPng();
+    // 每個情況都是結構完整的 PNG（資料長度照一般排法對得上），只有 IHDR 的這個欄位不被支援：解碼器看到 IHDR 就該拒絕
+    const blank = (width, height, bytesPerPixel) => Array.from({ length: height }, () => Buffer.alloc(1 + width * bytesPerPixel));
+    const cases = [
+        ['調色盤', { colorType: 3, rows: blank(2, 2, 1), before: [pngChunk('PLTE', Buffer.alloc(6))] }, /調色盤.*color type 3/],
+        ['灰階', { colorType: 0, rows: blank(2, 2, 1) }, /灰階.*color type 0/],
+        ['灰階加透明', { colorType: 4, rows: blank(2, 2, 2) }, /灰階加透明.*color type 4/],
+        ['16 位元的 RGB', { colorType: 2, bitDepth: 16, rows: blank(2, 2, 6) }, /16 位元/],
+        ['16 位元的 RGBA', { colorType: 6, bitDepth: 16, rows: blank(2, 2, 8) }, /16 位元/],
+        ['交錯的 RGBA', { colorType: 6, interlace: 1, rows: blank(2, 2, 4) }, /交錯/]
+    ];
+    for (const [name, options, message] of cases) {
+        assert.throws(() => decodePng(makePng({ width: 2, height: 2, ...options })), message, name);
+    }
+    // 對照：同樣的做法組出來的 8 位元、不交錯的 RGB 與 RGBA 解得開
+    assert.equal(decodePng(makePng({ width: 2, height: 2, colorType: 2, rows: blank(2, 2, 3) })).channels, 3);
+    assert.equal(decodePng(makePng({ width: 2, height: 2, colorType: 6, rows: blank(2, 2, 4) })).channels, 4);
+});
+
+test('decodePng：像素資料解不開、長度不對、filter 類型不認得時丟錯', async () => {
+    const { decodePng } = await importPng();
+    const row = (type) => Buffer.from([type, 1, 2, 3, 4, 5, 6]); // RGB 兩個像素的一列
+    assert.throws(() => decodePng(makePng({ width: 2, height: 3, colorType: 2, rows: [row(0), row(0)] })), /像素資料.*長度/, '只有 2 列卻說有 3 列');
+    assert.throws(() => decodePng(makePng({ width: 2, height: 1, colorType: 2, rows: [row(0), row(0)] })), /像素資料.*長度/, '有 2 列卻說只有 1 列');
+    assert.throws(() => decodePng(makePng({ width: 2, height: 1, colorType: 2, rows: [row(5)] })), /第 1 列.*filter/, 'filter 5 不存在');
+    assert.throws(() => decodePng(makePng({ width: 2, height: 1, colorType: 2, idat: Buffer.from('this is not zlib data') })), /像素資料.*解不開/, 'IDAT 不是 zlib');
+});
+
+test('decodePng：另一個編碼器（ffmpeg）用 none、sub、up、avg、paeth 各存一次的同一張圖，都解出原本的像素', async () => {
+    const { decodePng } = await importPng();
+    const expected = { width: 7, height: 5, channels: 3, pixels: lcgBytes(20261110, 7 * 5 * 3) };
+    for (const [name, base64] of Object.entries(FFMPEG_PNGS)) {
+        const png = Buffer.from(base64, 'base64');
+        assert.deepEqual(filterTypesOf(png, expected), FFMPEG_FILTERS[name], `${name} 的檔案用的 filter`);
+        assert.deepEqual(decodePng(png), expected, name);
+    }
+});
+
+test('decodePng：assets/images/ui/mark.png（Sub、Up、Average、Paeth 混用的 RGBA，還帶 iCCP 等附屬區塊）解出的像素和 ffmpeg、ImageMagick 的一樣', async () => {
+    const { decodePng } = await importPng();
+    const png = fs.readFileSync(path.join(ROOT, MARK_PNG));
+    assert.deepEqual([...new Set(filterTypesOf(png, { width: 27, height: 29, channels: 4 }))].sort(), [1, 2, 3, 4], '這張圖用到的 filter');
+    const image = decodePng(png);
+    assert.deepEqual([image.width, image.height, image.channels], [27, 29, 4]);
+    assert.equal(crypto.createHash('sha256').update(image.pixels).digest('hex'), MARK_PIXELS_SHA256, '換了 mark.png 就照 MARK_PIXELS_SHA256 上面的指令重算');
+});
+
+test('decodePng：第一列用 Up、Average、Paeth 時，上面和左邊沒有東西的位置當作 0', async () => {
+    const { decodePng } = await importPng();
+    // RGB 兩個像素的一列，用手算：
+    //   Up：上面是 0，原樣
+    //   Average：第二個像素是 差值 + floor(左邊 / 2)（上面是 0），200 + 125 = 325，減 256 是 69；6 + 10 = 16；7 + 15 = 22
+    //   Paeth：上面和左上都是 0，預測永遠是左邊（pa = 0），200 + 250 = 450，減 256 是 194；6 + 20 = 26；7 + 30 = 37
+    const cases = [
+        ['Up', 2, [10, 20, 30, 40, 50, 60], [10, 20, 30, 40, 50, 60]],
+        ['Average', 3, [250, 20, 30, 200, 6, 7], [250, 20, 30, 69, 16, 22]],
+        ['Paeth', 4, [250, 20, 30, 200, 6, 7], [250, 20, 30, 194, 26, 37]]
+    ];
+    for (const [name, type, filtered, expected] of cases) {
+        const image = decodePng(makePng({ width: 2, height: 1, colorType: 2, rows: [Buffer.from([type, ...filtered])] }));
+        assert.deepEqual([...image.pixels], expected, name);
+    }
+});
+
+test('decodePng：像素資料分在好幾個 IDAT、前後夾著不認得的附屬區塊時照樣解得開', async () => {
+    const { decodePng } = await importPng();
+    const image = filterFixture(3);
+    const png = makePng({
+        ...image,
+        colorType: 2,
+        rows: plainRows(image),
+        idatCount: 4,
+        before: [pngChunk('caBX', Buffer.from('not used')), pngChunk('pHYs', Buffer.alloc(9))],
+        after: [pngChunk('eXIf', Buffer.alloc(14))]
+    });
+    assert.equal(pngChunks(png).filter((chunk) => chunk.type === 'IDAT').length, 4);
+    assert.deepEqual(decodePng(png), image);
 });
