@@ -58,15 +58,13 @@ function contrast(a, b) {
 // 這個檔案的職責就是彙整元件，允許 @import components/*.css
 const IMPORT_ALLOWED = new Set(['assets/css/tools-common.css']);
 
-// 自動列舉 assets/css 與 tools/*/ 底下所有 .css；只有角色卡的卡片成品樣式例外
+// 自動列舉 assets/css 與 tools/*/ 底下所有 .css，每一個都要守 token 規則（沒有例外：角色卡的卡片現在畫在 canvas 上，配色在 card-renderer.js）
 function listAllCssFiles() {
     const out = [...listFiles('assets/css', ['.css']), ...listFiles('tools', ['.css'])];
     return out.sort();
 }
 
-// 卡片成品是使用者自訂的畫面，不隨主題變色、不受 token 規則約束（見該檔頂部註解）
-const TOKEN_CLEAN_EXCLUDE = new Set(['tools/character-card/card-templates.css']);
-const TOKEN_CLEAN_FILES = listAllCssFiles().filter((file) => !TOKEN_CLEAN_EXCLUDE.has(file));
+const TOKEN_CLEAN_FILES = listAllCssFiles();
 
 // 只有 tokens.css 可以定義 [data-theme] 規則
 const DARK_RULES_ALLOWED = new Set(['assets/css/tokens.css']);

@@ -25,12 +25,12 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../../assets/css/tokens.css">
     <link rel="stylesheet" href="../../assets/css/common.css">
     <link rel="stylesheet" href="../../assets/css/tools-common.css">
     <link rel="stylesheet" href="../../assets/css/components/language-switcher.css">
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="card-templates.css">
 </head>
 <body>
     <div id="header-placeholder" data-base-path="../../" data-tool-name="角色卡產生器" data-tool-name-key="char_card_header"></div>
@@ -45,278 +45,215 @@
 
     <main class="main">
         <div class="container">
-            <h1 class="visually-hidden" data-i18n="char_card_header">角色卡產生器</h1>
-            <div class="tool-container">
-                <div class="preview-section">
-                    <div id="characterCard" class="character-card layout-horizontal">
-                        <div class="card-background" id="cardBackground">
-                            <img id="backgroundImage" class="background-image" style="display: none;">
+            <!-- 電腦（769px 以上）：左邊表單、右邊預覽（sticky），五組欄位都看得到，沒有分頁列。
+                 手機（768px 以下）：預覽排在最上面（sticky），下面是分頁與目前分頁的表單（script.js 用 hidden 切換面板）。
+                 DOM 的順序是說明、分頁、表單、預覽（電腦的由左到右）；手機用 style.css 的 order 把預覽排到上面 -->
+            <div class="editor" id="cardTool">
+                <h1 class="visually-hidden" data-i18n="char_card_header">角色卡產生器</h1>
+                <p class="description editor-lead" id="cardLead" data-i18n="char_card_lead">填名字、伺服器和主職就能下載；其他都是選填。</p>
+
+                <!-- 手機的分頁（WAI-ARIA 分頁）：script.js 切換 aria-selected、tabindex、.active 與面板的 hidden，
+                     左右方向鍵移動並切換、Home／End 到第一個／最後一個；電腦版由 style.css 藏起來 -->
+                <div class="tabs editor-tabs" id="cardTabs" role="tablist" aria-label="欄位分組" data-i18n="char_card_tabs_label" data-i18n-attr="aria-label">
+                    <button type="button" class="tab active" id="tab-basic" role="tab" data-tab="basic" aria-selected="true" aria-controls="panel-basic" tabindex="0" data-i18n="char_card_tab_basic">基本</button>
+                    <button type="button" class="tab" id="tab-profile" role="tab" data-tab="profile" aria-selected="false" aria-controls="panel-profile" tabindex="-1" data-i18n="char_card_tab_profile">名片</button>
+                    <button type="button" class="tab" id="tab-play" role="tab" data-tab="play" aria-selected="false" aria-controls="panel-play" tabindex="-1" data-i18n="char_card_tab_play">怎麼玩</button>
+                    <button type="button" class="tab" id="tab-image" role="tab" data-tab="image" aria-selected="false" aria-controls="panel-image" tabindex="-1" data-i18n="char_card_tab_image">圖片</button>
+                    <button type="button" class="tab" id="tab-style" role="tab" data-tab="style" aria-selected="false" aria-controls="panel-style" tabindex="-1" data-i18n="char_card_tab_style">樣式</button>
+                </div>
+
+                <!-- 表單永遠不送出（script.js 擋掉 submit）；autocomplete="off"：瀏覽器重新整理時不要把欄位還原成和記住的內容對不上的字，欄位的值一律由 script.js 照記憶填。
+                     伺服器、主職的選項與其他職業的按鈕由 script.js 照共用的 assets/js/ff14-game-data.js 畫 -->
+                <form class="editor-form" id="cardForm" novalidate autocomplete="off">
+                    <section class="card editor-panel" id="panel-basic" role="tabpanel" aria-labelledby="tab-basic" tabindex="-1">
+                        <h2 class="editor-panel-title" data-i18n="char_card_panel_basic">基本資料（必填）</h2>
+                        <div class="form-group">
+                            <div class="field-head">
+                                <label class="form-label required" for="cardName" data-i18n="char_card_name_label">角色名稱</label>
+                                <span class="field-count" id="cardNameCount">0／21</span>
+                            </div>
+                            <input type="text" class="form-control" id="cardName" maxlength="21" aria-required="true" aria-describedby="cardNameCount" spellcheck="false" placeholder="Luna Starweaver" data-i18n="char_card_name_placeholder" data-i18n-attr="placeholder">
                         </div>
-                        <div class="card-content">
-                            <!-- 橫版布局 -->
-                            <div class="horizontal-layout">
-                                <div class="business-card-layout">
-                                    <div class="character-section">
-                                        <div class="name-row">
-                                            <div class="name-info">
-                                                <h2 class="character-name">角色名稱</h2>
-                                                <span class="job-name">職業</span>
-                                                <div class="info-line">
-                                                    <span class="character-title">稱號</span>
-                                                    <span class="separator">•</span>
-                                                    <span class="company-name">---</span>
-                                                    <span class="separator">•</span>
-                                                    <span class="server-name">伺服器</span>
-                                                </div>
-                                            </div>
-                                            <div class="job-icon">⚔️</div>
-                                        </div>
+                        <div class="form-group">
+                            <label class="form-label required" for="cardWorld" data-i18n="char_card_world_label">伺服器</label>
+                            <select class="form-control" id="cardWorld" aria-required="true"></select>
+                        </div>
+                        <div class="form-group" id="cardWorldCustomGroup" hidden>
+                            <div class="field-head">
+                                <label class="form-label" for="cardWorldCustom" data-i18n="char_card_world_custom_label">自己輸入的伺服器名稱</label>
+                                <span class="field-count" id="cardWorldCustomCount">0／20</span>
+                            </div>
+                            <input type="text" class="form-control" id="cardWorldCustom" maxlength="20" aria-describedby="cardWorldCustomCount" spellcheck="false">
+                        </div>
+                        <div class="field-row field-row-job">
+                            <div class="form-group">
+                                <label class="form-label required" for="cardMainJob" data-i18n="char_card_job_label">主職</label>
+                                <select class="form-control" id="cardMainJob" aria-required="true"></select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="cardLevel" data-i18n="char_card_level_label">等級</label>
+                                <input type="number" class="form-control" id="cardLevel" min="1" max="100" step="1" inputmode="numeric">
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="card editor-panel" id="panel-profile" role="tabpanel" aria-labelledby="tab-profile" tabindex="-1">
+                        <h2 class="editor-panel-title" data-i18n="char_card_panel_profile">名片資訊</h2>
+                        <div class="form-group">
+                            <div class="field-head">
+                                <span class="form-label" id="cardSubJobsLabel" data-i18n="char_card_subjobs_label">其他職業</span>
+                                <span class="field-count" id="cardSubJobsCount">0／3</span>
+                            </div>
+                            <div class="chip-group" id="cardSubJobs" role="group" aria-labelledby="cardSubJobsLabel"></div>
+                        </div>
+                        <div class="form-group">
+                            <div class="field-head">
+                                <label class="form-label" for="cardTitle" data-i18n="char_card_title_label">稱號</label>
+                                <span class="field-count" id="cardTitleCount">0／30</span>
+                            </div>
+                            <input type="text" class="form-control" id="cardTitle" maxlength="30" aria-describedby="cardTitleCount" placeholder="例：光之戰士" data-i18n="char_card_title_placeholder" data-i18n-attr="placeholder">
+                        </div>
+                        <div class="field-row field-row-fc">
+                            <div class="form-group">
+                                <div class="field-head">
+                                    <label class="form-label" for="cardFcName" data-i18n="char_card_fc_name_label">部隊名稱</label>
+                                    <span class="field-count" id="cardFcNameCount">0／20</span>
+                                </div>
+                                <input type="text" class="form-control" id="cardFcName" maxlength="20" aria-describedby="cardFcNameCount" spellcheck="false">
+                            </div>
+                            <div class="form-group">
+                                <div class="field-head">
+                                    <label class="form-label" for="cardFcTag" data-i18n="char_card_fc_tag_label">部隊簡稱</label>
+                                    <span class="field-count" id="cardFcTagCount">0／5</span>
+                                </div>
+                                <input type="text" class="form-control" id="cardFcTag" maxlength="5" aria-describedby="cardFcTagCount" spellcheck="false">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="cardGc" data-i18n="char_card_gc_label">大國防聯軍</label>
+                            <select class="form-control" id="cardGc">
+                                <option value="" data-i18n="char_card_gc_none">不填</option>
+                                <option value="maelstrom" data-i18n="char_card_gc_maelstrom">黑渦團</option>
+                                <option value="twinAdder" data-i18n="char_card_gc_twin_adder">雙蛇黨</option>
+                                <option value="immortalFlames" data-i18n="char_card_gc_immortal_flames">不滅隊</option>
+                            </select>
+                        </div>
+
+                        <h2 class="editor-panel-title editor-panel-title-next" data-i18n="char_card_panel_about">自我介紹與聯絡</h2>
+                        <div class="form-group">
+                            <div class="field-head">
+                                <label class="form-label" for="cardIntro" data-i18n="char_card_intro_label">一句話自我介紹</label>
+                                <span class="field-count" id="cardIntroCount">0／60</span>
+                            </div>
+                            <textarea class="form-control" id="cardIntro" rows="2" maxlength="60" aria-describedby="cardIntroCount" placeholder="例：想找一起打零式的固定隊" data-i18n="char_card_intro_placeholder" data-i18n-attr="placeholder"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <div class="field-head">
+                                <label class="form-label" for="cardContact" data-i18n="char_card_contact_label">聯絡方式（選填）</label>
+                                <span class="field-count" id="cardContactCount">0／40</span>
+                            </div>
+                            <input type="text" class="form-control" id="cardContact" maxlength="40" aria-describedby="cardContactCount" spellcheck="false" placeholder="例：Discord：luna_star" data-i18n="char_card_contact_placeholder" data-i18n-attr="placeholder">
+                        </div>
+                    </section>
+
+                    <section class="card editor-panel" id="panel-play" role="tabpanel" aria-labelledby="tab-play" tabindex="-1">
+                        <h2 class="editor-panel-title" data-i18n="char_card_panel_play">怎麼玩</h2>
+                        <div class="form-group">
+                            <span class="form-label" id="cardHoursLabel" data-i18n="char_card_hours_label">遊玩時段</span>
+                            <!-- 2 列（平日、假日）× 4 欄（早上、下午、晚上、深夜）：每個勾選框的名稱（「平日 晚上」）由 script.js 照介面語言寫在 aria-label -->
+                            <div class="hours-field" id="cardHours" role="group" aria-labelledby="cardHoursLabel">
+                                <div class="hours-day">
+                                    <span class="hours-day-name" data-i18n="char_card_day_weekday">平日</span>
+                                    <div class="hours-slots">
+                                        <label class="hours-slot"><input type="checkbox" class="form-check-input" id="hours-weekday-morning" value="weekday-morning"><span data-i18n="char_card_slot_morning">早上</span></label>
+                                        <label class="hours-slot"><input type="checkbox" class="form-check-input" id="hours-weekday-afternoon" value="weekday-afternoon"><span data-i18n="char_card_slot_afternoon">下午</span></label>
+                                        <label class="hours-slot"><input type="checkbox" class="form-check-input" id="hours-weekday-evening" value="weekday-evening"><span data-i18n="char_card_slot_evening">晚上</span></label>
+                                        <label class="hours-slot"><input type="checkbox" class="form-check-input" id="hours-weekday-lateNight" value="weekday-lateNight"><span data-i18n="char_card_slot_late_night">深夜</span></label>
+                                    </div>
+                                </div>
+                                <div class="hours-day">
+                                    <span class="hours-day-name" data-i18n="char_card_day_weekend">假日</span>
+                                    <div class="hours-slots">
+                                        <label class="hours-slot"><input type="checkbox" class="form-check-input" id="hours-weekend-morning" value="weekend-morning"><span data-i18n="char_card_slot_morning">早上</span></label>
+                                        <label class="hours-slot"><input type="checkbox" class="form-check-input" id="hours-weekend-afternoon" value="weekend-afternoon"><span data-i18n="char_card_slot_afternoon">下午</span></label>
+                                        <label class="hours-slot"><input type="checkbox" class="form-check-input" id="hours-weekend-evening" value="weekend-evening"><span data-i18n="char_card_slot_evening">晚上</span></label>
+                                        <label class="hours-slot"><input type="checkbox" class="form-check-input" id="hours-weekend-lateNight" value="weekend-lateNight"><span data-i18n="char_card_slot_late_night">深夜</span></label>
                                     </div>
                                 </div>
                             </div>
+                            <span class="form-text" data-i18n="char_card_hours_hint">早上 6–12 點、下午 12–18 點、晚上 18–24 點、深夜 0–6 點</span>
+                        </div>
+                        <div class="form-group">
+                            <div class="field-head">
+                                <span class="form-label" id="cardLikesLabel" data-i18n="char_card_likes_label">喜歡的內容</span>
+                                <span class="field-count" id="cardLikesCount">0／6</span>
+                            </div>
+                            <div class="chip-group" id="cardLikes" role="group" aria-labelledby="cardLikesLabel">
+                                <button type="button" class="chip" data-like="msq" aria-pressed="false" data-i18n="char_card_like_msq">主線劇情</button>
+                                <button type="button" class="chip" data-like="leveling" aria-pressed="false" data-i18n="char_card_like_leveling">練等</button>
+                                <button type="button" class="chip" data-like="trials" aria-pressed="false" data-i18n="char_card_like_trials">討伐殲滅戰</button>
+                                <button type="button" class="chip" data-like="savage" aria-pressed="false" data-i18n="char_card_like_savage">零式</button>
+                                <button type="button" class="chip" data-like="ultimate" aria-pressed="false" data-i18n="char_card_like_ultimate">絕境戰</button>
+                                <button type="button" class="chip" data-like="alliance" aria-pressed="false" data-i18n="char_card_like_alliance">聯盟任務</button>
+                                <button type="button" class="chip" data-like="pvp" aria-pressed="false" data-i18n="char_card_like_pvp">PvP</button>
+                                <button type="button" class="chip" data-like="crafting" aria-pressed="false" data-i18n="char_card_like_crafting">生產</button>
+                                <button type="button" class="chip" data-like="gathering" aria-pressed="false" data-i18n="char_card_like_gathering">採集</button>
+                                <button type="button" class="chip" data-like="treasure" aria-pressed="false" data-i18n="char_card_like_treasure">寶圖</button>
+                                <button type="button" class="chip" data-like="deepDungeon" aria-pressed="false" data-i18n="char_card_like_deep_dungeon">深層迷宮</button>
+                                <button type="button" class="chip" data-like="housing" aria-pressed="false" data-i18n="char_card_like_housing">房屋</button>
+                                <button type="button" class="chip" data-like="glamour" aria-pressed="false" data-i18n="char_card_like_glamour">幻化</button>
+                                <button type="button" class="chip" data-like="photo" aria-pressed="false" data-i18n="char_card_like_photo">拍照</button>
+                                <button type="button" class="chip" data-like="roleplay" aria-pressed="false" data-i18n="char_card_like_roleplay">角色扮演</button>
+                                <button type="button" class="chip" data-like="fishing" aria-pressed="false" data-i18n="char_card_like_fishing">釣魚</button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <span class="form-label" id="cardLookingLabel" data-i18n="char_card_looking_label">在找什麼</span>
+                            <div class="chip-group" id="cardLooking" role="group" aria-labelledby="cardLookingLabel">
+                                <button type="button" class="chip" data-looking="static" aria-pressed="false" data-i18n="char_card_looking_static">固定隊</button>
+                                <button type="button" class="chip" data-looking="fc" aria-pressed="false" data-i18n="char_card_looking_fc">部隊</button>
+                                <button type="button" class="chip" data-looking="friends" aria-pressed="false" data-i18n="char_card_looking_friends">朋友</button>
+                            </div>
+                        </div>
+                    </section>
 
-                            <!-- 直版布局 -->
-                            <div class="vertical-layout" style="display: none;">
-                                <div class="business-card-layout">
-                                    <div class="character-section">
-                                        <div class="name-row">
-                                            <div class="name-info">
-                                                <h2 class="character-name">角色名稱</h2>
-                                                <span class="job-name">職業</span>
-                                                <div class="info-line">
-                                                    <span class="character-title">稱號</span>
-                                                    <span class="separator">•</span>
-                                                    <span class="company-name">---</span>
-                                                    <span class="separator">•</span>
-                                                    <span class="server-name">伺服器</span>
-                                                </div>
-                                            </div>
-                                            <div class="job-icon">⚔️</div>
-                                        </div>
-                                    </div>
+                    <section class="card editor-panel" id="panel-image" role="tabpanel" aria-labelledby="tab-image" tabindex="-1">
+                        <h2 class="editor-panel-title" data-i18n="char_card_panel_image">角色圖</h2>
+                        <!-- 上傳截圖、拖曳與縮放的控制項由後面的 Task 補在這裡 -->
+                    </section>
+
+                    <section class="card editor-panel" id="panel-style" role="tabpanel" aria-labelledby="tab-style" tabindex="-1">
+                        <h2 class="editor-panel-title" data-i18n="char_card_panel_style">樣式</h2>
+                        <div class="form-group">
+                            <span class="form-label" id="cardAccentLabel" data-i18n="char_card_accent_label">重點色</span>
+                            <div class="accent-options" role="radiogroup" aria-labelledby="cardAccentLabel">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="accent" id="accentAuto" value="auto" checked>
+                                    <label class="form-check-label" for="accentAuto" data-i18n="char_card_accent_auto">跟著職能</label>
+                                </div>
+                                <div class="form-check accent-custom">
+                                    <input class="form-check-input" type="radio" name="accent" id="accentCustom" value="custom">
+                                    <label class="form-check-label" for="accentCustom" data-i18n="char_card_accent_custom">自己選</label>
+                                    <input type="color" class="accent-color" id="accentColor" aria-label="自己選的顏色" data-i18n="char_card_accent_color_label" data-i18n-attr="aria-label">
                                 </div>
                             </div>
                         </div>
+                        <div class="form-group">
+                            <button type="button" class="btn btn-secondary" id="clearAll">清除全部</button>
+                            <span class="form-text" data-i18n="char_card_clear_hint">清除所有欄位、上傳的圖片，以及這個瀏覽器記住的資料。</span>
+                        </div>
+                    </section>
+                </form>
+
+                <!-- 預覽：卡片就是一張 canvas（畫面上看到的和下載的是同一張）。#cardActions 的按鈕由後面的 Task 補上 -->
+                <aside class="preview-pane" id="cardPreview" aria-label="卡片預覽" data-i18n="char_card_preview_title" data-i18n-attr="aria-label">
+                    <canvas class="preview-canvas" id="cardCanvas" role="img" width="1200" height="675" aria-label="角色卡預覽：還沒填資料"></canvas>
+                    <div class="preview-format" role="group" aria-label="版型" data-i18n="char_card_format_label" data-i18n-attr="aria-label">
+                        <button type="button" class="chip active" id="formatLandscape" aria-pressed="true" data-format="landscape" data-i18n="char_card_format_landscape">橫版</button>
+                        <button type="button" class="chip" id="formatPortrait" aria-pressed="false" data-format="portrait" data-i18n="char_card_format_portrait">直版</button>
                     </div>
-                </div>
-
-                <div class="image-controls card">
-                    <h3 data-i18n="char_card_image_settings">圖片設定</h3>
-                    <div class="controls-row">
-                        <div class="control-group">
-                            <label data-i18n="char_card_upload_image">上傳圖片</label>
-                            <input type="file" id="characterImage" accept="image/*" class="file-input">
-                            <small class="form-text" data-i18n="char_card_file_types">JPG、PNG、GIF</small>
-                        </div>
-                        <div class="control-group" id="positionGroup" style="display: none;">
-                            <label data-i18n="char_card_position">位置</label>
-                            <div class="position-controls">
-                                <button type="button" class="control-btn" id="moveUp" aria-label="上移" data-i18n="char_card_move_up" data-i18n-attr="aria-label">↑</button>
-                                <button type="button" class="control-btn" id="moveDown" aria-label="下移" data-i18n="char_card_move_down" data-i18n-attr="aria-label">↓</button>
-                                <button type="button" class="control-btn" id="moveLeft" aria-label="左移" data-i18n="char_card_move_left" data-i18n-attr="aria-label">←</button>
-                                <button type="button" class="control-btn" id="moveRight" aria-label="右移" data-i18n="char_card_move_right" data-i18n-attr="aria-label">→</button>
-                            </div>
-                        </div>
-                        <div class="control-group" id="scaleGroup" style="display: none;">
-                            <label data-i18n="char_card_scale">縮放</label>
-                            <input type="range" id="scaleSlider" min="0.5" max="2" step="0.1" value="1">
-                            <span id="scaleValue">100%</span>
-                        </div>
-                        <div class="control-group" id="rotateGroup" style="display: none;">
-                            <label data-i18n="char_card_rotate">旋轉</label>
-                            <input type="range" id="rotateSlider" min="0" max="360" step="1" value="0">
-                            <span id="rotateValue">0°</span>
-                        </div>
-                        <div class="control-group" id="opacityGroup" style="display: none;">
-                            <label data-i18n="char_card_opacity">背景透明度</label>
-                            <input type="range" id="opacitySlider" min="0" max="100" step="5" value="40">
-                            <span id="opacityValue">40%</span>
-                        </div>
-                        <div class="control-group" id="actionGroup" style="display: none;">
-                            <label data-i18n="char_card_actions">操作</label>
-                            <div class="action-buttons">
-                                <button type="button" class="btn btn-secondary btn-sm" id="resetImage" data-i18n="char_card_reset">重置</button>
-                                <button type="button" class="btn btn-secondary btn-sm" id="removeImage" data-i18n="char_card_remove">移除</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="input-section card">
-                    <div class="form-group">
-                        <label for="characterName" data-i18n="char_card_name_label" class="form-label">角色名稱</label>
-                        <input type="text" id="characterName" data-i18n-attr="placeholder" data-i18n="char_card_name_placeholder" placeholder="輸入角色名稱" class="form-control">
-                    </div>
-
-                    <div class="form-group">
-                        <div class="collapsible-header" id="serverCollapsibleHeader">
-                            <label data-i18n="char_card_server_label" class="form-label">伺服器選擇</label>
-                            <button type="button" class="collapse-toggle" id="serverCollapseToggle">
-                                <span class="toggle-icon">▼</span>
-                            </button>
-                        </div>
-
-                        <!-- 已選擇的伺服器顯示 -->
-                        <div class="selected-server" id="selectedServer" style="display: none;">
-                            <span class="selected-label" data-i18n="char_card_selected">已選擇：</span>
-                            <span class="selected-value" id="selectedServerName"></span>
-                            <button type="button" class="btn btn-outline btn-sm clear-btn" id="clearServer" data-i18n="char_card_reselect">重新選擇</button>
-                        </div>
-
-                        <div class="collapsible-content" id="serverCollapsibleContent">
-                            <!-- 第一層：區域選擇 -->
-                            <div class="server-selection-step">
-                                <div class="selection-grid">
-                                    <button type="button" class="selection-btn" data-region="Japan">Japan</button>
-                                    <button type="button" class="selection-btn" data-region="Oceanian">Oceanian</button>
-                                    <button type="button" class="selection-btn" data-region="Europe">Europe</button>
-                                    <button type="button" class="selection-btn" data-region="North America">North America</button>
-                                    <button type="button" class="selection-btn" data-region="Taiwan">Taiwan</button>
-                                </div>
-                            </div>
-
-                            <!-- 第二層：資料中心選擇 -->
-                            <div class="server-selection-step" id="datacenterStep" style="display: none;">
-                                <div class="selection-grid" id="datacenterGrid">
-                                    <!-- 動態生成 -->
-                                </div>
-                            </div>
-
-                            <!-- 第三層：伺服器選擇 -->
-                            <div class="server-selection-step" id="serverStep" style="display: none;">
-                                <div class="selection-grid" id="serverGrid">
-                                    <!-- 動態生成 -->
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- 隱藏的input用於表單提交 -->
-                        <input type="hidden" id="serverName" name="serverName" value="">
-                    </div>
-
-                    <div class="form-group">
-                        <div class="collapsible-header" id="jobCollapsibleHeader">
-                            <label data-i18n="char_card_job_label" class="form-label">職業選擇</label>
-                            <button type="button" class="collapse-toggle" id="jobCollapseToggle">
-                                <span class="toggle-icon">▼</span>
-                            </button>
-                        </div>
-
-                        <!-- 已選擇的職業顯示 -->
-                        <div class="selected-server" id="selectedJob" style="display: none;">
-                            <span class="selected-label" data-i18n="char_card_selected_job">已選擇職業：</span>
-                            <span class="selected-value" id="selectedJobName"></span>
-                            <button type="button" class="btn btn-outline btn-sm clear-btn" id="clearJob" data-i18n="char_card_reselect">重新選擇</button>
-                        </div>
-
-                        <div class="collapsible-content" id="jobCollapsibleContent">
-                            <!-- 坦克職業 -->
-                            <div class="job-category card">
-                                <h4 class="job-category-title">
-                                    <span class="job-category-icon">🛡️</span>
-                                    <span data-i18n="char_card_job_tank">坦克</span>
-                                </h4>
-                                <div class="selection-grid">
-                                    <button type="button" class="selection-btn job-btn" data-job="騎士" data-category="坦克">騎士</button>
-                                    <button type="button" class="selection-btn job-btn" data-job="戰士" data-category="坦克">戰士</button>
-                                    <button type="button" class="selection-btn job-btn" data-job="暗黑騎士" data-category="坦克">暗黑騎士</button>
-                                    <button type="button" class="selection-btn job-btn" data-job="絕槍戰士" data-category="坦克">絕槍戰士</button>
-                                </div>
-                            </div>
-
-                            <!-- 治療職業 -->
-                            <div class="job-category card">
-                                <h4 class="job-category-title">
-                                    <span class="job-category-icon">💚</span>
-                                    <span data-i18n="char_card_job_healer">治療</span>
-                                </h4>
-                                <div class="selection-grid">
-                                    <button type="button" class="selection-btn job-btn" data-job="白魔法師" data-category="治療">白魔法師</button>
-                                    <button type="button" class="selection-btn job-btn" data-job="學者" data-category="治療">學者</button>
-                                    <button type="button" class="selection-btn job-btn" data-job="占星術士" data-category="治療">占星術士</button>
-                                    <button type="button" class="selection-btn job-btn" data-job="賢者" data-category="治療">賢者</button>
-                                </div>
-                            </div>
-
-                            <!-- 近戰職業 -->
-                            <div class="job-category card">
-                                <h4 class="job-category-title">
-                                    <span class="job-category-icon">⚔️</span>
-                                    <span data-i18n="char_card_job_melee">近戰</span>
-                                </h4>
-                                <div class="selection-grid">
-                                    <button type="button" class="selection-btn job-btn" data-job="武僧" data-category="近戰">武僧</button>
-                                    <button type="button" class="selection-btn job-btn" data-job="龍騎士" data-category="近戰">龍騎士</button>
-                                    <button type="button" class="selection-btn job-btn" data-job="忍者" data-category="近戰">忍者</button>
-                                    <button type="button" class="selection-btn job-btn" data-job="武士" data-category="近戰">武士</button>
-                                    <button type="button" class="selection-btn job-btn" data-job="鐮刀" data-category="近戰">鐮刀</button>
-                                </div>
-                            </div>
-
-                            <!-- 遠程職業 -->
-                            <div class="job-category card">
-                                <h4 class="job-category-title">
-                                    <span class="job-category-icon">🏹</span>
-                                    <span data-i18n="char_card_job_ranged">遠程</span>
-                                </h4>
-                                <div class="selection-grid">
-                                    <button type="button" class="selection-btn job-btn" data-job="詩人" data-category="遠程">詩人</button>
-                                    <button type="button" class="selection-btn job-btn" data-job="機工士" data-category="遠程">機工士</button>
-                                    <button type="button" class="selection-btn job-btn" data-job="舞者" data-category="遠程">舞者</button>
-                                </div>
-                            </div>
-
-                            <!-- 魔法職業 -->
-                            <div class="job-category card">
-                                <h4 class="job-category-title">
-                                    <span class="job-category-icon">🔮</span>
-                                    <span data-i18n="char_card_job_caster">魔法</span>
-                                </h4>
-                                <div class="selection-grid">
-                                    <button type="button" class="selection-btn job-btn" data-job="黑魔法師" data-category="魔法">黑魔法師</button>
-                                    <button type="button" class="selection-btn job-btn" data-job="召喚師" data-category="魔法">召喚師</button>
-                                    <button type="button" class="selection-btn job-btn" data-job="赤魔法師" data-category="魔法">赤魔法師</button>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- 隐藏的input用於表單提交 -->
-                        <input type="hidden" id="jobName" name="jobName" value="">
-                    </div>
-
-
-                    <div class="form-group">
-                        <label for="characterTitle" data-i18n="char_card_title_label" class="form-label">稱號</label>
-                        <input type="text" id="characterTitle" data-i18n-attr="placeholder" data-i18n="char_card_title_placeholder" placeholder="角色稱號（可選）" class="form-control">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="freeCompany" data-i18n="char_card_fc_label" class="form-label">部隊名稱</label>
-                        <input type="text" id="freeCompany" data-i18n-attr="placeholder" data-i18n="char_card_fc_placeholder" placeholder="部隊名稱（可選）" class="form-control">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="cardLayout" data-i18n="char_card_layout_label" class="form-label">卡片版型</label>
-                        <select id="cardLayout" class="form-control">
-                            <option value="horizontal" data-i18n="char_card_layout_horizontal">橫版 (800x600)</option>
-                            <option value="vertical" data-i18n="char_card_layout_vertical">直版 (600x800)</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="nameColor" data-i18n="char_card_name_color" class="form-label">角色名稱顏色</label>
-                        <div class="color-input-wrapper">
-                            <input type="color" id="nameColor" value="#FFFFFF">
-                            <input type="text" id="nameColorText" value="#FFFFFF" placeholder="#FFFFFF" class="form-control">
-                        </div>
-                    </div>
-
-
-                    <div class="button-group">
-                        <button id="generateCard" class="btn btn-primary" data-i18n="char_card_generate">產生角色卡</button>
-                        <button id="downloadCard" class="btn btn-secondary" data-i18n="char_card_download">下載圖片</button>
-                    </div>
-                </div>
+                    <div class="preview-actions" id="cardActions"></div>
+                </aside>
             </div>
         </div>
     </main>
@@ -331,8 +268,11 @@
     <script src="../../assets/js/components/footer-template.js"></script>
     <script src="../../assets/js/components/layout-loader.js"></script>
     <script src="../../assets/js/common.js"></script>
-    <script src="../../assets/js/security-utils.js"></script>
-    <script src="character-card-data.js"></script>
+    <script src="../../assets/js/ff14-game-data.js"></script>
+    <script src="../../assets/js/modal-manager.js"></script>
+    <script src="card-state.js"></script>
+    <script src="card-layout.js"></script>
+    <script src="card-renderer.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
