@@ -2,6 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const vm = require('node:vm');
 
 const { createFakeDom } = require('./helpers/fake-dom.js');
 
@@ -146,4 +147,151 @@ test('common.css 沒有 .logo-main 與 .logo-tool 這兩個沒人用的樣式', 
     assert.ok(!/\.logo-main(?![\w-])/.test(css), 'nav-template.js 不會產生 .logo-main');
     // .logo-tool-name 仍在使用（nav-template.js 產生），所以不能只比對前綴
     assert.ok(!/\.logo-tool(?![\w-])/.test(css), 'nav-template.js 不會產生 .logo-tool（工具名稱是 .logo-tool-name）');
+});
+
+// ---------- 網址列顏色（<meta name="theme-color">） ----------
+// ThemeManager 每次套用主題時，從 CSS 讀 --color-browser-bar 寫回 <meta name="theme-color">（JS 不寫色碼）。
+// fake-dom 沒有 CSS 引擎，也沒有 getComputedStyle：這一段載入真正的 common.js，由測試補上 window.getComputedStyle、
+// matchMedia 與 localStorage 的替身，再用 vm 在同一個全域裡建立 ThemeManager（class 是詞法繫結，不會掛在 window 上）
+
+const BAR_TOKEN = '--color-browser-bar';
+// 頁首漸層的起點色：HTML 裡寫淺色的值，深色的值只在 tokens.css（兩個值本身由 share-preview.test.js 另外守住）
+const LIGHT_BAR = '#667eea';
+const DARK_BAR = '#4b5ca8';
+
+// tokens.css 裡 --color-browser-bar 在淺色（:root）與深色（[data-theme="dark"]）各自區塊的值
+function barColorsInTokens() {
+    const css = read('assets/css/tokens.css');
+    const valueIn = (selector) => {
+        const start = css.indexOf(`\n${selector} {`);
+        assert.notEqual(start, -1, `tokens.css 找不到 ${selector} 區塊`);
+        const match = new RegExp(`${BAR_TOKEN}:\\s*([^;]+);`).exec(css.slice(start, css.indexOf('\n}', start)));
+        assert.ok(match, `tokens.css 的 ${selector} 區塊沒有 ${BAR_TOKEN}`);
+        return match[1].trim();
+    };
+    return { light: valueIn(':root'), dark: valueIn('[data-theme="dark"]') };
+}
+
+// window.getComputedStyle 的替身：只認 --color-browser-bar，依 <html data-theme> 回傳 tokens.css 的深色或淺色值
+// （和 CSS 一樣，只有 data-theme="dark" 是深色），其他名稱回傳 ''。
+// 值前面多留一個空白：自訂屬性的值依瀏覽器與版本可能帶著前後的空白，實作要先去掉，不然 content 會變成 ' #4b5ca8'
+function tokensComputedStyle(document) {
+    const colors = barColorsInTokens();
+    return () => ({
+        getPropertyValue(name) {
+            if (name !== BAR_TOKEN) return '';
+            return ` ${document.documentElement.getAttribute('data-theme') === 'dark' ? colors.dark : colors.light}`;
+        }
+    });
+}
+
+// matchMedia 替身：ThemeManager 只問 (prefers-color-scheme: dark)，其他查詢丟錯（正確的實作不會問別的）。
+// systemDark 是系統現在是不是深色；change(matches) 模擬系統切換深淺色，和瀏覽器一樣讓查詢的 matches 變了再通知 change 監聽器
+function installColorSchemeMedia(window, systemDark) {
+    const query = '(prefers-color-scheme: dark)';
+    const mediaQuery = {
+        media: query,
+        matches: systemDark,
+        listeners: [],
+        addEventListener(type, listener) { if (type === 'change') this.listeners.push(listener); },
+        removeEventListener(type, listener) { this.listeners = this.listeners.filter((entry) => entry !== listener); }
+    };
+    window.matchMedia = (asked) => {
+        if (asked !== query) throw new Error(`matchMedia 替身只支援 ${query}，收到：${asked}`);
+        return mediaQuery;
+    };
+    return {
+        change(matches) {
+            mediaQuery.matches = matches;
+            for (const listener of mediaQuery.listeners) listener({ type: 'change', media: query, matches });
+        }
+    };
+}
+
+// localStorage 替身：ThemeManager 讀寫 localStorage['theme']；沒有的話它會在 console 留警告
+function installLocalStorage(window, stored) {
+    const items = new Map(Object.entries(stored));
+    window.localStorage = {
+        getItem: (key) => items.get(key) ?? null,
+        setItem: (key, value) => { items.set(key, String(value)); }
+    };
+}
+
+// 頁面的 <head> 放 <meta name="theme-color" content="#667eea">（meta: false 是沒有這一行的頁面）。
+// style：'tokens' 是照 tokens.css 回答的 getComputedStyle 替身，函式是自己的替身，null 是沒有 getComputedStyle（fake-dom 預設就沒有）；
+// stored 是 localStorage 的初始內容，systemDark 是系統偏好。建立 ThemeManager 時就會套用主題
+function setupBrowserBar({ meta = true, style = 'tokens', systemDark = false, stored = {} } = {}) {
+    const dom = createFakeDom();
+    const { document, window } = dom;
+    const themeColor = meta ? dom.el('meta', { name: 'theme-color', content: LIGHT_BAR }) : null;
+    if (themeColor) document.head.appendChild(themeColor);
+
+    const media = installColorSchemeMedia(window, systemDark);
+    installLocalStorage(window, stored);
+    if (style === 'tokens') window.getComputedStyle = tokensComputedStyle(document);
+    else if (style) window.getComputedStyle = style;
+
+    dom.load('assets/js/common.js');
+    const manager = vm.runInContext('new ThemeManager()', window);
+    return { document, media, manager, themeColor };
+}
+
+const barOf = (page) => page.themeColor.getAttribute('content');
+
+test('ThemeManager：套用深色時 theme-color 是 #4b5ca8，切回淺色是 #667eea', () => {
+    const page = setupBrowserBar();
+    assert.equal(page.document.documentElement.getAttribute('data-theme'), 'light', '前提：系統是淺色、沒存過偏好，一開始是淺色');
+    assert.equal(barOf(page), LIGHT_BAR, '淺色：HTML 裡寫的就是淺色的值');
+
+    assert.equal(page.manager.toggle(), 'dark');
+    assert.equal(page.document.documentElement.getAttribute('data-theme'), 'dark');
+    assert.equal(barOf(page), DARK_BAR, '深色：換成深色的值，前後沒有空白');
+
+    assert.equal(page.manager.toggle(), 'light');
+    assert.equal(barOf(page), LIGHT_BAR, '切回淺色：換回淺色的值');
+});
+
+test('ThemeManager：打開頁面時就是深色（存著的偏好或系統偏好），theme-color 一開始就是深色的值；系統偏好改變時跟著換', () => {
+    // 存著的偏好是深色：HTML 裡寫的淺色值在 ThemeManager 建立時就換掉，不用等玩家按切換鈕
+    const storedDark = setupBrowserBar({ stored: { theme: 'dark' } });
+    assert.equal(storedDark.document.documentElement.getAttribute('data-theme'), 'dark');
+    assert.equal(barOf(storedDark), DARK_BAR, '存著的偏好是深色');
+
+    // 沒存過偏好、系統是深色
+    const systemDark = setupBrowserBar({ systemDark: true });
+    assert.equal(systemDark.document.documentElement.getAttribute('data-theme'), 'dark');
+    assert.equal(barOf(systemDark), DARK_BAR, '沒存過偏好，系統是深色');
+
+    // 沒存過偏好、頁面開著時系統在深淺色之間切換
+    const following = setupBrowserBar();
+    assert.equal(barOf(following), LIGHT_BAR);
+    following.media.change(true);
+    assert.equal(following.document.documentElement.getAttribute('data-theme'), 'dark');
+    assert.equal(barOf(following), DARK_BAR, '系統改成深色');
+    following.media.change(false);
+    assert.equal(barOf(following), LIGHT_BAR, '系統改回淺色');
+});
+
+test('ThemeManager：沒有 theme-color 或讀不到 token 時不改、不丟錯', () => {
+    // 頁面沒有 <meta name="theme-color">：不丟錯，也不替頁面補一個
+    let withoutMeta;
+    assert.doesNotThrow(() => { withoutMeta = setupBrowserBar({ meta: false }); }, '沒有 theme-color：建立 ThemeManager 不丟錯');
+    assert.doesNotThrow(() => withoutMeta.manager.toggle(), '沒有 theme-color：切換主題不丟錯');
+    assert.equal(withoutMeta.document.documentElement.getAttribute('data-theme'), 'dark', '沒有 theme-color：主題照樣切成深色');
+    assert.equal(withoutMeta.document.querySelectorAll('meta').length, 0, '沒有 theme-color：不補上一個');
+
+    // 讀不到 token：沒有 getComputedStyle、讀到空字串、讀到只有空白。content 維持 HTML 裡的值（不會被清成空的），主題照樣切換
+    const unreadable = {
+        '沒有 getComputedStyle': null,
+        'token 讀到空字串': () => ({ getPropertyValue: () => '' }),
+        'token 讀到只有空白': () => ({ getPropertyValue: () => '  ' })
+    };
+    for (const [name, style] of Object.entries(unreadable)) {
+        let page;
+        assert.doesNotThrow(() => { page = setupBrowserBar({ style }); }, `${name}：建立 ThemeManager 不丟錯`);
+        assert.equal(barOf(page), LIGHT_BAR, `${name}：建立後 content 不變`);
+        assert.doesNotThrow(() => page.manager.toggle(), `${name}：切換主題不丟錯`);
+        assert.equal(page.document.documentElement.getAttribute('data-theme'), 'dark', `${name}：主題照樣切成深色`);
+        assert.equal(barOf(page), LIGHT_BAR, `${name}：切換後 content 仍是 HTML 裡的值`);
+    }
 });
