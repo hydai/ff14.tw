@@ -814,6 +814,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 - **NEVER use `git add .`**: Always add specific files you intend to commit to ensure only relevant changes are included.
 - **Check status first**: Run `git status` before adding files to understand the current state.
 - **Atomic commits**: Separate commits logically; each commit should address a single concern.
+- **換行一律 LF**：`.gitattributes`（`* text=auto eol=lf`）讓每個文字檔在任何平台都用 LF 取出，二進位檔照舊自動判斷。沒有它時 Windows 的 git 預設會換成 CRLF，那樣的複本上 `node scripts/share-preview.mjs pages` 會停下、有測試會失敗。
 
 ### 修改紀錄怎麼寫
 `changelog.html` 照月份分段：一個月一個 `<section class="changelog-month">`，**裡面只放月份標題（`<h2 class="changelog-month-title">YYYY年M月</h2>`）和這個月的版本**，不要加段落或其他元素；同一個月的收合列靠兄弟選擇器（`.changelog-month-title + .changelog-entry`、`.changelog-entry.is-latest + .changelog-entry`、`.changelog-entry:last-child`）接成一張圓角清單，多一個元素圓角就會跑掉。版本由新到舊，照日期排、不照版本號（v2.12.0 比 v2.11.1 早，不重新編號）。每一版有三種寫法：

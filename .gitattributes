@@ -1,0 +1,2 @@
+# 每個文字檔在任何平台都用 LF 取出：Windows 的 git 預設會換成 CRLF，而 scripts/ 的腳本與測試都假設 LF
+* text=auto eol=lf
