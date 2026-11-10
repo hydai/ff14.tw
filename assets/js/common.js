@@ -3,9 +3,19 @@
 // 主題管理器
 class ThemeManager {
     // 定義常數以避免魔術字串
+    // 外觀：套在 <html data-theme> 上的值，畫面只有這兩種
     static THEMES = {
         LIGHT: 'light',
         DARK: 'dark'
+    };
+
+    // 模式：玩家選的。淺色、深色是自己選了外觀；跟著系統是沒選，外觀由系統的深淺色決定
+    // MODES.LIGHT、MODES.DARK 刻意和 THEMES.LIGHT、THEMES.DARK 是同樣的字串：themeFor() 直接把模式當外觀回傳，
+    // toggleLabel() 拿外觀去查 MODE_NAMES，nextMode() 用外觀的值排出一圈、再拿模式去那一圈裡找位置
+    static MODES = {
+        LIGHT: 'light',
+        DARK: 'dark',
+        SYSTEM: 'system'
     };
 
     static ACTIONS = {
@@ -13,10 +23,27 @@ class ThemeManager {
         REMOVE: 'remove'
     };
 
+    // localStorage 只存 light 或 dark；跟著系統就是沒有這個鍵
     static STORAGE_KEY = 'theme';
+
+    // 各模式在按鈕名稱裡的寫法：翻譯鍵與中文備用字（沒有載入翻譯的頁面用中文）
+    static MODE_NAMES = {
+        [ThemeManager.MODES.LIGHT]: { key: 'theme_mode_light', fallback: '淺色' },
+        [ThemeManager.MODES.DARK]: { key: 'theme_mode_dark', fallback: '深色' },
+        [ThemeManager.MODES.SYSTEM]: { key: 'theme_mode_system', fallback: '跟著系統' }
+    };
 
     // 網址列顏色的 CSS 變數（assets/css/tokens.css：淺色在 :root，深色在 [data-theme="dark"]）
     static BROWSER_BAR_TOKEN = '--color-browser-bar';
+
+    // 按一下換到的下一個模式。一圈是 [跟著系統, 和系統相反的顏色, 和系統同色]：
+    // 從跟著系統按第一下，畫面一定看得到變化。純函式，不靠 this
+    static nextMode(mode, systemTheme) {
+        const { LIGHT, DARK } = ThemeManager.THEMES;
+        const opposite = systemTheme === DARK ? LIGHT : DARK;
+        const ring = [ThemeManager.MODES.SYSTEM, opposite, systemTheme];
+        return ring[(ring.indexOf(mode) + 1) % ring.length];
+    }
 
     // 建立月亮圖示（深色模式時顯示）
     static createMoonIcon() {
@@ -54,6 +81,22 @@ class ThemeManager {
         return svg;
     }
 
+    // 建立 ◑ 圖示（跟著系統時顯示）：圓形外框加上右半邊實心。
+    // 不另外設樣式：common.css 的 .theme-toggle svg 讓圖形填色、circle 不填色（所以圓是外框，path 的半圓是實心）
+    static createSystemIcon() {
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('viewBox', '0 0 24 24');
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('cx', '12');
+        circle.setAttribute('cy', '12');
+        circle.setAttribute('r', '9');
+        svg.appendChild(circle);
+        const half = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        half.setAttribute('d', 'M12 3a9 9 0 0 1 0 18z');
+        svg.appendChild(half);
+        return svg;
+    }
+
     // 把手機瀏覽器網址列的顏色（<meta name="theme-color">）換成目前主題的值：
     // 頁面的 HTML 裡寫的是淺色的值，深色模式要換成深色的。值從 CSS 的 --color-browser-bar 讀，JS 不寫色碼。
     // 沒有 <meta name="theme-color">、沒有 getComputedStyle 或讀到空字串時什麼都不做，不丟錯
@@ -72,11 +115,9 @@ class ThemeManager {
         this.darkModeQuery = window.matchMedia?.('(prefers-color-scheme: dark)');
         this._boundSystemThemeChangeHandler = this._handleSystemThemeChange.bind(this);
 
-        // 檢查是否有儲存的主題偏好
-        const storedTheme = this.getStoredTheme();
-
-        // 如果有儲存的偏好就使用，否則偵測系統偏好
-        this.theme = storedTheme || this.getSystemPreference();
+        // 玩家選過淺色或深色就照他選的；沒選過（或存的值壞掉）是跟著系統
+        this.mode = this.getStoredMode() || ThemeManager.MODES.SYSTEM;
+        this.theme = this.themeFor(this.mode);
 
         this.init();
     }
@@ -109,28 +150,38 @@ class ThemeManager {
     }
 
     _handleSystemThemeChange(e) {
-        // 只有在使用者沒有明確設定主題時才自動切換
-        if (!this.getStoredTheme()) {
-            const newTheme = e.matches ? ThemeManager.THEMES.DARK : ThemeManager.THEMES.LIGHT;
-            // 只有在主題真的改變時才更新，避免不必要的 DOM 操作
-            if (this.theme !== newTheme) {
-                this.applyTheme(newTheme);
-            }
+        // 自己選了淺色或深色時畫面不動；但按鈕名稱裡「按一下改成…」的下一段是照系統算的，要重算
+        if (this.mode !== ThemeManager.MODES.SYSTEM) {
+            this.updateThemeToggleButtons();
+            return;
+        }
+
+        const newTheme = e.matches ? ThemeManager.THEMES.DARK : ThemeManager.THEMES.LIGHT;
+        // 只有在主題真的改變時才更新，避免不必要的 DOM 操作
+        if (this.theme !== newTheme) {
+            this.applyTheme(newTheme);
         }
     }
 
-    getStoredTheme() {
+    // 存著的模式：只有 light、dark 兩種。沒有、壞掉（不是這兩個值）或讀不到都是 null，呼叫端當成跟著系統
+    getStoredMode() {
         try {
-            return localStorage.getItem(ThemeManager.STORAGE_KEY);
+            const stored = localStorage.getItem(ThemeManager.STORAGE_KEY);
+            return stored === ThemeManager.MODES.LIGHT || stored === ThemeManager.MODES.DARK ? stored : null;
         } catch (e) {
             console.warn('無法存取 localStorage，主題偏好將不會被保存', e);
             return null;
         }
     }
 
-    setStoredTheme(theme) {
+    // light、dark 寫進去；跟著系統是把鍵刪掉（不存成 'system'）
+    setStoredMode(mode) {
         try {
-            localStorage.setItem(ThemeManager.STORAGE_KEY, theme);
+            if (mode === ThemeManager.MODES.SYSTEM) {
+                localStorage.removeItem(ThemeManager.STORAGE_KEY);
+            } else {
+                localStorage.setItem(ThemeManager.STORAGE_KEY, mode);
+            }
         } catch (e) {
             console.warn('無法存取 localStorage，主題偏好將不會被儲存', e);
         }
@@ -138,6 +189,11 @@ class ThemeManager {
 
     getSystemPreference() {
         return this.darkModeQuery?.matches ? ThemeManager.THEMES.DARK : ThemeManager.THEMES.LIGHT;
+    }
+
+    // 這個模式現在的外觀：淺色、深色就是它自己，跟著系統是系統現在的深淺色
+    themeFor(mode) {
+        return mode === ThemeManager.MODES.SYSTEM ? this.getSystemPreference() : mode;
     }
 
     applyTheme(theme) {
@@ -151,23 +207,56 @@ class ThemeManager {
         ThemeManager.syncBrowserBar();
     }
 
+    // 換成這個模式：記住、存起來（跟著系統是刪掉存著的值）、套用外觀。mode 要先換，套用外觀時按鈕名稱照它算
+    setMode(mode) {
+        this.mode = mode;
+        this.applyTheme(this.themeFor(mode));
+        this.setStoredMode(mode);
+        return mode;
+    }
+
+    // 按一下換到下一個模式，回傳新的模式
     toggle() {
-        const newTheme = this.theme === ThemeManager.THEMES.LIGHT ? ThemeManager.THEMES.DARK : ThemeManager.THEMES.LIGHT;
-        this.applyTheme(newTheme);
-        this.setStoredTheme(newTheme);
-        return newTheme;
+        return this.setMode(ThemeManager.nextMode(this.mode, this.getSystemPreference()));
+    }
+
+    // 按鈕的名稱：「主題：現在。按一下改成下一個」。跟著系統時，「現在」多寫出系統目前是淺色還是深色
+    toggleLabel() {
+        const nameOf = (mode) => {
+            const { key, fallback } = ThemeManager.MODE_NAMES[mode];
+            return FF14Utils.getI18nText(key, fallback);
+        };
+        const current = this.mode === ThemeManager.MODES.SYSTEM
+            ? FF14Utils.getI18nText('theme_mode_system_now', '跟著系統（現在是{appearance}）', { appearance: nameOf(this.theme) })
+            : nameOf(this.mode);
+        const next = nameOf(ThemeManager.nextMode(this.mode, this.getSystemPreference()));
+        return FF14Utils.getI18nText('theme_toggle_label', '主題：{current}。按一下改成{next}', { current, next });
+    }
+
+    // 圖示代表現在的模式（不是按下去會變成什麼）
+    _createModeIcon() {
+        switch (this.mode) {
+            case ThemeManager.MODES.LIGHT:
+                return ThemeManager.createSunIcon();
+            case ThemeManager.MODES.DARK:
+                return ThemeManager.createMoonIcon();
+            default:
+                return ThemeManager.createSystemIcon();
+        }
     }
 
     updateThemeToggleButtons() {
+        // 文件裡沒有切換鈕就直接結束，連名稱都不算：頁面載入時 new ThemeManager() 比 initThemeToggle() 放進切換鈕早，
+        // 那時算名稱會為了沒人看得到的字去問翻譯；window.i18n 不完整的話，還會在 DOMContentLoaded 裡丟錯，後面的 ☰、切換鈕、返回頂部都建不起來
         const buttons = document.querySelectorAll('.theme-toggle');
-        buttons.forEach(button => {
-            const isLight = this.theme === ThemeManager.THEMES.LIGHT;
-            button.replaceChildren(isLight ? ThemeManager.createMoonIcon() : ThemeManager.createSunIcon());  // 淺色模式顯示月亮圖示，深色模式顯示太陽圖示
+        if (buttons.length === 0) return;
 
-            // 使用 i18n 取得翻譯文字（如果可用）
-            const darkLabel = window.i18n?.getText('theme_toggle_dark') || '切換至深色模式';
-            const lightLabel = window.i18n?.getText('theme_toggle_light') || '切換至淺色模式';
-            button.setAttribute('aria-label', isLight ? darkLabel : lightLabel);
+        // aria-label 與 title 是同一句：螢幕閱讀器念的名稱，與滑鼠移上去看得到的提示
+        const label = this.toggleLabel();
+        buttons.forEach(button => {
+            button.replaceChildren(this._createModeIcon());
+            button.setAttribute('aria-label', label);
+            button.setAttribute('title', label);
         });
     }
 }

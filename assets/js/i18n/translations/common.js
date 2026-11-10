@@ -78,9 +78,12 @@ const CommonTranslations = {
         label_sep_colon: '：',
         label_sep_comma: '，',
 
-        // 深色模式
-        theme_toggle_dark: '切換至深色模式',
-        theme_toggle_light: '切換至淺色模式',
+        // 主題切換鈕（淺色、深色、跟著系統）
+        theme_toggle_label: '主題：{current}。按一下改成{next}',
+        theme_mode_light: '淺色',
+        theme_mode_dark: '深色',
+        theme_mode_system: '跟著系統',
+        theme_mode_system_now: '跟著系統（現在是{appearance}）',
 
         // 表單
         form_required: '必填',
@@ -168,9 +171,12 @@ const CommonTranslations = {
         label_sep_colon: ': ',
         label_sep_comma: ', ',
 
-        // Dark mode
-        theme_toggle_dark: 'Switch to dark mode',
-        theme_toggle_light: 'Switch to light mode',
+        // Theme toggle (light, dark, follow the system)
+        theme_toggle_label: 'Theme: {current}. Switch to {next}',
+        theme_mode_light: 'light',
+        theme_mode_dark: 'dark',
+        theme_mode_system: 'system',
+        theme_mode_system_now: 'system (currently {appearance})',
 
         // Form
         form_required: 'Required',
@@ -258,9 +264,12 @@ const CommonTranslations = {
         label_sep_colon: '：',
         label_sep_comma: '、',
 
-        // ダークモード
-        theme_toggle_dark: 'ダークモードに切り替え',
-        theme_toggle_light: 'ライトモードに切り替え',
+        // テーマ切り替えボタン（ライト、ダーク、システム設定）
+        theme_toggle_label: 'テーマ：{current}。{next}に切り替え',
+        theme_mode_light: 'ライト',
+        theme_mode_dark: 'ダーク',
+        theme_mode_system: 'システム設定',
+        theme_mode_system_now: 'システム設定（現在は{appearance}）',
 
         // フォーム
         form_required: '必須',
