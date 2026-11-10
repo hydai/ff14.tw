@@ -13,8 +13,8 @@
 //   page.requests.map((request) => request.path); page.history; page.url(); page.back(); page.forward(); page.stored('ff14tw_lodestone_mine'); page.setLang('en');
 //   page.tabs(); page.selectTab('achievements'); page.panelText('achievements'); page.key('ArrowRight');
 //
-// - 照 index.html 建出 #lodestoneTool（mountFromHtml），照 index.html 的 <script src> 順序載入這個工具的翻譯檔與工具目錄自己的每一個腳本
-//   （src 不含 /：lodestone-data.js、lodestone-model.js、lodestone-store.js、lodestone-tabs.js、script.js），最後 new LodestoneLookup()：不帶參數，
+// - 照 index.html 建出 #lodestoneTool（mountFromHtml），照 index.html 的 <script src> 順序載入這個工具的翻譯檔、共用的 ff14-game-data.js
+//   與工具目錄自己的每一個腳本（src 不含 /：lodestone-data.js、lodestone-model.js、lodestone-store.js、lodestone-tabs.js、script.js），最後 new LodestoneLookup()：不帶參數，
 //   Worker 的網址與 localStorage 都是頁面自己的預設。建立頁面不等請求：createLodestonePage() 直接回傳，ready 是 app.ready
 //   （網址帶 ?id= 時是打開那個角色的 promise）。頁首與頁尾（layout-loader.js）、common.js、i18n-manager.js 與共用翻譯檔不載入，
 //   用到的部分改用下面的替身：頁面程式只能用 FF14Utils.getI18nText()，不能用 SecurityUtils。頁面的 <h1> 在 #lodestoneTool 外面，不建出來
@@ -76,6 +76,7 @@ const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
 
 const TOOL_DIR = 'tools/lodestone-lookup';
 const TRANSLATIONS = 'assets/js/i18n/translations/tools/lodestone-lookup.js';
+const SHARED_DATA = 'assets/js/ff14-game-data.js';
 const PAGE_URL = 'https://ff14.tw/tools/lodestone-lookup/';
 const WORKER = 'https://logstone.z54981220.workers.dev';
 
@@ -87,9 +88,9 @@ function scriptSources(html) {
 }
 
 const PAGE_HTML = read(`${TOOL_DIR}/index.html`);
-// 翻譯檔與工具目錄自己的腳本；其他共用腳本（頁首、頁尾、common.js）不載入，用到的部分改用下面的替身
+// 翻譯檔、共用的 ff14-game-data.js 與工具目錄自己的腳本；其他共用腳本（頁首、頁尾、common.js）不載入，用到的部分改用下面的替身
 const PAGE_SCRIPTS = scriptSources(PAGE_HTML)
-    .filter((src) => !src.includes('/') || src === `../../${TRANSLATIONS}`)
+    .filter((src) => !src.includes('/') || src === `../../${TRANSLATIONS}` || src === `../../${SHARED_DATA}`)
     .map((src) => path.posix.join(TOOL_DIR, src));
 
 // history.state 與路由的 body：瀏覽器存的是複製；也讓頁面拿到的是新的物件，改它不會動到測試的資料

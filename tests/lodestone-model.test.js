@@ -7,12 +7,15 @@ const vm = require('node:vm');
 const ROOT = path.join(__dirname, '..');
 const TOOL_DIR = path.join(ROOT, 'tools/lodestone-lookup');
 
-// lodestone-data.js 與 lodestone-model.js 都把東西掛在 window 上，所以讓 window 指向 context 本身（同 dungeon-list.test.js）。
+// 職業與伺服器的資料在共用的 ff14-game-data.js，要比 lodestone-data.js 先載入（路徑照 index.html 的寫法，相對於工具目錄）
+const SHARED_DATA = '../../assets/js/ff14-game-data.js';
+
+// ff14-game-data.js、lodestone-data.js 與 lodestone-model.js 都把東西掛在 window 上，所以讓 window 指向 context 本身（同 dungeon-list.test.js）。
 // URLSearchParams 是瀏覽器與 Node 才有的全域，vm 的 context 裡沒有，officialSearchUrl() 要用，所以放進去
 function loadContext() {
     const context = vm.createContext({ URLSearchParams });
     context.window = context;
-    for (const file of ['lodestone-data.js', 'lodestone-model.js']) {
+    for (const file of [SHARED_DATA, 'lodestone-data.js', 'lodestone-model.js']) {
         vm.runInContext(fs.readFileSync(path.join(TOOL_DIR, file), 'utf8'), context, { filename: file });
     }
     return context;

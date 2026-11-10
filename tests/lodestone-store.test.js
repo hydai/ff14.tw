@@ -6,6 +6,9 @@ const vm = require('node:vm');
 
 const TOOL_DIR = path.join(__dirname, '..', 'tools/lodestone-lookup');
 
+// 職業與伺服器的資料在共用的 ff14-game-data.js，要比 lodestone-data.js 先載入（路徑照 index.html 的寫法，相對於工具目錄）
+const SHARED_DATA = '../../assets/js/ff14-game-data.js';
+
 // 這些腳本都把東西掛在 window 上，所以讓 window 指向 context 本身（同 lodestone-model.test.js）
 function loadContext(files) {
     const context = vm.createContext({});
@@ -480,7 +483,7 @@ test('不改傳進來的東西，傳深層凍結的 person 也行', () => {
 });
 
 test('接上 LodestoneModel.person()：存的那一筆讀回來一樣', () => {
-    const context = loadContext(['lodestone-data.js', 'lodestone-model.js', 'lodestone-store.js']);
+    const context = loadContext([SHARED_DATA, 'lodestone-data.js', 'lodestone-model.js', 'lodestone-store.js']);
     const { LodestoneModel, LodestoneStore: store } = context;
     const server = { World: 'Tonberry', DC: 'Elemental' };
     const characters = [
