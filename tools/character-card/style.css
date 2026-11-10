@@ -3,7 +3,8 @@
    手機（768px 以下，沒有 @media 的基本規則）：說明、預覽（sticky，高度最多 35vh）、分頁、目前分頁的欄位，一欄。
    電腦（769px 以上）：左邊五組欄位、右邊預覽（sticky），沒有分頁列。
    不能左右捲：欄寫 minmax(0, …)，長的字換行，不用 overflow-x；按鈕與輸入框不被壓扁（共用元件的 height 都有同值的 min-height）。
-   卡片本身是 canvas，畫在圖上的配色在 card-renderer.js，不跟著網站的深淺色。拖曳移動角色圖的游標與 touch-action 見 .preview-canvas 那一段
+   卡片本身是 canvas，畫在圖上的配色在 card-renderer.js，不跟著網站的深淺色。拖曳移動角色圖的游標與 touch-action 見 .preview-canvas 那一段。
+   輸出：下載、分享、複製的按鈕列（#cardActions）電腦在預覽下面，手機固定在畫面最下方；全螢幕大圖（#imageViewer）；手機打字時（.is-typing）按鈕列收起、預覽縮小
    ========================================================================== */
 
 /* DOM 的順序是說明、分頁、表單、預覽（電腦的由左到右）；手機用 order 把預覽排在分頁上面。
@@ -305,7 +306,8 @@
     gap: var(--space-2);
 }
 
-/* 下載、分享、複製的按鈕放在這裡（後面的 Task）；還沒有按鈕時不占位 */
+/* 下載、分享、複製的按鈕：電腦在預覽下面（同一欄，跟著 sticky 的預覽走）；手機（768px 以下）固定在畫面最下方，見後面的 @media。
+   .btn 設了 display，會蓋掉瀏覽器內建的 [hidden]：分享與複製只有瀏覽器支援才顯示（script.js 切換 hidden） */
 .preview-actions {
     display: flex;
     flex-wrap: wrap;
@@ -313,7 +315,88 @@
     gap: var(--space-2);
 }
 
-.preview-actions:empty {
+#shareCard[hidden],
+#copyCard[hidden] {
+    display: none;
+}
+
+/* LINE 的內建瀏覽器才有的提示（「在 LINE 裡可能存不了圖，建議先用瀏覽器打開再填：用瀏覽器打開」）：在按鈕下面獨占一整列。.form-text 設了 display: block，會蓋掉 [hidden] */
+.line-tip {
+    flex: 1 0 100%;
+    margin: 0;
+    font-size: var(--text-sm);
+    line-height: var(--leading-snug);
+    text-align: center;
+}
+
+#lineTip[hidden] {
+    display: none;
+}
+
+/* ---------- 全螢幕大圖（#imageViewer） ---------- */
+
+/* 共用的 .dialog-overlay / .dialog（外觀、遮罩、焦點陷阱與 Esc）：顯示與隱藏由 ModalManager 加減 .active。
+   共用的 .dialog-overlay 本身是 display: flex，所以預設要自己藏起來。
+   z-index：整個畫面都是大圖，頁首的漢堡按鈕（1002）與回到頂部鈕（--z-overlay）不能壓在它上面，所以疊在它們上面（同陸行鳥染色的色票面板），在 toast 之下 */
+.viewer-overlay {
+    display: none;
+    z-index: calc(var(--z-modal) + 2);
+    padding: 0;
+}
+
+.viewer-overlay.active {
+    display: flex;
+}
+
+/* 整個畫面：標題在上、按鈕在下，圖在中間縮到放得進去（不超過寬度與高度、不變形），所以不會左右捲。
+   overscroll-behavior：在大圖上滑不會接著捲動後面的頁面 */
+.viewer {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: none;
+    height: 100%;
+    max-height: none;
+    border: 0;
+    border-radius: 0;
+    overscroll-behavior: contain;
+}
+
+.viewer .dialog-header {
+    justify-content: center;
+    text-align: center;
+}
+
+/* min-height: 0：flex 的子項預設不會縮到比內容小，圖太高時要讓它縮 */
+.viewer-body {
+    flex: 1 1 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
+    padding: var(--space-3);
+}
+
+/* 長按圖片存檔（iOS、Android 的瀏覽器）靠圖片本身：這裡不能把圖片的觸控、選取或長按選單關掉 */
+.viewer-image {
+    display: block;
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+}
+
+.viewer-actions {
+    flex-wrap: wrap;
+    justify-content: center;
+    padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
+}
+
+#viewerDownload[hidden],
+#viewerShare[hidden] {
     display: none;
 }
 
@@ -338,6 +421,67 @@
 @media (max-width: 359px) {
     .editor-panel {
         padding: var(--space-3);
+    }
+}
+
+/* 手機（768px 以下）：下載與分享固定在畫面最下方（拇指按得到，捲到哪裡都在），上方的小卡不再放按鈕。
+   --card-actions-height 是這一列有多高（上下內距、一顆按鈕、safe-area；有 LINE 的提示時多一個間距與兩行字）：
+   頁尾的底部留出這麼多（頁尾的底色一路接到按鈕列底下，捲到最底看得到整個頁尾），共用的回到頂部鈕（.back-to-top 是 fixed，bottom: var(--space-5)，不提高會壓在按鈕列上）提高這麼多；
+   scroll-padding：焦點移到欄位時（必填沒填、Tab）不被固定的按鈕列（下）與 sticky 的預覽（上，35vh 的卡片加版型按鈕的高度）蓋住。
+   設計：手機最下方是「下載圖片」與「分享」，複製圖片是電腦的。
+   手機打字（.is-typing，script.js 在文字欄、文字框得到焦點時加在 #cardTool 上，離開時拿掉；選單不算，不開鍵盤）：鍵盤多半開著，按鈕列收起來，上方的卡片縮到 20vh，讓正在打的欄位看得到 */
+@media (max-width: 768px) {
+    :root {
+        --card-actions-height: calc(var(--control-lg) + var(--space-5) + env(safe-area-inset-bottom, 0px));
+        scroll-padding-top: calc(35vh + var(--space-10));
+        scroll-padding-bottom: var(--card-actions-height);
+    }
+
+    :root:has(#lineTip:not([hidden])) {
+        --card-actions-height: calc(var(--control-lg) + var(--space-5) + var(--space-2) + var(--space-8) + env(safe-area-inset-bottom, 0px));
+    }
+
+    :root:has(.is-typing) {
+        scroll-padding-top: calc(20vh + var(--space-10));
+        scroll-padding-bottom: 0;
+    }
+
+    .preview-actions {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        padding: var(--space-2) var(--space-4) calc(var(--space-2) + env(safe-area-inset-bottom, 0px));
+        background: var(--color-surface);
+        border-top: 1px solid var(--color-border);
+    }
+
+    .preview-actions .btn {
+        flex: 1 1 auto;
+        min-width: 0;
+        height: var(--control-lg);
+        min-height: var(--control-lg);
+        padding-inline: var(--space-3);
+    }
+
+    #copyCard {
+        display: none;
+    }
+
+    .footer {
+        padding-bottom: calc(var(--space-6) + var(--card-actions-height));
+    }
+
+    .back-to-top {
+        bottom: calc(var(--space-5) + var(--card-actions-height));
+    }
+
+    .is-typing .preview-canvas {
+        max-height: 20vh;
+    }
+
+    .is-typing #cardActions {
+        display: none;
     }
 }
 

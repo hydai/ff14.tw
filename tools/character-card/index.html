@@ -63,7 +63,9 @@
                 </div>
 
                 <!-- 表單永遠不送出（script.js 擋掉 submit）；autocomplete="off"：瀏覽器重新整理時不要把欄位還原成和記住的內容對不上的字，欄位的值一律由 script.js 照記憶填。
-                     伺服器、主職的選項與其他職業的按鈕由 script.js 照共用的 assets/js/ff14-game-data.js 畫 -->
+                     伺服器、主職的選項與其他職業的按鈕由 script.js 照共用的 assets/js/ff14-game-data.js 畫。
+                     名字、伺服器、主職下面的 .invalid-feedback 是必填沒填就按下載時的錯誤：script.js 替欄位加 .is-invalid（共用的 .form-control.is-invalid ~ .invalid-feedback 才會顯示）與
+                     aria-invalid，並把錯誤的 id 接在欄位的 aria-describedby 後面，填了就拿掉 -->
                 <form class="editor-form" id="cardForm" novalidate autocomplete="off">
                     <section class="card editor-panel" id="panel-basic" role="tabpanel" aria-labelledby="tab-basic" tabindex="-1">
                         <h2 class="editor-panel-title" data-i18n="char_card_panel_basic">基本資料（必填）</h2>
@@ -73,10 +75,12 @@
                                 <span class="field-count" id="cardNameCount">0／21</span>
                             </div>
                             <input type="text" class="form-control" id="cardName" maxlength="21" aria-required="true" aria-describedby="cardNameCount" spellcheck="false" placeholder="Luna Starweaver" data-i18n="char_card_name_placeholder" data-i18n-attr="placeholder">
+                            <div class="invalid-feedback" id="cardNameError" data-i18n="char_card_error_name">請填角色名稱</div>
                         </div>
                         <div class="form-group">
                             <label class="form-label required" for="cardWorld" data-i18n="char_card_world_label">伺服器</label>
                             <select class="form-control" id="cardWorld" aria-required="true"></select>
+                            <div class="invalid-feedback" id="cardWorldError" data-i18n="char_card_error_world">請選伺服器</div>
                         </div>
                         <div class="form-group" id="cardWorldCustomGroup" hidden>
                             <div class="field-head">
@@ -89,6 +93,7 @@
                             <div class="form-group">
                                 <label class="form-label required" for="cardMainJob" data-i18n="char_card_job_label">主職</label>
                                 <select class="form-control" id="cardMainJob" aria-required="true"></select>
+                                <div class="invalid-feedback" id="cardMainJobError" data-i18n="char_card_error_job">請選主職</div>
                             </div>
                             <div class="form-group">
                                 <label class="form-label" for="cardLevel" data-i18n="char_card_level_label">等級</label>
@@ -267,18 +272,44 @@
                     </section>
                 </form>
 
-                <!-- 預覽：卡片就是一張 canvas（畫面上看到的和下載的是同一張）。#cardActions 的按鈕由後面的 Task 補上 -->
+                <!-- 預覽：卡片就是一張 canvas（畫面上看到的和下載的是同一張）。用大圖的裝置（手機、觸控為主）點一下卡片用整個畫面看大圖（#imageViewer）。
+                     #cardActions：下載圖片、分享、複製圖片，分享與複製只有瀏覽器支援才由 script.js 拿掉 hidden；#lineTip 只有 LINE 的內建瀏覽器才顯示。
+                     電腦在預覽下面（同一欄，跟著 sticky 的預覽走），手機（768px 以下）固定在畫面最下方（style.css）-->
                 <aside class="preview-pane" id="cardPreview" aria-label="卡片預覽" data-i18n="char_card_preview_title" data-i18n-attr="aria-label">
                     <canvas class="preview-canvas" id="cardCanvas" role="img" width="1200" height="675" aria-label="角色卡預覽：還沒填資料"></canvas>
                     <div class="preview-format" role="group" aria-label="版型" data-i18n="char_card_format_label" data-i18n-attr="aria-label">
                         <button type="button" class="chip active" id="formatLandscape" aria-pressed="true" data-format="landscape" data-i18n="char_card_format_landscape">橫版</button>
                         <button type="button" class="chip" id="formatPortrait" aria-pressed="false" data-format="portrait" data-i18n="char_card_format_portrait">直版</button>
                     </div>
-                    <div class="preview-actions" id="cardActions"></div>
+                    <div class="preview-actions" id="cardActions">
+                        <button type="button" class="btn btn-primary" id="downloadCard" data-i18n="char_card_download">下載圖片</button>
+                        <button type="button" class="btn btn-secondary" id="shareCard" hidden data-i18n="char_card_share">分享</button>
+                        <button type="button" class="btn btn-secondary" id="copyCard" hidden data-i18n="char_card_copy">複製圖片</button>
+                        <p class="form-text line-tip" id="lineTip" hidden><span data-i18n="char_card_line_tip">在 LINE 裡可能存不了圖，建議先用瀏覽器打開再填：</span><a id="lineTipLink" href="?openExternalBrowser=1" data-i18n="char_card_line_tip_link">用瀏覽器打開</a></p>
+                    </div>
                 </aside>
             </div>
         </div>
     </main>
+
+    <!-- 全螢幕大圖：手機按「下載圖片」，或點一下小卡，用整個畫面顯示做好的圖（長按圖片即可儲存）；內建瀏覽器（LINE、Facebook…）常常不能直接下載。
+         顯示與隱藏由 ModalManager 加減 .active；role、aria-modal、aria-labelledby 寫在遮罩層上，內層的 .dialog 是沒有 role 的一般容器。
+         圖、下載連結與分享鈕由 script.js 照這一次產生的圖填：必填沒填完時（只是看大圖）只有圖與「關閉」 -->
+    <div class="dialog-overlay viewer-overlay" id="imageViewer" role="dialog" aria-modal="true" aria-labelledby="viewerTitle">
+        <div class="dialog viewer">
+            <div class="dialog-header">
+                <h2 class="dialog-title" id="viewerTitle" data-i18n="char_card_viewer_title">長按圖片即可儲存</h2>
+            </div>
+            <div class="dialog-body viewer-body">
+                <img class="viewer-image" id="viewerImage" alt="">
+            </div>
+            <div class="dialog-actions viewer-actions">
+                <a class="btn btn-secondary" id="viewerDownload" download hidden data-i18n="char_card_viewer_download">下載檔案</a>
+                <button type="button" class="btn btn-secondary" id="viewerShare" hidden data-i18n="char_card_share">分享</button>
+                <button type="button" class="btn btn-secondary" id="viewerClose" data-i18n="char_card_viewer_close">關閉</button>
+            </div>
+        </div>
+    </div>
 
     <div id="footer-placeholder" data-base-path="../../"></div>
 
@@ -296,6 +327,7 @@
     <script src="card-layout.js"></script>
     <script src="card-renderer.js"></script>
     <script src="card-image.js"></script>
+    <script src="card-export.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

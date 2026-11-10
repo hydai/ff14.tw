@@ -11,10 +11,22 @@
 // 字型：Google Fonts 的中文字型依字分批載入，沒載入的字會退成別的字型，所以每畫一次就看有沒有還沒請求過的字，有就請瀏覽器載入（這一次請求的算一批）；
 // 這一批載入完（失敗也算：卡片用備用字型）就重畫一次，不等別批。fontsReady() 等到請求過的每一批都載入完並重畫過：等的時候又請求的也等，
 // 先請求的那一批比後請求的慢（後請求的先載完）也一樣，下載、分享、複製之前要等它。
+// 輸出（下載圖片、分享、複製圖片、全螢幕大圖）：三顆按鈕先看必填有沒有填（CardState.validate：沒填的在欄位下面寫錯誤、手機切到基本分頁、焦點移到第一個沒填的欄位，不產生圖），
+// 再等字型、職業圖示與還原中、上傳中的角色圖都好了（assetsReady()，最多等 EXPORT_WAIT_MS：卡住的請求不能讓按鈕永遠沒反應，逾時就照目前的畫面產生並說一聲）、重畫、轉成 PNG（CardExport，card-export.js）。
+// 手機（768px 以下）與觸控為主的裝置按「下載圖片」不直接下載，打開全螢幕大圖（#imageViewer，ModalManager），上面寫「長按圖片即可儲存」（LINE、Facebook 等內建瀏覽器常常不能直接下載）；
+// 這些裝置上點一下小卡也看大圖（只是看，不驗證，必填沒填完時大圖裡只有圖與「關閉」）。匯出做到一半再按什麼都不理（exporting）。
+// 複製要在點擊的當下就把「之後才會有的圖」（Promise）交給剪貼簿（Safari 要求 clipboard.write 在使用者手勢裡呼叫）。大圖裡的分享用已經做好的檔案，馬上分享，不再等任何東西。
+// 底部的分享要等圖做好才呼叫 navigator.share，等太久點擊的使用者手勢就過期了（瀏覽器只給幾秒，丟 NotAllowedError）：這時改開大圖，請使用者按大圖裡的分享（新的一下點擊）。
+// 手機打字（表單裡的文字欄、文字框得到焦點；選單不算：不開鍵盤，選完焦點還留在上面）時 #cardTool 加 .is-typing：style.css 把按鈕列收起來、預覽縮小，
+// 讓正在打的欄位看得到。換分頁要藏起有焦點的欄位時，先讓它失去焦點（selectTab()：Safari 藏起有焦點的欄位時不一定送 focusout，.is-typing 就收不掉）。
 class CharacterCardApp {
     static PHONE_QUERY = '(max-width: 768px)';
     static COARSE_QUERY = '(pointer: coarse)';
     static CLEAR_CONFIRM_MS = 3000;
+    // 下載、分享、複製之前，等字型、職業圖示與還原中的角色圖最多等多久（毫秒）：卡住的請求不能讓按鈕永遠沒反應
+    static EXPORT_WAIT_MS = 10000;
+    // 卡片上拖曳：指標離按下去的地方至少這麼遠（CSS 像素）才算移動；手抖的一兩個像素還是「點一下」（點小卡看大圖）
+    static DRAG_SLOP_PX = 4;
     static CUSTOM_WORLD = '__custom';
     static ICON_DIR = '../../assets/images/se/FFXIVJobIcons/';
     // 畫在卡片上、不跟著介面語言換的字
@@ -31,6 +43,16 @@ class CharacterCardApp {
         ['Home', () => 0],
         ['End', (index, count) => count - 1]
     ]);
+
+    // 必填的欄位（CardState.validate 的 missing 裡的名字）→ 錯誤的元素 id 與要標成錯誤的欄位 id。
+    // 伺服器選了「其他」而沒打字時，焦點會在自己輸入的欄位，所以那個欄位也要指到同一句錯誤
+    static ERROR_FIELDS = new Map([
+        ['name', { error: 'cardNameError', fields: ['cardName'] }],
+        ['world', { error: 'cardWorldError', fields: ['cardWorld', 'cardWorldCustom'] }],
+        ['mainJob', { error: 'cardMainJobError', fields: ['cardMainJob'] }]
+    ]);
+    // 焦點在這些 input 上是在打字（手機的鍵盤多半開著）；沒寫 type 的 input 也是 text。勾選框、單選、滑桿、檔案、顏色與按鈕不算
+    static TEXT_INPUT_TYPES = new Set(['text', 'search', 'email', 'url', 'tel', 'number']);
 
     // 有字數上限的文字欄位 id → 狀態的鍵（自己輸入的伺服器另外處理：它是 world，而且只有選了「其他」才算數）
     static TEXT_FIELDS = new Map([
@@ -111,17 +133,31 @@ class CharacterCardApp {
         this.fontChars = new Map();
         this.fontBatches = new Set();
         this.clearTimer = null;
+        // 還在載入的職業圖示：每一個是載入完（成功或失敗）就解決的 Promise，下載、分享、複製之前要等它們
+        this.iconLoads = new Set();
+        // 輸出：exporting 是匯出做到一半（再按什麼都不理）；errors 是現在寫著錯誤的必填欄位（ERROR_FIELDS 的鍵）；
+        // viewerState 是大圖開著時的 { url（這一張圖的 object URL）, file（大圖裡分享用的檔案，必填沒填完時是 null）, title }，沒開是 null；
+        // suppressClick 是剛才在卡片上拖曳移動了圖片，放開之後的那一下 click 不算點一下
+        this.exporting = false;
+        this.errors = new Set();
+        this.viewerState = null;
+        this.suppressClick = false;
         // 角色圖：image 是畫卡片用的 { source, width, height }（縮過、轉成 JPEG 再讀回來的那一張）或 null；imageToken 是上傳與還原的流水號
-        // （每開始一次、圖片拿掉與清除全部都加一，慢的那一次回來發現流水號變了就不算）；imageStatus 是狀態那一行現在寫的句子（IMAGE_STATUS 的名字，
-        // null 是空的，換語言時照它重寫）；adjusting 是調整模式；drag 是拖曳到一半的狀態 { pointerId, x, y, crop }，沒在拖是 null
+        // （每開始一次、圖片拿掉與清除全部都加一，慢的那一次回來發現流水號變了就不算）；imageLoad 是還在讀的上傳（只有最新的一次算數，所以只記它）：
+        // 那一次的 Promise，沒有是 null，下載、分享、複製之前要等它讀完；imageWaits 是正在等它的匯出（imageSettled()），imageLoad 一換（見 setImageLoad()）就叫醒；
+        // imageStatus 是狀態那一行現在寫的句子（IMAGE_STATUS 的名字，null 是空的，換語言時照它重寫）；adjusting 是調整模式；
+        // drag 是拖曳到一半的狀態 { pointerId, x, y, crop, moved（離按下去的地方超過 DRAG_SLOP_PX 了嗎）}，沒在拖是 null
         this.image = null;
         this.imageToken = 0;
+        this.imageLoad = null;
+        this.imageWaits = new Set();
         this.imageStatus = null;
         this.adjusting = false;
         this.drag = null;
 
         const byId = (id) => document.getElementById(id);
         this.elements = {
+            tool: byId('cardTool'),
             form: byId('cardForm'),
             tabs: byId('cardTabs'),
             name: byId('cardName'),
@@ -154,7 +190,17 @@ class CharacterCardApp {
             imageCenter: byId('imageCenter'),
             imageFill: byId('imageFill'),
             imageRemove: byId('imageRemove'),
-            imageAdjust: byId('imageAdjust')
+            imageAdjust: byId('imageAdjust'),
+            downloadCard: byId('downloadCard'),
+            shareCard: byId('shareCard'),
+            copyCard: byId('copyCard'),
+            lineTip: byId('lineTip'),
+            lineTipLink: byId('lineTipLink'),
+            viewer: byId('imageViewer'),
+            viewerImage: byId('viewerImage'),
+            viewerDownload: byId('viewerDownload'),
+            viewerShare: byId('viewerShare'),
+            viewerClose: byId('viewerClose')
         };
         this.formatButtons = new Map([['landscape', byId('formatLandscape')], ['portrait', byId('formatPortrait')]]);
         this.likeChips = this.chipsOf(this.elements.likes, 'like');
@@ -167,6 +213,7 @@ class CharacterCardApp {
         this.bindEvents();
         this.initTabs();
         this.initImage();
+        this.initExport();
         this.relabel();
         this.syncForm();
         this.render();
@@ -281,11 +328,40 @@ class CharacterCardApp {
         canvas.addEventListener('pointerdown', (event) => this.startDrag(event));
         canvas.addEventListener('pointermove', (event) => this.moveDrag(event));
         for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) canvas.addEventListener(type, (event) => this.endDrag(event));
-        // 切換語言：靜態的文字由 I18nManager 換，這裡換 JS 畫的（選項、按鈕、計數、勾選框的名稱），再用新的語言重畫卡片；選的值不變
+        // 點一下小卡看大圖（用大圖的裝置）：卡片不是按鈕，鍵盤的人用「下載圖片」
+        canvas.addEventListener('click', () => this.handleCanvasClick());
+
+        // 輸出：三顆按鈕與大圖裡的分享、關閉
+        const { downloadCard, shareCard, copyCard, viewerShare, viewerClose } = this.elements;
+        downloadCard.addEventListener('click', () => this.handleDownload());
+        shareCard.addEventListener('click', () => this.handleShare());
+        copyCard.addEventListener('click', () => this.handleCopy());
+        viewerShare.addEventListener('click', () => this.shareFromViewer());
+        viewerClose.addEventListener('click', () => this.closeViewer());
+
+        // 手機打字：焦點進了文字欄、文字框就加 .is-typing，離開時拿掉（移到另一個這種欄位時不拿掉；選單不算）。focusin、focusout 會冒泡，所以掛在表單上
+        form.addEventListener('focusin', (event) => {
+            if (this.isTypingField(event.target)) this.elements.tool.classList.add('is-typing');
+        });
+        form.addEventListener('focusout', (event) => {
+            if (!(form.contains(event.relatedTarget) && this.isTypingField(event.relatedTarget))) this.elements.tool.classList.remove('is-typing');
+        });
+
+        // 切換語言：靜態的文字由 I18nManager 換，這裡換 JS 畫的（選項、按鈕、計數、勾選框的名稱），再用新的語言重畫卡片；選的值不變。
+        // 大圖開著時，圖的說明（alt）是卡片現在的說明，跟著換（圖本身是這一張的快照）
         window.i18n.onLanguageChange(() => {
             this.relabel();
             this.render();
+            if (this.viewerState !== null) this.elements.viewerImage.setAttribute('alt', this.elements.canvas.getAttribute('aria-label') ?? '');
         });
+    }
+
+    // 焦點在這個元素上是在打字嗎：文字相關的 input 與文字框。選單不算：它不開鍵盤，Android 與電腦的 Chrome 選完之後焦點還留在選單上，
+    // 算的話選完最後一個必填欄位（主職）之後 .is-typing 一直關不掉，按鈕列一直收著
+    isTypingField(element) {
+        if (!element || typeof element.tagName !== 'string') return false;
+        if (element.tagName === 'TEXTAREA') return true;
+        return element.tagName === 'INPUT' && CharacterCardApp.TEXT_INPUT_TYPES.has((element.getAttribute('type') || 'text').toLowerCase());
     }
 
     // 一組切換按鈕：事件委派在群組上，點到按鈕（不能按的瀏覽器本來就不送 click）就把它的值交給 onToggle
@@ -377,6 +453,7 @@ class CharacterCardApp {
         this.state = CardState.normalize({ ...this.state, ...patch }, this.jobs);
         CardState.save(this.storage, this.state);
         this.syncDerived();
+        this.syncErrors();
         this.render();
     }
 
@@ -407,6 +484,7 @@ class CharacterCardApp {
         this.state = CardState.defaults();
         this.dropImage();
         this.setImageStatus(null);
+        this.hideErrors();
         this.syncForm();
         this.render();
         FF14Utils.showToast(this.t('char_card_cleared', '已清除全部資料'));
@@ -463,6 +541,13 @@ class CharacterCardApp {
         const chosen = this.tabs.find((item) => item.key === key);
         if (!chosen) return;
         const phone = this.isPhone();
+        // 手機要藏起來的那幾組裡有焦點的話，藏起來之前先讓焦點離開：Chrome 藏起有焦點的欄位時會丟掉焦點並送 focusout，Safari 不一定，
+        // 那樣 .is-typing 沒人拿掉，按鈕列就一直收著。blur() 會送 focusout（拿掉 .is-typing），這裡不靠它一定送，再拿一次。電腦五組都顯示，沒有要藏的
+        const active = document.activeElement;
+        if (phone && this.tabs.some(({ key: tabKey, panel }) => tabKey !== key && panel.contains(active))) {
+            active.blur();
+            this.elements.tool.classList.remove('is-typing');
+        }
         for (const { key: tabKey, tab, panel } of this.tabs) {
             const on = tabKey === key;
             tab.setAttribute('aria-selected', on ? 'true' : 'false');
@@ -667,11 +752,30 @@ class CharacterCardApp {
         return canvas;
     }
 
-    // 選了檔案（<input type="file"> 的 change）：先拿出檔案再清掉輸入框，同一個檔案再選一次才會有 change；在選檔視窗按取消沒有檔案，什麼都不做
+    // 選了檔案（<input type="file"> 的 change）：先拿出檔案再清掉輸入框，同一個檔案再選一次才會有 change；在選檔視窗按取消沒有檔案，什麼都不做。
+    // 讀完之前記在 imageLoad：選了截圖馬上按下載的話，要等它（assetsReady()），不然產生的是舊的圖，畫面卻在一會兒之後換成新的那張
     chooseImage(input) {
         const file = input.files && input.files.length > 0 ? input.files[0] : null;
         input.value = '';
-        if (file !== null) this.uploadImage(file);
+        if (file === null) return;
+        const load = this.uploadImage(file).finally(() => {
+            if (this.imageLoad === load) this.setImageLoad(null);
+        });
+        this.setImageLoad(load);
+    }
+
+    // 上傳中的那一次換了（開始讀一張、讀完、被後選的取代、移除圖片、清除全部）：記下現在的（沒有是 null），叫醒在等的匯出，
+    // 讓它們照現在的重新看要不要等。不叫醒的話，已經在等的匯出會一直等一張不算數的圖，等到逾時才產生，還說是字型沒載完
+    setImageLoad(load) {
+        this.imageLoad = load;
+        for (const wake of this.imageWaits) wake();
+        this.imageWaits.clear();
+    }
+
+    // 等到現在上傳中的那一次讀完，或它換掉了（不算數了）就回來：回來之後由呼叫端（assetsReady()）照 imageLoad 再看一次
+    imageSettled() {
+        if (this.imageLoad === null) return Promise.resolve();
+        return new Promise((resolve) => this.imageWaits.add(resolve));
     }
 
     /**
@@ -743,9 +847,10 @@ class CharacterCardApp {
         this.elements.imageInput.focus();
     }
 
-    // 圖片拿掉（移除圖片、清除全部）：還在讀的上傳與還原都不算了，檔案輸入清空，拖曳與調整模式結束（卡片不再攔截手指）。呼叫端自己重畫
+    // 圖片拿掉（移除圖片、清除全部）：還在讀的上傳與還原都不算了（下載也不用等它），檔案輸入清空，拖曳與調整模式結束（卡片不再攔截手指）。呼叫端自己重畫
     dropImage() {
         this.imageToken += 1;
+        this.setImageLoad(null);
         this.image = null;
         this.elements.imageInput.value = '';
         this.stopDrag({ save: false });
@@ -798,8 +903,10 @@ class CharacterCardApp {
             : this.t('char_card_image_adjust', '調整圖片');
     }
 
-    // 卡片上按下去：有圖片，而且是滑鼠左鍵、或在調整模式（手指、筆）才開始拖。其他情況什麼都不做，也不 preventDefault：手指在卡片上滑，頁面照常捲
+    // 卡片上按下去：有圖片，而且是滑鼠左鍵、或在調整模式（手指、筆）才開始拖。其他情況什麼都不做，也不 preventDefault：手指在卡片上滑，頁面照常捲。
+    // 每一次按下去都先把「剛才拖曳過」的記號清掉（上一次拖曳放開之後的 click 沒送到卡片的話，不能讓它擋住這一次的點一下）
     startDrag(event) {
+        this.suppressClick = false;
         if (this.image === null) return;
         const mouse = event.pointerType === 'mouse' && event.button === 0;
         if (!mouse && !this.adjusting) return;
@@ -814,7 +921,7 @@ class CharacterCardApp {
         } catch (error) {
             // 不處理
         }
-        this.drag = { pointerId: event.pointerId, x: event.clientX, y: event.clientY, crop: CardState.cropOf(this.state) };
+        this.drag = { pointerId: event.pointerId, x: event.clientX, y: event.clientY, crop: CardState.cropOf(this.state), moved: false };
         this.elements.canvas.classList.add('is-dragging');
         event.preventDefault();
     }
@@ -831,6 +938,8 @@ class CharacterCardApp {
             this.stopDrag({ save: true, release: true });
             return;
         }
+        // 離按下去的地方至少 DRAG_SLOP_PX 才算拖曳（放開之後的 click 就不算點一下）；手抖的一兩個像素還是點一下
+        if (!drag.moved && Math.hypot(event.clientX - drag.x, event.clientY - drag.y) >= CharacterCardApp.DRAG_SLOP_PX) drag.moved = true;
         const { canvas } = this.elements;
         const rect = canvas.getBoundingClientRect();
         if (!(rect.width > 0)) return;
@@ -844,11 +953,13 @@ class CharacterCardApp {
         if (this.drag !== null && event.pointerId === this.drag.pointerId) this.stopDrag({ save: true });
     }
 
-    // 結束拖曳。save：把現在的位置存起來；release：放掉指標抓取（放開、取消、抓取被拿走時瀏覽器已經放掉了，不用；放開的事件沒收到時還抓著，要自己放）
+    // 結束拖曳。save：把現在的位置存起來；release：放掉指標抓取（放開、取消、抓取被拿走時瀏覽器已經放掉了，不用；放開的事件沒收到時還抓著，要自己放）。
+    // 拖曳移動了圖片的話，記下來：緊接著放開之後瀏覽器送的那一下 click 是拖曳的收尾，不是點一下（handleCanvasClick 吃掉它）
     stopDrag({ save, release = false }) {
         if (this.drag === null) return;
-        const { pointerId } = this.drag;
+        const { pointerId, moved } = this.drag;
         this.drag = null;
+        this.suppressClick = moved;
         this.elements.canvas.classList.remove('is-dragging');
         if (release) {
             try {
@@ -893,15 +1004,26 @@ class CharacterCardApp {
     }
 
     // 職業的圖示：載入完才給卡片（complete 而且有寬度），載入前與載入失敗是 null（卡片畫名稱的第一個字）。
-    // 每個職業只載入一次；載入完重畫，失敗就維持 null、不再請求
+    // 每個職業只載入一次；載入完重畫，失敗就維持 null、不再請求。還在載入的記在 iconLoads（載完或失敗就拿掉）：下載、分享、複製之前要等它們，
+    // 不然圖上畫的是名稱的第一個字，不是圖示
     iconOf(job) {
         if (!job.icon) return null;
         let entry = this.icons.get(job.key);
         if (!entry) {
             const image = new Image();
             entry = { image };
-            image.onload = () => this.render();
-            image.onerror = () => {};
+            const loading = new Promise((resolve) => {
+                const settle = () => {
+                    this.iconLoads.delete(loading);
+                    resolve();
+                };
+                image.onload = () => {
+                    settle();
+                    this.render();
+                };
+                image.onerror = settle;
+            });
+            this.iconLoads.add(loading);
             image.src = `${CharacterCardApp.ICON_DIR}${job.icon}`;
             this.icons.set(job.key, entry);
         }
@@ -960,6 +1082,275 @@ class CharacterCardApp {
     // 也等：每等完一輪就再看一次，直到沒有還在載入的批次為止。下載、分享、複製之前要等它
     async fontsReady() {
         while (this.fontBatches.size > 0) await Promise.all([...this.fontBatches]);
+    }
+
+    // ---------- 輸出：下載、分享、複製、全螢幕大圖 ----------
+
+    // 這個瀏覽器能做什麼：分享要能傳 PNG 檔（拿一個真的檔案問 canShare：有的瀏覽器只能分享文字與網址；沒有 File 建構函式的不能分享）、複製要有 ClipboardItem；
+    // LINE 的內建瀏覽器多一行「用瀏覽器打開」。瀏覽器的功能不會變，判斷一次就好
+    initExport() {
+        const { shareCard, copyCard, lineTip, lineTipLink } = this.elements;
+        this.viewerModal = new ModalManager();
+        const probe = this.makeFile([''], 'card.png');
+        this.canShare = probe !== null && CardExport.canShareFiles(window.navigator, probe);
+        this.canCopy = CardExport.canCopy(window.navigator, window);
+        shareCard.hidden = !this.canShare;
+        copyCard.hidden = !this.canCopy;
+        if (CardExport.inAppBrowser(window.navigator.userAgent) === 'line') {
+            lineTipLink.setAttribute('href', CardExport.externalUrl(window.location.href));
+            lineTip.hidden = false;
+        }
+    }
+
+    // 一個 PNG 檔；沒有 File 建構函式（或建不起來）的瀏覽器是 null
+    makeFile(parts, name) {
+        if (typeof window.File !== 'function') return null;
+        try {
+            return new window.File(parts, name, { type: CardExport.PNG_TYPE });
+        } catch (error) {
+            return null;
+        }
+    }
+
+    // 手機（768px 以下）與觸控為主的裝置用全螢幕大圖，不直接下載：LINE、Facebook 等內建瀏覽器常常不能直接下載，長按圖片存檔最可靠
+    usesViewer() {
+        return this.isPhone() || this.isCoarse();
+    }
+
+    // 卡片上點一下（click）：用大圖的裝置才看大圖，電腦（寬螢幕、滑鼠）什麼都不做；調整圖片時卡片上的點與拖都是在調整；
+    // 拖曳移動了圖片之後放開的那一下 click 是拖曳的收尾（stopDrag 記下來的），不算
+    handleCanvasClick() {
+        if (this.suppressClick) {
+            this.suppressClick = false;
+            return;
+        }
+        if (this.adjusting || !this.usesViewer()) return;
+        this.handleEnlarge();
+    }
+
+    // 一次只做一件：等字型、轉 PNG 的時候再按（慢的手機會連按），什麼都不做（呼叫端先看 exporting）。任何沒接住的錯誤都告訴使用者，不留在 console。
+    // 必填的驗證在 runExport 之前做（同步的，沒過就不算「忙」）
+    async runExport(task) {
+        this.exporting = true;
+        try {
+            await task();
+        } catch (error) {
+            this.toastError('char_card_export_failed', '沒辦法產生圖片，請再試一次。');
+        } finally {
+            this.exporting = false;
+        }
+    }
+
+    toastError(key, fallback) {
+        FF14Utils.showToast(this.t(key, fallback), 'error');
+    }
+
+    // 下載圖片：必填都填了才產生；電腦直接存檔，手機（與觸控為主的裝置）打開全螢幕大圖
+    handleDownload() {
+        if (this.exporting || !this.validateForExport()) return undefined;
+        return this.runExport(async () => {
+            const blob = await this.makeBlob();
+            const name = CardExport.fileName(this.state.name);
+            if (this.usesViewer()) {
+                // Safari 與 macOS 的 Firefox 點按鈕不給焦點：先把焦點放在按鈕上，ModalManager 才記得關掉時要回到這裡
+                this.elements.downloadCard.focus();
+                this.openViewer(blob, name, true);
+                return;
+            }
+            CardExport.download(blob, name, document);
+            FF14Utils.showToast(this.t('char_card_downloaded', '已下載 {file}', { file: name }));
+        });
+    }
+
+    // 點小卡看大圖：只是看，不驗證、不寫錯誤；必填沒填完時大圖裡只有圖與「關閉」（沒有下載檔案與分享）
+    handleEnlarge() {
+        if (this.exporting) return undefined;
+        return this.runExport(async () => {
+            const complete = CardState.validate(this.state).ok;
+            const blob = await this.makeBlob();
+            this.openViewer(blob, CardExport.fileName(this.state.name), complete);
+        });
+    }
+
+    // 分享：分享一個 PNG 檔，標題是角色名稱。使用者取消不說話；失敗（含沒有 File）建議改用下載。
+    // 等字型、等圖太久，點擊的使用者手勢就過期了（瀏覽器只在點擊之後的幾秒內收 navigator.share，丟 NotAllowedError）：改開大圖，
+    // 焦點放在大圖的分享，請使用者再按一次（新的手勢，大圖裡分享的是已經做好的檔案，馬上就呼叫）。先把焦點放在分享鈕上，ModalManager 才記得關掉時要回到這裡
+    handleShare() {
+        if (this.exporting || !this.validateForExport()) return undefined;
+        return this.runExport(async () => {
+            const blob = await this.makeBlob();
+            const name = CardExport.fileName(this.state.name);
+            const file = this.makeFile([blob], name);
+            const result = file === null ? 'failed' : await CardExport.share(window.navigator, file, this.state.name.trim());
+            if (result === 'blocked') {
+                this.elements.shareCard.focus();
+                this.openViewer(blob, name, true);
+                this.elements.viewerShare.focus();
+                FF14Utils.showToast(this.t('char_card_share_ready', '圖片做好了，請再按一次「分享」。'), 'info');
+            } else if (result === 'failed') {
+                this.toastError('char_card_share_failed', '沒辦法分享，請改用下載。');
+            }
+        });
+    }
+
+    // 複製圖片：在點擊的當下（還在使用者手勢裡）就把「之後才會有的圖」（Promise）交給剪貼簿，Safari 要求 clipboard.write 在手勢裡呼叫，
+    // 等圖做好才呼叫會被拒絕；圖晚一點才好沒關係。圖轉不出來（Promise 被拒絕）時 write 也被拒絕，一樣是複製失敗
+    handleCopy() {
+        if (this.exporting || !this.validateForExport()) return undefined;
+        this.exporting = true;
+        const blob = this.makeBlob();
+        return CardExport.copy(window.navigator, window, blob).then((copied) => {
+            if (copied) FF14Utils.showToast(this.t('char_card_copied', '已複製圖片'));
+            else this.toastError('char_card_copy_failed', '沒辦法複製，請改用下載。');
+        }).finally(() => {
+            this.exporting = false;
+        });
+    }
+
+    // 等到產生圖要用的東西都好了：還原中的角色圖（this.ready）、上傳中的角色圖（imageSettled()）、還在載入的職業圖示、字型的每一批。
+    // 等的時候又請求的（使用者又打了字、換了語言、又選了一張截圖）也等，每等完一輪就再看一次，直到沒有還在等的為止
+    // （失敗也算好了：卡片用備用字型、名稱的第一個字或現在的圖；等的那一次上傳不算數了也算，見 setImageLoad()）
+    async assetsReady() {
+        await this.ready;
+        do {
+            await Promise.all([this.fontsReady(), ...this.iconLoads, this.imageSettled()]);
+        } while (this.fontBatches.size > 0 || this.iconLoads.size > 0 || this.imageLoad !== null);
+    }
+
+    // 卡片轉成 PNG：等 assetsReady()（最多 EXPORT_WAIT_MS，逾時就照目前的畫面產生並說一聲：截圖還在處理，或字型還沒載完），然後重畫一次、在同一個 tick 裡轉成 PNG
+    // （中間沒有 await，畫面不會被別的重畫換掉）。回傳 Promise<Blob>，轉不出來是 rejected
+    async makeBlob() {
+        let timer;
+        const capped = new Promise((resolve) => {
+            timer = window.setTimeout(() => resolve(true), CharacterCardApp.EXPORT_WAIT_MS);
+        });
+        const slow = await Promise.race([this.assetsReady().then(() => false), capped]);
+        window.clearTimeout(timer);
+        if (slow && this.imageLoad !== null) FF14Utils.showToast(this.t('char_card_image_slow', '上傳的截圖還在處理，先用目前的畫面產生圖片。'), 'warning');
+        else if (slow) FF14Utils.showToast(this.t('char_card_fonts_slow', '字型還沒載完，先用目前的畫面產生圖片。'), 'warning');
+        this.render();
+        return CardExport.toBlob(this.elements.canvas);
+    }
+
+    // ---------- 必填的驗證 ----------
+
+    // 名字、伺服器、主職都填了才能輸出。沒填的在欄位下面寫錯誤，手機切到基本分頁（三個必填都在那一組），焦點移到第一個沒填的欄位。回傳能不能輸出
+    validateForExport() {
+        const { ok, missing } = CardState.validate(this.state);
+        if (ok) return true;
+        for (const key of missing) this.showError(key);
+        if (this.isPhone()) this.selectTab('basic');
+        this.focusField(missing[0]);
+        return false;
+    }
+
+    // 焦點移到沒填的欄位。伺服器選了「其他（自己輸入）」而沒打字時，要填的是自己輸入的欄位
+    focusField(key) {
+        const { name, world, worldCustom, mainJob } = this.elements;
+        if (key === 'name') name.focus();
+        else if (key === 'world') (world.value === CharacterCardApp.CUSTOM_WORLD ? worldCustom : world).focus();
+        else mainJob.focus();
+    }
+
+    // 錯誤寫在欄位下面（共用的 .form-control.is-invalid ~ .invalid-feedback 才會顯示）：欄位標成 .is-invalid 與 aria-invalid，
+    // 錯誤的 id 接在欄位原本的 aria-describedby 後面（字數計數的 id 留著），螢幕閱讀器聚焦到欄位時才聽得到
+    showError(key) {
+        const { error, fields } = CharacterCardApp.ERROR_FIELDS.get(key);
+        for (const id of fields) {
+            const field = document.getElementById(id);
+            field.classList.add('is-invalid');
+            field.setAttribute('aria-invalid', 'true');
+            const ids = this.describedBy(field);
+            if (!ids.includes(error)) field.setAttribute('aria-describedby', [...ids, error].join(' '));
+        }
+        this.errors.add(key);
+    }
+
+    hideError(key) {
+        const { error, fields } = CharacterCardApp.ERROR_FIELDS.get(key);
+        for (const id of fields) {
+            const field = document.getElementById(id);
+            field.classList.remove('is-invalid');
+            field.removeAttribute('aria-invalid');
+            const ids = this.describedBy(field).filter((item) => item !== error);
+            if (ids.length > 0) field.setAttribute('aria-describedby', ids.join(' '));
+            else field.removeAttribute('aria-describedby');
+        }
+        this.errors.delete(key);
+    }
+
+    hideErrors() {
+        for (const key of [...this.errors]) this.hideError(key);
+    }
+
+    // 欄位的 aria-describedby 現在指到哪幾個 id
+    describedBy(field) {
+        return (field.getAttribute('aria-describedby') ?? '').split(/\s+/).filter(Boolean);
+    }
+
+    // 填了的欄位把錯誤拿掉（每次狀態改變都看一下：打字、選單、自己輸入的伺服器）
+    syncErrors() {
+        if (this.errors.size === 0) return;
+        const { missing } = CardState.validate(this.state);
+        for (const key of [...this.errors]) if (!missing.includes(key)) this.hideError(key);
+    }
+
+    // ---------- 全螢幕大圖 ----------
+
+    /**
+     * 打開全螢幕大圖，顯示這一次產生的圖（這一張的 object URL，關掉之後過一陣子撤銷，見 releaseViewer()）。圖的說明（alt）是卡片現在的說明。
+     * 完整時（必填都填了）有「下載檔案」（<a download>，給支援的瀏覽器）與「分享」（這個瀏覽器能分享檔案時）；
+     * 必填沒填完（只是看大圖）時只有圖與「關閉」。關掉時（Esc、關閉鈕、點遮罩）焦點回到開啟前的元素（ModalManager）。
+     * @param {Blob} blob - 這一次產生的 PNG
+     * @param {string} name - 下載的檔名
+     * @param {boolean} complete - 必填都填了嗎
+     */
+    openViewer(blob, name, complete) {
+        this.closeViewer();
+        const { viewer, viewerImage, viewerDownload, viewerShare, canvas } = this.elements;
+        const url = window.URL.createObjectURL(blob);
+        const file = complete ? this.makeFile([blob], name) : null;
+        this.viewerState = { url, file, title: this.state.name.trim() };
+        viewerImage.setAttribute('src', url);
+        viewerImage.setAttribute('alt', canvas.getAttribute('aria-label') ?? '');
+        if (complete) {
+            viewerDownload.setAttribute('href', url);
+            viewerDownload.setAttribute('download', name);
+        } else {
+            viewerDownload.removeAttribute('href');
+        }
+        viewerDownload.hidden = !complete;
+        viewerShare.hidden = !(this.canShare && file !== null);
+        this.viewerModal.show(viewer, { onClose: () => this.releaseViewer() });
+    }
+
+    // 沒開著就什麼都不做；開著就關掉（ModalManager 還原焦點，再呼叫 releaseViewer）
+    closeViewer() {
+        this.viewerModal.hide();
+    }
+
+    // 大圖關掉了：圖與下載連結馬上不再指到這一張的 object URL，網址本身過一陣子才撤銷。剛點完「下載檔案」就關掉的話，瀏覽器是在 click() 之後才
+    // （非同步）去讀網址，太早撤銷有的瀏覽器會取消這次下載，所以和 CardExport.download 一樣等 REVOKE_DELAY_MS
+    releaseViewer() {
+        const state = this.viewerState;
+        if (state === null) return;
+        this.viewerState = null;
+        this.elements.viewerImage.removeAttribute('src');
+        this.elements.viewerDownload.removeAttribute('href');
+        window.setTimeout(() => window.URL.revokeObjectURL(state.url), CardExport.REVOKE_DELAY_MS);
+    }
+
+    // 大圖裡的分享：分享已經做好的檔案，同步呼叫 navigator.share（這一下點擊是新的使用者手勢，不能再等字型或轉檔）；連按不重複。
+    // 這裡被拒絕（blocked：這裡不准分享）就沒有別的退路了，和其他失敗一樣建議改用下載（大圖裡就有「下載檔案」）
+    shareFromViewer() {
+        const state = this.viewerState;
+        if (state === null || state.file === null || this.exporting) return undefined;
+        this.exporting = true;
+        return CardExport.share(window.navigator, state.file, state.title).then((result) => {
+            if (result === 'failed' || result === 'blocked') this.toastError('char_card_share_failed', '沒辦法分享，請改用下載。');
+        }).finally(() => {
+            this.exporting = false;
+        });
     }
 }
 

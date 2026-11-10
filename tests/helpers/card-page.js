@@ -8,12 +8,14 @@
 //   page.texts(); page.drawCalls(); page.stored; page.toasts; page.consoleErrors; await page.flush();
 //   const again = await page.reopen();
 //   page.pick(page.file({ width: 4000, height: 1500 })); await page.flush(); page.slide(150); page.drag([[300, 200], [330, 205]]); page.pointer('down', { pointerType: 'touch' });
+//   page.focus('cardName'); page.press('downloadCard'); await page.flush(); page.downloads; page.shares; page.shareCalls; page.clipboardCalls; page.clipboardWrites;
+//   page.blobRequests(); page.releaseFonts(); page.setBlobFails(true); page.$('imageViewer').classList.contains('active');
 //
-// - 照 index.html 建出 #cardTool（mountFromHtml），照 index.html 的 <script src> 順序載入這個工具的翻譯檔、共用的 ff14-game-data.js 與 modal-manager.js、
-//   工具目錄自己的每一個腳本（src 不含 /：card-state.js、card-layout.js、card-renderer.js、script.js…），最後 new CharacterCardApp()，
+// - 照 index.html 建出 #cardTool 與全螢幕大圖 #imageViewer（mountFromHtml），照 index.html 的 <script src> 順序載入這個工具的翻譯檔、共用的 ff14-game-data.js、
+//   工具目錄自己的每一個腳本（src 不含 /：card-state.js、card-layout.js、card-renderer.js、card-export.js、script.js…），最後 new CharacterCardApp()，
 //   等 app.ready 才回傳（fontsDelay 時不等：字型一直沒回來，ready 就一直沒完成，要先 releaseFonts()）。
-//   頁首與頁尾（layout-loader.js）、common.js、i18n-manager.js 與共用翻譯檔不載入，用到的部分改用下面的替身：
-//   頁面程式只能用 FF14Utils.getI18nText() 與 showToast()，不能用 SecurityUtils。ModalManager 載入的是真的，但 Task 7 之前沒有人用它
+//   頁首與頁尾（layout-loader.js）、common.js、i18n-manager.js、modal-manager.js 與共用翻譯檔不載入，用到的部分改用下面的替身：
+//   頁面程式只能用 FF14Utils.getI18nText() 與 showToast()，不能用 SecurityUtils；ModalManager 是下面的 FakeModalManager
 // - i18n 替身從真正的翻譯檔取字（en、ja 找不到時退回 zh，同 I18nManager）並代入 {參數}；setLang(next) 照 I18nManager.setLanguage()
 //   先依 [data-i18n] 重新翻譯頁面，再依序呼叫登記的語言監聽。建立頁面之前先照 lang 翻譯一次（同 DOMContentLoaded 時的順序）
 // - FF14Utils 替身只有 getI18nText 與 showToast；toasts 記下每一次 showToast() 的 { message, type }
@@ -59,15 +61,28 @@
 // - matchMedia 只認 '(max-width: 768px)'（narrow：頁面現在是不是手機版面）與 '(pointer: coarse)'（coarse：觸控為主的裝置），其他查詢一律丟錯。
 //   回傳 { media, matches, addEventListener('change', fn), removeEventListener }；setNarrow(next)、setCoarse(next) 改值並呼叫那個查詢每個登記的 change 監聽
 //   （{ matches: next, media }），不管值有沒有變
-// - navigator（Task 7 才會用到）：userAgent 預設是桌面版的 Chrome。share：false（預設，沒有 navigator.share 與 canShare）、'ok'（canShare 認得有檔案的資料，
-//   share() 成功，每一筆記在 shares）、'cancel'（share() 丟 AbortError）、'fail'（share() 丟別的錯）、'no-files'（有 share，但 canShare 一律回 false）。
-//   clipboard：false（預設，沒有 navigator.clipboard 與 ClipboardItem）、'ok'（clipboard.write(items) 記在 clipboardWrites）、'reject'（write() 被拒絕）
+// - navigator：userAgent 預設是桌面版的 Chrome。share：false（預設，沒有 navigator.share 與 canShare）、'ok'（canShare 認得有檔案的資料，
+//   share() 成功，每一筆記在 shares）、'cancel'（share() 丟 AbortError）、'fail'（share() 丟別的錯：DataError）、'no-files'（有 share，但 canShare 一律回 false）、
+//   'expired'（只有在 press() 那一下點擊裡同步呼叫的 share() 才成功，之後才呼叫的丟 NotAllowedError：瀏覽器只在點擊之後的幾秒內收 navigator.share，
+//   替身沒有時間，頁面先 await 了什麼才呼叫就當成手勢已經過期）、'blocked'（share() 一律丟 NotAllowedError：這裡不准分享）。
+//   shareCalls 是每一次 navigator.share() 被呼叫的資料（呼叫的當下就記，不管結果；瀏覽器要求在使用者手勢裡呼叫，測試靠它看是不是同步呼叫的）。
+//   clipboard：false（預設，沒有 navigator.clipboard 與 ClipboardItem）、'ok'（write() 成功）、'reject'（write() 被拒絕）。
+//   clipboardCalls 是每一次 clipboard.write(items) 被呼叫的 items（呼叫的當下就記，ClipboardItem 的 data 還可能是還沒好的 Promise；Safari 要求在使用者手勢裡
+//   呼叫，所以測試靠它看是不是同步呼叫的）；clipboardWrites 是寫完的：和瀏覽器一樣等每個 ClipboardItem 的內容（Blob 或 Promise<Blob>），
+//   每一筆是 [{ 'image/png': Blob }…]，內容的 Promise 被拒絕時 write() 也被拒絕、不記。ClipboardItem 替身有 data 與 types。
+//   fileConstructor：false 時沒有 window.File（預設有，用 Node 的 File：{ name, type, size }）。
+//   downloads 是 <a download href="…"> 被點的每一次：{ file（download 的值）, href, blob（href 的 object URL 對到的那個 Blob，不是這份頁面建的是 null） }；
+//   照 Firefox 的規則，連結沒有接在文件上（不在 document.body 底下）時點了沒有用，不記
 // - fake-dom 的元素少了瀏覽器有的幾樣東西，這份 document 建出來的每個元素（mountFromHtml 建的與頁面自己建的）都補上
 //   （只換這份 document 的 createElement，不動 fake-dom 的元素類別；換 createElement 一定要在 mountFromHtml 之前）：
 //   disabled 的元素 click() 什麼都不做；勾選框與單選照瀏覽器的順序：先換 checked（單選同組的其他人取消），派送 click（被 preventDefault 就換回去、
 //   不再往下），再派送 input 與 change（已經選取的單選再點只有 click）；元素本身或祖先有 hidden、或 disabled 的元素 focus() 什麼都不做
 //   （瀏覽器拿不到焦點；fake-dom 的 focus() 只檢查 inert）；hidden 設成 true 時，焦點在這個元素（或它的子孫）上就掉到 body
-//   （瀏覽器的行為；fake-dom 藏起來焦點照樣留著，「焦點不會掉」的測試就永遠不會失敗）。disabled 設成 true 不模擬焦點掉走
+//   （瀏覽器的行為；fake-dom 藏起來焦點照樣留著，「焦點不會掉」的測試就永遠不會失敗）。disabled 設成 true 不模擬焦點掉走。
+//   hideKeepsFocus: true 時不模擬這件事（模擬 Safari：藏起有焦點的欄位時，焦點不一定掉走、也不一定送 focusout）：hidden 設成 true 之後，
+//   activeElement 還是被藏起來的那個元素，也沒有 focusout；頁面要自己先讓它失去焦點（blur()）才收得掉「焦點在欄位上」的狀態（例如 .is-typing）。
+//   藏起來的元素 focus() 照樣拿不到焦點
+//   focus() 在焦點真的換過去之後還會在這個元素上派送 focusin（冒泡，relatedTarget 是剛失去焦點的元素，原本是 body 就是 null；fake-dom 只派送 focusout）
 // - querySelectorAll() 與 .children 的結果和瀏覽器一樣：querySelectorAll() 是 NodeList 的替身（length、item()、索引、forEach()、entries()、keys()、values()、
 //   迭代），.children 是 HTMLCollection 的替身（length、item()、namedItem()、索引、迭代，連 forEach() 都沒有）。兩個都沒有 map、filter、find、some、every、
 //   reduce、includes、indexOf、at、flatMap、slice 這些陣列的方法：fake-dom 自己回傳一般的陣列，頁面少轉成陣列（Array.from()、[...]）時測試照樣過，
@@ -77,10 +92,13 @@
 //   .childNodes（瀏覽器也是 NodeList）沒有換：fake-dom 自己拿它當陣列在改節點樹，換了會壞掉；那個只靠 tests/character-card-page.test.js 的掃描擋
 // - 操作：type(id, text) 照瀏覽器打字：超過 maxlength 的部分打不進去（以 UTF-16 的單位算），然後設定 value、派送 input；
 //   select(id, value) 找不到有這個 value 的 option 就丟錯（瀏覽器會把值變成空的），否則設定 value、派送 input 與 change；
-//   press(目標) 是 click()；toggle(目標) 是勾選框、單選的 click()（不是這兩種就丟錯）；目標可以是 id 或元素。
+//   press(目標) 是 click()（click 派送的當下算在使用者手勢裡，見 share 的 'expired'）；toggle(目標) 是勾選框、單選的 click()（不是這兩種就丟錯）；focus(目標) 是 focus()（會派送 focusin）；目標可以是 id 或元素。
 //   chip(群組 id, 值) 是 #cardSubJobs、#cardLikes、#cardLooking 裡 data-job、data-like、data-looking 等於值的那顆按鈕（找不到丟錯）。
 //   key(鍵, 目標, init) 在目標（預設是焦點所在的元素）上派送會冒泡、可取消的 keydown（init 可以加 altKey、ctrlKey、metaKey…）並回傳事件。
-//   isShown(目標) 是元素本身與祖先都沒有 hidden
+//   isShown(目標) 是元素本身與祖先都沒有 hidden。
+//   ModalManager 替身（FakeModalManager）：fake-dom 不支援真正的 ModalManager 用到的 :not() 選擇器（ModalManager 本身由 modal-manager-stack 測試負責），
+//   所以照 chocobo-page.js 的作法：show() 記下開啟前的焦點、加 .active（或選項的 useClass）、焦點移到 [autofocus] 或第一個看得到的可聚焦元素；
+//   hide() 拿掉 .active、還原焦點（開啟前的元素還在文件裡才還原），再呼叫 onClose；Esc（document 的 keydown）與點遮罩本身（不是裡面的內容）都看選項
 // - reopen(overrides)：用同一份 storage 的內容與目前的介面語言再開一次頁面，overrides 蓋掉其他選項
 // - dataUrlOf(寬, 高, 型別)：canvas 的 toDataURL 替身轉出來的 data URL（內容是 'canvas 寬x高'）；測試要放進 localStorage 的圖片用它，頁面讀得回來
 const assert = require('node:assert/strict');
@@ -98,12 +116,12 @@ const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
 
 const TOOL_DIR = 'tools/character-card';
 const TRANSLATIONS = 'assets/js/i18n/translations/tools/character-card.js';
-const SHARED_SCRIPTS = ['../../assets/js/ff14-game-data.js', '../../assets/js/modal-manager.js'];
+const SHARED_SCRIPTS = ['../../assets/js/ff14-game-data.js'];
 const PAGE_URL = 'https://ff14.tw/tools/character-card/index.html';
 const NARROW_QUERY = '(max-width: 768px)';
 const COARSE_QUERY = '(pointer: coarse)';
 const DESKTOP_USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36';
-const SHARE_MODES = [false, 'ok', 'cancel', 'fail', 'no-files'];
+const SHARE_MODES = [false, 'ok', 'cancel', 'fail', 'no-files', 'expired', 'blocked'];
 const CLIPBOARD_MODES = [false, 'ok', 'reject'];
 const ICON_MODES = ['load', 'fail', 'hold'];
 const PICTURE_MODES = ['load', 'hold'];
@@ -120,7 +138,7 @@ function scriptSources(html) {
 }
 
 const PAGE_HTML = read(`${TOOL_DIR}/index.html`);
-// 翻譯檔、共用的遊戲資料與 ModalManager、工具目錄自己的腳本；其他共用腳本（頁首、頁尾、common.js）不載入，用到的部分改用下面的替身
+// 翻譯檔、共用的遊戲資料、工具目錄自己的腳本；其他共用腳本（頁首、頁尾、common.js、modal-manager.js）不載入，用到的部分改用下面的替身
 const PAGE_SCRIPTS = scriptSources(PAGE_HTML)
     .filter((src) => !src.includes('/') || src === `../../${TRANSLATIONS}` || SHARED_SCRIPTS.includes(src))
     .map((src) => path.posix.join(TOOL_DIR, src));
@@ -132,6 +150,16 @@ const isShown = (element) => {
     for (let node = element; node && node.nodeType === 1; node = node.parentNode) if (node.hidden) return false;
     return true;
 };
+
+// ModalManager 替身開啟時移入焦點用：同 ModalManager._getFocusableElements，依 DOM 順序列出看得到的可聚焦元素（同 chocobo-page.js）。
+// fake-dom 不支援逗號與 :not() 選擇器，所以逐一走訪子孫；「看得到」是自己與祖先都沒有 hidden（真的那個看 offsetWidth），
+// 停用的按鈕與 tabindex="-1" 跳過。.children 是沒有陣列方法的 HTMLCollection 替身，先 Array.from()
+const isFocusable = (element) => (['BUTTON', 'INPUT', 'SELECT', 'TEXTAREA'].includes(element.tagName) && !element.disabled)
+    || (element.tagName === 'A' && element.hasAttribute('href'))
+    || (element.hasAttribute('tabindex') && element.getAttribute('tabindex') !== '-1');
+const focusableElements = (root) => Array.from(root.children).flatMap((child) => (child.hidden
+    ? []
+    : [...(isFocusable(child) ? [child] : []), ...focusableElements(child)]));
 
 // FileList 的替身（<input type="file"> 的 files）：只有瀏覽器有的成員，沒有陣列的方法
 class FileListLike {
@@ -213,7 +241,7 @@ function strictLists(parent) {
 }
 
 // 一張 canvas 的替身（見檔頭說明）。回傳這張 canvas 的記錄：{ context, draws, blobRequests }。env 是頁面共用的東西：
-// { displayScale()：畫面上縮成幾倍, dataUrlRequests：每一次 toDataURL 的記錄 }
+// { displayScale()：畫面上縮成幾倍, blobFails()：toBlob 現在轉不出 PNG 嗎, dataUrlRequests：每一次 toDataURL 的記錄 }
 function patchCanvas(element, env) {
     // context 到 getContext() 才建：設定 width 或 height 只把現在的丟掉（下一次 getContext 拿到全新、重設過的 context），
     // 不然頁面每畫一次要設寬又設高，每次都白建兩個記錄 context（各約 35 個函式）
@@ -234,9 +262,12 @@ function patchCanvas(element, env) {
         state.context ??= createRecordingContext();
         return state.context;
     };
+    // toBlob 在呼叫的當下就把畫面拍下來（記下那一刻畫了幾次、畫了哪些字），之後非同步轉成 PNG；轉不出來（blobFails）時 callback 收到 null
     element.toBlob = (callback, type = 'image/png', quality) => {
-        state.blobRequests.push({ type, quality });
-        Promise.resolve().then(() => callback(new Blob([`canvas ${element.width}x${element.height}`], { type })));
+        const texts = (state.context?.calls ?? []).filter((call) => call.op === 'fillText').map((call) => call.args[0]);
+        state.blobRequests.push({ type, quality, width: element.width, height: element.height, draws: state.draws, texts });
+        const failed = env.blobFails();
+        Promise.resolve().then(() => callback(failed ? null : new Blob([`canvas ${element.width}x${element.height}`], { type })));
     };
     element.toDataURL = (type = 'image/png', quality) => {
         env.dataUrlRequests.push({ type, quality, width: element.width, height: element.height });
@@ -254,8 +285,9 @@ function patchCanvas(element, env) {
 async function createCardPage({
     lang = 'zh', stored = {}, storageThrows = false, storageFull = [], narrow = false, coarse = false,
     userAgent = DESKTOP_USER_AGENT, share = false, clipboard = false, fontsDelay = false, icons = 'load',
-    pictureLoads = 'load', pointerCapture = 'ok', displayScale = 0.5
+    pictureLoads = 'load', pointerCapture = 'ok', displayScale = 0.5, blobFails = false, fileConstructor = true, hideKeepsFocus = false
 } = {}) {
+    assert.ok(typeof hideKeepsFocus === 'boolean', `hideKeepsFocus 是 true 或 false，不是 ${JSON.stringify(hideKeepsFocus)}`);
     assert.ok(SHARE_MODES.includes(share), `不認得的 share：${share}`);
     assert.ok(CLIPBOARD_MODES.includes(clipboard), `不認得的 clipboard：${clipboard}`);
     assert.ok(ICON_MODES.includes(icons), `不認得的 icons：${icons}`);
@@ -276,7 +308,10 @@ async function createCardPage({
     const images = [];
     const pictures = [];
     const shares = [];
+    const shareCalls = [];
     const clipboardWrites = [];
+    const clipboardCalls = [];
+    const downloads = [];
     const canvases = new WeakMap();
     const objectUrls = { created: [], revoked: [] };
     const blobFiles = new Map();
@@ -284,8 +319,11 @@ async function createCardPage({
     const captured = new Set();
     const pressed = new Map();
     const storageWrites = [];
+    // press() 正在派送 click：這時呼叫的 navigator.share 算在使用者手勢裡（share 是 'expired' 時才看）
+    let gestures = 0;
     const dataUrlRequests = [];
     let scale = displayScale;
+    let blobFailing = blobFails;
     const translations = { zh: {}, en: {}, ja: {} };
     let currentLang = lang;
     let isNarrow = narrow;
@@ -333,10 +371,17 @@ async function createCardPage({
         };
         element.focus = () => {
             if (element.disabled === true || !isShown(element)) return;
+            const document = element.ownerDocument;
+            const previous = document.activeElement;
             focus();
+            // 焦點真的換過來之後，瀏覽器還會在這個元素上派送 focusin（fake-dom 只派送 focusout）：relatedTarget 是剛失去焦點的元素，原本是 body 就是 null
+            if (previous !== element && document.activeElement === element) {
+                element.dispatchEvent(new win.Event('focusin', { bubbles: true, relatedTarget: previous === document.body ? null : previous }));
+            }
         };
         // 焦點所在的元素（或它的祖先）被藏起來時，瀏覽器把焦點丟掉，document.activeElement 變成 body。fake-dom 只看元素還在不在文件裡，
-        // 藏起來焦點照樣留著：那樣「藏起來、再顯示、把焦點放回去」的程式，拿掉放回去的那一行測試也不會失敗。所以 hidden 設成 true 時照瀏覽器做
+        // 藏起來焦點照樣留著：那樣「藏起來、再顯示、把焦點放回去」的程式，拿掉放回去的那一行測試也不會失敗。所以 hidden 設成 true 時照瀏覽器做。
+        // hideKeepsFocus 是 Safari 的樣子：藏起來之後焦點不動、不送 focusout（見檔頭說明）
         const { get, set } = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(element), 'hidden');
         Object.defineProperty(element, 'hidden', {
             configurable: true,
@@ -344,11 +389,22 @@ async function createCardPage({
             set: (value) => {
                 set.call(element, value);
                 const active = element.ownerDocument.activeElement;
-                if (value && element.contains(active)) active.blur();
+                if (value && !hideKeepsFocus && element.contains(active)) active.blur();
             }
         });
         strictLists(element);
-        if (element.tagName === 'CANVAS') canvases.set(element, patchCanvas(element, { displayScale: () => scale, dataUrlRequests }));
+        if (element.tagName === 'CANVAS') canvases.set(element, patchCanvas(element, { displayScale: () => scale, blobFails: () => blobFailing, dataUrlRequests }));
+        // <a download href="blob:…"> 被點：瀏覽器去讀那個網址存成檔案。照 Firefox 的規則，連結沒有接在文件上時點了沒有用（不記）
+        if (element.tagName === 'A') {
+            const clickLink = element.click;
+            element.click = () => {
+                if (element.hasAttribute('download') && element.hasAttribute('href') && element.ownerDocument.body.contains(element)) {
+                    const href = element.getAttribute('href');
+                    downloads.push({ file: element.getAttribute('download'), href, blob: blobFiles.get(href) ?? null });
+                }
+                clickLink();
+            };
+        }
         return element;
     }
     // 這份 document 建出來的每個元素都補上 addBrowserParts()；一定要在 mountFromHtml 之前換
@@ -431,23 +487,84 @@ async function createCardPage({
     const navigatorStub = { userAgent };
     if (share !== false) {
         navigatorStub.canShare = (data) => share !== 'no-files' && Boolean(data && data.files && data.files.length > 0);
+        // 呼叫的當下就記在 shareCalls（async 函式在第一個 await 之前是同步執行的），瀏覽器要求在使用者手勢裡呼叫
         navigatorStub.share = async (data) => {
+            shareCalls.push(data);
             if (share === 'cancel') throw Object.assign(new Error('Share canceled'), { name: 'AbortError' });
-            if (share === 'fail') throw Object.assign(new Error('Share failed'), { name: 'NotAllowedError' });
+            if (share === 'fail') throw Object.assign(new Error('Share failed'), { name: 'DataError' });
+            if (share === 'blocked' || (share === 'expired' && gestures === 0)) {
+                throw Object.assign(new Error('Must be handling a user gesture to perform a share request.'), { name: 'NotAllowedError' });
+            }
             shares.push(data);
         };
     }
     if (clipboard !== false) {
         navigatorStub.clipboard = {
+            // 呼叫的當下記在 clipboardCalls（ClipboardItem 的內容可能還是沒好的 Promise）；寫完（等每個 ClipboardItem 的內容都好了）才記在 clipboardWrites
             write: async (items) => {
+                clipboardCalls.push(items);
                 if (clipboard === 'reject') throw Object.assign(new Error('Clipboard denied'), { name: 'NotAllowedError' });
-                clipboardWrites.push(items);
+                const written = [];
+                for (const item of items) {
+                    const entry = {};
+                    for (const [type, value] of Object.entries(item.data)) entry[type] = await value;
+                    written.push(entry);
+                }
+                clipboardWrites.push(written);
             }
         };
         win.ClipboardItem = class ClipboardItem {
-            constructor(data) { this.data = data; }
+            constructor(data) {
+                this.data = data;
+                this.types = Object.keys(data);
+            }
         };
     }
+    if (fileConstructor) win.File = File;
+
+    // ModalManager 替身（見檔頭說明）。openModal 是目前開著的那一個（沒有開就是 null）
+    let openModal = null;
+    class FakeModalManager {
+        constructor() {
+            this.activeModal = null;
+            this.previousFocus = null;
+            this.options = {};
+            this.handleOverlayClick = (event) => {
+                if (event.target === this.activeModal && this.options.closeOnOverlayClick) this.hide();
+            };
+        }
+
+        show(element, options = {}) {
+            if (this.activeModal === element) return;
+            if (this.activeModal) this.hide();
+            this.options = { onClose: null, closeOnOverlayClick: true, closeOnEsc: true, useClass: 'active', ...options };
+            this.activeModal = element;
+            this.previousFocus = dom.document.activeElement;
+            element.classList.add(this.options.useClass);
+            openModal = this;
+            element.addEventListener('click', this.handleOverlayClick);
+            (element.querySelector('[autofocus]') ?? focusableElements(element)[0] ?? element).focus();
+        }
+
+        // 同真的 ModalManager：拿掉 .active、還原焦點（開啟前的元素還在文件裡才還原），最後才呼叫 onClose
+        hide() {
+            if (!this.activeModal) return;
+            const { activeModal: element, options, previousFocus } = this;
+            element.classList.remove(options.useClass);
+            openModal = null;
+            element.removeEventListener('click', this.handleOverlayClick);
+            Object.assign(this, { activeModal: null, previousFocus: null });
+            if (previousFocus && dom.document.body.contains(previousFocus)) previousFocus.focus();
+            options.onClose?.();
+        }
+    }
+    // 同 ModalManager 共用的 document keydown 監聽器：Escape 關掉開著的視窗
+    dom.document.addEventListener('keydown', (event) => {
+        if (openModal && event.key === 'Escape' && openModal.options.closeOnEsc) {
+            event.preventDefault();
+            openModal.hide();
+        }
+    });
 
     // 頁面的 console 不印到真的 console：log、error、warn 都照 Node 的 console 用 util.format() 寫成一筆字串記下來
     const record = (...args) => { consoleErrors.push(util.format(...args)); };
@@ -483,6 +600,7 @@ async function createCardPage({
             }
         },
         navigator: navigatorStub,
+        ModalManager: FakeModalManager,
         Image: FakeImage,
         i18n: {
             get currentLanguage() { return currentLang; },
@@ -526,7 +644,8 @@ async function createCardPage({
         };
     }
 
-    mountFromHtml(dom, PAGE_HTML, ['cardTool']);
+    // 預覽與表單在 #cardTool 裡；全螢幕大圖 #imageViewer 在它外面（和頁面一樣，是 <main> 後面的另一個元素）
+    mountFromHtml(dom, PAGE_HTML, ['cardTool', 'imageViewer']);
     // 檔案輸入與卡片 canvas 的指標抓取（見檔頭說明）；標記裡還沒有的元素（角色圖的功能還沒做好時）略過
     const fileInput = dom.document.getElementById('cardImageInput');
     const chooseFiles = fileInput ? patchFileInput(fileInput) : null;
@@ -579,7 +698,10 @@ async function createCardPage({
         storageWrites,
         dataUrlRequests,
         shares,
+        shareCalls,
         clipboardWrites,
+        clipboardCalls,
+        downloads,
         $,
         isShown: (target) => isShown(elementOf(target)),
         type(target, text) {
@@ -597,7 +719,16 @@ async function createCardPage({
             fire(element, 'change');
         },
         press(target) {
-            elementOf(target).click();
+            const element = elementOf(target);
+            gestures += 1;
+            try {
+                element.click();
+            } finally {
+                gestures -= 1;
+            }
+        },
+        focus(target) {
+            elementOf(target).focus();
         },
         toggle(target) {
             const element = elementOf(target);
@@ -709,9 +840,13 @@ async function createCardPage({
         setDisplayScale(next) {
             scale = next;
         },
+        // toBlob 轉不出 PNG（callback 收到 null）：之後的每一次 toBlob 都是
+        setBlobFails(next) {
+            blobFailing = next;
+        },
         reopen: (overrides = {}) => createCardPage({
             lang: currentLang, stored: Object.fromEntries(storage), storageThrows, storageFull, narrow: isNarrow, coarse: isCoarse, userAgent, share, clipboard,
-            fontsDelay, icons, pictureLoads, pointerCapture, displayScale: scale, ...overrides
+            fontsDelay, icons, pictureLoads, pointerCapture, displayScale: scale, blobFails: blobFailing, fileConstructor, hideKeepsFocus, ...overrides
         })
     };
     return api;

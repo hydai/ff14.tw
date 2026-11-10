@@ -8,6 +8,13 @@
  * char_card_card_* 是畫在卡片上的短標籤（英文的全名縮在卡片上小到看不清）；char_card_day_*、char_card_slot_* 是表單上的全名。
  * char_card_image_* 是角色圖：按鈕與標籤，以及上傳狀態（處理中、已上傳、太大不會記住、讀不出來、已移除、上次的圖片讀不出來）；
  * char_card_image_adjust 與 char_card_image_adjust_done 是同一顆按鈕的兩種字（調整模式前後）。
+ * 輸出：char_card_download、char_card_share、char_card_copy 是預覽下面（手機是最下方）的按鈕，char_card_share 也是大圖裡的分享鈕；
+ * char_card_error_* 是必填沒填就按下載時寫在欄位下面的錯誤；{file} 是下載的檔名（char_card_downloaded）；
+ * 產生圖之前等太久（10 秒）就照目前的畫面產生：char_card_image_slow 是上傳的截圖還在處理時的 toast，char_card_fonts_slow 是其他（字型、職業圖示）；
+ * char_card_share_ready 是底部的分享等太久、點擊的使用者手勢過期之後改開大圖時的 toast（請再按一次大圖裡的分享，char_card_share）；
+ * char_card_viewer_* 是全螢幕大圖（標題「長按圖片即可儲存」、下載檔案、關閉）；char_card_line_tip 接著連結 char_card_line_tip_link，
+ * 兩段合起來是一句「在 LINE 裡可能存不了圖，建議先用瀏覽器打開再填：用瀏覽器打開」（英文的前半句結尾有一個空格）：
+ * LINE 的內建瀏覽器和手機的瀏覽器不共用這個網站記住的資料，所以要請玩家在填之前就換瀏覽器，填好再換會什麼都不在。
  */
 const CharacterCardTranslations = {
     zh: {
@@ -142,6 +149,27 @@ const CharacterCardTranslations = {
         char_card_format_label: '版型',
         char_card_format_landscape: '橫版',
         char_card_format_portrait: '直版',
+
+        // 輸出：按鈕、必填的錯誤、結果的說明、全螢幕大圖、LINE 的提示
+        char_card_download: '下載圖片',
+        char_card_share: '分享',
+        char_card_copy: '複製圖片',
+        char_card_error_name: '請填角色名稱',
+        char_card_error_world: '請選伺服器',
+        char_card_error_job: '請選主職',
+        char_card_downloaded: '已下載 {file}',
+        char_card_share_failed: '沒辦法分享，請改用下載。',
+        char_card_copied: '已複製圖片',
+        char_card_copy_failed: '沒辦法複製，請改用下載。',
+        char_card_export_failed: '沒辦法產生圖片，請再試一次。',
+        char_card_fonts_slow: '字型還沒載完，先用目前的畫面產生圖片。',
+        char_card_image_slow: '上傳的截圖還在處理，先用目前的畫面產生圖片。',
+        char_card_share_ready: '圖片做好了，請再按一次「分享」。',
+        char_card_viewer_title: '長按圖片即可儲存',
+        char_card_viewer_download: '下載檔案',
+        char_card_viewer_close: '關閉',
+        char_card_line_tip: '在 LINE 裡可能存不了圖，建議先用瀏覽器打開再填：',
+        char_card_line_tip_link: '用瀏覽器打開',
 
         // 字數計數（全形的斜線；英文與日文是半形）
         char_card_count: '{n}／{max}'
@@ -279,6 +307,27 @@ const CharacterCardTranslations = {
         char_card_format_landscape: 'Landscape',
         char_card_format_portrait: 'Portrait',
 
+        // Output: buttons, errors for the required fields, results, the full-screen viewer, the LINE tip
+        char_card_download: 'Download image',
+        char_card_share: 'Share',
+        char_card_copy: 'Copy image',
+        char_card_error_name: 'Enter a character name',
+        char_card_error_world: 'Choose a world',
+        char_card_error_job: 'Choose a main job',
+        char_card_downloaded: 'Downloaded {file}',
+        char_card_share_failed: "Couldn't share. Please download instead.",
+        char_card_copied: 'Image copied',
+        char_card_copy_failed: "Couldn't copy. Please download instead.",
+        char_card_export_failed: "Couldn't make the picture. Please try again.",
+        char_card_fonts_slow: "Fonts are still loading, so the picture uses what's on screen now.",
+        char_card_image_slow: "Your screenshot is still processing, so the picture uses what's on screen now.",
+        char_card_share_ready: 'The picture is ready. Press Share again.',
+        char_card_viewer_title: 'Press and hold the image to save it',
+        char_card_viewer_download: 'Download file',
+        char_card_viewer_close: 'Close',
+        char_card_line_tip: 'LINE may not save the picture. Open this page in your browser before you fill it in: ',
+        char_card_line_tip_link: 'Open in browser',
+
         // Character counter (a half-width slash)
         char_card_count: '{n}/{max}'
     },
@@ -414,6 +463,27 @@ const CharacterCardTranslations = {
         char_card_format_label: 'カードの向き',
         char_card_format_landscape: '横型',
         char_card_format_portrait: '縦型',
+
+        // 出力：ボタン、必須項目のエラー、結果のメッセージ、全画面の画像表示、LINE のヒント
+        char_card_download: '画像をダウンロード',
+        char_card_share: '共有',
+        char_card_copy: '画像をコピー',
+        char_card_error_name: 'キャラクター名を入力してください',
+        char_card_error_world: 'ワールドを選んでください',
+        char_card_error_job: 'メインジョブを選んでください',
+        char_card_downloaded: '{file} をダウンロードしました',
+        char_card_share_failed: '共有できませんでした。ダウンロードをお試しください。',
+        char_card_copied: '画像をコピーしました',
+        char_card_copy_failed: 'コピーできませんでした。ダウンロードをお試しください。',
+        char_card_export_failed: '画像を作れませんでした。もう一度お試しください。',
+        char_card_fonts_slow: 'フォントの読み込みが終わっていないため、今の表示のまま画像を作りました。',
+        char_card_image_slow: 'スクリーンショットの処理が終わっていないため、今の表示のまま画像を作りました。',
+        char_card_share_ready: '画像ができました。もう一度「共有」を押してください。',
+        char_card_viewer_title: '画像を長押しして保存',
+        char_card_viewer_download: 'ファイルをダウンロード',
+        char_card_viewer_close: '閉じる',
+        char_card_line_tip: 'LINEでは画像を保存できないことがあります。入力する前にブラウザで開いてください：',
+        char_card_line_tip_link: 'ブラウザで開く',
 
         // 文字数カウンター（半角のスラッシュ）
         char_card_count: '{n}/{max}'

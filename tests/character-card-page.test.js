@@ -2315,7 +2315,7 @@ test('頁面替身本身（角色圖）：檔案輸入、blob: 網址、角色�
 
 test('index.html：腳本順序、標準字型連結＋Outfit、不載入 security-utils.js、沒有 innerHTML；style.css：沒有 overflow-x、沒有色碼、用 hidden 切換的元素都有 display: none', () => {
     // 腳本順序：i18n 三個、頁首頁尾與共用腳本（tools-registry.js 在 nav-template.js 前、layout-loader.js 在 common.js 前）、共用的遊戲資料與 ModalManager、
-    // 這個工具的模組（card-export.js 是後面的 Task 才會有），最後是 script.js
+    // 這個工具的模組（card-export.js 在 card-image.js 後面、script.js 前面），最後是 script.js
     const scripts = [...HTML.matchAll(/<script src="([^"]+)"/g)].map((m) => m[1]);
     const ORDER = [
         '../../assets/js/i18n/i18n-manager.js',
@@ -2335,8 +2335,8 @@ test('index.html：腳本順序、標準字型連結＋Outfit、不載入 securi
         'card-export.js',
         'script.js'
     ];
-    assert.deepEqual(scripts, ORDER.filter((src) => scripts.includes(src)), '腳本照規定的順序載入，沒有多的');
-    for (const src of ORDER.filter((item) => item !== 'card-export.js')) assert.ok(scripts.includes(src), `載入 ${src}`);
+    assert.deepEqual(scripts, ORDER, '腳本照規定的順序載入，沒有多的');
+    for (const src of ORDER) assert.ok(scripts.includes(src), `載入 ${src}`);
     assert.equal(scripts.at(-1), 'script.js');
     assert.ok(!scripts.some((src) => src.endsWith('security-utils.js')), '不載入 security-utils.js');
     assert.ok(!scripts.includes('character-card-data.js'), '舊的資料檔拿掉了');
@@ -2430,7 +2430,7 @@ test('script.js 不在 NodeList／HTMLCollection 上直接用陣列方法', () =
 
     // 掃的是頁面載入的每一支這個工具的腳本（index.html 的 <script src> 裡沒有 / 的那幾個），不只 script.js
     const files = [...HTML.matchAll(/<script src="([^"/]+\.js)"/g)].map((m) => `tools/character-card/${m[1]}`);
-    for (const expected of ['card-state.js', 'card-layout.js', 'card-renderer.js', 'card-image.js', 'script.js']) {
+    for (const expected of ['card-state.js', 'card-layout.js', 'card-renderer.js', 'card-image.js', 'card-export.js', 'script.js']) {
         assert.ok(files.includes(`tools/character-card/${expected}`), `掃描的清單裡有 ${expected}`);
     }
     for (const file of files) {
@@ -2552,4 +2552,1798 @@ test('翻譯：三語的鍵一樣，每個鍵的 {參數} 三語一樣，index.h
         ['Wkdy', 'Wknd', 'Morn', 'Aft', 'Eve', 'Late']);
     assert.deepEqual(['char_card_card_day_weekday', 'char_card_card_day_weekend', 'char_card_card_slot_morning', 'char_card_card_slot_afternoon', 'char_card_card_slot_evening', 'char_card_card_slot_late_night'].map((key) => values.ja.get(key)),
         ['平日', '休日', '朝', '昼', '夜', '深夜']);
+});
+
+// ---------- 輸出：下載、分享、複製、全螢幕大圖、必填的驗證、LINE 的提示、手機打字 ----------
+const NAME = 'Luna Starweaver';
+const OUT_FILE = `ff14-${NAME}.png`;
+const FIELD_OF = { name: 'cardName', world: 'cardWorld', mainJob: 'cardMainJob' };
+const ERROR_OF = { name: 'cardNameError', world: 'cardWorldError', mainJob: 'cardMainJobError' };
+const ERROR_ZH = { name: '請填角色名稱', world: '請選伺服器', mainJob: '請選主職' };
+const FONTS_SLOW = '字型還沒載完，先用目前的畫面產生圖片。';
+const IMAGE_SLOW = '上傳的截圖還在處理，先用目前的畫面產生圖片。';
+const SHARE_READY = '圖片做好了，請再按一次「分享」。';
+const LINE_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Safari Line/14.8.0';
+
+// 必填的三樣（名字、伺服器、主職）都填好
+function fillRequired(page, name = NAME) {
+    page.type('cardName', name);
+    page.select('cardWorld', 'Tiamat');
+    page.select('cardMainJob', 'Pictomancer');
+}
+const messages = (page) => page.toasts.map((toast) => toast.message);
+const describedBy = (page, id) => (page.$(id).getAttribute('aria-describedby') ?? '').split(/\s+/).filter(Boolean);
+// 現在顯示著錯誤的欄位（共用的 .form-control.is-invalid ~ .invalid-feedback 才會把緊接在欄位後面的錯誤顯示出來）
+const shownErrors = (page) => Object.keys(FIELD_OF).filter((key) => page.$(FIELD_OF[key]).classList.contains('is-invalid'));
+const viewerOpen = (page) => page.$('imageViewer').classList.contains('active');
+const isTyping = (page) => page.$('cardTool').classList.contains('is-typing');
+
+// 不產生圖；欄位下面寫錯誤（填了、選了就拿掉）；焦點在第一個沒填的欄位；手機先切到基本分頁（電腦五組都看得到，不動分頁）
+test('沒填名字就按下載：不產生圖、寫錯誤、焦點在名字欄；手機切到基本分頁', async () => {
+    const page = await createCardPage();
+    page.press('downloadCard');
+    await page.flush();
+    // 不產生圖：沒有 toBlob、沒有下載、沒有大圖、沒有 toast（錯誤寫在欄位下面）
+    assert.equal(page.blobRequests().length, 0);
+    assert.deepEqual(page.downloads, []);
+    assert.equal(viewerOpen(page), false);
+    assert.deepEqual(page.toasts, []);
+    assert.deepEqual(page.consoleErrors, []);
+
+    // 三樣必填都沒填：欄位下面各寫一句，欄位標成錯誤，aria-describedby 指到它（字數計數的 id 留著）
+    assert.deepEqual(shownErrors(page), ['name', 'world', 'mainJob']);
+    for (const key of Object.keys(FIELD_OF)) {
+        const field = page.$(FIELD_OF[key]);
+        const error = page.$(ERROR_OF[key]);
+        assert.equal(field.getAttribute('aria-invalid'), 'true', `${key}：aria-invalid`);
+        assert.ok(describedBy(page, FIELD_OF[key]).includes(ERROR_OF[key]), `${key}：aria-describedby 指到錯誤`);
+        assert.equal(error.textContent, ERROR_ZH[key]);
+        assert.ok(error.classList.contains('invalid-feedback'), `${key}：用共用的 .invalid-feedback`);
+        isSame(error.previousElementSibling, field, `${key}：錯誤緊接在欄位後面（共用的 .form-control.is-invalid ~ .invalid-feedback 才會顯示）`);
+    }
+    assert.deepEqual(describedBy(page, 'cardName'), ['cardNameCount', 'cardNameError']);
+    isSame(page.document.activeElement, page.$('cardName'), '焦點在第一個沒填的欄位：名字');
+
+    // 只有空白還是沒填；有字了錯誤才拿掉（input），aria-describedby 回到只剩字數計數
+    page.type('cardName', '   ');
+    assert.deepEqual(shownErrors(page), ['name', 'world', 'mainJob']);
+    page.type('cardName', 'Luna');
+    assert.deepEqual(shownErrors(page), ['world', 'mainJob']);
+    assert.equal(page.$('cardName').getAttribute('aria-invalid'), null);
+    assert.deepEqual(describedBy(page, 'cardName'), ['cardNameCount']);
+    // 伺服器與主職是選單：選了（change）錯誤拿掉，沒有別的 id 時整個 aria-describedby 拿掉
+    page.select('cardWorld', 'Tiamat');
+    assert.deepEqual(shownErrors(page), ['mainJob']);
+    assert.equal(page.$('cardWorld').getAttribute('aria-describedby'), null);
+    assert.equal(page.$('cardWorld').getAttribute('aria-invalid'), null);
+    page.select('cardMainJob', 'Pictomancer');
+    assert.deepEqual(shownErrors(page), []);
+    assert.equal(page.$('cardMainJob').getAttribute('aria-describedby'), null);
+
+    // 填好了就產生；再清掉名字，下載又擋住（欄位下面又寫錯誤）
+    page.press('downloadCard');
+    await page.flush();
+    assert.equal(page.downloads.length, 1);
+    page.type('cardName', '');
+    page.press('downloadCard');
+    await page.flush();
+    assert.equal(page.downloads.length, 1, '名字空了又擋住');
+    assert.deepEqual(shownErrors(page), ['name']);
+    isSame(page.document.activeElement, page.$('cardName'));
+
+    // 手機：切到基本分頁（三個必填都在那一組）再把焦點移到第一個沒填的欄位
+    const phone = await createCardPage({ narrow: true });
+    phone.press('tab-style');
+    assert.deepEqual(shownPanels(phone), ['style']);
+    phone.press('downloadCard');
+    await phone.flush();
+    assert.deepEqual(shownPanels(phone), ['basic']);
+    assert.deepEqual(selectedTabs(phone), ['basic']);
+    isSame(phone.document.activeElement, phone.$('cardName'), '面板顯示出來之後焦點才拿得到');
+    assert.deepEqual(shownErrors(phone), ['name', 'world', 'mainJob']);
+    assert.equal(phone.blobRequests().length, 0);
+    assert.equal(viewerOpen(phone), false, '手機也只寫錯誤，不開大圖');
+
+    // 只差主職：也切到基本分頁（三個必填都在那一組）
+    const jobOnly = await createCardPage({ narrow: true });
+    jobOnly.type('cardName', NAME);
+    jobOnly.select('cardWorld', 'Tiamat');
+    jobOnly.press('tab-play');
+    jobOnly.press('downloadCard');
+    assert.deepEqual(shownPanels(jobOnly), ['basic']);
+    isSame(jobOnly.document.activeElement, jobOnly.$('cardMainJob'));
+
+    // 電腦五組都看得到，不用切；沒有動分頁的選取
+    const desktop = await createCardPage();
+    desktop.app.selectTab('style');
+    desktop.press('downloadCard');
+    assert.deepEqual(shownPanels(desktop), TABS);
+    assert.deepEqual(selectedTabs(desktop), ['style']);
+    isSame(desktop.document.activeElement, desktop.$('cardName'));
+});
+
+test('必填沒填：焦點到第一個沒填的欄位（名字 → 伺服器 → 主職）；選了「其他」而沒打字就到自己輸入的欄位；分享與複製也一樣擋住', async () => {
+    const worldFirst = await createCardPage({ share: 'ok', clipboard: 'ok' });
+    worldFirst.type('cardName', NAME);
+    worldFirst.press('downloadCard');
+    assert.deepEqual(shownErrors(worldFirst), ['world', 'mainJob']);
+    isSame(worldFirst.document.activeElement, worldFirst.$('cardWorld'));
+    worldFirst.select('cardWorld', 'Tiamat');
+    worldFirst.focus('cardName');
+    worldFirst.press('shareCard');
+    isSame(worldFirst.document.activeElement, worldFirst.$('cardMainJob'), '分享也擋住，焦點到主職');
+    worldFirst.focus('cardName');
+    worldFirst.press('copyCard');
+    await worldFirst.flush();
+    isSame(worldFirst.document.activeElement, worldFirst.$('cardMainJob'), '複製也擋住');
+    assert.deepEqual(worldFirst.shareCalls, []);
+    assert.deepEqual(worldFirst.clipboardCalls, []);
+    assert.equal(worldFirst.blobRequests().length, 0);
+    assert.deepEqual(worldFirst.toasts, []);
+
+    // 選了「其他（自己輸入）」而什麼都沒打：沒填的是伺服器，焦點到自己輸入的欄位；錯誤也指到那個欄位
+    const custom = await createCardPage();
+    custom.type('cardName', NAME);
+    custom.select('cardMainJob', 'Pictomancer');
+    custom.select('cardWorld', '__custom');
+    custom.focus('cardName');
+    custom.press('downloadCard');
+    isSame(custom.document.activeElement, custom.$('cardWorldCustom'));
+    assert.deepEqual(shownErrors(custom), ['world']);
+    assert.ok(custom.$('cardWorldCustom').classList.contains('is-invalid'));
+    assert.deepEqual(describedBy(custom, 'cardWorldCustom'), ['cardWorldCustomCount', 'cardWorldError']);
+    assert.equal(custom.$('cardWorldCustom').getAttribute('aria-invalid'), 'true');
+    custom.type('cardWorldCustom', 'Home Server');
+    assert.deepEqual(shownErrors(custom), []);
+    assert.equal(custom.$('cardWorldCustom').classList.contains('is-invalid'), false);
+    assert.deepEqual(describedBy(custom, 'cardWorldCustom'), ['cardWorldCustomCount']);
+    assert.equal(custom.$('cardWorldCustom').getAttribute('aria-invalid'), null);
+    custom.press('downloadCard');
+    await custom.flush();
+    assert.equal(custom.downloads.length, 1, '自己輸入的伺服器也算填了');
+});
+
+test('清除全部也拿掉必填的錯誤；切換語言時顯示著的錯誤換成那個語言', async () => {
+    const page = await createCardPage();
+    page.press('downloadCard');
+    assert.deepEqual(shownErrors(page), ['name', 'world', 'mainJob']);
+    assert.deepEqual(Object.keys(ERROR_OF).map((key) => page.$(ERROR_OF[key]).textContent), ['請填角色名稱', '請選伺服器', '請選主職']);
+    page.setLang('en');
+    assert.deepEqual(Object.keys(ERROR_OF).map((key) => page.$(ERROR_OF[key]).textContent), ['Enter a character name', 'Choose a world', 'Choose a main job']);
+    assert.deepEqual(shownErrors(page), ['name', 'world', 'mainJob'], '還是顯示著');
+    page.setLang('ja');
+    assert.deepEqual(Object.keys(ERROR_OF).map((key) => page.$(ERROR_OF[key]).textContent), ['キャラクター名を入力してください', 'ワールドを選んでください', 'メインジョブを選んでください']);
+
+    page.press('clearAll');
+    page.press('clearAll');
+    assert.deepEqual(shownErrors(page), [], '清除全部之後沒有人按下載，錯誤不留著');
+    assert.deepEqual(describedBy(page, 'cardName'), ['cardNameCount']);
+    assert.equal(page.$('cardWorld').getAttribute('aria-describedby'), null);
+    assert.equal(page.$('cardMainJob').getAttribute('aria-describedby'), null);
+});
+
+// 字型還沒載完（fontsDelay）時 toBlob 還沒被呼叫；每一批都載完、重畫之後才產生（中文字型依字分批載入，下載的圖不能用到備用字型）
+test('等字型才產生圖', async () => {
+    const page = await createCardPage({ fontsDelay: true });
+    fillRequired(page);
+    await page.flush();
+    // 職業圖示載完時會自己重畫一次；先等它畫完，之後的重畫次數才數得準
+    assert.ok(page.images.length >= 1 && page.images.every((image) => image.complete), '主職的圖示已經載完');
+    const batches = page.heldFontBatches().length;
+    assert.ok(batches >= 2, `打名字、選伺服器與主職各請求了新的字：${batches} 批還在等`);
+    const drawsBefore = page.drawCount();
+    page.press('downloadCard');
+    await page.flush();
+    assert.equal(page.blobRequests().length, 0, '字型還沒載完，toBlob 還沒被呼叫');
+    assert.deepEqual(page.downloads, []);
+    assert.deepEqual(page.toasts, []);
+
+    // 只放行其中一批：還有一批在等，還是不能產生（中文字型依字分批載入，下載時還沒載完的字會用到備用字型）
+    page.releaseFonts(0);
+    await page.flush();
+    assert.equal(page.blobRequests().length, 0, '還有一批沒載完');
+    page.releaseFonts();
+    await page.flush();
+    assert.equal(page.blobRequests().length, 1);
+    assert.equal(page.downloads.length, 1);
+    assert.equal(page.downloads[0].file, OUT_FILE);
+    // 拍下來的那一刻字型都載完了（沒有還在等的批次），而且每一批載完各重畫過一次、產生之前又重畫了一次
+    assert.deepEqual(page.heldFontBatches(), []);
+    const [request] = page.blobRequests();
+    assert.equal(request.draws, drawsBefore + batches + 1, `重畫：之前 ${drawsBefore} 次，${batches} 批各一次、再加產生之前一次`);
+    assert.ok(request.texts.includes(NAME) && request.texts.includes('Tiamat'), '拍下來的畫面有名字與伺服器');
+});
+
+test('產生圖也等職業圖示：圖示還沒載完（icons: hold）時 toBlob 還沒被呼叫，載完（或失敗）才產生', async () => {
+    const page = await createCardPage({ icons: 'hold' });
+    fillRequired(page);
+    assert.ok(page.images.length >= 1 && page.images.every((image) => !image.complete), '主職的圖示請求了，一直沒回來');
+    page.press('downloadCard');
+    await page.flush();
+    assert.equal(page.blobRequests().length, 0, '圖示還沒載完');
+    page.finishImages(true);
+    await page.flush();
+    assert.equal(page.blobRequests().length, 1);
+    assert.equal(page.downloads.length, 1);
+    assert.ok(page.drawCalls().some((call) => call.op === 'drawImage'), '卡片畫的是圖示（不是名稱的第一個字）');
+
+    // 等圖示的時候字型又有新的批次（使用者又打了字）：圖示載完時還有一批在等，照樣要等它載完才產生，不是圖示好了就產生
+    const typing = await createCardPage({ icons: 'hold', fontsDelay: true });
+    fillRequired(typing);
+    typing.press('downloadCard');
+    typing.releaseFonts();
+    await typing.flush();
+    assert.equal(typing.heldFontBatches().length, 0, '字型都載完了，只剩圖示');
+    typing.type('cardTitle', '光之戰士');
+    assert.equal(typing.heldFontBatches().length, 1, '等圖示的時候又請求了新的字');
+    typing.finishImages(true);
+    await typing.flush();
+    assert.equal(typing.blobRequests().length, 0, '圖示好了，但新請求的字型還沒載完');
+    typing.releaseFonts();
+    await typing.flush();
+    assert.equal(typing.blobRequests().length, 1);
+    assert.equal(typing.downloads.length, 1);
+    // 稱號是一個字一個字畫的：新請求的字也畫在拍下來的圖上
+    assert.ok(Array.from('光之戰士').every((char) => typing.blobRequests()[0].texts.includes(char)), '稱號也畫上去了');
+
+    // 載入失敗也算結束：卡片用名稱的第一個字，照樣產生
+    const failed = await createCardPage({ icons: 'hold' });
+    fillRequired(failed);
+    failed.press('downloadCard');
+    await failed.flush();
+    assert.equal(failed.blobRequests().length, 0);
+    failed.finishImages(false);
+    await failed.flush();
+    assert.equal(failed.blobRequests().length, 1);
+    assert.equal(failed.downloads.length, 1);
+    assert.deepEqual(failed.toasts.map((toast) => toast.message), [`已下載 ${OUT_FILE}`], '沒有逾時的 toast');
+});
+
+test('產生圖也等記住的角色圖還原好：還在讀（pictureLoads: hold）時 toBlob 還沒被呼叫，讀好（或讀不出來）才產生，圖畫在卡片上', async () => {
+    const stored = { [KEY]: JSON.stringify({ v: 1, name: NAME, world: 'Tiamat', mainJob: 'Pictomancer' }), [IMAGE_KEY]: dataUrlOf(640, 360) };
+    const page = await createCardPage({ stored, pictureLoads: 'hold' });
+    page.press('downloadCard');
+    await page.flush();
+    assert.equal(page.blobRequests().length, 0, '記住的圖片還在讀');
+    assert.deepEqual(page.downloads, []);
+    page.finishPictures(true);
+    await page.flush();
+    assert.equal(page.blobRequests().length, 1);
+    assert.equal(page.downloads.length, 1);
+    assert.ok(pictureDraws(page).length >= 1, '拍下來的卡片上有還原的角色圖');
+
+    // 讀不出來也算結束：卡片用預設背景，照樣產生
+    const broken = await createCardPage({ stored, pictureLoads: 'hold' });
+    broken.press('downloadCard');
+    await broken.flush();
+    assert.equal(broken.blobRequests().length, 0);
+    broken.finishPictures(false);
+    await broken.flush();
+    assert.equal(broken.blobRequests().length, 1);
+    assert.equal(broken.downloads.length, 1);
+    assert.equal(pictureDraws(broken).length, 0);
+});
+
+// 選了截圖之後馬上按下載：截圖還在縮小、轉成 JPEG 再讀回來，不等它的話下載的是舊的圖（或預設背景），畫面卻在一會兒之後換成新的那張
+test('產生圖也等還在處理的截圖：選了截圖還在處理（hold）時 toBlob 還沒被呼叫，處理好才產生，拍下來的是新的那張；讀不出來就照現在的圖產生', async () => {
+    const page = await createCardPage();
+    fillRequired(page);
+    await upload(page, { width: 640, height: 360 });
+    const file = page.file({ name: 'new.png', ...WIDE, hold: true });
+    page.pick(file);
+    page.press('downloadCard');
+    await page.flush();
+    assert.equal(page.$('cardImageStatus').textContent, '處理中…');
+    assert.equal(page.blobRequests().length, 0, '新的截圖還在處理');
+    assert.deepEqual(page.downloads, []);
+    assert.deepEqual(pictureDraws(page).map((call) => call.args[0].src), [dataUrlOf(640, 360)], '畫面上還是舊的那張');
+    page.finishFile(file, true);
+    await page.flush();
+    assert.equal(page.blobRequests().length, 1);
+    assert.equal(page.downloads.length, 1);
+    assert.equal(page.blobRequests()[0].draws, page.drawCount(), '產生之後沒有再重畫：現在畫著的就是拍下來的那一張');
+    assert.deepEqual(pictureDraws(page).map((call) => call.args[0].src), [dataUrlOf(2048, 768)], '拍下來的是新的那張');
+    assert.ok(!page.pendingDelays().includes(10000), '沒逾時，計時取消了');
+    assert.deepEqual(messages(page), [`已下載 ${OUT_FILE}`]);
+
+    // 讀不出來：照現在的圖（剛才那張）產生，不說產生失敗
+    const broken = page.file({ name: 'broken.png', hold: true });
+    page.pick(broken);
+    page.press('downloadCard');
+    await page.flush();
+    assert.equal(page.blobRequests().length, 1);
+    page.finishFile(broken, false);
+    await page.flush();
+    assert.equal(page.blobRequests().length, 2);
+    assert.equal(page.downloads.length, 2);
+    assert.equal(page.$('cardImageStatus').textContent, '這個檔案讀不出來，請換一張圖片。');
+    assert.deepEqual(pictureDraws(page).map((call) => call.args[0].src), [dataUrlOf(2048, 768)], '圖片照舊');
+    assert.deepEqual(messages(page), [`已下載 ${OUT_FILE}`, `已下載 ${OUT_FILE}`]);
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('還在處理的截圖只等最新的一次：被後選的取代、移除圖片之後就不等它；分享、複製也等', async () => {
+    // 先選的還在處理、後選的已經好了：只有後選的算數，不等先選的
+    const page = await createCardPage();
+    fillRequired(page);
+    const slow = page.file({ name: 'slow.png', ...WIDE, hold: true });
+    page.pick(slow);
+    await upload(page, { width: 640, height: 360 });
+    page.press('downloadCard');
+    await page.flush();
+    assert.equal(page.downloads.length, 1, '不等被取代的那一次');
+    assert.deepEqual(pictureDraws(page).map((call) => call.args[0].src), [dataUrlOf(640, 360)]);
+    // 移除圖片：還在處理的那一次不算了，也不等它
+    const pending = page.file({ name: 'pending.png', hold: true });
+    page.pick(pending);
+    page.press('imageRemove');
+    page.press('downloadCard');
+    await page.flush();
+    assert.equal(page.downloads.length, 2, '移除圖片之後不等還在處理的那一次');
+    assert.deepEqual(pictureDraws(page), [], '預設背景');
+    // 那兩次現在才讀完：不換圖、不再產生
+    page.finishFile(slow, true);
+    page.finishFile(pending, true);
+    await page.flush();
+    assert.equal(page.downloads.length, 2);
+    assert.deepEqual(pictureDraws(page), []);
+    assert.deepEqual(page.consoleErrors, []);
+
+    // 分享與複製也等截圖處理好
+    const both = await createCardPage({ share: 'ok', clipboard: 'ok' });
+    fillRequired(both);
+    const shared = both.file({ name: 'shared.png', hold: true });
+    both.pick(shared);
+    both.press('shareCard');
+    await both.flush();
+    assert.deepEqual(both.shareCalls, [], '分享等截圖處理好');
+    both.finishFile(shared, true);
+    await both.flush();
+    assert.equal(both.shares.length, 1);
+    assert.deepEqual(pictureDraws(both).map((call) => call.args[0].src), [dataUrlOf(1600, 900)], '分享的是新的那張');
+    const copied = both.file({ name: 'copied.png', width: 640, height: 360, hold: true });
+    both.pick(copied);
+    both.press('copyCard');
+    await both.flush();
+    assert.equal(both.clipboardCalls.length, 1, '點擊的當下就交給剪貼簿');
+    assert.deepEqual(both.clipboardWrites, [], '圖還沒好：等截圖處理好');
+    both.finishFile(copied, true);
+    await both.flush();
+    assert.equal(both.clipboardWrites.length, 1);
+    assert.deepEqual(pictureDraws(both).map((call) => call.args[0].src), [dataUrlOf(640, 360)], '複製的是新的那張');
+    assert.deepEqual(both.consoleErrors, []);
+});
+
+// 下載已經在等的那一次上傳不算數了（移除圖片、改選另一張），就不能再等它：不然匯出卡到 10 秒逾時，還跳「字型還沒載完」
+test('已經在等上傳中的截圖時移除圖片或改選另一張：不再等原本那一次，移除就馬上產生，改選就等新的那張', async () => {
+    const page = await createCardPage();
+    fillRequired(page);
+    await upload(page, { width: 640, height: 360 });
+    const stuck = page.file({ name: 'stuck.png', ...WIDE, hold: true });
+    page.pick(stuck);
+    page.press('downloadCard');
+    await page.flush();
+    assert.equal(page.blobRequests().length, 0, '在等新選的截圖');
+    page.press('imageRemove');
+    await page.flush();
+    assert.equal(page.blobRequests().length, 1, '移除圖片之後馬上產生，不等到逾時');
+    assert.equal(page.downloads.length, 1);
+    assert.deepEqual(pictureDraws(page), [], '預設背景');
+    assert.ok(!page.pendingDelays().includes(10000), '10 秒的計時取消了');
+    assert.deepEqual(messages(page), [`已下載 ${OUT_FILE}`], '沒有「字型還沒載完」');
+
+    // 改選另一張：等新的那張處理好就產生，畫的是新的那張；先選的那張一直沒讀完也不影響
+    const slow = page.file({ name: 'slow.png', hold: true });
+    page.pick(slow);
+    page.press('downloadCard');
+    await page.flush();
+    const next = page.file({ name: 'next.png', width: 1000, height: 3000, hold: true });
+    page.pick(next);
+    await page.flush();
+    assert.equal(page.blobRequests().length, 1, '改選的那張還在處理');
+    page.finishFile(next, true);
+    await page.flush();
+    assert.equal(page.blobRequests().length, 2, '新的那張好了就產生，不等先選的那張');
+    assert.equal(page.downloads.length, 2);
+    assert.deepEqual(pictureDraws(page).map((call) => call.args[0].src), [dataUrlOf(683, 2048)]);
+    assert.ok(!page.pendingDelays().includes(10000));
+    assert.deepEqual(messages(page), [`已下載 ${OUT_FILE}`, `已下載 ${OUT_FILE}`]);
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('等太久就不等了：EXPORT_WAIT_MS（10 秒）一到，照目前的畫面產生圖、跳「字型還沒載完」的 toast（卡住的是上傳的截圖時寫截圖還在處理）；沒逾時時把計時取消', async () => {
+    const page = await createCardPage({ fontsDelay: true });
+    assert.equal(page.window.CharacterCardApp.EXPORT_WAIT_MS, 10000);
+    fillRequired(page);
+    page.press('downloadCard');
+    await page.flush();
+    assert.equal(page.blobRequests().length, 0);
+    assert.ok(page.pendingDelays().includes(10000), '用頁面的 setTimeout 等最多 10 秒');
+    page.runTimeouts();
+    await page.flush();
+    assert.equal(page.blobRequests().length, 1, '逾時後照現在的畫面產生');
+    assert.equal(page.downloads.length, 1);
+    assert.deepEqual(messages(page), [FONTS_SLOW, `已下載 ${OUT_FILE}`]);
+    assert.equal(page.toasts[0].type, 'warning');
+    // 字型之後才回來：不會再產生第二張
+    page.releaseFonts();
+    await page.flush();
+    assert.equal(page.blobRequests().length, 1);
+    assert.equal(page.downloads.length, 1);
+
+    // 圖示卡住也一樣
+    const icons = await createCardPage({ icons: 'hold' });
+    fillRequired(icons);
+    icons.press('downloadCard');
+    await icons.flush();
+    assert.equal(icons.blobRequests().length, 0);
+    icons.runTimeouts();
+    await icons.flush();
+    assert.equal(icons.blobRequests().length, 1);
+    assert.ok(messages(icons).includes(FONTS_SLOW));
+
+    // 卡住的是上傳的截圖：toast 寫截圖還在處理（不是字型），玩家才知道等它處理好再下載一次
+    const picture = await createCardPage();
+    fillRequired(picture);
+    picture.pick(picture.file({ hold: true }));
+    picture.press('downloadCard');
+    await picture.flush();
+    assert.equal(picture.blobRequests().length, 0);
+    picture.runTimeouts();
+    await picture.flush();
+    assert.equal(picture.blobRequests().length, 1);
+    assert.equal(picture.downloads.length, 1);
+    assert.deepEqual(messages(picture), [IMAGE_SLOW, `已下載 ${OUT_FILE}`]);
+    assert.equal(picture.toasts[0].type, 'warning');
+
+    // 沒逾時：載完就產生，10 秒的計時已經取消（只剩撤銷網址的計時）
+    const fine = await createCardPage();
+    fillRequired(fine);
+    fine.press('downloadCard');
+    await fine.flush();
+    assert.equal(fine.downloads.length, 1);
+    assert.ok(!fine.pendingDelays().includes(10000), '沒逾時，計時取消了');
+    assert.deepEqual(messages(fine), [`已下載 ${OUT_FILE}`]);
+});
+
+const EXPORT_FAILED = '沒辦法產生圖片，請再試一次。';
+
+test('匯出中再按下載、分享、複製、點卡片都不理：一次只產生一張；做完（或失敗）之後又能按', async () => {
+    const page = await createCardPage({ fontsDelay: true, share: 'ok', clipboard: 'ok' });
+    fillRequired(page);
+    page.press('downloadCard');
+    page.press('downloadCard');
+    page.press('shareCard');
+    page.press('copyCard');
+    page.press('cardCanvas');
+    await page.flush();
+    assert.equal(page.blobRequests().length, 0);
+    assert.deepEqual(page.clipboardCalls, [], '複製沒有呼叫 clipboard.write');
+    assert.deepEqual(page.shareCalls, []);
+    page.releaseFonts();
+    await page.flush();
+    assert.equal(page.blobRequests().length, 1, '只產生一張');
+    assert.equal(page.downloads.length, 1, '只下載一次');
+    assert.deepEqual(page.shareCalls, []);
+    assert.deepEqual(page.clipboardCalls, []);
+    assert.deepEqual(messages(page), [`已下載 ${OUT_FILE}`]);
+
+    // 做完了：再按又能做
+    page.press('downloadCard');
+    await page.flush();
+    assert.equal(page.downloads.length, 2);
+    // 失敗（轉不成 PNG）也把「忙」放掉，而且告訴使用者
+    page.setBlobFails(true);
+    page.press('downloadCard');
+    await page.flush();
+    assert.equal(page.downloads.length, 2);
+    assert.equal(messages(page).at(-1), EXPORT_FAILED);
+    page.setBlobFails(false);
+    page.press('downloadCard');
+    await page.flush();
+    assert.equal(page.downloads.length, 3);
+    // 必填沒過也不會卡住：再填好又能下載
+    page.type('cardName', '');
+    page.press('downloadCard');
+    await page.flush();
+    assert.equal(page.downloads.length, 3);
+    page.type('cardName', NAME);
+    page.press('downloadCard');
+    await page.flush();
+    assert.equal(page.downloads.length, 4);
+
+    // 手機：下載還在等時，再點卡片不會多開一個大圖，也不會多產生一張
+    const phone = await createCardPage({ fontsDelay: true, narrow: true });
+    fillRequired(phone);
+    phone.press('downloadCard');
+    phone.press('cardCanvas');
+    phone.press('downloadCard');
+    phone.releaseFonts();
+    await phone.flush();
+    assert.equal(phone.blobRequests().length, 1);
+    assert.equal(viewerOpen(phone), true);
+    assert.equal(phone.objectUrls.created.length, 1, '只建了一個 object URL');
+});
+
+// 橫版 1200×675、直版 1080×1350；連結點完就拿掉；網址不在同一個 tick 撤銷（過一陣子才撤銷）
+test('電腦下載：檔名 ff14-Luna Starweaver.png 的 <a download> 被點、toast', async () => {
+    const page = await createCardPage();
+    fillRequired(page);
+    page.press('downloadCard');
+    await page.flush();
+    assert.deepEqual(page.blobRequests().map(({ type, width, height }) => ({ type, width, height })), [{ type: 'image/png', width: 1200, height: 675 }]);
+    assert.equal(page.downloads.length, 1);
+    const [download] = page.downloads;
+    assert.equal(download.file, OUT_FILE);
+    assert.match(download.href, /^blob:/);
+    assert.ok(download.blob && download.blob.size > 0 && download.blob.type === 'image/png', '點的是這張 PNG 的 object URL');
+    assert.deepEqual(messages(page), [`已下載 ${OUT_FILE}`]);
+    assert.equal(page.toasts[0].type, undefined, '成功的 toast 用預設的樣式');
+    assert.equal(viewerOpen(page), false, '電腦直接下載，不開大圖');
+    assert.deepEqual(page.consoleErrors, []);
+    // 連結點完就拿掉，不留在 body 上
+    assert.deepEqual(kids(page.document.body).filter((node) => node.tagName === 'A'), []);
+
+    // 網址不在同一個 tick 撤銷（有的瀏覽器網址一撤銷就取消這次下載）：還沒撤銷，排了 1 秒以上的計時，時間到才撤銷
+    assert.ok(!page.objectUrls.revoked.includes(download.href), '點完還沒撤銷');
+    const delays = page.pendingDelays();
+    assert.equal(delays.length, 1);
+    assert.ok(delays[0] >= 1000, `撤銷的計時 ${delays[0]} 毫秒，至少 1000`);
+    page.runTimeouts();
+    assert.deepEqual(page.objectUrls.revoked.filter((url) => url === download.href), [download.href]);
+
+    // 直版：1080×1350，同一個檔名；名字裡不能當檔名的字換掉
+    page.press('formatPortrait');
+    page.type('cardName', 'Luna/Star:weaver?');
+    page.press('downloadCard');
+    await page.flush();
+    assert.deepEqual(page.blobRequests().map(({ width, height }) => [width, height]), [[1200, 675], [1080, 1350]]);
+    assert.equal(page.downloads.at(-1).file, 'ff14-Luna-Star-weaver-.png');
+    assert.equal(messages(page).at(-1), '已下載 ff14-Luna-Star-weaver-.png');
+    // 兩次下載各是各的網址
+    assert.notEqual(page.downloads[0].href, page.downloads[1].href);
+    assert.equal(page.consoleErrors.length, 0);
+});
+
+test('下載的圖就是畫面上那張 canvas：拍下來的畫面有名字、伺服器、主職與版權字，頁面不再多畫別的', async () => {
+    const page = await createCardPage();
+    fillRequired(page);
+    const drawsBefore = page.drawCount();
+    page.press('downloadCard');
+    await page.flush();
+    const [request] = page.blobRequests();
+    assert.ok(request.draws >= drawsBefore, '沒有另外建一張 canvas 重畫別的東西');
+    for (const text of [NAME, 'Tiamat', MARK, NOTICE]) assert.ok(request.texts.includes(text), `畫面上有 ${text}`);
+    assert.deepEqual(request.texts, page.texts(), '拍下來的就是現在畫面上畫的字');
+});
+
+// 關掉（Esc 或關閉鈕）時圖與下載連結不再指到這一張的網址，網址過一陣子才撤銷（見下面的測試）；Safari 點按鈕不給焦點時焦點也要回到下載鈕
+test('手機下載：對話框打開、圖是 object URL、長按的說明、關閉後焦點回到下載鈕', async () => {
+    const page = await createCardPage({ narrow: true, share: 'ok' });
+    fillRequired(page);
+    page.focus('downloadCard');
+    page.press('downloadCard');
+    await page.flush();
+    const viewer = page.$('imageViewer');
+    assert.equal(viewerOpen(page), true);
+    assert.equal(viewer.getAttribute('role'), 'dialog');
+    assert.equal(viewer.getAttribute('aria-modal'), 'true');
+    assert.equal(viewer.getAttribute('aria-labelledby'), 'viewerTitle');
+    assert.equal(page.$('viewerTitle').textContent, '長按圖片即可儲存');
+    // 手機不直接下載：沒有 <a download> 被點、沒有 toast
+    assert.deepEqual(page.downloads, []);
+    assert.deepEqual(page.toasts, []);
+    assert.equal(page.blobRequests().length, 1);
+
+    // 圖是這一張的 object URL；說明（alt）是卡片現在的說明
+    const image = page.$('viewerImage');
+    const src = image.getAttribute('src');
+    assert.match(src, /^blob:/);
+    assert.deepEqual(page.objectUrls.created.filter((url) => url === src), [src]);
+    assert.ok(!page.objectUrls.revoked.includes(src), '開著的時候不能撤銷');
+    assert.equal(image.getAttribute('alt'), page.$('cardCanvas').getAttribute('aria-label'));
+    assert.equal(image.getAttribute('alt'), '角色卡預覽：Luna Starweaver，Tiamat，繪靈法師 Lv 100');
+    // 「下載檔案」是 <a download>（給支援的瀏覽器）：同一個網址、同一個檔名
+    const link = page.$('viewerDownload');
+    assert.equal(link.tagName, 'A');
+    assert.equal(link.hidden, false);
+    assert.equal(link.getAttribute('href'), src);
+    assert.equal(link.getAttribute('download'), OUT_FILE);
+    assert.equal(link.textContent, '下載檔案');
+    // 分享（這個瀏覽器支援才出現）與關閉
+    assert.equal(page.$('viewerShare').hidden, false);
+    assert.equal(page.$('viewerShare').textContent, '分享');
+    assert.equal(page.$('viewerClose').textContent, '關閉');
+    // 焦點移進對話框裡
+    assert.ok(viewer.contains(page.document.activeElement), '焦點在對話框裡');
+    assert.deepEqual(page.consoleErrors, []);
+
+    // Esc 關掉：焦點回到「下載圖片」；關掉的當下還沒撤銷這一張的網址，過一陣子才撤銷（只撤銷一次）
+    page.key('Escape');
+    assert.equal(viewerOpen(page), false);
+    isSame(page.document.activeElement, page.$('downloadCard'));
+    assert.ok(!page.objectUrls.revoked.includes(src), '關掉的當下還沒撤銷');
+    page.runTimeouts();
+    assert.deepEqual(page.objectUrls.revoked.filter((url) => url === src), [src]);
+
+    // 再開一次：新的網址；用「關閉」鈕關掉也一樣
+    page.press('downloadCard');
+    await page.flush();
+    assert.equal(viewerOpen(page), true);
+    const second = page.$('viewerImage').getAttribute('src');
+    assert.notEqual(second, src);
+    assert.equal(page.$('viewerDownload').getAttribute('href'), second);
+    page.press('viewerClose');
+    assert.equal(viewerOpen(page), false);
+    isSame(page.document.activeElement, page.$('downloadCard'));
+    assert.ok(!page.objectUrls.revoked.includes(second), '關掉的當下還沒撤銷');
+    page.runTimeouts();
+    assert.deepEqual(page.objectUrls.revoked.filter((url) => url === second), [second]);
+    assert.equal(page.downloads.length, 0);
+
+    // Safari 與 macOS 的 Firefox 點按鈕不給焦點（activeElement 是 body）：照樣要回到「下載圖片」
+    const safari = await createCardPage({ narrow: true });
+    fillRequired(safari);
+    safari.document.body.focus();
+    assert.equal(safari.document.activeElement, safari.document.body);
+    safari.press('downloadCard');
+    await safari.flush();
+    assert.equal(viewerOpen(safari), true);
+    safari.key('Escape');
+    isSame(safari.document.activeElement, safari.$('downloadCard'));
+});
+
+// 剛點完「下載檔案」就關掉大圖：瀏覽器是在 click() 之後才（非同步）去讀網址，太早撤銷有的瀏覽器會取消這次下載（電腦下載的 CardExport.download 也是等
+// REVOKE_DELAY_MS 才撤銷）。所以關掉大圖時，圖與下載連結馬上不再指到網址，網址則等同樣的時間才撤銷
+test('關掉大圖：圖與下載連結馬上不再指到網址，網址等 REVOKE_DELAY_MS 才撤銷（剛點完下載檔案就關掉，下載不會被取消）', async () => {
+    const page = await createCardPage({ narrow: true });
+    fillRequired(page);
+    page.press('downloadCard');
+    await page.flush();
+    const url = page.$('viewerImage').getAttribute('src');
+    assert.equal(page.$('viewerDownload').getAttribute('href'), url);
+    assert.deepEqual(page.pendingDelays(), [], '開著的時候沒有排任何計時');
+
+    // 點「下載檔案」（<a download>），馬上關掉
+    page.$('viewerDownload').click();
+    assert.deepEqual(page.downloads.map((download) => download.href), [url], '點的是這一張的網址');
+    page.press('viewerClose');
+    assert.equal(viewerOpen(page), false);
+    // 圖與下載連結馬上不再指到它
+    assert.equal(page.$('viewerImage').hasAttribute('src'), false);
+    assert.equal(page.$('viewerDownload').hasAttribute('href'), false);
+    // 網址還沒撤銷：排了一個計時，等的時間和電腦下載一樣（CardExport.REVOKE_DELAY_MS，至少 1 秒）
+    assert.deepEqual(page.objectUrls.revoked, [], '網址還有效：下載的瀏覽器還在讀它');
+    const { REVOKE_DELAY_MS } = page.window.CardExport;
+    assert.ok(REVOKE_DELAY_MS >= 1000);
+    assert.deepEqual(page.pendingDelays(), [REVOKE_DELAY_MS]);
+    // 時間到才撤銷，只撤銷一次
+    page.runTimeouts();
+    assert.deepEqual(page.objectUrls.revoked, [url]);
+    page.runTimeouts();
+    assert.deepEqual(page.objectUrls.revoked, [url]);
+    assert.deepEqual(page.pendingDelays(), []);
+
+    // 大圖已經開著時再按「下載圖片」：先關掉前一張（它照樣等計時），新的那張一直有效，直到它自己關掉
+    page.press('downloadCard');
+    await page.flush();
+    const first = page.$('viewerImage').getAttribute('src');
+    page.press('downloadCard');
+    await page.flush();
+    const second = page.$('viewerImage').getAttribute('src');
+    assert.notEqual(second, first);
+    assert.equal(page.$('viewerDownload').getAttribute('href'), second);
+    assert.deepEqual(page.objectUrls.revoked, [url], '前一張只是排了計時，還沒撤銷');
+    assert.deepEqual(page.pendingDelays(), [REVOKE_DELAY_MS]);
+    page.runTimeouts();
+    assert.deepEqual(page.objectUrls.revoked, [url, first], '前一張時間到才撤銷，開著的這一張不動');
+    page.key('Escape');
+    assert.deepEqual(page.objectUrls.revoked, [url, first]);
+    page.runTimeouts();
+    assert.deepEqual(page.objectUrls.revoked, [url, first, second]);
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('大圖裡沒有分享時（瀏覽器不支援）沒有分享鈕；有 canShare 卻不收檔案時也沒有', async () => {
+    for (const options of [{}, { share: 'no-files' }, { share: 'ok', fileConstructor: false }]) {
+        const page = await createCardPage({ narrow: true, ...options });
+        fillRequired(page);
+        page.press('downloadCard');
+        await page.flush();
+        assert.equal(viewerOpen(page), true, JSON.stringify(options));
+        assert.equal(page.$('viewerShare').hidden, true, JSON.stringify(options));
+        assert.equal(page.$('viewerDownload').hidden, false);
+        assert.equal(page.$('shareCard').hidden, true, JSON.stringify(options));
+    }
+});
+
+test('觸控為主的寬螢幕（平板）也用大圖，滑鼠的寬螢幕直接下載；視窗大小變了照現在的算', async () => {
+    const tablet = await createCardPage({ coarse: true });
+    fillRequired(tablet);
+    tablet.press('downloadCard');
+    await tablet.flush();
+    assert.equal(viewerOpen(tablet), true, '(pointer: coarse) 就用大圖');
+    assert.deepEqual(tablet.downloads, []);
+
+    const mouse = await createCardPage();
+    fillRequired(mouse);
+    mouse.press('downloadCard');
+    await mouse.flush();
+    assert.equal(viewerOpen(mouse), false);
+    assert.equal(mouse.downloads.length, 1);
+
+    // 按的當下才看：視窗縮到手機寬度就用大圖，放寬了又直接下載
+    const resizing = await createCardPage();
+    fillRequired(resizing);
+    resizing.setNarrow(true);
+    resizing.press('downloadCard');
+    await resizing.flush();
+    assert.equal(viewerOpen(resizing), true);
+    assert.equal(resizing.downloads.length, 0);
+    resizing.key('Escape');
+    resizing.setNarrow(false);
+    resizing.press('downloadCard');
+    await resizing.flush();
+    assert.equal(viewerOpen(resizing), false);
+    assert.equal(resizing.downloads.length, 1);
+    resizing.setCoarse(true);
+    resizing.press('downloadCard');
+    await resizing.flush();
+    assert.equal(viewerOpen(resizing), true, '改成觸控為主也跟著');
+});
+
+test('點小卡看大圖：用大圖的裝置上，點一下卡片就打開大圖；必填沒填完時只有圖與「關閉」，也不寫錯誤', async () => {
+    const page = await createCardPage({ narrow: true, share: 'ok' });
+    // 必填沒填完：照樣打開，只有圖與關閉（沒有下載檔案、分享），沒有驗證的錯誤、沒有 toast
+    page.press('cardCanvas');
+    await page.flush();
+    assert.equal(viewerOpen(page), true);
+    assert.match(page.$('viewerImage').getAttribute('src'), /^blob:/);
+    assert.equal(page.$('viewerImage').getAttribute('alt'), '角色卡預覽：還沒填資料');
+    assert.equal(page.$('viewerDownload').hidden, true);
+    assert.equal(page.$('viewerShare').hidden, true);
+    assert.equal(page.$('viewerClose').hidden, false);
+    assert.deepEqual(shownErrors(page), []);
+    assert.deepEqual(page.toasts, []);
+    assert.deepEqual(page.downloads, []);
+    assert.deepEqual(page.consoleErrors, []);
+    assert.ok(page.$('imageViewer').contains(page.document.activeElement), '焦點在大圖裡');
+    // 卡片不是按鈕：不能聚焦，沒有 role="button"、tabindex
+    assert.equal(page.$('cardCanvas').getAttribute('role'), 'img');
+    assert.equal(page.$('cardCanvas').hasAttribute('tabindex'), false);
+    // 點的不是任何能聚焦的東西：關掉之後不硬把焦點拉到別的元素
+    page.press('viewerClose');
+    assert.equal(viewerOpen(page), false);
+    assert.equal(page.document.activeElement, page.document.body);
+    assert.equal(page.objectUrls.revoked.length, 0, '關掉的當下還沒撤銷');
+    page.runTimeouts();
+    assert.equal(page.objectUrls.revoked.length, 1, '過一陣子才撤銷');
+
+    // 填好之後：下載檔案與分享都有
+    fillRequired(page);
+    page.press('cardCanvas');
+    await page.flush();
+    assert.equal(viewerOpen(page), true);
+    assert.equal(page.$('viewerDownload').hidden, false);
+    assert.equal(page.$('viewerDownload').getAttribute('download'), OUT_FILE);
+    assert.equal(page.$('viewerDownload').getAttribute('href'), page.$('viewerImage').getAttribute('src'));
+    assert.equal(page.$('viewerShare').hidden, false);
+    assert.equal(page.$('viewerImage').getAttribute('alt'), '角色卡預覽：Luna Starweaver，Tiamat，繪靈法師 Lv 100');
+    page.key('Escape');
+    // 接著用下載圖片：大圖的按鈕又跟著這一次（沒有留著上一次的狀態）
+    page.type('cardName', '');
+    page.press('cardCanvas');
+    await page.flush();
+    assert.equal(page.$('viewerDownload').hidden, true, '名字清掉了，只有圖與關閉');
+    assert.equal(page.$('viewerShare').hidden, true);
+
+    // 電腦（寬螢幕、滑鼠）：點卡片什麼都不發生
+    const desktop = await createCardPage();
+    fillRequired(desktop);
+    desktop.press('cardCanvas');
+    await desktop.flush();
+    assert.equal(viewerOpen(desktop), false);
+    assert.equal(desktop.blobRequests().length, 0);
+    assert.deepEqual(desktop.toasts, []);
+    // 觸控為主的寬螢幕（平板）也算
+    const tablet = await createCardPage({ coarse: true });
+    tablet.press('cardCanvas');
+    await tablet.flush();
+    assert.equal(viewerOpen(tablet), true);
+});
+
+test('點小卡看大圖：調整圖片模式不開；拖曳移動了圖片之後放開的那一下 click 不開；沒移動（點一下）才開', async () => {
+    const page = await createCardPage({ narrow: true, coarse: true });
+    await upload(page, WIDE);
+    // 調整模式（要在手指按下去之前設好 touch-action，所以按「調整圖片」的當下就進入）：卡片上的點與拖都是在調整圖片，不開大圖
+    page.press('tab-image');
+    page.press('imageAdjust');
+    page.press('cardCanvas');
+    await page.flush();
+    assert.equal(viewerOpen(page), false, '調整模式不開大圖');
+    assert.equal(page.blobRequests().length, 0);
+    page.press('imageAdjust');
+    page.press('cardCanvas');
+    await page.flush();
+    assert.equal(viewerOpen(page), true, '離開調整模式又能點');
+    page.key('Escape');
+
+    // 滑鼠：按下、移動超過幾個像素、放開，之後瀏覽器送的 click 是拖曳的收尾，不開大圖；下一次點才開
+    const crop = () => JSON.stringify(saved(page).crops);
+    const before = crop();
+    page.drag([[300, 200], [340, 212]]);
+    assert.notEqual(crop(), before, '圖片真的被拖動了');
+    page.press('cardCanvas');
+    await page.flush();
+    assert.equal(viewerOpen(page), false, '拖曳之後的 click 不開');
+    page.press('cardCanvas');
+    await page.flush();
+    assert.equal(viewerOpen(page), true, '只吃掉那一次 click');
+    page.key('Escape');
+
+    // 按下去再放開，沒有移動：是點一下，開大圖
+    page.pointer('down', { x: 300, y: 200 });
+    page.pointer('up', { x: 300, y: 200 });
+    page.press('cardCanvas');
+    await page.flush();
+    assert.equal(viewerOpen(page), true, '沒移動的點一下');
+    page.key('Escape');
+    // 手抖了一兩個像素也是點一下
+    page.pointer('down', { x: 300, y: 200 });
+    page.pointer('move', { x: 301, y: 201 });
+    page.pointer('up', { x: 301, y: 201 });
+    page.press('cardCanvas');
+    await page.flush();
+    assert.equal(viewerOpen(page), true, '小小的抖動不算拖曳');
+    page.key('Escape');
+
+    // 拖曳之後放開的 click 沒送到卡片（放在卡片外面）：下一次按下去就把「拖曳過」的記號清掉，那一次點一下照開
+    page.drag([[300, 200], [360, 220]]);
+    page.pointer('down', { x: 300, y: 200 });
+    page.pointer('up', { x: 300, y: 200 });
+    page.press('cardCanvas');
+    await page.flush();
+    assert.equal(viewerOpen(page), true, '新的一次按下去，上一次拖曳的記號不留著');
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+// 沒填必填不分享；分享傳的是 PNG 檔與角色名稱（標題）；沒有 File 建構函式也不顯示
+test('分享鈕只在支援時出現；取消不跳 toast、失敗跳 toast', async () => {
+    // 不支援：沒有 navigator.share、canShare 不收檔案、沒有 File 建構函式
+    for (const options of [{}, { share: 'no-files' }, { share: 'ok', fileConstructor: false }]) {
+        const page = await createCardPage(options);
+        assert.equal(page.$('shareCard').hidden, true, JSON.stringify(options));
+    }
+    const page = await createCardPage({ share: 'ok' });
+    assert.equal(page.$('shareCard').hidden, false);
+    assert.equal(page.$('shareCard').textContent, '分享');
+    assert.equal(page.$('shareCard').classList.contains('btn-primary'), false, '主要按鈕只有下載圖片');
+
+    // 必填沒填完：不產生、不分享，寫錯誤
+    page.press('shareCard');
+    await page.flush();
+    assert.deepEqual(page.shareCalls, []);
+    assert.equal(page.blobRequests().length, 0);
+    assert.deepEqual(shownErrors(page), ['name', 'world', 'mainJob']);
+
+    // 填好：分享一個 PNG 檔（檔名同下載），標題是角色名稱；分享成功不跳 toast，不開大圖
+    fillRequired(page);
+    page.press('shareCard');
+    await page.flush();
+    assert.equal(page.shares.length, 1);
+    const [data] = page.shares;
+    assert.equal(data.files.length, 1);
+    assert.equal(data.files[0].name, OUT_FILE);
+    assert.equal(data.files[0].type, 'image/png');
+    assert.ok(data.files[0].size > 0);
+    assert.equal(data.title, NAME);
+    assert.deepEqual(page.toasts, []);
+    assert.equal(viewerOpen(page), false);
+    assert.deepEqual(page.downloads, []);
+    assert.deepEqual(page.consoleErrors, []);
+
+    // 使用者取消（AbortError）：什麼都不說
+    const cancel = await createCardPage({ share: 'cancel' });
+    fillRequired(cancel);
+    cancel.press('shareCard');
+    await cancel.flush();
+    assert.equal(cancel.shareCalls.length, 1);
+    assert.deepEqual(cancel.toasts, []);
+
+    // 別的錯誤：告訴使用者，建議改用下載
+    const fail = await createCardPage({ share: 'fail' });
+    fillRequired(fail);
+    fail.press('shareCard');
+    await fail.flush();
+    assert.equal(fail.shareCalls.length, 1);
+    assert.deepEqual(messages(fail), ['沒辦法分享，請改用下載。']);
+    assert.equal(fail.toasts[0].type, 'error');
+    // 等字型的時候也一樣：載完才產生、才分享
+    const slow = await createCardPage({ share: 'ok', fontsDelay: true });
+    fillRequired(slow);
+    slow.press('shareCard');
+    await slow.flush();
+    assert.equal(slow.blobRequests().length, 0);
+    assert.deepEqual(slow.shareCalls, []);
+    slow.releaseFonts();
+    await slow.flush();
+    assert.equal(slow.shares.length, 1);
+    // 轉不成 PNG：說產生不出圖，不分享
+    const broken = await createCardPage({ share: 'ok', blobFails: true });
+    fillRequired(broken);
+    broken.press('shareCard');
+    await broken.flush();
+    assert.deepEqual(broken.shareCalls, []);
+    assert.deepEqual(messages(broken), [EXPORT_FAILED]);
+});
+
+// 底部的分享先等字型、圖示與截圖，再轉成 PNG，才呼叫 navigator.share；瀏覽器只在點擊之後的幾秒內收它，等太久就丟 NotAllowedError。
+// 這時改開全螢幕大圖（同手機的下載），焦點在大圖的「分享」：在大圖裡再按一次是新的手勢，馬上分享已經做好的檔案
+test('分享等太久、點擊的手勢過期了（NotAllowedError）：改開大圖，焦點在大圖的分享，toast 請再按一次；大圖裡一按就分享，不再產生一張', async () => {
+    const page = await createCardPage({ share: 'expired', fontsDelay: true });
+    fillRequired(page);
+    page.press('shareCard');
+    await page.flush();
+    assert.deepEqual(page.shareCalls, [], '還在等字型');
+    page.releaseFonts();
+    await page.flush();
+    assert.equal(page.shareCalls.length, 1, '字型載完才呼叫：這時點擊的手勢已經過期');
+    assert.deepEqual(page.shares, []);
+    assert.equal(viewerOpen(page), true, '改開大圖');
+    assert.equal(page.$('viewerImage').getAttribute('src'), page.objectUrls.created.at(-1), '大圖是這一次產生的圖');
+    assert.equal(page.isShown('viewerShare'), true);
+    assert.equal(page.isShown('viewerDownload'), true, '必填都填了：也能下載檔案');
+    isSame(page.document.activeElement, page.$('viewerShare'), '焦點在大圖的分享，鍵盤與螢幕閱讀器接著按');
+    assert.deepEqual(messages(page), [SHARE_READY]);
+    assert.equal(page.toasts[0].type, 'info');
+    assert.equal(page.blobRequests().length, 1);
+
+    // 在大圖裡按分享：新的手勢，同步分享做好的那個檔案，不再產生一張
+    page.press('viewerShare');
+    assert.equal(page.shareCalls.length, 2, '同步呼叫');
+    await page.flush();
+    assert.equal(page.shares.length, 1);
+    assert.equal(page.shares[0].files[0].name, OUT_FILE);
+    assert.equal(page.shares[0].files[0].type, 'image/png');
+    assert.equal(page.shares[0].title, NAME);
+    assert.equal(page.blobRequests().length, 1, '沒有再產生一張圖');
+    assert.deepEqual(messages(page), [SHARE_READY], '分享成功不再說話');
+    // 關掉大圖：焦點回到底部的分享（Safari 點按鈕不給焦點也一樣）
+    page.press('viewerClose');
+    assert.equal(viewerOpen(page), false);
+    isSame(page.document.activeElement, page.$('shareCard'));
+    assert.deepEqual(page.consoleErrors, []);
+
+    // 大圖裡的分享也被拒絕（這裡不准分享，例如網頁放在不准分享的 iframe 裡）：說沒辦法分享，大圖照樣開著，還能下載檔案
+    const blocked = await createCardPage({ narrow: true, share: 'blocked' });
+    fillRequired(blocked);
+    blocked.press('shareCard');
+    await blocked.flush();
+    assert.equal(viewerOpen(blocked), true);
+    blocked.press('viewerShare');
+    await blocked.flush();
+    assert.deepEqual(messages(blocked), [SHARE_READY, '沒辦法分享，請改用下載。']);
+    assert.equal(blocked.toasts[1].type, 'error');
+    assert.equal(viewerOpen(blocked), true);
+    assert.equal(blocked.isShown('viewerDownload'), true);
+    assert.deepEqual(blocked.consoleErrors, []);
+});
+
+test('大圖裡的分享：馬上分享做好的檔案（同步呼叫 navigator.share，不再等字型，手勢還新鮮）；取消不說話、失敗跳 toast；大圖照樣開著', async () => {
+    const page = await createCardPage({ narrow: true, share: 'ok', fontsDelay: true });
+    fillRequired(page);
+    page.releaseFonts();
+    await page.flush();
+    page.press('downloadCard');
+    await page.flush();
+    assert.equal(viewerOpen(page), true);
+    // 字型又有新的在載（大圖開著時照理動不了，這裡硬動）：大圖裡的分享也不等，同步就呼叫了
+    page.type('cardTitle', '光之戰士');
+    assert.ok(page.heldFontBatches().length > 0);
+    page.press('viewerShare');
+    assert.equal(page.shareCalls.length, 1, '同步呼叫 navigator.share');
+    assert.equal(page.blobRequests().length, 1, '沒有再產生一張圖');
+    await page.flush();
+    assert.equal(page.shares.length, 1);
+    assert.equal(page.shares[0].files[0].name, OUT_FILE);
+    assert.equal(page.shares[0].files[0].type, 'image/png');
+    assert.equal(page.shares[0].title, NAME);
+    assert.equal(viewerOpen(page), true, '分享之後大圖還開著');
+    assert.deepEqual(page.toasts, []);
+
+    const cancel = await createCardPage({ narrow: true, share: 'cancel' });
+    fillRequired(cancel);
+    cancel.press('downloadCard');
+    await cancel.flush();
+    cancel.press('viewerShare');
+    await cancel.flush();
+    assert.equal(cancel.shareCalls.length, 1);
+    assert.deepEqual(cancel.toasts, []);
+
+    const fail = await createCardPage({ narrow: true, share: 'fail' });
+    fillRequired(fail);
+    fail.press('downloadCard');
+    await fail.flush();
+    fail.press('viewerShare');
+    await fail.flush();
+    assert.deepEqual(messages(fail), ['沒辦法分享，請改用下載。']);
+    assert.equal(viewerOpen(fail), true);
+    // 連按兩下不會連續呼叫兩次（上一次還沒完成時 navigator.share 會丟 InvalidStateError）
+    const twice = await createCardPage({ narrow: true, share: 'ok' });
+    fillRequired(twice);
+    twice.press('downloadCard');
+    await twice.flush();
+    twice.press('viewerShare');
+    twice.press('viewerShare');
+    await twice.flush();
+    assert.equal(twice.shareCalls.length, 1);
+    twice.press('viewerShare');
+    await twice.flush();
+    assert.equal(twice.shareCalls.length, 2, '做完了又能分享');
+});
+
+// 沒填必填不複製；圖轉不出來也是複製失敗
+test('複製鈕只在支援時出現；成功與失敗的 toast', async () => {
+    for (const options of [{}, { share: 'ok' }]) {
+        const page = await createCardPage(options);
+        assert.equal(page.$('copyCard').hidden, true, JSON.stringify(options));
+    }
+    const page = await createCardPage({ clipboard: 'ok' });
+    assert.equal(page.$('copyCard').hidden, false);
+    assert.equal(page.$('copyCard').textContent, '複製圖片');
+    assert.equal(page.$('copyCard').classList.contains('btn-primary'), false);
+    page.press('copyCard');
+    await page.flush();
+    assert.deepEqual(page.clipboardCalls, [], '必填沒填完，不碰剪貼簿');
+    assert.deepEqual(shownErrors(page), ['name', 'world', 'mainJob']);
+
+    fillRequired(page);
+    page.press('copyCard');
+    await page.flush();
+    assert.equal(page.clipboardWrites.length, 1);
+    assert.deepEqual(Object.keys(page.clipboardWrites[0][0]), ['image/png']);
+    const blob = page.clipboardWrites[0][0]['image/png'];
+    assert.equal(blob.type, 'image/png');
+    assert.ok(blob.size > 0);
+    assert.deepEqual(messages(page), ['已複製圖片']);
+    assert.equal(page.toasts[0].type, undefined);
+    assert.deepEqual(page.downloads, [], '複製不下載');
+    assert.equal(viewerOpen(page), false);
+
+    // 寫入被拒絕（沒給權限）：告訴使用者，建議改用下載
+    const denied = await createCardPage({ clipboard: 'reject' });
+    fillRequired(denied);
+    denied.press('copyCard');
+    await denied.flush();
+    assert.deepEqual(messages(denied), ['沒辦法複製，請改用下載。']);
+    assert.equal(denied.toasts[0].type, 'error');
+    assert.deepEqual(denied.clipboardWrites, []);
+
+    // 圖轉不出來：ClipboardItem 裡的 Promise 被拒絕，write 也被拒絕，一樣是複製失敗（不是產生不出圖）
+    const broken = await createCardPage({ clipboard: 'ok', blobFails: true });
+    fillRequired(broken);
+    broken.press('copyCard');
+    await broken.flush();
+    assert.deepEqual(messages(broken), ['沒辦法複製，請改用下載。']);
+    assert.deepEqual(broken.clipboardWrites, []);
+    assert.deepEqual(broken.consoleErrors, []);
+    // 失敗之後「忙」放掉了，又能複製
+    broken.setBlobFails(false);
+    broken.press('copyCard');
+    await broken.flush();
+    assert.equal(broken.clipboardWrites.length, 1);
+});
+
+test('複製：點擊的當下就把「還沒做好的圖」（Promise）交給 ClipboardItem 並呼叫 clipboard.write（Safari 要求在使用者手勢裡），圖做好了才寫進去', async () => {
+    const page = await createCardPage({ clipboard: 'ok', fontsDelay: true });
+    fillRequired(page);
+    page.press('copyCard');
+    // 同步：還沒有任何 await 回來
+    assert.equal(page.clipboardCalls.length, 1, '同步呼叫 clipboard.write');
+    const [item] = page.clipboardCalls[0];
+    assert.ok(item instanceof page.window.ClipboardItem, '建的是 ClipboardItem');
+    assert.deepEqual(item.types, ['image/png']);
+    assert.equal(typeof item.data['image/png'].then, 'function', '交進去的是 Promise<Blob>，不是等圖做好才建');
+    assert.deepEqual(page.clipboardWrites, [], '圖還沒做好，還沒寫進去');
+    await page.flush();
+    assert.equal(page.blobRequests().length, 0, '字型還沒載完，圖還沒產生');
+    assert.deepEqual(page.clipboardWrites, []);
+    assert.deepEqual(page.toasts, []);
+    page.releaseFonts();
+    await page.flush();
+    assert.equal(page.blobRequests().length, 1);
+    assert.equal(page.clipboardWrites.length, 1);
+    assert.equal(page.clipboardWrites[0][0]['image/png'].type, 'image/png');
+    assert.deepEqual(messages(page), ['已複製圖片']);
+    assert.equal(page.clipboardCalls.length, 1, '只呼叫一次');
+
+    // 等太久：逾時照目前的畫面產生，複製照樣成功，也說一聲字型還沒載完
+    const slow = await createCardPage({ clipboard: 'ok', fontsDelay: true });
+    fillRequired(slow);
+    slow.press('copyCard');
+    await slow.flush();
+    slow.runTimeouts();
+    await slow.flush();
+    assert.equal(slow.clipboardWrites.length, 1);
+    assert.deepEqual(messages(slow), [FONTS_SLOW, '已複製圖片']);
+});
+
+// 其他內建瀏覽器（Facebook、Instagram、Discord）沒有這個提示
+test('LINE 的提示只在 LINE 出現，連結有 openExternalBrowser=1', async () => {
+    const normal = await createCardPage();
+    assert.equal(normal.$('lineTip').hidden, true);
+    assert.equal(normal.$('cardActions').contains(normal.$('lineTip')), true, '提示在按鈕列裡，緊接在下載圖片的旁邊');
+
+    const line = await createCardPage({ userAgent: LINE_UA, narrow: true });
+    const tip = line.$('lineTip');
+    assert.equal(tip.hidden, false);
+    assert.equal(tip.textContent, '在 LINE 裡可能存不了圖，建議先用瀏覽器打開再填：用瀏覽器打開');
+    const link = line.$('lineTipLink');
+    assert.equal(link.tagName, 'A');
+    assert.equal(link.textContent, '用瀏覽器打開');
+    assert.equal(link.getAttribute('href'), 'https://ff14.tw/tools/character-card/index.html?openExternalBrowser=1');
+    assert.ok(tip.contains(link));
+    assert.equal(link.getAttribute('target'), null, '同一個分頁：LINE 看到參數會改用手機預設的瀏覽器打開');
+    // 切換語言：兩段字都換
+    line.setLang('en');
+    assert.equal(tip.textContent, 'LINE may not save the picture. Open this page in your browser before you fill it in: Open in browser');
+    line.setLang('ja');
+    assert.equal(tip.textContent, 'LINEでは画像を保存できないことがあります。入力する前にブラウザで開いてください：ブラウザで開く');
+    // LINE 裡手機的下載照樣用大圖
+    fillRequired(line);
+    line.press('downloadCard');
+    await line.flush();
+    assert.equal(viewerOpen(line), true);
+
+    for (const userAgent of [
+        'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 [FBAN/FBIOS;FBAV/460.0.0.37.108;]',
+        'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Instagram 330.0.0.34.105',
+        'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Discord/260.0',
+        'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1'
+    ]) {
+        const other = await createCardPage({ userAgent, narrow: true });
+        assert.equal(other.$('lineTip').hidden, true, userAgent);
+    }
+});
+
+// #cardTool 的 .is-typing：文字欄、數字欄與文字框得到焦點時加上，離開時拿掉，欄位之間移動不拿掉；
+// 選單（不開鍵盤，選完焦點還留在上面）、勾選、單選、滑桿、檔案、顏色與按鈕不算
+test('手機打字時 .is-typing', async () => {
+    const page = await createCardPage({ narrow: true });
+    await upload(page);
+    const tool = page.$('cardTool');
+    assert.equal(isTyping(page), false);
+
+    // 文字欄、數字欄、文字框：焦點進去就是在打字（鍵盤多半開著）
+    page.app.selectTab('basic');
+    for (const id of ['cardName', 'cardLevel']) {
+        page.focus(id);
+        assert.equal(isTyping(page), true, `#${id} 得到焦點`);
+        page.focus('downloadCard');
+        assert.equal(isTyping(page), false, `離開 #${id}（移到按鈕）`);
+    }
+    page.app.selectTab('profile');
+    for (const id of ['cardTitle', 'cardFcName', 'cardFcTag', 'cardIntro', 'cardContact']) {
+        page.focus(id);
+        assert.equal(isTyping(page), true, `#${id} 得到焦點`);
+        page.focus('downloadCard');
+        assert.equal(isTyping(page), false);
+    }
+    // 選單不算：不開鍵盤（Android 與電腦的 Chrome 選完焦點還留在選單上），按鈕列要看得到
+    page.app.selectTab('basic');
+    for (const id of ['cardWorld', 'cardMainJob']) {
+        page.focus(id);
+        assert.equal(isTyping(page), false, `#${id}（選單）得到焦點`);
+    }
+    page.app.selectTab('profile');
+    page.focus('cardGc');
+    assert.equal(isTyping(page), false, '#cardGc（選單）得到焦點');
+    // 焦點離開（失焦，沒有移到別的元素）也拿掉
+    page.focus('cardContact');
+    assert.equal(isTyping(page), true);
+    page.document.activeElement.blur();
+    assert.equal(isTyping(page), false);
+
+    // 在兩個欄位之間移動（relatedTarget 是另一個欄位）：不拿掉再加上，一直是在打字
+    page.app.selectTab('profile');
+    page.focus('cardTitle');
+    const original = tool.classList.remove.bind(tool.classList);
+    let removed = 0;
+    tool.classList.remove = (...tokens) => {
+        removed += 1;
+        return original(...tokens);
+    };
+    page.focus('cardFcName');
+    page.focus('cardFcTag');
+    page.focus('cardIntro');
+    assert.equal(isTyping(page), true);
+    assert.equal(removed, 0, '欄位之間移動時沒有拿掉過');
+    // 從欄位移到不是欄位的東西（切換按鈕）：拿掉
+    page.focus(page.chip('cardSubJobs', 'Paladin'));
+    assert.equal(removed, 1);
+    assert.equal(isTyping(page), false);
+    tool.classList.remove = original;
+    // 文字欄 → 選單：拿掉（選單不算）；選單 → 文字欄：又加上
+    page.focus('cardTitle');
+    assert.equal(isTyping(page), true);
+    page.focus('cardGc');
+    assert.equal(isTyping(page), false, '從文字欄移到選單');
+    page.focus('cardIntro');
+    assert.equal(isTyping(page), true, '從選單移到文字欄');
+    page.document.activeElement.blur();
+    assert.equal(isTyping(page), false);
+
+    // 勾選框、單選、滑桿、檔案、顏色、按鈕、切換按鈕：不算在打字
+    page.app.selectTab('play');
+    page.focus('hours-weekday-evening');
+    assert.equal(isTyping(page), false, '勾選框');
+    page.focus(page.chip('cardLikes', 'msq'));
+    assert.equal(isTyping(page), false, '切換按鈕');
+    page.app.selectTab('style');
+    page.focus('accentAuto');
+    assert.equal(isTyping(page), false, '單選');
+    page.focus('accentColor');
+    assert.equal(isTyping(page), false, '顏色');
+    page.focus('clearAll');
+    assert.equal(isTyping(page), false, '按鈕');
+    page.app.selectTab('image');
+    page.focus('imageZoom');
+    assert.equal(isTyping(page), false, '滑桿');
+    page.focus('cardImageInput');
+    assert.equal(isTyping(page), false, '檔案');
+    page.focus('imageCenter');
+    assert.equal(isTyping(page), false);
+
+    // 文字相關的 input 類型都算：text、search、email、url、tel、number（沒寫 type 的也是 text）；其他不算
+    const form = page.$('cardForm');
+    const typeAs = (type) => {
+        const input = page.document.createElement('input');
+        if (type !== null) input.setAttribute('type', type);
+        form.appendChild(input);
+        return input;
+    };
+    for (const type of [null, 'text', 'search', 'email', 'url', 'tel', 'number', 'SEARCH']) {
+        const input = typeAs(type);
+        input.focus();
+        assert.equal(isTyping(page), true, `type=${type}`);
+        page.document.activeElement.blur();
+        assert.equal(isTyping(page), false);
+        input.remove();
+    }
+    for (const type of ['checkbox', 'radio', 'range', 'file', 'color', 'button', 'submit', 'reset', 'image', 'hidden', 'date']) {
+        const input = typeAs(type);
+        input.focus();
+        assert.equal(isTyping(page), false, `type=${type}`);
+        input.remove();
+    }
+    const textarea = page.document.createElement('textarea');
+    form.appendChild(textarea);
+    textarea.focus();
+    assert.equal(isTyping(page), true, 'textarea');
+    page.document.activeElement.blur();
+    const select = page.document.createElement('select');
+    form.appendChild(select);
+    select.focus();
+    assert.equal(isTyping(page), false, 'select 不算：不開鍵盤');
+    page.document.activeElement.blur();
+    assert.equal(isTyping(page), false);
+    // 表單外面的欄位不管（預覽、頁首的東西）
+    const outside = page.document.createElement('input');
+    page.document.body.appendChild(outside);
+    outside.focus();
+    assert.equal(isTyping(page), false, '表單外面的欄位不算');
+
+    // 必填沒填就按下載：焦點被程式移進第一個沒填的欄位，那也是在打字
+    const empty = await createCardPage({ narrow: true });
+    empty.press('downloadCard');
+    isSame(empty.document.activeElement, empty.$('cardName'));
+    assert.equal(isTyping(empty), true);
+    // 名字填了、伺服器沒選：焦點被程式移進選單，選單不算在打字，按鈕列不會被收起來
+    const noWorld = await createCardPage({ narrow: true });
+    noWorld.type('cardName', NAME);
+    noWorld.press('downloadCard');
+    isSame(noWorld.document.activeElement, noWorld.$('cardWorld'));
+    assert.equal(isTyping(noWorld), false);
+});
+
+// Android 與電腦的 Chrome：選完選單焦點還留在選單上，也沒有鍵盤開著。主職是最後一個必填欄位，選完之後 .is-typing 要是關著的，
+// 手機最下方的「下載圖片」按鈕列才看得到（以前選單也算在打字，選完主職按鈕列一直收著，小卡也一直縮在 20vh）
+test('選完選單（焦點還留在選單上）：.is-typing 是關著的，按鈕列看得到，下載圖片照常能按', async () => {
+    const page = await createCardPage({ narrow: true });
+    // 名字打完（鍵盤開著：按鈕列收起來），再去選伺服器：焦點一移到選單就不是在打字
+    page.focus('cardName');
+    page.type('cardName', NAME);
+    assert.equal(isTyping(page), true, '打字中');
+    page.focus('cardWorld');
+    assert.equal(isTyping(page), false, '焦點移到選單');
+    page.select('cardWorld', 'Tiamat');
+    isSame(page.document.activeElement, page.$('cardWorld'), '選完焦點還留在選單上');
+    assert.equal(isTyping(page), false, '選完伺服器');
+    // 主職：最後一個必填欄位
+    page.focus('cardMainJob');
+    page.select('cardMainJob', 'Pictomancer');
+    isSame(page.document.activeElement, page.$('cardMainJob'), '選完焦點還留在選單上');
+    assert.equal(isTyping(page), false, '選完最後一個必填欄位：按鈕列要出現');
+    assert.equal(page.isShown('cardActions'), true);
+    assert.equal(page.window.CardState.validate(page.app.state).ok, true, '必填都填好了');
+    // 選單裡再改選別的：還是不算打字
+    page.select('cardMainJob', 'Paladin');
+    assert.equal(isTyping(page), false);
+    // 按鈕列只靠 .is-typing 收起來（見樣式的測試），所以現在按得到：下載圖片打開大圖
+    page.press('downloadCard');
+    await page.flush();
+    assert.equal(viewerOpen(page), true);
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+// Safari：藏起有焦點的欄位時不一定送 focusout（Chrome 會把焦點丟到 body 並送 focusout）。手機打字到一半點分頁換到別組，
+// 被藏起來的欄位還留著焦點的話，沒有人拿掉 .is-typing，按鈕列就一直收著。selectTab() 在藏起來之前先讓有焦點的欄位失去焦點
+test('手機打字到一半換分頁（Safari 藏起欄位時不送 focusout）：焦點離開被藏起來的欄位，.is-typing 收掉', async () => {
+    const page = await createCardPage({ narrow: true, hideKeepsFocus: true });
+    page.press('tab-profile');
+    page.focus('cardTitle');
+    assert.equal(isTyping(page), true, '在名片分頁打字');
+    // 點「基本」分頁（Safari 點按鈕不給焦點，焦點還在欄位上）
+    page.press('tab-basic');
+    assert.deepEqual(shownPanels(page), ['basic']);
+    assert.equal(page.$('panel-profile').hidden, true);
+    isSame(page.document.activeElement, page.document.body, '焦點離開了被藏起來的欄位，不留在看不到的欄位上');
+    assert.equal(isTyping(page), false, '換分頁之後 .is-typing 收掉');
+
+    // 鍵盤（左右鍵）換分頁：焦點本來就在分頁上，不是在打字
+    page.focus('tab-basic');
+    page.key('ArrowRight');
+    assert.deepEqual(shownPanels(page), ['profile']);
+    isSame(page.document.activeElement, page.$('tab-profile'));
+    assert.equal(isTyping(page), false);
+
+    // 再選同一組（焦點在這一組的欄位裡）：這一組沒有被藏起來，焦點與 .is-typing 都不動
+    page.focus('cardIntro');
+    assert.equal(isTyping(page), true);
+    page.press('tab-profile');
+    isSame(page.document.activeElement, page.$('cardIntro'), '同一組再選一次，焦點留在欄位上');
+    assert.equal(isTyping(page), true);
+    // 焦點在另一組的欄位裡、而那一組被藏起來：切過去之前先放掉焦點（選單也一樣：焦點離開，.is-typing 本來就是關著的）
+    page.press('tab-basic');
+    isSame(page.document.activeElement, page.document.body);
+    assert.equal(isTyping(page), false);
+    page.focus('cardWorld');
+    page.press('tab-play');
+    isSame(page.document.activeElement, page.document.body, '焦點在選單上，那一組被藏起來也先放掉焦點');
+    assert.equal(isTyping(page), false);
+
+    // 必填沒填就按下載（焦點還在名片分頁的欄位上，例如用鍵盤送出）：切到基本分頁、焦點移到第一個沒填的欄位，那是文字欄，所以又在打字
+    page.press('tab-profile');
+    page.focus('cardContact');
+    assert.equal(isTyping(page), true);
+    page.press('downloadCard');
+    await page.flush();
+    assert.deepEqual(shownPanels(page), ['basic']);
+    isSame(page.document.activeElement, page.$('cardName'));
+    assert.equal(isTyping(page), true);
+
+    // 電腦：五組都顯示，沒有被藏起來的，焦點不動
+    const desktop = await createCardPage({ hideKeepsFocus: true });
+    desktop.focus('cardTitle');
+    desktop.app.selectTab('basic');
+    assert.deepEqual(shownPanels(desktop), TABS);
+    isSame(desktop.document.activeElement, desktop.$('cardTitle'));
+    assert.equal(isTyping(desktop), true);
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+// 上面的測試靠 hideKeepsFocus 模擬 Safari：預設（Chrome）藏起有焦點的元素時，焦點掉到 body、送 focusout；hideKeepsFocus 時什麼都不發生，
+// 焦點與 activeElement 留在被藏起來的元素上，沒有 focusout。藏起來的元素 focus() 都拿不到焦點
+test('頁面替身本身（hidden 與焦點）：藏起有焦點的元素時，預設掉到 body 並送 focusout，hideKeepsFocus 時焦點留著', async () => {
+    for (const keeps of [false, true]) {
+        const page = await createCardPage({ hideKeepsFocus: keeps });
+        const events = [];
+        page.$('cardForm').addEventListener('focusout', (event) => events.push(event.target.getAttribute('id')));
+        page.focus('cardTitle');
+        page.$('panel-profile').hidden = true;
+        if (keeps) {
+            isSame(page.document.activeElement, page.$('cardTitle'), 'hideKeepsFocus：焦點還在被藏起來的欄位上');
+            assert.deepEqual(events, [], 'hideKeepsFocus：沒有 focusout');
+        } else {
+            isSame(page.document.activeElement, page.document.body, '預設：焦點掉到 body');
+            assert.deepEqual(events, ['cardTitle'], '預設：送 focusout');
+        }
+        // 藏起來的元素 focus() 什麼都不做；藏起來的不是焦點所在的那一組不影響焦點
+        page.focus('cardIntro');
+        assert.notEqual(page.document.activeElement, page.$('cardIntro'), '藏起來的欄位拿不到焦點');
+        page.focus('cardName');
+        isSame(page.document.activeElement, page.$('cardName'));
+        page.$('panel-play').hidden = true;
+        isSame(page.document.activeElement, page.$('cardName'), '藏起來的是別組，焦點不動');
+        // 拿掉 hidden 不影響焦點
+        page.$('panel-profile').hidden = false;
+        isSame(page.document.activeElement, page.$('cardName'));
+    }
+    // reopen 帶著 hideKeepsFocus；選項不是布林值就丟錯（拼錯字不會默默變成預設）
+    const reopened = await (await createCardPage({ hideKeepsFocus: true })).reopen();
+    reopened.focus('cardTitle');
+    reopened.$('panel-profile').hidden = true;
+    isSame(reopened.document.activeElement, reopened.$('cardTitle'), 'reopen 帶著 hideKeepsFocus');
+    await assert.rejects(createCardPage({ hideKeepsFocus: 'yes' }), /hideKeepsFocus/);
+});
+
+// 唯一的主要按鈕是 #downloadCard；#cardActions 照下載、分享、複製、LINE 提示的順序；大圖裡的按鈕都不是主要按鈕
+test('整頁只有一顆 .btn-primary', async () => {
+    const page = await createCardPage();
+    const primaries = [...HTML.matchAll(/<[a-zA-Z][^>]*\sclass="([^"]*)"[^>]*>/g)].filter((m) => m[1].split(/\s+/).includes('btn-primary'));
+    assert.equal(primaries.length, 1, '整頁只有一個 .btn-primary');
+    assert.ok(classesOf(tagAttrs(HTML, 'downloadCard')).includes('btn-primary'));
+    assert.deepEqual(all(page.document, '.btn-primary').map((button) => button.getAttribute('id')), ['downloadCard']);
+    assert.equal(page.$('downloadCard').textContent, '下載圖片');
+    assert.equal(page.$('downloadCard').getAttribute('type'), 'button');
+    assert.equal(page.$('downloadCard').hidden, false);
+    assert.deepEqual(kids(page.$('cardActions')).map((node) => node.getAttribute('id')), ['downloadCard', 'shareCard', 'copyCard', 'lineTip']);
+    // 預覽那一欄：卡片、版型、按鈕列
+    assert.deepEqual(kids(page.$('cardPreview')).map((node) => node.getAttribute('id')), ['cardCanvas', null, 'cardActions']);
+    // 分享、複製、LINE 的提示一開始是藏起來的（瀏覽器支援與 User-Agent 由 script.js 判斷）
+    for (const id of ['shareCard', 'copyCard', 'lineTip', 'viewerDownload', 'viewerShare']) assert.equal(page.$(id).hidden, true, `#${id} 一開始 hidden`);
+    assert.equal(page.$('viewerClose').hidden, false);
+
+    // 大圖：role、aria-modal、名稱在遮罩層上，內層的 .dialog 是沒有 role 的一般容器；圖有 alt，按鈕是 type="button"
+    const viewer = page.$('imageViewer');
+    assert.deepEqual(classesOf(tagAttrs(HTML, 'imageViewer')), ['dialog-overlay', 'viewer-overlay']);
+    assert.equal(viewer.getAttribute('role'), 'dialog');
+    assert.equal(viewer.getAttribute('aria-modal'), 'true');
+    assert.equal(page.$('viewerTitle').tagName, 'H2');
+    assert.equal(viewer.firstElementChild.getAttribute('role'), null);
+    assert.equal(page.$('viewerImage').tagName, 'IMG');
+    assert.equal(page.$('viewerImage').hasAttribute('alt'), true);
+    assert.equal(page.$('viewerDownload').hasAttribute('download'), true);
+    assert.equal(page.$('viewerDownload').hasAttribute('href'), false, '網址由 script.js 照這一次的圖填');
+    for (const id of ['viewerShare', 'viewerClose']) assert.equal(page.$(id).getAttribute('type'), 'button');
+    assert.ok(!viewer.querySelector('.btn-primary'));
+    assert.equal(viewerOpen(page), false, '一開始是關著的');
+    assert.doesNotMatch(HTML, /style="/, '沒有內嵌樣式');
+});
+
+test('輸出失敗：轉不成 PNG 時說產生不出圖（不是下載成功），console 是空的', async () => {
+    const page = await createCardPage({ blobFails: true });
+    fillRequired(page);
+    page.press('downloadCard');
+    await page.flush();
+    assert.deepEqual(page.downloads, []);
+    assert.deepEqual(messages(page), [EXPORT_FAILED]);
+    assert.equal(page.toasts[0].type, 'error');
+    assert.deepEqual(page.consoleErrors, []);
+    // 手機也一樣：不開空的大圖
+    const phone = await createCardPage({ narrow: true, blobFails: true });
+    fillRequired(phone);
+    phone.press('downloadCard');
+    await phone.flush();
+    assert.equal(viewerOpen(phone), false);
+    assert.deepEqual(messages(phone), [EXPORT_FAILED]);
+    phone.press('cardCanvas');
+    await phone.flush();
+    assert.equal(viewerOpen(phone), false);
+    assert.deepEqual(messages(phone), [EXPORT_FAILED, EXPORT_FAILED]);
+    assert.deepEqual(phone.consoleErrors, []);
+});
+
+test('切換語言：大圖開著時標題、按鈕與圖的說明換成那個語言；之後的 toast 用新的語言；按鈕列與提示照語言', async () => {
+    const page = await createCardPage({ narrow: true, share: 'ok', clipboard: 'ok', userAgent: LINE_UA });
+    fillRequired(page);
+    assert.deepEqual(['downloadCard', 'shareCard', 'copyCard'].map((id) => page.$(id).textContent), ['下載圖片', '分享', '複製圖片']);
+    page.setLang('en');
+    assert.deepEqual(['downloadCard', 'shareCard', 'copyCard'].map((id) => page.$(id).textContent), ['Download image', 'Share', 'Copy image']);
+    page.setLang('ja');
+    assert.deepEqual(['downloadCard', 'shareCard', 'copyCard'].map((id) => page.$(id).textContent), ['画像をダウンロード', '共有', '画像をコピー']);
+    page.setLang('zh');
+
+    page.press('downloadCard');
+    await page.flush();
+    assert.equal(viewerOpen(page), true);
+    page.setLang('en');
+    assert.equal(viewerOpen(page), true);
+    assert.equal(page.$('viewerTitle').textContent, 'Press and hold the image to save it');
+    assert.equal(page.$('viewerDownload').textContent, 'Download file');
+    assert.equal(page.$('viewerShare').textContent, 'Share');
+    assert.equal(page.$('viewerClose').textContent, 'Close');
+    assert.equal(page.$('viewerImage').getAttribute('alt'), 'Character card preview: Luna Starweaver, Tiamat, Pictomancer Lv 100');
+    assert.equal(page.$('viewerImage').getAttribute('alt'), page.$('cardCanvas').getAttribute('aria-label'));
+    page.setLang('ja');
+    assert.equal(page.$('viewerTitle').textContent, '画像を長押しして保存');
+    assert.equal(page.$('viewerDownload').textContent, 'ファイルをダウンロード');
+    assert.equal(page.$('viewerClose').textContent, '閉じる');
+    assert.equal(page.$('viewerImage').getAttribute('alt'), page.$('cardCanvas').getAttribute('aria-label'));
+    assert.match(page.$('viewerImage').getAttribute('alt'), /^キャラクターカードのプレビュー：/);
+    page.key('Escape');
+
+    // 之後的 toast（下載、分享失敗、複製）用新的語言
+    const desktop = await createCardPage({ lang: 'en', clipboard: 'ok', share: 'fail' });
+    fillRequired(desktop);
+    desktop.press('downloadCard');
+    await desktop.flush();
+    desktop.press('shareCard');
+    await desktop.flush();
+    desktop.press('copyCard');
+    await desktop.flush();
+    assert.deepEqual(messages(desktop), [`Downloaded ${OUT_FILE}`, "Couldn't share. Please download instead.", 'Image copied']);
+    desktop.setLang('ja');
+    desktop.press('downloadCard');
+    await desktop.flush();
+    assert.equal(messages(desktop).at(-1), `${OUT_FILE} をダウンロードしました`);
+});
+
+test('輸出的樣式：手機的按鈕列固定在最下方（照 safe-area 加內距）、頁尾與回到頂部鈕不被蓋住、.is-typing 收起按鈕列並把預覽縮到 20vh；電腦在預覽下面；大圖不左右捲', () => {
+    const phone = mediaBody('(max-width: 768px)');
+    const desktop = mediaBody('(min-width: 769px)');
+
+    // 手機（768px 以下）：按鈕列固定在畫面最下方，有不透明的底（要蓋住底下捲上來的欄位）、上框線，下內距加 safe-area（有瀏海與手勢列的手機）
+    const bar = declarations('.preview-actions', phone);
+    assert.match(bar, /position:\s*fixed/);
+    assert.match(bar, /bottom:\s*0/);
+    assert.match(bar, /left:\s*0/);
+    assert.match(bar, /right:\s*0/);
+    assert.match(bar, /padding:[^;]*env\(safe-area-inset-bottom/);
+    assert.match(bar, /background:\s*var\(--color-surface\)/);
+    assert.match(bar, /border-top:\s*1px solid var\(--color-border\)/);
+    // 按鈕不被壓扁：height 有同值的 min-height；放不下的字不撐寬，兩顆按鈕平分一列
+    const bigButton = declarations('.preview-actions .btn', phone);
+    assert.match(bigButton, /height:\s*var\(--control-lg\)/);
+    assert.match(bigButton, /min-height:\s*var\(--control-lg\)/);
+    assert.match(bigButton, /flex:\s*1 1 auto/);
+    assert.match(bigButton, /min-width:\s*0/);
+    // 電腦與基本規則：按鈕列在預覽下面（同一欄，跟著 sticky 的預覽走），不是 fixed
+    assert.doesNotMatch(declarations('.preview-actions', BASE_CSS), /position:/);
+    assert.doesNotMatch(declarations('.preview-actions', desktop), /position:/);
+    assert.match(declarations('.preview-actions', BASE_CSS), /display:\s*flex/);
+    assert.match(declarations('.preview-actions', BASE_CSS), /flex-wrap:\s*wrap/);
+    assert.doesNotMatch(CSS, /\.preview-actions:empty/, '按鈕列不再是空的');
+    // 設計：手機最下方是「下載圖片」與「分享」，複製圖片是電腦的
+    assert.match(declarations('#copyCard', phone), /display:\s*none/);
+
+    // 頁面底部留出按鈕列那麼高：頁尾加下內距（頁尾的底色一路接到按鈕列底下），回到頂部鈕（共用的 .back-to-top 是 fixed，bottom: var(--space-5)）提高到按鈕列上面，
+    // 捲動到焦點時也不會被按鈕列（下）與 sticky 的預覽（上）蓋住
+    const root = declarations(':root', phone);
+    assert.match(root, /--card-actions-height:\s*calc\([^;]*var\(--control-lg\)[^;]*env\(safe-area-inset-bottom/);
+    assert.match(root, /scroll-padding-bottom:\s*var\(--card-actions-height\)/);
+    assert.match(root, /scroll-padding-top:\s*calc\(35vh \+ var\(--space-10\)\)/);
+    assert.match(declarations('.footer', phone), /padding-bottom:\s*calc\(var\(--space-6\) \+ var\(--card-actions-height\)\)/);
+    assert.match(declarations('.back-to-top', phone), /bottom:\s*calc\(var\(--space-5\) \+ var\(--card-actions-height\)\)/);
+    // 有 LINE 的提示（按鈕下面多兩行字）時按鈕列比較高
+    const withTip = declarations(':root:has(#lineTip:not([hidden]))', phone);
+    assert.match(withTip, /--card-actions-height:\s*calc\([^;]*var\(--space-8\)[^;]*env\(safe-area-inset-bottom/);
+
+    // 手機打字（.is-typing，script.js 在文字欄得到焦點時加在 #cardTool 上）：按鈕列收起來，上方的卡片縮到 20vh；只在手機，電腦與基本規則沒有
+    assert.match(declarations('.is-typing #cardActions', phone), /display:\s*none/);
+    assert.match(declarations('.is-typing .preview-canvas', phone), /max-height:\s*20vh/);
+    assert.match(declarations(':root:has(.is-typing)', phone), /scroll-padding-top:\s*calc\(20vh \+ var\(--space-10\)\)/);
+    assert.match(declarations(':root:has(.is-typing)', phone), /scroll-padding-bottom:\s*0/);
+    assert.doesNotMatch(BASE_CSS, /is-typing/);
+    assert.doesNotMatch(desktop, /is-typing/);
+    // 預覽原本的 35vh 還在基本規則裡（上面的測試守住）；.is-typing 的規則比它具體，排在它後面
+    assert.ok(CSS.indexOf('.is-typing .preview-canvas') > CSS.indexOf('.preview-canvas {'));
+
+    // 用 hidden 切換的元素（.btn 與 .form-text 設了 display，會蓋掉 [hidden]）：分享、複製、LINE 的提示、大圖裡的下載與分享
+    for (const id of ['shareCard', 'copyCard', 'lineTip', 'viewerDownload', 'viewerShare']) {
+        assert.match(declarations(`#${id}[hidden]`), /display:\s*none/, `#${id}[hidden] 要有 display: none`);
+    }
+    // LINE 的提示在按鈕列裡獨占一整列
+    assert.match(declarations('.line-tip'), /flex:\s*1 0 100%/);
+
+    // 大圖（全螢幕）：用共用的 .dialog-overlay / .dialog，預設藏起來、ModalManager 加 .active 才顯示；疊在頁首的 ☰（1002）與回到頂部鈕（--z-overlay）上面；
+    // 圖縮到放得進畫面（不超過寬度與高度，不變形），沒有 overflow-x；長按存圖靠圖片本身，不能關掉圖片的觸控與選取
+    assert.match(declarations('.viewer-overlay'), /display:\s*none/);
+    assert.match(declarations('.viewer-overlay'), /z-index:\s*calc\(var\(--z-modal\) \+ 2\)/);
+    assert.match(declarations('.viewer-overlay.active'), /display:\s*flex/);
+    assert.match(declarations('.viewer'), /height:\s*100%/);
+    assert.match(declarations('.viewer'), /width:\s*100%/);
+    assert.match(declarations('.viewer'), /max-width:\s*none/);
+    assert.match(declarations('.viewer'), /max-height:\s*none/);
+    const image = declarations('.viewer-image');
+    assert.match(image, /max-width:\s*100%/);
+    assert.match(image, /max-height:\s*100%/);
+    assert.match(image, /object-fit:\s*contain/);
+    assert.doesNotMatch(image, /pointer-events|touch-callout|user-select|touch-action/);
+    assert.match(declarations('.viewer-body'), /min-height:\s*0/);
+    assert.match(declarations('.viewer-actions'), /padding-bottom:[^;]*env\(safe-area-inset-bottom/);
+    assert.doesNotMatch(CSS, /overflow-x/);
+});
+
+test('頁面替身本身（輸出）：focusin、下載連結、分享與剪貼簿的同步記錄、File、toBlob、ModalManager', async () => {
+    const page = await createCardPage({ share: 'ok', clipboard: 'ok' });
+
+    // focus() 派送 focusin（冒泡）：relatedTarget 是剛失去焦點的元素（原本是 body 就是 null）；先 focusout 再 focusin，同一個元素再 focus() 什麼都不發生
+    const events = [];
+    const form = page.$('cardForm');
+    for (const type of ['focusin', 'focusout']) {
+        form.addEventListener(type, (event) => events.push([type, event.target.getAttribute('id'), event.relatedTarget ? event.relatedTarget.getAttribute('id') : null]));
+    }
+    page.focus('cardName');
+    page.focus('cardTitle');
+    page.focus('cardTitle');
+    assert.deepEqual(events, [['focusin', 'cardName', null], ['focusout', 'cardName', 'cardTitle'], ['focusin', 'cardTitle', 'cardName']]);
+    events.length = 0;
+    page.document.activeElement.blur();
+    assert.deepEqual(events, [['focusout', 'cardTitle', null]]);
+    events.length = 0;
+    page.$('cardTitle').disabled = true;
+    page.focus('cardTitle');
+    assert.deepEqual(events, [], 'disabled 的元素拿不到焦點，也沒有 focusin');
+    page.$('cardTitle').disabled = false;
+
+    // <a download href> 被點：接在文件上才記（Firefox 的規則）；沒有 download 或沒有 href 的連結不算；blob 是 object URL 對到的那一個
+    const blob = new Blob(['png'], { type: 'image/png' });
+    const url = page.window.URL.createObjectURL(blob);
+    const link = page.document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'a.png');
+    link.click();
+    assert.deepEqual(page.downloads, [], '沒有接在文件上，點了沒有用');
+    page.document.body.appendChild(link);
+    link.click();
+    assert.equal(page.downloads.length, 1);
+    assert.deepEqual({ ...page.downloads[0], blob: null }, { file: 'a.png', href: url, blob: null });
+    assert.equal(page.downloads[0].blob, blob);
+    const plainLink = page.document.createElement('a');
+    plainLink.setAttribute('href', url);
+    page.document.body.appendChild(plainLink);
+    plainLink.click();
+    const noHref = page.document.createElement('a');
+    noHref.setAttribute('download', 'b.png');
+    page.document.body.appendChild(noHref);
+    noHref.click();
+    assert.equal(page.downloads.length, 1, '沒有 download 或沒有 href 的連結不是下載');
+    const unknown = page.document.createElement('a');
+    unknown.setAttribute('href', 'blob:https://ff14.tw/nope');
+    unknown.setAttribute('download', 'c.png');
+    page.document.body.appendChild(unknown);
+    unknown.click();
+    assert.equal(page.downloads[1].blob, null, '不是這份頁面建的網址，blob 是 null');
+
+    // toBlob：呼叫的當下記下畫面（寬高、畫了幾次、畫了哪些字）；blobFails（或 setBlobFails）時 callback 收到 null
+    const canvas = page.$('cardCanvas');
+    let got = 'unset';
+    canvas.toBlob((value) => { got = value; }, 'image/png');
+    const [request] = page.blobRequests();
+    assert.deepEqual({ ...request, texts: null }, { type: 'image/png', quality: undefined, width: 1200, height: 675, draws: page.drawCount(), texts: null });
+    assert.deepEqual(request.texts, page.texts());
+    assert.equal(got, 'unset');
+    await page.flush();
+    assert.equal(got.type, 'image/png');
+    page.setBlobFails(true);
+    canvas.toBlob((value) => { got = value; }, 'image/png');
+    await page.flush();
+    assert.equal(got, null);
+    page.setBlobFails(false);
+    const failing = await createCardPage({ blobFails: true });
+    failing.$('cardCanvas').toBlob((value) => { got = value; });
+    await failing.flush();
+    assert.equal(got, null);
+    const reopened = await failing.reopen();
+    got = 'unset';
+    reopened.$('cardCanvas').toBlob((value) => { got = value; });
+    await reopened.flush();
+    assert.equal(got, null, 'reopen 帶著 blobFails');
+
+    // 分享：navigator.share 在呼叫的當下就記在 shareCalls（不管結果）；成功才記在 shares
+    const calls = page.shareCalls.length;
+    const sharing = page.window.navigator.share({ files: [1] });
+    assert.equal(page.shareCalls.length, calls + 1, '同步記下');
+    await sharing;
+    assert.equal(page.shares.length, 1);
+    const cancel = await createCardPage({ share: 'cancel' });
+    const cancelled = cancel.window.navigator.share({ files: [1] });
+    assert.equal(cancel.shareCalls.length, 1);
+    await assert.rejects(cancelled, { name: 'AbortError' });
+    assert.deepEqual(cancel.shares, []);
+    // 'fail' 丟 NotAllowedError 以外的錯（DataError）；'blocked' 一律丟 NotAllowedError；
+    // 'expired' 只有在 press() 那一下點擊裡同步呼叫的才成功，之後才呼叫的（先 await 了別的）丟 NotAllowedError
+    const failShare = await createCardPage({ share: 'fail' });
+    await assert.rejects(failShare.window.navigator.share({ files: [1] }), { name: 'DataError' });
+    const blockedPage = await createCardPage({ share: 'blocked' });
+    await assert.rejects(blockedPage.window.navigator.share({ files: [1] }), { name: 'NotAllowedError' });
+    assert.deepEqual(blockedPage.shares, []);
+    const expired = await createCardPage({ share: 'expired' });
+    const nav = expired.window.navigator;
+    const attempts = [];
+    const button = expired.document.createElement('button');
+    button.addEventListener('click', () => {
+        attempts.push(nav.share({ files: ['now'] }));
+        attempts.push(Promise.resolve().then(() => nav.share({ files: ['later'] })));
+    });
+    expired.document.body.appendChild(button);
+    expired.press(button);
+    const [inClick, afterAwait] = await Promise.allSettled(attempts);
+    assert.equal(inClick.status, 'fulfilled', '點擊裡同步呼叫的成功');
+    assert.equal(afterAwait.status, 'rejected');
+    assert.equal(afterAwait.reason.name, 'NotAllowedError', '點擊之後才呼叫的：手勢過期了');
+    await assert.rejects(nav.share({ files: ['outside'] }), { name: 'NotAllowedError' }, '不在任何點擊裡');
+    assert.deepEqual(expired.shares.map((data) => data.files[0]), ['now']);
+
+    // 剪貼簿：write() 在呼叫的當下記在 clipboardCalls（內容可能還是 Promise）；等每個 ClipboardItem 的內容都好了才記在 clipboardWrites；內容被拒絕時 write 也被拒絕、不記
+    let resolveBlob;
+    const later = new Promise((resolve) => { resolveBlob = resolve; });
+    const item = new page.window.ClipboardItem({ 'image/png': later });
+    assert.deepEqual(item.types, ['image/png']);
+    const writing = page.window.navigator.clipboard.write([item]);
+    assert.equal(page.clipboardCalls.length, 1);
+    assert.equal(page.clipboardCalls[0][0], item);
+    assert.deepEqual(page.clipboardWrites, []);
+    resolveBlob(blob);
+    await writing;
+    assert.equal(page.clipboardWrites.length, 1);
+    assert.equal(page.clipboardWrites[0][0]['image/png'], blob);
+    await assert.rejects(page.window.navigator.clipboard.write([new page.window.ClipboardItem({ 'image/png': Promise.reject(new Error('no png')) })]), /no png/);
+    assert.equal(page.clipboardWrites.length, 1);
+    assert.equal(page.clipboardCalls.length, 2);
+
+    // File：預設有（Node 的 File）；fileConstructor: false 時沒有
+    const file = new page.window.File([blob], 'x.png', { type: 'image/png' });
+    assert.deepEqual([file.name, file.type, file.size], ['x.png', 'image/png', 3]);
+    assert.equal(typeof (await createCardPage({ fileConstructor: false })).window.File, 'undefined');
+
+    // ModalManager 替身：show() 記下開啟前的焦點、加 .active、焦點移到第一個看得到的可聚焦元素（藏起來的跳過）；hide() 拿掉 .active、還原焦點，最後才呼叫 onClose；
+    // Esc 與點遮罩本身（不是裡面的內容）關掉；已經開著的同一個元素再 show() 什麼都不做
+    const viewer = page.$('imageViewer');
+    const modal = new page.window.ModalManager();
+    const closed = [];
+    page.focus('downloadCard');
+    modal.show(viewer, { onClose: () => closed.push(page.document.activeElement.getAttribute('id')) });
+    assert.equal(viewerOpen(page), true);
+    isSame(page.document.activeElement, page.$('viewerClose'), '下載檔案與分享藏著，第一個看得到的是關閉');
+    modal.show(viewer);
+    page.$('imageViewer').firstElementChild.click();
+    assert.equal(viewerOpen(page), true, '點到裡面的內容不關');
+    viewer.click();
+    assert.equal(viewerOpen(page), false, '點遮罩本身關掉');
+    assert.deepEqual(closed, ['downloadCard'], '先還原焦點再呼叫 onClose');
+    modal.show(viewer);
+    page.key('Escape');
+    assert.equal(viewerOpen(page), false);
+    modal.show(viewer, { closeOnEsc: false, closeOnOverlayClick: false });
+    page.key('Escape');
+    viewer.click();
+    assert.equal(viewerOpen(page), true, '選項說不關就不關');
+    modal.hide();
+    modal.hide();
+    assert.equal(viewerOpen(page), false);
+});
+
+test('輸出的翻譯：每個新的 char_card_* 鍵三語都有，zh 照規定的字（下載圖片、錯誤、長按的說明、LINE 的提示…）', () => {
+    const values = Object.fromEntries(LANGS.map((lang) => [lang, translationValues(TRANSLATIONS, lang)]));
+    const expected = {
+        zh: {
+            download: '下載圖片', share: '分享', copy: '複製圖片',
+            error_name: '請填角色名稱', error_world: '請選伺服器', error_job: '請選主職',
+            downloaded: '已下載 {file}', share_failed: '沒辦法分享，請改用下載。', copied: '已複製圖片', copy_failed: '沒辦法複製，請改用下載。',
+            export_failed: '沒辦法產生圖片，請再試一次。', fonts_slow: '字型還沒載完，先用目前的畫面產生圖片。',
+            image_slow: '上傳的截圖還在處理，先用目前的畫面產生圖片。', share_ready: '圖片做好了，請再按一次「分享」。',
+            viewer_title: '長按圖片即可儲存', viewer_download: '下載檔案', viewer_close: '關閉',
+            line_tip: '在 LINE 裡可能存不了圖，建議先用瀏覽器打開再填：', line_tip_link: '用瀏覽器打開'
+        },
+        en: {
+            download: 'Download image', share: 'Share', copy: 'Copy image',
+            error_name: 'Enter a character name', error_world: 'Choose a world', error_job: 'Choose a main job',
+            downloaded: 'Downloaded {file}', share_failed: "Couldn't share. Please download instead.", copied: 'Image copied', copy_failed: "Couldn't copy. Please download instead.",
+            export_failed: "Couldn't make the picture. Please try again.", fonts_slow: "Fonts are still loading, so the picture uses what's on screen now.",
+            image_slow: "Your screenshot is still processing, so the picture uses what's on screen now.", share_ready: 'The picture is ready. Press Share again.',
+            viewer_title: 'Press and hold the image to save it', viewer_download: 'Download file', viewer_close: 'Close',
+            line_tip: 'LINE may not save the picture. Open this page in your browser before you fill it in: ', line_tip_link: 'Open in browser'
+        },
+        ja: {
+            download: '画像をダウンロード', share: '共有', copy: '画像をコピー',
+            error_name: 'キャラクター名を入力してください', error_world: 'ワールドを選んでください', error_job: 'メインジョブを選んでください',
+            downloaded: '{file} をダウンロードしました', share_failed: '共有できませんでした。ダウンロードをお試しください。', copied: '画像をコピーしました', copy_failed: 'コピーできませんでした。ダウンロードをお試しください。',
+            export_failed: '画像を作れませんでした。もう一度お試しください。', fonts_slow: 'フォントの読み込みが終わっていないため、今の表示のまま画像を作りました。',
+            image_slow: 'スクリーンショットの処理が終わっていないため、今の表示のまま画像を作りました。', share_ready: '画像ができました。もう一度「共有」を押してください。',
+            viewer_title: '画像を長押しして保存', viewer_download: 'ファイルをダウンロード', viewer_close: '閉じる',
+            line_tip: 'LINEでは画像を保存できないことがあります。入力する前にブラウザで開いてください：', line_tip_link: 'ブラウザで開く'
+        }
+    };
+    for (const lang of LANGS) {
+        for (const [name, text] of Object.entries(expected[lang])) assert.equal(values[lang].get(`char_card_${name}`), text, `${lang} 的 char_card_${name}`);
+    }
+    // 大圖與按鈕列的 data-i18n 鍵都有人用（頁面上的字是翻譯檔的 zh；script.js 用到的鍵 tests 前面已經掃過）
+    for (const key of ['download', 'share', 'copy', 'error_name', 'error_world', 'error_job', 'viewer_title', 'viewer_download', 'viewer_close', 'line_tip', 'line_tip_link']) {
+        assert.ok(HTML.includes(`data-i18n="char_card_${key}"`), `index.html 用 char_card_${key}`);
+    }
+    for (const key of ['downloaded', 'share_failed', 'copied', 'copy_failed', 'export_failed', 'fonts_slow', 'image_slow', 'share_ready']) {
+        assert.ok(SCRIPT.includes(`'char_card_${key}'`), `script.js 用 char_card_${key}`);
+    }
 });
