@@ -38,7 +38,7 @@ const IndexTranslations = {
 
         tool_report_generator_desc: '快速產生不當行為檢舉的模板文字，協助您進行申訴',
 
-        tool_macro_converter_desc: '將 FF14 巨集在繁體中文、英文、日文之間轉換',
+        tool_macro_converter_desc: '把英文、日文攻略的生產巨集換成繁體中文',
 
         tool_weather_forecast_desc: '查看艾歐澤亞各地區的天氣預報，搜尋特定天氣條件',
 
@@ -89,7 +89,7 @@ const IndexTranslations = {
 
         tool_report_generator_desc: 'Quickly generate report templates for reporting inappropriate behavior',
 
-        tool_macro_converter_desc: 'Convert FF14 macros between Traditional Chinese, English, and Japanese',
+        tool_macro_converter_desc: 'Convert FF14 crafting macros from English and Japanese guides into Traditional Chinese',
 
         tool_weather_forecast_desc: 'View weather forecasts for Eorzea zones and search for specific conditions',
 
@@ -140,7 +140,7 @@ const IndexTranslations = {
 
         tool_report_generator_desc: '不適切な行為の通報テンプレートを素早く作成',
 
-        tool_macro_converter_desc: 'FF14マクロを繁体字中国語、英語、日本語間で変換',
+        tool_macro_converter_desc: '英語・日本語の製作マクロを繁体字中国語に変換',
 
         tool_weather_forecast_desc: 'エオルゼア各地域の天気予報を確認、特定の天気条件を検索',
 
