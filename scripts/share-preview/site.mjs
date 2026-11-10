@@ -51,8 +51,9 @@ export const GUIDE_TOPICS = Object.freeze(['guild', 'grand-company', 'dungeon', 
 const ROOT_PAGES = ['index.html', 'about.html', 'changelog.html', 'copyright.html'];
 const NOT_FOUND_PAGE = '404.html';
 const TOUCH_ICON = 'assets/images/icons/apple-touch-icon.png';
-const IMAGE_WIDTH = 1200;
-const IMAGE_HEIGHT = 630;
+// 預覽圖的大小（og:image:width／height，也是 images 指令畫圖的大小）
+export const IMAGE_WIDTH = 1200;
+export const IMAGE_HEIGHT = 630;
 const INDENT = '    ';
 
 // 三個 manifest 圖示（檔案由 images 指令從 logo 縮出來）
@@ -68,8 +69,8 @@ const escapeRegExp = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const count = (text, part) => text.split(part).length - 1;
 const readText = (root, file) => fs.readFileSync(path.join(root, ...file.split('/')), 'utf8');
 
-// 屬性值裡要跳脫的四個字元（屬性一律用雙引號包起來）
-function escapeHtml(text) {
+// 屬性值與文字裡要跳脫的四個字元（屬性一律用雙引號包起來）
+export function escapeHtml(text) {
     return String(text).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 

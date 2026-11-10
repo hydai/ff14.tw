@@ -20,6 +20,10 @@ let siteCache = null;
 const loadSite = async () => (siteCache ??= (await importSite()).loadSite());
 let pngModule = null;
 const importPng = async () => (pngModule ??= await import(pathToFileURL(path.join(ROOT, 'scripts/share-preview/png.mjs')).href));
+let cardsModule = null;
+const importCards = async () => (cardsModule ??= await import(pathToFileURL(path.join(ROOT, 'scripts/share-preview/cards.mjs')).href));
+let renderModule = null;
+const importRender = async () => (renderModule ??= await import(pathToFileURL(path.join(ROOT, 'scripts/share-preview/render.mjs')).href));
 
 // 設計文件「每一頁 <head> 多的一段」的範例（天氣預報）：16 行，含開頭、結尾註解，在 HTML 裡縮 4 格。
 // 設計文件原本的範例有 og:url 那一行，總審查之後每一頁都不寫（Facebook 把 og:url 當正式網址，分享連結的 ?room=、?maps=、#… 會被導回沒有狀態的頁面）
@@ -143,8 +147,9 @@ function contrast(a, b) {
 }
 
 // 把腳本需要的檔案（25 頁、14 個 manifest、tokens、登錄表、首頁翻譯與腳本本身）複製到暫存資料夾，
-// 讓測試能在複本上跑指令、改檔案，不動到真的 repo。腳本靠自己的位置找根目錄，所以複本裡的腳本會處理複本
-async function withSiteCopy(run) {
+// 讓測試能在複本上跑指令、改檔案，不動到真的 repo。腳本靠自己的位置找根目錄，所以複本裡的腳本會處理複本。
+// images: true 時連 logo、21 張預覽圖與 4 張圖示也複製（images 指令的測試用）
+async function withSiteCopy(run, { images = false } = {}) {
     const site = await loadSite();
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'share-preview-'));
     try {
@@ -155,7 +160,8 @@ async function withSiteCopy(run) {
             'assets/js/components/tools-registry.js',
             'assets/js/i18n/translations/index.js',
             'scripts/share-preview.mjs',
-            ...fs.readdirSync(path.join(ROOT, 'scripts/share-preview')).map((name) => `scripts/share-preview/${name}`)
+            ...fs.readdirSync(path.join(ROOT, 'scripts/share-preview')).map((name) => `scripts/share-preview/${name}`),
+            ...(images ? ['assets/images/ff14tw-logo.png', ...['og', 'icons'].flatMap((name) => fs.readdirSync(path.join(ROOT, 'assets/images', name)).map((file) => `assets/images/${name}/${file}`))] : [])
         ];
         for (const file of files) {
             fs.mkdirSync(path.dirname(path.join(dir, file)), { recursive: true });
@@ -166,7 +172,8 @@ async function withSiteCopy(run) {
         fs.rmSync(dir, { recursive: true, force: true });
     }
 }
-const runCli = (dir, ...args) => spawnSync(process.execPath, [path.join(dir, 'scripts/share-preview.mjs'), ...args], { cwd: os.tmpdir(), encoding: 'utf8' });
+const runCliWithEnv = (dir, env, ...args) => spawnSync(process.execPath, [path.join(dir, 'scripts/share-preview.mjs'), ...args], { cwd: os.tmpdir(), encoding: 'utf8', env: { ...process.env, ...env } });
+const runCli = (dir, ...args) => runCliWithEnv(dir, {}, ...args);
 
 // ---------- 頁面清單與那一段 ----------
 
@@ -685,15 +692,16 @@ test('pages 指令：改了頁面說明之後重跑，那一頁的預覽與 mani
     });
 });
 
-test('pages 指令以外的參數：印用法並以非 0 結束，不改任何檔案', async () => {
+test('pages、images 以外的參數：印用法並以非 0 結束，不改任何檔案', async () => {
     await withSiteCopy(async (dir, site) => {
         const snapshot = () => site.pages.map((page) => fs.readFileSync(path.join(dir, page.file), 'utf8')).join('\0');
         const before = snapshot();
-        for (const args of [[], ['images-x'], ['pages', 'extra'], ['--help']]) {
+        for (const args of [[], ['images-x'], ['pages', 'extra'], ['images', 'extra'], ['--help']]) {
             const result = runCli(dir, ...args);
             assert.notEqual(result.status, 0, `參數 ${JSON.stringify(args)}`);
             assert.match(result.stderr, /用法/, `參數 ${JSON.stringify(args)}`);
             assert.match(result.stderr, /pages/);
+            assert.match(result.stderr, /images/);
         }
         assert.equal(snapshot(), before);
     });
@@ -1123,4 +1131,493 @@ test('decodePng：像素資料分在好幾個 IDAT、前後夾著不認得的附
     });
     assert.equal(pngChunks(png).filter((chunk) => chunk.type === 'IDAT').length, 4);
     assert.deepEqual(decodePng(png), image);
+});
+
+// ---------- 預覽圖與圖示（scripts/share-preview/cards.mjs、render.mjs 與 images 指令） ----------
+
+const OG_DIR = 'assets/images/og';
+const ICON_DIR = 'assets/images/icons';
+const LOGO_PATH = 'assets/images/ff14tw-logo.png';
+const TEMPLATE_PATH = 'scripts/share-preview/card.html';
+const MAX_PREVIEW_BYTES = 307200;
+const sha256 = (data) => crypto.createHash('sha256').update(data).digest('hex');
+const escapeForHtml = (text) => text.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+// 照現在的內容重算每張預覽圖該有的雜湊（不經過 images 指令：只用 cards.mjs 的雜湊與背景函式，logo 與範本照檔案算）。
+// 範本的雜湊把 \r\n 換成 \n 再算（Windows 上 git 可能把 card.html 換成 CRLF，雜湊不能因此變）：這裡自己再寫一次，不用 cards.mjs 的 templateHash
+async function expectedCardHashes() {
+    const { cardBackground, cardHash } = await importCards();
+    const site = await loadSite();
+    const logoSha256 = sha256(fs.readFileSync(path.join(ROOT, LOGO_PATH)));
+    const templateSha256 = sha256(fs.readFileSync(path.join(ROOT, TEMPLATE_PATH), 'utf8').replace(/\r\n/g, '\n'));
+    return new Map(site.cards.map((card) => [card.key, cardHash(card, { background: cardBackground(card, site.tokens), logoSha256, templateSha256 })]));
+}
+
+// 21 張預覽圖加 4 張圖示的檔案（相對路徑），預覽圖照卡片的順序、圖示照 ICONS 的順序
+async function imageFiles() {
+    const { ICONS } = await importCards();
+    const site = await loadSite();
+    return [...site.cards.map((card) => `${OG_DIR}/${card.key}.png`), ...ICONS.map((icon) => `${ICON_DIR}/${icon.file}`)];
+}
+
+test('cards()：天氣、隊伍系統與網站那三張的字', async () => {
+    const site = await loadSite();
+    const textOf = (key) => {
+        const { name, label, sentence, icon } = site.cards.find((card) => card.key === key);
+        return { name, label, sentence, icon };
+    };
+    assert.deepEqual(textOf('weather-forecast'), { name: '天氣預報', label: '', sentence: '查看艾歐澤亞各地區的天氣預報，搜尋特定天氣條件', icon: '🌤️' });
+    assert.deepEqual(textOf('guide-party'), { name: '隊伍系統', label: '攻略資料', sentence: 'FF14 隊伍系統完整說明，包含 Light Party、Full Party、跨服小隊、聯盟團隊與職能配置', icon: '📖' });
+    assert.deepEqual(textOf('site'), { name: 'FF14.tw', label: '', sentence: 'Final Fantasy XIV 工具箱', icon: '' });
+});
+
+test('ICONS 與 CARD_TEMPLATE：四張圖示（凍結），留邊版縮成 84%', async () => {
+    const { ICONS, CARD_TEMPLATE } = await importCards();
+    assert.equal(CARD_TEMPLATE, 'scripts/share-preview/card.html');
+    assert.deepEqual(ICONS.map((icon) => ({ ...icon })), [
+        { file: 'apple-touch-icon.png', size: 180, scale: 1 },
+        { file: 'icon-192.png', size: 192, scale: 1 },
+        { file: 'icon-512.png', size: 512, scale: 1 },
+        { file: 'icon-maskable-512.png', size: 512, scale: 0.84 }
+    ]);
+    assert.ok(Object.isFrozen(ICONS) && ICONS.every((icon) => Object.isFrozen(icon)));
+});
+
+test('cardBackground：工具是「顏色往右下漸暗到 70% 顏色加 30% 黑」，網站是淺色的品牌漸層', async () => {
+    const { cardBackground } = await importCards();
+    const site = await loadSite();
+    const weather = site.cards.find((card) => card.key === 'weather-forecast');
+    assert.equal(cardBackground(weather, site.tokens), 'linear-gradient(135deg, #0e7c9c 0%, color-mix(in srgb, #0e7c9c 70%, #000000) 100%)');
+    for (const card of site.cards.filter((card) => card.color !== null)) {
+        assert.equal(cardBackground(card, site.tokens), `linear-gradient(135deg, ${card.color} 0%, color-mix(in srgb, ${card.color} 70%, #000000) 100%)`, card.key);
+    }
+    const siteCard = site.cards.find((card) => card.key === 'site');
+    assert.equal(cardBackground(siteCard, site.tokens), 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)');
+    assert.equal(cardBackground(siteCard, site.tokens), site.tokens.light.get('--gradient-brand'), '就是 tokens.css 淺色的 --gradient-brand 展開後的值');
+    // 顏色不是字串、也不是網站那張的 null：丟錯並指出是哪一張；淺色沒有 --gradient-brand 也丟錯
+    assert.throws(() => cardBackground({ ...weather, color: undefined }, site.tokens), /weather-forecast/);
+    assert.throws(() => cardBackground(siteCard, { light: new Map(), dark: new Map() }), /--gradient-brand/);
+});
+
+test('cardHash、iconHash：欄位照順序排成 JSON 陣列的 SHA-256；任何一個欄位變了雜湊就變；缺欄位丟錯', async () => {
+    const { cardHash, iconHash, iconHtml, ICONS } = await importCards();
+    const card = { key: 'k', name: '名稱', label: '標籤', sentence: '一句說明', icon: '🌤️', color: '#0e7c9c' };
+    const options = { background: 'linear-gradient(red, blue)', logoSha256: 'a'.repeat(64), templateSha256: 'b'.repeat(64) };
+    const expected = sha256(JSON.stringify(['k', '名稱', '標籤', '一句說明', '🌤️', 'linear-gradient(red, blue)', 'a'.repeat(64), 'b'.repeat(64)]));
+    assert.equal(cardHash(card, options), expected);
+    assert.match(cardHash(card, options), /^[0-9a-f]{64}$/);
+    assert.equal(cardHash({ ...card, color: '#000000' }, options), expected, 'color 已經算進 background，不另外進雜湊');
+    for (const change of [{ key: 'k2' }, { name: 'n' }, { label: 'l' }, { sentence: 's' }, { icon: 'i' }]) {
+        assert.notEqual(cardHash({ ...card, ...change }, options), expected, JSON.stringify(change));
+    }
+    for (const change of [{ background: 'x' }, { logoSha256: 'c'.repeat(64) }, { templateSha256: 'd'.repeat(64) }]) {
+        assert.notEqual(cardHash(card, { ...options, ...change }), expected, JSON.stringify(change));
+    }
+    assert.notEqual(cardHash({ ...card, name: '標籤', label: '名稱' }, options), expected, '欄位的位置是固定的');
+    for (const name of ['background', 'logoSha256', 'templateSha256']) {
+        assert.throws(() => cardHash(card, { ...options, [name]: undefined }), new RegExp(name), name);
+    }
+    assert.throws(() => cardHash({ ...card, sentence: undefined }, options), /sentence/);
+
+    // 最後一個欄位是圖示頁面（iconHtml 的結果，logo 用空的 data URI：logo 的內容已經由 logoSha256 涵蓋）：改了 iconHtml 的寫法，4 張圖示也要重畫
+    const icon = ICONS[3];
+    const iconPage = iconHtml(icon, { logoDataUri: '' });
+    assert.ok(iconPage.includes('<img src="" alt="">'), '頁面裡的 logo 是空的 data URI，不把 1.7MB 的 base64 再算一次');
+    const iconExpected = sha256(JSON.stringify(['icon-maskable-512.png', 512, 0.84, '#0e171f', 'a'.repeat(64), iconPage]));
+    assert.equal(iconHash(icon, { logoSha256: 'a'.repeat(64) }), iconExpected);
+    for (const change of [{ file: 'x.png' }, { size: 513 }, { scale: 0.8 }]) {
+        assert.notEqual(iconHash({ ...icon, ...change }, { logoSha256: 'a'.repeat(64) }), iconExpected, JSON.stringify(change));
+    }
+    assert.notEqual(iconHash(icon, { logoSha256: 'c'.repeat(64) }), iconExpected);
+    assert.equal(new Set(ICONS.map((each) => iconHash(each, { logoSha256: 'a'.repeat(64) }))).size, 4, '四張圖示的雜湊各不相同');
+    assert.throws(() => iconHash(icon, {}), /logoSha256/);
+});
+
+test('templateHash：範本換行是 \\r\\n 還是 \\n 雜湊一樣（Windows 上 git 把 card.html 換成 CRLF 也不用重畫），內容不同雜湊就不同', async () => {
+    const { templateHash } = await importCards();
+    const lf = read(TEMPLATE_PATH);
+    assert.ok(!lf.includes('\r'), 'repo 裡的 card.html 是 LF 換行');
+    const crlf = lf.replace(/\n/g, '\r\n');
+    assert.ok(crlf.includes('\r\n') && crlf.length > lf.length);
+    assert.equal(templateHash(crlf), templateHash(lf));
+    assert.equal(templateHash(lf), sha256(lf), '沒有 \\r\\n 的文字就是它自己的 SHA-256：也是改之前這個檔案的雜湊，現有的預覽圖不用重畫');
+    assert.match(templateHash(lf), /^[0-9a-f]{64}$/);
+    assert.notEqual(templateHash(`${lf}<!-- 多一行 -->\n`), templateHash(lf));
+    assert.notEqual(templateHash('a\rb'), templateHash('a\nb'), '只有成對的 \\r\\n 算換行，單獨的 \\r 是內容');
+});
+
+test('cardHtml：範本是 CRLF 還是 LF，每張卡片畫出來的頁面一樣', async () => {
+    const { cardHtml, cardBackground } = await importCards();
+    const site = await loadSite();
+    const lf = read(TEMPLATE_PATH);
+    const crlf = lf.replace(/\n/g, '\r\n');
+    for (const card of site.cards) {
+        const options = { background: cardBackground(card, site.tokens), logoDataUri: 'data:image/png;base64,QUJD' };
+        const html = cardHtml(card, { ...options, template: crlf });
+        assert.ok(!html.includes('\r'), `${card.key} 的頁面裡沒有 \\r`);
+        assert.equal(html, cardHtml(card, { ...options, template: lf }), card.key);
+    }
+});
+
+test('cardHtml：{{…}} 一次換完、文字跳脫、沒有圖示就是網站版型；範本缺少或多出 {{…}}、缺選項時丟錯', async () => {
+    const { cardHtml } = await importCards();
+    const TEMPLATE = '<style>:root { --bg: {{BACKGROUND}}; } .logo { background: url("{{LOGO}}"); }</style>\n<div class="og {{LAYOUT}}"><i>{{LABEL}}</i><i>{{ICON}}</i><b>{{NAME}}</b><p>{{SENTENCE}}</p></div>';
+    const options = { template: TEMPLATE, background: 'linear-gradient(135deg, #111111 0%, #222222 100%)', logoDataUri: 'data:image/png;base64,QUJD' };
+    const card = { key: 'k', name: 'A & B <C> "D"', label: '攻略資料', sentence: "說明 {{NAME}} 與 {{LOGO}} 'x'", icon: '🌤️', color: '#0e7c9c' };
+    assert.equal(cardHtml(card, options),
+        '<style>:root { --bg: linear-gradient(135deg, #111111 0%, #222222 100%); } .logo { background: url("data:image/png;base64,QUJD"); }</style>\n'
+        + '<div class="og is-tool"><i>攻略資料</i><i>🌤️</i><b>A &amp; B &lt;C&gt; &quot;D&quot;</b><p>說明 {{NAME}} 與 {{LOGO}} \'x\'</p></div>',
+        '名稱與說明的 &、<、> 與 " 跳脫；說明裡的 {{NAME}} 照字面留著（不會被再換一次）');
+    assert.match(cardHtml({ ...card, icon: '', label: '', color: null }, options), /<div class="og is-site"><i><\/i><i><\/i>/, '沒有圖示的卡片（網站那張）用網站版型，空的標籤與圖示留空');
+
+    assert.throws(() => cardHtml(card, { ...options, template: TEMPLATE.replace('{{SENTENCE}}', '') }), /SENTENCE/, '範本少了一個');
+    assert.throws(() => cardHtml(card, { ...options, template: `${TEMPLATE}{{FOO}}` }), /FOO/, '範本多了不認得的');
+    for (const name of ['template', 'background', 'logoDataUri']) {
+        assert.throws(() => cardHtml(card, { ...options, [name]: undefined }), new RegExp(name), name);
+    }
+});
+
+test('真正的 card.html：21 張卡片都換得出完整的頁面（20 張工具版型、1 張網站版型），字都在裡面', async () => {
+    const { cardHtml, cardBackground } = await importCards();
+    const site = await loadSite();
+    const template = read(TEMPLATE_PATH);
+    const layouts = { 'is-tool': 0, 'is-site': 0 };
+    for (const card of site.cards) {
+        const html = cardHtml(card, { template, background: cardBackground(card, site.tokens), logoDataUri: 'data:image/png;base64,QUJD' });
+        assert.doesNotMatch(html, /\{\{[A-Z_]+\}\}/, `${card.key} 還有沒換掉的 {{…}}`);
+        for (const text of [card.name, card.sentence, card.icon, card.label]) assert.ok(html.includes(escapeForHtml(text)), `${card.key} 的頁面裡找不到「${text}」`);
+        assert.ok(html.includes(cardBackground(card, site.tokens)), `${card.key} 的背景`);
+        layouts[card.icon === '' ? 'is-site' : 'is-tool']++;
+        assert.ok(html.includes(`class="og ${card.icon === '' ? 'is-site' : 'is-tool'}"`), `${card.key} 的版型`);
+    }
+    assert.deepEqual(layouts, { 'is-tool': 20, 'is-site': 1 });
+});
+
+test('card.html：固定 1200×630、字型來自 Google Fonts（Noto Sans TC 500／700／900 與 Noto Color Emoji）、定義 window.__problems()，沒有別的外部資源', () => {
+    const template = read(TEMPLATE_PATH);
+    assert.deepEqual([...new Set(template.match(/\{\{[A-Z_]+\}\}/g))].sort(), ['{{BACKGROUND}}', '{{ICON}}', '{{LABEL}}', '{{LAYOUT}}', '{{LOGO}}', '{{NAME}}', '{{SENTENCE}}']);
+    assert.match(template, /<link rel="stylesheet" href="https:\/\/fonts\.googleapis\.com\/css2\?family=Noto\+Sans\+TC:wght@500;700;900&family=Noto\+Color\+Emoji&display=swap">/);
+    assert.match(template, /width: 1200px;/);
+    assert.match(template, /height: 630px;/);
+    assert.match(template, /window\.__problems = function/);
+    assert.match(template, /document\.fonts/);
+    // 說明只在標點與空格斷行（和站上巨集轉換器的中文說明一樣用 keep-all），再讓各行長度接近：不從詞中間斷開，最後一行也不剩單獨一個字。
+    // 沒有 overflow-wrap、break-all 這類「哪裡都能斷」的設定：兩個斷行的地方中間的字太長時要放不下，讓 window.__problems() 報出來，不默默在詞中間斷開
+    const desc = /\.og-desc \{([^}]*)\}/.exec(template)?.[1] ?? '';
+    assert.match(desc, /word-break: keep-all;/);
+    assert.match(desc, /text-wrap: balance;/);
+    assert.doesNotMatch(desc, /overflow-wrap|word-wrap|break-all|break-word|line-break: anywhere/);
+    // 外部網址只有 Google Fonts；沒有內嵌別的圖或腳本
+    const urls = [...template.matchAll(/https?:\/\/[^\s"')]+/g)].map((match) => new URL(match[0]).host);
+    assert.deepEqual([...new Set(urls)].sort(), ['fonts.googleapis.com', 'fonts.gstatic.com']);
+    assert.doesNotMatch(template, /<script[^>]*\ssrc=/);
+});
+
+test('card.html 與腳本不寫色碼：範本只有白字與白色半透明，cards.mjs 只有 color-mix 的黑，其他腳本一個都沒有', () => {
+    const hexOf = (text) => text.match(/#[0-9a-fA-F]{3,8}\b/g) ?? [];
+    const template = read(TEMPLATE_PATH);
+    assert.deepEqual([...new Set(hexOf(template.replace(/\{\{[A-Z_]+\}\}/g, '')))].sort(), ['#ffffff']);
+    assert.deepEqual([...new Set((template.match(/rgba?\([^)]*\)/g) ?? []).map((color) => color.replace(/,\s*[0-9.]+\)$/, ')')))], ['rgba(255, 255, 255)'], '只有白色半透明');
+    assert.doesNotMatch(template, /\b(?:white|black)\b/i, '不用顏色名稱');
+    assert.deepEqual([...new Set(hexOf(read('scripts/share-preview/cards.mjs')))], ['#000000']);
+    assert.deepEqual(hexOf(read('scripts/share-preview/render.mjs')), []);
+    assert.deepEqual(hexOf(read('scripts/share-preview.mjs')), []);
+});
+
+test('iconHtml：圖示大小的頁面，logo 置中、留邊版縮成 84%（430px），底色是 logo 的底色，頁面自己檢查 logo 載入了', async () => {
+    const { iconHtml, ICONS } = await importCards();
+    const logoDataUri = 'data:image/png;base64,QUJD';
+    for (const icon of ICONS) {
+        const html = iconHtml(icon, { logoDataUri });
+        const inner = icon.scale === 1 ? icon.size : 430;
+        assert.match(html, new RegExp(`html, body \\{[^}]*width: ${icon.size}px;[^}]*height: ${icon.size}px;`), `${icon.file} 的畫布大小`);
+        assert.match(html, new RegExp(`img \\{[^}]*width: ${inner}px;[^}]*height: ${inner}px;`), `${icon.file} 的 logo 大小`);
+        assert.ok(html.includes(`src="${logoDataUri}"`), icon.file);
+        assert.ok(html.includes('background: #0e171f;'), `${icon.file} 的底色是 logo 的底色`);
+        assert.match(html, /window\.__problems = /, icon.file);
+    }
+    assert.throws(() => iconHtml(ICONS[0], {}), /logoDataUri/);
+});
+
+// ---------- render.mjs（不啟動真的 Chrome：用假的執行檔檢查啟動失敗時的收尾） ----------
+
+// 在另一個 Node 程序裡呼叫 renderPngs（可以換 CHROME_PATH 與 TMPDIR，不動到這個測試程序的環境），印出結果
+function runRender(env) {
+    const renderUrl = pathToFileURL(path.join(ROOT, 'scripts/share-preview/render.mjs')).href;
+    const script = `import { renderPngs } from ${JSON.stringify(renderUrl)};
+try {
+    const out = await renderPngs([{ name: 'job-a', html: '<p>x</p>', width: 10, height: 10 }]);
+    console.log('RESOLVED ' + out.size);
+} catch (error) {
+    console.log('REJECTED ' + error.message);
+}`;
+    return spawnSync(process.execPath, ['--input-type=module', '-e', script], { env: { ...process.env, ...env }, encoding: 'utf8', timeout: 60000 });
+}
+
+// 寫一個假的 Chrome（shell script）到暫存資料夾，run 拿到 { dir, tmp, chrome }；tmp 是給 TMPDIR 用的空資料夾
+async function withFakeChrome(script, run) {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fake-chrome-'));
+    try {
+        const tmp = path.join(dir, 'tmp');
+        fs.mkdirSync(tmp);
+        const chrome = path.join(dir, 'chrome');
+        fs.writeFileSync(chrome, `#!/bin/sh\n${script}\n`, { mode: 0o755 });
+        return await run({ dir, tmp, chrome });
+    } finally {
+        fs.rmSync(dir, { recursive: true, force: true });
+    }
+}
+
+test('DEFAULT_CHROME 是 macOS 的 Google Chrome；沒有工作時 renderPngs 不開 Chrome', async () => {
+    const { DEFAULT_CHROME, renderPngs } = await importRender();
+    assert.equal(DEFAULT_CHROME, '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome');
+    const result = await renderPngs([], { chromePath: '/no/such/chrome' });
+    assert.ok(result instanceof Map);
+    assert.equal(result.size, 0);
+});
+
+test('renderPngs：找不到 Chrome 時訊息寫出找的路徑與 CHROME_PATH（參數與環境變數都算）', async () => {
+    const { renderPngs } = await importRender();
+    const job = { name: 'job-a', html: '<p>x</p>', width: 10, height: 10 };
+    await assert.rejects(renderPngs([job], { chromePath: '/no/such/chrome' }), (error) => {
+        assert.ok(error instanceof Error);
+        assert.ok(error.message.includes('/no/such/chrome'), error.message);
+        assert.ok(error.message.includes('CHROME_PATH'), error.message);
+        return true;
+    });
+    const result = runRender({ CHROME_PATH: '/no/such/chrome-from-env' });
+    assert.match(result.stdout, /REJECTED[\s\S]*\/no\/such\/chrome-from-env/, result.stdout + result.stderr);
+});
+
+test('renderPngs：Chrome 一啟動就結束時，訊息有它的結束碼與輸出，暫存資料夾清乾淨', async () => {
+    await withFakeChrome('echo "fake chrome: boom" >&2\nexit 3', ({ tmp, chrome }) => {
+        const result = runRender({ CHROME_PATH: chrome, TMPDIR: tmp });
+        assert.match(result.stdout, /^REJECTED /, result.stdout + result.stderr);
+        assert.ok(result.stdout.includes('fake chrome: boom'), result.stdout);
+        assert.ok(result.stdout.includes('3'), result.stdout);
+        assert.deepEqual(fs.readdirSync(tmp), [], '暫存資料夾沒清乾淨');
+    });
+});
+
+test('renderPngs：連不上 DevTools 時一樣關掉 Chrome、清掉暫存資料夾', async () => {
+    // 假的 Chrome 印出 DevTools 網址（指到沒人聽的埠）就睡著；renderPngs 連不上，要把它殺掉
+    await withFakeChrome('echo $$ > "$FAKE_CHROME_PID"\necho "DevTools listening on ws://127.0.0.1:1/devtools/browser/fake" >&2\nexec sleep 120', async ({ dir, tmp, chrome }) => {
+        const pidFile = path.join(dir, 'pid');
+        const isAlive = (pid) => { try { process.kill(pid, 0); return true; } catch (error) { return error.code !== 'ESRCH'; } };
+        let pid = null;
+        try {
+            const result = runRender({ CHROME_PATH: chrome, TMPDIR: tmp, FAKE_CHROME_PID: pidFile });
+            assert.match(result.stdout, /^REJECTED /, result.stdout + result.stderr);
+            assert.match(result.stdout, /DevTools/, result.stdout);
+            pid = Number(fs.readFileSync(pidFile, 'utf8'));
+            assert.ok(pid > 1, `假的 Chrome 的 pid：${pid}`);
+            for (let wait = 0; wait < 50 && isAlive(pid); wait++) await new Promise((resolve) => setTimeout(resolve, 100));
+            assert.ok(!isAlive(pid), '假的 Chrome 還在執行');
+            assert.deepEqual(fs.readdirSync(tmp), [], '暫存資料夾沒清乾淨');
+        } finally {
+            if (pid > 1 && isAlive(pid)) process.kill(pid, 'SIGKILL');
+        }
+    });
+});
+
+// ---------- 預覽圖與圖示的檔案 ----------
+
+test('logo 原檔：1024×1024，SHA-256 開頭是 1f7113f6e2f5fc01', async () => {
+    const { readPngInfo } = await importPng();
+    const logo = fs.readFileSync(path.join(ROOT, LOGO_PATH));
+    assert.ok(sha256(logo).startsWith('1f7113f6e2f5fc01'), sha256(logo));
+    const info = readPngInfo(logo);
+    assert.deepEqual([info.width, info.height], [1024, 1024]);
+    const { LOGO_FILE } = await importSite();
+    assert.equal(LOGO_FILE, LOGO_PATH);
+});
+
+test('21 張預覽圖：存在、PNG 1200×630、≤ 307200 bytes、ff14tw-source 等於 cardHash()', async () => {
+    const { readPngInfo, SOURCE_KEYWORD } = await importPng();
+    const site = await loadSite();
+    const expected = await expectedCardHashes();
+    assert.equal(site.cards.length, 21);
+    for (const card of site.cards) {
+        const file = `${OG_DIR}/${card.key}.png`;
+        assert.ok(fs.existsSync(path.join(ROOT, file)), `${file} 不存在，執行 node scripts/share-preview.mjs images`);
+        const png = fs.readFileSync(path.join(ROOT, file));
+        assert.ok(png.length <= MAX_PREVIEW_BYTES, `${file} 有 ${png.length} bytes，超過 ${MAX_PREVIEW_BYTES}`);
+        const info = readPngInfo(png);
+        assert.deepEqual([info.width, info.height], [1200, 630], file);
+        assert.equal(info.text.get(SOURCE_KEYWORD), expected.get(card.key), `${file} 裡記的雜湊和現在的內容不一樣：改了說明、圖示、顏色、logo 或範本之後，重跑 node scripts/share-preview.mjs images`);
+    }
+});
+
+test('assets/images/og/ 只有這 21 張；每一頁的 og:image 都指到存在的檔案', async () => {
+    const site = await loadSite();
+    assert.deepEqual(fs.readdirSync(path.join(ROOT, OG_DIR)).sort(), site.cards.map((card) => `${card.key}.png`).sort());
+    for (const page of site.pages) {
+        const image = metaContent(blockLines(read(page.file), page.file).join('\n'), 'property', 'og:image');
+        assert.match(image, /^https:\/\/ff14\.tw\/assets\/images\/og\/[a-z0-9-]+\.png$/, page.file);
+        assert.ok(fs.existsSync(path.join(ROOT, new URL(image).pathname)), `${page.file} 的 og:image ${image} 指到不存在的檔案`);
+    }
+});
+
+test('4 張圖示：大小照 ICONS、ff14tw-source 等於 iconHash()', async () => {
+    const { readPngInfo, SOURCE_KEYWORD } = await importPng();
+    const { ICONS, iconHash } = await importCards();
+    const logoSha256 = sha256(fs.readFileSync(path.join(ROOT, LOGO_PATH)));
+    assert.equal(ICONS.length, 4);
+    for (const icon of ICONS) {
+        const file = `${ICON_DIR}/${icon.file}`;
+        assert.ok(fs.existsSync(path.join(ROOT, file)), `${file} 不存在，執行 node scripts/share-preview.mjs images`);
+        const info = readPngInfo(fs.readFileSync(path.join(ROOT, file)));
+        assert.deepEqual([info.width, info.height], [icon.size, icon.size], file);
+        assert.equal(info.text.get(SOURCE_KEYWORD), iconHash(icon, { logoSha256 }), `${file} 裡記的雜湊和現在的內容不一樣，重跑 node scripts/share-preview.mjs images`);
+    }
+    assert.deepEqual(fs.readdirSync(path.join(ROOT, ICON_DIR)).sort(), ICONS.map((icon) => icon.file).sort(), 'assets/images/icons/ 裡沒有別的檔案');
+});
+
+test('每一頁的 apple-touch-icon 都指到存在的檔案（180×180 的 PNG）；manifest 的 icons 都指到存在、大小相符的檔案', async () => {
+    const { readPngInfo } = await importPng();
+    const site = await loadSite();
+    for (const page of site.pages) {
+        const href = /<link rel="apple-touch-icon" href="([^"]*)">/.exec(blockLines(read(page.file), page.file).join('\n'))[1];
+        const file = href.startsWith('/') ? href.slice(1) : path.posix.join(path.posix.dirname(page.file), href);
+        assert.ok(fs.existsSync(path.join(ROOT, file)), `${page.file} 的 apple-touch-icon ${href} 指到不存在的檔案`);
+        const info = readPngInfo(fs.readFileSync(path.join(ROOT, file)));
+        assert.deepEqual([info.width, info.height], [180, 180], `${page.file} 的 apple-touch-icon`);
+    }
+    for (const { file, data } of site.manifests) {
+        assert.equal(data.icons.length, 3, file);
+        for (const icon of data.icons) {
+            assert.match(icon.src, /^\/assets\/images\/icons\/[a-z0-9-]+\.png$/, `${file} 的 icon 要是根目錄絕對路徑`);
+            assert.equal(icon.type, 'image/png');
+            assert.ok(fs.existsSync(path.join(ROOT, icon.src.slice(1))), `${file} 的 icon ${icon.src} 指到不存在的檔案`);
+            const info = readPngInfo(fs.readFileSync(path.join(ROOT, icon.src.slice(1))));
+            assert.equal(`${info.width}x${info.height}`, icon.sizes, `${file} 的 icon ${icon.src} 大小和 sizes 不符`);
+        }
+    }
+});
+
+// ---------- images 指令（在複本上跑；不啟動 Chrome：雜湊都對得上就不需要它，需要時把 CHROME_PATH 指到不存在的檔案） ----------
+
+const NO_CHROME = { CHROME_PATH: '/no/such/chrome' };
+// 指令在要畫之前列出的檔案：兩個空格開頭的 assets/images/ 路徑
+const listedFiles = (stdout) => stdout.split('\n').filter((line) => /^ {2}assets\/images\//.test(line)).map((line) => line.trim());
+
+test('images 指令：每張圖的雜湊都對得上時一張都不畫（不需要 Chrome），也不改任何檔案', async () => {
+    const files = await imageFiles();
+    assert.equal(files.length, 25);
+    await withSiteCopy(async (dir) => {
+        const OLD = new Date('2020-01-01T00:00:00Z');
+        for (const file of files) fs.utimesSync(path.join(dir, file), OLD, OLD);
+        const result = runCliWithEnv(dir, NO_CHROME, 'images');
+        assert.equal(result.status, 0, result.stderr);
+        assert.match(result.stdout, /畫了 0 張、跳過 25 張/);
+        for (const file of files) assert.equal(fs.statSync(path.join(dir, file)).mtimeMs, OLD.getTime(), `${file} 沒變，不該重寫`);
+    }, { images: true });
+});
+
+test('images 指令：刪掉 assets/images/og/ 裡不屬於 21 張的 PNG，其他檔案不動', async () => {
+    const site = await loadSite();
+    await withSiteCopy(async (dir) => {
+        const og = path.join(dir, OG_DIR);
+        fs.copyFileSync(path.join(og, 'site.png'), path.join(og, 'old-tool.png'));
+        fs.writeFileSync(path.join(og, 'notes.txt'), 'keep');
+        const result = runCliWithEnv(dir, NO_CHROME, 'images');
+        assert.equal(result.status, 0, result.stderr);
+        assert.match(result.stdout, /畫了 0 張、跳過 25 張/);
+        assert.ok(result.stdout.includes(`${OG_DIR}/old-tool.png`), result.stdout);
+        assert.deepEqual(fs.readdirSync(og).sort(), [...site.cards.map((card) => `${card.key}.png`), 'notes.txt'].sort());
+    }, { images: true });
+});
+
+test('images 指令：缺的、壞掉的、沒有雜湊的、雜湊不對的、尺寸不對的圖都算過期，只列出這些；Chrome 找不到時什麼都不寫、不刪', async () => {
+    const { readPngInfo, recompressPng, withTextChunk, encodePng, SOURCE_KEYWORD } = await importPng();
+    await withSiteCopy(async (dir) => {
+        const at = (file) => path.join(dir, file);
+        const stale = [];
+        const mark = (file) => stale.push(file);
+
+        fs.rmSync(at(`${OG_DIR}/weather-forecast.png`)); // 缺
+        mark(`${OG_DIR}/weather-forecast.png`);
+        const broken = fs.readFileSync(at(`${OG_DIR}/guide-party.png`)); // 壞：壓縮資料裡一個位元組不對，區塊的 CRC 不符
+        broken[100] ^= 0xff;
+        fs.writeFileSync(at(`${OG_DIR}/guide-party.png`), broken);
+        mark(`${OG_DIR}/guide-party.png`);
+        fs.writeFileSync(at(`${OG_DIR}/macro-converter.png`), recompressPng(fs.readFileSync(at(`${OG_DIR}/macro-converter.png`)))); // 沒有雜湊
+        mark(`${OG_DIR}/macro-converter.png`);
+        fs.writeFileSync(at(`${OG_DIR}/dungeon-database.png`), withTextChunk(fs.readFileSync(at(`${OG_DIR}/dungeon-database.png`)), SOURCE_KEYWORD, '0'.repeat(64))); // 雜湊不對
+        mark(`${OG_DIR}/dungeon-database.png`);
+        const siteHash = readPngInfo(fs.readFileSync(at(`${OG_DIR}/site.png`))).text.get(SOURCE_KEYWORD); // 雜湊對、尺寸不對
+        fs.writeFileSync(at(`${OG_DIR}/site.png`), withTextChunk(encodePng({ width: 600, height: 315, channels: 3, pixels: Buffer.alloc(600 * 315 * 3) }), SOURCE_KEYWORD, siteHash));
+        mark(`${OG_DIR}/site.png`);
+        fs.writeFileSync(at(`${ICON_DIR}/icon-192.png`), withTextChunk(encodePng({ width: 100, height: 100, channels: 3, pixels: Buffer.alloc(100 * 100 * 3) }), SOURCE_KEYWORD, readPngInfo(fs.readFileSync(at(`${ICON_DIR}/icon-192.png`))).text.get(SOURCE_KEYWORD))); // 圖示尺寸不對
+        mark(`${ICON_DIR}/icon-192.png`);
+
+        const snapshot = () => Object.fromEntries([OG_DIR, ICON_DIR].flatMap((folder) => fs.readdirSync(at(folder)).map((name) => [`${folder}/${name}`, sha256(fs.readFileSync(at(`${folder}/${name}`)))])));
+        const before = snapshot();
+        fs.writeFileSync(at(`${OG_DIR}/old-tool.png`), 'not needed'); // 多出來的圖：這一次也不能刪（出錯時什麼都不動）
+        const result = runCliWithEnv(dir, NO_CHROME, 'images');
+        assert.notEqual(result.status, 0);
+        assert.ok(result.stderr.includes('/no/such/chrome'), result.stderr);
+        assert.deepEqual(listedFiles(result.stdout).sort(), stale.sort(), result.stdout);
+        assert.match(result.stdout, /要畫 6 張（跳過 19 張沒變的）/);
+        fs.rmSync(at(`${OG_DIR}/old-tool.png`));
+        assert.deepEqual(snapshot(), before, '出錯時沒有檔案被寫或被刪');
+    }, { images: true });
+});
+
+test('images 指令：範本改了要重畫 21 張預覽圖（圖示不用），圖示頁面（iconHtml）改了只重畫 4 張圖示，logo 改了連圖示都要重畫，一張卡片的說明改了只重畫那一張', async () => {
+    const files = await imageFiles();
+    const ogFiles = files.filter((file) => file.startsWith(OG_DIR));
+    const iconFiles = files.filter((file) => file.startsWith(ICON_DIR));
+    await withSiteCopy(async (dir) => {
+        const at = (file) => path.join(dir, file);
+        const stale = (...files) => {
+            const result = runCliWithEnv(dir, NO_CHROME, 'images');
+            assert.notEqual(result.status, 0);
+            assert.deepEqual(listedFiles(result.stdout).sort(), [...files].sort(), result.stdout);
+        };
+        const edit = (file, change, check) => {
+            const original = fs.readFileSync(at(file));
+            fs.writeFileSync(at(file), change(original));
+            try { check(); } finally { fs.writeFileSync(at(file), original); }
+        };
+
+        edit(TEMPLATE_PATH, (bytes) => Buffer.concat([bytes, Buffer.from('<!-- 改了範本 -->\n')]), () => stale(...ogFiles));
+        // 改 cards.mjs 裡圖示頁面的樣式（logo、尺寸、留邊比例、底色都沒動）：預覽圖的雜湊輸入沒變，只有 4 張圖示過期
+        const iconStyle = 'body { display: grid; place-items: center; }';
+        edit('scripts/share-preview/cards.mjs', (bytes) => {
+            assert.equal(count(bytes.toString('utf8'), iconStyle), 1, 'cards.mjs 的圖示頁面找不到要改的那一行');
+            return Buffer.from(bytes.toString('utf8').replace(iconStyle, 'body { display: grid; place-items: start; }'));
+        }, () => stale(...iconFiles));
+        edit(LOGO_PATH, (bytes) => Buffer.concat([bytes, Buffer.from([0])]), () => stale(...files));
+        edit('assets/js/i18n/translations/index.js', (bytes) => Buffer.from(bytes.toString('utf8').replace('查看艾歐澤亞各地區的天氣預報，搜尋特定天氣條件', '新的一句說明')), () => stale(`${OG_DIR}/weather-forecast.png`));
+        // 改回來之後又都是最新的
+        const result = runCliWithEnv(dir, NO_CHROME, 'images');
+        assert.equal(result.status, 0, result.stderr);
+        assert.match(result.stdout, /畫了 0 張、跳過 25 張/);
+    }, { images: true });
+});
+
+test('images 指令：card.html 與 cards.mjs 換成 CRLF 換行（Windows 的 git）時雜湊不變，一張都不用重畫', async () => {
+    await withSiteCopy(async (dir) => {
+        const file = path.join(dir, TEMPLATE_PATH);
+        const lf = fs.readFileSync(file, 'utf8');
+        fs.writeFileSync(file, lf.replace(/\n/g, '\r\n'));
+        assert.ok(fs.readFileSync(file, 'utf8').includes('\r\n'), '複本的 card.html 換成 CRLF 了');
+        // 圖示頁面寫在 cards.mjs 的模板字串裡，雜湊用到它：JavaScript 把模板字串裡的 \r\n 一律當成 \n，所以 CRLF 的 cards.mjs 算出同一個雜湊
+        const cards = path.join(dir, 'scripts/share-preview/cards.mjs');
+        fs.writeFileSync(cards, fs.readFileSync(cards, 'utf8').replace(/\n/g, '\r\n'));
+        assert.ok(fs.readFileSync(cards, 'utf8').includes('\r\n'), '複本的 cards.mjs 換成 CRLF 了');
+        const result = runCliWithEnv(dir, NO_CHROME, 'images');
+        assert.equal(result.status, 0, result.stdout + result.stderr);
+        assert.match(result.stdout, /畫了 0 張、跳過 25 張/);
+    }, { images: true });
+});
+
+test('images 指令：找不到 logo 時報錯並寫出檔名', async () => {
+    await withSiteCopy(async (dir) => {
+        fs.rmSync(path.join(dir, LOGO_PATH));
+        const result = runCliWithEnv(dir, NO_CHROME, 'images');
+        assert.notEqual(result.status, 0);
+        assert.ok(result.stderr.includes(LOGO_PATH), result.stderr);
+    }, { images: true });
 });

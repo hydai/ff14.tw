@@ -51,10 +51,8 @@ test('404.html 的站內資源與連結都用根目錄絕對路徑', () => {
     for (const value of values) {
         assert.match(value, /^(?:\/(?!\/)|https?:\/\/|#|mailto:)/, `"${value}" 不是以 / 開頭的根目錄絕對路徑`);
     }
-    // 根目錄絕對路徑指到的檔案都存在（'/' 是首頁）。分享預覽那一段（scripts/share-preview.mjs 產生）的主畫面圖示
-    // 在 /assets/images/icons/，由 `node scripts/share-preview.mjs images` 畫出來；還沒畫的時候先不檢查它存在
-    // （上面照樣檢查它是根目錄絕對路徑），圖示產生之後這個例外可以拿掉
-    for (const value of values.filter((v) => v.startsWith('/') && !v.startsWith('/assets/images/icons/'))) {
+    // 根目錄絕對路徑指到的檔案都存在（'/' 是首頁）
+    for (const value of values.filter((v) => v.startsWith('/'))) {
         const file = value === '/' ? 'index.html' : value.slice(1);
         assert.ok(fs.existsSync(path.join(ROOT, file)), `"${value}" 指到的檔案 ${file} 不存在`);
     }
