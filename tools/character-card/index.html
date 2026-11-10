@@ -124,7 +124,8 @@
                                     <label class="form-label" for="cardFcName" data-i18n="char_card_fc_name_label">部隊名稱</label>
                                     <span class="field-count" id="cardFcNameCount">0／20</span>
                                 </div>
-                                <input type="text" class="form-control" id="cardFcName" maxlength="20" aria-describedby="cardFcNameCount" spellcheck="false">
+                                <input type="text" class="form-control" id="cardFcName" maxlength="20" aria-describedby="cardFcNameCount cardFcNameNotDrawn" spellcheck="false">
+                                <span class="form-text" id="cardFcNameNotDrawn" data-i18n="char_card_not_drawn">目前的海報風格不會畫出這一項</span>
                             </div>
                             <div class="form-group">
                                 <div class="field-head">
@@ -136,12 +137,13 @@
                         </div>
                         <div class="form-group">
                             <label class="form-label" for="cardGc" data-i18n="char_card_gc_label">大國防聯軍</label>
-                            <select class="form-control" id="cardGc">
+                            <select class="form-control" id="cardGc" aria-describedby="cardGcNotDrawn">
                                 <option value="" data-i18n="char_card_gc_none">不填</option>
                                 <option value="maelstrom" data-i18n="char_card_gc_maelstrom">黑渦團</option>
                                 <option value="twinAdder" data-i18n="char_card_gc_twin_adder">雙蛇黨</option>
                                 <option value="immortalFlames" data-i18n="char_card_gc_immortal_flames">不滅隊</option>
                             </select>
+                            <span class="form-text" id="cardGcNotDrawn" data-i18n="char_card_not_drawn">目前的海報風格不會畫出這一項</span>
                         </div>
 
                         <h2 class="editor-panel-title editor-panel-title-next" data-i18n="char_card_panel_about">自我介紹與聯絡</h2>
@@ -157,7 +159,8 @@
                                 <label class="form-label" for="cardContact" data-i18n="char_card_contact_label">聯絡方式（選填）</label>
                                 <span class="field-count" id="cardContactCount">0／40</span>
                             </div>
-                            <input type="text" class="form-control" id="cardContact" maxlength="40" aria-describedby="cardContactCount" spellcheck="false" placeholder="例：Discord：luna_star" data-i18n="char_card_contact_placeholder" data-i18n-attr="placeholder">
+                            <input type="text" class="form-control" id="cardContact" maxlength="40" aria-describedby="cardContactCount cardContactNotDrawn" spellcheck="false" placeholder="例：Discord：luna_star" data-i18n="char_card_contact_placeholder" data-i18n-attr="placeholder">
+                            <span class="form-text" id="cardContactNotDrawn" data-i18n="char_card_not_drawn">目前的海報風格不會畫出這一項</span>
                         </div>
                     </section>
 
@@ -214,11 +217,12 @@
                         </div>
                         <div class="form-group">
                             <span class="form-label" id="cardLookingLabel" data-i18n="char_card_looking_label">在找什麼</span>
-                            <div class="chip-group" id="cardLooking" role="group" aria-labelledby="cardLookingLabel">
+                            <div class="chip-group" id="cardLooking" role="group" aria-labelledby="cardLookingLabel" aria-describedby="cardLookingNotDrawn">
                                 <button type="button" class="chip" data-looking="static" aria-pressed="false" data-i18n="char_card_looking_static">固定隊</button>
                                 <button type="button" class="chip" data-looking="fc" aria-pressed="false" data-i18n="char_card_looking_fc">部隊</button>
                                 <button type="button" class="chip" data-looking="friends" aria-pressed="false" data-i18n="char_card_looking_friends">朋友</button>
                             </div>
+                            <span class="form-text" id="cardLookingNotDrawn" data-i18n="char_card_not_drawn">目前的海報風格不會畫出這一項</span>
                         </div>
                     </section>
 

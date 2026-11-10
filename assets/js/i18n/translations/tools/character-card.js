@@ -5,6 +5,8 @@
  * {job}、{level} 是預覽圖說明裡的主職與等級，{parts} 是已經填了的幾段（名字、伺服器、主職）用 char_card_preview_sep 接起來的字
  * （char_card_preview_label）：沒填的部分不寫，所以不是一個留空格的樣板，一個都沒填時用 char_card_preview_empty。
  * 遊戲用語（大國防聯軍、部隊、職能、喜歡的內容、在找什麼）照 TERMINOLOGY.md 與官方名稱；職業的名稱在 assets/js/ff14-game-data.js（三語都有）。
+ * char_card_not_drawn 是部隊名稱、大國防聯軍、聯絡方式、在找什麼四個欄位底下的說明：現在的海報風格不會把它們畫在卡片上（欄位照樣能填、也會記住），
+ * 只說現在的風格，不承諾之後的風格；四個欄位用同一句。
  * char_card_card_* 是畫在卡片上的短標籤（英文的全名縮在卡片上小到看不清）；char_card_day_*、char_card_slot_* 是表單上的全名。
  * char_card_image_* 是角色圖：按鈕與標籤，以及上傳狀態（處理中、已上傳、太大不會記住、讀不出來、已移除、上次的圖片讀不出來）；
  * char_card_image_adjust 與 char_card_image_adjust_done 是同一顆按鈕的兩種字（調整模式前後）。
@@ -106,6 +108,9 @@ const CharacterCardTranslations = {
         char_card_looking_static: '固定隊',
         char_card_looking_fc: '部隊',
         char_card_looking_friends: '朋友',
+
+        // 目前的海報風格不畫的欄位（部隊名稱、大國防聯軍、聯絡方式、在找什麼）底下的說明
+        char_card_not_drawn: '目前的海報風格不會畫出這一項',
 
         // 畫在卡片上的時段短標籤
         char_card_card_day_weekday: '平日',
@@ -264,6 +269,9 @@ const CharacterCardTranslations = {
         char_card_looking_fc: 'Free Company',
         char_card_looking_friends: 'Friends',
 
+        // Note under the fields the current poster style does not draw (Free Company name, Grand Company, contact, looking for)
+        char_card_not_drawn: 'Not shown on the current poster style',
+
         // Short labels for the hours drawn on the card
         char_card_card_day_weekday: 'Wkdy',
         char_card_card_day_weekend: 'Wknd',
@@ -420,6 +428,9 @@ const CharacterCardTranslations = {
         char_card_looking_static: '固定',
         char_card_looking_fc: 'FC',
         char_card_looking_friends: 'フレンド',
+
+        // 今のポスタースタイルでは描かない項目（フリーカンパニー名、グランドカンパニー、連絡先、探していること）の下の説明
+        char_card_not_drawn: '今のポスタースタイルには表示されません',
 
         // カードに描く時間帯の短いラベル
         char_card_card_day_weekday: '平日',

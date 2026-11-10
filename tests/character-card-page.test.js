@@ -251,7 +251,10 @@ test('字數計數「5／21」與 maxlength', async () => {
     for (const [id, key] of fields) {
         assert.equal(page.$(id).getAttribute('maxlength'), String(LIMITS[key]), `#${id} 的 maxlength`);
         assert.equal(page.$(`${id}Count`).textContent, `0／${LIMITS[key]}`, `#${id}Count`);
-        assert.equal(page.$(id).getAttribute('aria-describedby'), `${id}Count`);
+        // 計數的 id 排第一；海報風格不畫的欄位（部隊名稱、聯絡方式）後面再接一個說明的 id（見「海報風格不畫的四個欄位」的測試）
+        const [first, ...more] = (page.$(id).getAttribute('aria-describedby') ?? '').split(/\s+/);
+        assert.equal(first, `${id}Count`);
+        assert.deepEqual(more, ['cardFcName', 'cardContact'].includes(id) ? [`${id}NotDrawn`] : [], `#${id} 的 aria-describedby 後面`);
     }
 
     page.type('cardName', 'Aerin');
@@ -2552,6 +2555,64 @@ test('翻譯：三語的鍵一樣，每個鍵的 {參數} 三語一樣，index.h
         ['Wkdy', 'Wknd', 'Morn', 'Aft', 'Eve', 'Late']);
     assert.deepEqual(['char_card_card_day_weekday', 'char_card_card_day_weekend', 'char_card_card_slot_morning', 'char_card_card_slot_afternoon', 'char_card_card_slot_evening', 'char_card_card_slot_late_night'].map((key) => values.ja.get(key)),
         ['平日', '休日', '朝', '昼', '夜', '深夜']);
+});
+
+// 海報風格不畫的四個欄位（部隊名稱、大國防聯軍、聯絡方式、在找什麼）：欄位照樣能填、也會記住，但卡片上不會出現。欄位底下各寫一行小字說明，
+// 接進 aria-describedby（螢幕閱讀器聚焦到欄位時念）；會畫在卡片上的欄位沒有。之後換風格、這四項裡有哪一項畫上卡片了，要把它的說明拿掉
+const NOT_DRAWN_TEXT = { zh: '目前的海報風格不會畫出這一項', en: 'Not shown on the current poster style', ja: '今のポスタースタイルには表示されません' };
+const NOT_DRAWN = [['cardFcName', 'cardFcNameNotDrawn'], ['cardGc', 'cardGcNotDrawn'], ['cardContact', 'cardContactNotDrawn'], ['cardLooking', 'cardLookingNotDrawn']];
+test('海報風格不畫的四個欄位底下各寫一行說明，接進 aria-describedby；會畫的欄位沒有；說明跟著介面語言', async () => {
+    const page = await createCardPage();
+    const describedIds = (element) => (element.getAttribute('aria-describedby') ?? '').split(/\s+/).filter(Boolean);
+
+    // 翻譯：三語逐字
+    for (const lang of LANGS) assert.equal(translationValues(TRANSLATIONS, lang).get('char_card_not_drawn'), NOT_DRAWN_TEXT[lang], `${lang} 的 char_card_not_drawn`);
+
+    // 四個欄位：底下緊接著一行 .form-text（每個欄位各有自己的 id），欄位的 aria-describedby 指到它（有字數計數的欄位，計數的 id 還在、排前面）
+    assert.equal(new Set(NOT_DRAWN.map(([, hint]) => hint)).size, 4, '每個欄位各有自己的 id');
+    for (const [fieldId, hintId] of NOT_DRAWN) {
+        const field = page.$(fieldId);
+        const hint = page.$(hintId);
+        assert.equal(hint.tagName, 'SPAN', hintId);
+        assert.ok(hint.classList.contains('form-text'), `#${hintId} 用共用的 .form-text`);
+        assert.equal(hint.getAttribute('data-i18n'), 'char_card_not_drawn', hintId);
+        assert.equal(hint.textContent, NOT_DRAWN_TEXT.zh, hintId);
+        isSame(hint.previousElementSibling, field, `#${hintId} 緊接在 #${fieldId} 底下`);
+        assert.deepEqual(describedIds(field), page.$(`${fieldId}Count`) ? [`${fieldId}Count`, hintId] : [hintId], `#${fieldId} 的 aria-describedby`);
+    }
+    // 在找什麼是一組按鈕：說明接在 role="group" 的那個元素上，群組的名稱照舊指到標題
+    assert.equal(page.$('cardLooking').getAttribute('role'), 'group');
+    assert.equal(page.$('cardLooking').getAttribute('aria-labelledby'), 'cardLookingLabel');
+
+    // 只有這四個：整頁用這個字串的元素就是這四行；其他的控制項（會畫在卡片上的）的 aria-describedby 都沒有指到它們
+    assert.deepEqual(all(page.document, '[data-i18n="char_card_not_drawn"]').map((element) => element.getAttribute('id')).sort(), NOT_DRAWN.map(([, hint]) => hint).sort());
+    const hintIds = new Set(NOT_DRAWN.map(([, hint]) => hint));
+    const withHint = all(page.$('cardForm'), '[aria-describedby]').filter((element) => describedIds(element).some((id) => hintIds.has(id)));
+    assert.deepEqual(withHint.map((element) => element.getAttribute('id')).sort(), NOT_DRAWN.map(([field]) => field).sort());
+    for (const id of ['cardName', 'cardWorld', 'cardWorldCustom', 'cardMainJob', 'cardLevel', 'cardSubJobs', 'cardTitle', 'cardFcTag', 'cardHours', 'cardLikes', 'cardIntro']) {
+        assert.ok(!describedIds(page.$(id)).some((item) => hintIds.has(item)), `#${id} 會畫在卡片上，沒有這行說明`);
+    }
+
+    // 說明說的是實話：四個欄位都填了，卡片上還是沒有它們的字（中文與英文介面都一樣）；會畫的欄位都在卡片上
+    fillEverything(page);
+    page.chip('cardLooking', 'fc').click();
+    page.chip('cardLooking', 'friends').click();
+    for (const lang of ['zh', 'en']) {
+        page.setLang(lang);
+        const texts = page.texts();
+        for (const hidden of ['Moonlit Garden', 'Discord: luna_star', ...['gc_twin_adder', 'looking_static', 'looking_fc', 'looking_friends'].map((key) => translationValues(TRANSLATIONS, lang).get(`char_card_${key}`))]) {
+            assert.ok(!texts.some((text) => text.includes(hidden)), `${lang}：卡片上不會有 ${hidden}`);
+        }
+        for (const drawn of ['Luna Starweaver', 'Tiamat', '«MOON»', 'Looking for a Savage static.']) assert.ok(texts.includes(drawn), `${lang}：卡片上有 ${drawn}`);
+    }
+    page.setLang('zh');
+
+    // 說明跟著介面語言（欄位的名稱與選項不變）
+    for (const lang of ['en', 'ja', 'zh']) {
+        page.setLang(lang);
+        for (const [, hintId] of NOT_DRAWN) assert.equal(page.$(hintId).textContent, NOT_DRAWN_TEXT[lang], `${lang}：#${hintId}`);
+    }
+    assert.deepEqual(page.consoleErrors, []);
 });
 
 // ---------- 輸出：下載、分享、複製、全螢幕大圖、必填的驗證、LINE 的提示、手機打字 ----------
