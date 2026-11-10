@@ -15,6 +15,8 @@
     --color-brand-a: #667eea;
     --color-brand-b: #764ba2;
     --gradient-brand: linear-gradient(135deg, var(--color-brand-a) 0%, var(--color-brand-b) 100%);
+    /* 手機瀏覽器網址列與 Discord 色帶用的頁首起點色 */
+    --color-browser-bar: #667eea;
 
     /* ---- 主色（互動色：按鈕、連結、啟用中的篩選、焦點環） ---- */
     --color-primary: #5061d3;
@@ -154,6 +156,7 @@
     --color-brand-a: #667eea;
     --color-brand-b: #764ba2;
     --gradient-brand: linear-gradient(135deg, #4b5ca8 0%, #563b79 100%);
+    --color-browser-bar: #4b5ca8;
 
     --color-primary: #8b9cf5;
     --color-primary-hover: #a0aef8;

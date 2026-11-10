@@ -1,0 +1,32 @@
+{
+  "id": "/tools/faux-hollows-foxes/",
+  "name": "宗長計算機 - FF14.tw",
+  "short_name": "宗長計算機",
+  "description": "計算 FF14 Faux Hollows Foxes 活動的最佳點擊策略",
+  "lang": "zh-Hant",
+  "start_url": "/tools/faux-hollows-foxes/",
+  "scope": "/tools/faux-hollows-foxes/",
+  "display": "browser",
+  "background_color": "#0e171f",
+  "theme_color": "#667eea",
+  "icons": [
+    {
+      "src": "/assets/images/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/images/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/images/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

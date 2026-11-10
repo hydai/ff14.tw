@@ -1,0 +1,32 @@
+{
+  "id": "/tools/character-card/",
+  "name": "角色卡產生器 - FF14.tw",
+  "short_name": "角色卡產生器",
+  "description": "快速生成你的FF14角色資訊卡片，支援多種樣式和自訂選項。",
+  "lang": "zh-Hant",
+  "start_url": "/tools/character-card/",
+  "scope": "/tools/character-card/",
+  "display": "browser",
+  "background_color": "#0e171f",
+  "theme_color": "#667eea",
+  "icons": [
+    {
+      "src": "/assets/images/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/images/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/images/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
