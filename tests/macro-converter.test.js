@@ -640,6 +640,75 @@ test('複製之後輸出沒變（多打空白轉出來一樣、選同一個目�
     assert.deepEqual(page.consoleErrors, []);
 });
 
+test('按下複製到剪貼簿寫完之間輸出變了（清除、改目標語言、打字、貼上）：寫完時按鈕不寫「✓ 已複製」，toast 照跳', async () => {
+    // 剪貼簿可能晚一點才寫完（瀏覽器在問權限）：寫進去的是按下去那一刻的輸出，輸出框裡已經不是它了。
+    // 「✓ 已複製」說的是輸出框裡的字，所以不寫；toast「已複製」照跳：剪貼簿真的換成了按下去那一刻的輸出
+    const page = await createMacroPage({ clipboard: 'hold' });
+    const copy = page.$('copyOutput');
+    const COPIED = '/ac "堅信" <wait.3>';
+    const changes = [
+        ['清除', () => page.$('clearInput').click()],
+        ['改目標語言', () => chooseTarget(page, 'en')],
+        ['打字', () => page.type('/ac Innovation <wait.2>')],
+        ['貼上', async () => {
+            page.clipboardText = '/mlock';
+            page.$('pasteInput').click();
+            await page.settle();
+        }]
+    ];
+    for (const [when, change] of changes) {
+        chooseTarget(page, 'zh');
+        page.type(MUSCLE_MEMORY);
+        const writes = page.clipboard.length;
+        const toasts = page.toasts.length;
+        copy.click();
+        await page.settle();
+        assert.equal(page.clipboard.length, writes, `${when}：剪貼簿還沒寫完`);
+        assert.equal(copy.textContent, '複製', `${when}：還沒寫完不寫「✓ 已複製」`);
+
+        await change();
+        assert.notEqual(page.output(), COPIED, `${when}：輸出變了`);
+        page.releaseClipboard();
+        await page.settle();
+        assert.equal(page.clipboard.at(-1), COPIED, `${when}：剪貼簿裡是按下去那一刻的輸出`);
+        assert.deepEqual(page.toasts.slice(toasts), [{ message: '已複製', type: 'success' }], `${when}：toast 照跳`);
+        assert.equal(copy.textContent, '複製', `${when}：按鈕不寫「✓ 已複製」`);
+        assert.ok(!page.pendingDelays().includes(2000), `${when}：沒有排變回「複製」的計時`);
+        assert.equal(copy.getAttribute('aria-disabled'), page.output() === '' ? 'true' : null, `${when}：沒有輸出才 aria-disabled`);
+    }
+
+    // 前一次的「✓ 已複製」還在時再按一次，等的時候打了字：打字時按鈕就變回「複製」，寫完也不再寫「✓ 已複製」
+    page.type(MUSCLE_MEMORY);
+    page.clipboardMode = 'ok';
+    copy.click();
+    await page.settle();
+    assert.equal(copy.textContent, '✓ 已複製');
+    page.clipboardMode = 'hold';
+    copy.click();
+    await page.settle();
+    page.type('/ac Innovation <wait.2>');
+    assert.equal(copy.textContent, '複製', '輸出變了，馬上變回「複製」');
+    page.releaseClipboard();
+    await page.settle();
+    assert.equal(copy.textContent, '複製', '寫完也不寫「✓ 已複製」');
+    assert.ok(!page.pendingDelays().includes(2000));
+
+    // 等的時候輸出變了又變回來（打了字又刪掉）：寫完時輸出框裡的字就是剛才寫進去的，照常暫時寫「✓ 已複製」
+    page.type(MUSCLE_MEMORY);
+    copy.click();
+    await page.settle();
+    page.type('/ac Innovation <wait.2>');
+    page.type(MUSCLE_MEMORY);
+    page.releaseClipboard();
+    await page.settle();
+    assert.equal(page.clipboard.at(-1), COPIED);
+    assert.equal(copy.textContent, '✓ 已複製', '輸出和剪貼簿一樣');
+    assert.deepEqual(page.pendingDelays().filter((delay) => delay === 2000), [2000]);
+    page.runTimeouts();
+    assert.equal(copy.textContent, '複製');
+    assert.deepEqual(page.consoleErrors, []);
+});
+
 test('複製失敗：toast「複製失敗，請手動選取文字」，按鈕不變，輸出還在讓玩家自己選取', async () => {
     const page = await createMacroPage({ clipboard: 'reject' });
     const copy = page.$('copyOutput');

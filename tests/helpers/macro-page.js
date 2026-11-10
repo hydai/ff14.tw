@@ -4,7 +4,7 @@
 //   const { createMacroPage } = require('./helpers/macro-page.js');
 //   const page = await createMacroPage({ lang: 'en', stored: { ff14tw_macro_target_lang: 'ja' }, storageThrows: true, fetchResults: ['fail'], clipboard: 'reject' });
 //   page.type('/ac "Muscle Memory" <wait.3>'); page.output(); page.outputTitle(); page.warnings(); page.setLang('ja'); page.toasts; page.consoleErrors;
-//   page.$('copyOutput').click(); await page.settle(); page.clipboard; page.pendingDelays(); page.runTimeouts();
+//   page.$('copyOutput').click(); await page.settle(); page.clipboard; page.pendingDelays(); page.runTimeouts(); page.releaseClipboard();
 //   const again = await page.reopen();
 //
 // - 照 index.html 建出 #macroTool（mountFromHtml），照 index.html 的 <script src> 順序載入這個工具的翻譯檔與工具目錄自己的每一個腳本
@@ -25,9 +25,11 @@
 // - type(text)：把輸入框（#inputMacro）的值設成 text 並派送 input（打字、貼上、刪除都是這個事件）；
 //   output() 是輸出框（#outputMacro）的值，outputTitle() 是輸出標題列（#outputTitle）的文字，
 //   warnings() 是要注意的行（#macroWarnings）每個 li 的文字，整塊 hidden 時是 []
-// - clipboard：'ok'（預設）或 'reject'。navigator.clipboard 的 writeText() 與 readText() 都是 async：'ok' 時 writeText(text) 把 text 記在
+// - clipboard：'ok'（預設）、'reject' 或 'hold'。navigator.clipboard 的 writeText() 與 readText() 都是 async：'ok' 時 writeText(text) 把 text 記在
 //   clipboard（寫入的每一筆，照順序）並成為剪貼簿目前的內容，readText() 回傳剪貼簿目前的內容；'reject' 時兩個都回傳被拒絕的 Promise
-//   （瀏覽器沒給權限或不支援），什麼都不記。clipboardMode 可讀可寫，是現在的模式（'ok' 或 'reject'；先成功、再失敗的情況在測試裡改它）。
+//   （瀏覽器沒給權限或不支援），什麼都不記；'hold' 時 writeText() 先不回來（瀏覽器還在問權限、剪貼簿還在寫），呼叫 releaseClipboard()
+//   才讓等著的每一筆照順序和 'ok' 一樣寫進去並回來，readText() 同 'ok'。clipboardMode 可讀可寫，是現在的模式（先成功、再失敗的情況在測試裡改它；
+//   改模式不影響已經在等的寫入）。
 //   clipboardText 可讀可寫，是剪貼簿目前的內容（一開始是 ''；測試要「貼上」的字先寫在這裡，'ok' 時 readText() 就是回傳它：
 //   空字串、只有空白的字也一樣照實回傳，像複製的是圖片時 readText() 讀到的是空字串）
 // - setTimeout／clearTimeout 只記下、不真的計時（複製成功後按鈕暫時寫「✓ 已複製」用的是它）：runTimeouts() 把呼叫當下排著的
@@ -59,7 +61,7 @@ const TRANSLATIONS = 'assets/js/i18n/translations/tools/macro-converter.js';
 const PAGE_URL = 'https://ff14.tw/tools/macro-converter/index.html';
 const DATA_URL = '../../data/macro-mappings.json';
 const FETCH_RESULTS = ['ok', 'fail', 'pending'];
-const CLIPBOARD_MODES = ['ok', 'reject'];
+const CLIPBOARD_MODES = ['ok', 'reject', 'hold'];
 
 // 頁面裡每一個 <script> 開始標籤的 src，照出現的順序（同 chocobo-page.js）
 function scriptSources(html) {
@@ -117,6 +119,8 @@ async function createMacroPage({
     const consoleErrors = [];
     const toasts = [];
     const clipboardWrites = [];
+    // clipboard 是 'hold' 時還沒回來的 writeText()：每一筆是讓它寫進去的函式，releaseClipboard() 照順序呼叫
+    const heldWrites = [];
     const timeouts = [];
     const languageListeners = [];
     const translations = { zh: {}, en: {}, ja: {} };
@@ -148,6 +152,7 @@ async function createMacroPage({
             clipboard: {
                 writeText: async (text) => {
                     if (clipboardMode === 'reject') throw new Error('NotAllowedError');
+                    if (clipboardMode === 'hold') await new Promise((resolve) => heldWrites.push(resolve));
                     clipboardWrites.push(text);
                     systemClipboard = text;
                 },
@@ -224,6 +229,10 @@ async function createMacroPage({
         },
         get clipboardText() { return systemClipboard; },
         set clipboardText(text) { systemClipboard = String(text); },
+        // 'hold' 時等著的 writeText() 照順序寫進去並回來；之後要 await settle() 讓頁面的 await 跑完
+        releaseClipboard() {
+            for (const release of heldWrites.splice(0)) release();
+        },
         $,
         type(text) {
             const input = $('inputMacro');

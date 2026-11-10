@@ -254,7 +254,9 @@ class MacroConverter {
             return;
         }
         FF14Utils.showToast(this.t('macro_converter_copied', '已複製'), 'success');
-        this.showCopied();
+        // 剪貼簿可能晚一點才寫完（瀏覽器在問權限）：等的時候輸出變了（打字、改目標語言、貼上、清除），寫進去的是按下去那一刻的輸出，
+        // 不是輸出框裡現在的字，按鈕就不寫「✓ 已複製」（toast 照跳：剪貼簿真的換了）
+        if (this.elements.outputMacro.value === text) this.showCopied();
     }
 
     // 按鈕暫時寫「✓ 已複製」，2 秒後變回「複製」；期間再按一次，前一次的計時取消，重新算 2 秒
