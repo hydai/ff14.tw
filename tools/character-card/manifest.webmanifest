@@ -2,7 +2,7 @@
   "id": "/tools/character-card/",
   "name": "角色卡產生器 - FF14.tw",
   "short_name": "角色卡產生器",
-  "description": "快速生成你的FF14角色資訊卡片，支援多種樣式和自訂選項。",
+  "description": "做一張自己的冒險者自介卡：填名字、伺服器和主職就能下載，也能加上截圖、喜歡的內容與遊玩時段。",
   "lang": "zh-Hant",
   "start_url": "/tools/character-card/",
   "scope": "/tools/character-card/",

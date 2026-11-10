@@ -59,7 +59,6 @@ function skeleton(inner) {
 
 // ---------- 站長決定的標示（spec 6.8）；沒列在這裡的卡片不帶標籤、也沒有「缺什麼」說明 ----------
 const TAGS = {
-    'tools/character-card/index.html': { key: 'status_under_construction', classes: ['tag', 'tag-warning', 'tool-tag'] },
     'tools/lodestone-lookup/index.html': { key: 'status_intl_only', classes: ['tag', 'tag-info', 'tool-tag'] },
     'https://tc-shop.ff14.tw': { key: 'tag_external_site', classes: ['tag', 'tool-tag'] }
 };
@@ -75,12 +74,15 @@ const NEW_TEXTS = {
     status_guide_pages_pending: { zh: '部隊、副本、風脈、探索筆記 4 頁撰寫中', en: 'Free Company, dungeon, aether current and sightseeing pages are in progress', ja: 'フリーカンパニー・ダンジョン・風脈・探検手帳の4ページは準備中' },
     tag_external_site: { zh: '外部網站 ↗', en: 'External site ↗', ja: '外部サイト ↗' },
     tool_dungeon_database_desc: { zh: '完整的FF14副本資訊查詢，包含獎勵與機制說明', en: 'Complete FF14 dungeon info with rewards and mechanics', ja: 'FF14ダンジョン情報。報酬とギミック説明を収録' },
-    tool_chocobo_color_desc: { zh: '選陸行鳥現在和想要的顏色，算出要餵的水果和順序', en: 'Pick your chocobo\'s current and wanted colors to get the fruits and the feeding order', ja: 'チョコボの今の色と目標の色から、与える果物と順番を計算' }
+    tool_chocobo_color_desc: { zh: '選陸行鳥現在和想要的顏色，算出要餵的水果和順序', en: 'Pick your chocobo\'s current and wanted colors to get the fruits and the feeding order', ja: 'チョコボの今の色と目標の色から、与える果物と順番を計算' },
+    tool_character_card_desc: { zh: '做一張自己的冒險者自介卡，下載或分享到 Discord、LINE', en: 'Make your own adventurer card to download or share on Discord and LINE', ja: '自分の冒険者カードを作って、DiscordやLINEで共有' }
 };
+// 角色卡工具頁自己的 <meta name="description">（分享預覽與 manifest 都照抄這一句）
+const CHARACTER_CARD_PAGE_DESCRIPTION = '做一張自己的冒險者自介卡：填名字、伺服器和主職就能下載，也能加上截圖、喜歡的內容與遊玩時段。';
 
 // ---------- 測試 ----------
 test('首頁沒有即將推出的卡片，相關鍵也已刪除', () => {
-    for (const needle of ['coming-soon', 'equipment_analyzer', 'status_coming_soon', 'status_unavailable', 'status-badge']) {
+    for (const needle of ['coming-soon', 'equipment_analyzer', 'status_coming_soon', 'status_unavailable', 'status_under_construction', 'status-badge']) {
         assert.ok(!html.includes(needle), `index.html 不該再出現 ${needle}`);
     }
     // 14 張卡都是可點的 <a>，沒有不能點的 <div class="tool-card">
@@ -92,13 +94,11 @@ test('首頁沒有即將推出的卡片，相關鍵也已刪除', () => {
         const index = translationKeySet(INDEX_FILE, lang);
         const common = translationKeySet(COMMON_FILE, lang);
         assert.ok(index.size > 0 && common.size > 0, `解析不到 ${lang} 語系，測試可能失效`);
-        for (const key of ['tool_equipment_analyzer_title', 'tool_equipment_analyzer_desc', 'status_coming_soon', 'status_unavailable']) {
+        // 施工中的標示：角色卡是最後一個用到的，上線之後鍵也一起拿掉
+        for (const key of ['tool_equipment_analyzer_title', 'tool_equipment_analyzer_desc', 'status_coming_soon', 'status_unavailable', 'status_under_construction']) {
             assert.ok(!index.has(key), `${INDEX_FILE} 的 ${lang} 語系不該再定義 ${key}`);
             assert.ok(!common.has(key), `${COMMON_FILE} 的 ${lang} 語系不該再定義 ${key}`);
         }
-        // 施工中的標示只有首頁用到：定義留在 index.js，common.js 不再重複
-        assert.ok(index.has('status_under_construction'), `${INDEX_FILE} 的 ${lang} 語系要保留 status_under_construction`);
-        assert.ok(!common.has('status_under_construction'), `${COMMON_FILE} 的 ${lang} 語系不該重複定義 status_under_construction`);
     }
 
     // 卡片不再用 .status-badge，樣式連同變體一起刪掉
@@ -121,24 +121,30 @@ test('工具卡結構：圖示、標題列（標題＋選用標籤）、說明�
     }
 });
 
-test('寶圖沒有施工中，角色卡保留施工中標示', () => {
-    const treasure = elementsOf(cardByHref('tools/treasure-map-finder/index.html').inner);
-    assert.equal(withClass(treasure, 'tool-tag').length, 0, '寶圖搜尋器不帶任何標籤');
-    assert.ok(!treasure.some((el) => el.attrs['data-i18n'] === 'status_under_construction'));
+test('沒有任何卡片標施工中：角色卡重做上線後不帶標籤', () => {
+    // 寶圖搜尋器、副本資料庫（改成在說明下方寫出缺什麼）與角色卡都不帶任何標籤
+    for (const href of ['tools/treasure-map-finder/index.html', 'tools/dungeon-database/index.html', 'tools/character-card/index.html']) {
+        const parts = elementsOf(cardByHref(href).inner);
+        assert.equal(withClass(parts, 'tool-tag').length, 0, `${href} 不帶任何標籤`);
+        assert.ok(!parts.some((el) => el.attrs['data-i18n'] === 'status_under_construction'), `${href} 不該標施工中`);
+    }
+    // 全站（含不屬於卡片的地方）沒有任何地方還標施工中
+    assert.equal((html.match(/status_under_construction/g) || []).length, 0);
+});
 
-    // 角色卡的施工中是標題旁的標籤（和其他標示一致），不再是右上角的 .status-badge
-    const [tag, ...others] = withClass(elementsOf(cardByHref('tools/character-card/index.html').inner), 'tool-tag');
-    assert.equal(others.length, 0);
-    assert.equal(tag.tag, 'span');
-    assert.deepEqual(classesOf(tag.attrs).sort(), ['tag', 'tag-warning', 'tool-tag']);
-    assert.equal(tag.attrs['data-i18n'], 'status_under_construction');
-    assert.equal(tag.text, translationValues(INDEX_FILE, 'zh').get('status_under_construction'));
-    assert.equal(tag.text, '🚧 施工中');
-
-    // 副本資料庫已經不是施工中，改成在說明下方寫出缺什麼
-    assert.ok(!elementsOf(cardByHref('tools/dungeon-database/index.html').inner).some((el) => el.attrs['data-i18n'] === 'status_under_construction'));
-    // 全站只有角色卡還標施工中
-    assert.equal((html.match(/data-i18n="status_under_construction"/g) || []).length, 1);
+test('角色卡的說明照實寫：首頁卡片的三語說明與工具頁的 <meta name="description">', () => {
+    for (const lang of LANGS) {
+        const description = translationValues(INDEX_FILE, lang).get('tool_character_card_desc');
+        assert.equal(description, NEW_TEXTS.tool_character_card_desc[lang], `${lang} 的角色卡說明`);
+        // 重做之前的說明是「支援圖片上傳、多版型和自訂背景」，新的說明改寫成下載與分享，那一句的寫法不再用；
+        // 「圖片上傳」現在也有（上傳截圖），不在要擋的字裡，擋的是「多版型」「自訂背景」和英日文的 templates、テンプレート
+        assert.doesNotMatch(description, /多版型|自訂背景|templates|テンプレート/, `${lang} 的角色卡說明不該再寫舊功能`);
+    }
+    const page = read('tools/character-card/index.html');
+    const head = page.slice(0, page.indexOf('</head>'));
+    const descriptions = [...head.matchAll(/<meta\b[^>]*>/g)].map((m) => parseAttrs(m[0])).filter((a) => a.name === 'description');
+    assert.equal(descriptions.length, 1, '角色卡工具頁只有一個 <meta name="description">');
+    assert.equal(descriptions[0].content, CHARACTER_CARD_PAGE_DESCRIPTION);
 });
 
 test('副本資料庫與攻略資料在說明下方寫出缺什麼', () => {
@@ -208,7 +214,6 @@ test('新增的狀態與標示文字在 index.js 的 zh/en/ja 都有', () => {
         for (const [key, texts] of Object.entries(NEW_TEXTS)) {
             assert.equal(values.get(key), texts[lang], `${INDEX_FILE} 的 ${lang} 語系 ${key}`);
         }
-        assert.ok(values.get('status_under_construction'), `${INDEX_FILE} 的 ${lang} 語系 status_under_construction`);
     }
 });
 

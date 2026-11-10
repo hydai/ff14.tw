@@ -22,7 +22,7 @@ const IndexTranslations = {
 
         tool_dungeon_database_desc: '完整的FF14副本資訊查詢，包含獎勵與機制說明',
 
-        tool_character_card_desc: '創造專屬的FF14角色卡片，支援圖片上傳、多版型和自訂背景',
+        tool_character_card_desc: '做一張自己的冒險者自介卡，下載或分享到 Discord、LINE',
 
         tool_faux_hollows_desc: '計算 FF14 Faux Hollows Foxes 活動的最佳點擊策略',
 
@@ -45,7 +45,6 @@ const IndexTranslations = {
         tool_tc_shop_desc: '統計已購買的商城道具，協助管理官方商城消費紀錄',
 
         // 狀態標籤（標題旁）
-        status_under_construction: '🚧 施工中',
         status_intl_only: '僅限國際版角色',
         tag_external_site: '外部網站 ↗',
 
@@ -73,7 +72,7 @@ const IndexTranslations = {
 
         tool_dungeon_database_desc: 'Complete FF14 dungeon info with rewards and mechanics',
 
-        tool_character_card_desc: 'Create custom FF14 character cards with image upload and templates',
+        tool_character_card_desc: 'Make your own adventurer card to download or share on Discord and LINE',
 
         tool_faux_hollows_desc: 'Calculate the optimal clicking strategy for Faux Hollows Foxes event',
 
@@ -96,7 +95,6 @@ const IndexTranslations = {
         tool_tc_shop_desc: 'Track purchased shop items and manage your official store spending history',
 
         // Status tags (next to the title)
-        status_under_construction: '🚧 WIP',
         status_intl_only: 'Global servers only',
         tag_external_site: 'External site ↗',
 
@@ -124,7 +122,7 @@ const IndexTranslations = {
 
         tool_dungeon_database_desc: 'FF14ダンジョン情報。報酬とギミック説明を収録',
 
-        tool_character_card_desc: 'カスタムFF14キャラクターカードを作成、画像アップロードとテンプレート対応',
+        tool_character_card_desc: '自分の冒険者カードを作って、DiscordやLINEで共有',
 
         tool_faux_hollows_desc: '幻フォールスホローの最適クリック戦略を計算',
 
@@ -147,7 +145,6 @@ const IndexTranslations = {
         tool_tc_shop_desc: '購入済みショップアイテムを統計し、公式ストアの消費履歴を管理',
 
         // ステータスタグ（タイトルの横）
-        status_under_construction: '🚧 工事中',
         status_intl_only: 'グローバル版キャラクターのみ',
         tag_external_site: '外部サイト ↗',
 
