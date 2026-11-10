@@ -628,6 +628,27 @@ test('找不到 favicon 那一行：applyHeadBlock 丟錯，訊息含檔名', as
     assert.ok(applyHeadBlock(reordered, sampleBlock('a'), 'reordered.html').includes('<link href="a.ico" rel="icon">\n    <!-- 分享預覽與主畫面'));
 });
 
+test('applyHeadBlock：CRLF 換行的頁面（Windows 的 git）照樣插入、換掉那一段，寫回時整份保留 CRLF', async () => {
+    const { applyHeadBlock, headBlock, BAR_TOKEN } = await importSite();
+    const crlf = (text) => text.replace(/\n/g, '\r\n');
+    // 沒有那一段：插在 favicon 那一行的下一行，結果和 LF 的頁面一樣，只是每個換行都是 \r\n（不會多一行空行）
+    const once = applyHeadBlock(crlf(SAMPLE_HTML), sampleBlock('第一版'), 'x.html');
+    assert.equal(once, crlf(applyHeadBlock(SAMPLE_HTML, sampleBlock('第一版'), 'x.html')));
+    assert.doesNotMatch(once, /(?<!\r)\n/, '不能有單獨的 \\n');
+    // 已經有那一段：重跑一字不差，換成新的也只換那一段
+    assert.equal(applyHeadBlock(once, sampleBlock('第一版'), 'x.html'), once);
+    assert.equal(applyHeadBlock(once, sampleBlock('第二版'), 'x.html'), once.replace('第一版', '第二版'));
+    // 註解真的對不上時照樣丟錯
+    assert.throws(() => applyHeadBlock(once.replace('    <!-- /分享預覽與主畫面 -->\r\n', ''), sampleBlock('c'), 'broken.html'), /broken\.html/);
+    // 真的頁面換成 CRLF 也一樣：重跑沒有任何變化
+    const site = await loadSite();
+    const barColor = site.tokens.light.get(BAR_TOKEN);
+    for (const page of site.pages) {
+        const html = crlf(read(page.file));
+        assert.equal(applyHeadBlock(html, headBlock(page, barColor), page.file), html, `${page.file} 換成 CRLF 後重跑應該沒有任何變化`);
+    }
+});
+
 // ---------- 指令 ----------
 
 test('pages 指令：在複本上重跑沒有任何檔案被改；改壞的檔案被補回來，只印出、只寫那幾個', async () => {
@@ -660,6 +681,29 @@ test('pages 指令：在複本上重跑沒有任何檔案被改；改壞的檔�
             assert.equal(mtime(file), OLD.getTime(), `${file} 沒壞，不該重寫`);
         }
         assert.ok(mtime('tools/weather-forecast/index.html') > OLD.getTime());
+    });
+});
+
+test('pages 指令：頁面是 CRLF 換行（Windows 的 git）時照樣跑完：沒有檔案被改，改壞的那一頁補回來、換行照舊是 CRLF', async () => {
+    await withSiteCopy(async (dir, site) => {
+        const pages = site.pages.map((page) => page.file);
+        for (const file of pages) {
+            const target = path.join(dir, file);
+            fs.writeFileSync(target, fs.readFileSync(target, 'utf8').replace(/\n/g, '\r\n'));
+        }
+        const before = new Map(pages.map((file) => [file, fs.readFileSync(path.join(dir, file), 'utf8')]));
+        let result = runCli(dir, 'pages');
+        assert.equal(result.status, 0, result.stderr);
+        assert.match(result.stdout, /沒有檔案需要更新/);
+        for (const file of pages) assert.equal(fs.readFileSync(path.join(dir, file), 'utf8'), before.get(file), `${file} 不該被改`);
+
+        // 弄壞天氣頁的標題：補回來，換行照舊是 CRLF
+        const weather = 'tools/weather-forecast/index.html';
+        const target = path.join(dir, weather);
+        fs.writeFileSync(target, before.get(weather).replace('<meta property="og:title" content="天氣預報 - FF14.tw">', '<meta property="og:title" content="舊的">'));
+        result = runCli(dir, 'pages');
+        assert.equal(result.status, 0, result.stderr);
+        assert.equal(fs.readFileSync(target, 'utf8'), before.get(weather));
     });
 });
 

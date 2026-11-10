@@ -349,12 +349,19 @@ const FAVICON_LINE = /^[ \t]*<link\b[^>\n]*\brel=["']icon["'][^>\n]*>[ \t]*(?:\n
 
 /**
  * 把那一段放進頁面：已經有就換成新的（其他部分一字不動），沒有就插在 favicon（<link rel="icon" …>）那一行的下一行。
+ * 頁面用 \r\n 換行（Windows 的 git 取出時的預設）也一樣：先換成 \n 處理，原本有 \r\n 就整份用 \r\n 寫回。
  * 開頭、結尾註解對不上，或找不到 favicon 那一行時丟錯（訊息有檔名），不默默跳過。
  * @param {string} html
  * @param {string} block headBlock() 的結果
  * @param {string} file 檔名，只用在錯誤訊息
  */
 export function applyHeadBlock(html, block, file) {
+    if (!html.includes('\r\n')) return applyToLfPage(html, block, file);
+    return applyToLfPage(html.replace(/\r\n/g, '\n'), block, file).replace(/\n/g, '\r\n');
+}
+
+// applyHeadBlock 的本體：頁面只用 \n 換行
+function applyToLfPage(html, block, file) {
     const starts = count(html, BLOCK_START);
     const ends = count(html, BLOCK_END);
     if (starts === 0 && ends === 0) {
