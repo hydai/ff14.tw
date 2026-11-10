@@ -16,6 +16,8 @@ class MacroConverter {
     static MAX_MACRO_LINES = 15;
     // 複製成功後，按鈕寫「✓ 已複製」的毫秒數
     static COPIED_FEEDBACK_MS = 2000;
+    // 貼上成功後，朗讀區先清空、隔這麼多毫秒才寫進結果（同 FF14Utils.showToast）
+    static ANNOUNCE_DELAY_MS = 100;
     // 輸出標題列的語言名稱（跟著網站介面語言）：目標語言 -> [翻譯鍵, 中文預設]
     static LANG_NAMES = {
         zh: ['macro_converter_lang_zh', '繁體中文'],
@@ -39,6 +41,8 @@ class MacroConverter {
         // 複製成功後按鈕暫時寫「✓ 已複製」：copied 是現在是不是這個狀態，copiedTimer 是變回來的計時
         this.copied = false;
         this.copiedTimer = null;
+        // 貼上的朗讀還沒寫進朗讀區的計時（見 announcePasted()）
+        this.announceTimer = null;
 
         this.elements = {
             inputMacro: document.getElementById('inputMacro'),
@@ -48,6 +52,7 @@ class MacroConverter {
             copyOutput: document.getElementById('copyOutput'),
             clearInput: document.getElementById('clearInput'),
             pasteInput: document.getElementById('pasteInput'),
+            pasteAnnounce: document.getElementById('pasteAnnounce'),
             warnings: document.getElementById('macroWarnings'),
             loadingIndicator: document.getElementById('loadingIndicator'),
             loadError: document.getElementById('loadError'),
@@ -133,6 +138,8 @@ class MacroConverter {
     // 把輸入框現在的內容轉成目標語言（每一行自動判斷語言），再重畫標題列與要注意的行。
     // 資料還沒載入（載入中、載入失敗）時沒有東西可以轉：輸入框停用，所以通常也沒有輸入，瀏覽器還原的字等載入完再轉
     convert() {
+        // 貼上的朗讀說的是貼上那一次轉出來的結果：重新轉換（打字、改目標語言、清除、再貼上）就清掉，還沒念到的也取消
+        this.clearAnnouncement();
         const input = this.elements.inputMacro.value;
         const results = input.trim() && this.engine ? this.engine.convert(input, this.elements.targetLang.value) : [];
 
@@ -189,10 +196,9 @@ class MacroConverter {
         this.elements.outputTitle.textContent = this.t('macro_converter_output_title', '{lang}・{lines}', { lang, lines });
     }
 
-    // 每個轉不了的詞、每一行不是指令的行各一條，依行號排；超過 15 行的提醒放在最後。一條一個 li，文字用 textContent
-    // （問題的文字是玩家貼上的原文，可能有 <me> 這類尖括號）。沒有任何一條時整塊 hidden
-    renderWarnings() {
-        const list = this.elements.warnings;
+    // 要注意的行每一條的字：每個轉不了的詞、每一行不是指令的行各一條，依行號排；超過 15 行的提醒放在最後。
+    // renderWarnings() 照這份畫，貼上後的朗讀照這份數
+    warningTexts() {
         const texts = this.problems.map(({ line, kind, text }) => {
             // 不認得的種類當成沒有收錄（引擎只會給 WARNINGS 裡的三種）
             const [key, fallback] = MacroConverter.WARNINGS[kind] ?? MacroConverter.WARNINGS.action;
@@ -204,7 +210,13 @@ class MacroConverter {
                 macros: Math.ceil(this.lineCount / MacroConverter.MAX_MACRO_LINES)
             }));
         }
+        return texts;
+    }
 
+    // 一條一個 li，文字用 textContent（問題的文字是玩家貼上的原文，可能有 <me> 這類尖括號）。沒有任何一條時整塊 hidden
+    renderWarnings() {
+        const list = this.elements.warnings;
+        const texts = this.warningTexts();
         list.textContent = '';
         for (const text of texts) {
             const item = document.createElement('li');
@@ -224,6 +236,9 @@ class MacroConverter {
     }
 
     async pasteFromClipboard() {
+        // 這一次的結果出來之前，朗讀區先清空、上一次還沒念的取消：讀不到時念的是 toast，不能接著念上一次的結果；
+        // 同一份巨集連著貼兩次時，朗讀區也要先空過一次，換字才會再念
+        this.clearAnnouncement();
         let text = '';
         try {
             text = await navigator.clipboard.readText();
@@ -239,6 +254,34 @@ class MacroConverter {
         // 程式改輸入框的值不會觸發 input 事件，所以自己轉。成功時焦點留在「貼上」，不彈出手機的鍵盤
         this.elements.inputMacro.value = text;
         this.convert();
+        this.announcePasted();
+    }
+
+    // 貼上成功時給螢幕閱讀器一句結果：焦點留在「貼上」上，螢幕閱讀器念不到輸出框，沒有這一句就要自己移過去才知道轉出了什麼。
+    // 「已貼上並轉換：繁體中文・13 行，有 2 條要注意」（標題列的字，加上要注意的條數）寫在看不到的朗讀區（#pasteAnnounce，
+    // role="status"）：畫面上輸出框與要注意的行本來就看得到，不跳 toast。朗讀區在 pasteFromClipboard() 一開始就清空了，
+    // 隔一下才寫進去（同 FF14Utils.showToast），區塊已經在頁面上才換字，螢幕閱讀器才會念。字在寫進去的時候才取，
+    // 用那時的網站介面語言；在那之前重新轉換的話，convert() 會把這個計時取消
+    announcePasted() {
+        this.announceTimer = setTimeout(() => {
+            const title = this.elements.outputTitle.textContent;
+            const count = this.warningTexts().length;
+            let message;
+            if (count === 0) {
+                message = this.t('macro_converter_pasted', '已貼上並轉換：{title}', { title });
+            } else {
+                const key = count === 1 ? 'macro_converter_pasted_warning_one' : 'macro_converter_pasted_warnings';
+                message = this.t(key, '已貼上並轉換：{title}，有 {count} 條要注意', { title, count });
+            }
+            this.elements.pasteAnnounce.textContent = message;
+        }, MacroConverter.ANNOUNCE_DELAY_MS);
+    }
+
+    // 清空朗讀區並取消還沒寫進去的那一句
+    clearAnnouncement() {
+        clearTimeout(this.announceTimer);
+        this.announceTimer = null;
+        if (this.elements.pasteAnnounce.textContent !== '') this.elements.pasteAnnounce.textContent = '';
     }
 
     async copyToClipboard() {

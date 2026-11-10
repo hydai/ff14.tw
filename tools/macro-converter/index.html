@@ -63,6 +63,8 @@
                                 <button type="button" class="btn btn-secondary btn-sm" id="clearInput" data-i18n="macro_converter_clear">清除</button>
                             </div>
                         </div>
+                        <!-- 貼上成功時給螢幕閱讀器的一句結果（焦點留在「貼上」上，念不到輸出框）：看不到，畫面上輸出框與要注意的行本來就看得到 -->
+                        <p class="visually-hidden" id="pasteAnnounce" role="status" aria-live="polite"></p>
                         <!-- 提示字是三行範例（英文、日文、繁中各一行）。換行寫在屬性值裡，所以後兩行不縮排。
                              一開始就是停用的：資料載入完 script.js 才拿掉（「貼上」同理） -->
                         <textarea id="inputMacro" class="form-control macro-textarea" rows="8" spellcheck="false" autocomplete="off" disabled

@@ -45,7 +45,12 @@ const MacroConverterTranslations = {
         macro_converter_load_error: '載入翻譯資料失敗，請按「重試」再試一次。',
         macro_converter_copied: '已複製',
         macro_converter_copy_error: '複製失敗，請手動選取文字',
-        macro_converter_paste_error: '沒辦法讀取剪貼簿，請直接在框裡貼上（Ctrl+V 或長按）'
+        macro_converter_paste_error: '沒辦法讀取剪貼簿，請直接在框裡貼上（Ctrl+V 或長按）',
+
+        // Read to screen readers after 貼上 ({title} is the output title, {count} is how many warnings are listed)
+        macro_converter_pasted: '已貼上並轉換：{title}',
+        macro_converter_pasted_warning_one: '已貼上並轉換：{title}，有 {count} 條要注意',
+        macro_converter_pasted_warnings: '已貼上並轉換：{title}，有 {count} 條要注意'
     },
     en: {
         // Page meta
@@ -90,7 +95,12 @@ const MacroConverterTranslations = {
         macro_converter_load_error: 'Failed to load the translation data. Press "Retry" to try again.',
         macro_converter_copied: 'Copied',
         macro_converter_copy_error: 'Copy failed. Please select the text and copy it yourself.',
-        macro_converter_paste_error: 'Cannot read the clipboard. Paste into the box directly (Ctrl+V or long-press).'
+        macro_converter_paste_error: 'Cannot read the clipboard. Paste into the box directly (Ctrl+V or long-press).',
+
+        // Read to screen readers after Paste ({title} is the output title, {count} is how many warnings are listed)
+        macro_converter_pasted: 'Pasted and converted: {title}',
+        macro_converter_pasted_warning_one: 'Pasted and converted: {title}, with {count} warning',
+        macro_converter_pasted_warnings: 'Pasted and converted: {title}, with {count} warnings'
     },
     ja: {
         // Page meta
@@ -135,7 +145,12 @@ const MacroConverterTranslations = {
         macro_converter_load_error: '翻訳データの読み込みに失敗しました。「再試行」を押してもう一度お試しください。',
         macro_converter_copied: 'コピーしました',
         macro_converter_copy_error: 'コピーに失敗しました。テキストを手動で選択してください',
-        macro_converter_paste_error: 'クリップボードを読み取れません。入力欄に直接貼り付けてください（Ctrl+V または長押し）'
+        macro_converter_paste_error: 'クリップボードを読み取れません。入力欄に直接貼り付けてください（Ctrl+V または長押し）',
+
+        // Read to screen readers after 貼り付け ({title} is the output title, {count} is how many warnings are listed)
+        macro_converter_pasted: '貼り付けて変換しました：{title}',
+        macro_converter_pasted_warning_one: '貼り付けて変換しました：{title}。注意点が {count} 件あります',
+        macro_converter_pasted_warnings: '貼り付けて変換しました：{title}。注意点が {count} 件あります'
     }
 };
 

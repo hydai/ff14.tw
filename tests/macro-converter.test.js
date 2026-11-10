@@ -571,7 +571,7 @@ test('複製之後輸出變了（改目標語言、打字、貼上、清除）�
     // 「✓ 已複製」說的是剛才複製的那一份輸出：輸出變了就不是它了，按鈕變回「複製」，前一次的計時也取消（之後不會再有計時去改按鈕）
     const assertBack = (when) => {
         assert.equal(copy.textContent, '複製', `${when}：按鈕變回「複製」`);
-        assert.deepEqual(page.pendingDelays(), [], `${when}：計時取消了`);
+        assert.deepEqual(page.pendingDelays().filter((delay) => delay === 2000), [], `${when}：計時取消了`);
     };
 
     page.type(MUSCLE_MEMORY);
@@ -591,6 +591,7 @@ test('複製之後輸出變了（改目標語言、打字、貼上、清除）�
     await page.settle();
     assert.equal(page.output(), '/mlock', '貼上換掉了輸入與輸出');
     assertBack('貼上');
+    page.runTimeouts(); // 貼上的朗讀（隔 100 毫秒才寫進朗讀區）
 
     // 清除：輸出清空，沒有東西可以複製，複製是 aria-disabled，不能同時寫「✓ 已複製」又不能按
     await copyNow();
@@ -905,6 +906,170 @@ test('貼上時剪貼簿裡沒有字（空的、只有空白）：輸入框與�
     isSame(empty.document.activeElement, empty.$('inputMacro'));
     assert.deepEqual(empty.consoleErrors, []);
     assert.deepEqual(page.consoleErrors, []);
+});
+
+test('貼上成功：給螢幕閱讀器一句結果（目標語言、行數、要注意幾條），寫在看不到的朗讀區，不跳 toast', async () => {
+    // 成功時焦點留在「貼上」上（不彈出手機的鍵盤），螢幕閱讀器念不到輸出框：沒有這一句，要自己移到輸出框才知道轉出了什麼
+    const page = await createMacroPage();
+    const paste = page.$('pasteInput');
+    const announce = page.$('pasteAnnounce');
+    const pasteText = async (clipboard) => {
+        page.clipboardText = clipboard;
+        paste.focus();
+        paste.click();
+        await page.settle();
+    };
+    assert.equal(announce.textContent, '', '一打開是空的');
+
+    await pasteText(`${MUSCLE_MEMORY}\n/mlock`);
+    // 先清空、隔 100 毫秒才寫進去（同 FF14Utils.showToast）：朗讀區已經在頁面上才換字，螢幕閱讀器才會念
+    assert.equal(announce.textContent, '');
+    assert.deepEqual(page.pendingDelays(), [100]);
+    page.runTimeouts();
+    assert.equal(announce.textContent, '已貼上並轉換：繁體中文・2 行', '標題列的字');
+    isSame(page.document.activeElement, paste, '焦點還在「貼上」');
+
+    // 要注意幾條：一條、兩條；超過 15 行的提醒也算一條（就是輸出框的說明念的那幾條）
+    await pasteText('/foo');
+    page.runTimeouts();
+    assert.equal(announce.textContent, '已貼上並轉換：繁體中文・1 行，有 1 條要注意');
+    await pasteText(WITH_PROBLEMS);
+    page.runTimeouts();
+    assert.equal(announce.textContent, '已貼上並轉換：繁體中文・3 行，有 2 條要注意');
+    await pasteText(`/foo\n${macroLines(17)}`);
+    page.runTimeouts();
+    assert.equal(page.warnings().length, 2);
+    assert.equal(announce.textContent, '已貼上並轉換：繁體中文・18 行，有 2 條要注意');
+
+    // 目標語言是英文：照標題列寫英文
+    chooseTarget(page, 'en');
+    await pasteText(MUSCLE_MEMORY);
+    page.runTimeouts();
+    assert.equal(announce.textContent, '已貼上並轉換：英文・1 行');
+
+    // 同一份巨集再貼一次：按下去先清空、再寫進同一句，螢幕閱讀器才會再念一次
+    await pasteText(MUSCLE_MEMORY);
+    assert.equal(announce.textContent, '', '按下去就先清空');
+    page.runTimeouts();
+    assert.equal(announce.textContent, '已貼上並轉換：英文・1 行');
+    assert.deepEqual(page.toasts, [], '畫面上看得到結果，不跳 toast');
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('貼上的朗讀只說這一次貼上的結果：讀不到時、重新轉換時清掉，還沒念到就換了也不念舊的', async () => {
+    const page = await createMacroPage();
+    const paste = page.$('pasteInput');
+    const announce = page.$('pasteAnnounce');
+    const pasteText = async (clipboard) => {
+        page.clipboardText = clipboard;
+        paste.click();
+        await page.settle();
+    };
+    const announced = async (clipboard) => {
+        await pasteText(clipboard);
+        page.runTimeouts();
+        assert.notEqual(announce.textContent, '', `貼上「${clipboard}」之後有一句結果`);
+    };
+
+    // 讀不到剪貼簿、剪貼簿沒有字：念的是 toast「沒辦法讀取剪貼簿…」，朗讀區清空，不會留著上一次的結果
+    await announced(MUSCLE_MEMORY);
+    page.clipboardMode = 'reject';
+    paste.click();
+    await page.settle();
+    assert.equal(announce.textContent, '', '讀不到');
+    page.clipboardMode = 'ok';
+    await announced(MUSCLE_MEMORY);
+    await pasteText('   ');
+    assert.equal(announce.textContent, '', '沒有字');
+    assert.deepEqual(page.pendingDelays(), [], '也不會晚一點才念');
+    assert.equal(page.toasts.length, 2);
+
+    // 重新轉換（打字、改目標語言、清除）：那一句說的不再是現在的輸出，清掉；
+    // 輸出一樣也清掉（/mlock 換成英文還是 /mlock，但那一句寫的是繁體中文）
+    const changes = [
+        ['打字', () => page.type('/ac Innovation <wait.2>')],
+        ['改目標語言、輸出一樣', () => chooseTarget(page, 'en')],
+        ['清除', () => page.$('clearInput').click()]
+    ];
+    for (const [when, change] of changes) {
+        chooseTarget(page, 'zh');
+        await announced('/mlock');
+        change();
+        assert.equal(announce.textContent, '', when);
+    }
+
+    // 還沒念到（100 毫秒內）就打字：取消，不念舊的結果
+    await pasteText(MUSCLE_MEMORY);
+    page.type('/mlock');
+    assert.deepEqual(page.pendingDelays(), []);
+    page.runTimeouts();
+    assert.equal(announce.textContent, '');
+
+    // 連按兩次「貼上」：前一次還沒念的取消，只念後面那一次
+    await pasteText(MUSCLE_MEMORY);
+    await pasteText(WITH_PROBLEMS);
+    assert.deepEqual(page.pendingDelays(), [100]);
+    page.runTimeouts();
+    assert.equal(announce.textContent, '已貼上並轉換：繁體中文・3 行，有 2 條要注意');
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('貼上的朗讀跟著網站介面語言：英文照單複數，日文；文字在要念的時候才取', async () => {
+    const EXPECTED = {
+        en: [
+            'Pasted and converted: Traditional Chinese · 1 line',
+            'Pasted and converted: Traditional Chinese · 1 line, with 1 warning',
+            'Pasted and converted: Traditional Chinese · 3 lines, with 2 warnings'
+        ],
+        ja: [
+            '貼り付けて変換しました：繁体字中国語・1 行',
+            '貼り付けて変換しました：繁体字中国語・1 行。注意点が 1 件あります',
+            '貼り付けて変換しました：繁体字中国語・3 行。注意点が 2 件あります'
+        ]
+    };
+    for (const [lang, expected] of Object.entries(EXPECTED)) {
+        const page = await createMacroPage({ lang });
+        const announce = page.$('pasteAnnounce');
+        for (const [index, clipboard] of [MUSCLE_MEMORY, '/foo', WITH_PROBLEMS].entries()) {
+            page.clipboardText = clipboard;
+            page.$('pasteInput').click();
+            await page.settle();
+            page.runTimeouts();
+            assert.equal(announce.textContent, expected[index], `${lang}：${clipboard}`);
+        }
+
+        // 按下去之後、剪貼簿的結果回來之前切換語言，與結果回來之後、念之前（100 毫秒內）切換語言：都用切換之後的語言
+        const zh = await createMacroPage();
+        zh.clipboardText = MUSCLE_MEMORY;
+        zh.$('pasteInput').click();
+        zh.setLang(lang);
+        await zh.settle();
+        zh.runTimeouts();
+        assert.equal(zh.$('pasteAnnounce').textContent, expected[0], `${lang}：結果回來之前切換`);
+        const late = await createMacroPage();
+        late.clipboardText = MUSCLE_MEMORY;
+        late.$('pasteInput').click();
+        await late.settle();
+        late.setLang(lang);
+        late.runTimeouts();
+        assert.equal(late.$('pasteAnnounce').textContent, expected[0], `${lang}：念之前切換`);
+    }
+});
+
+test('index.html：貼上的朗讀區在輸入卡片裡，看不到、一開始是空的、role="status"', async () => {
+    const page = await createMacroPage();
+    const announce = page.$('pasteAnnounce');
+    assert.ok(announce, '#pasteAnnounce 不在');
+    assert.ok(page.$('inputMacro').closest('.macro-panel').contains(announce), '在輸入卡片裡（「貼上」那一張）');
+    const attrs = tagAttrs(HTML, 'pasteAnnounce');
+    assert.ok(attrs.class.split(/\s+/).includes('visually-hidden'), '看不到：畫面上輸出框與要注意的行本來就看得到');
+    assert.equal(attrs.role, 'status');
+    assert.equal(attrs['aria-live'], 'polite');
+    // 不能 hidden：藏起來的元素螢幕閱讀器也念不到
+    assert.doesNotMatch(openTag('pasteAnnounce'), /\shidden(?=[\s>])/);
+    assert.match(HTML, /<p\b[^>]*\sid="pasteAnnounce"[^>]*><\/p>/, '一開始是空的');
+    const at = (id) => HTML.indexOf(`id="${id}"`);
+    assert.ok(at('pasteInput') < at('pasteAnnounce') && at('pasteAnnounce') < at('inputMacro'), '在「貼上」與輸入框中間');
 });
 
 test('清除：清空輸入與輸出，標題列只剩語言名稱，要注意的行收起來，焦點回到輸入框', async () => {
@@ -1303,7 +1468,10 @@ test('翻譯檔：三語的鍵與 {參數} 一致，拿掉的鍵不在了，頁�
         macro_converter_load_error: '載入翻譯資料失敗，請按「重試」再試一次。',
         macro_converter_copied: '已複製',
         macro_converter_copy_error: '複製失敗，請手動選取文字',
-        macro_converter_paste_error: '沒辦法讀取剪貼簿，請直接在框裡貼上（Ctrl+V 或長按）'
+        macro_converter_paste_error: '沒辦法讀取剪貼簿，請直接在框裡貼上（Ctrl+V 或長按）',
+        macro_converter_pasted: '已貼上並轉換：{title}',
+        macro_converter_pasted_warning_one: '已貼上並轉換：{title}，有 {count} 條要注意',
+        macro_converter_pasted_warnings: '已貼上並轉換：{title}，有 {count} 條要注意'
     };
     assert.deepEqual(Object.fromEntries(values.zh), ZH);
 
@@ -1321,6 +1489,9 @@ test('翻譯檔：三語的鍵與 {參數} 一致，拿掉的鍵不在了，頁�
     assert.deepEqual(params(values.zh.get('macro_converter_line_one')), ['{count}']);
     assert.deepEqual(params(values.zh.get('macro_converter_lines')), ['{count}']);
     assert.deepEqual(params(values.zh.get('macro_converter_output_title')), ['{lang}', '{lines}']);
+    assert.deepEqual(params(values.zh.get('macro_converter_pasted')), ['{title}']);
+    assert.deepEqual(params(values.zh.get('macro_converter_pasted_warning_one')), ['{count}', '{title}']);
+    assert.deepEqual(params(values.zh.get('macro_converter_pasted_warnings')), ['{count}', '{title}']);
 
     // 拿掉的鍵三語都不在
     const REMOVED = ['macro_converter_convert', 'macro_converter_warning', 'macro_converter_auto_detect_hint',
@@ -1333,6 +1504,9 @@ test('翻譯檔：三語的鍵與 {參數} 一致，拿掉的鍵不在了，頁�
     assert.equal(values.en.get('macro_converter_line_one'), '{count} line');
     assert.equal(values.en.get('macro_converter_lines'), '{count} lines');
     assert.equal(values.ja.get('macro_converter_line_one'), values.ja.get('macro_converter_lines'));
+    // 貼上的朗讀：要注意的條數一樣是英文有單複數
+    assert.notEqual(values.en.get('macro_converter_pasted_warning_one'), values.en.get('macro_converter_pasted_warnings'));
+    assert.equal(values.ja.get('macro_converter_pasted_warning_one'), values.ja.get('macro_converter_pasted_warnings'));
     // 輸出標題列的符號是每種語言自己的翻譯：中文、日文是「・」（U+30FB，前後沒有空格），英文是前後各一個空格的「 · 」（U+00B7）
     assert.equal(values.ja.get('macro_converter_output_title'), '{lang}・{lines}');
     assert.equal(values.en.get('macro_converter_output_title'), '{lang} · {lines}');
