@@ -5,11 +5,15 @@
 // 手機（768px 以下）五組欄位用分頁切換（script.js 用 hidden 切換面板），電腦五組都顯示；預覽的位置、sticky 與分頁列的顯示都在 style.css。
 // 記住：每一次讀寫都由 CardState 包 try/catch；瀏覽器封鎖網站資料時連 window.localStorage 本身都會丟例外，所以取 storage 也包 try，
 // 取不到就傳 null（CardState 當成讀不到、寫不進去），這次打開期間照常運作，只是不記住。
+// 角色圖：上傳的圖由 card-image.js 縮小、轉成 JPEG（卡片畫的與瀏覽器記住的是同一張：轉出來之後再讀回來才用），位置與縮放存在 state.crops
+// （每個版型各一份）。卡片上拖曳（pointer 事件）：滑鼠直接拖；手指從卡片上滑要能捲動頁面，所以只有按了「調整圖片」（調整模式，觸控為主的裝置才有）才拖，
+// 其他時候 pointerdown 什麼都不做。上傳、還原都用流水號（imageToken）：同時有好幾次在讀，只有最新的算數。
 // 字型：Google Fonts 的中文字型依字分批載入，沒載入的字會退成別的字型，所以每畫一次就看有沒有還沒請求過的字，有就請瀏覽器載入（這一次請求的算一批）；
 // 這一批載入完（失敗也算：卡片用備用字型）就重畫一次，不等別批。fontsReady() 等到請求過的每一批都載入完並重畫過：等的時候又請求的也等，
 // 先請求的那一批比後請求的慢（後請求的先載完）也一樣，下載、分享、複製之前要等它。
 class CharacterCardApp {
     static PHONE_QUERY = '(max-width: 768px)';
+    static COARSE_QUERY = '(pointer: coarse)';
     static CLEAR_CONFIRM_MS = 3000;
     static CUSTOM_WORLD = '__custom';
     static ICON_DIR = '../../assets/images/se/FFXIVJobIcons/';
@@ -68,6 +72,15 @@ class CharacterCardApp {
         roleplay: ['char_card_like_roleplay', '角色扮演'],
         fishing: ['char_card_like_fishing', '釣魚']
     };
+    // 角色圖狀態那一行寫的句子（setImageStatus 的名字）→ [翻譯鍵, 中文預設文字]；翻譯鍵一律寫成完整的字串，不用組的
+    static IMAGE_STATUS = new Map([
+        ['processing', ['char_card_image_processing', '處理中…']],
+        ['uploaded', ['char_card_image_uploaded', '已上傳']],
+        ['not_saved', ['char_card_image_not_saved', '這張圖太大，這次不會記住，重新整理後要再上傳。']],
+        ['failed', ['char_card_image_failed', '這個檔案讀不出來，請換一張圖片。']],
+        ['removed', ['char_card_image_removed', '已移除圖片']],
+        ['restore_failed', ['char_card_image_restore_failed', '上次的圖片讀不出來，請重新上傳。']]
+    ]);
     // 遊玩時段的日子與時段：form 是表單上的全名（勾選框的名稱），card 是畫在卡片上的短標籤（英文的全名縮在卡片上小到看不清）
     static DAY_LABELS = {
         weekday: { form: ['char_card_day_weekday', '平日'], card: ['char_card_card_day_weekday', '平日'] },
@@ -89,7 +102,8 @@ class CharacterCardApp {
             storage = null;
         }
         this.storage = storage;
-        this.state = CardState.load(this.storage, this.jobs).state;
+        const loaded = CardState.load(this.storage, this.jobs);
+        this.state = loaded.state;
 
         // 職業圖示：職業鍵 → { image }，每個只載入一次（載入失敗也留著，不再請求）
         this.icons = new Map();
@@ -97,6 +111,14 @@ class CharacterCardApp {
         this.fontChars = new Map();
         this.fontBatches = new Set();
         this.clearTimer = null;
+        // 角色圖：image 是畫卡片用的 { source, width, height }（縮過、轉成 JPEG 再讀回來的那一張）或 null；imageToken 是上傳與還原的流水號
+        // （每開始一次、圖片拿掉與清除全部都加一，慢的那一次回來發現流水號變了就不算）；imageStatus 是狀態那一行現在寫的句子（IMAGE_STATUS 的名字，
+        // null 是空的，換語言時照它重寫）；adjusting 是調整模式；drag 是拖曳到一半的狀態 { pointerId, x, y, crop }，沒在拖是 null
+        this.image = null;
+        this.imageToken = 0;
+        this.imageStatus = null;
+        this.adjusting = false;
+        this.drag = null;
 
         const byId = (id) => document.getElementById(id);
         this.elements = {
@@ -124,7 +146,15 @@ class CharacterCardApp {
             accentCustom: byId('accentCustom'),
             accentColor: byId('accentColor'),
             clearAll: byId('clearAll'),
-            canvas: byId('cardCanvas')
+            canvas: byId('cardCanvas'),
+            imageInput: byId('cardImageInput'),
+            imageStatus: byId('cardImageStatus'),
+            imageZoom: byId('imageZoom'),
+            imageZoomValue: byId('imageZoomValue'),
+            imageCenter: byId('imageCenter'),
+            imageFill: byId('imageFill'),
+            imageRemove: byId('imageRemove'),
+            imageAdjust: byId('imageAdjust')
         };
         this.formatButtons = new Map([['landscape', byId('formatLandscape')], ['portrait', byId('formatPortrait')]]);
         this.likeChips = this.chipsOf(this.elements.likes, 'like');
@@ -136,11 +166,13 @@ class CharacterCardApp {
         this.buildSubJobs();
         this.bindEvents();
         this.initTabs();
+        this.initImage();
         this.relabel();
         this.syncForm();
         this.render();
-        // ready：第一次畫好、字型載入完並重畫過
-        this.ready = this.fontsReady();
+        // 存著的圖片讀回來（讀好重畫一次，讀不出來就丟掉）。ready：第一次畫好、字型載入完並重畫過、存著的圖片讀回來了（失敗也算）
+        this.restored = this.restoreImage(loaded.image);
+        this.ready = Promise.all([this.restored, this.fontsReady()]).then(() => undefined);
     }
 
     t(key, fallback, params) {
@@ -239,6 +271,16 @@ class CharacterCardApp {
         for (const [format, button] of this.formatButtons) button.addEventListener('click', () => this.update({ format }));
 
         this.elements.clearAll.addEventListener('click', () => this.handleClear());
+
+        // 角色圖：按鈕，與卡片上的拖曳（pointer 事件：按下去、移動、放開、被取消、抓取被拿走都要結束這一次拖曳）
+        const { canvas, imageCenter, imageFill, imageRemove, imageAdjust } = this.elements;
+        imageCenter.addEventListener('click', () => this.setCrop({ x: 0, y: 0 }, { save: true }));
+        imageFill.addEventListener('click', () => this.setCrop({ x: 0, y: 0, zoom: 1 }, { save: true }));
+        imageRemove.addEventListener('click', () => this.removeImage());
+        imageAdjust.addEventListener('click', () => this.setAdjusting(!this.adjusting));
+        canvas.addEventListener('pointerdown', (event) => this.startDrag(event));
+        canvas.addEventListener('pointermove', (event) => this.moveDrag(event));
+        for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) canvas.addEventListener(type, (event) => this.endDrag(event));
         // 切換語言：靜態的文字由 I18nManager 換，這裡換 JS 畫的（選項、按鈕、計數、勾選框的名稱），再用新的語言重畫卡片；選的值不變
         window.i18n.onLanguageChange(() => {
             this.relabel();
@@ -268,6 +310,10 @@ class CharacterCardApp {
             this.update({ level: target.value });
         } else if (target.id === 'accentColor') {
             this.update({ accent: target.value });
+        } else if (target.id === 'imageZoom') {
+            // 拖滑桿的過程只重畫，放開（change）才存
+            const zoom = Number(target.value) / 100;
+            if (Number.isFinite(zoom)) this.setCrop({ zoom }, { save: false });
         }
     }
 
@@ -284,6 +330,10 @@ class CharacterCardApp {
             target.value = String(this.state.level);
         } else if (target.id === 'accentAuto' || target.id === 'accentCustom') {
             if (target.checked === true) this.update({ accent: target.id === 'accentAuto' ? 'auto' : this.elements.accentColor.value });
+        } else if (target.id === 'imageZoom') {
+            CardState.save(this.storage, this.state);
+        } else if (target.id === 'cardImageInput') {
+            this.chooseImage(target);
         } else if (target.getAttribute('type') === 'checkbox' && this.elements.hours.contains(target)) {
             this.toggleHour(target);
         }
@@ -351,10 +401,12 @@ class CharacterCardApp {
         this.renderClearButton();
     }
 
-    // 清空欄位與記憶（欄位與圖片兩個鍵），回到什麼都沒填的卡片
+    // 清空欄位、角色圖（還在讀的也不算了）與記憶（欄位與圖片兩個鍵），回到什麼都沒填的卡片
     clearAll() {
         CardState.clear(this.storage);
         this.state = CardState.defaults();
+        this.dropImage();
+        this.setImageStatus(null);
         this.syncForm();
         this.render();
         FF14Utils.showToast(this.t('char_card_cleared', '已清除全部資料'));
@@ -418,6 +470,8 @@ class CharacterCardApp {
             tab.classList.toggle('active', on);
             panel.hidden = phone && !on;
         }
+        // 調整模式只在圖片那一組：切到別組就結束（不然卡片一直攔截手指，手機上滑不動頁面）
+        if (key !== 'image') this.setAdjusting(false);
         if (focus) chosen.tab.focus();
     }
 
@@ -479,12 +533,27 @@ class CharacterCardApp {
             button.setAttribute('aria-pressed', on ? 'true' : 'false');
             button.classList.toggle('active', on);
         }
+        this.syncImage();
         const custom = state.accent !== 'auto';
         this.elements.accentAuto.checked = !custom;
         this.elements.accentCustom.checked = custom;
         // 跟著職能時色票顯示現在用的顏色；自己選的顏色是使用者剛動過的，不再寫回去（色票開著時寫回去會跳）
         if (!custom) this.elements.accentColor.value = CardState.accentOf(state, this.jobs);
         this.renderCounters();
+    }
+
+    // 角色圖的控制項：沒有圖片時縮放、置中、填滿、移除、調整都不能按；滑桿與百分比跟著這個版型的縮放（沒有圖片寫預設的 100%，存著的位置要有圖片才用得上）；
+    // 「調整圖片」只有觸控為主的裝置才顯示；卡片有圖片時才有拖曳的游標（.has-image）
+    syncImage() {
+        const { elements } = this;
+        const has = this.image !== null;
+        const percent = Math.round((has ? CardState.cropOf(this.state).zoom : 1) * 100);
+        for (const control of [elements.imageZoom, elements.imageCenter, elements.imageFill, elements.imageRemove, elements.imageAdjust]) control.disabled = !has;
+        elements.imageZoom.value = String(percent);
+        elements.imageZoom.setAttribute('aria-valuetext', `${percent}%`);
+        elements.imageZoomValue.textContent = `${percent}%`;
+        elements.imageAdjust.hidden = !this.isCoarse();
+        elements.canvas.classList.toggle('has-image', has);
     }
 
     // 一組切換按鈕：選了的 aria-pressed 與 .active 一起換；滿了（max）時沒選的都不能按，locked（主職）永遠不能按
@@ -536,12 +605,259 @@ class CharacterCardApp {
             }));
         }
         this.renderClearButton();
+        this.renderAdjustButton();
+        this.renderImageStatus();
         this.renderCounters();
     }
 
     // [翻譯鍵, 中文預設文字] → 目前介面語言的字
     label([key, fallback]) {
         return this.t(key, fallback);
+    }
+
+    // ---------- 角色圖 ----------
+
+    initImage() {
+        // 讀圖與建 canvas 交給 CardImage（它不碰 DOM）
+        this.imageDeps = {
+            loadImage: (input) => this.loadImage(input),
+            createCanvas: (width, height) => this.createCanvas(width, height)
+        };
+        // 觸控為主的裝置才有「調整圖片」；沒有 matchMedia 的環境當成滑鼠
+        this.coarse = window.matchMedia ? window.matchMedia(CharacterCardApp.COARSE_QUERY) : null;
+        if (this.coarse) this.coarse.addEventListener('change', () => this.followPointer());
+    }
+
+    isCoarse() {
+        return this.coarse !== null && this.coarse.matches === true;
+    }
+
+    // 裝置變成不是觸控為主（例如平板接上滑鼠）：「調整圖片」藏起來，調整模式也要結束，不然卡片一直攔截手指，又沒有「完成」可以按
+    followPointer() {
+        if (!this.isCoarse()) this.setAdjusting(false);
+        this.syncImage();
+    }
+
+    // File（或 data URL 字串）→ 解碼好的圖 { source, width, height }。File 先轉成 blob: 網址，圖載入完（成功或失敗）就撤掉：
+    // 撤得太早圖會讀不到，不撤會一直占著記憶體。沒有固有大小的圖（沒寫寬高的 SVG）width、height 是 0，由 CardImage 擋下來
+    loadImage(input) {
+        return new Promise((resolve, reject) => {
+            const image = new Image();
+            const url = typeof input === 'string' ? input : URL.createObjectURL(input);
+            const release = () => {
+                if (url !== input) URL.revokeObjectURL(url);
+            };
+            image.onload = () => {
+                release();
+                resolve({ source: image, width: image.naturalWidth, height: image.naturalHeight });
+            };
+            image.onerror = () => {
+                release();
+                reject(new Error('圖片讀不出來'));
+            };
+            image.src = url;
+        });
+    }
+
+    // 縮圖用的 canvas（不放進頁面）
+    createCanvas(width, height) {
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        return canvas;
+    }
+
+    // 選了檔案（<input type="file"> 的 change）：先拿出檔案再清掉輸入框，同一個檔案再選一次才會有 change；在選檔視窗按取消沒有檔案，什麼都不做
+    chooseImage(input) {
+        const file = input.files && input.files.length > 0 ? input.files[0] : null;
+        input.value = '';
+        if (file !== null) this.uploadImage(file);
+    }
+
+    /**
+     * 上傳一張圖：縮小、轉成 JPEG（CardImage.prepare），再把轉出來的讀回來，卡片畫的、瀏覽器記的都是這一張；新的圖從填滿置中開始
+     * （舊的位置與縮放是照上一張調的）。要等好幾個步驟，使用者可能已經選了別張、移除了圖片或清除全部：每個步驟之後看流水號，
+     * 不是自己這一次就收手（只有最新的一次算數）。讀不出來時現在的圖片照舊。不丟例外。
+     * @param {File} file
+     */
+    async uploadImage(file) {
+        const token = ++this.imageToken;
+        this.setImageStatus('processing');
+        let prepared;
+        let picture;
+        try {
+            prepared = await CardImage.prepare(file, this.imageDeps);
+            if (token !== this.imageToken) return;
+            picture = await CardImage.fromDataUrl(prepared.dataUrl, this.imageDeps);
+            if (token !== this.imageToken) return;
+        } catch (error) {
+            // 只有讀圖、縮圖、轉換失敗算「這個檔案讀不出來」；後面換圖、存檔、重畫出的問題不是檔案的錯
+            if (token === this.imageToken) this.setImageStatus('failed');
+            return;
+        }
+        this.image = picture;
+        this.state = CardState.normalize({ ...this.state, crops: {} }, this.jobs);
+        CardState.save(this.storage, this.state);
+        this.setImageStatus(this.rememberImage(prepared.dataUrl) ? 'uploaded' : 'not_saved');
+        this.syncImage();
+        this.render();
+    }
+
+    /**
+     * 打開頁面時把記住的圖片讀回來。讀不出來（記著的內容壞了）就丟掉並說明，下次打開不會再失敗一次。
+     * 讀的時候使用者已經上傳了新的（或移除、清除全部）就不算。不丟例外。
+     * @param {string | null} dataUrl - CardState.load 讀到的；沒有是 null
+     */
+    async restoreImage(dataUrl) {
+        if (dataUrl === null) return;
+        const token = ++this.imageToken;
+        try {
+            const picture = await CardImage.fromDataUrl(dataUrl, this.imageDeps);
+            if (token !== this.imageToken) return;
+            this.image = picture;
+        } catch (error) {
+            if (token !== this.imageToken) return;
+            CardState.saveImage(this.storage, null);
+            this.setImageStatus('restore_failed');
+        }
+        this.syncImage();
+        this.render();
+    }
+
+    // 記住圖片，回傳「用不著特別說這次記不住」：沒有儲存空間（瀏覽器封鎖網站資料）什麼都記不住，不算這張圖的問題；
+    // 有儲存空間卻存不進去（容量已滿）是 false，這時把以前存的那一張也拿掉，不然重新整理之後會冒出已經換掉的舊圖
+    rememberImage(dataUrl) {
+        if (this.storage === null || CardState.saveImage(this.storage, dataUrl)) return true;
+        CardState.saveImage(this.storage, null);
+        return false;
+    }
+
+    // 移除圖片：回到預設背景，記住的圖片刪掉。按鈕按下去就不能按了，所以焦點移到上傳（鍵盤才接得下去）
+    removeImage() {
+        if (this.image === null) return;
+        this.dropImage();
+        CardState.saveImage(this.storage, null);
+        this.setImageStatus('removed');
+        this.syncImage();
+        this.render();
+        this.elements.imageInput.focus();
+    }
+
+    // 圖片拿掉（移除圖片、清除全部）：還在讀的上傳與還原都不算了，檔案輸入清空，拖曳與調整模式結束（卡片不再攔截手指）。呼叫端自己重畫
+    dropImage() {
+        this.imageToken += 1;
+        this.image = null;
+        this.elements.imageInput.value = '';
+        this.stopDrag({ save: false });
+        this.setAdjusting(false);
+    }
+
+    // 狀態那一行：name 是 IMAGE_STATUS 的名字，null 是清空。換語言時照 imageStatus 重寫
+    setImageStatus(name) {
+        this.imageStatus = name;
+        this.renderImageStatus();
+    }
+
+    renderImageStatus() {
+        const entry = this.imageStatus === null ? undefined : CharacterCardApp.IMAGE_STATUS.get(this.imageStatus);
+        this.elements.imageStatus.textContent = entry ? this.label(entry) : '';
+    }
+
+    // ---------- 角色圖的位置與縮放、拖曳 ----------
+
+    /**
+     * 改這個版型的位置與縮放（patch 蓋在目前的上面，整理過再寫回 state.crops；另一個版型的不動），重畫。
+     * 拖曳與拖滑桿的過程 save 是 false，只重畫，放開才存。沒有圖片時什麼都不做。
+     * @param {{x?: number, y?: number, zoom?: number}} patch
+     * @param {{save: boolean}} options
+     */
+    setCrop(patch, { save }) {
+        if (this.image === null) return;
+        const key = CardState.cropKey(this.state);
+        const crops = { ...this.state.crops, [key]: { ...CardState.cropOf(this.state), ...patch } };
+        this.state = CardState.normalize({ ...this.state, crops }, this.jobs);
+        if (save) CardState.save(this.storage, this.state);
+        this.syncImage();
+        this.render();
+    }
+
+    // 調整模式（觸控為主的裝置）：卡片上拖曳才會移動圖片，平常手指在卡片上滑頁面照常捲。卡片加 .is-adjusting（touch-action: none；
+    // 要在手指按下去之前就設好才有用，所以按「調整圖片」的當下就加）。按鈕的字說了狀態，不另外用 aria-pressed。結束時拖到一半的也結束
+    setAdjusting(on) {
+        const next = on === true && this.image !== null;
+        if (next === this.adjusting) return;
+        this.adjusting = next;
+        this.elements.canvas.classList.toggle('is-adjusting', next);
+        if (!next) this.stopDrag({ save: true });
+        this.renderAdjustButton();
+    }
+
+    renderAdjustButton() {
+        this.elements.imageAdjust.textContent = this.adjusting
+            ? this.t('char_card_image_adjust_done', '完成')
+            : this.t('char_card_image_adjust', '調整圖片');
+    }
+
+    // 卡片上按下去：有圖片，而且是滑鼠左鍵、或在調整模式（手指、筆）才開始拖。其他情況什麼都不做，也不 preventDefault：手指在卡片上滑，頁面照常捲
+    startDrag(event) {
+        if (this.image === null) return;
+        const mouse = event.pointerType === 'mouse' && event.button === 0;
+        if (!mouse && !this.adjusting) return;
+        // 拖的時候別的 pointer（另一根手指）按下去不理；同一個 pointer 又按下去，是上一次的放開沒收到，結束它再重新開始
+        if (this.drag !== null) {
+            if (this.drag.pointerId !== event.pointerId) return;
+            this.stopDrag({ save: true });
+        }
+        try {
+            // 抓住這個 pointer：移到卡片外面也繼續收到移動與放開。瀏覽器對已經不在作用的 pointer 會丟例外，抓不到照樣拖
+            this.elements.canvas.setPointerCapture(event.pointerId);
+        } catch (error) {
+            // 不處理
+        }
+        this.drag = { pointerId: event.pointerId, x: event.clientX, y: event.clientY, crop: CardState.cropOf(this.state) };
+        this.elements.canvas.classList.add('is-dragging');
+        event.preventDefault();
+    }
+
+    // 拖：一律從按下去那一刻的位置與座標算（不是一段一段累加）。滑鼠與手指的座標是 CSS 像素，卡片的座標是 canvas 像素，差 canvas.width / 畫面上的寬度。
+    // 卡片藏起來（畫面上的寬度是 0）時不算
+    moveDrag(event) {
+        const { drag, image } = this;
+        if (drag === null || event.pointerId !== drag.pointerId || image === null) return;
+        // 滑鼠的按鍵已經放開（buttons 是 0），放開的事件卻沒收到（例如 macOS 上拖到一半按著 Ctrl 跳出右鍵選單，放開被選單吃掉）：
+        // 這一次移動不算，拖曳到此為止，照一般的結束存起來，並放掉抓取（不然滑鼠移到哪裡，事件都一直送到卡片上）；
+        // 不然滑鼠只是移過卡片，圖片就一直跟著動。手指與筆（調整模式）照舊不看 buttons
+        if (event.pointerType === 'mouse' && event.buttons === 0) {
+            this.stopDrag({ save: true, release: true });
+            return;
+        }
+        const { canvas } = this.elements;
+        const rect = canvas.getBoundingClientRect();
+        if (!(rect.width > 0)) return;
+        const scale = canvas.width / rect.width;
+        const crop = CardLayout.dragCrop(drag.crop, (event.clientX - drag.x) * scale, (event.clientY - drag.y) * scale, image.width, image.height, canvas.width, canvas.height);
+        this.setCrop(crop, { save: false });
+    }
+
+    // 放開、被取消、抓取被拿走：結束這一次拖曳（三個事件常常連著來，第二個起 drag 已經是 null，什麼都不做，所以只存一次）
+    endDrag(event) {
+        if (this.drag !== null && event.pointerId === this.drag.pointerId) this.stopDrag({ save: true });
+    }
+
+    // 結束拖曳。save：把現在的位置存起來；release：放掉指標抓取（放開、取消、抓取被拿走時瀏覽器已經放掉了，不用；放開的事件沒收到時還抓著，要自己放）
+    stopDrag({ save, release = false }) {
+        if (this.drag === null) return;
+        const { pointerId } = this.drag;
+        this.drag = null;
+        this.elements.canvas.classList.remove('is-dragging');
+        if (release) {
+            try {
+                this.elements.canvas.releasePointerCapture(pointerId);
+            } catch (error) {
+                // 沒抓著，或瀏覽器認為這個 pointer 已經不在作用：不處理
+            }
+        }
+        if (save) CardState.save(this.storage, this.state);
     }
 
     // ---------- 畫卡片 ----------
@@ -568,7 +884,7 @@ class CharacterCardApp {
             },
             intro: state.intro,
             accent: CardState.accentOf(state, this.jobs),
-            image: null, // 角色圖：後面的 Task 接上
+            image: this.image,
             crop: CardState.cropOf(state),
             levelLabel: CharacterCardApp.LEVEL_LABEL,
             mark: CharacterCardApp.MARK,

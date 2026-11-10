@@ -7,6 +7,7 @@
 //   page.chip('cardLikes', 'msq').click(); page.key('ArrowRight', page.$('tab-basic')); page.setLang('ja'); page.setNarrow(false);
 //   page.texts(); page.drawCalls(); page.stored; page.toasts; page.consoleErrors; await page.flush();
 //   const again = await page.reopen();
+//   page.pick(page.file({ width: 4000, height: 1500 })); await page.flush(); page.slide(150); page.drag([[300, 200], [330, 205]]); page.pointer('down', { pointerType: 'touch' });
 //
 // - 照 index.html 建出 #cardTool（mountFromHtml），照 index.html 的 <script src> 順序載入這個工具的翻譯檔、共用的 ff14-game-data.js 與 modal-manager.js、
 //   工具目錄自己的每一個腳本（src 不含 /：card-state.js、card-layout.js、card-renderer.js、script.js…），最後 new CharacterCardApp()，
@@ -32,11 +33,31 @@
 //   （同一次 getContext）請求的 load() 算一批（頁面每畫一次就請求一批），heldFontBatches() 是還在等的每一批（照請求的順序，每一批是 [{ font, text }]）；
 //   releaseFonts() 讓還在等的每一批回來，releaseFonts(index) 只放行還在等的第 index 批（0 起算），模擬後請求的字型先載完、慢的那一批還在等；
 //   第二個參數 { fail: true } 讓那一批的 load() 被拒絕（像瀏覽器載入字型失敗：NetworkError）而不是成功。之後新的 load() 又會等。ready 是已經完成的 Promise
-// - Image：new Image() 的 src 設好後，icons 選項決定它怎麼結束：'load'（預設）一個 microtask 後載入成功（complete、naturalWidth 64、onload），
-//   'fail' 一個 microtask 後失敗（complete、naturalWidth 0、onerror），'hold' 一直不結束，finishImages(ok) 才讓還沒結束的每一張照 ok 結束。
-//   images 是建出來的每一張（{ src, complete, naturalWidth, finish(ok) }）
+// - Image：new Image() 的 src 設好後，看 src 分成兩種。職業圖示（一般的路徑）：icons 選項決定它怎麼結束：'load'（預設）一個 microtask 後載入成功
+//   （complete、naturalWidth 64、onload），'fail' 一個 microtask 後失敗（complete、naturalWidth 0、onerror），'hold' 一直不結束，
+//   finishImages(ok) 才讓還沒結束的每一張照 ok 結束。images 是職業圖示的每一張（{ src, complete, naturalWidth, finish(ok) }）。
+//   角色圖（src 是 blob: 或 data:）：pictures 是這種的每一張（{ src, file, complete, naturalWidth, naturalHeight, finish(ok) }），
+//   blob: 是上傳的檔案（URL.createObjectURL(file) 的結果）：大小是 file.width、file.height，file.broken 時讀不出來（onerror），撤掉（revokeObjectURL）之後才載入的也讀不出來
+//   （和瀏覽器一樣）；data: 是頁面存著或轉出來的圖（canvas 的 toDataURL 替身轉出來的，內容是 'canvas 寬x高'），大小讀回那個寬高，不是這種內容的讀不出來。
+//   都是一個 microtask 後結束，除非 file.hold 是 true（那個檔案的 blob: 圖一直不結束）或 pictureLoads 選項是 'hold'（所有 data: 圖一直不結束，
+//   restore 與轉出來之後再讀回來的圖都算），finishPictures(ok) 讓還沒結束的每一張結束，finishFile(file, ok) 只讓那個檔案的那一張結束（ok 是 false 就讀不出來）
+// - 上傳：file({ name, type, width, height, broken, hold }) 回傳假的 File（只有 name、type、size 與這幾個欄位，傳給 URL.createObjectURL 才認得；
+//   不是物件的東西丟 TypeError，和瀏覽器一樣）；pick(...檔案) 照瀏覽器選檔案：#cardImageInput.files 換成這些檔案（FileList 的替身：length、item()、索引、迭代，
+//   沒有陣列的方法），派送 input 與 change；沒給檔案是取消（files 空的）。頁面把 input.value 設成 ''，files 就清空（和瀏覽器一樣，設成別的字丟錯）。
+//   objectUrls 是 { created, revoked }：每一次 URL.createObjectURL／revokeObjectURL 的網址
+// - 滑桿與拖曳：slide(值, { release }) 設定 #imageZoom 的值並派送 input，release（預設 true）再派送 change（disabled 的滑桿丟錯：使用者動不了）；
+//   pointer(類型, { x, y, id, pointerType, button, buttons }) 在卡片的 canvas 上派送 pointerdown／move／up／cancel（類型寫 'down'、'move'、'up'、'cancel'；x、y 是 clientX、clientY，
+//   id 預設 1、pointerType 預設 'mouse'、button 預設 0），會冒泡、可取消，回傳事件；事件的 buttons（MouseEvent.buttons：左鍵 1、右鍵 2、中鍵 4）照瀏覽器：
+//   pointerdown 到 pointerup／pointercancel 之前是按著的那顆按鍵（替身自己記著哪個 pointer 按著），其他時候（只是在卡片上移動、放開的那一刻）是 0；
+//   傳 buttons 就照傳的（例如放開的事件沒收到，之後滑鼠只是移過卡片：{ buttons: 0 }）。up 與 cancel 之後，canvas 還抓著那個 pointer 的話，和瀏覽器一樣
+//   自己放掉並派送 lostpointercapture（canvas 呼叫 releasePointerCapture 放掉抓著的 pointer 也一樣）；lose(id) 只派送 lostpointercapture（抓取被拿走，沒有 pointerup、
+//   pointercancel；canvas 沒抓著那個 pointer 就丟錯，瀏覽器不會送）。drag(點們, init) 是在第一個點按下、依序移動到其他每個點、在最後一個點放開。
+//   captures 是 canvas 的 setPointerCapture／releasePointerCapture 呼叫與抓取的結束（{ call: 'set' | 'release' | 'lost', pointerId }）；pointerCapture 選項是 'throws' 時
+//   setPointerCapture 丟 NotFoundError（瀏覽器對不在作用的 pointer 就是這樣）。getBoundingClientRect() 是 canvas 的寬高乘 displayScale
+//   （選項，預設 0.5，卡片在畫面上縮成一半：拖曳的換算有 2 倍）；setDisplayScale(0) 模擬 canvas 藏起來（寬高都是 0）。dataUrlRequests 是每一次 toDataURL 的 { type, quality, width, height}
+// - storageFull 選項：這些鍵的 setItem 丟 QuotaExceededError（容量已滿；讀與刪照常）。storageWrites 是每一次 setItem 的鍵（不管成不成功，照順序）
 // - matchMedia 只認 '(max-width: 768px)'（narrow：頁面現在是不是手機版面）與 '(pointer: coarse)'（coarse：觸控為主的裝置），其他查詢一律丟錯。
-//   回傳 { media, matches, addEventListener('change', fn), removeEventListener }；setNarrow(next) 改值並呼叫每個登記的 change 監聽
+//   回傳 { media, matches, addEventListener('change', fn), removeEventListener }；setNarrow(next)、setCoarse(next) 改值並呼叫那個查詢每個登記的 change 監聽
 //   （{ matches: next, media }），不管值有沒有變
 // - navigator（Task 7 才會用到）：userAgent 預設是桌面版的 Chrome。share：false（預設，沒有 navigator.share 與 canShare）、'ok'（canShare 認得有檔案的資料，
 //   share() 成功，每一筆記在 shares）、'cancel'（share() 丟 AbortError）、'fail'（share() 丟別的錯）、'no-files'（有 share，但 canShare 一律回 false）。
@@ -61,6 +82,7 @@
 //   key(鍵, 目標, init) 在目標（預設是焦點所在的元素）上派送會冒泡、可取消的 keydown（init 可以加 altKey、ctrlKey、metaKey…）並回傳事件。
 //   isShown(目標) 是元素本身與祖先都沒有 hidden
 // - reopen(overrides)：用同一份 storage 的內容與目前的介面語言再開一次頁面，overrides 蓋掉其他選項
+// - dataUrlOf(寬, 高, 型別)：canvas 的 toDataURL 替身轉出來的 data URL（內容是 'canvas 寬x高'）；測試要放進 localStorage 的圖片用它，頁面讀得回來
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -84,6 +106,11 @@ const DESKTOP_USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Appl
 const SHARE_MODES = [false, 'ok', 'cancel', 'fail', 'no-files'];
 const CLIPBOARD_MODES = [false, 'ok', 'reject'];
 const ICON_MODES = ['load', 'fail', 'hold'];
+const PICTURE_MODES = ['load', 'hold'];
+const CAPTURE_MODES = ['ok', 'throws'];
+const POINTER_EVENTS = ['down', 'move', 'up', 'cancel'];
+// MouseEvent.button（0 左、1 中、2 右）→ MouseEvent.buttons 裡那一顆的位元（1 左、4 中、2 右）
+const BUTTON_BITS = [1, 4, 2];
 
 // 頁面裡每一個 <script> 開始標籤的 src，照出現的順序（同 chocobo-page.js）
 function scriptSources(html) {
@@ -98,10 +125,44 @@ const PAGE_SCRIPTS = scriptSources(PAGE_HTML)
     .filter((src) => !src.includes('/') || src === `../../${TRANSLATIONS}` || SHARED_SCRIPTS.includes(src))
     .map((src) => path.posix.join(TOOL_DIR, src));
 
+// canvas 的 toDataURL 替身轉出來的圖：內容是 'canvas 寬x高'，Image 的替身讀回來就是那個大小
+const dataUrlOf = (width, height, type = 'image/jpeg') => `data:${type};base64,${Buffer.from(`canvas ${width}x${height}`).toString('base64')}`;
+
 const isShown = (element) => {
     for (let node = element; node && node.nodeType === 1; node = node.parentNode) if (node.hidden) return false;
     return true;
 };
+
+// FileList 的替身（<input type="file"> 的 files）：只有瀏覽器有的成員，沒有陣列的方法
+class FileListLike {
+    #files;
+
+    constructor(files) {
+        this.#files = files;
+        files.forEach((file, index) => { this[index] = file; });
+    }
+
+    get length() { return this.#files.length; }
+    item(index) { return this.#files[index] ?? null; }
+    [Symbol.iterator]() { return this.#files.values(); }
+}
+
+// 檔案輸入：files 是 FileList 的替身，value 讀出來是假的路徑、設成 ''（只能設成空字串）會清掉 files。回傳換掉 files 的函式（使用者選檔案）
+function patchFileInput(input) {
+    let chosen = new FileListLike([]);
+    Object.defineProperty(input, 'files', { configurable: true, get: () => chosen });
+    Object.defineProperty(input, 'value', {
+        configurable: true,
+        get: () => (chosen.length > 0 ? `C:\\fakepath\\${chosen[0].name}` : ''),
+        set: (value) => {
+            if (String(value) !== '') {
+                throw Object.assign(new Error("Failed to set the 'value' property on 'HTMLInputElement': This input element accepts a filename, which may only be programmatically set to the empty string."), { name: 'InvalidStateError' });
+            }
+            chosen = new FileListLike([]);
+        }
+    });
+    return (files) => { chosen = new FileListLike(files); };
+}
 
 // NodeList 與 HTMLCollection 的替身（見檔頭說明）：只有瀏覽器有的成員，沒有陣列的方法。索引（list[0]）是一般的屬性
 class NodeListLike {
@@ -151,8 +212,9 @@ function strictLists(parent) {
     }
 }
 
-// 一張 canvas 的替身（見檔頭說明）。回傳這張 canvas 的記錄：{ context, draws, blobRequests }
-function patchCanvas(element) {
+// 一張 canvas 的替身（見檔頭說明）。回傳這張 canvas 的記錄：{ context, draws, blobRequests }。env 是頁面共用的東西：
+// { displayScale()：畫面上縮成幾倍, dataUrlRequests：每一次 toDataURL 的記錄 }
+function patchCanvas(element, env) {
     // context 到 getContext() 才建：設定 width 或 height 只把現在的丟掉（下一次 getContext 拿到全新、重設過的 context），
     // 不然頁面每畫一次要設寬又設高，每次都白建兩個記錄 context（各約 35 個函式）
     const state = { context: null, draws: 0, blobRequests: [] };
@@ -176,17 +238,30 @@ function patchCanvas(element) {
         state.blobRequests.push({ type, quality });
         Promise.resolve().then(() => callback(new Blob([`canvas ${element.width}x${element.height}`], { type })));
     };
-    element.toDataURL = (type = 'image/png') => `data:${type};base64,${Buffer.from(`canvas ${element.width}x${element.height}`).toString('base64')}`;
+    element.toDataURL = (type = 'image/png', quality) => {
+        env.dataUrlRequests.push({ type, quality, width: element.width, height: element.height });
+        return dataUrlOf(element.width, element.height, type);
+    };
+    // 畫面上的大小：canvas 的寬高乘上縮放（CSS 把卡片縮小顯示）；縮放是 0 就是藏起來（瀏覽器對藏起來的元素量出來都是 0）
+    element.getBoundingClientRect = () => {
+        const width = element.width * env.displayScale();
+        const height = element.height * env.displayScale();
+        return { x: 0, y: 0, left: 0, top: 0, right: width, bottom: height, width, height };
+    };
     return state;
 }
 
 async function createCardPage({
-    lang = 'zh', stored = {}, storageThrows = false, narrow = false, coarse = false,
-    userAgent = DESKTOP_USER_AGENT, share = false, clipboard = false, fontsDelay = false, icons = 'load'
+    lang = 'zh', stored = {}, storageThrows = false, storageFull = [], narrow = false, coarse = false,
+    userAgent = DESKTOP_USER_AGENT, share = false, clipboard = false, fontsDelay = false, icons = 'load',
+    pictureLoads = 'load', pointerCapture = 'ok', displayScale = 0.5
 } = {}) {
     assert.ok(SHARE_MODES.includes(share), `不認得的 share：${share}`);
     assert.ok(CLIPBOARD_MODES.includes(clipboard), `不認得的 clipboard：${clipboard}`);
     assert.ok(ICON_MODES.includes(icons), `不認得的 icons：${icons}`);
+    assert.ok(PICTURE_MODES.includes(pictureLoads), `不認得的 pictureLoads：${pictureLoads}`);
+    assert.ok(CAPTURE_MODES.includes(pointerCapture), `不認得的 pointerCapture：${pointerCapture}`);
+    assert.ok(Array.isArray(storageFull), 'storageFull 是鍵的陣列');
     const dom = createFakeDom({ url: PAGE_URL });
     const win = dom.window;
     const storage = new Map(Object.entries(stored));
@@ -195,15 +270,26 @@ async function createCardPage({
     const timeouts = [];
     const languageListeners = [];
     const mediaListeners = [];
+    const coarseListeners = [];
     const fontLoads = [];
     const heldFonts = [];
     const images = [];
+    const pictures = [];
     const shares = [];
     const clipboardWrites = [];
     const canvases = new WeakMap();
+    const objectUrls = { created: [], revoked: [] };
+    const blobFiles = new Map();
+    const captures = [];
+    const captured = new Set();
+    const pressed = new Map();
+    const storageWrites = [];
+    const dataUrlRequests = [];
+    let scale = displayScale;
     const translations = { zh: {}, en: {}, ja: {} };
     let currentLang = lang;
     let isNarrow = narrow;
+    let isCoarse = coarse;
     const lookup = (key) => [currentLang, 'zh'].map((l) => translations[l][key]).find((text) => text !== undefined);
     const fill = (text, params = {}) => text.replace(/\{(\w+)\}/g, (match, name) => (name in params ? String(params[name]) : match));
     // 同 I18nManager.updatePageLanguage()：有 data-i18n-attr 的換那個屬性，否則換掉整段文字
@@ -262,7 +348,7 @@ async function createCardPage({
             }
         });
         strictLists(element);
-        if (element.tagName === 'CANVAS') canvases.set(element, patchCanvas(element));
+        if (element.tagName === 'CANVAS') canvases.set(element, patchCanvas(element, { displayScale: () => scale, dataUrlRequests }));
         return element;
     }
     // 這份 document 建出來的每個元素都補上 addBrowserParts()；一定要在 mountFromHtml 之前換
@@ -288,30 +374,57 @@ async function createCardPage({
         ready: Promise.resolve()
     };
 
-    // 職業圖示：Image 的替身（見檔頭說明）
+    // Image 的替身（見檔頭說明）：職業圖示與角色圖（blob:、data:）分開記，各有各的控制
     class FakeImage {
         constructor() {
             this.complete = false;
             this.naturalWidth = 0;
+            this.naturalHeight = 0;
             this.onload = null;
             this.onerror = null;
             this.srcValue = '';
-            images.push(this);
+            this.kind = null;
         }
 
         get src() { return this.srcValue; }
 
+        // 角色圖：上傳的檔案（blob: 網址對到的那個）
+        get file() { return blobFiles.get(this.srcValue) ?? null; }
+
         set src(value) {
             this.srcValue = String(value);
-            if (icons !== 'hold') Promise.resolve().then(() => this.finish(icons === 'load'));
+            const picture = /^(?:blob|data):/.test(this.srcValue);
+            this.kind = picture ? 'picture' : 'icon';
+            (picture ? pictures : images).push(this);
+            if (!picture) {
+                if (icons !== 'hold') Promise.resolve().then(() => this.finish(icons === 'load'));
+                return;
+            }
+            const held = this.srcValue.startsWith('blob:') ? Boolean(this.file?.hold) : pictureLoads === 'hold';
+            if (!held) Promise.resolve().then(() => this.finish(true));
         }
 
-        finish(ok) {
+        // 讀得出來的大小；讀不出來是 null
+        decode() {
+            if (this.kind === 'icon') return { width: 64, height: 64 };
+            if (this.srcValue.startsWith('blob:')) {
+                const { file } = this;
+                if (!file || file.broken || objectUrls.revoked.includes(this.srcValue)) return null;
+                return { width: file.width, height: file.height };
+            }
+            const match = /^data:image\/[\w.+-]+;base64,([A-Za-z0-9+/=]*)$/.exec(this.srcValue);
+            const size = /^canvas (\d+)x(\d+)$/.exec(match ? Buffer.from(match[1], 'base64').toString('utf8') : '');
+            return size ? { width: Number(size[1]), height: Number(size[2]) } : null;
+        }
+
+        finish(ok = true) {
             if (this.complete) return;
             this.complete = true;
-            this.naturalWidth = ok ? 64 : 0;
-            const handler = ok ? this.onload : this.onerror;
-            if (typeof handler === 'function') handler.call(this, new win.Event(ok ? 'load' : 'error'));
+            const size = ok ? this.decode() : null;
+            this.naturalWidth = size ? size.width : 0;
+            this.naturalHeight = size ? size.height : 0;
+            const handler = size ? this.onload : this.onerror;
+            if (typeof handler === 'function') handler.call(this, new win.Event(size ? 'load' : 'error'));
         }
     }
 
@@ -344,15 +457,30 @@ async function createCardPage({
         clearTimeout: (id) => { if (timeouts[id - 1]) timeouts[id - 1].cleared = true; },
         matchMedia: (query) => {
             if (![NARROW_QUERY, COARSE_QUERY].includes(query)) throw new Error(`createCardPage 沒有準備 matchMedia(${JSON.stringify(query)})`);
+            const listeners = query === NARROW_QUERY ? mediaListeners : coarseListeners;
             return {
                 media: query,
-                get matches() { return query === NARROW_QUERY ? isNarrow : coarse; },
-                addEventListener: (type, listener) => { if (type === 'change' && query === NARROW_QUERY) mediaListeners.push(listener); },
+                get matches() { return query === NARROW_QUERY ? isNarrow : isCoarse; },
+                addEventListener: (type, listener) => { if (type === 'change') listeners.push(listener); },
                 removeEventListener: (type, listener) => {
-                    const index = mediaListeners.indexOf(listener);
-                    if (index !== -1) mediaListeners.splice(index, 1);
+                    const index = listeners.indexOf(listener);
+                    if (index !== -1) listeners.splice(index, 1);
                 }
             };
+        },
+        // 角色圖上傳用的 blob: 網址（見檔頭說明）：不是物件的東西瀏覽器會丟 TypeError
+        URL: class PageURL extends URL {
+            static createObjectURL(file) {
+                if (file === null || typeof file !== 'object' || !('size' in file)) throw new TypeError("Failed to execute 'createObjectURL' on 'URL': Overload resolution failed.");
+                const url = `blob:https://ff14.tw/${objectUrls.created.length + 1}`;
+                blobFiles.set(url, file);
+                objectUrls.created.push(url);
+                return url;
+            }
+
+            static revokeObjectURL(url) {
+                objectUrls.revoked.push(String(url));
+            }
         },
         navigator: navigatorStub,
         Image: FakeImage,
@@ -385,7 +513,13 @@ async function createCardPage({
     } else {
         win.localStorage = {
             getItem: (key) => (storage.has(key) ? storage.get(key) : null),
-            setItem: (key, value) => storage.set(key, String(value)),
+            setItem: (key, value) => {
+                storageWrites.push(key);
+                if (storageFull.includes(key)) {
+                    throw Object.assign(new Error(`Failed to execute 'setItem' on 'Storage': Setting the value of '${key}' exceeded the quota.`), { name: 'QuotaExceededError' });
+                }
+                storage.set(key, String(value));
+            },
             removeItem: (key) => storage.delete(key),
             key: (index) => Array.from(storage.keys())[index] ?? null,
             get length() { return storage.size; }
@@ -393,10 +527,32 @@ async function createCardPage({
     }
 
     mountFromHtml(dom, PAGE_HTML, ['cardTool']);
+    // 檔案輸入與卡片 canvas 的指標抓取（見檔頭說明）；標記裡還沒有的元素（角色圖的功能還沒做好時）略過
+    const fileInput = dom.document.getElementById('cardImageInput');
+    const chooseFiles = fileInput ? patchFileInput(fileInput) : null;
+    const cardCanvas = dom.document.getElementById('cardCanvas');
+    cardCanvas.setPointerCapture = (pointerId) => {
+        if (pointerCapture === 'throws') {
+            throw Object.assign(new Error("Failed to execute 'setPointerCapture' on 'Element': No active pointer with the given id is found."), { name: 'NotFoundError' });
+        }
+        captured.add(pointerId);
+        captures.push({ call: 'set', pointerId });
+    };
+    // 抓著的 pointer 被放掉（pointerup、pointercancel 之後、releasePointerCapture、lose）：canvas 收到 lostpointercapture；沒抓著就沒有（瀏覽器的規則）。回傳有沒有放掉
+    const loseCapture = (pointerId) => {
+        if (!captured.delete(pointerId)) return false;
+        captures.push({ call: 'lost', pointerId });
+        cardCanvas.dispatchEvent(new win.Event('lostpointercapture', { bubbles: true, pointerId }));
+        return true;
+    };
+    cardCanvas.releasePointerCapture = (pointerId) => {
+        captures.push({ call: 'release', pointerId });
+        loseCapture(pointerId);
+    };
     for (const file of PAGE_SCRIPTS) dom.load(file);
     translatePage();
     const app = vm.runInContext('new CharacterCardApp()', win);
-    if (!fontsDelay) await app.ready;
+    if (!fontsDelay && pictureLoads !== 'hold') await app.ready;
 
     const $ = (id) => dom.document.getElementById(id);
     const elementOf = (target) => {
@@ -408,7 +564,7 @@ async function createCardPage({
     const drawCalls = () => stateOf().context?.calls ?? [];
     const fire = (element, type) => element.dispatchEvent(new win.Event(type, { bubbles: true }));
 
-    return {
+    const api = {
         window: win,
         document: dom.document,
         app,
@@ -417,6 +573,11 @@ async function createCardPage({
         consoleErrors,
         fontLoads,
         images,
+        pictures,
+        objectUrls,
+        captures,
+        storageWrites,
+        dataUrlRequests,
         shares,
         clipboardWrites,
         $,
@@ -447,6 +608,48 @@ async function createCardPage({
             const button = Array.from($(groupId).querySelectorAll('button')).find((item) => [item.dataset.job, item.dataset.like, item.dataset.looking].includes(value));
             assert.ok(button, `#${groupId} 裡找不到 ${value} 這顆按鈕`);
             return button;
+        },
+        file: ({ name = 'screenshot.png', type = 'image/png', width = 1600, height = 900, broken = false, hold = false } = {}) => ({
+            name, type, size: width * height, width, height, broken, hold
+        }),
+        pick(...files) {
+            const input = elementOf('cardImageInput');
+            chooseFiles(files);
+            fire(input, 'input');
+            fire(input, 'change');
+        },
+        slide(value, { release = true } = {}) {
+            const element = elementOf('imageZoom');
+            assert.ok(element.disabled !== true, '#imageZoom 是 disabled：使用者動不了');
+            element.value = String(value);
+            fire(element, 'input');
+            if (release) fire(element, 'change');
+        },
+        pointer(type, { x = 0, y = 0, id = 1, pointerType = 'mouse', button = 0, buttons } = {}) {
+            assert.ok(POINTER_EVENTS.includes(type), `pointer 的類型是 ${POINTER_EVENTS.join('、')} 其中一個，不是 ${type}`);
+            // 按下去那一刻起到放開之前是按著的按鍵，其他時候是 0（見檔頭說明）
+            if (type === 'down') pressed.set(id, BUTTON_BITS[button] ?? 0);
+            const held = buttons ?? (type === 'down' || type === 'move' ? pressed.get(id) ?? 0 : 0);
+            const event = new win.Event(`pointer${type}`, { bubbles: true, cancelable: true, pointerId: id, pointerType, button, buttons: held, clientX: x, clientY: y, isPrimary: true });
+            $('cardCanvas').dispatchEvent(event);
+            // pointerup、pointercancel 之後瀏覽器自己放掉抓取，並派送 lostpointercapture
+            if (type === 'up' || type === 'cancel') {
+                pressed.delete(id);
+                loseCapture(id);
+            }
+            return event;
+        },
+        // 抓取被拿走而沒有 pointerup、pointercancel（例如元素被移出頁面、有人呼叫 releasePointerCapture）：只有 lostpointercapture
+        lose(id = 1) {
+            assert.ok(loseCapture(id), `canvas 沒有抓著 pointer ${id}，瀏覽器不會送 lostpointercapture`);
+        },
+        drag(points, { id = 1, pointerType = 'mouse', button = 0 } = {}) {
+            assert.ok(points.length >= 2, 'drag 至少要按下與放開兩個點');
+            const [first, ...rest] = points;
+            api.pointer('down', { x: first[0], y: first[1], id, pointerType, button });
+            for (const [x, y] of rest) api.pointer('move', { x, y, id, pointerType });
+            const last = points.at(-1);
+            api.pointer('up', { x: last[0], y: last[1], id, pointerType });
         },
         key(key, target = dom.document.activeElement, init = {}) {
             const event = new win.Event('keydown', { bubbles: true, cancelable: true, key, ...init });
@@ -480,6 +683,15 @@ async function createCardPage({
         finishImages(ok) {
             for (const image of images) image.finish(ok);
         },
+        // 角色圖：還沒結束的每一張結束（ok 是 false 就讀不出來）；finishFile 只讓那個檔案的那一張結束
+        finishPictures(ok = true) {
+            for (const picture of pictures) picture.finish(ok);
+        },
+        finishFile(file, ok = true) {
+            const picture = pictures.find((item) => item.file === file);
+            assert.ok(picture, `頁面還沒讀 ${file.name}（沒有用它的 blob: 網址建 Image）`);
+            picture.finish(ok);
+        },
         setLang(next) {
             currentLang = next;
             translatePage();
@@ -489,10 +701,20 @@ async function createCardPage({
             isNarrow = next;
             for (const listener of [...mediaListeners]) listener({ matches: next, media: NARROW_QUERY });
         },
+        setCoarse(next) {
+            isCoarse = next;
+            for (const listener of [...coarseListeners]) listener({ matches: next, media: COARSE_QUERY });
+        },
+        // 卡片在畫面上縮成幾倍；0 是藏起來（getBoundingClientRect() 都是 0）
+        setDisplayScale(next) {
+            scale = next;
+        },
         reopen: (overrides = {}) => createCardPage({
-            lang: currentLang, stored: Object.fromEntries(storage), storageThrows, narrow: isNarrow, coarse, userAgent, share, clipboard, fontsDelay, icons, ...overrides
+            lang: currentLang, stored: Object.fromEntries(storage), storageThrows, storageFull, narrow: isNarrow, coarse: isCoarse, userAgent, share, clipboard,
+            fontsDelay, icons, pictureLoads, pointerCapture, displayScale: scale, ...overrides
         })
     };
+    return api;
 }
 
-module.exports = { createCardPage };
+module.exports = { createCardPage, dataUrlOf };

@@ -3,7 +3,7 @@
    手機（768px 以下，沒有 @media 的基本規則）：說明、預覽（sticky，高度最多 35vh）、分頁、目前分頁的欄位，一欄。
    電腦（769px 以上）：左邊五組欄位、右邊預覽（sticky），沒有分頁列。
    不能左右捲：欄寫 minmax(0, …)，長的字換行，不用 overflow-x；按鈕與輸入框不被壓扁（共用元件的 height 都有同值的 min-height）。
-   卡片本身是 canvas，畫在圖上的配色在 card-renderer.js，不跟著網站的深淺色
+   卡片本身是 canvas，畫在圖上的配色在 card-renderer.js，不跟著網站的深淺色。拖曳移動角色圖的游標與 touch-action 見 .preview-canvas 那一段
    ========================================================================== */
 
 /* DOM 的順序是說明、分頁、表單、預覽（電腦的由左到右）；手機用 order 把預覽排在分頁上面。
@@ -218,6 +218,39 @@
     box-shadow: var(--ring-primary);
 }
 
+/* 角色圖：上傳是 <label> 包著看不見的檔案輸入（樣式是按鈕），下面是狀態、縮放滑桿、置中／填滿／調整圖片。按鈕放不下就換行，不左右捲 */
+.image-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+/* 看不見的檔案輸入（.visually-hidden 是 absolute）跟著按鈕定位；鍵盤聚焦到它時，焦點外框畫在按鈕上 */
+.image-upload {
+    position: relative;
+}
+
+.image-upload:has(input:focus-visible) {
+    box-shadow: var(--ring-primary);
+}
+
+/* 沒有狀態文字時不留空隙（.editor-panel .form-text 有上邊距）。元素一直在頁面上，aria-live 才念得到之後寫進去的字 */
+.editor-panel .image-status:empty {
+    margin-top: 0;
+}
+
+.image-zoom {
+    display: block;
+    width: 100%;
+    min-height: var(--control-md);
+    accent-color: var(--color-primary);
+}
+
+/* .btn 設了 display，會蓋掉瀏覽器內建的 [hidden]：「調整圖片」只有觸控為主的裝置才顯示（script.js 切換 hidden） */
+#imageAdjust[hidden] {
+    display: none;
+}
+
 /* 預覽：手機排在最上面（order）、跟著往下捲（sticky，要蓋住捲上來的欄位，所以有不透明的底），卡片高度最多 35vh，照比例縮小，不變形。
    canvas 的寬高是卡片的尺寸（橫版 1200×675、直版 1080×1350），畫面上的大小全由這裡決定 */
 .preview-pane {
@@ -242,6 +275,27 @@
     max-height: 35vh;
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-lg);
+    /* 拖曳移動圖片時不要選到字（Safari 要加前綴） */
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+/* 在卡片上拖曳移動圖片（script.js 用 pointer 事件）。有圖片時滑鼠直接拖，游標是 grab（只有滑鼠才有游標，所以放在 pointer: fine）；
+   手指從卡片上滑要能捲動頁面，所以平常不設 touch-action，按了「調整圖片」（.is-adjusting）才設成 none，而且要在手指按下去之前就設好才有用。
+   拖的時候是 grabbing：.is-dragging 排在最後，才蓋得掉 grab */
+@media (pointer: fine) {
+    .preview-canvas.has-image {
+        cursor: grab;
+    }
+}
+
+.preview-canvas.is-adjusting {
+    touch-action: none;
+    cursor: grab;
+}
+
+.preview-canvas.is-dragging {
+    cursor: grabbing;
 }
 
 .preview-format {

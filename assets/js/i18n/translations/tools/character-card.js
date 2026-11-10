@@ -6,6 +6,8 @@
  * （char_card_preview_label）：沒填的部分不寫，所以不是一個留空格的樣板，一個都沒填時用 char_card_preview_empty。
  * 遊戲用語（大國防聯軍、部隊、職能、喜歡的內容、在找什麼）照 TERMINOLOGY.md 與官方名稱；職業的名稱在 assets/js/ff14-game-data.js（三語都有）。
  * char_card_card_* 是畫在卡片上的短標籤（英文的全名縮在卡片上小到看不清）；char_card_day_*、char_card_slot_* 是表單上的全名。
+ * char_card_image_* 是角色圖：按鈕與標籤，以及上傳狀態（處理中、已上傳、太大不會記住、讀不出來、已移除、上次的圖片讀不出來）；
+ * char_card_image_adjust 與 char_card_image_adjust_done 是同一顆按鈕的兩種字（調整模式前後）。
  */
 const CharacterCardTranslations = {
     zh: {
@@ -105,6 +107,21 @@ const CharacterCardTranslations = {
         char_card_card_slot_afternoon: '下午',
         char_card_card_slot_evening: '晚上',
         char_card_card_slot_late_night: '深夜',
+
+        // 角色圖
+        char_card_image_upload: '上傳截圖',
+        char_card_image_zoom: '縮放',
+        char_card_image_center: '置中',
+        char_card_image_fill: '填滿',
+        char_card_image_remove: '移除圖片',
+        char_card_image_adjust: '調整圖片',
+        char_card_image_adjust_done: '完成',
+        char_card_image_processing: '處理中…',
+        char_card_image_uploaded: '已上傳',
+        char_card_image_not_saved: '這張圖太大，這次不會記住，重新整理後要再上傳。',
+        char_card_image_failed: '這個檔案讀不出來，請換一張圖片。',
+        char_card_image_removed: '已移除圖片',
+        char_card_image_restore_failed: '上次的圖片讀不出來，請重新上傳。',
 
         // 樣式
         char_card_accent_label: '重點色',
@@ -227,6 +244,21 @@ const CharacterCardTranslations = {
         char_card_card_slot_evening: 'Eve',
         char_card_card_slot_late_night: 'Late',
 
+        // Character image
+        char_card_image_upload: 'Upload screenshot',
+        char_card_image_zoom: 'Zoom',
+        char_card_image_center: 'Center',
+        char_card_image_fill: 'Fill',
+        char_card_image_remove: 'Remove picture',
+        char_card_image_adjust: 'Adjust picture',
+        char_card_image_adjust_done: 'Done',
+        char_card_image_processing: 'Processing…',
+        char_card_image_uploaded: 'Uploaded',
+        char_card_image_not_saved: "This picture is too big to remember. You'll need to upload it again after reloading.",
+        char_card_image_failed: "This file couldn't be read. Try another image.",
+        char_card_image_removed: 'Picture removed',
+        char_card_image_restore_failed: "Your last picture couldn't be loaded. Please upload it again.",
+
         // Style
         char_card_accent_label: 'Accent color',
         char_card_accent_auto: 'Match the job role',
@@ -347,6 +379,21 @@ const CharacterCardTranslations = {
         char_card_card_slot_afternoon: '昼',
         char_card_card_slot_evening: '夜',
         char_card_card_slot_late_night: '深夜',
+
+        // キャラクター画像
+        char_card_image_upload: 'スクリーンショットを選ぶ',
+        char_card_image_zoom: '拡大',
+        char_card_image_center: '中央に戻す',
+        char_card_image_fill: '全体に合わせる',
+        char_card_image_remove: '画像を削除',
+        char_card_image_adjust: '画像を調整',
+        char_card_image_adjust_done: '完了',
+        char_card_image_processing: '処理中…',
+        char_card_image_uploaded: 'アップロードしました',
+        char_card_image_not_saved: 'この画像は大きすぎて保存できません。再読み込みしたらもう一度アップロードしてください。',
+        char_card_image_failed: 'このファイルは読み込めません。別の画像を選んでください。',
+        char_card_image_removed: '画像を削除しました',
+        char_card_image_restore_failed: '前回の画像を読み込めませんでした。もう一度アップロードしてください。',
 
         // スタイル
         char_card_accent_label: '強調色',

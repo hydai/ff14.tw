@@ -4,7 +4,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 
-const { createCardPage } = require('./helpers/card-page.js');
+const { createCardPage, dataUrlOf } = require('./helpers/card-page.js');
+const { tagAttrs, sliceElementById, classesOf } = require('./helpers/html-fragment.js');
 const { translationKeySet, translationValues } = require('./helpers/translation-parsers.js');
 
 const ROOT = path.join(__dirname, '..');
@@ -660,7 +661,7 @@ test('重新打開還原所有欄位；記憶壞掉時照常打開；瀏覽器�
 });
 
 test('清除全部：要按兩次，3 秒後變回原本的字', async () => {
-    const page = await createCardPage({ stored: { [IMAGE_KEY]: 'data:image/jpeg;base64,AAAA' } });
+    const page = await createCardPage({ stored: { [IMAGE_KEY]: dataUrlOf(640, 360) } });
     fillEverything(page);
     const button = page.$('clearAll');
     assert.equal(button.textContent, '清除全部');
@@ -1127,9 +1128,1194 @@ test('頁面替身本身：canvas 重設、matchMedia、字型與圖示的控制
     assert.throws(() => page.toggle('cardName'), /不是勾選框或單選/);
 });
 
+// ---------- 角色圖：上傳、拖曳、縮放、調整模式 ----------
+// 上傳一個檔案並等頁面處理完（讀檔、縮圖、轉成 JPEG、再讀回來）
+async function upload(page, init = {}) {
+    const file = page.file(init);
+    page.pick(file);
+    await page.flush();
+    return file;
+}
+// 卡片上畫的角色圖：drawImage 的第一個參數是角色圖（不是職業圖示）的那幾次
+const pictureDraws = (page) => page.drawCalls().filter((call) => call.op === 'drawImage' && page.pictures.includes(call.args[0]));
+const drawnRect = (call) => ({ dx: call.args[1], dy: call.args[2], dw: call.args[3], dh: call.args[4] });
+// 照 CardLayout.coverRect 算出來，這張圖在現在這張卡片上該畫在哪裡
+const expectedRect = (page, image, crop) => plain(page.window.CardLayout.coverRect(image.width, image.height, page.$('cardCanvas').width, page.$('cardCanvas').height, crop));
+// 拖曳的換算用 CardLayout.dragCrop，這裡拿它算預期值（dragCrop 自己有 character-card-layout.test.js 守住）
+const expectedDrag = (page, image, start, dx, dy) => plain(page.window.CardLayout.dragCrop(start, dx, dy, image.width, image.height, page.$('cardCanvas').width, page.$('cardCanvas').height));
+const cropsOf = (page) => plain(saved(page).crops);
+const near = (actual, expected, message) => assert.ok(Math.abs(actual - expected) < 1e-9, `${message}：${actual} 不等於 ${expected}`);
+const nearCrop = (actual, expected, message) => {
+    for (const field of ['x', 'y', 'zoom']) near(actual[field], expected[field], `${message} 的 ${field}`);
+};
+const IMAGE_CONTROLS = ['imageZoom', 'imageCenter', 'imageFill', 'imageRemove', 'imageAdjust'];
+const FILL = { x: 0, y: 0, zoom: 1 };
+// 4000×1500 的檔案縮成 2048×768：橫版的卡片（1200×675）左右有多出來的部分，可以左右拖
+const WIDE = { width: 4000, height: 1500 };
+const WIDE_IMAGE = { width: 2048, height: 768 };
+
+test('上傳截圖：卡片用 coverRect 畫這張圖、記在 IMAGE_KEY、狀態寫已上傳', async () => {
+    const page = await createCardPage();
+    const status = page.$('cardImageStatus');
+
+    // 一打開：還沒有圖片。上傳是 <label> 包著的檔案輸入（只收圖片）；縮放、置中、填滿、移除、調整都不能按；狀態是空的
+    assert.equal(page.$('cardImageInput').getAttribute('type'), 'file');
+    assert.equal(page.$('cardImageInput').getAttribute('accept'), 'image/*');
+    assert.equal(page.$('cardImageInput').closest('label').textContent, '上傳截圖');
+    for (const id of IMAGE_CONTROLS) assert.equal(page.$(id).disabled, true, `#${id} 還沒有圖片時不能按`);
+    assert.equal(page.$('imageZoom').value, '100');
+    assert.equal(page.$('imageZoomValue').textContent, '100%');
+    assert.equal(status.getAttribute('aria-live'), 'polite');
+    assert.equal(status.textContent, '');
+    assert.ok(!page.drawCalls().some((call) => call.op === 'drawImage'));
+    assert.ok(page.drawCalls().some((call) => call.op === 'createRadialGradient'), '預設背景的光點');
+    assert.equal(page.$('cardCanvas').classList.contains('has-image'), false);
+
+    // 選檔案：先寫處理中；選好就把檔案輸入清掉（同一個檔案再選一次才會有 change）
+    page.pick(page.file({ name: 'luna.png', ...WIDE }));
+    assert.equal(status.textContent, '處理中…');
+    assert.equal(page.$('cardImageInput').files.length, 0);
+    assert.equal(page.$('cardImageInput').value, '');
+    await page.flush();
+
+    // 縮成長邊 2048、轉成 JPEG（品質 0.85）：記住的是這一張，卡片畫的也是這一張（從 data URL 再讀出來的），不是原檔
+    assert.deepEqual(page.dataUrlRequests, [{ type: 'image/jpeg', quality: 0.85, width: 2048, height: 768 }]);
+    const url = dataUrlOf(2048, 768);
+    assert.equal(page.stored.get(IMAGE_KEY), url);
+    const draws = pictureDraws(page);
+    assert.equal(draws.length, 1, '圖片只畫一次');
+    assert.equal(draws[0].args[0].src, url, '畫的是記住的那一張');
+    assert.deepEqual(drawnRect(draws[0]), expectedRect(page, WIDE_IMAGE, FILL), '用 coverRect 填滿、置中');
+    assert.ok(!page.drawCalls().some((call) => call.op === 'createRadialGradient'), '有圖片就不畫預設背景');
+    assert.equal(status.textContent, '已上傳');
+    assert.equal(page.$('cardCanvas').classList.contains('has-image'), true);
+    // 暫時的 blob: 網址讀完就撤掉（不撤會一直占著記憶體）
+    assert.equal(page.objectUrls.created.length, 1);
+    assert.deepEqual(page.objectUrls.revoked, page.objectUrls.created);
+    // 控制項都能按了；「調整圖片」只有觸控為主的裝置才出現
+    for (const id of IMAGE_CONTROLS) assert.equal(page.$(id).disabled, false, `#${id} 有圖片之後能按`);
+    assert.equal(page.isShown('imageAdjust'), false);
+    // 位置還沒動過：記住的欄位裡沒有位置（預設填滿置中）
+    assert.deepEqual(cropsOf(page), {});
+    assert.deepEqual(page.consoleErrors, []);
+    assert.deepEqual(page.toasts, []);
+
+    // 圖片與欄位各存各的：改名字不動圖片；換版型畫的還是同一張圖
+    page.type('cardName', 'Luna');
+    assert.equal(page.stored.get(IMAGE_KEY), url);
+    page.press('formatPortrait');
+    assert.deepEqual(drawnRect(pictureDraws(page)[0]), expectedRect(page, WIDE_IMAGE, FILL));
+    assert.equal(page.$('cardCanvas').width, 1080);
+
+    // 再上傳一張：換掉圖片、記的也換掉；新的圖從填滿置中開始（舊的位置是照上一張調的）
+    page.slide(200);
+    page.drag([[100, 100], [160, 100]]);
+    assert.ok(Object.keys(cropsOf(page)).length > 0);
+    await upload(page, { width: 1000, height: 3000 });
+    assert.equal(page.stored.get(IMAGE_KEY), dataUrlOf(683, 2048));
+    assert.deepEqual(cropsOf(page), {}, '新的圖片從填滿置中開始');
+    assert.equal(page.$('imageZoom').value, '100');
+    assert.deepEqual(drawnRect(pictureDraws(page)[0]), expectedRect(page, { width: 683, height: 2048 }, FILL));
+    assert.equal(pictureDraws(page).length, 1);
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('容量已滿：狀態寫這次不會記住，文字欄位照樣記住', async () => {
+    const page = await createCardPage({ storageFull: [IMAGE_KEY] });
+    const status = page.$('cardImageStatus');
+    page.type('cardName', 'Luna Starweaver');
+    await upload(page, WIDE);
+    assert.equal(status.textContent, '這張圖太大，這次不會記住，重新整理後要再上傳。');
+    assert.ok(page.storageWrites.includes(IMAGE_KEY), '有試著存');
+    assert.ok(!page.stored.has(IMAGE_KEY));
+    assert.equal(pictureDraws(page).length, 1, '圖片這次照常畫');
+    for (const id of IMAGE_CONTROLS.filter((id) => id !== 'imageAdjust')) assert.equal(page.$(id).disabled, false, `#${id} 這次照常能用`);
+
+    // 文字欄位照樣記住（欄位與圖片是兩個鍵）；圖片的位置跟著欄位存
+    assert.equal(saved(page).name, 'Luna Starweaver');
+    page.type('cardTitle', 'Hero of Light');
+    assert.equal(saved(page).title, 'Hero of Light');
+    page.slide(200);
+    assert.equal(cropsOf(page)['b-landscape'].zoom, 2);
+
+    // 重新整理之後沒有圖片（要再上傳），文字與位置都在，不留 console
+    const again = await page.reopen({ storageFull: [] });
+    assert.equal(again.$('cardName').value, 'Luna Starweaver');
+    assert.equal(again.$('cardTitle').value, 'Hero of Light');
+    assert.equal(pictureDraws(again).length, 0);
+    assert.equal(again.$('cardImageStatus').textContent, '');
+    assert.equal(again.$('imageZoom').disabled, true);
+    assert.deepEqual(again.consoleErrors, []);
+
+    // 以前存著一張、這次換的存不進去：舊的也拿掉，重新整理之後不會冒出已經換掉的舊圖
+    const old = await createCardPage({ stored: { [IMAGE_KEY]: dataUrlOf(640, 360) }, storageFull: [IMAGE_KEY] });
+    assert.equal(pictureDraws(old).length, 1, '舊的圖片照常還原');
+    await upload(old, WIDE);
+    assert.equal(old.$('cardImageStatus').textContent, '這張圖太大，這次不會記住，重新整理後要再上傳。');
+    assert.ok(!old.stored.has(IMAGE_KEY), '舊的也拿掉');
+    assert.equal(pictureDraws(old).length, 1);
+    assert.equal(pictureDraws(old)[0].args[0].src, dataUrlOf(2048, 768), '這次畫的是新的');
+
+    // 瀏覽器封鎖網站資料：什麼都記不住，這次照常運作；不用特別說「太大」（和容量無關），狀態就是已上傳
+    const blocked = await createCardPage({ storageThrows: true });
+    await upload(blocked, WIDE);
+    assert.equal(blocked.$('cardImageStatus').textContent, '已上傳');
+    assert.equal(blocked.stored.size, 0);
+    assert.equal(pictureDraws(blocked).length, 1);
+    blocked.slide(150);
+    assert.deepEqual(drawnRect(pictureDraws(blocked)[0]), expectedRect(blocked, WIDE_IMAGE, { x: 0, y: 0, zoom: 1.5 }));
+    assert.deepEqual(blocked.consoleErrors, []);
+});
+
+test('重新打開還原圖片與位置', async () => {
+    const page = await createCardPage();
+    await upload(page, WIDE);
+    page.slide(200);
+    page.drag([[300, 200], [330, 205]]);
+    const crop = cropsOf(page)['b-landscape'];
+    assert.equal(crop.zoom, 2);
+    assert.ok(crop.x < 0 && crop.y !== 0, '拖過了');
+
+    // 還原：圖片是記住的那一張，位置照記住的，滑桿也是；不用說什麼，也不跳 toast
+    const again = await page.reopen();
+    const draws = pictureDraws(again);
+    assert.equal(draws.length, 1);
+    assert.equal(draws[0].args[0].src, page.stored.get(IMAGE_KEY));
+    assert.deepEqual(drawnRect(draws[0]), expectedRect(again, WIDE_IMAGE, crop));
+    assert.equal(again.$('imageZoom').value, '200');
+    assert.equal(again.$('imageZoom').getAttribute('aria-valuetext'), '200%');
+    assert.equal(again.$('imageZoomValue').textContent, '200%');
+    for (const id of IMAGE_CONTROLS) assert.equal(again.$(id).disabled, false, `#${id} 還原之後能按`);
+    assert.equal(again.$('cardImageStatus').textContent, '');
+    assert.equal(again.$('cardCanvas').classList.contains('has-image'), true);
+    assert.ok(!again.drawCalls().some((call) => call.op === 'createRadialGradient'));
+    assert.deepEqual(again.toasts, []);
+    assert.deepEqual(again.consoleErrors, []);
+    // 還原之後照樣能拖、能存
+    again.drag([[300, 200], [320, 200]]);
+    assert.notDeepEqual(cropsOf(again)['b-landscape'], crop);
+
+    // 沒有圖片時，滑桿與位置的說明寫預設的 100%（存著的位置要等有圖片才用得上）
+    const orphan = await createCardPage({ stored: { [KEY]: JSON.stringify({ crops: { 'b-landscape': { x: 0.5, y: 0, zoom: 2.5 } } }) } });
+    assert.equal(orphan.$('imageZoom').value, '100');
+    assert.equal(orphan.$('imageZoomValue').textContent, '100%');
+    assert.equal(orphan.$('imageZoom').disabled, true);
+});
+
+test('滑鼠拖曳改變 crops[\'b-landscape\'] 並記住；直版有自己的一份', async () => {
+    const page = await createCardPage();
+    await upload(page, WIDE);
+    const canvas = page.$('cardCanvas');
+    // 卡片在畫面上縮成一半（600×337.5 的 CSS 像素）：滑鼠移 30 個 CSS 像素，是卡片上的 60 個像素
+    assert.equal(canvas.getBoundingClientRect().width, 600);
+
+    const writes = page.storageWrites.length;
+    const down = page.pointer('down', { x: 300, y: 200 });
+    assert.deepEqual(page.captures, [{ call: 'set', pointerId: 1 }], '按下去就抓住指標：滑鼠移到卡片外面也繼續拖');
+    assert.equal(canvas.classList.contains('is-dragging'), true);
+    assert.equal(down.defaultPrevented, true);
+    const start = FILL;
+
+    // 往右拖：圖跟著往右，x 變小。照開始的位置算，不是一段一段累加（第二次移動算的是離按下去的地方 60 像素，不是離上一次）
+    page.pointer('move', { x: 330, y: 205 });
+    nearCrop(page.app.state.crops['b-landscape'], { x: -0.2, y: 0, zoom: 1 }, '往右拖 30 個 CSS 像素');
+    nearCrop(page.app.state.crops['b-landscape'], expectedDrag(page, WIDE_IMAGE, start, 60, 10), '和 dragCrop 一致');
+    assert.deepEqual(drawnRect(pictureDraws(page)[0]), expectedRect(page, WIDE_IMAGE, plain(page.app.state.crops['b-landscape'])), '一邊拖一邊重畫');
+    page.pointer('move', { x: 360, y: 200 });
+    nearCrop(page.app.state.crops['b-landscape'], { x: -0.4, y: 0, zoom: 1 }, '往右拖 60 個 CSS 像素');
+    // 拖過邊界再拖回來：上面都在 x 沒被夾住的範圍裡，從開始的位置算與一段一段累加的結果一樣，分不出來。這裡移到離按下去 400 個 CSS 像素（卡片上 800 個像素，
+    // 圖只能再往右 300 個像素，x 夾在 -1），再移回離按下去 100 個 CSS 像素（卡片上 200 個像素）：從開始的位置算是 x = -2/3；
+    // 累加的話第二次是從夾住的 -1 往回 300 個 CSS 像素，變成 +1
+    page.pointer('move', { x: 700, y: 200 });
+    nearCrop(page.app.state.crops['b-landscape'], { x: -1, y: 0, zoom: 1 }, '拖過邊界：夾在 -1');
+    page.pointer('move', { x: 400, y: 200 });
+    nearCrop(page.app.state.crops['b-landscape'], { x: -2 / 3, y: 0, zoom: 1 }, '拖回來：離按下去 100 個 CSS 像素');
+    nearCrop(page.app.state.crops['b-landscape'], expectedDrag(page, WIDE_IMAGE, start, 200, 0), '和從開始的位置算的 dragCrop 一致');
+    // 拖回起點：回到原本的位置
+    page.pointer('move', { x: 300, y: 200 });
+    nearCrop(page.app.state.crops['b-landscape'], FILL, '拖回起點');
+    page.pointer('move', { x: 360, y: 200 });
+    assert.equal(page.storageWrites.length, writes, '拖的過程不存');
+    assert.deepEqual(plain(page.app.state.crops['b-landscape']).zoom, 1);
+
+    // 放開才存，只存一次（放開之後瀏覽器還會送 lostpointercapture，不再存第二次）
+    page.pointer('up', { x: 360, y: 200 });
+    assert.equal(canvas.classList.contains('is-dragging'), false);
+    assert.equal(page.storageWrites.length, writes + 1);
+    assert.deepEqual(page.captures.map((capture) => capture.call).filter((call) => call !== 'release'), ['set', 'lost']);
+    const landscape = cropsOf(page)['b-landscape'];
+    nearCrop(landscape, { x: -0.4, y: 0, zoom: 1 }, '記住的位置');
+    assert.deepEqual(Object.keys(cropsOf(page)), ['b-landscape'], '直版還沒動過');
+
+    // 放開之後再動不算：不拖了
+    page.pointer('move', { x: 500, y: 300 });
+    nearCrop(plain(page.app.state.crops['b-landscape']), landscape, '放開之後的移動不算');
+
+    // 直版有自己的一份：預設填滿置中，拖它不動橫版的
+    page.press('formatPortrait');
+    assert.equal(canvas.width, 1080);
+    assert.deepEqual(drawnRect(pictureDraws(page)[0]), expectedRect(page, WIDE_IMAGE, FILL), '直版沒動過，填滿置中');
+    page.drag([[200, 300], [230, 300]]);
+    const portrait = cropsOf(page)['b-portrait'];
+    nearCrop(portrait, expectedDrag(page, WIDE_IMAGE, FILL, 60, 0), '直版的位置');
+    assert.ok(portrait.x < 0);
+    assert.deepEqual(cropsOf(page)['b-landscape'], landscape, '橫版的位置不變');
+    assert.deepEqual(drawnRect(pictureDraws(page)[0]), expectedRect(page, WIDE_IMAGE, portrait));
+
+    // 切回橫版：畫的是橫版自己記的位置；重新打開兩份都在
+    page.press('formatLandscape');
+    assert.deepEqual(drawnRect(pictureDraws(page)[0]), expectedRect(page, WIDE_IMAGE, landscape));
+    const again = await page.reopen();
+    assert.deepEqual(plain(again.app.state.crops), { 'b-landscape': landscape, 'b-portrait': portrait });
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('拖曳的細節：只有滑鼠左鍵、沒有圖片不拖、別的 pointer 不理、取消也存一次、指標抓不到照樣拖、卡片藏起來不亂動', async () => {
+    const page = await createCardPage();
+    const canvas = page.$('cardCanvas');
+
+    // 還沒有圖片：滑鼠按下去什麼都不做，不抓、不攔截
+    const bare = page.pointer('down', { x: 300, y: 200 });
+    assert.equal(bare.defaultPrevented, false);
+    assert.deepEqual(page.captures, []);
+    assert.equal(canvas.classList.contains('is-dragging'), false);
+    page.pointer('up', {});
+
+    await upload(page, { width: 1500, height: 4000 }); // 直的圖：橫版的卡片上下有多出來的部分，可以上下拖
+    const image = { width: 768, height: 2048 };
+
+    // 滑鼠右鍵、中鍵不拖
+    for (const button of [1, 2]) {
+        const event = page.pointer('down', { x: 300, y: 200, button });
+        assert.equal(event.defaultPrevented, false, `按鍵 ${button}`);
+    }
+    assert.deepEqual(page.captures, []);
+
+    // 上下拖：往下拖，y 變小
+    page.pointer('down', { x: 300, y: 200, id: 3 });
+    assert.deepEqual(page.captures, [{ call: 'set', pointerId: 3 }]);
+    page.pointer('move', { x: 300, y: 210, id: 3 });
+    nearCrop(page.app.state.crops['b-landscape'], expectedDrag(page, image, FILL, 0, 20), '往下拖 10 個 CSS 像素');
+    assert.ok(page.app.state.crops['b-landscape'].y < 0);
+    const after = plain(page.app.state.crops['b-landscape']);
+    // 拖的時候別的 pointer（另一根手指、另一支筆）按下與移動都不理
+    page.pointer('down', { x: 10, y: 10, id: 4, pointerType: 'touch' });
+    page.pointer('down', { x: 10, y: 10, id: 5 });
+    page.pointer('move', { x: 500, y: 300, id: 4, pointerType: 'touch' });
+    page.pointer('move', { x: 500, y: 300, id: 5 });
+    page.pointer('up', { id: 4, pointerType: 'touch' });
+    assert.deepEqual(page.captures, [{ call: 'set', pointerId: 3 }], '只抓一個 pointer');
+    nearCrop(plain(page.app.state.crops['b-landscape']), after, '別的 pointer 不影響');
+    assert.equal(canvas.classList.contains('is-dragging'), true, '別的 pointer 放開也不結束這一次拖曳');
+
+    // 被取消（例如系統手勢搶走）：結束，存一次
+    const writes = page.storageWrites.length;
+    page.pointer('cancel', { id: 3 });
+    assert.equal(canvas.classList.contains('is-dragging'), false);
+    assert.equal(page.storageWrites.length, writes + 1);
+    page.pointer('move', { x: 300, y: 400, id: 3 });
+    nearCrop(plain(page.app.state.crops['b-landscape']), after, '取消之後的移動不算');
+
+    // 指標抓不到（瀏覽器對不在作用的 pointer 會丟例外）：照樣能拖，不丟錯
+    const noCapture = await createCardPage({ pointerCapture: 'throws' });
+    await upload(noCapture, { width: 1500, height: 4000 });
+    noCapture.drag([[300, 200], [300, 230]]);
+    assert.ok(noCapture.app.state.crops['b-landscape'].y < 0);
+    assert.ok(noCapture.stored.get(KEY).includes('"b-landscape"'));
+    assert.deepEqual(noCapture.consoleErrors, []);
+
+    // 卡片的大小量出來是 0（藏起來）：不拖，不丟錯、不出現 NaN
+    const hidden = await createCardPage();
+    await upload(hidden, { width: 1500, height: 4000 });
+    hidden.setDisplayScale(0);
+    hidden.drag([[300, 200], [300, 230]]);
+    assert.deepEqual(plain(hidden.app.state.crops), {});
+    assert.deepEqual(hidden.consoleErrors, []);
+
+    // 同一個 pointer 又按下去（上一次的放開沒收到）：重新開始，不會卡在拖到一半
+    const stuck = await createCardPage();
+    await upload(stuck, { width: 1500, height: 4000 });
+    stuck.pointer('down', { x: 300, y: 200 });
+    stuck.pointer('down', { x: 300, y: 300 });
+    stuck.pointer('move', { x: 300, y: 310 });
+    nearCrop(stuck.app.state.crops['b-landscape'], expectedDrag(stuck, { width: 768, height: 2048 }, FILL, 0, 20), '從第二次按下去的地方算');
+});
+
+test('抓取被拿走（只有 lostpointercapture，沒有 pointerup）：拖曳也結束，存一次，之後的移動與放開都不算', async () => {
+    const page = await createCardPage();
+    await upload(page, WIDE);
+    const canvas = page.$('cardCanvas');
+    const writes = page.storageWrites.length;
+    page.pointer('down', { x: 300, y: 200 });
+    page.pointer('move', { x: 330, y: 200 });
+    nearCrop(page.app.state.crops['b-landscape'], { x: -0.2, y: 0, zoom: 1 }, '拖到一半');
+    assert.equal(canvas.classList.contains('is-dragging'), true);
+    assert.equal(page.storageWrites.length, writes, '拖的過程不存');
+
+    // 抓取被拿走（元素被移出頁面、有人放掉抓取…）：瀏覽器只送 lostpointercapture，不一定有 pointerup 或 pointercancel
+    page.lose();
+    assert.equal(canvas.classList.contains('is-dragging'), false, '抓取沒了，這一次拖曳就結束');
+    assert.equal(page.storageWrites.length, writes + 1, '存一次');
+    nearCrop(cropsOf(page)['b-landscape'], { x: -0.2, y: 0, zoom: 1 }, '存的是畫面上的位置');
+    // 之後的移動不算，放開也不再存
+    page.pointer('move', { x: 500, y: 200 });
+    nearCrop(plain(page.app.state.crops['b-landscape']), { x: -0.2, y: 0, zoom: 1 }, '抓取沒了之後的移動不算');
+    page.pointer('up', { x: 500, y: 200 });
+    assert.equal(page.storageWrites.length, writes + 1, '之後的 pointerup 也不再存');
+    assert.deepEqual(page.consoleErrors, []);
+
+    // 沒有卡在拖到一半：下一次按下去照常從現在的位置開始拖
+    page.drag([[300, 200], [360, 200]]);
+    nearCrop(page.app.state.crops['b-landscape'], expectedDrag(page, WIDE_IMAGE, { x: -0.2, y: 0, zoom: 1 }, 120, 0), '下一次拖曳');
+    assert.equal(page.storageWrites.length, writes + 2);
+});
+
+test('滑鼠的按鍵已經放開、pointerup 卻沒收到（例如 macOS 拖到一半按著 Ctrl 跳出右鍵選單）：下一次移動就結束拖曳，存一次，之後滑鼠移過卡片不再動圖片', async () => {
+    const page = await createCardPage();
+    await upload(page, WIDE);
+    const canvas = page.$('cardCanvas');
+    const writes = page.storageWrites.length;
+    page.pointer('down', { x: 300, y: 200 });
+    page.pointer('move', { x: 330, y: 200 });
+    const half = { x: -0.2, y: 0, zoom: 1 };
+    nearCrop(page.app.state.crops['b-landscape'], half, '拖到一半（按著，buttons 是 1）');
+    assert.equal(page.pointer('move', { x: 340, y: 200 }).buttons, 1, '按著的時候 buttons 是 1');
+    assert.equal(canvas.classList.contains('is-dragging'), true);
+    assert.equal(page.storageWrites.length, writes, '拖的過程不存');
+    const dragged = plain(page.app.state.crops['b-landscape']);
+
+    // 按鍵已經放開（buttons 是 0）：這一次移動不算，拖曳結束，存一次（存的是畫面上的位置）
+    page.pointer('move', { x: 450, y: 220, buttons: 0 });
+    assert.equal(canvas.classList.contains('is-dragging'), false, '沒按著了，拖曳結束');
+    nearCrop(plain(page.app.state.crops['b-landscape']), dragged, '沒按著的那一次移動不算');
+    assert.equal(page.storageWrites.length, writes + 1, '存一次');
+    nearCrop(cropsOf(page)['b-landscape'], dragged, '存的是拖到一半的位置');
+    // 也放掉抓取：不然滑鼠移到哪裡，事件都一直送到卡片上，頁面其他地方的 hover 也壞掉
+    assert.deepEqual(page.captures, [{ call: 'set', pointerId: 1 }, { call: 'release', pointerId: 1 }, { call: 'lost', pointerId: 1 }]);
+
+    // 之後滑鼠只是移過卡片：圖片不再跟著動，也不再存；晚到的（或根本不會來的）pointerup 一樣不再存
+    page.pointer('move', { x: 500, y: 250, buttons: 0 });
+    page.pointer('move', { x: 100, y: 100, buttons: 0 });
+    nearCrop(plain(page.app.state.crops['b-landscape']), dragged, '之後滑鼠移過卡片');
+    assert.deepEqual(drawnRect(pictureDraws(page)[0]), expectedRect(page, WIDE_IMAGE, dragged), '畫面上的位置也沒動');
+    page.pointer('up', { x: 100, y: 100 });
+    assert.equal(page.storageWrites.length, writes + 1);
+    assert.deepEqual(page.consoleErrors, []);
+
+    // 下一次按下去照常拖
+    page.drag([[300, 200], [360, 200]]);
+    nearCrop(page.app.state.crops['b-landscape'], expectedDrag(page, WIDE_IMAGE, dragged, 120, 0), '下一次拖曳');
+    assert.equal(page.storageWrites.length, writes + 2);
+
+    // 只看滑鼠：調整模式裡手指（與筆）的移動照舊，就算 buttons 是 0 也照樣拖
+    for (const pointerType of ['touch', 'pen']) {
+        const coarse = await createCardPage({ coarse: true });
+        await upload(coarse, WIDE);
+        coarse.press('imageAdjust');
+        coarse.pointer('down', { pointerType, x: 300, y: 200, id: 7 });
+        coarse.pointer('move', { pointerType, x: 330, y: 200, id: 7, buttons: 0 });
+        nearCrop(coarse.app.state.crops['b-landscape'], half, `${pointerType}：buttons 是 0 也照樣拖`);
+        assert.equal(coarse.$('cardCanvas').classList.contains('is-dragging'), true, `${pointerType} 還在拖`);
+        coarse.pointer('up', { pointerType, x: 330, y: 200, id: 7 });
+        assert.equal(coarse.$('cardCanvas').classList.contains('is-dragging'), false);
+    }
+});
+
+test('縮放滑桿、置中、填滿', async () => {
+    const page = await createCardPage();
+    page.type('cardName', 'Luna');
+    await upload(page, WIDE);
+    const slider = page.$('imageZoom');
+
+    // 滑桿 100%～300%、間隔 5%；說明寫在標籤旁，螢幕閱讀器念的 aria-valuetext 是同一個百分比
+    assert.deepEqual(['min', 'max', 'step'].map((name) => slider.getAttribute(name)), ['100', '300', '5']);
+    assert.equal(slider.getAttribute('type'), 'range');
+    assert.equal(slider.value, '100');
+    assert.equal(slider.getAttribute('aria-valuetext'), '100%');
+    assert.equal(page.$('imageZoomValue').textContent, '100%');
+    assert.equal(labelOf(page, 'imageZoom'), '縮放');
+
+    // 拖滑桿（input）：馬上重畫、不存；放開（change）才存
+    const writes = page.storageWrites.length;
+    const draws = page.drawCount();
+    page.slide(150, { release: false });
+    assert.equal(page.drawCount(), draws + 1);
+    assert.deepEqual(drawnRect(pictureDraws(page)[0]), expectedRect(page, WIDE_IMAGE, { x: 0, y: 0, zoom: 1.5 }));
+    assert.equal(slider.getAttribute('aria-valuetext'), '150%');
+    assert.equal(page.$('imageZoomValue').textContent, '150%');
+    assert.equal(page.storageWrites.length, writes, '拖滑桿的過程不存');
+    page.slide(150);
+    assert.equal(page.storageWrites.length, writes + 1, '放開存一次');
+    assert.deepEqual(cropsOf(page)['b-landscape'], { x: 0, y: 0, zoom: 1.5 });
+
+    // 拖一下，再按「置中」：x、y 歸 0，縮放不變
+    page.drag([[300, 200], [340, 230]]);
+    const moved = cropsOf(page)['b-landscape'];
+    assert.ok(moved.x !== 0 && moved.y !== 0, '兩個方向都拖得動（放大之後上下左右都有多出來的部分）');
+    assert.equal(moved.zoom, 1.5);
+    page.press('imageCenter');
+    assert.deepEqual(cropsOf(page)['b-landscape'], { x: 0, y: 0, zoom: 1.5 });
+    assert.deepEqual(drawnRect(pictureDraws(page)[0]), expectedRect(page, WIDE_IMAGE, { x: 0, y: 0, zoom: 1.5 }));
+    assert.equal(slider.value, '150');
+
+    // 再拖一下，按「填滿」：縮放 100%、置中
+    page.drag([[300, 200], [340, 230]]);
+    page.press('imageFill');
+    assert.deepEqual(cropsOf(page)['b-landscape'], FILL);
+    assert.equal(slider.value, '100');
+    assert.equal(slider.getAttribute('aria-valuetext'), '100%');
+    assert.equal(page.$('imageZoomValue').textContent, '100%');
+    assert.deepEqual(drawnRect(pictureDraws(page)[0]), expectedRect(page, WIDE_IMAGE, FILL));
+
+    // 兩端與超出範圍的值：300% 就是 3 倍；比 300 大的收回 300，滑桿跟著收回來
+    page.slide(300);
+    assert.equal(cropsOf(page)['b-landscape'].zoom, 3);
+    page.slide(999);
+    assert.equal(cropsOf(page)['b-landscape'].zoom, 3);
+    assert.equal(slider.value, '300');
+    page.slide(100);
+    assert.equal(cropsOf(page)['b-landscape'].zoom, 1);
+
+    // 滑桿跟著現在的版型：橫版 200%，直版沒動過是 100%；各動各的
+    page.slide(200);
+    page.press('formatPortrait');
+    assert.equal(slider.value, '100');
+    assert.equal(page.$('imageZoomValue').textContent, '100%');
+    page.slide(150);
+    assert.deepEqual(plain(Object.fromEntries(Object.entries(cropsOf(page)).map(([key, crop]) => [key, crop.zoom]))), { 'b-landscape': 2, 'b-portrait': 1.5 });
+    page.press('formatLandscape');
+    assert.equal(slider.value, '200');
+    assert.equal(slider.getAttribute('aria-valuetext'), '200%');
+    page.press('formatPortrait');
+    assert.equal(slider.value, '150');
+
+    // 重新打開：兩份縮放都在
+    const again = await page.reopen();
+    assert.equal(again.$('imageZoom').value, '150', '直版');
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('觸控不攔截：coarse 而且不在調整模式時，pointerdown 不 setPointerCapture、不 preventDefault；按「調整圖片」後才拖得動', async () => {
+    const page = await createCardPage({ coarse: true });
+    const canvas = page.$('cardCanvas');
+    const adjust = page.$('imageAdjust');
+    const touch = (type, init) => page.pointer(type, { pointerType: 'touch', x: 300, y: 200, id: 7, ...init });
+
+    // 觸控為主的裝置才有「調整圖片」；還沒有圖片時不能按，手指在卡片上滑頁面照常捲
+    assert.equal(page.isShown('imageAdjust'), true);
+    assert.equal(adjust.disabled, true);
+    assert.equal(adjust.textContent, '調整圖片');
+    assert.equal(touch('down').defaultPrevented, false);
+    assert.deepEqual(page.captures, []);
+
+    await upload(page, WIDE);
+    page.type('cardName', 'Luna');
+    assert.equal(adjust.disabled, false);
+    assert.equal(canvas.classList.contains('is-adjusting'), false);
+
+    // 不在調整模式：手指在卡片上按下去、移動、放開，什麼都不做（不抓、不攔截），位置不動，頁面照常捲
+    const down = touch('down');
+    assert.equal(down.defaultPrevented, false);
+    assert.deepEqual(page.captures, []);
+    assert.equal(canvas.classList.contains('is-dragging'), false);
+    touch('move', { x: 360, y: 230 });
+    assert.equal(touch('up', { x: 360, y: 230 }).defaultPrevented, false);
+    assert.deepEqual(plain(page.app.state.crops), {});
+    // 筆也一樣（只有滑鼠左鍵可以直接拖）
+    assert.equal(page.pointer('down', { pointerType: 'pen', x: 300, y: 200, id: 9 }).defaultPrevented, false);
+    assert.deepEqual(page.captures, []);
+
+    // 按「調整圖片」：按鈕變「完成」（不用 aria-pressed，字就說了狀態），卡片加 .is-adjusting（touch-action: none 要在手指按下去之前就設好）
+    page.press('imageAdjust');
+    assert.equal(adjust.textContent, '完成');
+    assert.equal(adjust.getAttribute('aria-pressed'), null);
+    assert.equal(canvas.classList.contains('is-adjusting'), true);
+    touch('down', { id: 8 });
+    assert.deepEqual(page.captures, [{ call: 'set', pointerId: 8 }]);
+    assert.equal(canvas.classList.contains('is-dragging'), true);
+    const writes = page.storageWrites.length;
+    touch('move', { id: 8, x: 330, y: 205 });
+    nearCrop(page.app.state.crops['b-landscape'], expectedDrag(page, WIDE_IMAGE, FILL, 60, 10), '手指拖 30 個 CSS 像素');
+    assert.ok(page.app.state.crops['b-landscape'].x < 0);
+    assert.equal(page.storageWrites.length, writes, '拖的過程不存');
+    touch('up', { id: 8, x: 330, y: 205 });
+    assert.equal(page.storageWrites.length, writes + 1);
+    assert.equal(canvas.classList.contains('is-dragging'), false);
+    assert.ok(cropsOf(page)['b-landscape'].x < 0, '放開存起來');
+    // 調整模式裡筆也拖得動
+    page.pointer('down', { pointerType: 'pen', x: 300, y: 200, id: 10 });
+    assert.deepEqual(page.captures.filter((capture) => capture.call === 'set').map((capture) => capture.pointerId), [8, 10]);
+    page.pointer('up', { pointerType: 'pen', id: 10 });
+
+    // 按「完成」：卡片不再攔截，手指又照常捲
+    page.press('imageAdjust');
+    assert.equal(adjust.textContent, '調整圖片');
+    assert.equal(canvas.classList.contains('is-adjusting'), false);
+    const before = page.captures.length;
+    assert.equal(touch('down', { id: 11 }).defaultPrevented, false);
+    assert.equal(page.captures.length, before);
+
+    // 觸控為主的裝置接了滑鼠：滑鼠不用調整模式，直接拖
+    page.pointer('down', { x: 300, y: 200, id: 1 });
+    assert.equal(page.captures.at(-1).pointerId, 1);
+    page.pointer('up', { id: 1 });
+
+    // 滑鼠為主的裝置：沒有「調整圖片」，手指在卡片上什麼都不做
+    const desktop = await createCardPage();
+    await upload(desktop, WIDE);
+    assert.equal(desktop.isShown('imageAdjust'), false);
+    assert.equal(desktop.pointer('down', { pointerType: 'touch', id: 3 }).defaultPrevented, false);
+    assert.deepEqual(desktop.captures, []);
+    // 裝置變成觸控為主（例如平板拿掉鍵盤）：「調整圖片」出現；變回來就藏起來
+    desktop.setCoarse(true);
+    assert.equal(desktop.isShown('imageAdjust'), true);
+    desktop.setCoarse(false);
+    assert.equal(desktop.isShown('imageAdjust'), false);
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('調整模式：按「完成」、切離圖片分頁、移除圖片、清除全部、不再是觸控為主時都會結束，結束之後觸控照常捲', async () => {
+    let id = 100;
+    // 手機版面、觸控為主、已上傳、進入調整模式
+    async function adjusting(options = {}) {
+        const page = await createCardPage({ narrow: true, coarse: true, ...options });
+        page.press('tab-image');
+        await upload(page, WIDE);
+        page.press('imageAdjust');
+        assert.equal(page.$('cardCanvas').classList.contains('is-adjusting'), true);
+        assert.equal(page.$('imageAdjust').textContent, '完成');
+        return page;
+    }
+    const assertFree = (page, why) => {
+        assert.equal(page.$('cardCanvas').classList.contains('is-adjusting'), false, `${why}：.is-adjusting 拿掉`);
+        assert.equal(page.$('imageAdjust').textContent, '調整圖片', `${why}：按鈕變回「調整圖片」`);
+        const before = page.captures.length;
+        id += 1;
+        assert.equal(page.pointer('down', { pointerType: 'touch', x: 300, y: 200, id }).defaultPrevented, false, `${why}：觸控不攔截`);
+        assert.equal(page.captures.length, before, `${why}：觸控不抓`);
+    };
+
+    // 完成
+    const done = await adjusting();
+    done.press('imageAdjust');
+    assertFree(done, '按完成');
+
+    // 切到別的分頁（手機分頁離開圖片）：點分頁、鍵盤方向鍵都一樣；回到圖片分頁不會自己又進入調整模式
+    const tabs = await adjusting();
+    tabs.press('tab-style');
+    assertFree(tabs, '切到樣式分頁');
+    tabs.press('tab-image');
+    assert.equal(tabs.$('cardCanvas').classList.contains('is-adjusting'), false, '回到圖片分頁不會自己進入調整模式');
+    const keys = await adjusting();
+    keys.$('tab-image').focus();
+    keys.key('ArrowLeft');
+    assertFree(keys, '用方向鍵切到別的分頁');
+    // 還在圖片分頁時（再點一下圖片分頁）不結束
+    const stay = await adjusting();
+    stay.press('tab-image');
+    assert.equal(stay.$('cardCanvas').classList.contains('is-adjusting'), true);
+    assert.equal(stay.$('imageAdjust').textContent, '完成');
+
+    // 移除圖片、清除全部
+    const removed = await adjusting();
+    removed.press('imageRemove');
+    assertFree(removed, '移除圖片');
+    const cleared = await adjusting();
+    cleared.press('clearAll');
+    cleared.press('clearAll');
+    assertFree(cleared, '清除全部');
+
+    // 不再是觸控為主：按鈕藏起來，調整模式也結束（不然卡片一直攔截手指，又沒有「完成」可以按）
+    const mouse = await adjusting();
+    mouse.setCoarse(false);
+    assert.equal(mouse.isShown('imageAdjust'), false);
+    assertFree(mouse, '不再是觸控為主');
+
+    // 調整到一半（手指還按著）結束：拖曳也結束，不再跟著動
+    const mid = await adjusting();
+    mid.pointer('down', { pointerType: 'touch', x: 300, y: 200, id: 50 });
+    mid.pointer('move', { pointerType: 'touch', x: 330, y: 200, id: 50 });
+    const moved = plain(mid.app.state.crops['b-landscape']);
+    mid.press('tab-style');
+    assert.equal(mid.$('cardCanvas').classList.contains('is-dragging'), false);
+    mid.pointer('move', { pointerType: 'touch', x: 400, y: 200, id: 50 });
+    assert.deepEqual(plain(mid.app.state.crops['b-landscape']), moved);
+    assert.deepEqual(cropsOf(mid)['b-landscape'], moved, '結束時存起來');
+    assert.deepEqual(mid.consoleErrors, []);
+});
+
+test('移除圖片：回到預設背景、刪掉 IMAGE_KEY，之後觸控照常捲', async () => {
+    const page = await createCardPage({ coarse: true });
+    const canvas = page.$('cardCanvas');
+    page.type('cardName', 'Luna');
+    await upload(page, WIDE);
+    page.press('imageAdjust');
+    assert.equal(canvas.classList.contains('is-adjusting'), true);
+    assert.ok(page.stored.has(IMAGE_KEY));
+
+    // 按「移除圖片」：焦點在那顆按鈕上，按下去它就不能按了，所以焦點移到上傳（鍵盤才接得下去）
+    page.$('imageRemove').focus();
+    isSame(page.document.activeElement, page.$('imageRemove'));
+    page.press('imageRemove');
+    assert.equal(pictureDraws(page).length, 0, '回到預設背景');
+    assert.ok(page.drawCalls().some((call) => call.op === 'createRadialGradient'), '預設背景的光點');
+    assert.ok(!page.stored.has(IMAGE_KEY));
+    assert.equal(page.$('cardImageStatus').textContent, '已移除圖片');
+    for (const id of IMAGE_CONTROLS) assert.equal(page.$(id).disabled, true, `#${id} 沒有圖片了不能按`);
+    assert.equal(page.$('imageZoom').value, '100');
+    assert.equal(canvas.classList.contains('has-image'), false);
+    isSame(page.document.activeElement, page.$('cardImageInput'), '焦點移到上傳');
+    assert.equal(saved(page).name, 'Luna', '欄位不動');
+
+    // 修掉舊版 CC-12：移除之後手指在卡片上滑頁面照常捲（不攔截、不抓、沒有調整模式）
+    assert.equal(canvas.classList.contains('is-adjusting'), false);
+    assert.equal(page.$('imageAdjust').textContent, '調整圖片');
+    const down = page.pointer('down', { pointerType: 'touch', x: 300, y: 200, id: 21 });
+    assert.equal(down.defaultPrevented, false);
+    assert.deepEqual(page.captures.filter((capture) => capture.pointerId === 21), []);
+    // 滑鼠也一樣沒有圖片可拖
+    assert.equal(page.pointer('down', { x: 300, y: 200 }).defaultPrevented, false);
+    assert.equal(page.captures.filter((capture) => capture.call === 'set').length, 0);
+
+    // 重新整理：沒有圖片；可以再上傳同一個檔案
+    const again = await page.reopen();
+    assert.equal(pictureDraws(again).length, 0);
+    assert.equal(again.$('imageRemove').disabled, true);
+    const file = await upload(page, WIDE);
+    assert.equal(pictureDraws(page).length, 1);
+    const created = page.objectUrls.created.length;
+    page.pick(file);
+    await page.flush();
+    assert.equal(page.objectUrls.created.length, created + 1, '同一個檔案再選一次也會處理');
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('連續上傳：只有最新的一次算數，先選的那張比較晚讀完也一樣', async () => {
+    const page = await createCardPage();
+    const status = page.$('cardImageStatus');
+    const slow = page.file({ name: 'slow.png', ...WIDE, hold: true });
+    const fast = page.file({ name: 'fast.png', width: 1000, height: 3000 });
+    page.pick(slow);
+    page.pick(fast);
+    assert.equal(status.textContent, '處理中…');
+    await page.flush();
+
+    // 後選的讀完了：畫的、記的都是它（1000×3000 縮成 683×2048）
+    const fastUrl = dataUrlOf(683, 2048);
+    assert.equal(page.stored.get(IMAGE_KEY), fastUrl);
+    assert.equal(status.textContent, '已上傳');
+    assert.equal(pictureDraws(page).length, 1);
+    assert.equal(pictureDraws(page)[0].args[0].src, fastUrl);
+
+    // 先選的那張現在才讀完：不蓋過最新的，也不再存、不再改狀態
+    const writes = page.storageWrites.length;
+    page.finishFile(slow, true);
+    await page.flush();
+    assert.equal(page.stored.get(IMAGE_KEY), fastUrl);
+    assert.equal(page.storageWrites.length, writes);
+    assert.equal(pictureDraws(page).length, 1);
+    assert.equal(pictureDraws(page)[0].args[0].src, fastUrl);
+    assert.equal(status.textContent, '已上傳');
+    // 先選的讀不出來也一樣：不會顯示失敗
+    const slow2 = page.file({ name: 'slow2.png', hold: true });
+    const fast2 = page.file({ name: 'fast2.png', width: 640, height: 360 });
+    page.pick(slow2);
+    page.pick(fast2);
+    await page.flush();
+    page.finishFile(slow2, false);
+    await page.flush();
+    assert.equal(status.textContent, '已上傳');
+    assert.equal(page.stored.get(IMAGE_KEY), dataUrlOf(640, 360));
+    assert.deepEqual(page.consoleErrors, []);
+    // 暫時的網址一個不漏地撤掉
+    assert.deepEqual([...page.objectUrls.revoked].sort(), [...page.objectUrls.created].sort());
+});
+
+test('連續上傳：轉出來再讀回來的那一步也看流水號，先選的比較晚讀回來（成功或失敗）都不蓋掉後選的', async () => {
+    // 上面那個測試只讓第一步（讀檔）晚到。這裡讓檔案都讀完、轉成 JPEG 了，卡在「轉出來再讀回來」那一步（pictureLoads: 'hold'：data: 的圖一直等著），
+    // 兩次都在等的時候後選的先讀回來，先選的才讀回來（讀得出來或讀不出來）
+    for (const lateOk of [true, false]) {
+        const page = await createCardPage({ pictureLoads: 'hold' });
+        const status = page.$('cardImageStatus');
+        page.pick(page.file({ name: 'a.png', ...WIDE }));
+        await page.flush();
+        page.pick(page.file({ name: 'b.png', width: 1000, height: 3000 }));
+        await page.flush();
+        const reread = page.pictures.filter((picture) => picture.src.startsWith('data:'));
+        assert.deepEqual(reread.map((picture) => picture.src), [dataUrlOf(2048, 768), dataUrlOf(683, 2048)], '兩張都轉成 JPEG 了，正在讀回來');
+        assert.equal(status.textContent, '處理中…');
+        assert.equal(pictureDraws(page).length, 0);
+        assert.ok(!page.stored.has(IMAGE_KEY));
+
+        // 後選的先讀回來：畫的、記的都是它
+        const newer = dataUrlOf(683, 2048);
+        reread[1].finish(true);
+        await page.flush();
+        assert.equal(page.stored.get(IMAGE_KEY), newer);
+        assert.equal(pictureDraws(page)[0].args[0].src, newer);
+        assert.deepEqual(drawnRect(pictureDraws(page)[0]), expectedRect(page, { width: 683, height: 2048 }, FILL));
+        assert.equal(status.textContent, '已上傳');
+        const writes = page.storageWrites.length;
+
+        // 先選的現在才讀回來：不蓋掉，不再存，不改狀態（讀不出來也不寫失敗）
+        reread[0].finish(lateOk);
+        await page.flush();
+        const why = lateOk ? '先選的讀回來了' : '先選的讀不出來';
+        assert.equal(page.stored.get(IMAGE_KEY), newer, `${why}：記憶還是後選的`);
+        assert.equal(page.storageWrites.length, writes, `${why}：不再存`);
+        assert.equal(pictureDraws(page).length, 1, why);
+        assert.equal(pictureDraws(page)[0].args[0].src, newer, `${why}：畫的還是後選的`);
+        assert.deepEqual(drawnRect(pictureDraws(page)[0]), expectedRect(page, { width: 683, height: 2048 }, FILL), why);
+        assert.equal(status.textContent, '已上傳', `${why}：狀態不變`);
+        assert.deepEqual(page.consoleErrors, []);
+    }
+});
+
+test('讀不出來的檔案：狀態寫原因，現在的圖片與記住的都不動', async () => {
+    const page = await createCardPage();
+    await upload(page, WIDE);
+    const stored = page.stored.get(IMAGE_KEY);
+    page.pick(page.file({ name: 'notes.txt', type: 'text/plain', broken: true }));
+    assert.equal(page.$('cardImageStatus').textContent, '處理中…');
+    await page.flush();
+    assert.equal(page.$('cardImageStatus').textContent, '這個檔案讀不出來，請換一張圖片。');
+    assert.equal(page.stored.get(IMAGE_KEY), stored);
+    assert.equal(pictureDraws(page).length, 1, '現在的圖片還在卡片上');
+    assert.equal(page.$('imageRemove').disabled, false);
+    assert.deepEqual(page.objectUrls.revoked, page.objectUrls.created, '讀失敗也撤掉暫時的網址');
+    assert.deepEqual(page.toasts, []);
+    assert.deepEqual(page.consoleErrors, []);
+
+    // 之後選一張好的，照常上傳
+    await upload(page, { width: 640, height: 360 });
+    assert.equal(page.$('cardImageStatus').textContent, '已上傳');
+    assert.equal(page.stored.get(IMAGE_KEY), dataUrlOf(640, 360));
+
+    // 第一次就讀不出來：沒有圖片可留，維持預設背景，控制項不能按
+    const fresh = await createCardPage();
+    await upload(fresh, { broken: true });
+    assert.equal(fresh.$('cardImageStatus').textContent, '這個檔案讀不出來，請換一張圖片。');
+    assert.equal(pictureDraws(fresh).length, 0);
+    assert.ok(!fresh.stored.has(IMAGE_KEY));
+    assert.equal(fresh.$('imageZoom').disabled, true);
+    // 沒有固有大小的圖（0×0，例如沒寫寬高的 SVG）也當成讀不出來
+    const empty = await createCardPage();
+    await upload(empty, { width: 0, height: 0 });
+    assert.equal(empty.$('cardImageStatus').textContent, '這個檔案讀不出來，請換一張圖片。');
+    assert.equal(pictureDraws(empty).length, 0);
+    assert.deepEqual(empty.consoleErrors, []);
+    // 在選檔案的視窗按取消（沒有選任何檔案）：什麼都不變
+    const cancelled = await createCardPage();
+    cancelled.pick();
+    await cancelled.flush();
+    assert.equal(cancelled.$('cardImageStatus').textContent, '');
+    assert.equal(cancelled.objectUrls.created.length, 0);
+});
+
+test('重新打開時 app.ready 等還原的圖片；存著的圖片解不開就丟掉並說明，頁面照常運作', async () => {
+    const fields = JSON.stringify({ name: 'Luna Starweaver' });
+    const stored = { [KEY]: fields, [IMAGE_KEY]: dataUrlOf(1024, 576) };
+
+    // 還原還沒完成：ready 還沒完成，卡片先用預設背景
+    const held = await createCardPage({ stored, pictureLoads: 'hold' });
+    let ready = false;
+    held.app.ready.then(() => { ready = true; });
+    await held.flush();
+    assert.equal(ready, false, '圖片還沒讀回來，ready 不能完成');
+    assert.equal(pictureDraws(held).length, 0);
+    assert.ok(held.drawCalls().some((call) => call.op === 'createRadialGradient'));
+    assert.equal(held.$('imageRemove').disabled, true);
+    held.finishPictures(true);
+    await held.flush();
+    assert.equal(ready, true);
+    assert.equal(pictureDraws(held).length, 1);
+    assert.deepEqual(drawnRect(pictureDraws(held)[0]), expectedRect(held, { width: 1024, height: 576 }, FILL));
+    assert.equal(held.$('imageRemove').disabled, false);
+    assert.equal(held.$('cardImageStatus').textContent, '');
+
+    // 讀回來失敗也算完成：ready 完成，說明原因，把解不開的圖片刪掉（不要每次打開都再失敗一次），欄位照舊
+    const failing = await createCardPage({ stored, pictureLoads: 'hold' });
+    let failedReady = false;
+    failing.app.ready.then(() => { failedReady = true; });
+    failing.finishPictures(false);
+    await failing.flush();
+    assert.equal(failedReady, true);
+    assert.equal(failing.$('cardImageStatus').textContent, '上次的圖片讀不出來，請重新上傳。');
+    assert.ok(!failing.stored.has(IMAGE_KEY));
+    assert.equal(failing.stored.get(KEY), fields, '欄位不動');
+    assert.equal(failing.$('cardName').value, 'Luna Starweaver');
+
+    // 存著的內容根本不是圖片（壞掉）：同樣丟掉，頁面照常運作，console 是空的
+    const broken = await createCardPage({ stored: { ...stored, [IMAGE_KEY]: 'data:image/jpeg;base64,AAAA' } });
+    assert.equal(broken.$('cardImageStatus').textContent, '上次的圖片讀不出來，請重新上傳。');
+    assert.ok(!broken.stored.has(IMAGE_KEY));
+    assert.equal(pictureDraws(broken).length, 0);
+    assert.equal(broken.$('imageZoom').disabled, true);
+    assert.ok(broken.drawCalls().some((call) => call.op === 'createRadialGradient'));
+    assert.deepEqual(broken.consoleErrors, []);
+    await upload(broken, WIDE);
+    assert.equal(broken.$('cardImageStatus').textContent, '已上傳');
+    assert.equal(broken.stored.get(IMAGE_KEY), dataUrlOf(2048, 768));
+    // 不是 data:image/ 開頭的（被改過的記憶）：CardState 讀的時候就丟掉，不當圖片
+    const foreign = await createCardPage({ stored: { [IMAGE_KEY]: 'https://example.com/a.png' } });
+    assert.equal(pictureDraws(foreign).length, 0);
+    assert.equal(foreign.$('cardImageStatus').textContent, '');
+
+    // 還原還沒完成時使用者已經上傳了新的：新的算數，舊的比較晚讀回來不蓋掉新的。讀得出來與讀不出來都要試：
+    // 讀不出來的那一條會把「記著的圖片壞了」的處理（刪掉記著的、寫上次的圖片讀不出來）用在已經換成新圖的記憶上，把剛上傳的圖刪掉
+    for (const lateOk of [true, false]) {
+        const racing = await createCardPage({ stored, pictureLoads: 'hold' });
+        racing.pick(racing.file(WIDE));
+        await racing.flush();
+        assert.equal(racing.pictures.length, 3, '存著的圖、上傳的檔案、轉出來再讀回來的圖');
+        racing.pictures[2].finish(true);
+        await racing.flush();
+        const newUrl = dataUrlOf(2048, 768);
+        assert.equal(racing.stored.get(IMAGE_KEY), newUrl);
+        assert.equal(pictureDraws(racing)[0].args[0].src, newUrl);
+        const writes = racing.storageWrites.length;
+        racing.pictures[0].finish(lateOk);
+        await racing.flush();
+        const why = lateOk ? '還原的舊圖讀回來了' : '還原的舊圖讀不出來';
+        assert.equal(pictureDraws(racing).length, 1, why);
+        assert.equal(pictureDraws(racing)[0].args[0].src, newUrl, `${why}：不蓋掉新的`);
+        assert.equal(racing.stored.get(IMAGE_KEY), newUrl, `${why}：記憶裡還是新的（不能被刪掉）`);
+        assert.equal(racing.storageWrites.length, writes, `${why}：不再寫`);
+        assert.equal(racing.$('cardImageStatus').textContent, '已上傳', `${why}：狀態不變`);
+        assert.equal(racing.$('imageRemove').disabled, false);
+        assert.deepEqual(racing.consoleErrors, []);
+    }
+});
+
+test('清除全部也清掉角色圖：圖片、檔案輸入、狀態、調整模式都回到沒有圖片的樣子，還在讀的圖也不會又冒出來', async () => {
+    const page = await createCardPage({ coarse: true });
+    page.type('cardName', 'Luna');
+    await upload(page, WIDE);
+    page.slide(200);
+    page.press('imageAdjust');
+    const slow = page.file({ name: 'slow.png', width: 1000, height: 3000, hold: true });
+    page.pick(slow);
+    assert.equal(page.$('cardImageStatus').textContent, '處理中…');
+
+    page.press('clearAll');
+    assert.ok(page.stored.has(IMAGE_KEY), '第一次按還沒清');
+    page.press('clearAll');
+    assert.ok(!page.stored.has(IMAGE_KEY) && !page.stored.has(KEY), '兩個鍵都清掉');
+    assert.equal(pictureDraws(page).length, 0);
+    assert.ok(page.drawCalls().some((call) => call.op === 'createRadialGradient'), '回到預設背景');
+    assert.equal(page.$('cardImageStatus').textContent, '');
+    assert.equal(page.$('cardImageInput').files.length, 0);
+    assert.equal(page.$('cardCanvas').classList.contains('is-adjusting'), false);
+    assert.equal(page.$('cardCanvas').classList.contains('has-image'), false);
+    assert.equal(page.$('imageAdjust').textContent, '調整圖片');
+    assert.equal(page.$('imageZoom').value, '100');
+    for (const id of IMAGE_CONTROLS) assert.equal(page.$(id).disabled, true, `#${id} 沒有圖片不能按`);
+    assert.equal(page.pointer('down', { pointerType: 'touch', x: 300, y: 200, id: 31 }).defaultPrevented, false);
+    assert.deepEqual(page.captures.filter((capture) => capture.pointerId === 31), []);
+
+    // 清除之前還在讀的那一張現在才讀完：不會又冒出來，也不會把記憶寫回去
+    page.finishFile(slow, true);
+    await page.flush();
+    assert.equal(pictureDraws(page).length, 0);
+    assert.ok(!page.stored.has(IMAGE_KEY) && !page.stored.has(KEY));
+    assert.equal(page.$('cardImageStatus').textContent, '');
+    assert.deepEqual(page.consoleErrors, []);
+
+    // 清除之後再上傳，從頭開始
+    await upload(page, WIDE);
+    assert.equal(page.$('imageZoom').value, '100');
+    assert.equal(pictureDraws(page).length, 1);
+});
+
+test('切換語言：角色圖的標籤、按鈕與狀態換成那個語言，圖片與位置不變', async () => {
+    const page = await createCardPage({ coarse: true });
+    const labels = () => [
+        page.$('cardImageInput').closest('label').textContent, labelOf(page, 'imageZoom'), page.$('imageCenter').textContent,
+        page.$('imageFill').textContent, page.$('imageRemove').textContent, page.$('imageAdjust').textContent
+    ];
+    assert.deepEqual(labels(), ['上傳截圖', '縮放', '置中', '填滿', '移除圖片', '調整圖片']);
+    await upload(page, WIDE);
+    page.slide(150);
+    assert.equal(page.$('cardImageStatus').textContent, '已上傳');
+
+    page.setLang('en');
+    assert.deepEqual(labels(), ['Upload screenshot', 'Zoom', 'Center', 'Fill', 'Remove picture', 'Adjust picture']);
+    assert.equal(page.$('cardImageStatus').textContent, 'Uploaded');
+    page.setLang('ja');
+    assert.deepEqual(labels(), ['スクリーンショットを選ぶ', '拡大', '中央に戻す', '全体に合わせる', '画像を削除', '画像を調整']);
+    assert.equal(page.$('cardImageStatus').textContent, 'アップロードしました');
+    // 圖片、位置、滑桿的百分比都不變（百分比不是文字，不跟著語言）
+    assert.equal(pictureDraws(page).length, 1);
+    assert.deepEqual(drawnRect(pictureDraws(page)[0]), expectedRect(page, WIDE_IMAGE, { x: 0, y: 0, zoom: 1.5 }));
+    assert.equal(page.$('imageZoom').value, '150');
+    assert.equal(page.$('imageZoomValue').textContent, '150%');
+    assert.equal(page.$('imageZoom').getAttribute('aria-valuetext'), '150%');
+
+    // 調整中的按鈕寫「完成」，換語言之後還是「完成」那個語言的字（共用的翻譯會先把按鈕改回「調整圖片」，頁面再補回來）
+    page.press('imageAdjust');
+    assert.equal(page.$('imageAdjust').textContent, '完了');
+    page.setLang('en');
+    assert.equal(page.$('imageAdjust').textContent, 'Done');
+    page.setLang('zh');
+    assert.equal(page.$('imageAdjust').textContent, '完成');
+    assert.equal(page.$('cardCanvas').classList.contains('is-adjusting'), true, '換語言不結束調整模式');
+
+    // 其他的狀態也跟著語言：讀不出來、移除、存不進去
+    page.pick(page.file({ broken: true }));
+    await page.flush();
+    assert.equal(page.$('cardImageStatus').textContent, '這個檔案讀不出來，請換一張圖片。');
+    page.setLang('en');
+    assert.equal(page.$('cardImageStatus').textContent, "This file couldn't be read. Try another image.");
+    page.press('imageRemove');
+    assert.equal(page.$('cardImageStatus').textContent, 'Picture removed');
+    page.setLang('ja');
+    assert.equal(page.$('cardImageStatus').textContent, '画像を削除しました');
+    const full = await createCardPage({ lang: 'en', storageFull: [IMAGE_KEY] });
+    await upload(full, WIDE);
+    assert.equal(full.$('cardImageStatus').textContent, "This picture is too big to remember. You'll need to upload it again after reloading.");
+    full.setLang('ja');
+    assert.equal(full.$('cardImageStatus').textContent, 'この画像は大きすぎて保存できません。再読み込みしたらもう一度アップロードしてください。');
+    const lost = await createCardPage({ lang: 'ja', stored: { [IMAGE_KEY]: 'data:image/jpeg;base64,AAAA' } });
+    assert.equal(lost.$('cardImageStatus').textContent, '前回の画像を読み込めませんでした。もう一度アップロードしてください。');
+    lost.setLang('en');
+    assert.equal(lost.$('cardImageStatus').textContent, "Your last picture couldn't be loaded. Please upload it again.");
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('角色圖的標記與樣式：看不見但能聚焦的檔案輸入、滑桿、只有調整模式才設 touch-action、有圖片時的游標、用 hidden 切換的元素', () => {
+    const panel = sliceElementById(HTML, 'panel-image');
+    // 上傳：<label> 包著檔案輸入，label 是按鈕的樣子，輸入框用 .visually-hidden（看不見但還是 Tab 得到）；字在輸入框外面的 <span>
+    assert.match(panel, /<label [^>]*class="[^"]*\bbtn\b[^"]*"[^>]*>\s*<span [^>]*data-i18n="char_card_image_upload"[^>]*>上傳截圖<\/span>\s*<input [^>]*id="cardImageInput"[^>]*>\s*<\/label>/);
+    const input = tagAttrs(HTML, 'cardImageInput');
+    assert.equal(input.type, 'file');
+    assert.equal(input.accept, 'image/*');
+    assert.ok(classesOf(input).includes('visually-hidden'));
+    assert.doesNotMatch(panel, /<input [^>]*id="cardImageInput"[^>]*(?:\shidden|display:\s*none|tabindex="-1")/, '輸入框不能 hidden、不能拿掉焦點');
+    // 看不見的輸入框獲得鍵盤焦點時，焦點外框畫在按鈕（label）上
+    assert.match(declarations('.image-upload:has(input:focus-visible)'), /box-shadow:\s*var\(--ring-primary\)/);
+    assert.match(declarations('.image-upload'), /position:\s*relative/);
+
+    // 狀態：aria-live，沒字時不占位
+    assert.equal(tagAttrs(HTML, 'cardImageStatus')['aria-live'], 'polite');
+    assert.match(declarations('.editor-panel .image-status:empty'), /margin-top:\s*0/);
+
+    // 滑桿 100～300、間隔 5，沒有圖片時 disabled；旁邊的百分比不是 <output>（它自帶 role="status"，每動一下就念一次，和滑桿自己念的重複）
+    const zoom = tagAttrs(HTML, 'imageZoom');
+    assert.deepEqual([zoom.type, zoom.min, zoom.max, zoom.step], ['range', '100', '300', '5']);
+    assert.match(panel, /<input [^>]*id="imageZoom"[^>]*\sdisabled/);
+    assert.doesNotMatch(panel, /<output/);
+    assert.match(panel, /<label [^>]*for="imageZoom"[^>]*>縮放<\/label>/);
+    // 按鈕：在表單裡，一律 type="button"；沒有圖片時 disabled
+    for (const id of ['imageCenter', 'imageFill', 'imageRemove', 'imageAdjust']) {
+        assert.equal(tagAttrs(HTML, id).type, 'button', `#${id}`);
+        assert.match(panel, new RegExp(`<button [^>]*id="${id}"[^>]*\\sdisabled`), `#${id} 一開始就 disabled`);
+    }
+    // 「調整圖片」一開始就 hidden（觸控為主的裝置才由 script.js 顯示），.btn 設了 display，要自己寫 display: none
+    assert.match(panel, /<button [^>]*id="imageAdjust"[^>]*\shidden/);
+    assert.match(declarations('#imageAdjust[hidden]'), /display:\s*none/);
+    assert.doesNotMatch(panel, /id="imageAdjust"[^>]*aria-pressed/, '不用 aria-pressed：按鈕的字就說了狀態');
+
+    // 拖曳：touch-action: none 只在調整模式（要在手指按下去之前就設好才有用），平常不設，手指在卡片上滑頁面照常捲
+    assert.doesNotMatch(declarations('.preview-canvas', BASE_CSS), /touch-action/);
+    assert.match(declarations('.preview-canvas.is-adjusting'), /touch-action:\s*none/);
+    assert.match(declarations('.preview-canvas.is-adjusting'), /cursor:\s*grab/);
+    assert.equal((CSS.match(/touch-action/g) ?? []).length, 1, '整份 style.css 只有調整模式設 touch-action');
+    // 游標：有圖片時滑鼠指到卡片是 grab（只在 pointer: fine，手指沒有游標），拖的時候是 grabbing
+    assert.match(declarations('.preview-canvas.has-image', mediaBody('(pointer: fine)')), /cursor:\s*grab/);
+    assert.doesNotMatch(declarations('.preview-canvas.has-image', BASE_CSS), /cursor/);
+    assert.match(declarations('.preview-canvas.is-dragging'), /cursor:\s*grabbing/);
+    assert.ok(CSS.indexOf('.preview-canvas.is-dragging') > CSS.indexOf('.preview-canvas.has-image'), 'grabbing 排在 grab 後面才蓋得掉它');
+    // 拖曳不選到字
+    assert.match(declarations('.preview-canvas'), /user-select:\s*none/);
+    assert.match(declarations('.image-zoom'), /width:\s*100%/);
+});
+
+test('頁面替身本身（角色圖）：檔案輸入、blob: 網址、角色圖的 Image、指標與抓取、容量已滿、觸控為主的切換', async () => {
+    const page = await createCardPage({ pictureLoads: 'hold', pointerCapture: 'throws', displayScale: 0.25, storageFull: ['no-room'] });
+
+    // file()：假的 File，預設是 1600×900 的 png
+    assert.deepEqual(page.file(), { name: 'screenshot.png', type: 'image/png', size: 1600 * 900, width: 1600, height: 900, broken: false, hold: false });
+    assert.deepEqual(page.file({ name: 'a.jpg', type: 'image/jpeg', width: 10, height: 20, broken: true, hold: true }),
+        { name: 'a.jpg', type: 'image/jpeg', size: 200, width: 10, height: 20, broken: true, hold: true });
+
+    // pick()：files 換成選的檔案（FileList 的替身：沒有陣列的方法），先 input 再 change；value 設 '' 才清掉，設別的字丟錯。
+    // 頁面自己在 change 裡就把輸入框清掉了（同一個檔案再選才有 change），也會開始處理第一個檔案，所以這一段用另一個頁面，不影響後面的記錄；
+    // 在輸入框自己的監聽裡看 files（它比冒泡到表單的頁面處理先跑）
+    const picker = await createCardPage();
+    const input = picker.$('cardImageInput');
+    const events = [];
+    let during = null;
+    input.addEventListener('input', () => events.push('input'));
+    input.addEventListener('change', () => {
+        events.push('change');
+        during = {
+            length: input.files.length, first: input.files[0], second: input.files.item(1), third: input.files.item(2),
+            names: [...input.files].map((file) => file.name), value: input.value,
+            arrayMethods: ['map', 'filter', 'find', 'slice', 'forEach'].map((name) => input.files[name])
+        };
+    });
+    const [one, two] = [page.file({ name: 'one.png' }), page.file({ name: 'two.png' })];
+    picker.pick(one, two);
+    assert.deepEqual(events, ['input', 'change']);
+    assert.equal(during.length, 2);
+    isSame(during.first, one);
+    isSame(during.second, two);
+    assert.equal(during.third, null);
+    assert.deepEqual(during.names, ['one.png', 'two.png']);
+    assert.deepEqual(during.arrayMethods, [undefined, undefined, undefined, undefined, undefined], 'FileList 沒有陣列的方法');
+    assert.equal(during.value, 'C:\\fakepath\\one.png');
+    assert.equal(input.files.length, 0, '頁面把輸入框清掉了');
+    assert.equal(input.value, '');
+    assert.throws(() => { input.value = 'x.png'; }, { name: 'InvalidStateError' });
+    picker.pick();
+    assert.equal(during.length, 0, '沒給檔案是取消');
+    assert.deepEqual(events, ['input', 'change', 'input', 'change']);
+
+    // URL：createObjectURL 記下網址（不是物件的東西丟 TypeError），revokeObjectURL 也記；原本的 URL 照常能用
+    const { URL: PageURL } = page.window;
+    const url = PageURL.createObjectURL(one);
+    assert.match(url, /^blob:https:\/\/ff14\.tw\//);
+    assert.throws(() => PageURL.createObjectURL('檔案'), TypeError);
+    assert.throws(() => PageURL.createObjectURL(null), TypeError);
+    assert.equal(new PageURL('https://ff14.tw/tools/').pathname, '/tools/');
+    assert.deepEqual(page.objectUrls, { created: [url], revoked: [] });
+
+    // Image：角色圖（blob:、data:）和職業圖示分開記，不影響 images
+    const load = (src) => {
+        const image = new page.window.Image();
+        const seen = [];
+        image.onload = () => seen.push('load');
+        image.onerror = () => seen.push('error');
+        image.src = src;
+        return { image, seen };
+    };
+    const blob = load(url);
+    assert.equal(blob.image.file, one);
+    assert.deepEqual(page.pictures, [blob.image]);
+    assert.deepEqual(page.images, [], '角色圖不算職業圖示');
+    page.finishFile(one, true);
+    assert.deepEqual([blob.seen, blob.image.naturalWidth, blob.image.naturalHeight, blob.image.complete], [['load'], 1600, 900, true]);
+    // 讀不出來的檔案、撤掉之後才載入的、藏著不放（hold）的檔案
+    const broken = page.file({ name: 'broken.png', broken: true });
+    const brokenUrl = PageURL.createObjectURL(broken);
+    const brokenImage = load(brokenUrl);
+    page.finishFile(broken, true);
+    assert.deepEqual([brokenImage.seen, brokenImage.image.naturalWidth], [['error'], 0]);
+    const late = page.file({ name: 'late.png', width: 30, height: 40 });
+    const lateUrl = PageURL.createObjectURL(late);
+    const lateImage = load(lateUrl);
+    PageURL.revokeObjectURL(lateUrl);
+    page.finishFile(late, true);
+    assert.deepEqual(lateImage.seen, ['error'], '撤掉的網址之後才載入，和瀏覽器一樣讀不出來');
+    assert.deepEqual(page.objectUrls.revoked, [lateUrl]);
+    const held = page.file({ name: 'held.png', width: 30, height: 40, hold: true });
+    const heldImage = load(PageURL.createObjectURL(held));
+    await page.flush();
+    assert.deepEqual([heldImage.seen, heldImage.image.complete], [[], false], 'hold 的檔案不自己結束');
+    page.finishFile(held, false);
+    assert.deepEqual(heldImage.seen, ['error'], 'finishFile(檔案, false) 讓它讀不出來');
+    assert.throws(() => page.finishFile(page.file({ name: 'never.png' })), /還沒讀 never\.png/);
+    // data:：canvas 的 toDataURL 替身轉出來的讀回那個大小；其他內容讀不出來；pictureLoads 'hold' 時不自己結束
+    const data = load(dataUrlOf(640, 360));
+    const garbage = load('data:image/jpeg;base64,AAAA');
+    const text = load('data:text/plain;base64,AAAA');
+    await page.flush();
+    assert.deepEqual([data.seen, garbage.seen, text.seen], [[], [], []]);
+    page.finishPictures(true);
+    assert.deepEqual([data.seen, data.image.naturalWidth, data.image.naturalHeight], [['load'], 640, 360]);
+    assert.deepEqual([garbage.seen, text.seen], [['error'], ['error']]);
+    // 職業圖示照舊：路徑、64×64
+    const icon = load('../../assets/images/se/FFXIVJobIcons/x.png');
+    await page.flush();
+    assert.deepEqual([icon.seen, icon.image.naturalWidth], [['load'], 64]);
+    assert.deepEqual(page.images, [icon.image]);
+
+    // pointer()：在卡片的 canvas 上派送，會冒泡、可取消；up 之後 canvas 還抓著就自己放掉並派送 lostpointercapture（pointerCapture 'throws' 時抓不到）
+    const canvas = page.$('cardCanvas');
+    const received = [];
+    for (const type of ['pointerdown', 'pointermove', 'pointerup', 'pointercancel', 'lostpointercapture']) canvas.addEventListener(type, (event) => received.push(event));
+    const down = page.pointer('down', { x: 12, y: 34, id: 5, pointerType: 'touch', button: 0 });
+    assert.deepEqual([down.type, down.clientX, down.clientY, down.pointerId, down.pointerType, down.button, down.bubbles, down.cancelable], ['pointerdown', 12, 34, 5, 'touch', 0, true, true]);
+    assert.throws(() => canvas.setPointerCapture(5), { name: 'NotFoundError' });
+    page.pointer('up', { id: 5 });
+    assert.deepEqual(received.map((event) => event.type), ['pointerdown', 'pointerup'], '沒抓著就沒有 lostpointercapture');
+    assert.throws(() => page.pointer('sideways'), /pointer 的類型/);
+    const capturing = await createCardPage();
+    const log = [];
+    for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) capturing.$('cardCanvas').addEventListener(type, (event) => log.push(`${event.type}:${event.pointerId}`));
+    capturing.$('cardCanvas').setPointerCapture(8);
+    capturing.pointer('cancel', { id: 8 });
+    assert.deepEqual(log, ['pointercancel:8', 'lostpointercapture:8']);
+    assert.deepEqual(capturing.captures, [{ call: 'set', pointerId: 8 }, { call: 'lost', pointerId: 8 }]);
+    capturing.$('cardCanvas').releasePointerCapture(8);
+    assert.deepEqual(capturing.captures.at(-1), { call: 'release', pointerId: 8 });
+    // 抓著的 pointer 被 releasePointerCapture 放掉：和瀏覽器一樣 canvas 收到 lostpointercapture。lose() 只送 lostpointercapture（沒有 pointerup、pointercancel），沒抓著就丟錯
+    log.length = 0;
+    capturing.$('cardCanvas').setPointerCapture(9);
+    capturing.$('cardCanvas').releasePointerCapture(9);
+    assert.deepEqual(log, ['lostpointercapture:9']);
+    assert.deepEqual(capturing.captures.slice(-3), [{ call: 'set', pointerId: 9 }, { call: 'release', pointerId: 9 }, { call: 'lost', pointerId: 9 }]);
+    log.length = 0;
+    capturing.$('cardCanvas').setPointerCapture(10);
+    capturing.lose(10);
+    assert.deepEqual(log, ['lostpointercapture:10']);
+    assert.deepEqual(capturing.captures.slice(-2), [{ call: 'set', pointerId: 10 }, { call: 'lost', pointerId: 10 }]);
+    assert.throws(() => capturing.lose(10), /沒有抓著 pointer 10/);
+    assert.throws(() => capturing.lose(), /沒有抓著 pointer 1/);
+    // buttons：按下去到放開之前是按著的按鍵（左 1、右 2、中 4），其他時候（只是移動、放開的那一刻、取消之後）是 0；傳 buttons 就照傳的
+    const buttonsOf = (...events) => events.map((event) => event.buttons);
+    assert.deepEqual(buttonsOf(
+        capturing.pointer('move', { id: 11 }), capturing.pointer('down', { id: 11, button: 2 }), capturing.pointer('move', { id: 11 }),
+        capturing.pointer('move', { id: 11, buttons: 0 }), capturing.pointer('up', { id: 11, button: 2 }), capturing.pointer('move', { id: 11 }),
+        capturing.pointer('down', { id: 12 }), capturing.pointer('down', { id: 13, button: 1 }), capturing.pointer('cancel', { id: 12 }), capturing.pointer('move', { id: 12 }),
+        capturing.pointer('move', { id: 13 }), capturing.pointer('move', { id: 13, buttons: 5 })
+    ), [0, 2, 2, 0, 0, 0, 1, 4, 0, 0, 4, 5]);
+    assert.throws(() => capturing.drag([[1, 1]]), /至少要按下與放開/);
+
+    // getBoundingClientRect()：canvas 的寬高乘 displayScale，藏起來是 0；每張 canvas 都有（頁面自己建的也是）；toDataURL 記下請求
+    assert.deepEqual([canvas.getBoundingClientRect().width, canvas.getBoundingClientRect().height], [300, 168.75]);
+    page.setDisplayScale(0);
+    assert.deepEqual([canvas.getBoundingClientRect().width, canvas.getBoundingClientRect().height], [0, 0]);
+    page.setDisplayScale(1);
+    const scratch = page.document.createElement('canvas');
+    scratch.width = 40;
+    scratch.height = 30;
+    assert.equal(scratch.getBoundingClientRect().width, 40);
+    assert.equal(scratch.toDataURL('image/jpeg', 0.5), dataUrlOf(40, 30));
+    assert.deepEqual(page.dataUrlRequests, [{ type: 'image/jpeg', quality: 0.5, width: 40, height: 30 }]);
+
+    // storageFull：這些鍵的 setItem 丟 QuotaExceededError，別的照常；storageWrites 兩種都記
+    assert.throws(() => page.window.localStorage.setItem('no-room', 'x'), { name: 'QuotaExceededError' });
+    page.window.localStorage.setItem('room', 'y');
+    assert.equal(page.stored.get('room'), 'y');
+    assert.ok(!page.stored.has('no-room'));
+    assert.deepEqual(page.storageWrites.slice(-2), ['no-room', 'room']);
+
+    // slide() 對 disabled 的滑桿丟錯（使用者動不了）
+    assert.equal(page.$('imageZoom').disabled, true);
+    assert.throws(() => page.slide(150), /disabled/);
+
+    // setCoarse() 通知 (pointer: coarse) 的監聽並改 matches；setNarrow 的監聽不受影響；reopen 帶著新的選項
+    const coarse = page.window.matchMedia('(pointer: coarse)');
+    const seen = [];
+    coarse.addEventListener('change', (event) => seen.push(event.matches));
+    const narrowSeen = [];
+    page.window.matchMedia('(max-width: 768px)').addEventListener('change', (event) => narrowSeen.push(event.matches));
+    page.setCoarse(true);
+    assert.deepEqual([seen, coarse.matches, narrowSeen], [[true], true, []]);
+    page.setNarrow(true);
+    assert.deepEqual([seen, narrowSeen], [[true], [true]]);
+    const again = await page.reopen({ pictureLoads: 'load' });
+    assert.equal(again.window.matchMedia('(pointer: coarse)').matches, true, 'reopen 帶著現在的觸控為主');
+    assert.equal(again.$('cardCanvas').getBoundingClientRect().width, 1200, 'displayScale 也帶著（setDisplayScale(1) 之後是 1）');
+    assert.throws(() => again.$('cardCanvas').setPointerCapture(1), { name: 'NotFoundError' }, 'pointerCapture 也帶著');
+    await assert.rejects(createCardPage({ pictureLoads: 'nope' }), /不認得的 pictureLoads/);
+    await assert.rejects(createCardPage({ pointerCapture: 'nope' }), /不認得的 pointerCapture/);
+});
+
 test('index.html：腳本順序、標準字型連結＋Outfit、不載入 security-utils.js、沒有 innerHTML；style.css：沒有 overflow-x、沒有色碼、用 hidden 切換的元素都有 display: none', () => {
     // 腳本順序：i18n 三個、頁首頁尾與共用腳本（tools-registry.js 在 nav-template.js 前、layout-loader.js 在 common.js 前）、共用的遊戲資料與 ModalManager、
-    // 這個工具的模組（card-image.js、card-export.js 是後面的 Task 才會有），最後是 script.js
+    // 這個工具的模組（card-export.js 是後面的 Task 才會有），最後是 script.js
     const scripts = [...HTML.matchAll(/<script src="([^"]+)"/g)].map((m) => m[1]);
     const ORDER = [
         '../../assets/js/i18n/i18n-manager.js',
@@ -1150,7 +2336,7 @@ test('index.html：腳本順序、標準字型連結＋Outfit、不載入 securi
         'script.js'
     ];
     assert.deepEqual(scripts, ORDER.filter((src) => scripts.includes(src)), '腳本照規定的順序載入，沒有多的');
-    for (const src of ORDER.filter((item) => !['card-image.js', 'card-export.js'].includes(item))) assert.ok(scripts.includes(src), `載入 ${src}`);
+    for (const src of ORDER.filter((item) => item !== 'card-export.js')) assert.ok(scripts.includes(src), `載入 ${src}`);
     assert.equal(scripts.at(-1), 'script.js');
     assert.ok(!scripts.some((src) => src.endsWith('security-utils.js')), '不載入 security-utils.js');
     assert.ok(!scripts.includes('character-card-data.js'), '舊的資料檔拿掉了');
@@ -1244,7 +2430,7 @@ test('script.js 不在 NodeList／HTMLCollection 上直接用陣列方法', () =
 
     // 掃的是頁面載入的每一支這個工具的腳本（index.html 的 <script src> 裡沒有 / 的那幾個），不只 script.js
     const files = [...HTML.matchAll(/<script src="([^"/]+\.js)"/g)].map((m) => `tools/character-card/${m[1]}`);
-    for (const expected of ['card-state.js', 'card-layout.js', 'card-renderer.js', 'script.js']) {
+    for (const expected of ['card-state.js', 'card-layout.js', 'card-renderer.js', 'card-image.js', 'script.js']) {
         assert.ok(files.includes(`tools/character-card/${expected}`), `掃描的清單裡有 ${expected}`);
     }
     for (const file of files) {
@@ -1339,6 +2525,27 @@ test('翻譯：三語的鍵一樣，每個鍵的 {參數} 三語一樣，index.h
     };
     for (const lang of LANGS) {
         for (const [key, text] of Object.entries(expected[lang])) assert.equal(values[lang].get(`char_card_${key}`), text, `${lang} 的 ${key}`);
+    }
+    // 角色圖：狀態文字與按鈕的字（不存進欄位的記憶，只是畫面上的字）；「這張圖太大」那一句的中文一字不差
+    const image = {
+        zh: {
+            upload: '上傳截圖', zoom: '縮放', center: '置中', fill: '填滿', remove: '移除圖片', adjust: '調整圖片', adjust_done: '完成',
+            processing: '處理中…', uploaded: '已上傳', not_saved: '這張圖太大，這次不會記住，重新整理後要再上傳。',
+            failed: '這個檔案讀不出來，請換一張圖片。', removed: '已移除圖片', restore_failed: '上次的圖片讀不出來，請重新上傳。'
+        },
+        en: {
+            upload: 'Upload screenshot', zoom: 'Zoom', center: 'Center', fill: 'Fill', remove: 'Remove picture', adjust: 'Adjust picture', adjust_done: 'Done',
+            processing: 'Processing…', uploaded: 'Uploaded', not_saved: "This picture is too big to remember. You'll need to upload it again after reloading.",
+            failed: "This file couldn't be read. Try another image.", removed: 'Picture removed', restore_failed: "Your last picture couldn't be loaded. Please upload it again."
+        },
+        ja: {
+            upload: 'スクリーンショットを選ぶ', zoom: '拡大', center: '中央に戻す', fill: '全体に合わせる', remove: '画像を削除', adjust: '画像を調整', adjust_done: '完了',
+            processing: '処理中…', uploaded: 'アップロードしました', not_saved: 'この画像は大きすぎて保存できません。再読み込みしたらもう一度アップロードしてください。',
+            failed: 'このファイルは読み込めません。別の画像を選んでください。', removed: '画像を削除しました', restore_failed: '前回の画像を読み込めませんでした。もう一度アップロードしてください。'
+        }
+    };
+    for (const lang of LANGS) {
+        for (const [name, text] of Object.entries(image[lang])) assert.equal(values[lang].get(`char_card_image_${name}`), text, `${lang} 的 char_card_image_${name}`);
     }
     // 卡片上的時段用短標籤（英文的全名縮在卡片上看不清）
     assert.deepEqual(['char_card_card_day_weekday', 'char_card_card_day_weekend', 'char_card_card_slot_morning', 'char_card_card_slot_afternoon', 'char_card_card_slot_evening', 'char_card_card_slot_late_night'].map((key) => values.en.get(key)),

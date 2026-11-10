@@ -219,7 +219,29 @@
 
                     <section class="card editor-panel" id="panel-image" role="tabpanel" aria-labelledby="tab-image" tabindex="-1">
                         <h2 class="editor-panel-title" data-i18n="char_card_panel_image">角色圖</h2>
-                        <!-- 上傳截圖、拖曳與縮放的控制項由後面的 Task 補在這裡 -->
+                        <!-- 上傳：<label> 包著檔案輸入（.visually-hidden：看不見但 Tab 得到，焦點外框畫在按鈕上），字在輸入框外面的 <span>。
+                             狀態（處理中、已上傳、太大不會記住…）寫在 #cardImageStatus，aria-live 念給螢幕閱讀器。
+                             在卡片上拖曳移動圖片、縮放、置中與填滿都要有圖片才能用，一開始 disabled；script.js 照有沒有圖片切換。
+                             「調整圖片」一開始 hidden，只有觸控為主的裝置才由 script.js 顯示：手機上手指從卡片上滑要能捲動頁面，按了它才在卡片上拖 -->
+                        <div class="form-group">
+                            <div class="image-actions">
+                                <label class="btn btn-secondary image-upload"><span data-i18n="char_card_image_upload">上傳截圖</span><input type="file" class="visually-hidden" id="cardImageInput" accept="image/*"></label>
+                                <button type="button" class="btn btn-secondary" id="imageRemove" disabled data-i18n="char_card_image_remove">移除圖片</button>
+                            </div>
+                            <p class="form-text image-status" id="cardImageStatus" aria-live="polite"></p>
+                        </div>
+                        <div class="form-group">
+                            <div class="field-head">
+                                <label class="form-label" for="imageZoom" data-i18n="char_card_image_zoom">縮放</label>
+                                <span class="field-count" id="imageZoomValue">100%</span>
+                            </div>
+                            <input type="range" class="image-zoom" id="imageZoom" min="100" max="300" step="5" value="100" disabled aria-valuetext="100%">
+                        </div>
+                        <div class="form-group image-actions">
+                            <button type="button" class="btn btn-secondary" id="imageCenter" disabled data-i18n="char_card_image_center">置中</button>
+                            <button type="button" class="btn btn-secondary" id="imageFill" disabled data-i18n="char_card_image_fill">填滿</button>
+                            <button type="button" class="btn btn-secondary" id="imageAdjust" hidden disabled>調整圖片</button>
+                        </div>
                     </section>
 
                     <section class="card editor-panel" id="panel-style" role="tabpanel" aria-labelledby="tab-style" tabindex="-1">
@@ -273,6 +295,7 @@
     <script src="card-state.js"></script>
     <script src="card-layout.js"></script>
     <script src="card-renderer.js"></script>
+    <script src="card-image.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
