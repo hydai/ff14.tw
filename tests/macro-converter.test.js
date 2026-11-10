@@ -710,6 +710,48 @@ test('按下複製到剪貼簿寫完之間輸出變了（清除、改目標語�
     assert.deepEqual(page.consoleErrors, []);
 });
 
+test('連按兩次複製、兩次的剪貼簿寫入都還沒寫完：最後寫完的是舊的輸出時，按鈕變回「複製」', async () => {
+    const OLD = '/ac "堅信" <wait.3>';
+    const NEW = '/ac "改革" <wait.2>';
+    // 先複製一份、改了輸出再複製一份，兩筆都還在寫
+    const twoWrites = async () => {
+        const page = await createMacroPage({ clipboard: 'hold' });
+        page.type(MUSCLE_MEMORY);
+        page.$('copyOutput').click();
+        await page.settle();
+        page.type('/ac Innovation <wait.2>');
+        page.$('copyOutput').click();
+        await page.settle();
+        assert.equal(page.output(), NEW);
+        return page;
+    };
+
+    // 後按的先寫完：剪貼簿是現在的輸出，寫「✓ 已複製」；先按的最後才寫完：剪貼簿換回舊的輸出，
+    // 「✓ 已複製」說的已經不是剪貼簿裡的東西，變回「複製」、計時取消（兩次都跳 toast「已複製」：兩次都真的寫了）
+    const late = await twoWrites();
+    late.releaseClipboard(1);
+    await late.settle();
+    assert.equal(late.clipboardText, NEW);
+    assert.equal(late.$('copyOutput').textContent, '✓ 已複製');
+    assert.deepEqual(late.pendingDelays(), [2000]);
+    late.releaseClipboard();
+    await late.settle();
+    assert.equal(late.clipboardText, OLD, '剪貼簿裡是舊的輸出');
+    assert.equal(late.$('copyOutput').textContent, '複製', '不再寫「✓ 已複製」');
+    assert.deepEqual(late.pendingDelays(), [], '計時取消了');
+    assert.deepEqual(late.toasts, [{ message: '已複製', type: 'success' }, { message: '已複製', type: 'success' }]);
+
+    // 照順序寫完：剪貼簿是現在的輸出，最後寫「✓ 已複製」
+    const inOrder = await twoWrites();
+    inOrder.releaseClipboard();
+    await inOrder.settle();
+    assert.equal(inOrder.clipboardText, NEW);
+    assert.equal(inOrder.$('copyOutput').textContent, '✓ 已複製');
+    assert.deepEqual(inOrder.pendingDelays(), [2000]);
+    assert.deepEqual(late.consoleErrors, []);
+    assert.deepEqual(inOrder.consoleErrors, []);
+});
+
 test('複製失敗：toast「複製失敗，請手動選取文字」，按鈕不變，輸出還在讓玩家自己選取', async () => {
     const page = await createMacroPage({ clipboard: 'reject' });
     const copy = page.$('copyOutput');

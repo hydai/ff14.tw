@@ -28,7 +28,7 @@
 // - clipboard：'ok'（預設）、'reject' 或 'hold'。navigator.clipboard 的 writeText() 與 readText() 都是 async：'ok' 時 writeText(text) 把 text 記在
 //   clipboard（寫入的每一筆，照順序）並成為剪貼簿目前的內容，readText() 回傳剪貼簿目前的內容；'reject' 時兩個都回傳被拒絕的 Promise
 //   （瀏覽器沒給權限或不支援），什麼都不記；'hold' 時 writeText() 先不回來（瀏覽器還在問權限、剪貼簿還在寫），呼叫 releaseClipboard()
-//   才讓等著的每一筆照順序和 'ok' 一樣寫進去並回來，readText() 同 'ok'。clipboardMode 可讀可寫，是現在的模式（先成功、再失敗的情況在測試裡改它；
+//   才讓等著的每一筆照順序和 'ok' 一樣寫進去並回來（releaseClipboard(index) 只放還在等的第 index 筆，模擬後按的先寫完），readText() 同 'ok'。clipboardMode 可讀可寫，是現在的模式（先成功、再失敗的情況在測試裡改它；
 //   改模式不影響已經在等的寫入）。
 //   clipboardText 可讀可寫，是剪貼簿目前的內容（一開始是 ''；測試要「貼上」的字先寫在這裡，'ok' 時 readText() 就是回傳它：
 //   空字串、只有空白的字也一樣照實回傳，像複製的是圖片時 readText() 讀到的是空字串）
@@ -229,9 +229,12 @@ async function createMacroPage({
         },
         get clipboardText() { return systemClipboard; },
         set clipboardText(text) { systemClipboard = String(text); },
-        // 'hold' 時等著的 writeText() 照順序寫進去並回來；之後要 await settle() 讓頁面的 await 跑完
-        releaseClipboard() {
-            for (const release of heldWrites.splice(0)) release();
+        // 'hold' 時等著的 writeText() 寫進去並回來：沒給 index 時照順序全部；給了只放還在等的第 index 筆（0 起算），
+        // 用來模擬後按的先寫完。之後要 await settle() 讓頁面的 await 跑完
+        releaseClipboard(index) {
+            const releases = index === undefined ? heldWrites.splice(0) : heldWrites.splice(index, 1);
+            assert.ok(releases.length > 0, 'releaseClipboard：沒有還在等的寫入');
+            for (const release of releases) release();
         },
         $,
         type(text) {
