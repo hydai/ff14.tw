@@ -164,6 +164,8 @@ http://localhost:8000
 - 天氣預報
 - 攻略資料（8 個頁面都不載入資料檔）
 
+**分享預覽與主畫面圖示：** 由 `node scripts/share-preview.mjs pages`／`images` 產生（`images` 要本機的 Chrome 與網路），改了頁面標題、說明或新增工具後重跑。
+
 ### 測試與協作 API
 
 使用 Node 24，在專案根目錄執行：
@@ -189,6 +191,7 @@ ff14.tw/
 ├── changelog.html          # 修改紀錄頁面
 ├── copyright.html          # 版權聲明頁
 ├── 404.html                # 404 頁（GitHub Pages 對不存在的網址顯示它）
+├── manifest.webmanifest    # 網站的主畫面設定（每個工具目錄也各有一個）
 ├── api/                    # Cloudflare Workers API（寶圖隊伍協作，含自己的 package.json / wrangler.toml）
 │   └── treasure-room-worker.js
 ├── data/                   # 資料檔案
@@ -235,6 +238,9 @@ ff14.tw/
 │   │           └── tools/  # 各工具翻譯檔（report-generator 尚無）
 │   └── images/             # 圖片資源
 │       ├── ff14tw.ico      # 網站 favicon
+│       ├── ff14tw-logo.png # logo 原檔（1024×1024，預覽圖與主畫面圖示都從它產生）
+│       ├── og/             # 21 張分享預覽圖（由 scripts/share-preview.mjs 產生）
+│       ├── icons/          # 4 張主畫面圖示（同上）
 │       ├── se/             # Square Enix 官方素材
 │       │   └── FFXIVJobIcons/  # FF14 職業圖示 (45個)
 │       ├── tools/          # 工具用圖片（目前只有副本圖片的說明檔，頁面不顯示副本圖片）
@@ -243,8 +249,10 @@ ff14.tw/
 │   ├── generate-macro-mappings.py
 │   ├── add-design-links.mjs
 │   ├── remove-dark-mode-links.mjs
-│   └── replace-noscript-nav.mjs
-├── tests/                  # 62 份 node --test 測試（下列為部分範例）
+│   ├── replace-noscript-nav.mjs
+│   ├── share-preview.mjs   # 分享預覽與主畫面圖示的產生腳本（pages、images 兩個指令）
+│   └── share-preview/      # 它的模組與預覽圖範本 card.html
+├── tests/                  # 63 份 node --test 測試（下列為部分範例）
 │   ├── design-system.test.js
 │   ├── docs.test.js
 │   ├── gathering-materials.test.js
