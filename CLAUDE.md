@@ -19,7 +19,7 @@ FF14.tw is a multi-tool website for Final Fantasy XIV players in Taiwan, providi
 ## Project Statistics
 
 - **HTML Files**: 26 total — 20 across 13 tool directories (12 single-page tools + `guide/` with 8 pages) + 5 root pages (`index.html`, `about.html`, `changelog.html`, `copyright.html`, `404.html`) + 1 API test harness (`api/test.html`)
-- **JavaScript Files**: 164 total — 55 tool scripts + 8 shared utilities (`assets/js/`) + 19 i18n (manager + translations) + 4 layout components (`assets/js/components/`) + 62 test files (`tests/*.test.js`) + 15 test helpers (`tests/helpers/`, not test files) + 1 Cloudflare Worker (`api/treasure-room-worker.js`); plus 3 Node build scripts (`scripts/*.mjs`, not shipped to the site)
+- **JavaScript Files**: 165 total — 55 tool scripts + 8 shared utilities (`assets/js/`) + 19 i18n (manager + translations) + 4 layout components (`assets/js/components/`) + 63 test files (`tests/*.test.js`) + 15 test helpers (`tests/helpers/`, not test files) + 1 Cloudflare Worker (`api/treasure-room-worker.js`); plus 4 Node build scripts (`scripts/*.mjs`) and the 4 modules of `scripts/share-preview/` with its preview card template `card.html` (not counted in the HTML files), none of them part of the site
 - **CSS Files**: 24 (shared + components + tool-specific)
 - **JSON Data Files**: 8 (total ~25,600 lines); `/data/` also has one non-JSON `ff14-gp.csv`
 - **Total Dungeons**: 803 entries (data file's own `metadata.totalDungeons` field still says 804 — pre-existing inconsistency inside `dungeons.json` itself, not a doc bug)
@@ -75,7 +75,8 @@ Tools that work without server (can open HTML directly):
 - `tests/home-page.test.js`：首頁工具卡的結構與狀態標示、翻譯鍵與預設文字、hero 縮小與版面數值
 - `tests/not-found-page.test.js`：404 頁的絕對路徑、載入順序、頁面結構、翻譯、工具清單與樣式
 - `tests/fake-dom.test.js`：守住 `fake-dom.js` 本身的行為（事件的捕獲／冒泡、焦點與 `inert`、選擇器、屬性等），以及 `html-fragment.js` 的 `mountFromHtml()` 照 `index.html` 的寫法建出節點
-- `tests/theme-toggle.test.js` 也改用 `fake-dom.js`：主題切換鈕只建立一次，跨過 768px 不搬動
+- `tests/theme-toggle.test.js` 也改用 `fake-dom.js`：主題切換鈕只建立一次，跨過 768px 不搬動；另守住網址列顏色（載入真正的 `common.js`，`getComputedStyle`、`matchMedia` 與 `localStorage` 是測試補的替身，`getComputedStyle` 照 `tokens.css` 的值回答）：`ThemeManager` 套用深色時 `<meta name="theme-color">` 是 `#4b5ca8`、切回淺色是 `#667eea`（前後沒有空白）；打開頁面時就是深色（存著的偏好或系統偏好）的話一開始就是深色的值，沒存過偏好時系統在深淺色之間切換也跟著換；頁面沒有 `<meta name="theme-color">`，或讀不到 token（沒有 `getComputedStyle`、空字串、只有空白）時不改、不丟錯，也不替頁面補一個
+- `tests/share-preview.test.js`：守住分享預覽與主畫面（見「分享預覽與主畫面」；腳本是 ES module，測試用 `await import()` 載入 `scripts/share-preview/*.mjs`，不啟動真的 Chrome：用假的 Chrome 或不存在的 `CHROME_PATH`）。頁面：repo 裡的 HTML（不含 `api/`、`scripts/` 這類不屬於網站的目錄）剛好是 `loadSite().pages` 的 25 頁；每一頁的那一段逐字等於 `headBlock()`、前後註解各一個、在 `<head>` 裡，那一段以外沒有任何 `og:`、`twitter:`、`theme-color`、`apple-mobile-web-app-title`、manifest 或 `apple-touch-icon` 標籤；天氣預報那一段逐行等於設計文件的範例；`og:title`／`og:description` 等於頁面本身，沒有任何一頁有 `og:url`（含 404），`og:image` 指到存在的圖；404 那一段只有 `/` 開頭的路徑；14 個 manifest 逐字等於 `manifestJson()` 且內容照設計，每一頁連到的 manifest 與 `apple-touch-icon` 解析出來是對的檔案、scope 包含這一頁；`theme-color` 與 manifest 的 `theme_color` 等於 `tokens.css` 淺色的 `--color-browser-bar`；`TOOL_COLORS` 剛好涵蓋登錄表的 13 個站內工具，每個底色和白字的對比 ≥ 4.5:1；首頁與採集頁的分頁標題（採集頁用真正的 `I18nManager` 切換語言：「Timed Gathering Manager - FF14.tw」「タイムド採集管理 - FF14.tw」）；Lodestone 的 canonical 還在、舊的 `og-image.png` 不在任何頁面裡。腳本：`readTokens`（淺色是 `:root`、深色是 `[data-theme="dark"]`、`var()` 照同一個主題展開）、`pageText`（解開 HTML 實體，不認得的實體丟錯）、`headBlock` 的跳脫、`applyHeadBlock`（重跑一字不差；註解對不上或找不到 favicon 那一行就丟錯並寫出檔名；頁面是 CRLF 換行時照樣插入、換掉，寫回時整份保留 CRLF）、`pages` 指令在暫存複本上跑（重跑沒有檔案被改，只補回改壞的，有一頁出錯時所有檔案都不寫；25 頁都是 CRLF 時照樣跑完、換行不變）、`loadSite` 缺顏色 token 或缺說明時丟錯並指出是哪一個。圖：`png.mjs`（讀、解、編碼、重新壓縮、寫 `tEXt`，壞檔與不支援的格式丟錯，與另一個編碼器 ffmpeg 存出來的檔案對照）、`cards.mjs`（背景、雜湊、頁面；範本是 CRLF 還是 LF 雜湊一樣；真正的 `card.html` 換得出 21 張完整的頁面、固定 1200×630、外部網址只有 Google Fonts、說明只在標點與空格斷行、範本與腳本不寫色碼）、`render.mjs`（找不到 Chrome 時訊息寫出找的路徑與 `CHROME_PATH`，Chrome 一啟動就結束或連不上 DevTools 時也有訊息，而且關掉 Chrome、清掉暫存資料夾）；logo 原檔 1024×1024、SHA-256 開頭 `1f7113f6e2f5fc01`；21 張預覽圖存在、PNG 1200×630、≤ 307,200 bytes、`ff14tw-source` 等於照現在的內容重算的雜湊（忘了重跑 `images` 就失敗），`assets/images/og/` 沒有多餘的圖，4 張圖示的大小與雜湊，`apple-touch-icon` 與 manifest 的 `icons` 指到存在、大小相符的檔案；`images` 指令在暫存複本上跑：雜湊都對得上時一張都不畫也不改檔案，缺的、壞的、沒有雜湊的、雜湊不對的、尺寸不對的圖才算過期，Chrome 找不到時什麼都不寫不刪，範本改了重畫 21 張預覽圖、圖示頁面（`iconHtml()`）改了只重畫 4 張圖示、logo 改了連圖示都重畫、一張的說明改了只重畫那一張，`card.html` 與 `cards.mjs` 換成 CRLF 換行不用重畫，找不到 logo 時寫出檔名，並刪掉 `assets/images/og/` 裡不屬於這 21 張的 PNG。
 
 ## Core Patterns
 
@@ -201,7 +202,12 @@ Every type and version that has a visible entry needs a button, and every button
    - the zh/en/ja name key `tool_*_title` in `translations/common.js` (not `index.js`); its zh value must equal the registry `name`
    - the tool page: `data-tool-name` on `#header-placeholder` must equal the registry `name`, and the header key it points to (`data-tool-name-key`) must have the same zh/en/ja text as the `common.js` name
 7. Add tool card to main `index.html`, at the same position and with the same icon and title key as in the registry
-8. Update changelog.html with new version entry（寫法見「修改紀錄怎麼寫」）
+8. 加分享預覽與主畫面（見下面「分享預覽與主畫面」；預覽的名稱、圖示與那一句說明讀自上兩步的登錄表與首頁卡片翻譯 `tool_*_desc`）：
+   - 工具頁的 `<head>` 要有 `<title>`、`<meta name="description">` 與單獨一行的 `<link rel="icon" …>`（預覽照抄標題與說明；腳本把那一段插在 favicon 那一行後面，找不到就報錯並寫出檔名）
+   - 在 `scripts/share-preview/site.mjs` 的 `TOOL_COLORS` 加這個工具的顏色 token（沒加腳本會報錯；底色和白字的對比要 ≥ 4.5:1）
+   - 跑 `node scripts/share-preview.mjs pages`（把那一段寫進頁面、寫出 `tools/[tool-name]/manifest.webmanifest`）與 `node scripts/share-preview.mjs images`（畫 `assets/images/og/[tool-name].png`；要本機 Chrome 與網路），把它們改到的檔案一起 commit；沒跑的話 `tests/share-preview.test.js` 會失敗
+   - 新增頁面要多改的地方：工具以外的新頁面（像 `about.html`）要加進 `scripts/share-preview/site.mjs` 的 `ROOT_PAGES`，新的攻略主題要加進 `GUIDE_TOPICS`，沒加的話 `pages` 不會替它寫那一段；`tests/share-preview.test.js` 寫死了數量（25 頁、13 個工具、21 張預覽圖、14 個 manifest）、`EXPECTED_TOOL_COLORS` 與 `EXPECTED_GUIDE_TOPICS`，新增工具、主題或頁面時要照新的數字更新
+9. Update changelog.html with new version entry（寫法見「修改紀錄怎麼寫」）
 
 ## Shared Component System
 
@@ -211,9 +217,9 @@ The project includes a modular CSS component system in `/assets/css/components/`
 ### Design Tokens (`assets/css/tokens.css`)
 全站唯一的顏色、字級、間距、圓角、陰影來源；深色模式只在 `[data-theme="dark"]` 重新指定顏色類 token。**規則：**
 - 工具的 `style.css` 只寫版面（grid / flex / 間距），不得出現任何色碼（`#hex`、`rgb()`、`white`）、不得引用 `tokens.css` 未定義的 `var(--…)`、不得 `@import`、不得 `!important`；`tests/design-system.test.js` 自動檢查 `assets/css/**` 與 `tools/*/` 底下所有 CSS（唯一例外是 `tools/character-card/card-templates.css`——角色卡的卡片成品是使用者自訂的畫面，不隨主題變色），HTML／JS 不得使用 `tag-filter`、`btn-outline-*`、`tag-secondary`、`tag-light`、`tag-dark`、`tag-sm`、`tag-lg` 這些舊名稱，也不得再出現 `var(--primary-color)` 之類的相容別名。
-- 顏色：`--color-primary`（互動色）、`--color-bg` / `--color-surface` / `--color-surface-2`、`--color-border` / `--color-border-strong`、`--color-heading` / `--color-text` / `--color-muted`、語意色 `--color-{success,warning,danger,info}` 及其 `-tint` / `-text` / `-border`，實心底上的字用 `--color-on-{primary,success,warning,danger,info,muted}`。
+- 顏色：`--color-primary`（互動色）、`--color-bg` / `--color-surface` / `--color-surface-2`、`--color-border` / `--color-border-strong`、`--color-heading` / `--color-text` / `--color-muted`、語意色 `--color-{success,warning,danger,info}` 及其 `-tint` / `-text` / `-border`，實心底上的字用 `--color-on-{primary,success,warning,danger,info,muted}`；手機瀏覽器的網址列顏色 `--color-browser-bar`（頁首漸層的起點色，淺色 `#667eea`、深色 `#4b5ca8`）只給 `<meta name="theme-color">`（與 manifest 的 `theme_color`）用，`ThemeManager.syncBrowserBar()` 在每次套用主題時從 CSS 讀它寫回 `theme-color`（見「分享預覽與主畫面」）。
 - 字級 9 階 `--text-xs` … `--text-5xl`；間距 `--space-1` … `--space-10`（4px 基底）；圓角 `--radius-{sm,md,lg,xl,full}`；陰影 `--shadow-{sm,md,lg,xl}`；控制項高度 `--control-{sm,md,lg}` = 32 / 40 / 48；動態 `--duration-{fast,base,slow}` + `--ease`。
-- 品牌漸層 `--gradient-brand` 只用在頁首、首頁 hero、工具卡 hover 頂線、無 JavaScript 時的導覽列。
+- 品牌漸層 `--gradient-brand` 只用在頁首、首頁 hero、工具卡 hover 頂線、無 JavaScript 時的導覽列，以及網站那張分享預覽圖 `assets/images/og/site.png` 的背景（`node scripts/share-preview.mjs images` 讀淺色的值畫成圖）。
 
 ### Available Components
 
@@ -694,6 +700,23 @@ The footer has four rows:
 - `FINAL FANTASY XIV © SQUARE ENIX` (`p.footer-se-copyright`): carries the `© SQUARE ENIX` notice the SQUARE ENIX materials usage policy asks for, with `FINAL FANTASY XIV` in front as on the Traditional Chinese official site; the same in zh/en/ja, with no `data-i18n`, so switching languages never rewrites it
 - `© 2024–<current year> FF14.tw · Made with ❤️ by hydai` (the end year is computed; `createDOM({ year })` overrides it)
 
+### 分享預覽與主畫面（Generated by scripts/share-preview.mjs）
+貼連結到 Discord、LINE、Facebook 時的預覽卡，與手機「加到主畫面」的圖示和名稱。聊天 App 讀 HTML 原始碼、不執行網站的 JS，所以這些全部寫死在 HTML 與檔案裡，由腳本（Node 24，沒有任何套件）產生後一起 commit，不是網站載入時才算的：
+```bash
+node scripts/share-preview.mjs pages    # 重寫每一頁 <head> 裡的那一段、寫出 14 個 manifest；不連網路，可以重跑
+node scripts/share-preview.mjs images   # 畫 21 張預覽圖與 4 張圖示；要本機 Chrome 與網路（Google Fonts）
+```
+- 什麼時候重跑：新增工具或頁面，或改了某一頁的 `<title>` 或說明（包括把撰寫中的攻略主題寫成真正的摘要）、登錄表的名稱或圖示、首頁卡片的說明（`translations/index.js` 的 `tool_*_desc` 與 `hero_title`）、`TOOL_COLORS`、`tokens.css` 的顏色、logo、`card.html`，兩個指令都跑一次，沒變的檔案不會重寫。忘了跑，`tests/share-preview.test.js` 會失敗；CI 只檢查，不產生。
+- 每一頁 `<head>` 的那一段：25 頁（不含 `api/test.html`）各有一段，插在單獨一行的 `<link rel="icon" …>` 後面，前後是一字不差的註解 `<!-- 分享預覽與主畫面：由 scripts/share-preview.mjs 產生，改了分頁標題或說明後重跑 -->` 與 `<!-- /分享預覽與主畫面 -->`，重跑時整段換掉（複製別的頁面當新頁面時，舊的那一段會跟著複製過來，`pages` 會換成這一頁自己的）。頁面用 CRLF 換行（例如編輯器存成 CRLF）時照樣處理，寫回時整份保留 CRLF。裡面是 `og:*`、`twitter:card`、`theme-color`、`apple-mobile-web-app-title`、`<link rel="manifest">` 與 `<link rel="apple-touch-icon">`；這些標籤只能在那一段裡，不要手改。
+- 內容只照抄網站現有的字，不另外寫文案：`og:title` 是這一頁的 `<title>`、`og:description` 是 `<meta name="description">`（一字不差，HTML 跳脫照常，所以每一頁都要有這兩個）；`og:image` 是 `https://ff14.tw/…` 的絕對網址；manifest 連到同一個資料夾的 `manifest.webmanifest`，`apple-touch-icon` 照那一頁其他資源的寫法（根目錄 `assets/…`、工具與攻略 `../../assets/…`）。每一頁都不寫 `og:url`：Facebook 把它當正式網址、貼文的連結會指到它，分享出去的寶圖隊伍邀請（`?room=`）、寶圖清單（`?maps=`）、天氣（`#…`）與修改紀錄的版本（`#version-…`）會被導回沒有狀態的頁面；Discord、LINE、X 本來就用貼上的網址。`404.html` 會出現在任何打錯的網址上，所以它那一段只用 `/` 開頭的路徑，說明用頁面上那一句「網址可能打錯了，或這個頁面已經搬家。」。只有 Lodestone 頁另有 `<link rel="canonical">`（原本就有，保留）。
+- 21 張預覽圖（`assets/images/og/`，1200×630，每張 ≤ 300KB）：13 個工具各一張（`<id>.png`）、攻略資料的 7 個主題各一張（`guide-<主題>.png`，主題的檔名是腳本的 `GUIDE_TOPICS`）、網站一張（`site.png`，首頁、關於、修改紀錄、版權聲明與 404 共用）。圖上的字也只用現有的：工具是登錄表的 `name` 與 `icon` 加首頁卡片那一句；攻略主題是那一頁 `<title>` 裡的主題名稱（上面多一行小字「攻略資料」）與那一頁的說明；網站是「FF14.tw」與首頁大標 `hero_title`。底色是 `TOOL_COLORS`（`scripts/share-preview/site.mjs`，工具 → `tokens.css` 的顏色 token）對到的淺色值，往右下漸暗，攻略主題同攻略資料，網站那張是 `--gradient-brand`；顏色照 token 名稱讀 `tokens.css`，腳本不寫色碼（例外只有 logo 的底色、漸暗用的黑與範本裡的白字）。
+- `images` 的畫法：把每張圖的字套進範本 `scripts/share-preview/card.html`（範本，不是網站的頁面），交給本機 Chrome 截圖（預設是 macOS 的 Google Chrome，用環境變數 `CHROME_PATH` 換）。名稱只能一行、說明最多三行（只在標點與空格斷行），字型（Noto Sans TC、Noto Color Emoji）沒從 Google Fonts 載進來也算錯：放不下就報錯並列出是哪幾張，不產生任何圖，不會默默縮字或換字型。
+- 4 張主畫面圖示（`assets/images/icons/`）從 logo 原檔（`assets/images/ff14tw-logo.png`，1024×1024，不修改）縮出來：`apple-touch-icon.png`（180）、`icon-192.png`、`icon-512.png`，以及留邊版 `icon-maskable-512.png`（Android 會把圖示裁成圓形或圓角方形，所以 logo 縮成 84% 放中間、四周補 logo 的底色，外圈金色圓與字樣才不會被裁到）。
+- 14 個 manifest（`manifest.webmanifest`）：根目錄一個、13 個工具各在自己的目錄一個，攻略的 7 個主題用 `tools/guide/` 的。從哪一頁加到主畫面，就打開那個工具：工具自己的頁面用自己的 manifest，`start_url` 與 `scope` 是那個工具（`/tools/<id>/`），`short_name`（主畫面上的名稱）是登錄表的 `name`（`apple-mobile-web-app-title` 同它）；攻略資料的 7 個主題頁打開攻略資料（`/tools/guide/`），名稱是「攻略資料」；網站其他頁（首頁、關於、修改紀錄、版權聲明）與 404 用根目錄的，打開首頁，名稱是 FF14.tw。`display` 是 `browser`，打開還是有網址列的一般分頁。
+- 網址列顏色：`tokens.css` 的 `--color-browser-bar`（頁首漸層的起點色，淺色 `#667eea`、深色 `#4b5ca8`）。HTML 與 manifest 的 `theme_color` 寫淺色的值（聊天 App 不執行 JS，看到的就是它）；`assets/js/common.js` 的 `ThemeManager.syncBrowserBar()` 在每次 `applyTheme()` 時，從 CSS 讀這個 token 寫回 `<meta name="theme-color">`（JS 不寫色碼），手機瀏覽器上方的顏色因此跟著深色模式換；頁面沒有 `<meta name="theme-color">`、讀不到 `getComputedStyle` 或 token 是空的時什麼都不做。
+- 每個 PNG 的 `tEXt` 區塊（keyword `ff14tw-source`）記著畫它的內容的 SHA-256（預覽圖是名稱、上面那行小字、說明、圖示、底色、logo 檔與範本檔；圖示是 logo 檔、尺寸、留邊比例與圖示頁面 `iconHtml()` 的 HTML）：`images` 只重畫缺的、壞的、尺寸或雜湊對不上的圖，沒變的跳過（重跑不會把 25 張全部改一遍），也會刪掉 `assets/images/og/` 裡不屬於這 21 張的 PNG；測試照現在的內容重算雜湊來比對，所以忘了重跑 `images` 會失敗。
+- 預覽一律是中文（`og:locale` 是 `zh_TW`），不跟著網站的語言換；網址後面的 `?room=`、`?maps=`、`?id=`、`#…` 也不會改變預覽（要依連結內容換預覽得在伺服器端做）。各家 App 會快取預覽：以前分享過的網址可能要幾小時到幾天才換成新的，Facebook 可以用分享偵錯工具手動更新。
+
 ## Advanced Patterns
 
 ### Animation Standards
@@ -791,6 +814,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 - **NEVER use `git add .`**: Always add specific files you intend to commit to ensure only relevant changes are included.
 - **Check status first**: Run `git status` before adding files to understand the current state.
 - **Atomic commits**: Separate commits logically; each commit should address a single concern.
+- **換行一律 LF**：`.gitattributes`（`* text=auto eol=lf`）讓每個文字檔在任何平台都用 LF 取出，二進位檔照舊自動判斷。沒有它時 Windows 的 git 預設會換成 CRLF，那樣的複本上 `node scripts/share-preview.mjs pages` 會停下、有測試會失敗。
 
 ### 修改紀錄怎麼寫
 `changelog.html` 照月份分段：一個月一個 `<section class="changelog-month">`，**裡面只放月份標題（`<h2 class="changelog-month-title">YYYY年M月</h2>`）和這個月的版本**，不要加段落或其他元素；同一個月的收合列靠兄弟選擇器（`.changelog-month-title + .changelog-entry`、`.changelog-entry.is-latest + .changelog-entry`、`.changelog-entry:last-child`）接成一張圓角清單，多一個元素圓角就會跑掉。版本由新到舊，照日期排、不照版本號（v2.12.0 比 v2.11.1 早，不重新編號）。每一版有三種寫法：
@@ -903,6 +927,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 9. **Guide** (`guide/`): FF14 新手攻略指南，8 個頁面（攻略首頁加 7 個主題：部隊、大國防聯軍、副本、隊伍系統、風脈、探索筆記、專屬陸行鳥），沒有任何頁面載入資料檔，不需要本機伺服器。專屬陸行鳥文章裡的「染色計算器」小節（`h2#color-calculator`，以前分享出去的連結停在這裡）只剩一張連到陸行鳥染色計算器的卡片。部隊、副本、風脈、探索筆記 4 個主題還沒有內容：內文只有一句「這一頁還在撰寫中。」（副本頁多一句連到副本資料庫），`<meta name="description">` 老實寫「撰寫中」並加 `<meta name="robots" content="noindex">`，攻略首頁的卡片（說明下面）與目錄（名稱後面）標共用的 `.tag.tag-warning`「撰寫中」，首頁的攻略卡片多一行「4 頁撰寫中」（`status_guide_pages_pending`）。目錄（`sidebar-template.js` 的 `GuideSidebarTemplate`）是 `<details>`：電腦（寬度 769px 以上而且高度 501px 以上）是左邊 sticky 的側欄，預設打開，標題「目錄」右邊的 ▾ 也能收起來（重新載入或視窗跨過斷點時又打開）；手機收成一行「目錄」，點開才列出全部主題與「← 返回總覽」，不在框裡捲。「手機」是 `MOBILE_QUERY`（`(max-width: 768px), (max-height: 500px)`）：窄螢幕，或橫放的手機（寬度超過 768px 但高度 500px 以下，例如 844×390：電腦版 sticky 側欄的框放不下整份目錄，會變成要在框裡捲的框）；`style.css` 裡目錄與單欄的版面用同一個 `@media`（`.toc-sidebar` 的 `max-height` 是 `none`、`overflow` 是 `visible`，目錄整個展開），字級、內距、卡片格、上一篇／下一篇堆疊這些只有窄螢幕才需要的規則留在 `(max-width: 768px)`，橫放的手機維持電腦版的樣子；整份 `style.css` 沒有 `overflow-x`；視窗跨過斷點（寬度 768px、高度 500px）時照大小開關，焦點在目錄裡就維持打開（收起來的話焦點會掉到頁面最上面）。高度超過 500px 的電腦視窗照舊是 sticky 側欄，視窗比整份目錄矮時側欄仍會在框裡捲（這是 main 上就有的電腦版行為，反目標只管手機）。用語照 `TERMINOLOGY.md`：Free Company 是「部隊」（檔名 `guild.html` 與 `guide_toc_guild` 等翻譯鍵不改，以前的連結照樣能用）、Guildhest 是「公會令」、「艾歐澤亞」、主屬性 Dexterity 是「靈巧」；「公會」只能出現在「公會令」裡，`tests/guide-pages.test.js` 會掃攻略資料的每個 html、`sidebar-template.js`、`guide.js` 與首頁翻譯的中文
    - 寫好 4 個撰寫中主題的其中一頁（`guild.html`、`dungeon.html`、`aether.html`、`sightseeing.html`）時，下面幾處要一起改：
      - 那一頁自己：拿掉 `<meta name="robots" content="noindex">`，meta description 改成真正的摘要（不再寫「撰寫中」），內文換成真正的內容（不再是 `guide_coming_soon` 那一句）
+     - 改了那一頁的 `<title>` 或 meta description：要重跑 `node scripts/share-preview.mjs pages` 與 `node scripts/share-preview.mjs images`，因為那一頁的預覽標籤與它的預覽圖 `assets/images/og/guide-<檔名>.png`（例如 `guild.html` 的是 `guide-guild.png`）都照抄這兩段字；忘了跑，`tests/share-preview.test.js` 會失敗（見「分享預覽與主畫面」）
      - `tools/guide/sidebar-template.js` 的 `ITEMS`：拿掉那一項的 `pending: true`（目錄裡的「撰寫中」標籤就是靠它畫的）
      - `tools/guide/index.html`：拿掉那一張卡片的「撰寫中」標籤（`span.guide-card-pending`）
      - 首頁攻略卡片的 `status_guide_pages_pending`（「部隊、副本、風脈、探索筆記 4 頁撰寫中」）：`assets/js/i18n/translations/index.js` 的三語、根目錄 `index.html` 的預設文字，以及 `tests/home-page.test.js` 釘住的字串一起改，4 頁都寫完就拿掉這一行；沒有測試把它和 `PENDING` 對照，要自己記得改

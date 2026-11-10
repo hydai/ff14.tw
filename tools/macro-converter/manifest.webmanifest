@@ -1,0 +1,32 @@
+{
+  "id": "/tools/macro-converter/",
+  "name": "巨集轉換器 - FF14.tw",
+  "short_name": "巨集轉換器",
+  "description": "把英文、日文攻略的 FF14 生產巨集換成繁體中文；支援生產技能與文字指令。",
+  "lang": "zh-Hant",
+  "start_url": "/tools/macro-converter/",
+  "scope": "/tools/macro-converter/",
+  "display": "browser",
+  "background_color": "#0e171f",
+  "theme_color": "#667eea",
+  "icons": [
+    {
+      "src": "/assets/images/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/images/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/images/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

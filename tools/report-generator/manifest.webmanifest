@@ -1,0 +1,32 @@
+{
+  "id": "/tools/report-generator/",
+  "name": "檢舉模板產生器 - FF14.tw",
+  "short_name": "檢舉模板產生器",
+  "description": "快速產生 FF14 繁中版不當行為檢舉的模板文字，協助玩家進行申訴",
+  "lang": "zh-Hant",
+  "start_url": "/tools/report-generator/",
+  "scope": "/tools/report-generator/",
+  "display": "browser",
+  "background_color": "#0e171f",
+  "theme_color": "#667eea",
+  "icons": [
+    {
+      "src": "/assets/images/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/images/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/images/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

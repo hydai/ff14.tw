@@ -1,0 +1,32 @@
+{
+  "id": "/tools/chocobo-color/",
+  "name": "陸行鳥染色計算器 - FF14.tw",
+  "short_name": "陸行鳥染色計算器",
+  "description": "FF14 陸行鳥染色計算器：選目前和想要的顏色，算出要餵的水果與順序，會比較先餵拉札漢檸檬",
+  "lang": "zh-Hant",
+  "start_url": "/tools/chocobo-color/",
+  "scope": "/tools/chocobo-color/",
+  "display": "browser",
+  "background_color": "#0e171f",
+  "theme_color": "#667eea",
+  "icons": [
+    {
+      "src": "/assets/images/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/images/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/images/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

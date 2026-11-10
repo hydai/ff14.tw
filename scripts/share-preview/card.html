@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>預覽圖範本</title>
+<!--
+  分享預覽圖（1200×630）的範本，由 scripts/share-preview.mjs 的 images 指令套上每張卡片的字，在 Chrome 裡畫成 PNG。
+  這不是網站的頁面，不會有人打開它。
+  {{…}} 是 scripts/share-preview/cards.mjs 的 cardHtml() 換掉的位置：
+    BACKGROUND 背景（CSS 的漸層）、LOGO logo 的 data URI、LAYOUT 版型（is-tool 或 is-site）、
+    LABEL 名稱上面的小字、ICON 工具的圖示、NAME 名稱、SENTENCE 一句說明。
+  樣式是草稿頁的 C（每個工具一個顏色）：大小都是 1200 寬時的像素，版面固定，字放不下時由 window.__problems() 回報，
+  不自動縮字。最長的名稱放不下時，要把所有卡片的名稱字級（.og-name）一起調小。
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@500;700;900&family=Noto+Color+Emoji&display=swap">
+<style>
+:root { --og-background: {{BACKGROUND}}; }
+html, body { margin: 0; width: 1200px; height: 630px; overflow: hidden; }
+.og {
+    box-sizing: border-box; width: 1200px; height: 630px; padding: 66px 72px;
+    display: flex; flex-direction: column; gap: 24px;
+    background: var(--og-background); color: #ffffff;
+    font-family: "Noto Sans TC", sans-serif;
+}
+/* 左上：logo 與「FF14.tw」（網站那張沒有這一列） */
+.og-top { display: flex; align-items: center; gap: 17px; font-size: 34px; font-weight: 700; line-height: 1; }
+.logo { display: block; flex: none; background: url("{{LOGO}}") center / cover no-repeat; border-radius: 22%; }
+.og-mark { width: 72px; height: 72px; }
+/* 中間：圖示的圓（網站那張換成大的 logo）與右邊的字 */
+.og-main { flex: 1; min-height: 0; display: flex; align-items: center; gap: 48px; }
+.og-icon {
+    flex: none; width: 216px; height: 216px; border-radius: 50%; display: grid; place-items: center;
+    background: rgba(255, 255, 255, 0.16); font-family: "Noto Color Emoji"; font-size: 120px; line-height: 1;
+}
+.og-logo { width: 288px; height: 288px; }
+.og-text { min-width: 0; }
+.og-label { margin-bottom: 8px; font-size: 30px; font-weight: 700; line-height: 1.2; color: rgba(255, 255, 255, 0.9); }
+.og-label:empty { display: none; }
+.og-name { font-size: 79px; font-weight: 900; line-height: 1.15; }
+/* 說明只在標點與空格斷行（word-break: keep-all，和站上巨集轉換器的中文說明一樣），再讓各行長度接近（text-wrap: balance）：
+   不會從詞中間斷開，最後一行也不會剩下單獨一個字。沒有 overflow-wrap 這類「哪裡都能斷」的設定：兩個斷行的地方中間的字太長時
+   就是放不下，由 window.__problems() 報出來 */
+.og-desc { margin-top: 19px; font-size: 35px; font-weight: 500; line-height: 1.45; color: rgba(255, 255, 255, 0.9); word-break: keep-all; text-wrap: balance; }
+.is-site .og-top, .is-site .og-icon { display: none; }
+.is-tool .og-logo { display: none; }
+</style>
+</head>
+<body>
+<div class="og {{LAYOUT}}">
+    <div class="og-top"><span class="og-mark logo"></span><span class="og-brand">FF14.tw</span></div>
+    <div class="og-main">
+        <span class="og-icon">{{ICON}}</span>
+        <span class="og-logo logo"></span>
+        <div class="og-text">
+            <div class="og-label">{{LABEL}}</div>
+            <div class="og-name">{{NAME}}</div>
+            <div class="og-desc">{{SENTENCE}}</div>
+        </div>
+    </div>
+</div>
+<script>
+// render.mjs 等字型載完之後呼叫它。回傳的陣列不是空的（有字放不下、字型沒載入），那張圖就不截、不產生。
+window.__problems = function () {
+    const problems = [];
+    const card = document.querySelector('.og');
+    const box = card.getBoundingClientRect();
+    const shown = (element) => element.getClientRects().length > 0;
+    const lineCount = (element) => Math.round(element.getBoundingClientRect().height / parseFloat(getComputedStyle(element).lineHeight));
+
+    // 標籤與名稱一行、說明最多三行；字不能超出欄位（不能斷行的長字會超出去：說明只在標點與空格斷行，
+    // 兩個可以斷行的地方中間的字比欄寬還長，就會從這裡報出來，不會在詞中間硬斷）
+    for (const [selector, what, most, hint] of [['.og-label', '標籤', 1, ''], ['.og-name', '名稱', 1, ''], ['.og-desc', '說明', 3, '（說明只在標點與空格斷行，兩個斷行的地方中間的字太長）']]) {
+        const element = card.querySelector(selector);
+        if (!shown(element)) continue;
+        const lines = lineCount(element);
+        if (lines > most) problems.push(`${what}有 ${lines} 行，最多 ${most} 行`);
+        if (element.scrollWidth > element.clientWidth) problems.push(`${what}超出欄位的寬度${hint}`);
+    }
+
+    // 每一個字都要在圖裡面
+    const walker = document.createTreeWalker(card, NodeFilter.SHOW_TEXT);
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+        const text = node.nodeValue.trim();
+        if (!text) continue;
+        const range = document.createRange();
+        range.selectNodeContents(node);
+        const outside = [...range.getClientRects()].some((rect) => (
+            rect.left < box.left - 0.5 || rect.top < box.top - 0.5 || rect.right > box.right + 0.5 || rect.bottom > box.bottom + 0.5
+        ));
+        if (outside) problems.push(`文字超出 ${Math.round(box.width)}×${Math.round(box.height)}：「${text.slice(0, 12)}」`);
+    }
+
+    // 字型：Noto Sans TC（用到的每個字重）與 Noto Color Emoji 都要真的從 Google Fonts 載進來，不能用備用字型。
+    // 看 document.fonts 裡每個 FontFace 的狀態，不用 document.fonts.check()：它在根本沒有那個字型的 @font-face
+    // （例如連不上 Google Fonts）時也回傳 true；Google Fonts 的 unicode-range 切片有重疊，有沒載入的切片它又會回傳 false
+    const faces = [...document.fonts];
+    const familyOf = (face) => face.family.replace(/^["']|["']$/g, '');
+    const covers = (face, weight) => {
+        const [lightest, heaviest = lightest] = face.weight.split(' ').map(Number);
+        return weight >= lightest && weight <= heaviest;
+    };
+    const missing = new Set(); // 沒載入的字型，同一張圖只回報一行
+    for (const face of faces) {
+        if (face.status === 'error') missing.add(familyOf(face) === 'Noto Sans TC' ? `Noto Sans TC（${face.weight}）` : familyOf(face));
+    }
+    for (const element of card.querySelectorAll('.og-brand, .og-label, .og-name, .og-desc')) {
+        if (!shown(element) || !element.textContent.trim()) continue;
+        const weight = getComputedStyle(element).fontWeight;
+        if (!faces.some((face) => familyOf(face) === 'Noto Sans TC' && face.status === 'loaded' && covers(face, Number(weight)))) {
+            missing.add(`Noto Sans TC（${weight}）`);
+        }
+    }
+    const icon = card.querySelector('.og-icon');
+    if (shown(icon) && icon.textContent.trim() && !faces.some((face) => familyOf(face) === 'Noto Color Emoji' && face.status === 'loaded')) {
+        missing.add('Noto Color Emoji');
+    }
+    if (missing.size > 0) {
+        problems.push(`字型沒載入：${[...missing].sort().join('、')}。檢查網路連不連得到 Google Fonts（fonts.googleapis.com、fonts.gstatic.com）`);
+    }
+    return [...new Set(problems)];
+};
+</script>
+</body>
+</html>

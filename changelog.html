@@ -6,6 +6,22 @@
     <title>修改紀錄 - FF14.tw</title>
     <meta name="description" content="FF14.tw 網站功能更新與修改紀錄">
     <link rel="icon" type="image/x-icon" href="assets/images/ff14tw.ico">
+    <!-- 分享預覽與主畫面：由 scripts/share-preview.mjs 產生，改了分頁標題或說明後重跑 -->
+    <meta property="og:site_name" content="FF14.tw">
+    <meta property="og:type" content="website">
+    <meta property="og:locale" content="zh_TW">
+    <meta property="og:title" content="修改紀錄 - FF14.tw">
+    <meta property="og:description" content="FF14.tw 網站功能更新與修改紀錄">
+    <meta property="og:image" content="https://ff14.tw/assets/images/og/site.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="FF14.tw：Final Fantasy XIV 工具箱">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-title" content="FF14.tw">
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="apple-touch-icon" href="assets/images/icons/apple-touch-icon.png">
+    <!-- /分享預覽與主畫面 -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -40,12 +56,28 @@
                 <!-- 2026年11月 -->
                 <section class="changelog-month">
                     <h2 class="changelog-month-title">2026年11月</h2>
-                    <details class="changelog-entry is-latest" id="version-v2310" open>
+                    <details class="changelog-entry is-latest" id="version-v2320" open>
+                        <summary>
+                            <span class="changelog-meta">
+                                <time class="changelog-date" datetime="2026-11-10">11月10日</time>
+                                <span class="changelog-version">v2.32.0</span>
+                                <span class="changelog-latest" data-i18n="changelog_latest">最新</span>
+                            </span>
+                            <span class="changelog-headline">分享連結時每個工具都有自己的預覽圖，也能把工具加到手機主畫面</span>
+                        </summary>
+                        <ul class="changelog-items">
+                            <li><span class="tag tag-success">新增</span> 把網站的連結貼到 Discord、LINE、Facebook 時，會出現那個工具自己的預覽圖：工具名稱、一句說明，每個工具一個顏色</li>
+                            <li><span class="tag tag-success">新增</span> 手機「加到主畫面」時，圖示是網站的 logo、名稱是工具名稱，點開就是那個工具</li>
+                            <li><span class="tag tag-warning">修正</span> Lodestone 角色查詢：分享連結時預覽圖原本是壞的</li>
+                            <li><span class="tag tag-info">改善</span> 首頁與特殊採集時間管理器的分頁標題，寫法和其他頁一致</li>
+                        </ul>
+                    </details>
+
+                    <details class="changelog-entry" id="version-v2310">
                         <summary>
                             <span class="changelog-meta">
                                 <time class="changelog-date" datetime="2026-11-10">11月10日</time>
                                 <span class="changelog-version">v2.31.0</span>
-                                <span class="changelog-latest" data-i18n="changelog_latest">最新</span>
                             </span>
                             <span class="changelog-headline">巨集轉換器改版：貼上攻略的生產巨集就換成繁中，轉不了的行逐一標出</span>
                         </summary>

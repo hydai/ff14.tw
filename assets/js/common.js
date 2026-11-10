@@ -15,6 +15,9 @@ class ThemeManager {
 
     static STORAGE_KEY = 'theme';
 
+    // 網址列顏色的 CSS 變數（assets/css/tokens.css：淺色在 :root，深色在 [data-theme="dark"]）
+    static BROWSER_BAR_TOKEN = '--color-browser-bar';
+
     // 建立月亮圖示（深色模式時顯示）
     static createMoonIcon() {
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -49,6 +52,19 @@ class ThemeManager {
             svg.appendChild(line);
         });
         return svg;
+    }
+
+    // 把手機瀏覽器網址列的顏色（<meta name="theme-color">）換成目前主題的值：
+    // 頁面的 HTML 裡寫的是淺色的值，深色模式要換成深色的。值從 CSS 的 --color-browser-bar 讀，JS 不寫色碼。
+    // 沒有 <meta name="theme-color">、沒有 getComputedStyle 或讀到空字串時什麼都不做，不丟錯
+    static syncBrowserBar() {
+        const meta = document.querySelector('meta[name="theme-color"]');
+        if (!meta) return;
+
+        const style = window.getComputedStyle?.(document.documentElement);
+        // 自訂屬性的值可能帶著前後的空白，先去掉再判斷是不是空的
+        const color = style?.getPropertyValue(ThemeManager.BROWSER_BAR_TOKEN)?.trim();
+        if (color) meta.setAttribute('content', color);
     }
 
     constructor() {
@@ -130,6 +146,9 @@ class ThemeManager {
 
         // 更新所有主題切換按鈕的圖標
         this.updateThemeToggleButtons();
+
+        // 網址列顏色跟著主題（data-theme 換好之後，CSS 讀到的才是新主題的值）
+        ThemeManager.syncBrowserBar();
     }
 
     toggle() {

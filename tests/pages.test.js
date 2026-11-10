@@ -4,7 +4,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const ROOT = path.join(__dirname, '..');
-const SKIP_DIRS = new Set(['api', 'node_modules', 'docs', '.git', '.claude', '.superpowers']);
+// scripts/ 裡的 HTML（scripts/share-preview/card.html）是畫預覽圖用的範本，不是網站的頁面
+const SKIP_DIRS = new Set(['api', 'node_modules', 'docs', 'scripts', '.git', '.claude', '.superpowers']);
 const FONT_HREF = 'https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap';
 
 function listPages(dir = ROOT, out = []) {
