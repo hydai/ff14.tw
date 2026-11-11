@@ -22,7 +22,7 @@ function loadContext(files) {
 const context = loadContext([LAYOUT_FILE]);
 const { CardLayout } = context;
 // 故意用解構取出：頁面不一定用 CardLayout.xxx() 的寫法呼叫，這些函式不能靠 this
-const { fitScale, wrapText, layoutChips, coverRect, dragCrop, textColorOn } = CardLayout;
+const { fitScale, wrapText, layoutChips, coverRect, dragCrop, textColorOn, contrastRatio } = CardLayout;
 
 // vm 裡建出來的陣列與物件原型和這邊不同，deepEqual 前先轉成這邊的一般值（不能傳 undefined，也看不出 -0）
 const plain = (value) => JSON.parse(JSON.stringify(value));
@@ -37,6 +37,11 @@ function assertNear(actual, expected, message = '') {
     assert.ok(Math.abs(actual - expected) < 1e-9, `${message} ${actual} 不等於 ${expected}`.trim());
 }
 
+// 對比度的預期值是照公式算出來、寫到小數點後四位的，所以容許 epsilon
+function assertNear2(actual, expected, epsilon) {
+    assert.ok(Math.abs(actual - expected) <= epsilon, `${actual} 不等於 ${expected}`);
+}
+
 // 假的量字（字型已經套好的替身）：英數與拉丁字母一個字 0.6 × SIZE 寬，其他（中日韓、全形字、標點、…）一個字 1 × SIZE 寬。
 // SIZE 取 10：拉丁字母 6、其他 10，所以「20 字寬」就是 200
 const SIZE = 10;
@@ -48,9 +53,9 @@ const SENTENCE = 'the quick brown fox jumps over the lazy dog';
 
 // ---------- 模組 ----------
 
-test('CardLayout：只掛一個全域、模組凍結、只有規定的六個函式', () => {
+test('CardLayout：只掛一個全域、模組凍結、只有規定的七個函式', () => {
     assert.equal(Object.isFrozen(CardLayout), true);
-    assert.deepEqual(Object.keys(CardLayout).sort(), ['coverRect', 'dragCrop', 'fitScale', 'layoutChips', 'textColorOn', 'wrapText']);
+    assert.deepEqual(Object.keys(CardLayout).sort(), ['contrastRatio', 'coverRect', 'dragCrop', 'fitScale', 'layoutChips', 'textColorOn', 'wrapText']);
     for (const [name, fn] of Object.entries(CardLayout)) assert.equal(typeof fn, 'function', name);
 
     // 只掛 CardLayout 一個全域：常數與小函式都收在立即執行的函式裡，不會和頁面其他腳本的名稱撞在一起；
@@ -620,6 +625,36 @@ test('textColorOn：和照公式另外算的對照組逐色一致（紅綠藍各
     }
     // 兩種結果都有出現，不是整組都同一個答案
     assert.ok(darkCount > 30 && darkCount < 186, `深色字 ${darkCount} 色`);
+});
+
+// ---------- contrastRatio ----------
+
+test('contrastRatio：兩個 #rrggbb 的 WCAG 對比度（1～21），和先後無關、大小寫都行，同色是 1，有一個不是 #rrggbb 是 1', () => {
+    assert.equal(contrastRatio('#ffffff', '#000000'), 21);
+    assert.equal(contrastRatio('#000000', '#ffffff'), 21, '先後不影響');
+    assert.equal(contrastRatio('#4f74d6', '#4f74d6'), 1);
+    assert.equal(contrastRatio('#ffffff', '#ffffff'), 1);
+    // 預期值照 WCAG 的公式另外算過（草稿的灰字在 #f4f5fa 上：#7a8195 是 3.57、#8a90a2 是 2.93，換掉之後的 #697084 是 4.54）
+    assertNear2(contrastRatio('#7a8195', '#f4f5fa'), 3.5708, 0.0001);
+    assertNear2(contrastRatio('#8a90a2', '#f4f5fa'), 2.9261, 0.0001);
+    assertNear2(contrastRatio('#697084', '#f4f5fa'), 4.5367, 0.0001);
+    assertNear2(contrastRatio('#697084', '#ffffff'), 4.9394, 0.0001);
+    assertNear2(contrastRatio('#5b6275', '#f4f5fa'), 5.5927, 0.0001);
+    // 大小寫都行
+    assert.equal(contrastRatio('#F4F5FA', '#697084'), contrastRatio('#f4f5fa', '#697084'));
+    // 不是 #rrggbb（缺 #、長度不對、不是十六進位、rgb()、空白、不是字串）是 1，兩邊哪一個壞都一樣
+    for (const bad of ['', 'ffffff', '#fff', '#fffffff', '#gggggg', ' #ffffff', '#ffffff ', 'white', 'rgb(0, 0, 0)', null, undefined, 42, {}, ['#ffffff']]) {
+        assert.equal(contrastRatio(bad, '#000000'), 1, util.inspect(bad));
+        assert.equal(contrastRatio('#000000', bad), 1, util.inspect(bad));
+    }
+    assert.equal(contrastRatio('#zzzzzz', '#nnnnnn'), 1, '兩個都壞');
+    // 對比度在 1～21 之間，把白字與 #141826 比的結果和 textColorOn 一致（挑對比高的那個）
+    for (const hex of ['#c99a2e', '#4f74d6', '#3f9e5c', '#d4574e', '#8a63d2', '#7b7b7b', '#7c7c7c']) {
+        const white = contrastRatio(hex, '#ffffff');
+        const dark = contrastRatio(hex, '#141826');
+        assert.ok(white >= 1 && white <= 21 && dark >= 1 && dark <= 21, hex);
+        assert.equal(textColorOn(hex), dark > white ? '#141826' : '#ffffff', hex);
+    }
 });
 
 test('textColorOn：不是 #rrggbb 的東西一律是白字', () => {

@@ -2,7 +2,7 @@
  * 角色卡產生器的畫卡片：照畫面模型（model）在任何 2D context 上畫出一張卡片。
  * 畫面上的預覽與下載的 PNG 是同一張 canvas，所以怎麼畫都在這一組腳本裡，只畫圖、不碰 DOM，也不自己去拿 canvas。
  * 這支只做三件事：把 model 整理成畫圖用的 view、列出要載入的字型、照 model.style 交給那一種風格去畫（和回答那一種風格的照片框）。
- * 每一種風格一支腳本（風格 A「名片」：card-style-a.js、風格 B「海報」：card-style-b.js），風格自己的顏色、版面數字與區塊都在它的檔案裡；
+ * 每一種風格一支腳本（風格 A「名片」：card-style-a.js、風格 B「海報」：card-style-b.js、風格 C「資訊卡」：card-style-c.js），風格自己的顏色、版面數字與區塊都在它的檔案裡；
  * 三種風格共用的畫圖小工具在 card-paint.js（CardPaint）。
  *
  * - SIZES：兩種卡片的大小 { landscape: { width: 1200, height: 675 }, portrait: { width: 1080, height: 1350 } }，頁面照它設定 canvas 的寬高
@@ -18,13 +18,13 @@
  *     hours: { days: [label, label], slots: [label × 4], on: Set<'weekday-evening'…> }, intro, accent,
  *     image: { source, width, height } | null, backdrop: { source, width, height } | null, crop: { x, y, zoom },
  *     labels: { fc, gc, looking, likes, hours, subJobs, mainJob }, levelLabel: 'Lv', mark: 'FF14.tw', notice: 'FINAL FANTASY XIV © SQUARE ENIX' }
- * - style 是風格表（STYLE_MODULES）的鍵（'a'、'b'）；沒寫或不認得就是 'b'。format 是 SIZES 的鍵；沒寫或不認得就是 'landscape'
+ * - style 是風格表（STYLE_MODULES）的鍵（'a'、'b'、'c'）；沒寫或不認得就是 'b'。format 是 SIZES 的鍵；沒寫或不認得就是 'landscape'
  * - icon 是已載入的圖片（drawImage 認得的東西）或 null；null 時畫重點色的圓角方塊與職業名稱的第一個字。image.source、backdrop.source 同
  * - likes 照 CardState.LIKES 的順序、最多 CardState.LIMITS.likes 個，subJobs 最多 CardState.LIMITS.subJobs 個（多的不畫）；
  *   hours.on 的鍵是 `${CardState.DAYS 的一個}-${CardState.SLOTS 的一個}`，days、slots 是這些的標籤，照 DAYS、SLOTS 的順序
  * - accent 是 '#rrggbb'（CardState.accentOf 的結果），重點色全都從這裡來，這支不寫死任何職能的顏色
  * - fcName、fcTag：部隊名稱與簡稱；gc：大國防聯軍；looking：在找什麼（頁面翻譯好、已經接成一個字串）；contact：聯絡方式；
- *   backdrop：名片的模糊小圖（頁面在上傳與還原截圖時做好，檢查同 image）。這幾項海報不畫，名片會畫
+ *   backdrop：名片的模糊小圖（頁面在上傳與還原截圖時做好，檢查同 image）。這幾項海報不畫，名片與資訊卡會畫（模糊小圖只有名片用）
  * - labels：卡片上的小標（頁面照介面語言翻好）；沒給或空白的用中文預設：部隊、大國防聯軍、在找什麼、喜歡的內容、遊玩時段、其他職業、主職
  * - 沒填的欄位（空字串、只有空白、null、undefined）整塊不畫，不留空位；什麼都沒填時只畫背景、FF14.tw 與 SE 版權字。
  *   SE 版權字一定畫（卡片上畫了 SE 的職業圖示）：model 沒給 notice 時用內建的那一句
@@ -34,7 +34,8 @@
  * draw 畫出來的字與 texts 列的字是同一份 view，所以「要載入的字」與「畫出來的字」是同一份。
  *
  * 常數與小函式都收在最外層那個立即執行的函式裡，不會多出全域的名稱，和頁面其他腳本的名稱不會撞到；
- * 需要 card-state.js（CardState）、card-paint.js（CardPaint）、card-style-a.js（CardStyleA）與 card-style-b.js（CardStyleB）先載入。
+ * 需要 card-state.js（CardState）、card-paint.js（CardPaint）、card-style-a.js（CardStyleA）、card-style-b.js（CardStyleB）與
+ * card-style-c.js（CardStyleC）先載入。
  */
 const CardRenderer = (() => {
     // 嚴格模式：傳進來的資料被凍結時，想改它的地方會丟 TypeError，不會被默默忽略
@@ -44,7 +45,7 @@ const CardRenderer = (() => {
     const { DAYS, SLOTS, LIMITS, ROLE_COLORS } = window.CardState;
 
     // 風格表：model.style 是這裡的鍵（之後的風格加在這裡）
-    const STYLE_MODULES = Object.freeze({ a: window.CardStyleA, b: window.CardStyleB });
+    const STYLE_MODULES = Object.freeze({ a: window.CardStyleA, b: window.CardStyleB, c: window.CardStyleC });
     const DEFAULT_STYLE = 'b';
     const DEFAULT_FORMAT = 'landscape';
 

@@ -2,7 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 
 const { createRecordingContext, fakeMeasure } = require('./helpers/canvas-recorder.js');
-const { card, plain, near, picture } = require('./helpers/card-drawing.js');
+const { card, plain, near, picture, lines } = require('./helpers/card-drawing.js');
 
 // 共用的畫圖小工具（card-paint.js）：用 canvas-recorder.js 的記錄 context 與假的量字（碼位小於 U+0250 的字 0.6 × 字級，其他 1 × 字級）
 const { CardPaint, CardLayout } = card;
@@ -15,7 +15,7 @@ const measureOf = (px) => (text) => fakeMeasure(`${px}px x`, text);
 
 test('CardPaint：凍結，新增的小工具與 FAMILIES.serif 都在', () => {
     assert.equal(Object.isFrozen(CardPaint), true);
-    for (const name of ['isObject', 'deepFreeze', 'geometryOf', 'rgbaOf', 'fitChips', 'fittedSpacedSize', 'stackDown', 'drawPhotoBox', 'metaItems', 'footText', 'footBlock', 'splitColumns', 'twoColumns', 'labelBlock', 'iconLetters', 'listTexts']) {
+    for (const name of ['isObject', 'deepFreeze', 'geometryOf', 'rgbaOf', 'fitChips', 'fittedSpacedSize', 'stackDown', 'drawPhotoBox', 'metaItems', 'footText', 'footBlock', 'splitColumns', 'twoColumns', 'labelBlock', 'iconLetters', 'listTexts', 'mixOf', 'readableOn', 'tintOf', 'drawCapsule', 'photoInfoBoxes', 'metaCells', 'likesAndHours', 'drawInfoColumn']) {
         assert.equal(typeof CardPaint[name], 'function', `CardPaint.${name}`);
     }
     assert.equal(FAMILIES.serif, '"Noto Serif TC", serif');
@@ -29,6 +29,87 @@ test('rgbaOf：十六進位的顏色加透明度，寫成 rgba(r,g,b,a)', () => 
     assert.equal(CardPaint.rgbaOf('#000000', 0), 'rgba(0,0,0,0)');
     assert.equal(CardPaint.rgbaOf('#ffffff', 1), 'rgba(255,255,255,1)');
     assert.equal(CardPaint.rgbaOf('#F3F1FA', 0.7), 'rgba(243,241,250,0.7)', '大寫也行');
+});
+
+test('mixOf：往另一個顏色混 amount，每個色版 Math.round(a + (b - a) * amount)，輸出一律小寫；tintOf 就是往白色混', () => {
+    const { mixOf, tintOf } = CardPaint;
+    assert.equal(mixOf('#4f74d6', '#1d2233', 0), '#4f74d6', '0 是原本的顏色');
+    assert.equal(mixOf('#4f74d6', '#1d2233', 1), '#1d2233', '1 是另一個顏色');
+    assert.equal(mixOf('#4f74d6', '#1d2233', 0.2), '#4564b5', '79→69、116→99.6 進位成 100、214→181.4 捨去成 181');
+    assert.equal(mixOf('#000000', '#ffffff', 0.5), '#808080', '127.5 進位成 128');
+    assert.equal(mixOf('#4F74D6', '#1D2233', 0.2), '#4564b5', '大寫也行');
+    assert.equal(mixOf('#ffffff', '#ffffff', 0.87), '#ffffff');
+
+    // tintOf(hex, x) 就是 mixOf(hex, '#ffffff', x)：海報的稱號用它，顏色不能變
+    assert.equal(mixOf('#4f74d6', '#ffffff', 0.55), tintOf('#4f74d6', 0.55));
+    assert.equal(tintOf('#4f74d6', 0.55), '#b0c0ed');
+    for (const hex of ['#000000', '#4f74d6', '#3f9e5c', '#d4574e', '#8a63d2', '#c99a2e', '#ffff66', '#ffffff']) {
+        for (const amount of [0, 0.13, 0.34, 0.55, 0.87, 1]) assert.equal(tintOf(hex, amount), mixOf(hex, '#ffffff', amount), `${hex} 往白色混 ${amount}`);
+    }
+});
+
+test('readableOn：文字色一步一步（每次 0.05）往 toward 混，第一個和底色的對比 ≥ min 的就是答案；本來就夠就不動，都不夠是 toward', () => {
+    const { readableOn, mixOf } = CardPaint;
+    const ratio = CardLayout.contrastRatio;
+    const BASE = '#f4f5fa';
+    const stepsOf = (text, toward = '#1d2233') => Array.from({ length: 20 }, (_, i) => mixOf(text, toward, i / 20));
+
+    // 本來就夠（t 是 0）：原樣，輸出小寫
+    assert.equal(readableOn('#000000', BASE), '#000000');
+    assert.equal(readableOn('#1D2233', BASE), '#1d2233');
+
+    // 不夠：採集的金色在 #f4f5fa 上只有 2.37，往 #1d2233 混到第一個 ≥ 4.5 的，少混 0.05 就不到
+    for (const text of ['#c99a2e', '#3f9e5c', '#d4574e', '#4f74d6', '#8a63d2', '#ffff66', '#ffffff']) {
+        const found = readableOn(text, BASE);
+        const steps = stepsOf(text);
+        const at = steps.indexOf(found);
+        assert.ok(at > 0, `${text}：要混過（第 ${at} 步）`);
+        assert.ok(ratio(found, BASE) >= 4.5, `${text}：${found} 的對比 ${ratio(found, BASE)}`);
+        assert.ok(ratio(steps[at - 1], BASE) < 4.5, `${text}：少混 0.05（${steps[at - 1]}）就不到 4.5`);
+        for (let i = 0; i < at; i++) assert.ok(ratio(steps[i], BASE) < 4.5, `${text}：第 ${i} 步還不夠`);
+    }
+
+    // toward：往別的顏色混（淺色字在深色底上）；min：要的對比度（越高混得越多）
+    assert.equal(readableOn('#ffff66', '#1d2233', { toward: '#ffffff' }), '#ffff66', '本來就夠');
+    const lifted = readableOn('#555577', '#1d2233', { toward: '#ffffff' });
+    assert.ok(ratio('#555577', '#1d2233') < 4.5 && ratio(lifted, '#1d2233') >= 4.5, `${lifted} 的對比 ${ratio(lifted, '#1d2233')}`);
+    assert.ok(stepsOf('#555577', '#ffffff').includes(lifted));
+    const strict = readableOn('#c99a2e', BASE, { min: 7 });
+    assert.ok(ratio(strict, BASE) >= 7);
+    assert.ok(stepsOf('#c99a2e').indexOf(strict) > stepsOf('#c99a2e').indexOf(readableOn('#c99a2e', BASE)), 'min 越高混得越多');
+
+    // 都不夠：toward 自己
+    assert.equal(readableOn('#c99a2e', BASE, { min: 22 }), '#1d2233');
+    assert.equal(readableOn('#808080', '#808080', { toward: '#808080' }), '#808080');
+});
+
+test('drawCapsule：半透明的底加邊框（描邊的路徑往裡縮半條線寬）；沒有邊框（border 是 0）時只填色、不描邊', () => {
+    const { drawCapsule } = CardPaint;
+    const opsOf = (ctx) => ctx.calls.map((call) => call.op);
+
+    const ctx = createRecordingContext();
+    drawCapsule(ctx, 10, 20, 100, 30, 'rgba(1,2,3,0.5)', '#abcdef', 2);
+    assert.deepEqual(opsOf(ctx), ['beginPath', 'roundRect', 'fill', 'beginPath', 'roundRect', 'stroke']);
+    assert.deepEqual(plain(ctx.calls[1].args), [10, 20, 100, 30, 15], '底是整個膠囊，兩頭半圓');
+    assert.equal(ctx.calls[2].fillStyle, 'rgba(1,2,3,0.5)');
+    assert.deepEqual(plain(ctx.calls[4].args), [11, 21, 98, 28, 14], '邊框在框裡面：路徑往裡縮半條線寬');
+    assert.equal(ctx.calls[5].strokeStyle, '#abcdef');
+    assert.equal(ctx.calls[5].lineWidth, 2);
+
+    // 沒有邊框（border 是 0，或不給 stroke 與 border）：只填色。canvas 的 lineWidth 設成 0 會被忽略（沿用上一次的線寬），所以不能照樣描邊
+    for (const args of [['#ffffff', '#000000', 0], ['#ffffff']]) {
+        const flat = createRecordingContext();
+        flat.lineWidth = 7;
+        drawCapsule(flat, 10, 20, 100, 30, ...args);
+        assert.deepEqual(opsOf(flat), ['beginPath', 'roundRect', 'fill'], `參數 ${JSON.stringify(args)}`);
+        assert.equal(flat.calls[2].fillStyle, '#ffffff');
+        assert.equal(flat.lineWidth, 7, '不動線寬');
+    }
+    // 沒有 roundRect 的瀏覽器：改用 arcTo，照樣只填色
+    const old = createRecordingContext({ missing: ['roundRect'] });
+    drawCapsule(old, 10, 20, 100, 30, '#ffffff', '#000000', 0);
+    assert.equal(opsOf(old).includes('stroke'), false);
+    assert.equal(opsOf(old).includes('arcTo'), true);
 });
 
 // ---------- 版面數字 ----------
@@ -360,6 +441,87 @@ test('metaItems：部隊、大國防聯軍、在找什麼，沒填的拿掉，�
     assert.doesNotThrow(() => metaItems(Object.freeze(view({ gc: 'x' }))));
 });
 
+test('metaCells：三欄資訊排成三等分的欄（有值的從左邊那欄排），每一欄是小標加最多 2 行的值，同一列一樣高；padX、padY 是每一欄裡面的內距；paintBox 在每一欄的字之前畫底', () => {
+    const { metaCells } = CardPaint;
+    const labels = { fc: '部隊', gc: '大國防聯軍', looking: '在找什麼' };
+    const view = (fields) => ({ fcName: '', tag: '', gc: '', looking: '', labels, ...fields });
+    const label = { kind: TEXT, font: 10, spacing: 0, color: '#aaaaaa' };
+    const spec = { x: 100, width: 320, gap: 10, label, kind: TEXT, font: 10, color: '#111111' }; // 三欄各 100 寬，左邊分別在 100、210、320
+    const LINE = 10 * LINE_NORMAL; // 小標與值的一行：字級都是 10
+    const full = view({ fcName: 'Moonlit Garden', tag: '«MOON»', gc: '雙蛇黨', looking: '固定隊' });
+    const at = (ctx, text) => {
+        const found = lines(ctx).filter((line) => line.text === text);
+        assert.equal(found.length, 1, `剛好有一段「${text}」`);
+        return found[0];
+    };
+
+    // 沒有任何一項是 null
+    assert.equal(metaCells(createRecordingContext(), view({}), spec), null);
+
+    // 三項都有：部隊的值「Moonlit Garden «MOON»」（21 個字 × 6 = 126）一欄（100）放不下，在空白處折成 2 行，另外兩個是一行；
+    // 同一列一樣高：小標一行加最多的那一欄的行數
+    const ctx = createRecordingContext();
+    const block = metaCells(ctx, full, spec);
+    near(block.height, LINE + 2 * LINE, '小標加 2 行', 1e-9);
+    assert.equal(lines(ctx).length, 0, '還沒 draw 不畫');
+    block.draw(50);
+    for (const [text, x] of [['部隊', 100], ['大國防聯軍', 210], ['在找什麼', 320]]) {
+        near(at(ctx, text).x, x, `小標「${text}」的 x`, 1e-9);
+        near(at(ctx, text).y, 50 + LINE / 2, `小標「${text}」的中線`, 1e-9);
+        assert.equal(at(ctx, text).font, CardPaint.fontString(TEXT, 10));
+        assert.equal(at(ctx, text).fillStyle, '#aaaaaa');
+    }
+    for (const [text, x, row] of [['Moonlit Garden', 100, 0], ['«MOON»', 100, 1], ['雙蛇黨', 210, 0], ['固定隊', 320, 0]]) {
+        near(at(ctx, text).x, x, `值「${text}」的 x`, 1e-9);
+        near(at(ctx, text).y, 50 + LINE + LINE * (row + 0.5), `值「${text}」的中線`, 1e-9);
+        assert.equal(at(ctx, text).fillStyle, '#111111');
+    }
+
+    // 沒填的拿掉，有值的從左邊那欄排（欄寬照舊是三等分）；每次 draw 都照給的 top
+    const gcOnly = createRecordingContext();
+    const gcBlock = metaCells(gcOnly, view({ gc: '雙蛇黨' }), spec);
+    near(gcBlock.height, LINE + LINE, '一行的值', 1e-9);
+    gcBlock.draw(0);
+    near(at(gcOnly, '大國防聯軍').x, 100, '只有大國防聯軍時它在第一欄');
+    assert.equal(lines(gcOnly).length, 2);
+
+    // 值最多 2 行，超過的最後一行接「…」，每一行都在欄裡
+    const long = createRecordingContext();
+    metaCells(long, view({ gc: '寬'.repeat(80) }), spec).draw(0);
+    const wrapped = lines(long).filter((line) => line.fillStyle === '#111111');
+    assert.equal(wrapped.length, 2);
+    assert.ok(wrapped[1].text.endsWith('…'));
+    for (const line of wrapped) assert.ok(line.x + line.width <= 210 + 100 + 1e-9, '在自己那一欄裡');
+
+    // padX、padY：每一欄裡面的內距，小標與值都在內距裡面，值折行的寬度扣掉左右內距（這一欄的字比 92 寬就折）；paintBox 先畫每一欄的底
+    const padded = createRecordingContext();
+    const paintBox = (x, top, width, height) => padded.fillRect(x, top, width, height);
+    const paddedBlock = metaCells(padded, view({ fcName: 'Moonlit Garden', gc: '雙蛇黨', looking: '固定隊' }), { ...spec, padX: 4, padY: 3, paintBox });
+    near(paddedBlock.height, 2 * 3 + LINE + LINE, '上下內距加小標加一行', 1e-9);
+    paddedBlock.draw(50);
+    const boxes = padded.calls.map((call, i) => ({ call, i })).filter(({ call }) => call.op === 'fillRect');
+    assert.equal(boxes.length, 3, '每一欄一個底');
+    boxes.forEach(({ call }, column) => {
+        assert.deepEqual(plain(call.args.slice(0, 3)), [100 + 110 * column, 50, 100], `第 ${column + 1} 個底的位置與欄寬`);
+        near(call.args[3], paddedBlock.height, '每一欄一樣高', 1e-9);
+    });
+    for (const [text, column] of [['部隊', 0], ['Moonlit Garden', 0], ['大國防聯軍', 1], ['雙蛇黨', 1], ['在找什麼', 2], ['固定隊', 2]]) {
+        near(at(padded, text).x, 100 + 110 * column + 4, `「${text}」從欄的左邊再隔 padX 開始`, 1e-9);
+        // 這一欄的底在這一欄的字之前畫（字才不會被蓋住）
+        const first = padded.calls.findIndex((call) => call.op === 'fillText' && call.args[1] >= 100 + 110 * column + 4 - 1e-9 && call.args[1] < 100 + 110 * (column + 1));
+        assert.ok(boxes[column].i < first, `第 ${column + 1} 欄的底在字之前`);
+    }
+    near(at(padded, '部隊').y, 50 + 3 + LINE / 2, '小標在上內距之後', 1e-9);
+    near(at(padded, 'Moonlit Garden').y, 50 + 3 + LINE + LINE / 2, '值在小標下面', 1e-9);
+    // 內距讓可用的寬度變成 92：「Moonlit Garden」（84）放得下一行，「Moonlit Garden «MOON»」（126）還是要折
+    assert.equal(lines(padded).filter((line) => line.text.includes('«')).length, 0);
+    const wrappedPadded = createRecordingContext();
+    metaCells(wrappedPadded, full, { ...spec, padX: 4, padY: 3 }).draw(0);
+    assert.ok(lines(wrappedPadded).some((line) => line.text === '«MOON»'));
+    // 傳凍結的資料也行
+    assert.doesNotThrow(() => metaCells(createRecordingContext(), Object.freeze(full), Object.freeze({ ...spec, label: Object.freeze(label) })).draw(0));
+});
+
 // ---------- 底部一列 ----------
 
 test('footText 與 footBlock：右邊「FF14.tw · SE 版權字」整句畫出來，左邊聯絡方式放不下整行縮小，中間至少隔 gap', () => {
@@ -412,6 +574,44 @@ test('footText 與 footBlock：右邊「FF14.tw · SE 版權字」整句畫出�
 
     // 傳凍結的資料也行
     assert.doesNotThrow(() => footBlock(createRecordingContext(), Object.freeze({ ...view }), Object.freeze({ ...spec, kind: Object.freeze(TEXT) })).draw(0));
+});
+
+test('drawInfoColumn：區塊（沒填的是 null，拿掉）由上往下疊、之間隔 gap，底部一列貼著資訊欄的底，x 與寬照資訊欄；放不下時間距一起縮小', () => {
+    const { drawInfoColumn, footText } = CardPaint;
+    const info = { x: 100, y: 40, width: 300, height: 200 };
+    const view = { mark: 'FF14.tw', notice: 'N', contact: 'Hi' };
+    const foot = { kind: TEXT, font: 10, color: '#333333', gap: 20 };
+    const tops = [];
+    const block = (name, height) => ({ height, draw: (top) => tops.push([name, top]) });
+
+    // null 拿掉；放得下時第一個區塊貼著資訊欄的上緣，之間隔 gap（12）
+    const ctx = createRecordingContext();
+    drawInfoColumn(ctx, view, info, { blocks: [null, block('a', 30), null, block('b', 50), null], foot, gap: 12 });
+    assert.deepEqual(tops, [['a', 40], ['b', 40 + 30 + 12]]);
+    // 底部一列：高是一行字（14.5），貼著資訊欄的底，兩段字在同一條中線上；右邊整句貼著資訊欄的右緣，左邊聯絡方式在資訊欄的左邊
+    const texts = ctx.calls.filter((call) => call.op === 'fillText');
+    assert.equal(texts.length, 2);
+    const right = texts.find((call) => call.args[0] === footText(view));
+    const left = texts.find((call) => call.args[0] === 'Hi');
+    near(right.args[2], 40 + 200 - (10 * LINE_NORMAL) / 2, '中線貼著底', 1e-9);
+    near(left.args[2], right.args[2], '兩段字同一條中線', 1e-9);
+    near(right.args[1] + fakeMeasure(right.font, footText(view)), 100 + 300, '右邊貼著資訊欄的右緣', 1e-9);
+    assert.equal(left.args[1], 100);
+    assert.equal(right.fillStyle, '#333333');
+
+    // 全部都是 null：只有底部一列
+    const emptyCtx = createRecordingContext();
+    tops.length = 0;
+    drawInfoColumn(emptyCtx, view, info, { blocks: [null, null], foot, gap: 12 });
+    assert.deepEqual(tops, []);
+    assert.equal(emptyCtx.calls.filter((call) => call.op === 'fillText').length, 2);
+
+    // 放不下（兩個 100 高加底部一列 14.5 比 200 高）：間距一起縮到 0（stackDown 的規矩），不超出資訊欄
+    tops.length = 0;
+    drawInfoColumn(createRecordingContext(), view, info, { blocks: [block('a', 100), block('b', 100)], foot, gap: 12 });
+    assert.deepEqual(tops, [['a', 40], ['b', 140]]);
+    // 傳凍結的資料也行
+    assert.doesNotThrow(() => drawInfoColumn(createRecordingContext(), Object.freeze(view), Object.freeze(info), Object.freeze({ blocks: Object.freeze([null]), foot: Object.freeze(foot), gap: 12 })));
 });
 
 // ---------- 要載入的字 ----------
@@ -543,6 +743,41 @@ test('drawPhotoBox：clip 成圓角的框；有截圖照位置填滿框，沒有
     assert.doesNotThrow(() => drawPhotoBox(createRecordingContext(), Object.freeze({ image: Object.freeze({ source: PHOTO, width: 20, height: 10 }), crop: Object.freeze({ ...crop }), accent: '#4f74d6' }), Object.freeze({ ...box }), 16, 12));
 });
 
+// ---------- 照片框與資訊欄的範圍 ----------
+
+test('photoInfoBoxes：橫版照片框在左、資訊欄在右，直版照片框在上、資訊欄在下，中間隔 gap；照片框占內容寬（橫版）或內容高（直版）的 share；photo.margin 只讓照片框矮一截，沒有 photo 是 0', () => {
+    const { photoInfoBoxes } = CardPaint;
+    const share = { left: 0.25, top: 0.5 };
+    const landscapeG = { width: 1000, height: 500, pad: 20, gap: 10, photoAt: 'left' }; // 內容 960 × 460
+    const portraitG = { width: 800, height: 1000, pad: 20, gap: 10, photoAt: 'top' }; // 內容 760 × 960
+
+    // 橫版：照片框寬是內容寬的 25%（240）、和內容一樣高；資訊欄在右邊隔 gap，和內容一樣高，右緣停在內距上
+    const landscape = plain(photoInfoBoxes(landscapeG, share));
+    assert.deepEqual(landscape.photo, { x: 20, y: 20, width: 240, height: 460 });
+    assert.deepEqual(landscape.info, { x: 270, y: 20, width: 710, height: 460 });
+    assert.equal(landscape.info.x + landscape.info.width, 1000 - 20);
+    // 直版：照片框寬是整個內容寬、高是內容高的 50%（480）；資訊欄在下面隔 gap，底邊停在內距上
+    const portrait = plain(photoInfoBoxes(portraitG, share));
+    assert.deepEqual(portrait.photo, { x: 20, y: 20, width: 760, height: 480 });
+    assert.deepEqual(portrait.info, { x: 20, y: 510, width: 760, height: 470 });
+    assert.equal(portrait.info.y + portrait.info.height, 1000 - 20);
+
+    // photo.margin：照片框下面留給別的東西（資訊卡的徽章）的空間，只讓照片框矮一截，資訊欄不動（橫版直版都一樣）
+    const landscapeMargin = plain(photoInfoBoxes({ ...landscapeG, photo: { radius: 3, margin: 15 } }, share));
+    assert.deepEqual(landscapeMargin.photo, { x: 20, y: 20, width: 240, height: 445 });
+    assert.deepEqual(landscapeMargin.info, landscape.info);
+    const portraitMargin = plain(photoInfoBoxes({ ...portraitG, photo: { margin: 15 } }, share));
+    assert.deepEqual(portraitMargin.photo, { x: 20, y: 20, width: 760, height: 465 });
+    assert.deepEqual(portraitMargin.info, portrait.info, '資訊欄從內容高的 share.top 再隔 gap 開始，不管 margin');
+    // 有 photo 但沒有 margin（名片的 photo 只有光環與陰影的數字）和沒有 photo 一樣
+    assert.deepEqual(plain(photoInfoBoxes({ ...portraitG, photo: { radius: 3, ring: 1 } }, share)), portrait);
+
+    // 另一個方向的 share 用不到，可以不給；每次回傳新的物件，傳凍結的資料也行
+    assert.deepEqual(plain(photoInfoBoxes(landscapeG, { left: 0.25 })), landscape);
+    assert.notEqual(photoInfoBoxes(landscapeG, share), photoInfoBoxes(landscapeG, share));
+    assert.doesNotThrow(() => photoInfoBoxes(Object.freeze({ ...portraitG, photo: Object.freeze({ margin: 15 }) }), Object.freeze(share)));
+});
+
 // ---------- 時段格子 ----------
 
 test('hoursBlock：沒有時段（view.hours 是 null）是 null；有時段回傳寬、高與 draw', () => {
@@ -575,4 +810,90 @@ test('fitChips 與 CardLayout.layoutChips 的座標一致：從 (0, 0) 起，列
     const result = CardPaint.fitChips(ctx, labels, spec);
     const direct = CardLayout.layoutChips(labels, measureOf(10), { maxWidth: 100, height: 10 * LINE_NORMAL + 2 + 2, padX: 3, gap: 4, rowGap: 4, maxRows: 2 });
     assert.deepEqual(plain(result.chips), plain(direct));
+});
+
+// ---------- 喜歡的內容與遊玩時段 ----------
+
+test('likesAndHours：左邊喜歡的內容（小標加膠囊）、右邊遊玩時段（小標加格子），沒有喜歡的內容或沒有時段那一邊就沒有；膠囊的邊框、底、邊、字色照 spec，排成最多 2 列、排不下時整組縮小到最多 60%', () => {
+    const { likesAndHours, fontString } = CardPaint;
+    const label = { kind: TEXT, font: 10, spacing: 0, color: '#aaaaaa' };
+    const chips = { kind: TEXT, font: 10, padX: 4, padY: 2, gap: 3, border: 1, fill: 'rgba(1,2,3,0.5)', stroke: '#abcdef', color: '#222222' };
+    const hours = { kind: TEXT, font: 10, cell: 8, gapX: 4, gapY: 3, radius: 2, labelColor: '#999999', offColor: '#eeeeee', accent: '#4f74d6' };
+    const spec = { x: 100, width: 420, gap: 20, ratio: [1, 1], label, chips, hours }; // 兩欄各 200 寬：左欄 100、右欄 320
+    const HOURS = { days: ['平日', '假日'], slots: ['早上', '下午', '晚上', '深夜'], on: [[false, false, true, true], [false, true, true, false]] };
+    const view = (fields) => ({ likes: ['Savage', 'Glamour'], hours: HOURS, labels: { likes: '喜歡的內容', hours: '遊玩時段' }, ...fields });
+    const LINE = 10 * LINE_NORMAL;
+    const at = (ctx, text) => lines(ctx).find((line) => line.text === text);
+    const capsules = (ctx, fillStyle) => ctx.calls.filter((call) => call.op === 'fill' && call.fillStyle === fillStyle);
+
+    // 兩邊都有：左欄在 x（100），右欄在左欄右邊隔 gap（320）；小標用 label 的字距與顏色，在最上面；高度是較高的那一欄（時段：小標加 3 行加 2 個列距）
+    const ctx = createRecordingContext();
+    const block = likesAndHours(ctx, view(), spec);
+    near(block.height, LINE + 3 * LINE + 2 * 3, '時段那一欄比較高', 1e-9);
+    assert.equal(lines(ctx).length, 0, '還沒 draw 不畫');
+    block.draw(50);
+    near(at(ctx, '喜歡的內容').x, 100, '左欄的小標', 1e-9);
+    near(at(ctx, '遊玩時段').x, 320, '右欄的小標在左欄右邊隔 gap', 1e-9);
+    for (const text of ['喜歡的內容', '遊玩時段']) {
+        near(at(ctx, text).y, 50 + LINE / 2, `「${text}」在最上面`, 1e-9);
+        assert.equal(at(ctx, text).fillStyle, '#aaaaaa');
+    }
+    // 膠囊：2 顆，底是 fill，邊是 stroke、線寬是 border，字是 color、在小標下面；字左右的內距一樣，都是 padX 加一條邊框
+    assert.equal(capsules(ctx, 'rgba(1,2,3,0.5)').length, 2);
+    const strokes = ctx.calls.filter((call) => call.op === 'stroke');
+    assert.equal(strokes.length, 2);
+    assert.ok(strokes.every((call) => call.strokeStyle === '#abcdef' && call.lineWidth === 1));
+    const savage = at(ctx, 'Savage');
+    const glamour = at(ctx, 'Glamour');
+    assert.equal(savage.fillStyle, '#222222');
+    assert.equal(savage.font, fontString(TEXT, 10));
+    near(savage.x, 100 + 4 + 1, '字從膠囊的左邊再隔 padX 加一條邊框開始', 1e-9);
+    near(glamour.x, 100 + (36 + 2 * 5) + 3 + 5, '第二顆在第一顆右邊隔 gap', 1e-9);
+    near(savage.y, 50 + LINE + (10 * LINE_NORMAL + 2 * 2 + 2 * 1) / 2, '膠囊緊接在小標下面，字在膠囊的正中', 1e-9);
+    // 時段格子：8 格，有選的 4 格是 accent、沒選的是 offColor；欄名與列名是 labelColor
+    assert.equal(capsules(ctx, '#4f74d6').length, 4);
+    assert.equal(capsules(ctx, '#eeeeee').length, 4);
+    assert.equal(at(ctx, '早上').fillStyle, '#999999');
+    assert.equal(at(ctx, '平日').fillStyle, '#999999');
+    assert.ok(at(ctx, '平日').x >= 320 - 1e-9, '時段格子在右欄裡');
+
+    // 沒有邊框（border 沒給）：只填色、不描邊，字左右的內距都是 padX × 倍數；stroke 也不用給
+    const flat = createRecordingContext();
+    likesAndHours(flat, view(), { ...spec, chips: { ...chips, border: undefined, stroke: undefined } }).draw(50);
+    assert.equal(flat.calls.filter((call) => call.op === 'stroke').length, 0);
+    near(at(flat, 'Savage').x, 100 + 4, '內距只有 padX', 1e-9);
+    near(at(flat, 'Glamour').x, 100 + (36 + 2 * 4) + 3 + 4, '', 1e-9);
+
+    // 只有喜歡的內容：用整列的寬（420），沒有時段的小標與格子；只有時段：右欄照兩邊都有時的寬、靠左（x 就是整列的左邊）
+    const likesOnly = createRecordingContext();
+    likesAndHours(likesOnly, view({ hours: null }), spec).draw(0);
+    assert.ok(at(likesOnly, '喜歡的內容') && !at(likesOnly, '遊玩時段'));
+    assert.equal(capsules(likesOnly, '#4f74d6').length, 0);
+    const hoursOnly = createRecordingContext();
+    likesAndHours(hoursOnly, view({ likes: [] }), spec).draw(0);
+    assert.ok(!at(hoursOnly, '喜歡的內容') && !hoursOnly.calls.some((call) => call.op === 'stroke'));
+    near(at(hoursOnly, '遊玩時段').x, 100, '只有時段時靠左', 1e-9);
+    // 兩邊都沒有是 null
+    assert.equal(likesAndHours(createRecordingContext(), view({ likes: [], hours: null }), spec), null);
+
+    // 膠囊排成最多 2 列，排不下整組一起縮小（每次 0.05）：7 顆 'WWWWWWWW'（48 寬）排不進 2 列（一列 3 顆），縮到 0.8 就一列 4 顆
+    const many = createRecordingContext();
+    likesAndHours(many, view({ likes: Array(7).fill('WWWWWWWW'), hours: null }), { ...spec, width: 200 }).draw(0);
+    const manyTexts = many.calls.filter((call) => call.op === 'fillText' && call.args[0] === 'WWWWWWWW');
+    assert.equal(manyTexts.length, 7, '7 顆都畫出來');
+    assert.ok(manyTexts.every((call) => call.font === fontString(TEXT, 8)), '字級縮到 0.8');
+    assert.equal(new Set(manyTexts.map((call) => call.args[2])).size, 2, '排成 2 列');
+    // 縮到 60% 還排不下：用 60%，排不下的不畫（60% 時一列 5 顆、2 列 10 顆）
+    const tooMany = createRecordingContext();
+    likesAndHours(tooMany, view({ likes: Array(30).fill('WWWWWWWW'), hours: null }), { ...spec, width: 200 }).draw(0);
+    const tooManyTexts = tooMany.calls.filter((call) => call.op === 'fillText' && call.args[0] === 'WWWWWWWW');
+    assert.equal(tooManyTexts.length, 10);
+    assert.ok(tooManyTexts.every((call) => call.font === fontString(TEXT, 6)), '最多縮到 60%');
+    // 一顆都排不進去（比整欄還寬）：那一邊不畫（連小標也不畫），時段仍在右欄
+    const wide = createRecordingContext();
+    likesAndHours(wide, view({ likes: ['W'.repeat(200)] }), spec).draw(0);
+    assert.ok(!at(wide, '喜歡的內容'));
+    near(at(wide, '遊玩時段').x, 320, '時段還在右欄', 1e-9);
+    // 傳凍結的資料也行
+    assert.doesNotThrow(() => likesAndHours(createRecordingContext(), Object.freeze(view()), Object.freeze({ ...spec, chips: Object.freeze(chips), hours: Object.freeze(hours), label: Object.freeze(label) })).draw(0));
 });

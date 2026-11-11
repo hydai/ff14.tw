@@ -40,6 +40,9 @@
 // - fills(ctx)：每一次 fill 與 fillRect 的形狀與顏色：{ kind: 'roundRect' | 'rect' | 'fillRect', x, y, w, h, r, fillStyle, call }。
 //   fill 對到它前面最近的 roundRect／rect（弧線，像預設背景的光點，略過），call 是那一筆記錄（看得到當時的 shadow*、globalAlpha）
 // - imageCalls(ctx)：每一次 drawImage：{ image, x, y, w, h, args, call }（後面三項只有 5 個參數的呼叫才有）
+// - backgroundOf(ctx, call)：一次 fillText（ctx.calls 裡的那一筆）的底色：這一次畫字之前、包住字的中心點（字的左邊加一半寬、這一行的中線）的
+//   最後一次填色的 fillStyle。填色是 fillRect，或 roundRect（現代的路徑）之後的 fill（弧線不算，clip 也不是填色）；包住是看形狀的外框，
+//   不管圓角；形狀是漸層時 fillStyle 就是那個漸層物件。沒有任何填色包住是 null。檢查字和底的對比度用（資訊卡）
 //
 // 小工具
 // - plain(value)：vm 裡建出來的陣列與物件原型和這邊不同，deepEqual 前先轉成這邊的一般值
@@ -239,6 +242,31 @@ const imageCalls = (ctx) => ctx.calls
     .filter((call) => call.op === 'drawImage')
     .map((call) => ({ image: call.args[0], x: call.args[1], y: call.args[2], w: call.args[3], h: call.args[4], args: call.args, call }));
 
+// 每個 ctx 的填色形狀與每一筆 call 的順序，只算一次（記錄長度變了就重算）：backgroundOf 每一段字都要問一次
+const fillIndexes = new WeakMap();
+function fillIndexOf(ctx) {
+    let found = fillIndexes.get(ctx);
+    if (found === undefined || found.size !== ctx.calls.length) {
+        const order = new Map(ctx.calls.map((call, i) => [call, i]));
+        found = { size: ctx.calls.length, order, shapes: fills(ctx).map((shape) => ({ ...shape, at: order.get(shape.call) })) };
+        fillIndexes.set(ctx, found);
+    }
+    return found;
+}
+
+function backgroundOf(ctx, call) {
+    const { order, shapes } = fillIndexOf(ctx);
+    const index = order.get(call);
+    assert.ok(index !== undefined && call.op === 'fillText', 'backgroundOf 要傳 ctx.calls 裡的一筆 fillText');
+    const [text, x, y] = call.args;
+    const centerX = x + fakeMeasure(call.font, text) / 2;
+    for (let i = shapes.length - 1; i >= 0; i--) {
+        const shape = shapes[i];
+        if (shape.at < index && shape.x <= centerX && centerX <= shape.x + shape.w && shape.y <= y && y <= shape.y + shape.h) return shape.fillStyle;
+    }
+    return null;
+}
+
 // ---------- 小工具 ----------
 
 const plain = (value) => JSON.parse(JSON.stringify(value));
@@ -255,5 +283,5 @@ const overlaps = (a, b, epsilon = 1e-6) => a.left < b.right - epsilon && b.left 
 module.exports = {
     loadCard, card, SIZE, cq, ACCENT, NOTICE, INTRO, DAYS, SLOTS, LABELS_ZH, SUB_ICONS, picture,
     requiredModel, emptyModel, fullModel, maxedModel, longestLikes,
-    render, drawn, lines, textBoxes, fills, imageCalls, plain, near, inside, overlaps
+    render, drawn, lines, textBoxes, fills, imageCalls, backgroundOf, plain, near, inside, overlaps
 };

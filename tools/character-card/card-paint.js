@@ -1,6 +1,8 @@
 /**
- * 角色卡產生器的畫圖小工具：三種風格（名片、海報、資訊卡）共用的零件，只有「怎麼畫」，沒有任何一種風格的顏色與版面數字
- * （那些在各風格自己的檔案裡，名片是 card-style-a.js、海報是 card-style-b.js；唯一的例外是預設背景，沒有上傳截圖時每種風格的底都一樣）。
+ * 角色卡產生器的畫圖小工具：三種風格（名片、海報、資訊卡）共用的零件，只有「怎麼畫」，沒有任何一種風格自己的顏色與版面數字
+ * （那些在各風格自己的檔案裡，名片是 card-style-a.js、海報是 card-style-b.js、資訊卡是 card-style-c.js）。有兩個例外：預設背景（沒有上傳截圖時每種風格的底都一樣），
+ * 與名片、資訊卡共用的排法用到的四個數字（收在最外層函式裡：三欄資訊的欄數 META_COLUMNS 與每欄的值最多幾行 META_MAX_LINES、喜歡的內容的膠囊最多幾列
+ * LIKES_MAX_ROWS 與排不下時最多縮到幾倍 LIKES_FLOOR），這兩種風格的這幾個數字一樣，所以跟著排法收在這裡。
  * 都是純函式：只拿傳進來的 2D context 畫，不碰 DOM、不建 canvas、不靠 this、不改傳進來的資料（傳凍結的資料也行），
  * 所以風格可以解構出來單獨呼叫；字型與顏色每次畫之前都自己設，不靠上一次留下的狀態。
  * 座標一律是 canvas 的像素。字是靠左、垂直置中畫的（CardRenderer.draw 一開始就設好 textAlign = 'left'、textBaseline = 'middle'），
@@ -25,7 +27,11 @@
  *   { width, height, ...toPixels(specs[format], width / 100) }，每次回傳新的物件
  * - firstChar(text)：第一個字（以 Unicode 字元計，不會把代理對切成兩半），空字串是 ''
  * - sum(numbers)：加總
- * - tintOf(hex, amount)：'#rrggbb' 往白色混 amount（0～1）
+ * - mixOf(hex, other, amount)：'#rrggbb' 往另一個顏色 other 混 amount（0～1，0 是 hex 本身、1 是 other）：每個色版 Math.round(a + (b - a) * amount)，
+ *   輸出小寫的 '#rrggbb'
+ * - tintOf(hex, amount)：'#rrggbb' 往白色混 amount（0～1），就是 mixOf(hex, '#ffffff', amount)
+ * - readableOn(text, background, { toward = '#1d2233', min = 4.5 } = {})：background 上讀得清楚的文字色：text 一步一步（每次 0.05）往 toward 混，
+ *   第一個和 background 的對比度（CardLayout.contrastRatio）≥ min 的就是答案；text 本來就夠就是 text 本身（輸出小寫），都不夠就是 toward
  * - rgbaOf(hex, alpha)：'#rrggbb' 加透明度 → 'rgba(r,g,b,alpha)'（沒有空白）
  *
  * 畫圖：
@@ -41,7 +47,8 @@
  *   （最多縮到 FIT_FLOOR）；回傳實際的字級（fittedSize 的字距版）
  * - labelBlock(ctx, text, spec, maxWidth)：小標（部隊、喜歡的內容…）：字距一個字一個字畫，放不下 maxWidth 整行縮小（最多縮到 FIT_FLOOR）。
  *   spec = { kind, font, spacing, color }（字型的種類、原本的字級、字距（em）、顏色）；回傳 { height, draw(x, top) }，高度是原本字級的一行（縮小也不變）
- * - drawCapsule(ctx, x, y, w, h, fill, stroke, border)：膠囊：半透明的底加邊框。CSS 的邊框在框裡面，描邊的路徑往裡縮半條線寬才對得上
+ * - drawCapsule(ctx, x, y, w, h, fill, stroke, border)：膠囊：半透明的底加邊框。CSS 的邊框在框裡面，描邊的路徑往裡縮半條線寬才對得上。
+ *   沒有邊框（border 是 0 或沒給，stroke 也不用給）時只填色、不描邊（canvas 的 lineWidth 設成 0 會被忽略，沿用上一次的線寬，不能照樣描）
  * - drawIcon(ctx, item, x, y, size, accent)：職業圖示，item 是 { name, icon }。有圖（icon 是 drawImage 認得的東西）就畫在 (x, y) 的 size × size 方塊裡；
  *   沒有（例如 Beastmaster）畫重點色 accent 的圓角方塊，中間是名稱的第一個字，字色照重點色的亮度選白或深色（CardLayout.textColorOn）。
  *   這個字用 ICON_LETTER（Noto Sans TC 700）畫，所以風格的 texts() 要把 iconLetters(view) 列進這個字型
@@ -79,9 +86,28 @@
  *   它們要用 ICON_LETTER 的字型載入
  * - listTexts(groups)：groups 是 [[kind, ...字], …]（kind 是 { weight, family }），照順序列成 [{ kind, text }]，不是字串與空字串的略過
  *
- * 名片與資訊卡共用的內容：
+ * 名片與資訊卡共用的內容（兩種風格只剩自己的數字、顏色與畫法，用 spec 傳進來；metaCells、likesAndHours 回傳 { height, draw(top) }，沒有內容是 null，
+ * 可以直接放進 drawInfoColumn 的 blocks）：
+ * - photoInfoBoxes(g, share)：照片框與資訊欄的範圍 { photo, info }（都是 { x, y, width, height }，canvas 的像素）。g 是 geometryOf 換好像素的版面數字：
+ *   width、height（卡片）、pad（內距）、gap（照片框與資訊欄的間隔）、photoAt（'left'：橫版，照片框在左、資訊欄在右；'top'：直版，照片框在上、資訊欄在下）、
+ *   photo.margin（可以沒有，沒有是 0：照片框下面留給別的東西的空間，只讓照片框矮一截，資訊欄的位置不動）。share 是 { left, top }：
+ *   照片框占內容寬（橫版用 left）或內容高（直版用 top）的比例，另一個方向的可以不給
  * - metaItems(view)：三欄資訊的項目 [{ label, value }]：部隊（view.fcName 加 view.tag，只填一個就只寫那一個，用一個空白接）、大國防聯軍（view.gc）、
  *   在找什麼（view.looking），照這個順序，沒有值的拿掉；小標是 view.labels 的字
+ * - metaCells(ctx, view, spec)：三欄資訊的區塊：metaItems 排成三等分的欄（有值的從左邊那欄排，欄寬照舊是三等分），每一欄是小標（labelBlock）加最多 2 行的值
+ *   （CardLayout.wrapText，超過的最後一行接 …），同一列一樣高（照最高的那一欄）。沒有任何一項是 null。
+ *   spec = { x, width, gap, label, kind, font, color, padX = 0, padY = 0, paintBox }：x、width 是整列的左邊與寬（像素），gap 是欄與欄的間隔，
+ *   label 是小標的 spec（見 labelBlock），kind、font、color 是值的字型的種類、字級與顏色；padX、padY 是每一欄裡面的左右與上下內距（小標與值都在內距裡面，
+ *   值折行的寬度扣掉左右內距）；paintBox(x, top, width, height) 在每一欄的字之前畫那一欄的底（資訊卡的白色圓角框），沒給就不畫
+ * - likesAndHours(ctx, view, spec)：兩欄的區塊：左邊是喜歡的內容（view.likes，小標 view.labels.likes 加膠囊，排成最多 2 列，排不下時整組縮小到最多 60%，
+ *   用 fitChips），右邊是遊玩時段（view.hours，小標 view.labels.hours 加 hoursBlock 的格子），兩欄從上面對齊。沒有喜歡的內容或沒有時段（view.hours 是 null）
+ *   那一邊就沒有，只有一邊時的寬度見 splitColumns；膠囊一顆都排不進去時那一邊也不畫。兩邊都沒有是 null。
+ *   spec = { x, width, gap, ratio, label, chips, hours }：x、width 是整列的左邊與寬，gap、ratio 是兩欄的間隔與比例 [左, 右]（splitColumns），
+ *   label 是小標的 spec（見 labelBlock）；chips = { kind, font, padX, padY, gap, border, fill, stroke, color }：膠囊字型的種類與原本的字級、原本的內距與間隔
+ *   （像素）、邊框的線寬（沒給或 0 是沒有邊框，只填色）、底與邊框的顏色（stroke 沒有邊框時不用給）、字的顏色；
+ *   hours 是 hoursBlock 的 spec 去掉 width（寬度是欄寬）
+ * - drawInfoColumn(ctx, view, info, { blocks, foot, gap })：資訊欄（info 是 { x, y, width, height }）：blocks 是區塊（沒填的是 null，拿掉）由上往下疊，
+ *   之間隔 gap（放不下時一起縮小，見 stackDown），底部一列（footBlock）貼著資訊欄的底；foot 是 footBlock 的 spec 去掉 x 與 width（它們照資訊欄）
  * - footText(view)：底部一列右邊的字：`${view.mark} · ${view.notice}`
  * - footBlock(ctx, view, spec)：底部一列，回傳 { height, draw(top) }：右邊是 footText(view)，整句畫出來、貼著右緣；左邊是聯絡方式（view.contact，
  *   沒填就不畫），放不下整行縮小（最多縮到 FIT_FLOOR），和右邊至少隔 gap。spec = { kind, font, color, gap, x, width }：字型的種類、字級、顏色、
@@ -94,7 +120,7 @@ const CardPaint = (() => {
     // 嚴格模式：傳進來的資料被凍結時，想改它的地方會丟 TypeError，不會被默默忽略
     'use strict';
 
-    const { fitScale, textColorOn, layoutChips, coverRect } = window.CardLayout;
+    const { fitScale, textColorOn, contrastRatio, wrapText, layoutChips, coverRect } = window.CardLayout;
 
     const isObject = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
     const deepFreeze = (value) => {
@@ -117,6 +143,11 @@ const CardPaint = (() => {
     const ICON_RADIUS = 0.22; // 沒有圖示時的圓角方塊：圓角是邊長的幾倍
     const LETTER_SIZE = 0.55; // 方塊裡那個字的字級是邊長的幾倍
     const CHIP_STEP = 0.05; // fitChips 每次縮小的倍數
+    const READABLE_STEPS = 20; // readableOn 往 toward 混的步數：每一步 1/20 = 0.05
+    const META_COLUMNS = 3; // 三欄資訊：三等分的欄
+    const META_MAX_LINES = 2; // 三欄資訊每一欄的值最多幾行
+    const LIKES_MAX_ROWS = 2; // 喜歡的內容的膠囊最多幾列
+    const LIKES_FLOOR = 0.6; // 膠囊排不下時整組最多縮到原本的 60%
     // 預設背景的光點：固定的亂數種子，所以每次畫都一樣；半徑的單位是 cqw
     const DOTS = Object.freeze({ count: 64, seed: 20261110, reach: 0.75, radiusMin: 0.15, radiusMax: 1.2, alphaMin: 0.08, alphaMax: 0.35 });
     // 預設背景左上的深藍紫（右下是重點色）。畫在圖上的成品，不跟著網站的深淺色；card-image.js 轉 JPEG 時鋪的底色也是它
@@ -163,13 +194,26 @@ const CardPaint = (() => {
         };
     }
 
-    // '#rrggbb' 往白色混 amount（0～1）
-    function tintOf(hex, amount) {
+    // '#rrggbb' 往另一個顏色 other 混 amount（0～1）：每個色版 Math.round(a + (b - a) * amount)
+    function mixOf(hex, other, amount) {
         const channel = (start) => {
-            const value = parseInt(hex.slice(start, start + 2), 16);
-            return Math.round(value + (255 - value) * amount).toString(16).padStart(2, '0');
+            const from = parseInt(hex.slice(start, start + 2), 16);
+            const to = parseInt(other.slice(start, start + 2), 16);
+            return Math.round(from + (to - from) * amount).toString(16).padStart(2, '0');
         };
         return `#${channel(1)}${channel(3)}${channel(5)}`;
+    }
+
+    // '#rrggbb' 往白色混 amount（0～1）
+    const tintOf = (hex, amount) => mixOf(hex, '#ffffff', amount);
+
+    // background 上讀得清楚的文字色：text 一步一步（每次 1/READABLE_STEPS = 0.05）往 toward 混，第一個對比度 ≥ min 的；都不夠就是 toward
+    function readableOn(text, background, { toward = '#1d2233', min = 4.5 } = {}) {
+        for (let step = 0; step < READABLE_STEPS; step++) {
+            const mixed = mixOf(text, toward, step / READABLE_STEPS);
+            if (contrastRatio(mixed, background) >= min) return mixed;
+        }
+        return toward;
     }
 
     // '#rrggbb' 加透明度 alpha（0～1）→ 'rgba(r,g,b,alpha)'
@@ -249,11 +293,12 @@ const CardPaint = (() => {
         return { height, draw: (x, top) => drawSpaced(ctx, text, x, top + height / 2, spec.kind, px, spec.spacing, spec.color) };
     }
 
-    // 膠囊：半透明的底加邊框。CSS 的邊框在框裡面，描邊的路徑往裡縮半條線寬才對得上
+    // 膠囊：半透明的底加邊框。CSS 的邊框在框裡面，描邊的路徑往裡縮半條線寬才對得上。沒有邊框（border 是 0 或沒給）時只填色：canvas 的 lineWidth 設成 0 會被忽略，不能照樣描邊
     function drawCapsule(ctx, x, y, width, height, fill, stroke, border) {
         ctx.fillStyle = fill;
         roundedRect(ctx, x, y, width, height, height / 2);
         ctx.fill();
+        if (!(border > 0)) return;
         ctx.strokeStyle = stroke;
         ctx.lineWidth = border;
         roundedRect(ctx, x + border / 2, y + border / 2, width - border, height - border, (height - border) / 2);
@@ -480,13 +525,108 @@ const CardPaint = (() => {
         };
     }
 
+    // 照片框與資訊欄的範圍：橫版（g.photoAt 是 'left'）照片框在左、寬是內容寬的 share.left、和內容一樣高，資訊欄在右邊隔 g.gap；
+    // 直版（'top'）照片框在上、寬是整個內容寬、高是內容高的 share.top，資訊欄在下面隔 g.gap。照片框的高再減 g.photo.margin（沒有是 0），資訊欄不動
+    function photoInfoBoxes(g, share) {
+        const margin = g.photo?.margin ?? 0;
+        const contentWidth = g.width - 2 * g.pad;
+        const contentHeight = g.height - 2 * g.pad;
+        if (g.photoAt === 'left') {
+            const photoWidth = contentWidth * share.left;
+            return {
+                photo: { x: g.pad, y: g.pad, width: photoWidth, height: contentHeight - margin },
+                info: { x: g.pad + photoWidth + g.gap, y: g.pad, width: contentWidth - photoWidth - g.gap, height: contentHeight }
+            };
+        }
+        const rowHeight = contentHeight * share.top;
+        return {
+            photo: { x: g.pad, y: g.pad, width: contentWidth, height: rowHeight - margin },
+            info: { x: g.pad, y: g.pad + rowHeight + g.gap, width: contentWidth, height: contentHeight - rowHeight - g.gap }
+        };
+    }
+
+    // 三欄資訊：三等分的欄，每一欄是小標加最多 2 行的值，同一列一樣高；每一欄有內距與底的話，小標與值都在內距裡面（排法見檔案開頭）
+    function metaCells(ctx, view, spec) {
+        const items = metaItems(view);
+        if (items.length === 0) return null;
+        const { x, width, gap, label, kind, font, color, padX = 0, padY = 0, paintBox } = spec;
+        const columnWidth = (width - (META_COLUMNS - 1) * gap) / META_COLUMNS;
+        const inner = columnWidth - 2 * padX;
+        const valueFont = fontString(kind, font);
+        const measure = measurer(ctx, valueFont);
+        const cells = items.map((item) => ({ heading: labelBlock(ctx, item.label, label, inner), values: wrapText(item.value, inner, measure, META_MAX_LINES) }));
+        const labelHeight = Math.max(...cells.map((cell) => cell.heading.height));
+        const lineHeight = font * LINE_NORMAL;
+        const height = 2 * padY + labelHeight + Math.max(...cells.map((cell) => cell.values.length)) * lineHeight;
+        return {
+            height,
+            draw(top) {
+                cells.forEach((cell, i) => {
+                    const left = x + i * (columnWidth + gap);
+                    if (paintBox !== undefined) paintBox(left, top, columnWidth, height);
+                    cell.heading.draw(left + padX, top + padY);
+                    cell.values.forEach((value, row) => drawText(ctx, value, left + padX, top + padY + labelHeight + lineHeight * (row + 0.5), valueFont, color));
+                });
+            }
+        };
+    }
+
+    // 喜歡的內容：小標加膠囊（排成最多 LIKES_MAX_ROWS 列，排不下時整組縮小到最多 LIKES_FLOOR）。一顆都排不進去是 null。回傳 { height, draw(x, top) }
+    function likesColumn(ctx, view, width, label, chips) {
+        const { kind, font, padX, padY, gap, border = 0, fill, stroke, color } = chips;
+        const fit = fitChips(ctx, view.likes, { kind, font, padX, padY, gap, border, maxWidth: width, maxRows: LIKES_MAX_ROWS, floor: LIKES_FLOOR });
+        if (fit.chips.length === 0) return null;
+        const heading = labelBlock(ctx, view.labels.likes, label, width);
+        const chipFont = fontString(kind, fit.px);
+        const pad = padX * fit.scale + border;
+        return {
+            height: heading.height + fit.height,
+            draw(x, top) {
+                heading.draw(x, top);
+                const chipsTop = top + heading.height;
+                for (const chip of fit.chips) {
+                    drawCapsule(ctx, x + chip.x, chipsTop + chip.y, chip.w, chip.h, fill, stroke, border);
+                    drawText(ctx, chip.label, x + chip.x + pad, chipsTop + chip.y + chip.h / 2, chipFont, color);
+                }
+            }
+        };
+    }
+
+    // 遊玩時段：小標加格子（view.hours 不是 null 才會呼叫）。回傳 { height, draw(x, top) }
+    function hoursColumn(ctx, view, width, label, hours) {
+        const heading = labelBlock(ctx, view.labels.hours, label, width);
+        const grid = hoursBlock(ctx, view.hours, { ...hours, width });
+        return {
+            height: heading.height + grid.height,
+            draw(x, top) {
+                heading.draw(x, top);
+                grid.draw(x, top + heading.height);
+            }
+        };
+    }
+
+    // 兩欄：左邊喜歡的內容、右邊遊玩時段，有東西的那一邊才有（排法見檔案開頭）
+    function likesAndHours(ctx, view, spec) {
+        const { x, width, gap, ratio, label, chips, hours } = spec;
+        return twoColumns(x, width, gap, ratio, {
+            left: view.likes.length > 0 ? (columnWidth) => likesColumn(ctx, view, columnWidth, label, chips) : null,
+            right: view.hours !== null ? (columnWidth) => hoursColumn(ctx, view, columnWidth, label, hours) : null
+        });
+    }
+
+    // 資訊欄：沒填的區塊（null）拿掉，由上往下疊，底部一列貼著資訊欄的底
+    function drawInfoColumn(ctx, view, info, { blocks, foot, gap }) {
+        const rows = blocks.filter((block) => block !== null);
+        stackDown(rows, footBlock(ctx, view, { ...foot, x: info.x, width: info.width }), { top: info.y, bottom: info.y + info.height, gap });
+    }
+
     return Object.freeze({
         SIZES, LINE_NORMAL, FIT_FLOOR, ELLIPSIS, FAMILIES,
         ICON_LETTER,
-        isObject, deepFreeze, fontString, toPixels, geometryOf, firstChar, sum, tintOf, rgbaOf,
+        isObject, deepFreeze, fontString, toPixels, geometryOf, firstChar, sum, mixOf, tintOf, readableOn, rgbaOf,
         roundedRect, drawText, measurer, fittedSize, drawCapsule, drawIcon, iconLetters, stackUp, stackDown, splitColumns, twoColumns, fitChips,
         spacedWidth, drawSpaced, fittedSpacedSize, labelBlock, drawBackdrop, drawPhotoBox, hoursBlock,
-        listTexts, metaItems, footText, footBlock
+        listTexts, photoInfoBoxes, metaItems, metaCells, likesAndHours, drawInfoColumn, footText, footBlock
     });
 })();
 

@@ -29,7 +29,8 @@
  * - dragCrop(crop, dxPx, dyPx, imgW, imgH, boxW, boxH)：手指在框裡拖了 dxPx、dyPx（和 boxW、boxH 同一個像素單位）之後的新位置：
  *   圖移動同樣的距離，再換回 x、y。往右拖 x 變小，往左拖 x 變大，夾在 -1～1；zoom 照舊。那個方向沒有多出來的長度
  *   （圖剛好和框一樣寬或高，差在浮點誤差以內）時是 0，因為沒有東西可以拖。回傳新的物件。
- * - textColorOn(hex)：'#rrggbb' 的底色上用白字（'#ffffff'）還是深色字（'#141826'）：算兩個的 WCAG 對比度，高的那個贏，
+ * - contrastRatio(a, b)：兩個 '#rrggbb'（大小寫都行）的 WCAG 對比度，1（一樣）～21（黑白），和先後無關。有一個不是 '#rrggbb' 的東西是 1。
+ * - textColorOn(hex)：'#rrggbb' 的底色上用白字（'#ffffff'）還是深色字（'#141826'）：算兩個的 WCAG 對比度（contrastRatio），高的那個贏，
  *   一樣高是白字。不是 '#rrggbb'（大小寫都行）的東西是白字。
  */
 const CardLayout = (() => {
@@ -286,12 +287,10 @@ const CardLayout = (() => {
         };
     }
 
-    // ---------- 重點色上的字色 ----------
+    // ---------- 對比度與重點色上的字色 ----------
 
     const WHITE = '#ffffff';
     const DARK = '#141826';
-    // 白色的相對亮度是 1（定義）
-    const WHITE_LUMINANCE = 1;
     const HEX_COLOR = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i;
 
     // 一個色版（0～255）換成線性的亮度（WCAG 的公式）
@@ -308,23 +307,29 @@ const CardLayout = (() => {
         return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
     }
 
-    // 兩個相對亮度的對比度：1（一樣）～21（黑白）
-    const contrast = (a, b) => (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
-
-    const DARK_LUMINANCE = luminanceOf(DARK);
+    /**
+     * 兩個顏色的 WCAG 對比度：(較亮的相對亮度 + 0.05) / (較暗的相對亮度 + 0.05)。
+     * @param {string} a - '#rrggbb'（大小寫都行）
+     * @param {string} b - '#rrggbb'
+     * @returns {number} 1（一樣）～21（黑白），和 a、b 的先後無關；有一個不是 '#rrggbb' 的東西是 1
+     */
+    function contrastRatio(a, b) {
+        const first = luminanceOf(a);
+        const second = luminanceOf(b);
+        if (first === null || second === null) return 1;
+        return (Math.max(first, second) + 0.05) / (Math.min(first, second) + 0.05);
+    }
 
     /**
      * 這個底色上的字用白色還是深色：算白色與 #141826 對這個底色的 WCAG 對比度，高的那個贏，一樣高是白色。
      * @param {string} hex - '#rrggbb'（大小寫都行）
-     * @returns {'#ffffff' | '#141826'} 不是 '#rrggbb' 的東西是 '#ffffff'
+     * @returns {'#ffffff' | '#141826'} 不是 '#rrggbb' 的東西是 '#ffffff'（兩個對比度都是 1，一樣高）
      */
     function textColorOn(hex) {
-        const background = luminanceOf(hex);
-        if (background === null) return WHITE;
-        return contrast(background, DARK_LUMINANCE) > contrast(background, WHITE_LUMINANCE) ? DARK : WHITE;
+        return contrastRatio(hex, DARK) > contrastRatio(hex, WHITE) ? DARK : WHITE;
     }
 
-    return Object.freeze({ fitScale, wrapText, layoutChips, coverRect, dragCrop, textColorOn });
+    return Object.freeze({ fitScale, wrapText, layoutChips, coverRect, dragCrop, contrastRatio, textColorOn });
 })();
 
 // Export for use in other modules

@@ -13,11 +13,12 @@ const FILES = [
     'tools/character-card/card-paint.js',
     'tools/character-card/card-style-a.js',
     'tools/character-card/card-style-b.js',
+    'tools/character-card/card-style-c.js',
     'tools/character-card/card-renderer.js'
 ];
 
 // 這幾支腳本把東西掛在 window 上，所以讓 window 指向 context 本身（同 character-card-layout.test.js）。
-// 載入順序同頁面：card-layout.js、card-state.js 在 card-paint.js 前面，card-paint.js、card-style-a.js、card-style-b.js 在 card-renderer.js 前面
+// 載入順序同頁面：card-layout.js、card-state.js 在 card-paint.js 前面，card-paint.js、card-style-a.js、card-style-b.js、card-style-c.js 在 card-renderer.js 前面
 function loadContext(files) {
     const context = vm.createContext({});
     context.window = context;
@@ -193,7 +194,7 @@ test('SIZES 與 fontsFor', () => {
     assert.equal(typeof CardRenderer.draw, 'function');
     assert.equal(typeof CardRenderer.fontsFor, 'function');
     const alone = loadContext(FILES);
-    assert.deepEqual(Object.keys(alone).filter((name) => name !== 'window'), ['CardLayout', 'CardState', 'CardPaint', 'CardStyleA', 'CardStyleB', 'CardRenderer']);
+    assert.deepEqual(Object.keys(alone).filter((name) => name !== 'window'), ['CardLayout', 'CardState', 'CardPaint', 'CardStyleA', 'CardStyleB', 'CardStyleC', 'CardRenderer']);
 
     // 兩種尺寸，凍結的；和共用畫圖小工具的是同一個物件
     assert.deepEqual(plain(CardRenderer.SIZES), SIZE);
