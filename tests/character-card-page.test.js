@@ -21,6 +21,12 @@ const NOTICE = 'FINAL FANTASY XIV © SQUARE ENIX';
 const HTML = read('tools/character-card/index.html');
 const SCRIPT = read('tools/character-card/script.js');
 const CSS = read('tools/character-card/style.css').replace(/\/\*[\s\S]*?\*\//g, '');
+// 手機版面與兩欄版面的條件：整份測試只在這裡各寫一次。script.js 的 PHONE_QUERY、style.css 的兩塊 @media 與頁面替身認得的查詢都要和它們逐字相同
+// （「條件互補」那一條釘住），其他地方一律用這幾個常數，之後改條件不用到處改
+const PHONE_MEDIA = '(max-width: 559px), (max-width: 768px) and (min-height: 501px)';
+const TWO_COLUMN_MEDIA = '(min-width: 769px), (min-width: 560px) and (max-height: 500px)';
+// 兩欄版面裡比較窄的那一段（寬 560～768、高 500 以下：橫放的小手機）：預覽那一欄比電腦窄、三顆按鈕要換成兩排，卡片的高度要另外限制
+const SHORT_LANDSCAPE_MEDIA = '(min-width: 560px) and (max-width: 768px) and (max-height: 500px)';
 
 const saved = (page) => JSON.parse(page.stored.get(KEY));
 // vm 裡建出來的陣列與物件原型和這邊不同，deepEqual 前先轉成這邊的一般值
@@ -124,6 +130,20 @@ const mediaBody = (condition) => {
 };
 // 拿掉所有 @media 之後剩下的基本規則（從後面往前拿，前面的位置才不會跑掉）
 const BASE_CSS = [...MEDIA].reverse().reduce((css, block) => css.slice(0, block.start) + css.slice(block.end), CSS);
+
+// 媒體查詢的小算器：只認 min-width、max-width、min-height、max-height（px）、and 與 ,（或），其他的條件一律丟錯。
+// 回傳 (寬, 高) → 這個查詢（清單）符不符合；先拆好，掃很多個大小時才不用每次重拆
+function mediaMatcher(query) {
+    const alternatives = query.split(',').map((part) => part.split(/\s+and\s+/).map((condition) => {
+        const found = /^\((min|max)-(width|height):\s*(\d+)px\)$/.exec(condition.trim());
+        assert.ok(found, `算不出這個條件：${condition}`);
+        return { bound: found[1], axis: found[2], limit: Number(found[3]) };
+    }));
+    return (width, height) => alternatives.some((conditions) => conditions.every(({ bound, axis, limit }) => {
+        const value = axis === 'width' ? width : height;
+        return bound === 'min' ? value >= limit : value <= limit;
+    }));
+}
 
 // 把每一個欄位都填上，回傳填的內容（頁面還原後要一模一樣）
 function fillEverything(page) {
@@ -783,7 +803,7 @@ test('切換語言：標籤、選項與卡片上的字換成那個語言，選�
     assert.ok(page.texts().includes('繪靈法師'));
 });
 
-test('手機：只顯示目前分頁，左右鍵與 Home／End 切換；電腦：五組都顯示、沒有分頁列；跨過 768px 時焦點不會掉', async () => {
+test('手機：只顯示目前分頁，左右鍵與 Home／End 切換；電腦：五組都顯示、沒有分頁列；跨過手機版面的界線時焦點不會掉', async () => {
     // 電腦：五組都顯示（分頁列由樣式藏起來，見下面的樣式測試）
     const desktop = await createCardPage();
     assert.deepEqual(shownPanels(desktop), TABS);
@@ -831,7 +851,7 @@ test('手機：只顯示目前分頁，左右鍵與 Home／End 切換；電腦�
         assert.deepEqual(selectedTabs(page), ['style']);
     }
 
-    // 跨過 768px：焦點在哪一組的欄位裡，就切到那一組，焦點不會掉
+    // 跨過手機版面的界線：焦點在哪一組的欄位裡，就切到那一組，焦點不會掉
     const wide = await createCardPage();
     wide.$('cardContact').focus();
     wide.setNarrow(true);
@@ -1117,14 +1137,14 @@ test('字型載入失敗：不丟錯，卡片照樣重畫（備用字型），fo
 test('頁面替身本身：canvas 重設、matchMedia、字型與圖示的控制、Web Share 與剪貼簿', async () => {
     const page = await createCardPage({ narrow: true, coarse: true, userAgent: 'Line/14.0', share: 'cancel', clipboard: 'reject' });
     // matchMedia 只認兩種查詢，現在的值照選項；setNarrow 通知監聽
-    assert.equal(page.window.matchMedia('(max-width: 768px)').matches, true);
+    assert.equal(page.window.matchMedia(PHONE_MEDIA).matches, true);
     assert.equal(page.window.matchMedia('(pointer: coarse)').matches, true);
     assert.throws(() => page.window.matchMedia('(min-width: 1px)'), /沒有準備 matchMedia/);
     const seen = [];
-    page.window.matchMedia('(max-width: 768px)').addEventListener('change', (event) => seen.push(event.matches));
+    page.window.matchMedia(PHONE_MEDIA).addEventListener('change', (event) => seen.push(event.matches));
     page.setNarrow(false);
     assert.deepEqual(seen, [false]);
-    assert.equal(page.window.matchMedia('(max-width: 768px)').matches, false);
+    assert.equal(page.window.matchMedia(PHONE_MEDIA).matches, false);
 
     // canvas：設寬高會重設（記錄清空），getContext 只認 2d；toBlob 非同步、toDataURL 有值
     const canvas = page.$('cardCanvas');
@@ -2375,7 +2395,7 @@ test('頁面替身本身（角色圖）：檔案輸入、blob: 網址、角色�
     const seen = [];
     coarse.addEventListener('change', (event) => seen.push(event.matches));
     const narrowSeen = [];
-    page.window.matchMedia('(max-width: 768px)').addEventListener('change', (event) => narrowSeen.push(event.matches));
+    page.window.matchMedia(PHONE_MEDIA).addEventListener('change', (event) => narrowSeen.push(event.matches));
     page.setCoarse(true);
     assert.deepEqual([seen, coarse.matches, narrowSeen], [[true], true, []]);
     page.setNarrow(true);
@@ -2518,7 +2538,7 @@ test('script.js 不在 NodeList／HTMLCollection 上直接用陣列方法', () =
     }
 });
 
-test('標記與版面：表單、預覽、群組與輸入框的名稱；電腦兩欄、分頁列只在手機，預覽 sticky，手機的預覽高度最多 35vh', () => {
+test('標記與版面：表單、預覽、群組與輸入框的名稱；兩欄版面（電腦與橫放的小手機）、分頁列只在手機版面，預覽 sticky，手機版面的預覽高度最多 35vh', () => {
     // 標記：表單不送出、不讓瀏覽器自動帶入；預覽的 canvas 是圖片；每個輸入框都有名稱；單選與按鈕群組有自己的名稱；沒有內嵌樣式
     assert.match(HTML, /<form class="[^"]*" id="cardForm" novalidate autocomplete="off">/);
     assert.match(HTML, /<canvas [^>]*id="cardCanvas"[^>]*role="img"/);
@@ -2536,15 +2556,15 @@ test('標記與版面：表單、預覽、群組與輸入框的名稱；電腦�
     for (const id of ['formatLandscape', 'formatPortrait']) assert.match(HTML, new RegExp(`id="${id}"[^>]*aria-pressed="(true|false)"`));
     assert.doesNotMatch(HTML, /style="/, '沒有內嵌樣式');
 
-    // 電腦（769px 以上）：兩欄，分頁列不顯示；手機（768px 以下，沒有 @media 的基本規則）：預覽在最上面、sticky、高度最多 35vh
-    const desktop = mediaBody('(min-width: 769px)');
-    assert.match(declarations('.editor', desktop), /display:\s*grid/);
-    assert.match(declarations('.editor', desktop), /grid-template-columns:\s*minmax\(0, 3fr\) minmax\(0, 2fr\)/);
-    assert.match(declarations('.editor-tabs', desktop), /display:\s*none/);
-    // 預覽 sticky 是基本規則（手機與電腦都一樣），電腦只調位置：離頂端一段距離、靠上對齊（grid 那一列有整個表單那麼高，才有空間往下走）
-    assert.doesNotMatch(declarations('.preview-pane', desktop), /position:/, '電腦不改 position');
-    assert.match(declarations('.preview-pane', desktop), /top:\s*var\(--space-4\)/);
-    assert.match(declarations('.preview-pane', desktop), /align-self:\s*start/);
+    // 兩欄版面（電腦，與橫放的小手機）：兩欄，分頁列不顯示；手機版面（沒有 @media 的基本規則）：預覽在最上面、sticky、高度最多 35vh
+    const twoColumn = mediaBody(TWO_COLUMN_MEDIA);
+    assert.match(declarations('.editor', twoColumn), /display:\s*grid/);
+    assert.match(declarations('.editor', twoColumn), /grid-template-columns:\s*minmax\(0, 3fr\) minmax\(0, 2fr\)/);
+    assert.match(declarations('.editor-tabs', twoColumn), /display:\s*none/);
+    // 預覽 sticky 是基本規則（手機版面與兩欄版面都一樣），兩欄版面只調位置：離頂端一段距離、靠上對齊（grid 那一列有整個表單那麼高，才有空間往下走）
+    assert.doesNotMatch(declarations('.preview-pane', twoColumn), /position:/, '兩欄版面不改 position');
+    assert.match(declarations('.preview-pane', twoColumn), /top:\s*var\(--space-4\)/);
+    assert.match(declarations('.preview-pane', twoColumn), /align-self:\s*start/);
     assert.match(declarations('.editor', BASE_CSS), /display:\s*flex/);
     assert.match(declarations('.editor', BASE_CSS), /flex-direction:\s*column/);
     assert.match(declarations('.preview-pane', BASE_CSS), /position:\s*sticky/);
@@ -2569,6 +2589,100 @@ test('標記與版面：表單、預覽、群組與輸入框的名稱；電腦�
     assert.match(declarations('.editor-form', BASE_CSS), /min-width:\s*0/);
     assert.match(declarations('.chip:disabled', BASE_CSS), /cursor:\s*not-allowed/);
     assert.match(declarations('.editor-tabs', BASE_CSS), /flex-wrap:\s*wrap/);
+});
+
+test('手機版面與兩欄版面的條件互補（整數像素的畫面大小）：PHONE_QUERY 與 style.css 的兩塊逐字釘住，每個大小剛好符合其中一個', async () => {
+    // 條件逐字釘住：script.js 的 PHONE_QUERY 和 style.css 手機那一塊是同一個字串，兩欄那一塊是規定的字串，各只有一塊
+    const page = await createCardPage();
+    assert.equal(page.window.CharacterCardApp.PHONE_QUERY, PHONE_MEDIA, 'script.js 的 PHONE_QUERY');
+    for (const condition of [PHONE_MEDIA, TWO_COLUMN_MEDIA]) {
+        assert.equal(MEDIA.filter((block) => block.condition === condition).length, 1, `style.css 有一塊 @media ${condition}`);
+    }
+
+    // 每個大小剛好符合其中一個，而且是規定的那一個：直放的手機、窄視窗（分割畫面 400×450）、小平板直放是手機版面；
+    // 橫放的手機（667×375 是 iPhone SE）、小平板橫放與電腦是兩欄版面
+    const phone = mediaMatcher(PHONE_MEDIA);
+    const twoColumn = mediaMatcher(TWO_COLUMN_MEDIA);
+    const PHONES = [[390, 844], [400, 450], [559, 320], [360, 640], [768, 1024], [560, 501]];
+    const TWO_COLUMNS = [[844, 390], [667, 375], [740, 360], [568, 320], [560, 500], [769, 400], [1280, 800]];
+    for (const [width, height] of PHONES) {
+        assert.deepEqual([phone(width, height), twoColumn(width, height)], [true, false], `${width}×${height} 是手機版面`);
+    }
+    for (const [width, height] of TWO_COLUMNS) {
+        assert.deepEqual([phone(width, height), twoColumn(width, height)], [false, true], `${width}×${height} 是兩欄版面`);
+    }
+    // 不只這幾個：寬 1～1400、高 1～1000 的每一個整數大小，都剛好符合其中一個（沒有縫，也沒有同時符合兩個）。
+    // 互補只對整數像素的大小成立：瀏覽器縮放會量出小數的大小，可能兩個都不符合（例如 559.5×400、768.5×600、600×500.5；
+    // 559.5×600 還是手機版面，768.5×400 還是兩欄版面），和全站其他 768／769 的界線一樣，不處理（條件照規定寫整數 px）
+    for (let width = 1; width <= 1400; width += 1) {
+        for (let height = 1; height <= 1000; height += 1) {
+            if (phone(width, height) === twoColumn(width, height)) {
+                assert.fail(`${width}×${height} 要剛好符合手機版面或兩欄版面其中一個：手機 ${phone(width, height)}、兩欄 ${twoColumn(width, height)}`);
+            }
+        }
+    }
+});
+
+test('媒體查詢的小算器：min／max、寬／高、and、逗號；不認得的條件丟錯', () => {
+    const match = mediaMatcher('(min-width: 10px) and (max-height: 20px), (max-width: 5px)');
+    assert.equal(match(10, 20), true, '邊界（含）');
+    assert.equal(match(9, 20), false, '寬度不到 min-width');
+    assert.equal(match(10, 21), false, '高度超過 max-height');
+    assert.equal(match(5, 99), true, '逗號是「或」：第二個查詢單獨符合就好');
+    assert.equal(match(6, 99), false);
+    assert.throws(() => mediaMatcher('(pointer: coarse)'), /算不出這個條件/);
+    assert.throws(() => mediaMatcher('(min-width: 10em)'), /算不出這個條件/);
+});
+
+test('矮的橫向畫面（寬 560～768、高 500 以下）：預覽卡片的高度另外限制，整欄放得進畫面；電腦與 844 寬的手機照舊', () => {
+    // 條件是規定的字串、只有一塊，只涵蓋寬 560～768、高 500 以下的畫面
+    assert.equal(MEDIA.filter((block) => block.condition === SHORT_LANDSCAPE_MEDIA).length, 1, `style.css 有一塊 @media ${SHORT_LANDSCAPE_MEDIA}`);
+    const shortLandscape = mediaMatcher(SHORT_LANDSCAPE_MEDIA);
+    for (const [width, height] of [[667, 375], [740, 360], [568, 320], [560, 500], [768, 400]]) {
+        assert.equal(shortLandscape(width, height), true, `${width}×${height} 在範圍裡`);
+    }
+    for (const [width, height] of [[844, 390], [769, 400], [390, 844], [400, 450], [1280, 800]]) {
+        assert.equal(shortLandscape(width, height), false, `${width}×${height} 不在範圍裡`);
+    }
+
+    // 規則：.preview-canvas 的 max-height。兩欄版面照舊 70vh（844×390 量過：直版的卡片 273px、整欄 361px，放得進畫面），
+    // 這一段另外限制；兩條同樣重，後面的才蓋得掉，所以這一塊要排在兩欄那一塊後面
+    assert.match(declarations('.preview-canvas', mediaBody(TWO_COLUMN_MEDIA)), /max-height:\s*70vh/, '兩欄版面照舊 70vh');
+    assert.ok(CSS.indexOf(`@media ${SHORT_LANDSCAPE_MEDIA}`) > CSS.indexOf(`@media ${TWO_COLUMN_MEDIA}`), '矮的橫向畫面那一塊排在兩欄那一塊後面');
+    // 上限 = 畫面高度 − 上下各一個 sticky 的邊距（--space-4，同兩欄版面 .preview-pane 的 top）− 卡片以外的高度：版型按鈕一排（--control-sm）、
+    // 下載、分享、複製兩排（--control-md），加上它們之間的三個間距（--space-2：.preview-pane 的 gap 與按鈕列的 gap）。
+    // 用畫面高度算，所以量過的三個大小（568×320、667×375、740×360）整欄都放得進畫面（Chrome 量過：568×320 直版的卡片 152px、整欄 288px，加上邊距在 320 以內）。
+    // 已知的例外（見 CLAUDE.md 的已知限制）：英文介面寬 560～566px 時「橫版／直版」兩顆按鈕換行，LINE 的提示顯示時也多一段，整欄比算出來的高，下載鈕還看得到
+    const shortLandscapeCss = mediaBody(SHORT_LANDSCAPE_MEDIA);
+    assert.match(declarations('.preview-canvas', shortLandscapeCss), /max-height:\s*calc\(100vh - var\(--space-4\) \* 2 - var\(--space-2\) \* 3 - var\(--control-sm\) - var\(--control-md\) \* 2\);/);
+    // 按鈕兩排的前提：英文、日文的按鈕字比較長，欄窄到 200px 時三顆要三排，所以左右內距收到 --space-3（同手機版面固定在最下方的那一列）
+    assert.match(declarations('.preview-actions .btn', shortLandscapeCss), /padding-inline:\s*var\(--space-3\)/);
+});
+
+test('矮的橫向畫面的表單欄：遊玩時段回到兩欄、主職與部隊的並排欄位回到一欄（同手機版面寬不到 480／481px 的排法），排在那兩塊後面才蓋得掉；480／481px 以上的四欄與並排照舊', () => {
+    // 表單欄只有兩欄版面的 3fr：寬 568 時卡片內容只有 260px（667 是 320px，740 是 364px，768 是 380px）。四欄的遊玩時段每格只剩 59px，
+    // 英文的 Morning、Afternoon、Evening 會被切在字中間；主職的選單只剩 62px 的字寬（中、英、日各有 12～19 個職業名稱放不下）、部隊名稱的輸入框 100px。
+    // 所以整個範圍都用手機版面寬不到 480／481px 的排法
+    const HOURS_MEDIA = '(min-width: 480px)';
+    const FIELD_ROW_MEDIA = '(min-width: 481px)';
+    const columnsOf = (selector, css) => /grid-template-columns:\s*([^;]+);/.exec(declarations(selector, css))?.[1];
+    // 基本規則：遊玩時段兩欄、.field-row 一欄；480／481px 以上才四欄、並排（寬 769px 以上的兩欄版面照舊拿到這兩塊）
+    assert.equal(columnsOf('.hours-slots', BASE_CSS), 'repeat(2, minmax(0, 1fr))');
+    assert.equal(columnsOf('.field-row', BASE_CSS), 'minmax(0, 1fr)');
+    assert.equal(columnsOf('.hours-slots', mediaBody(HOURS_MEDIA)), 'repeat(4, minmax(0, 1fr))', '遊玩時段 480px 以上四欄');
+    for (const selector of ['.field-row-job', '.field-row-fc']) {
+        assert.match(columnsOf(selector, mediaBody(FIELD_ROW_MEDIA)), /^minmax\(0, 1fr\) minmax\(0, \d+rem\)$/, `${selector} 481px 以上並排`);
+    }
+    // 矮的橫向畫面那一塊把它們改回基本規則的值（照基本規則比，不另外寫死）
+    const shortLandscapeCss = mediaBody(SHORT_LANDSCAPE_MEDIA);
+    assert.equal(columnsOf('.hours-slots', shortLandscapeCss), columnsOf('.hours-slots', BASE_CSS), '遊玩時段回到兩欄');
+    for (const selector of ['.field-row-job', '.field-row-fc']) {
+        assert.equal(columnsOf(selector, shortLandscapeCss), columnsOf('.field-row', BASE_CSS), `${selector} 回到一欄`);
+    }
+    // 同樣重的規則，後面的才蓋得掉：這一塊要排在 480px、481px 那兩塊後面
+    for (const condition of [HOURS_MEDIA, FIELD_ROW_MEDIA]) {
+        assert.ok(CSS.indexOf(`@media ${SHORT_LANDSCAPE_MEDIA}`) > CSS.indexOf(`@media ${condition}`), `矮的橫向畫面那一塊排在 @media ${condition} 後面`);
+    }
 });
 
 test('翻譯：三語的鍵一樣，每個鍵的 {參數} 三語一樣，index.html 的預設文字等於 zh 翻譯，頁首名稱與登錄表一致', () => {
@@ -4163,11 +4277,11 @@ test('切換語言：大圖開著時標題、按鈕與圖的說明換成那個�
     assert.equal(messages(desktop).at(-1), `${OUT_FILE} をダウンロードしました`);
 });
 
-test('輸出的樣式：手機的按鈕列固定在最下方（照 safe-area 加內距）、頁尾與回到頂部鈕不被蓋住、.is-typing 收起按鈕列並把預覽縮到 20vh；電腦在預覽下面；大圖不左右捲', () => {
-    const phone = mediaBody('(max-width: 768px)');
-    const desktop = mediaBody('(min-width: 769px)');
+test('輸出的樣式：手機的按鈕列固定在最下方（照 safe-area 加內距）、頁尾與回到頂部鈕不被蓋住、.is-typing 收起按鈕列並把預覽縮到 20vh；兩欄版面在預覽下面；大圖不左右捲', () => {
+    const phone = mediaBody(PHONE_MEDIA);
+    const twoColumn = mediaBody(TWO_COLUMN_MEDIA);
 
-    // 手機（768px 以下）：按鈕列固定在畫面最下方，有不透明的底（要蓋住底下捲上來的欄位）、上框線，下內距加 safe-area（有瀏海與手勢列的手機）
+    // 手機版面：按鈕列固定在畫面最下方，有不透明的底（要蓋住底下捲上來的欄位）、上框線，下內距加 safe-area（有瀏海與手勢列的手機）
     const bar = declarations('.preview-actions', phone);
     assert.match(bar, /position:\s*fixed/);
     assert.match(bar, /bottom:\s*0/);
@@ -4182,9 +4296,9 @@ test('輸出的樣式：手機的按鈕列固定在最下方（照 safe-area 加
     assert.match(bigButton, /min-height:\s*var\(--control-lg\)/);
     assert.match(bigButton, /flex:\s*1 1 auto/);
     assert.match(bigButton, /min-width:\s*0/);
-    // 電腦與基本規則：按鈕列在預覽下面（同一欄，跟著 sticky 的預覽走），不是 fixed
+    // 兩欄版面與基本規則：按鈕列在預覽下面（同一欄，跟著 sticky 的預覽走），不是 fixed
     assert.doesNotMatch(declarations('.preview-actions', BASE_CSS), /position:/);
-    assert.doesNotMatch(declarations('.preview-actions', desktop), /position:/);
+    assert.doesNotMatch(declarations('.preview-actions', twoColumn), /position:/);
     assert.match(declarations('.preview-actions', BASE_CSS), /display:\s*flex/);
     assert.match(declarations('.preview-actions', BASE_CSS), /flex-wrap:\s*wrap/);
     assert.doesNotMatch(CSS, /\.preview-actions:empty/, '按鈕列不再是空的');
@@ -4209,7 +4323,7 @@ test('輸出的樣式：手機的按鈕列固定在最下方（照 safe-area 加
     assert.match(declarations(':root:has(.is-typing)', phone), /scroll-padding-top:\s*calc\(20vh \+ var\(--space-10\)\)/);
     assert.match(declarations(':root:has(.is-typing)', phone), /scroll-padding-bottom:\s*0/);
     assert.doesNotMatch(BASE_CSS, /is-typing/);
-    assert.doesNotMatch(desktop, /is-typing/);
+    assert.doesNotMatch(twoColumn, /is-typing/);
     // 預覽原本的 35vh 還在基本規則裡（上面的測試守住）；.is-typing 的規則比它具體，排在它後面
     assert.ok(CSS.indexOf('.is-typing .preview-canvas') > CSS.indexOf('.preview-canvas {'));
 

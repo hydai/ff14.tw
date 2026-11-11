@@ -65,7 +65,7 @@
 //   setPointerCapture 丟 NotFoundError（瀏覽器對不在作用的 pointer 就是這樣）。getBoundingClientRect() 是 canvas 的寬高乘 displayScale
 //   （選項，預設 0.5，卡片在畫面上縮成一半：拖曳的換算有 2 倍）；setDisplayScale(0) 模擬 canvas 藏起來（寬高都是 0）。dataUrlRequests 是每一次 toDataURL 的 { type, quality, width, height}
 // - storageFull 選項：這些鍵的 setItem 丟 QuotaExceededError（容量已滿；讀與刪照常）。storageWrites 是每一次 setItem 的鍵（不管成不成功，照順序）
-// - matchMedia 只認 '(max-width: 768px)'（narrow：頁面現在是不是手機版面）與 '(pointer: coarse)'（coarse：觸控為主的裝置），其他查詢一律丟錯。
+// - matchMedia 只認 NARROW_QUERY（和 script.js 的 PHONE_QUERY 逐字相同：narrow，頁面現在是不是手機版面）與 '(pointer: coarse)'（coarse：觸控為主的裝置），其他查詢一律丟錯。
 //   回傳 { media, matches, addEventListener('change', fn), removeEventListener }；setNarrow(next)、setCoarse(next) 改值並呼叫那個查詢每個登記的 change 監聽
 //   （{ matches: next, media }），不管值有沒有變
 // - navigator：userAgent 預設是桌面版的 Chrome。share：false（預設，沒有 navigator.share 與 canShare）、'ok'（canShare 認得有檔案的資料，
@@ -125,7 +125,8 @@ const TOOL_DIR = 'tools/character-card';
 const TRANSLATIONS = 'assets/js/i18n/translations/tools/character-card.js';
 const SHARED_SCRIPTS = ['../../assets/js/ff14-game-data.js'];
 const PAGE_URL = 'https://ff14.tw/tools/character-card/index.html';
-const NARROW_QUERY = '(max-width: 768px)';
+// 手機版面的查詢：和 script.js 的 PHONE_QUERY 逐字相同（tests/character-card-page.test.js 的「條件互補」釘住）；頁面問別的查詢，matchMedia 替身會丟錯
+const NARROW_QUERY = '(max-width: 559px), (max-width: 768px) and (min-height: 501px)';
 const COARSE_QUERY = '(pointer: coarse)';
 const DESKTOP_USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36';
 const SHARE_MODES = [false, 'ok', 'cancel', 'fail', 'no-files', 'expired', 'blocked'];

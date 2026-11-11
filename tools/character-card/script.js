@@ -7,7 +7,8 @@
 // 這四個欄位底下的說明（.not-drawn）只在選了海報時顯示，名片與資訊卡時 hidden 並從欄位的 aria-describedby 拿掉（syncNotDrawn()）。
 // 畫面模型（buildModel()）多了名片與資訊卡要的欄位與翻好的小標。圖片的位置每一種「風格 × 橫直版」各一份（CardState.cropKey）：拖曳照那種風格的照片框換算
 // （CardRenderer.photoBox：海報是整張卡片，名片與資訊卡是框）。
-// 手機（768px 以下）五組欄位用分頁切換（script.js 用 hidden 切換面板），電腦五組都顯示；預覽的位置、sticky 與分頁列的顯示都在 style.css。
+// 手機版面（PHONE_QUERY：寬 559px 以下，或寬 768px 以下而且高 501px 以上）五組欄位用分頁切換（script.js 用 hidden 切換面板），兩欄版面（電腦，與橫放的小手機）五組都顯示；
+// 預覽的位置、sticky 與分頁列的顯示都在 style.css。
 // 記住：每一次讀寫都由 CardState 包 try/catch；瀏覽器封鎖網站資料時連 window.localStorage 本身都會丟例外，所以取 storage 也包 try，
 // 取不到就傳 null（CardState 當成讀不到、寫不進去），這次打開期間照常運作，只是不記住。
 // 角色圖：上傳的圖由 card-image.js 縮小、轉成 JPEG（卡片畫的與瀏覽器記住的是同一張：轉出來之後再讀回來才用），位置與縮放存在 state.crops
@@ -24,16 +25,20 @@
 // 字型：Google Fonts 的中文字型依字分批載入，沒載入的字會退成別的字型，所以每畫一次就看有沒有還沒請求過的字，有就請瀏覽器載入（這一次請求的算一批）；
 // 這一批載入完（失敗也算：卡片用備用字型）就重畫一次，不等別批。fontsReady() 等到請求過的每一批都載入完並重畫過：等的時候又請求的也等，
 // 先請求的那一批比後請求的慢（後請求的先載完）也一樣，下載、分享、複製之前要等它。
-// 輸出（下載圖片、分享、複製圖片、全螢幕大圖）：三顆按鈕先看必填有沒有填（CardState.validate：沒填的在欄位下面寫錯誤、手機切到基本分頁、焦點移到第一個沒填的欄位，不產生圖），
+// 輸出（下載圖片、分享、複製圖片、全螢幕大圖）：三顆按鈕先看必填有沒有填（CardState.validate：沒填的在欄位下面寫錯誤、手機版面切到基本分頁、焦點移到第一個沒填的欄位，不產生圖），
 // 再等字型、職業圖示與還原中、上傳中的角色圖都好了（assetsReady()，最多等 EXPORT_WAIT_MS：卡住的請求不能讓按鈕永遠沒反應，逾時就照目前的畫面產生並說一聲）、重畫、轉成 PNG（CardExport，card-export.js）。
-// 手機（768px 以下）與觸控為主的裝置按「下載圖片」不直接下載，打開全螢幕大圖（#imageViewer，ModalManager），上面寫「長按圖片即可儲存」（LINE、Facebook 等內建瀏覽器常常不能直接下載）；
+// 手機版面與觸控為主的裝置按「下載圖片」不直接下載，打開全螢幕大圖（#imageViewer，ModalManager），上面寫「長按圖片即可儲存」（LINE、Facebook 等內建瀏覽器常常不能直接下載；
+// 橫放的小手機不是手機版面，但是觸控為主，照樣用大圖）；
 // 這些裝置上點一下小卡也看大圖（只是看，不驗證，必填沒填完時大圖裡只有圖與「關閉」）。匯出做到一半再按什麼都不理（exporting）。
 // 複製要在點擊的當下就把「之後才會有的圖」（Promise）交給剪貼簿（Safari 要求 clipboard.write 在使用者手勢裡呼叫）。大圖裡的分享用已經做好的檔案，馬上分享，不再等任何東西。
 // 底部的分享要等圖做好才呼叫 navigator.share，等太久點擊的使用者手勢就過期了（瀏覽器只給幾秒，丟 NotAllowedError）：這時改開大圖，請使用者按大圖裡的分享（新的一下點擊）。
-// 手機打字（表單裡的文字欄、文字框得到焦點；選單不算：不開鍵盤，選完焦點還留在上面）時 #cardTool 加 .is-typing：style.css 把按鈕列收起來、預覽縮小，
+// 手機打字（表單裡的文字欄、文字框得到焦點；選單不算：不開鍵盤，選完焦點還留在上面）時 #cardTool 加 .is-typing：style.css 在手機版面把按鈕列收起來、預覽縮小，
 // 讓正在打的欄位看得到。換分頁要藏起有焦點的欄位時，先讓它失去焦點（selectTab()：Safari 藏起有焦點的欄位時不一定送 focusout，.is-typing 就收不掉）。
 class CharacterCardApp {
-    static PHONE_QUERY = '(max-width: 768px)';
+    // 手機版面的查詢，和 style.css 手機那一塊的 @media 條件逐字相同：寬 559px 以下，或寬 768px 以下而且高 501px 以上。兩欄版面那一塊與它互補：
+    // 整數像素的畫面大小剛好符合其中一個；瀏覽器縮放量出的小數大小，可能兩個都不符合（例如 559.5×400、768.5×600、600×500.5），和全站其他 768／769 的界線一樣。
+    // 橫放的小手機（寬 560～768、高 500 以下，例如 iPhone SE 的 667×375）不算，用兩欄版面（電腦也用它）：五組欄位都顯示、沒有分頁列與固定在最下方的按鈕列
+    static PHONE_QUERY = '(max-width: 559px), (max-width: 768px) and (min-height: 501px)';
     static COARSE_QUERY = '(pointer: coarse)';
     static CLEAR_CONFIRM_MS = 3000;
     // 下載、分享、複製之前，等字型、職業圖示與還原中的角色圖最多等多久（毫秒）：卡住的請求不能讓按鈕永遠沒反應
@@ -567,7 +572,7 @@ class CharacterCardApp {
         button.classList.toggle('btn-secondary', !armed);
     }
 
-    // ---------- 分頁（手機） ----------
+    // ---------- 分頁（手機版面） ----------
 
     initTabs() {
         this.tabs = CharacterCardApp.TABS.map((key) => ({ key, tab: document.getElementById(`tab-${key}`), panel: document.getElementById(`panel-${key}`) }));
@@ -578,7 +583,7 @@ class CharacterCardApp {
             if (tab) this.selectTab(tab.dataset.tab);
         });
         this.elements.tabs.addEventListener('keydown', (event) => this.moveTab(event));
-        // 沒有 matchMedia 的環境當成電腦（五組都顯示）
+        // 沒有 matchMedia 的環境當成兩欄版面（五組都顯示）
         this.phone = window.matchMedia ? window.matchMedia(CharacterCardApp.PHONE_QUERY) : null;
         if (this.phone) this.phone.addEventListener('change', () => this.followViewport());
         this.followViewport();
@@ -588,9 +593,9 @@ class CharacterCardApp {
         return this.phone !== null && this.phone.matches === true;
     }
 
-    // 視窗跨過 768px（也在一打開時跑一次）。這個監聽在瀏覽器把焦點從剛被藏起來的元素丟掉之前執行，所以焦點還在的時候搬得動：
-    // 變成手機：焦點在哪一組的欄位裡就切到那一組，不然切到最後選的那一組（lastTab，一打開是基本），焦點不會掉到頁面最上面；
-    // 變成電腦：五組都顯示；焦點在分頁上（電腦沒有分頁列）就移到那一組
+    // 視窗跨過手機版面的界線（寬度或高度越過 PHONE_QUERY 的條件，例如手機轉向；也在一打開時跑一次）。這個監聽在瀏覽器把焦點從剛被藏起來的元素丟掉之前執行，所以焦點還在的時候搬得動：
+    // 變成手機版面：焦點在哪一組的欄位裡就切到那一組，不然切到最後選的那一組（lastTab，一打開是基本），焦點不會掉到頁面最上面；
+    // 變成兩欄版面：五組都顯示；焦點在分頁上（兩欄版面沒有分頁列）就移到那一組
     followViewport() {
         const active = document.activeElement;
         if (this.isPhone()) {
@@ -604,7 +609,7 @@ class CharacterCardApp {
     }
 
     /**
-     * 切到一組欄位：選中的分頁 aria-selected="true"、tabindex="0"、.active，其他的 tabindex="-1"；手機只顯示選中的那一組（其他的 hidden），電腦五組都顯示。
+     * 切到一組欄位：選中的分頁 aria-selected="true"、tabindex="0"、.active，其他的 tabindex="-1"；手機版面只顯示選中的那一組（其他的 hidden），兩欄版面五組都顯示。
      * 切過去的那一組記成最後選的（lastTab）：點分頁、鍵盤、驗證失敗切到基本、轉向時照焦點切，一律算。
      * @param {string} key - basic、profile、play、image、style（其他的不理）
      * @param {{focus?: boolean}} options - focus 是 true 時焦點移到那個分頁（鍵盤）
@@ -614,8 +619,8 @@ class CharacterCardApp {
         if (!chosen) return;
         this.lastTab = key;
         const phone = this.isPhone();
-        // 手機要藏起來的那幾組裡有焦點的話，藏起來之前先讓焦點離開：Chrome 藏起有焦點的欄位時會丟掉焦點並送 focusout，Safari 不一定，
-        // 那樣 .is-typing 沒人拿掉，按鈕列就一直收著。blur() 會送 focusout（拿掉 .is-typing），這裡不靠它一定送，再拿一次。電腦五組都顯示，沒有要藏的
+        // 手機版面要藏起來的那幾組裡有焦點的話，藏起來之前先讓焦點離開：Chrome 藏起有焦點的欄位時會丟掉焦點並送 focusout，Safari 不一定，
+        // 那樣 .is-typing 沒人拿掉，按鈕列就一直收著。blur() 會送 focusout（拿掉 .is-typing），這裡不靠它一定送，再拿一次。兩欄版面五組都顯示，沒有要藏的
         const active = document.activeElement;
         if (phone && this.tabs.some(({ key: tabKey, panel }) => tabKey !== key && panel.contains(active))) {
             active.blur();
@@ -1273,7 +1278,7 @@ class CharacterCardApp {
         }
     }
 
-    // 手機（768px 以下）與觸控為主的裝置用全螢幕大圖，不直接下載：LINE、Facebook 等內建瀏覽器常常不能直接下載，長按圖片存檔最可靠
+    // 手機版面與觸控為主的裝置用全螢幕大圖，不直接下載：LINE、Facebook 等內建瀏覽器常常不能直接下載，長按圖片存檔最可靠（橫放的小手機不是手機版面，但是觸控為主）
     usesViewer() {
         return this.isPhone() || this.isCoarse();
     }
@@ -1306,7 +1311,7 @@ class CharacterCardApp {
         FF14Utils.showToast(this.t(key, fallback), 'error');
     }
 
-    // 下載圖片：必填都填了才產生；電腦直接存檔，手機（與觸控為主的裝置）打開全螢幕大圖
+    // 下載圖片：必填都填了才產生；手機版面與觸控為主的裝置打開全螢幕大圖，其他（電腦）直接存檔
     handleDownload() {
         if (this.exporting || !this.validateForExport()) return undefined;
         return this.runExport(async () => {
@@ -1395,7 +1400,7 @@ class CharacterCardApp {
 
     // ---------- 必填的驗證 ----------
 
-    // 名字、伺服器、主職都填了才能輸出。沒填的在欄位下面寫錯誤，手機切到基本分頁（三個必填都在那一組），焦點移到第一個沒填的欄位。回傳能不能輸出
+    // 名字、伺服器、主職都填了才能輸出。沒填的在欄位下面寫錯誤，手機版面切到基本分頁（三個必填都在那一組），焦點移到第一個沒填的欄位。回傳能不能輸出
     validateForExport() {
         const { ok, missing } = CardState.validate(this.state);
         if (ok) return true;

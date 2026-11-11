@@ -45,15 +45,15 @@
 
     <main class="main">
         <div class="container">
-            <!-- 電腦（769px 以上）：左邊表單、右邊預覽（sticky），五組欄位都看得到，沒有分頁列。
-                 手機（768px 以下）：預覽排在最上面（sticky），下面是分頁與目前分頁的表單（script.js 用 hidden 切換面板）。
-                 DOM 的順序是說明、分頁、表單、預覽（電腦的由左到右）；手機用 style.css 的 order 把預覽排到上面 -->
+            <!-- 兩欄版面（寬 769px 以上的電腦，或寬 560px 以上而且高 500px 以下的橫放小手機）：左邊表單、右邊預覽（sticky），五組欄位都看得到，沒有分頁列。
+                 手機版面（寬 559px 以下，或寬 768px 以下而且高 501px 以上）：預覽排在最上面（sticky），下面是分頁與目前分頁的表單（script.js 用 hidden 切換面板）。
+                 DOM 的順序是說明、分頁、表單、預覽（兩欄版面的由左到右）；手機版面用 style.css 的 order 把預覽排到上面 -->
             <div class="editor" id="cardTool">
                 <h1 class="visually-hidden" data-i18n="char_card_header">角色卡產生器</h1>
                 <p class="description editor-lead" id="cardLead" data-i18n="char_card_lead">填名字、伺服器和主職就能下載；其他都是選填。</p>
 
-                <!-- 手機的分頁（WAI-ARIA 分頁）：script.js 切換 aria-selected、tabindex、.active 與面板的 hidden，
-                     左右方向鍵移動並切換、Home／End 到第一個／最後一個；電腦版由 style.css 藏起來 -->
+                <!-- 手機版面的分頁（WAI-ARIA 分頁）：script.js 切換 aria-selected、tabindex、.active 與面板的 hidden，
+                     左右方向鍵移動並切換、Home／End 到第一個／最後一個；兩欄版面由 style.css 藏起來 -->
                 <div class="tabs editor-tabs" id="cardTabs" role="tablist" aria-label="欄位分組" data-i18n="char_card_tabs_label" data-i18n-attr="aria-label">
                     <button type="button" class="tab active" id="tab-basic" role="tab" data-tab="basic" aria-selected="true" aria-controls="panel-basic" tabindex="0" data-i18n="char_card_tab_basic">基本</button>
                     <button type="button" class="tab" id="tab-profile" role="tab" data-tab="profile" aria-selected="false" aria-controls="panel-profile" tabindex="-1" data-i18n="char_card_tab_profile">名片</button>
@@ -316,7 +316,7 @@
 
                 <!-- 預覽：卡片就是一張 canvas（畫面上看到的和下載的是同一張）。用大圖的裝置（手機、觸控為主）點一下卡片用整個畫面看大圖（#imageViewer）。
                      #cardActions：下載圖片、分享、複製圖片，分享與複製只有瀏覽器支援才由 script.js 拿掉 hidden；#lineTip 只有 LINE 的內建瀏覽器才顯示。
-                     電腦在預覽下面（同一欄，跟著 sticky 的預覽走），手機（768px 以下）固定在畫面最下方（style.css）-->
+                     兩欄版面在預覽下面（同一欄，跟著 sticky 的預覽走），手機版面固定在畫面最下方（style.css）-->
                 <aside class="preview-pane" id="cardPreview" aria-label="卡片預覽" data-i18n="char_card_preview_title" data-i18n-attr="aria-label">
                     <canvas class="preview-canvas" id="cardCanvas" role="img" width="1200" height="675" aria-label="角色卡預覽：還沒填資料"></canvas>
                     <div class="preview-format" role="group" aria-label="版型" data-i18n="char_card_format_label" data-i18n-attr="aria-label">
