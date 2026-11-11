@@ -571,6 +571,8 @@ class CharacterCardApp {
 
     initTabs() {
         this.tabs = CharacterCardApp.TABS.map((key) => ({ key, tab: document.getElementById(`tab-${key}`), panel: document.getElementById(`panel-${key}`) }));
+        // 最後選的那一組（selectTab() 記下；只在這次打開期間，不存進瀏覽器）：一打開是基本。手機轉向再轉回來時回到它，不是每次都跳回基本
+        this.lastTab = 'basic';
         this.elements.tabs.addEventListener('click', (event) => {
             const tab = event.target.closest('[role="tab"]');
             if (tab) this.selectTab(tab.dataset.tab);
@@ -587,13 +589,13 @@ class CharacterCardApp {
     }
 
     // 視窗跨過 768px（也在一打開時跑一次）。這個監聽在瀏覽器把焦點從剛被藏起來的元素丟掉之前執行，所以焦點還在的時候搬得動：
-    // 變成手機：焦點在哪一組的欄位裡就切到那一組，不然切到基本，焦點不會掉到頁面最上面；
+    // 變成手機：焦點在哪一組的欄位裡就切到那一組，不然切到最後選的那一組（lastTab，一打開是基本），焦點不會掉到頁面最上面；
     // 變成電腦：五組都顯示；焦點在分頁上（電腦沒有分頁列）就移到那一組
     followViewport() {
         const active = document.activeElement;
         if (this.isPhone()) {
             const inside = this.tabs.find(({ panel }) => panel.contains(active));
-            this.selectTab(inside ? inside.key : 'basic');
+            this.selectTab(inside ? inside.key : this.lastTab);
             return;
         }
         const onTab = this.tabs.find(({ tab }) => tab === active);
@@ -603,12 +605,14 @@ class CharacterCardApp {
 
     /**
      * 切到一組欄位：選中的分頁 aria-selected="true"、tabindex="0"、.active，其他的 tabindex="-1"；手機只顯示選中的那一組（其他的 hidden），電腦五組都顯示。
+     * 切過去的那一組記成最後選的（lastTab）：點分頁、鍵盤、驗證失敗切到基本、轉向時照焦點切，一律算。
      * @param {string} key - basic、profile、play、image、style（其他的不理）
      * @param {{focus?: boolean}} options - focus 是 true 時焦點移到那個分頁（鍵盤）
      */
     selectTab(key, { focus = false } = {}) {
         const chosen = this.tabs.find((item) => item.key === key);
         if (!chosen) return;
+        this.lastTab = key;
         const phone = this.isPhone();
         // 手機要藏起來的那幾組裡有焦點的話，藏起來之前先讓焦點離開：Chrome 藏起有焦點的欄位時會丟掉焦點並送 focusout，Safari 不一定，
         // 那樣 .is-typing 沒人拿掉，按鈕列就一直收著。blur() 會送 focusout（拿掉 .is-typing），這裡不靠它一定送，再拿一次。電腦五組都顯示，沒有要藏的

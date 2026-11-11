@@ -838,7 +838,7 @@ test('手機：只顯示目前分頁，左右鍵與 Home／End 切換；電腦�
     assert.deepEqual(shownPanels(wide), ['profile']);
     assert.deepEqual(selectedTabs(wide), ['profile']);
     isSame(wide.document.activeElement, wide.$('cardContact'), '焦點還在自己輸入的欄位上');
-    // 焦點不在任何一組裡：切到基本
+    // 焦點不在任何一組裡：切到最後選的那一組（新打開的頁面最後選的就是基本）
     const idle = await createCardPage();
     idle.setNarrow(true);
     assert.deepEqual(shownPanels(idle), ['basic']);
@@ -863,6 +863,77 @@ test('手機：只顯示目前分頁，左右鍵與 Home／End 切換；電腦�
     const submit = new page.window.Event('submit', { bubbles: true, cancelable: true });
     page.$('cardForm').dispatchEvent(submit);
     assert.equal(submit.defaultPrevented, true);
+});
+
+// 手機轉向（變成電腦版面再變回手機版面）：焦點不在任何一組裡，就回到轉之前最後選的那一組，不是每次都跳回基本。
+// 最後選的只記在這次打開期間（script.js 的 lastTab），不存進瀏覽器
+test('轉向（手機 → 電腦 → 手機）回到最後選的分頁', async () => {
+    const page = await createCardPage({ narrow: true });
+    page.press('tab-image');
+    // 焦點不在任何一組裡（和手指點在頁面空白處一樣）：press() 只是 click()，不動焦點，這裡把前提寫明
+    page.document.activeElement.blur();
+    isSame(page.document.activeElement, page.document.body, '焦點在 body');
+    page.setNarrow(false);
+    assert.deepEqual(shownPanels(page), TABS, '電腦版面：五組都顯示');
+    page.setNarrow(true);
+    assert.deepEqual(selectedTabs(page), ['image'], '回到最後選的圖片，不是基本');
+    assert.deepEqual(shownPanels(page), ['image']);
+});
+
+test('轉向時焦點在某一組的欄位裡：切到那一組，焦點留著', async () => {
+    const page = await createCardPage({ narrow: true });
+    page.press('tab-image');
+    page.setNarrow(false);
+    page.focus('cardContact');
+    page.setNarrow(true);
+    // 焦點比最後選的分頁優先：焦點在自己輸入的欄位（名片那一組），就切到那一組，不是最後選的圖片
+    assert.deepEqual(selectedTabs(page), ['profile']);
+    assert.deepEqual(shownPanels(page), ['profile']);
+    isSame(page.document.activeElement, page.$('cardContact'), '焦點還在欄位上');
+    // 這樣切過去的也算最後選的：焦點離開之後再轉一次，還是那一組（不是原本點的圖片）
+    page.document.activeElement.blur();
+    isSame(page.document.activeElement, page.document.body, '焦點在 body');
+    page.setNarrow(false);
+    page.setNarrow(true);
+    assert.deepEqual(selectedTabs(page), ['profile']);
+    assert.deepEqual(shownPanels(page), ['profile']);
+});
+
+test('驗證失敗切到基本也算最後選的', async () => {
+    const page = await createCardPage({ narrow: true });
+    page.press('tab-style');
+    // 什麼都沒填就按下載：手機切到基本（驗證自己切的，沒有人點基本分頁），焦點到名字欄
+    page.press('downloadCard');
+    await page.flush();
+    assert.deepEqual(selectedTabs(page), ['basic']);
+    isSame(page.document.activeElement, page.$('cardName'), '焦點在第一個沒填的欄位');
+    page.document.activeElement.blur();
+    isSame(page.document.activeElement, page.document.body, '焦點在 body');
+    page.setNarrow(false);
+    page.setNarrow(true);
+    assert.deepEqual(selectedTabs(page), ['basic'], '最後選的是驗證切過去的基本，不是原本點的樣式');
+    assert.deepEqual(shownPanels(page), ['basic']);
+});
+
+// 最後選的分頁只記在這次打開期間（script.js 的 lastTab），不存進瀏覽器：重新打開還是從基本開始，localStorage 也沒有多出和分頁有關的鍵
+test('最後選的分頁不存進瀏覽器：重新打開（同一份 localStorage）還是從基本開始，localStorage 沒有多出分頁的鍵', async () => {
+    const page = await createCardPage({ narrow: true });
+    // 先讓頁面寫過東西（欄位的記憶），才看得出切換分頁有沒有多寫什麼
+    page.type('cardName', 'Luna Starweaver');
+    const written = () => [...page.stored.entries()];
+    assert.deepEqual([...page.stored.keys()], [KEY], '頁面寫進去的只有欄位的記憶');
+    const before = written();
+    page.press('tab-image');
+    assert.deepEqual(selectedTabs(page), ['image']);
+    assert.deepEqual(written(), before, '切換分頁不寫任何東西');
+
+    // 同一份 localStorage 再打開一次（手機版面）：選的是基本，只顯示基本那一組
+    const again = await page.reopen();
+    assert.deepEqual(selectedTabs(again), ['basic'], '重新打開從基本開始，不是最後選的圖片');
+    assert.deepEqual(shownPanels(again), ['basic']);
+    // 頁面寫進去的鍵還是只有欄位與角色圖那兩個，沒有分頁的
+    for (const key of again.stored.keys()) assert.ok([KEY, IMAGE_KEY].includes(key), `多出來的鍵：${key}`);
+    assert.equal(again.stored.get(KEY), page.stored.get(KEY), '欄位的記憶一個字都沒變');
 });
 
 test('字型：先畫再等字型，載入完重畫；只請求還沒請求過的字；切換語言與改名字時載入新的字', async () => {
