@@ -22,7 +22,7 @@ function loadContext(files) {
 const context = loadContext([LAYOUT_FILE]);
 const { CardLayout } = context;
 // 故意用解構取出：頁面不一定用 CardLayout.xxx() 的寫法呼叫，這些函式不能靠 this
-const { fitScale, wrapText, layoutChips, coverRect, dragCrop, textColorOn } = CardLayout;
+const { fitScale, wrapText, layoutChips, coverRect, dragCrop, canPan, textColorOn, contrastRatio } = CardLayout;
 
 // vm 裡建出來的陣列與物件原型和這邊不同，deepEqual 前先轉成這邊的一般值（不能傳 undefined，也看不出 -0）
 const plain = (value) => JSON.parse(JSON.stringify(value));
@@ -37,6 +37,11 @@ function assertNear(actual, expected, message = '') {
     assert.ok(Math.abs(actual - expected) < 1e-9, `${message} ${actual} 不等於 ${expected}`.trim());
 }
 
+// 對比度的預期值是照公式算出來、寫到小數點後四位的，所以容許 epsilon
+function assertNear2(actual, expected, epsilon) {
+    assert.ok(Math.abs(actual - expected) <= epsilon, `${actual} 不等於 ${expected}`);
+}
+
 // 假的量字（字型已經套好的替身）：英數與拉丁字母一個字 0.6 × SIZE 寬，其他（中日韓、全形字、標點、…）一個字 1 × SIZE 寬。
 // SIZE 取 10：拉丁字母 6、其他 10，所以「20 字寬」就是 200
 const SIZE = 10;
@@ -48,9 +53,9 @@ const SENTENCE = 'the quick brown fox jumps over the lazy dog';
 
 // ---------- 模組 ----------
 
-test('CardLayout：只掛一個全域、模組凍結、只有規定的六個函式', () => {
+test('CardLayout：只掛一個全域、模組凍結、只有規定的八個函式', () => {
     assert.equal(Object.isFrozen(CardLayout), true);
-    assert.deepEqual(Object.keys(CardLayout).sort(), ['coverRect', 'dragCrop', 'fitScale', 'layoutChips', 'textColorOn', 'wrapText']);
+    assert.deepEqual(Object.keys(CardLayout).sort(), ['canPan', 'contrastRatio', 'coverRect', 'dragCrop', 'fitScale', 'layoutChips', 'textColorOn', 'wrapText']);
     for (const [name, fn] of Object.entries(CardLayout)) assert.equal(typeof fn, 'function', name);
 
     // 只掛 CardLayout 一個全域：常數與小函式都收在立即執行的函式裡，不會和頁面其他腳本的名稱撞在一起；
@@ -575,6 +580,81 @@ test('dragCrop：位置壞掉當成置中；距離不是數字當成沒動；大
     assert.deepEqual(plain(frozen), { x: 0, y: 0, zoom: 2 });
 });
 
+// ---------- canPan ----------
+
+test('canPan：照 coverRect 看那個方向有沒有多出來的長度，有才是 true（沒有多出來的方向，位置滑桿也移不動圖）', () => {
+    // 4000×1500 放進 1200×675：縮放 0.45，寬 1800（多出 600）、高剛好 675
+    assert.deepEqual(plain(canPan(4000, 1500, 1200, 675, 1)), { x: true, y: false });
+    // 和框一樣比例的圖：剛好填滿，兩個方向都沒有；放大一點（105%）兩個方向都有
+    assert.deepEqual(plain(canPan(1600, 900, 1200, 675, 1)), { x: false, y: false });
+    assert.deepEqual(plain(canPan(1600, 900, 1200, 675, 1.05)), { x: true, y: true });
+    // 1000×3000 放進 1200×675：縮放 1.2，寬剛好 1200、高 3600（多出 2925）
+    assert.deepEqual(plain(canPan(1000, 3000, 1200, 675, 1)), { x: false, y: true });
+    // 放大到 150%、300%：兩個方向都有
+    assert.deepEqual(plain(canPan(4000, 1500, 1200, 675, 1.5)), { x: true, y: true });
+    assert.deepEqual(plain(canPan(1000, 3000, 1200, 675, 3)), { x: true, y: true });
+    // 每次回傳新的物件，只有 x、y 兩個 boolean
+    const first = canPan(4000, 1500, 1200, 675, 1);
+    assert.notEqual(first, canPan(4000, 1500, 1200, 675, 1));
+    assert.deepEqual(Object.keys(first).sort(), ['x', 'y']);
+    assert.deepEqual(Object.values(first).map((value) => typeof value), ['boolean', 'boolean']);
+});
+
+test('canPan：浮點的誤差不算多出來的長度（和 dragCrop 用同一個 EDGE_EPSILON，1e-6 像素）', () => {
+    // 7×28 放進 29×50：寬度縮放 29 / 7，乘回來是 29.000000000000004（誤差，不是真的多出來）；放進 61×50 乘回來是 60.99999999999999（少一點點）。
+    // 高度真的多出來（116、244），所以上下照樣是 true
+    for (const boxW of [29, 61]) assert.deepEqual(plain(canPan(7, 28, boxW, 50, 1)), { x: false, y: true }, `框寬 ${boxW}`);
+    // 門檻：多出 0.00001 像素是真的有，多出 0.0000001 像素是誤差
+    assert.deepEqual(plain(canPan(100.00001, 100, 100, 100, 1)), { x: true, y: false });
+    assert.deepEqual(plain(canPan(100.0000001, 100, 100, 100, 1)), { x: false, y: false });
+    // 上下一樣（直的圖放進橫框的寬度剛好）
+    assert.deepEqual(plain(canPan(100, 100.00001, 100, 100, 1)), { x: false, y: true });
+    assert.deepEqual(plain(canPan(100, 100.0000001, 100, 100, 1)), { x: false, y: false });
+});
+
+test('canPan：zoom 不是有限的數字當成 100%、範圍外的夾進去（同 coverRect）；圖或框的大小不對是兩個 false', () => {
+    for (const bad of [undefined, null, NaN, Infinity, '1.5', {}]) {
+        assert.deepEqual(plain(canPan(4000, 1500, 1200, 675, bad)), { x: true, y: false }, util.inspect(bad));
+    }
+    // 小於 100% 當成 100%（不會留白），大於 300% 當成 300%
+    assert.deepEqual(plain(canPan(1600, 900, 1200, 675, 0.5)), { x: false, y: false });
+    assert.deepEqual(plain(canPan(1600, 900, 1200, 675, -2)), { x: false, y: false });
+    assert.deepEqual(plain(canPan(1600, 900, 1200, 675, 10)), { x: true, y: true });
+    // 大小不是正的有限數字：算不出來，就沒有可以移的
+    for (const sizes of [
+        [0, 200, 100, 150], [400, 0, 100, 150], [400, 200, 0, 150], [400, 200, 100, -1],
+        [NaN, 200, 100, 150], [400, 200, Infinity, 150], [undefined, 200, 100, 150], ['400', 200, 100, 150]
+    ]) {
+        assert.deepEqual(plain(canPan(...sizes, 2)), { x: false, y: false }, util.inspect(sizes));
+    }
+});
+
+test('canPan：和 dragCrop 一致：true 的方向拖得動，false 的方向怎麼拖都是 0', () => {
+    // 圖：寬的、同比例的、直的、方的、很小的、縮過的（2048 是上傳時的長邊上限）；框：海報橫版與直版、名片與資訊卡橫版與直版的照片框（card-style-a、card-style-c 的 photoBox），
+    // 以及上面浮點誤差的兩個框
+    const images = [[4000, 1500], [1600, 900], [1000, 3000], [1000, 1000], [7, 28], [768, 2048], [2048, 768]];
+    const boxes = [[1200, 675], [1080, 1350], [417.36, 603], [993.6, 543.348], [404.352, 598.2], [29, 50], [61, 50]];
+    let can = 0;
+    let cannot = 0;
+    for (const [imgW, imgH] of images) {
+        for (const [boxW, boxH] of boxes) {
+            for (const zoom of [1, 1.05, 1.5, 3]) {
+                const label = `圖 ${imgW}×${imgH}、框 ${boxW}×${boxH}、zoom ${zoom}`;
+                const pan = canPan(imgW, imgH, boxW, boxH, zoom);
+                // 從置中拖 7 個像素：拖得動的方向位置會變（不是 0），拖不動的方向是 0
+                const moved = dragCrop({ x: 0, y: 0, zoom }, 7, 7, imgW, imgH, boxW, boxH);
+                assert.equal(moved.x !== 0, pan.x, `${label}：左右`);
+                assert.equal(moved.y !== 0, pan.y, `${label}：上下`);
+                for (const direction of [pan.x, pan.y]) {
+                    if (direction) can += 1;
+                    else cannot += 1;
+                }
+            }
+        }
+    }
+    assert.ok(can > 20 && cannot > 20, `兩種結果都要掃到（${can} 個能拖、${cannot} 個不能）`);
+});
+
 // ---------- textColorOn ----------
 
 test('textColorOn：照 WCAG 對比度，白字或 #141826 挑對比高的那一個', () => {
@@ -620,6 +700,36 @@ test('textColorOn：和照公式另外算的對照組逐色一致（紅綠藍各
     }
     // 兩種結果都有出現，不是整組都同一個答案
     assert.ok(darkCount > 30 && darkCount < 186, `深色字 ${darkCount} 色`);
+});
+
+// ---------- contrastRatio ----------
+
+test('contrastRatio：兩個 #rrggbb 的 WCAG 對比度（1～21），和先後無關、大小寫都行，同色是 1，有一個不是 #rrggbb 是 1', () => {
+    assert.equal(contrastRatio('#ffffff', '#000000'), 21);
+    assert.equal(contrastRatio('#000000', '#ffffff'), 21, '先後不影響');
+    assert.equal(contrastRatio('#4f74d6', '#4f74d6'), 1);
+    assert.equal(contrastRatio('#ffffff', '#ffffff'), 1);
+    // 預期值照 WCAG 的公式另外算過（草稿的灰字在 #f4f5fa 上：#7a8195 是 3.57、#8a90a2 是 2.93，換掉之後的 #697084 是 4.54）
+    assertNear2(contrastRatio('#7a8195', '#f4f5fa'), 3.5708, 0.0001);
+    assertNear2(contrastRatio('#8a90a2', '#f4f5fa'), 2.9261, 0.0001);
+    assertNear2(contrastRatio('#697084', '#f4f5fa'), 4.5367, 0.0001);
+    assertNear2(contrastRatio('#697084', '#ffffff'), 4.9394, 0.0001);
+    assertNear2(contrastRatio('#5b6275', '#f4f5fa'), 5.5927, 0.0001);
+    // 大小寫都行
+    assert.equal(contrastRatio('#F4F5FA', '#697084'), contrastRatio('#f4f5fa', '#697084'));
+    // 不是 #rrggbb（缺 #、長度不對、不是十六進位、rgb()、空白、不是字串）是 1，兩邊哪一個壞都一樣
+    for (const bad of ['', 'ffffff', '#fff', '#fffffff', '#gggggg', ' #ffffff', '#ffffff ', 'white', 'rgb(0, 0, 0)', null, undefined, 42, {}, ['#ffffff']]) {
+        assert.equal(contrastRatio(bad, '#000000'), 1, util.inspect(bad));
+        assert.equal(contrastRatio('#000000', bad), 1, util.inspect(bad));
+    }
+    assert.equal(contrastRatio('#zzzzzz', '#nnnnnn'), 1, '兩個都壞');
+    // 對比度在 1～21 之間，把白字與 #141826 比的結果和 textColorOn 一致（挑對比高的那個）
+    for (const hex of ['#c99a2e', '#4f74d6', '#3f9e5c', '#d4574e', '#8a63d2', '#7b7b7b', '#7c7c7c']) {
+        const white = contrastRatio(hex, '#ffffff');
+        const dark = contrastRatio(hex, '#141826');
+        assert.ok(white >= 1 && white <= 21 && dark >= 1 && dark <= 21, hex);
+        assert.equal(textColorOn(hex), dark > white ? '#141826' : '#ffffff', hex);
+    }
 });
 
 test('textColorOn：不是 #rrggbb 的東西一律是白字', () => {

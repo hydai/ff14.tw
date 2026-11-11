@@ -1,13 +1,26 @@
 // 角色卡產生器的編輯畫面
 // 表單 ↔ 狀態（CardState）↔ 畫在 canvas 上的卡片（CardRenderer）：每改一個欄位，狀態先整理過（CardState.normalize）、存起來、再重畫；
-// 卡片就是畫面上那張 canvas，之後下載的是同一張。欄位的規則（字數上限、預設值、重點色）在 card-state.js，畫圖在 card-renderer.js，
-// 這裡只管畫面與事件。伺服器與職業的清單來自共用的 assets/js/ff14-game-data.js（window.FF14_JOBS、FF14_WORLDS、FF14_TC_WORLDS，只從 window 讀）。
+// 卡片就是畫面上那張 canvas，之後下載的是同一張。欄位的規則（字數上限、預設值、重點色）在 card-state.js，畫圖在 card-renderer.js 與三種風格的檔案
+// （card-style-a.js 名片、card-style-b.js 海報、card-style-c.js 資訊卡），這裡只管畫面與事件。
+// 伺服器與職業的清單來自共用的 assets/js/ff14-game-data.js（window.FF14_JOBS、FF14_WORLDS、FF14_TC_WORLDS，只從 window 讀）。
+// 風格：「樣式」分頁最上面的三個單選（name="cardStyle"）換 state.style，三種風格用同一份資料，換了就重畫、存起來。海報不畫部隊名稱、大國防聯軍、聯絡方式、在找什麼，
+// 這四個欄位底下的說明（.not-drawn）只在選了海報時顯示，名片與資訊卡時 hidden 並從欄位的 aria-describedby 拿掉（syncNotDrawn()）。
+// 畫面模型（buildModel()）多了名片與資訊卡要的欄位與翻好的小標。圖片的位置每一種「風格 × 橫直版」各一份（CardState.cropKey）：拖曳照那種風格的照片框換算
+// （CardRenderer.photoBox：海報是整張卡片，名片與資訊卡是框）。
 // 手機（768px 以下）五組欄位用分頁切換（script.js 用 hidden 切換面板），電腦五組都顯示；預覽的位置、sticky 與分頁列的顯示都在 style.css。
 // 記住：每一次讀寫都由 CardState 包 try/catch；瀏覽器封鎖網站資料時連 window.localStorage 本身都會丟例外，所以取 storage 也包 try，
 // 取不到就傳 null（CardState 當成讀不到、寫不進去），這次打開期間照常運作，只是不記住。
 // 角色圖：上傳的圖由 card-image.js 縮小、轉成 JPEG（卡片畫的與瀏覽器記住的是同一張：轉出來之後再讀回來才用），位置與縮放存在 state.crops
-// （每個版型各一份）。卡片上拖曳（pointer 事件）：滑鼠直接拖；手指從卡片上滑要能捲動頁面，所以只有按了「調整圖片」（調整模式，觸控為主的裝置才有）才拖，
+// （每一種「風格 × 橫直版」各一份，鍵是 CardState.cropKey）。卡片上拖曳（pointer 事件）：滑鼠直接拖；手指從卡片上滑要能捲動頁面，所以只有按了「調整圖片」（調整模式，觸控為主的裝置才有）才拖，
 // 其他時候 pointerdown 什麼都不做。上傳、還原都用流水號（imageToken）：同時有好幾次在讀，只有最新的算數。
+// 位置滑桿「左右」「上下」（#imageX、#imageY）是不能拖曳卡片的人（鍵盤、單指點一下：WCAG 2.5.7）移動圖片的另一個做法：值是這一份位置（-1～1）乘 100 之後最接近的 5 的倍數，
+// 拖滑桿只重畫、放開才存（同縮放滑桿），旁邊的字與 aria-valuetext 是同一句（syncPosition()：0 是「置中」，其他寫偏哪邊與多少，換語言時重寫）；
+// 沒有圖片、或這種風格與版型的照片框在那個方向沒有多出來的部分（CardLayout.canPan：拖曳也拖不動）時 disabled，值寫 0、字寫「置中」（畫面上圖在那個方向本來就是置中的），
+// 記住的位置不改，有空間時（放大、換風格或版型）再顯示它。
+// 換風格或版型時位置換成另一份：拖曳到一半（用鍵盤換風格、版型，滑鼠鍵還按在卡片上）的先結束它（update()），不然下一次移動會把舊的起點套到新的那一份；
+// 換上新的圖（上傳、還原）時也一樣（setImage()）：先結束拖曳到一半的，不存舊圖的位置。
+// 名片的背景是壓暗的模糊截圖：模糊由 CardImage.blur 做成一張小 canvas（不用 ctx.filter，畫圖程式也不碰 DOM），橫版與直版各一張（this.backdrops），
+// 在圖換掉的當下（setImage()：上傳、還原、移除圖片、清除全部）一起做、一起放掉，之後重畫、換風格、換版型都用做好的那一張。
 // 字型：Google Fonts 的中文字型依字分批載入，沒載入的字會退成別的字型，所以每畫一次就看有沒有還沒請求過的字，有就請瀏覽器載入（這一次請求的算一批）；
 // 這一批載入完（失敗也算：卡片用備用字型）就重畫一次，不等別批。fontsReady() 等到請求過的每一批都載入完並重畫過：等的時候又請求的也等，
 // 先請求的那一批比後請求的慢（後請求的先載完）也一樣，下載、分享、複製之前要等它。
@@ -103,6 +116,14 @@ class CharacterCardApp {
         ['removed', ['char_card_image_removed', '已移除圖片']],
         ['restore_failed', ['char_card_image_restore_failed', '上次的圖片讀不出來，請重新上傳。']]
     ]);
+    // 位置滑桿（左右、上下）：滑桿的 id → 它動的方向（crop 的 x、y），旁邊的字是 `${id}Value`。滑桿的字與 aria-valuetext 是同一句：0 是 POSITION_CENTER，
+    // 負的是偏左、偏上（圖的左邊、上邊對齊框），正的是偏右、偏下，{n} 是百分比的數字（絕對值）。翻譯鍵一律寫成完整的字串，不用組的
+    static POSITION_SLIDERS = new Map([['imageX', 'x'], ['imageY', 'y']]);
+    static POSITION_CENTER = ['char_card_image_pos_center', '置中'];
+    static POSITION_TEXT = {
+        x: { negative: ['char_card_image_pos_left', '偏左 {n}%'], positive: ['char_card_image_pos_right', '偏右 {n}%'] },
+        y: { negative: ['char_card_image_pos_up', '偏上 {n}%'], positive: ['char_card_image_pos_down', '偏下 {n}%'] }
+    };
     // 遊玩時段的日子與時段：form 是表單上的全名（勾選框的名稱），card 是畫在卡片上的短標籤（英文的全名縮在卡片上小到看不清）
     static DAY_LABELS = {
         weekday: { form: ['char_card_day_weekday', '平日'], card: ['char_card_card_day_weekday', '平日'] },
@@ -113,6 +134,34 @@ class CharacterCardApp {
         afternoon: { form: ['char_card_slot_afternoon', '下午'], card: ['char_card_card_slot_afternoon', '下午'] },
         evening: { form: ['char_card_slot_evening', '晚上'], card: ['char_card_card_slot_evening', '晚上'] },
         lateNight: { form: ['char_card_slot_late_night', '深夜'], card: ['char_card_card_slot_late_night', '深夜'] }
+    };
+    // 風格（CardState.STYLES 的鍵）→ 單選的 id
+    static STYLE_RADIOS = { a: 'styleA', b: 'styleB', c: 'styleC' };
+    // 海報不畫的四個欄位 id → 它底下那行「海報風格不會畫出這一項」的 id；說明只在 NOT_DRAWN_STYLES 的風格（海報）顯示，名片與資訊卡會畫出這四項
+    static NOT_DRAWN = [['cardFcName', 'cardFcNameNotDrawn'], ['cardGc', 'cardGcNotDrawn'], ['cardContact', 'cardContactNotDrawn'], ['cardLooking', 'cardLookingNotDrawn']];
+    static NOT_DRAWN_STYLES = new Set(['b']);
+    // 畫在名片與資訊卡上的值：大國防聯軍（CardState.GCS 的鍵）、在找什麼（CardState.LOOKING 的鍵）→ [翻譯鍵, 中文預設文字]，和表單上選項的字一樣（官方名稱）；
+    // 在找什麼選了好幾個時，照 CardState.LOOKING 的順序、用 LOOKING_SEP 接起來（中文、日文是「、」，英文是「, 」）。翻譯鍵一律寫成完整的字串，不用組的
+    static GCS = {
+        maelstrom: ['char_card_gc_maelstrom', '黑渦團'],
+        twinAdder: ['char_card_gc_twin_adder', '雙蛇黨'],
+        immortalFlames: ['char_card_gc_immortal_flames', '不滅隊']
+    };
+    static LOOKING = {
+        static: ['char_card_looking_static', '固定隊'],
+        fc: ['char_card_looking_fc', '部隊'],
+        friends: ['char_card_looking_friends', '朋友']
+    };
+    static LOOKING_SEP = ['char_card_card_list_sep', '、'];
+    // 畫在名片與資訊卡上的小標（畫面模型 labels 的鍵）→ [翻譯鍵, 中文預設文字]
+    static CARD_LABELS = {
+        fc: ['char_card_card_fc', '部隊'],
+        gc: ['char_card_card_gc', '大國防聯軍'],
+        looking: ['char_card_card_looking', '在找什麼'],
+        likes: ['char_card_card_likes', '喜歡的內容'],
+        hours: ['char_card_card_hours', '遊玩時段'],
+        subJobs: ['char_card_card_subjobs', '其他職業'],
+        mainJob: ['char_card_card_main_job', '主職']
     };
 
     constructor() {
@@ -146,8 +195,11 @@ class CharacterCardApp {
         // （每開始一次、圖片拿掉與清除全部都加一，慢的那一次回來發現流水號變了就不算）；imageLoad 是還在讀的上傳（只有最新的一次算數，所以只記它）：
         // 那一次的 Promise，沒有是 null，下載、分享、複製之前要等它讀完；imageWaits 是正在等它的匯出（imageSettled()），imageLoad 一換（見 setImageLoad()）就叫醒；
         // imageStatus 是狀態那一行現在寫的句子（IMAGE_STATUS 的名字，null 是空的，換語言時照它重寫）；adjusting 是調整模式；
-        // drag 是拖曳到一半的狀態 { pointerId, x, y, crop, moved（離按下去的地方超過 DRAG_SLOP_PX 了嗎）}，沒在拖是 null
+        // drag 是拖曳到一半的狀態 { pointerId, x, y, crop, moved（離按下去的地方超過 DRAG_SLOP_PX 了嗎）}，沒在拖是 null；
+        // backdrops 是名片的模糊背景小圖 { landscape, portrait }（每一張是 CardImage.blur 的結果 { source, width, height }，做不出來的是 null），沒有圖片是 null：
+        // 跟著 image 一起換（setImage()），buildModel() 用現在版型的那一張
         this.image = null;
+        this.backdrops = null;
         this.imageToken = 0;
         this.imageLoad = null;
         this.imageWaits = new Set();
@@ -187,6 +239,10 @@ class CharacterCardApp {
             imageStatus: byId('cardImageStatus'),
             imageZoom: byId('imageZoom'),
             imageZoomValue: byId('imageZoomValue'),
+            imageX: byId('imageX'),
+            imageXValue: byId('imageXValue'),
+            imageY: byId('imageY'),
+            imageYValue: byId('imageYValue'),
             imageCenter: byId('imageCenter'),
             imageFill: byId('imageFill'),
             imageRemove: byId('imageRemove'),
@@ -203,6 +259,7 @@ class CharacterCardApp {
             viewerClose: byId('viewerClose')
         };
         this.formatButtons = new Map([['landscape', byId('formatLandscape')], ['portrait', byId('formatPortrait')]]);
+        this.styleRadios = new Map(Object.entries(CharacterCardApp.STYLE_RADIOS).map(([style, id]) => [style, byId(id)]));
         this.likeChips = this.chipsOf(this.elements.likes, 'like');
         this.lookingChips = this.chipsOf(this.elements.looking, 'looking');
         this.worldNames = new Set([...window.FF14_TC_WORLDS, ...window.FF14_WORLDS.worlds]);
@@ -390,6 +447,10 @@ class CharacterCardApp {
             // 拖滑桿的過程只重畫，放開（change）才存
             const zoom = Number(target.value) / 100;
             if (Number.isFinite(zoom)) this.setCrop({ zoom }, { save: false });
+        } else if (CharacterCardApp.POSITION_SLIDERS.has(target.id)) {
+            // 位置滑桿（左右、上下）：同縮放，值是位置乘 100（超出 -100～100 的由 CardState.normalize 夾回去，滑桿跟著收回來）
+            const offset = Number(target.value) / 100;
+            if (Number.isFinite(offset)) this.setCrop({ [CharacterCardApp.POSITION_SLIDERS.get(target.id)]: offset }, { save: false });
         }
     }
 
@@ -406,7 +467,11 @@ class CharacterCardApp {
             target.value = String(this.state.level);
         } else if (target.id === 'accentAuto' || target.id === 'accentCustom') {
             if (target.checked === true) this.update({ accent: target.id === 'accentAuto' ? 'auto' : this.elements.accentColor.value });
-        } else if (target.id === 'imageZoom') {
+        } else if (target.getAttribute('name') === 'cardStyle') {
+            // 風格：勾到哪一個就是哪一種（value 是 a、b、c；不合格的 CardState.normalize 會換回海報）。
+            // 單選的 name 不能叫 style：表單裡有叫 style 的欄位時，form.style 會變成 RadioNodeList，蓋掉元素自己的 style（CSSStyleDeclaration）
+            if (target.checked === true) this.update({ style: target.getAttribute('value') });
+        } else if (target.id === 'imageZoom' || CharacterCardApp.POSITION_SLIDERS.has(target.id)) {
             CardState.save(this.storage, this.state);
         } else if (target.id === 'cardImageInput') {
             this.chooseImage(target);
@@ -448,9 +513,13 @@ class CharacterCardApp {
         this.update({ hours });
     }
 
-    // 改了狀態：整理、存起來、更新由狀態算出來的控制項（按鈕、計數、重點色）、重畫卡片
+    // 改了狀態：整理、存起來、更新由狀態算出來的控制項（按鈕、計數、重點色）、重畫卡片。
+    // 風格或版型換了，圖片的位置就換成另一份（CardState.cropKey）：拖曳到一半（用鍵盤換風格或版型，滑鼠鍵還按在卡片上）的話先結束它，
+    // 放掉指標抓取；拖到現在的位置已經在原來那一份裡，下面存的就是它（所以結束時不另外存）。不結束的話，下一次移動會拿按下去那一刻的舊位置，套到新的那一份上
     update(patch) {
-        this.state = CardState.normalize({ ...this.state, ...patch }, this.jobs);
+        const next = CardState.normalize({ ...this.state, ...patch }, this.jobs);
+        if (this.drag !== null && CardState.cropKey(next) !== CardState.cropKey(this.state)) this.stopDrag({ save: false, release: true });
+        this.state = next;
         CardState.save(this.storage, this.state);
         this.syncDerived();
         this.syncErrors();
@@ -606,7 +675,7 @@ class CharacterCardApp {
         }
     }
 
-    // 由狀態算出來的控制項：切換按鈕（按下與不能按）、字數與個數的計數、重點色的單選與色票、版型的按鈕。不碰文字欄，使用者正在打字
+    // 由狀態算出來的控制項：切換按鈕（按下與不能按）、字數與個數的計數、風格與重點色的單選與色票、版型的按鈕、四行「不會畫出這一項」。不碰文字欄，使用者正在打字
     syncDerived() {
         const { state } = this;
         const { LIMITS } = CardState;
@@ -618,6 +687,8 @@ class CharacterCardApp {
             button.setAttribute('aria-pressed', on ? 'true' : 'false');
             button.classList.toggle('active', on);
         }
+        for (const [style, radio] of this.styleRadios) radio.checked = state.style === style;
+        this.syncNotDrawn();
         this.syncImage();
         const custom = state.accent !== 'auto';
         this.elements.accentAuto.checked = !custom;
@@ -627,7 +698,27 @@ class CharacterCardApp {
         this.renderCounters();
     }
 
-    // 角色圖的控制項：沒有圖片時縮放、置中、填滿、移除、調整都不能按；滑桿與百分比跟著這個版型的縮放（沒有圖片寫預設的 100%，存著的位置要有圖片才用得上）；
+    // 四個欄位底下的「海報風格不會畫出這一項」：只有海報（NOT_DRAWN_STYLES）時顯示，名片與資訊卡會畫出這四項，就藏起來；欄位的 aria-describedby 也只在顯示時指到它
+    // （藏起來的說明不該被念出來）。接在字數計數的 id 後面（欄位沒有計數就放最前面），aria-describedby 裡其他的 id 照舊，一個都沒有了就把屬性拿掉。
+    // 每打一個字（update()）都會進來：值沒變就不寫，尤其是焦點所在的欄位，aria-describedby 被寫了，有的螢幕閱讀器會把說明再念一次
+    syncNotDrawn() {
+        const shown = CharacterCardApp.NOT_DRAWN_STYLES.has(this.state.style);
+        for (const [fieldId, hintId] of CharacterCardApp.NOT_DRAWN) {
+            const field = document.getElementById(fieldId);
+            const hint = document.getElementById(hintId);
+            if (hint.hidden !== !shown) hint.hidden = !shown;
+            const ids = this.describedBy(field).filter((id) => id !== hintId);
+            if (shown) ids.splice(ids.indexOf(`${fieldId}Count`) + 1, 0, hintId);
+            if (ids.length === 0) {
+                if (field.hasAttribute('aria-describedby')) field.removeAttribute('aria-describedby');
+            } else if (field.getAttribute('aria-describedby') !== ids.join(' ')) {
+                field.setAttribute('aria-describedby', ids.join(' '));
+            }
+        }
+    }
+
+    // 角色圖的控制項：沒有圖片時縮放、置中、填滿、移除、調整都不能按；滑桿與百分比跟著這種風格與版型的縮放（沒有圖片寫預設的 100%，存著的位置要有圖片才用得上）；
+    // 位置滑桿（左右、上下）跟著這種風格與版型的位置（syncPosition()）；
     // 「調整圖片」只有觸控為主的裝置才顯示；卡片有圖片時才有拖曳的游標（.has-image）
     syncImage() {
         const { elements } = this;
@@ -637,8 +728,37 @@ class CharacterCardApp {
         elements.imageZoom.value = String(percent);
         elements.imageZoom.setAttribute('aria-valuetext', `${percent}%`);
         elements.imageZoomValue.textContent = `${percent}%`;
+        this.syncPosition();
         elements.imageAdjust.hidden = !this.isCoarse();
         elements.canvas.classList.toggle('has-image', has);
+    }
+
+    // 位置滑桿（左右、上下）：值是這種風格與版型的位置（-1～1）乘 100 之後最接近的 5 的倍數（滑桿的間隔是 5：拖曳停在 -0.2467 時滑桿停在 -25，
+    // 這裡只寫滑桿，不改記住的位置；再拉就從滑桿的值繼續），旁邊的字與 aria-valuetext 是同一句。
+    // 沒有圖片、或那個方向在這種風格與版型的照片框裡沒有多出來的部分（CardLayout.canPan：拖曳也拖不動）時 disabled，值寫 0、字寫「置中」：
+    // 畫面上圖在那個方向本來就是置中的（記住的位置在那個方向用不上）。記住的位置照舊不改，那個方向又有空間時（放大、換成別種風格或版型）滑桿再顯示它。
+    // 換語言時也呼叫（relabel()）重寫字
+    syncPosition() {
+        const { elements, image } = this;
+        const crop = CardState.cropOf(this.state);
+        const box = CardRenderer.photoBox(this.state.style, this.state.format);
+        const pan = image === null ? { x: false, y: false } : CardLayout.canPan(image.width, image.height, box.width, box.height, crop.zoom);
+        for (const [id, axis] of CharacterCardApp.POSITION_SLIDERS) {
+            const value = pan[axis] ? Math.round(crop[axis] * 20) * 5 : 0;
+            const text = this.positionText(axis, value);
+            const slider = elements[id];
+            slider.disabled = !pan[axis];
+            slider.value = String(value);
+            slider.setAttribute('aria-valuetext', text);
+            elements[`${id}Value`].textContent = text;
+        }
+    }
+
+    // 位置滑桿的字：axis 是 'x'（左右）或 'y'（上下），value 是滑桿的值（-100～100）。0 是「置中」，其他是「偏左 40%」這樣的一句
+    positionText(axis, value) {
+        if (value === 0) return this.label(CharacterCardApp.POSITION_CENTER);
+        const [key, fallback] = CharacterCardApp.POSITION_TEXT[axis][value < 0 ? 'negative' : 'positive'];
+        return this.t(key, fallback, { n: Math.abs(value) });
     }
 
     // 一組切換按鈕：選了的 aria-pressed 與 .active 一起換；滿了（max）時沒選的都不能按，locked（主職）永遠不能按
@@ -692,6 +812,7 @@ class CharacterCardApp {
         this.renderClearButton();
         this.renderAdjustButton();
         this.renderImageStatus();
+        this.syncPosition();
         this.renderCounters();
     }
 
@@ -799,7 +920,7 @@ class CharacterCardApp {
             if (token === this.imageToken) this.setImageStatus('failed');
             return;
         }
-        this.image = picture;
+        this.setImage(picture);
         this.state = CardState.normalize({ ...this.state, crops: {} }, this.jobs);
         CardState.save(this.storage, this.state);
         this.setImageStatus(this.rememberImage(prepared.dataUrl) ? 'uploaded' : 'not_saved');
@@ -818,7 +939,7 @@ class CharacterCardApp {
         try {
             const picture = await CardImage.fromDataUrl(dataUrl, this.imageDeps);
             if (token !== this.imageToken) return;
-            this.image = picture;
+            this.setImage(picture);
         } catch (error) {
             if (token !== this.imageToken) return;
             CardState.saveImage(this.storage, null);
@@ -847,11 +968,37 @@ class CharacterCardApp {
         this.elements.imageInput.focus();
     }
 
-    // 圖片拿掉（移除圖片、清除全部）：還在讀的上傳與還原都不算了（下載也不用等它），檔案輸入清空，拖曳與調整模式結束（卡片不再攔截手指）。呼叫端自己重畫
+    /**
+     * 畫卡片用的角色圖換了（上傳、還原、移除圖片、清除全部）：舊的名片背景小圖先放掉（寬高設成 0：iOS Safari 的 canvas 記憶體有總量上限），
+     * 新的圖橫版與直版各做一張小圖（CardImage.blur；不丟例外，做不出來的那張是 null，名片就畫預設背景）。每一張圖只做這一次：
+     * 重畫、換風格、換版型都用做好的。呼叫端自己重畫（放掉的小圖不能再拿去畫）。
+     * 換上新的圖（picture 不是 null：上傳、還原）時，拖曳到一半的先結束：放掉指標抓取，不存舊圖的位置（上傳接著就把位置清掉）；
+     * 不結束的話，下一次移動會把舊圖按下去那一刻的位置套到新圖上。沒有圖片（null）的路徑由 dropImage() 結束拖曳。
+     * @param {{source: *, width: number, height: number} | null} picture - 畫卡片用的圖；null 是沒有圖片
+     */
+    setImage(picture) {
+        this.releaseBackdrops();
+        if (picture !== null) this.stopDrag({ save: false, release: true });
+        this.image = picture;
+        if (picture === null) return;
+        this.backdrops = Object.fromEntries(Object.entries(CardRenderer.SIZES).map(([format, size]) => [format, CardImage.blur(picture, size, this.imageDeps)]));
+    }
+
+    // 名片的模糊背景小圖放掉：每一張 canvas 的寬高設成 0，不再留著
+    releaseBackdrops() {
+        for (const backdrop of Object.values(this.backdrops ?? {})) {
+            if (backdrop === null) continue;
+            backdrop.source.width = 0;
+            backdrop.source.height = 0;
+        }
+        this.backdrops = null;
+    }
+
+    // 圖片拿掉（移除圖片、清除全部）：還在讀的上傳與還原都不算了（下載也不用等它），名片的模糊小圖放掉，檔案輸入清空，拖曳與調整模式結束（卡片不再攔截手指）。呼叫端自己重畫
     dropImage() {
         this.imageToken += 1;
         this.setImageLoad(null);
-        this.image = null;
+        this.setImage(null);
         this.elements.imageInput.value = '';
         this.stopDrag({ save: false });
         this.setAdjusting(false);
@@ -871,7 +1018,7 @@ class CharacterCardApp {
     // ---------- 角色圖的位置與縮放、拖曳 ----------
 
     /**
-     * 改這個版型的位置與縮放（patch 蓋在目前的上面，整理過再寫回 state.crops；另一個版型的不動），重畫。
+     * 改這種風格與版型的位置與縮放（patch 蓋在目前的上面，整理過再寫回 state.crops；其他風格與版型的不動），重畫。
      * 拖曳與拖滑桿的過程 save 是 false，只重畫，放開才存。沒有圖片時什麼都不做。
      * @param {{x?: number, y?: number, zoom?: number}} patch
      * @param {{save: boolean}} options
@@ -927,6 +1074,7 @@ class CharacterCardApp {
     }
 
     // 拖：一律從按下去那一刻的位置與座標算（不是一段一段累加）。滑鼠與手指的座標是 CSS 像素，卡片的座標是 canvas 像素，差 canvas.width / 畫面上的寬度。
+    // 拖的是照片框裡的圖：框是這種風格與版型的照片框（CardRenderer.photoBox，海報是整張卡片，名片與資訊卡是卡片上的一塊），圖跟著指標移動同樣的距離。
     // 卡片藏起來（畫面上的寬度是 0）時不算
     moveDrag(event) {
         const { drag, image } = this;
@@ -944,7 +1092,8 @@ class CharacterCardApp {
         const rect = canvas.getBoundingClientRect();
         if (!(rect.width > 0)) return;
         const scale = canvas.width / rect.width;
-        const crop = CardLayout.dragCrop(drag.crop, (event.clientX - drag.x) * scale, (event.clientY - drag.y) * scale, image.width, image.height, canvas.width, canvas.height);
+        const box = CardRenderer.photoBox(this.state.style, this.state.format);
+        const crop = CardLayout.dragCrop(drag.crop, (event.clientX - drag.x) * scale, (event.clientY - drag.y) * scale, image.width, image.height, box.width, box.height);
         this.setCrop(crop, { save: false });
     }
 
@@ -974,17 +1123,23 @@ class CharacterCardApp {
     // ---------- 畫卡片 ----------
 
     // 畫面模型：CardRenderer.draw 要的樣子，文字照介面語言。重點色一律來自 CardState.accentOf，這裡不寫顏色；
-    // 喜歡的內容照 CardState.LIKES 的順序（不是點選的順序）
+    // 喜歡的內容與在找什麼照 CardState.LIKES、CardState.LOOKING 的順序（不是點選的順序）。fcName、gc、looking、contact 與 labels 是名片與資訊卡要畫的
+    // （海報不畫）；gc 與 looking 已經翻成介面語言的官方名稱，looking 選了好幾個時接成一個字串；labels 是卡片上的小標。backdrop 是名片的模糊背景小圖（現在這個版型的那一張，見 setImage()；沒有截圖或做不出來是 null，名片就畫預設背景）
     buildModel() {
         const { state } = this;
         const jobOf = (key) => this.jobs.find((job) => job.key === key);
         const main = jobOf(state.mainJob);
         return {
+            style: state.style,
             format: state.format,
             name: state.name,
             title: state.title,
             world: state.world,
+            fcName: state.fcName,
             fcTag: state.fcTag,
+            gc: state.gc === '' ? '' : this.label(CharacterCardApp.GCS[state.gc]),
+            looking: CardState.LOOKING.filter((key) => state.looking.includes(key)).map((key) => this.label(CharacterCardApp.LOOKING[key])).join(this.label(CharacterCardApp.LOOKING_SEP)),
+            contact: state.contact,
             job: main ? { name: this.nameOf(main), level: state.level, icon: this.iconOf(main) } : null,
             subJobs: state.subJobs.map(jobOf).filter(Boolean).map((job) => ({ name: this.nameOf(job), icon: this.iconOf(job) })),
             likes: CardState.LIKES.filter((key) => state.likes.includes(key)).map((key) => this.label(CharacterCardApp.LIKES[key])),
@@ -996,7 +1151,9 @@ class CharacterCardApp {
             intro: state.intro,
             accent: CardState.accentOf(state, this.jobs),
             image: this.image,
+            backdrop: this.backdrops?.[state.format] ?? null,
             crop: CardState.cropOf(state),
+            labels: Object.fromEntries(Object.entries(CharacterCardApp.CARD_LABELS).map(([name, entry]) => [name, this.label(entry)])),
             levelLabel: CharacterCardApp.LEVEL_LABEL,
             mark: CharacterCardApp.MARK,
             notice: CharacterCardApp.NOTICE

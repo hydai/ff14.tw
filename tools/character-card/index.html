@@ -25,7 +25,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;800&family=Noto+Serif+TC:wght@700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../../assets/css/tokens.css">
     <link rel="stylesheet" href="../../assets/css/common.css">
     <link rel="stylesheet" href="../../assets/css/tools-common.css">
@@ -125,7 +125,7 @@
                                     <span class="field-count" id="cardFcNameCount">0／20</span>
                                 </div>
                                 <input type="text" class="form-control" id="cardFcName" maxlength="20" aria-describedby="cardFcNameCount cardFcNameNotDrawn" spellcheck="false">
-                                <span class="form-text" id="cardFcNameNotDrawn" data-i18n="char_card_not_drawn">目前的海報風格不會畫出這一項</span>
+                                <span class="form-text not-drawn" id="cardFcNameNotDrawn" data-i18n="char_card_not_drawn">海報風格不會畫出這一項（名片、資訊卡會）</span>
                             </div>
                             <div class="form-group">
                                 <div class="field-head">
@@ -143,7 +143,7 @@
                                 <option value="twinAdder" data-i18n="char_card_gc_twin_adder">雙蛇黨</option>
                                 <option value="immortalFlames" data-i18n="char_card_gc_immortal_flames">不滅隊</option>
                             </select>
-                            <span class="form-text" id="cardGcNotDrawn" data-i18n="char_card_not_drawn">目前的海報風格不會畫出這一項</span>
+                            <span class="form-text not-drawn" id="cardGcNotDrawn" data-i18n="char_card_not_drawn">海報風格不會畫出這一項（名片、資訊卡會）</span>
                         </div>
 
                         <h2 class="editor-panel-title editor-panel-title-next" data-i18n="char_card_panel_about">自我介紹與聯絡</h2>
@@ -160,7 +160,7 @@
                                 <span class="field-count" id="cardContactCount">0／40</span>
                             </div>
                             <input type="text" class="form-control" id="cardContact" maxlength="40" aria-describedby="cardContactCount cardContactNotDrawn" spellcheck="false" placeholder="例：Discord：luna_star" data-i18n="char_card_contact_placeholder" data-i18n-attr="placeholder">
-                            <span class="form-text" id="cardContactNotDrawn" data-i18n="char_card_not_drawn">目前的海報風格不會畫出這一項</span>
+                            <span class="form-text not-drawn" id="cardContactNotDrawn" data-i18n="char_card_not_drawn">海報風格不會畫出這一項（名片、資訊卡會）</span>
                         </div>
                     </section>
 
@@ -222,7 +222,7 @@
                                 <button type="button" class="chip" data-looking="fc" aria-pressed="false" data-i18n="char_card_looking_fc">部隊</button>
                                 <button type="button" class="chip" data-looking="friends" aria-pressed="false" data-i18n="char_card_looking_friends">朋友</button>
                             </div>
-                            <span class="form-text" id="cardLookingNotDrawn" data-i18n="char_card_not_drawn">目前的海報風格不會畫出這一項</span>
+                            <span class="form-text not-drawn" id="cardLookingNotDrawn" data-i18n="char_card_not_drawn">海報風格不會畫出這一項（名片、資訊卡會）</span>
                         </div>
                     </section>
 
@@ -230,7 +230,9 @@
                         <h2 class="editor-panel-title" data-i18n="char_card_panel_image">角色圖</h2>
                         <!-- 上傳：<label> 包著檔案輸入（.visually-hidden：看不見但 Tab 得到，焦點外框畫在按鈕上），字在輸入框外面的 <span>。
                              狀態（處理中、已上傳、太大不會記住…）寫在 #cardImageStatus，aria-live 念給螢幕閱讀器。
-                             在卡片上拖曳移動圖片、縮放、置中與填滿都要有圖片才能用，一開始 disabled；script.js 照有沒有圖片切換。
+                             在卡片上拖曳移動圖片、縮放、左右與上下的位置滑桿、置中與填滿都要有圖片才能用，一開始 disabled；script.js 照有沒有圖片切換。
+                             「左右」「上下」兩個滑桿是不能拖曳卡片的人（鍵盤、單指點一下）移動圖片的另一個做法：值是位置（-100～100，間隔 5），旁邊的字（#imageXValue、#imageYValue）
+                             與 aria-valuetext 是同一句，0 是「置中」，其他寫偏哪邊與多少，由 script.js 照位置寫；那個方向沒有多出來的部分（圖剛好和照片框一樣寬或高）時也 disabled，這時寫 0 與「置中」（記住的位置不改，有空間時再顯示）。
                              「調整圖片」一開始 hidden，只有觸控為主的裝置才由 script.js 顯示：手機上手指從卡片上滑要能捲動頁面，按了它才在卡片上拖 -->
                         <div class="form-group">
                             <div class="image-actions">
@@ -246,6 +248,20 @@
                             </div>
                             <input type="range" class="image-zoom" id="imageZoom" min="100" max="300" step="5" value="100" disabled aria-valuetext="100%">
                         </div>
+                        <div class="form-group">
+                            <div class="field-head">
+                                <label class="form-label" for="imageX" data-i18n="char_card_image_x">左右</label>
+                                <span class="field-count" id="imageXValue">置中</span>
+                            </div>
+                            <input type="range" class="image-range" id="imageX" min="-100" max="100" step="5" value="0" disabled aria-valuetext="置中">
+                        </div>
+                        <div class="form-group">
+                            <div class="field-head">
+                                <label class="form-label" for="imageY" data-i18n="char_card_image_y">上下</label>
+                                <span class="field-count" id="imageYValue">置中</span>
+                            </div>
+                            <input type="range" class="image-range" id="imageY" min="-100" max="100" step="5" value="0" disabled aria-valuetext="置中">
+                        </div>
                         <div class="form-group image-actions">
                             <button type="button" class="btn btn-secondary" id="imageCenter" disabled data-i18n="char_card_image_center">置中</button>
                             <button type="button" class="btn btn-secondary" id="imageFill" disabled data-i18n="char_card_image_fill">填滿</button>
@@ -255,6 +271,28 @@
 
                     <section class="card editor-panel" id="panel-style" role="tabpanel" aria-labelledby="tab-style" tabindex="-1">
                         <h2 class="editor-panel-title" data-i18n="char_card_panel_style">樣式</h2>
+                        <!-- 風格：名片、海報、資訊卡（原生單選，同下面的重點色）。每個選項下面一行說明，用 aria-describedby 接在自己的單選上；
+                             script.js 照 state.style 勾選，換風格時重畫卡片，也把四行「不會畫出這一項」（.not-drawn）在海報時顯示、名片與資訊卡時藏起來 -->
+                        <div class="form-group">
+                            <span class="form-label" id="cardStyleLabel" data-i18n="char_card_style_label">風格</span>
+                            <div class="style-options" role="radiogroup" aria-labelledby="cardStyleLabel">
+                                <div class="form-check style-option">
+                                    <input class="form-check-input" type="radio" name="cardStyle" id="styleA" value="a" aria-describedby="styleAHint">
+                                    <label class="form-check-label" for="styleA" data-i18n="char_card_style_a">名片</label>
+                                    <span class="form-text style-hint" id="styleAHint" data-i18n="char_card_style_a_hint">資訊最完整，部隊、大國防聯軍、在找什麼、聯絡方式都會畫出來</span>
+                                </div>
+                                <div class="form-check style-option">
+                                    <input class="form-check-input" type="radio" name="cardStyle" id="styleB" value="b" aria-describedby="styleBHint" checked>
+                                    <label class="form-check-label" for="styleB" data-i18n="char_card_style_b">海報</label>
+                                    <span class="form-text style-hint" id="styleBHint" data-i18n="char_card_style_b_hint">截圖鋪滿、名字放大，資訊精簡</span>
+                                </div>
+                                <div class="form-check style-option">
+                                    <input class="form-check-input" type="radio" name="cardStyle" id="styleC" value="c" aria-describedby="styleCHint">
+                                    <label class="form-check-label" for="styleC" data-i18n="char_card_style_c">資訊卡</label>
+                                    <span class="form-text style-hint" id="styleCHint" data-i18n="char_card_style_c_hint">淺色底，字最好讀，資訊和名片一樣完整</span>
+                                </div>
+                            </div>
+                        </div>
                         <div class="form-group">
                             <span class="form-label" id="cardAccentLabel" data-i18n="char_card_accent_label">重點色</span>
                             <div class="accent-options" role="radiogroup" aria-labelledby="cardAccentLabel">
@@ -329,6 +367,10 @@
     <script src="../../assets/js/modal-manager.js"></script>
     <script src="card-state.js"></script>
     <script src="card-layout.js"></script>
+    <script src="card-paint.js"></script>
+    <script src="card-style-a.js"></script>
+    <script src="card-style-b.js"></script>
+    <script src="card-style-c.js"></script>
     <script src="card-renderer.js"></script>
     <script src="card-image.js"></script>
     <script src="card-export.js"></script>

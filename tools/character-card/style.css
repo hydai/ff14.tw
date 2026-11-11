@@ -3,7 +3,8 @@
    手機（768px 以下，沒有 @media 的基本規則）：說明、預覽（sticky，高度最多 35vh）、分頁、目前分頁的欄位，一欄。
    電腦（769px 以上）：左邊五組欄位、右邊預覽（sticky），沒有分頁列。
    不能左右捲：欄寫 minmax(0, …)，長的字換行，不用 overflow-x；按鈕與輸入框不被壓扁（共用元件的 height 都有同值的 min-height）。
-   卡片本身是 canvas，畫在圖上的配色在 card-renderer.js，不跟著網站的深淺色。拖曳移動角色圖的游標與 touch-action 見 .preview-canvas 那一段。
+   卡片本身是 canvas，畫在圖上的配色在每一種風格自己的檔案（card-style-a.js、card-style-b.js、card-style-c.js，預設背景在 card-paint.js），不跟著網站的深淺色。
+   拖曳移動角色圖的游標與 touch-action 見 .preview-canvas 那一段。
    輸出：下載、分享、複製的按鈕列（#cardActions）電腦在預覽下面，手機固定在畫面最下方；全螢幕大圖（#imageViewer）；手機打字時（.is-typing）按鈕列收起、預覽縮小
    ========================================================================== */
 
@@ -72,6 +73,12 @@
 
 .editor-panel .form-text {
     margin-top: var(--space-2);
+}
+
+/* 四個欄位底下的「海報風格不會畫出這一項」：選了名片或資訊卡（它們會畫出這四項）時 script.js 加上 hidden。
+   .form-text 設了 display: block，會蓋掉瀏覽器內建的 [hidden]，所以自己寫 */
+.not-drawn[hidden] {
+    display: none;
 }
 
 .editor-panel-title {
@@ -187,17 +194,46 @@
     box-shadow: var(--ring-primary);
 }
 
-/* 重點色：兩個單選，「自己選」後面接色票 */
-.accent-options {
+/* 風格與重點色：單選一個接一個 */
+.accent-options,
+.style-options {
     display: flex;
     flex-direction: column;
     gap: var(--space-2);
 }
 
-.accent-options .form-check {
+.accent-options .form-check,
+.style-options .form-check {
     margin-bottom: 0;
 }
 
+/* 風格的每個選項是兩欄的 grid（單選、名稱），一行說明在第二欄、名稱下面，和名稱對齊（不縮到單選底下）。
+   說明緊貼著名稱（列距 0），和下一個選項隔著 .style-options 的 gap，三個選項才分得出各自的說明。
+   .form-check 是 flex 並設了 gap，這裡改成 grid；.editor-panel .form-text 有上邊距，所以用同樣重的 .editor-panel .style-hint 蓋掉（排在後面） */
+.style-option {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 0 var(--space-2);
+}
+
+.style-option .form-check-input {
+    grid-column: 1;
+    grid-row: 1;
+}
+
+.style-option .form-check-label {
+    grid-column: 2;
+    grid-row: 1;
+}
+
+.editor-panel .style-hint {
+    grid-column: 2;
+    grid-row: 2;
+    margin-top: 0;
+}
+
+/* 重點色的「自己選」後面接色票 */
 .accent-custom {
     flex-wrap: wrap;
 }
@@ -219,7 +255,7 @@
     box-shadow: var(--ring-primary);
 }
 
-/* 角色圖：上傳是 <label> 包著看不見的檔案輸入（樣式是按鈕），下面是狀態、縮放滑桿、置中／填滿／調整圖片。按鈕放不下就換行，不左右捲 */
+/* 角色圖：上傳是 <label> 包著看不見的檔案輸入（樣式是按鈕），下面是狀態、縮放滑桿、左右與上下的位置滑桿、置中／填滿／調整圖片。按鈕放不下就換行，不左右捲 */
 .image-actions {
     display: flex;
     flex-wrap: wrap;
@@ -240,7 +276,9 @@
     margin-top: 0;
 }
 
-.image-zoom {
+/* 縮放與位置（左右、上下）三個滑桿：整排寬，不比手機寬 */
+.image-zoom,
+.image-range {
     display: block;
     width: 100%;
     min-height: var(--control-md);

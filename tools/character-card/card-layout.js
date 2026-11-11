@@ -29,7 +29,12 @@
  * - dragCrop(crop, dxPx, dyPx, imgW, imgH, boxW, boxH)：手指在框裡拖了 dxPx、dyPx（和 boxW、boxH 同一個像素單位）之後的新位置：
  *   圖移動同樣的距離，再換回 x、y。往右拖 x 變小，往左拖 x 變大，夾在 -1～1；zoom 照舊。那個方向沒有多出來的長度
  *   （圖剛好和框一樣寬或高，差在浮點誤差以內）時是 0，因為沒有東西可以拖。回傳新的物件。
- * - textColorOn(hex)：'#rrggbb' 的底色上用白字（'#ffffff'）還是深色字（'#141826'）：算兩個的 WCAG 對比度，高的那個贏，
+ * - canPan(imgW, imgH, boxW, boxH, zoom)：圖放進框裡，左右（x）、上下（y）各有沒有東西可以移，回傳 { x: boolean, y: boolean }（每次是新的物件）。
+ *   照 coverRect 算（位置不影響多出來的長度，只有 zoom 有影響；zoom 不是有限的數字當成 1、範圍外的夾進去，同 coverRect），那個方向多出來的長度
+ *   大於 dragCrop 用的誤差（EDGE_EPSILON，同一個算法）才是 true：所以 canPan 是 false 的方向 dragCrop 怎麼拖都是 0，位置滑桿也沒有東西可以移。
+ *   圖或框的大小不是正的有限數字時兩個都是 false。
+ * - contrastRatio(a, b)：兩個 '#rrggbb'（大小寫都行）的 WCAG 對比度，1（一樣）～21（黑白），和先後無關。有一個不是 '#rrggbb' 的東西是 1。
+ * - textColorOn(hex)：'#rrggbb' 的底色上用白字（'#ffffff'）還是深色字（'#141826'）：算兩個的 WCAG 對比度（contrastRatio），高的那個贏，
  *   一樣高是白字。不是 '#rrggbb'（大小寫都行）的東西是白字。
  */
 const CardLayout = (() => {
@@ -218,6 +223,9 @@ const CardLayout = (() => {
     const ZOOM_MAX = 3;
     // 多出來的長度不到這個值（像素）就當成沒有：dw、dh 是乘出來的，剛好填滿的那個方向會有浮點的誤差（多或少一點點）
     const EDGE_EPSILON = 1e-6;
+    // coverRect 算出來的 rect 在框裡，寬（x）、高（y）各比框多出多少（像素）；dragCrop 與 canPan 用同一個算法，才會一起認定那個方向有沒有東西可以移
+    const overflowOf = (rect, boxW, boxH) => ({ x: rect.dw - boxW, y: rect.dh - boxH });
+    const hasOverflow = (length) => length > EDGE_EPSILON;
 
     // 位置整理成合格的 { x, y, zoom }（每次都是新的物件）：x、y、zoom 都要是有限的數字，不然整份當成沒設（填滿、置中）；
     // 範圍外的夾進去
@@ -277,21 +285,34 @@ const CardLayout = (() => {
         const rect = coverRect(imgW, imgH, boxW, boxH, current);
         const moveX = Number.isFinite(dxPx) ? dxPx : 0;
         const moveY = Number.isFinite(dyPx) ? dyPx : 0;
-        const overflowX = rect.dw - boxW;
-        const overflowY = rect.dh - boxH;
+        const overflow = overflowOf(rect, boxW, boxH);
         return {
-            x: overflowX > EDGE_EPSILON ? clamp(-2 * (rect.dx + moveX) / overflowX - 1, -OFFSET_MAX, OFFSET_MAX) : 0,
-            y: overflowY > EDGE_EPSILON ? clamp(-2 * (rect.dy + moveY) / overflowY - 1, -OFFSET_MAX, OFFSET_MAX) : 0,
+            x: hasOverflow(overflow.x) ? clamp(-2 * (rect.dx + moveX) / overflow.x - 1, -OFFSET_MAX, OFFSET_MAX) : 0,
+            y: hasOverflow(overflow.y) ? clamp(-2 * (rect.dy + moveY) / overflow.y - 1, -OFFSET_MAX, OFFSET_MAX) : 0,
             zoom: current.zoom
         };
     }
 
-    // ---------- 重點色上的字色 ----------
+    /**
+     * 圖放進框裡，左右、上下各有沒有東西可以移：那個方向多出來的長度大於 EDGE_EPSILON（同 dragCrop）。位置不影響，所以只看 zoom。
+     * 位置滑桿（左右、上下）用它決定哪一個能動，拖曳拖不動的方向，滑桿也不能動。
+     * @param {number} imgW - 圖原本的寬
+     * @param {number} imgH - 圖原本的高
+     * @param {number} boxW - 框的寬
+     * @param {number} boxH - 框的高
+     * @param {number} zoom - 縮放；不是有限的數字當成 1，範圍外的夾進 1～3（同 coverRect）
+     * @returns {{x: boolean, y: boolean}} 新的物件；圖或框的大小不對時兩個都是 false
+     */
+    function canPan(imgW, imgH, boxW, boxH, zoom) {
+        if (![imgW, imgH, boxW, boxH].every(isSize)) return { x: false, y: false };
+        const overflow = overflowOf(coverRect(imgW, imgH, boxW, boxH, { x: 0, y: 0, zoom }), boxW, boxH);
+        return { x: hasOverflow(overflow.x), y: hasOverflow(overflow.y) };
+    }
+
+    // ---------- 對比度與重點色上的字色 ----------
 
     const WHITE = '#ffffff';
     const DARK = '#141826';
-    // 白色的相對亮度是 1（定義）
-    const WHITE_LUMINANCE = 1;
     const HEX_COLOR = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i;
 
     // 一個色版（0～255）換成線性的亮度（WCAG 的公式）
@@ -308,23 +329,29 @@ const CardLayout = (() => {
         return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
     }
 
-    // 兩個相對亮度的對比度：1（一樣）～21（黑白）
-    const contrast = (a, b) => (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
-
-    const DARK_LUMINANCE = luminanceOf(DARK);
+    /**
+     * 兩個顏色的 WCAG 對比度：(較亮的相對亮度 + 0.05) / (較暗的相對亮度 + 0.05)。
+     * @param {string} a - '#rrggbb'（大小寫都行）
+     * @param {string} b - '#rrggbb'
+     * @returns {number} 1（一樣）～21（黑白），和 a、b 的先後無關；有一個不是 '#rrggbb' 的東西是 1
+     */
+    function contrastRatio(a, b) {
+        const first = luminanceOf(a);
+        const second = luminanceOf(b);
+        if (first === null || second === null) return 1;
+        return (Math.max(first, second) + 0.05) / (Math.min(first, second) + 0.05);
+    }
 
     /**
      * 這個底色上的字用白色還是深色：算白色與 #141826 對這個底色的 WCAG 對比度，高的那個贏，一樣高是白色。
      * @param {string} hex - '#rrggbb'（大小寫都行）
-     * @returns {'#ffffff' | '#141826'} 不是 '#rrggbb' 的東西是 '#ffffff'
+     * @returns {'#ffffff' | '#141826'} 不是 '#rrggbb' 的東西是 '#ffffff'（兩個對比度都是 1，一樣高）
      */
     function textColorOn(hex) {
-        const background = luminanceOf(hex);
-        if (background === null) return WHITE;
-        return contrast(background, DARK_LUMINANCE) > contrast(background, WHITE_LUMINANCE) ? DARK : WHITE;
+        return contrastRatio(hex, DARK) > contrastRatio(hex, WHITE) ? DARK : WHITE;
     }
 
-    return Object.freeze({ fitScale, wrapText, layoutChips, coverRect, dragCrop, textColorOn });
+    return Object.freeze({ fitScale, wrapText, layoutChips, coverRect, dragCrop, canPan, contrastRatio, textColorOn });
 })();
 
 // Export for use in other modules

@@ -7,10 +7,18 @@ const vm = require('node:vm');
 const { createRecordingContext, fakeMeasure, fontSize } = require('./helpers/canvas-recorder.js');
 
 const ROOT = path.join(__dirname, '..');
-const FILES = ['tools/character-card/card-layout.js', 'tools/character-card/card-state.js', 'tools/character-card/card-renderer.js'];
+const FILES = [
+    'tools/character-card/card-layout.js',
+    'tools/character-card/card-state.js',
+    'tools/character-card/card-paint.js',
+    'tools/character-card/card-style-a.js',
+    'tools/character-card/card-style-b.js',
+    'tools/character-card/card-style-c.js',
+    'tools/character-card/card-renderer.js'
+];
 
 // 這幾支腳本把東西掛在 window 上，所以讓 window 指向 context 本身（同 character-card-layout.test.js）。
-// 載入順序同頁面：card-layout.js、card-state.js 在 card-renderer.js 前面
+// 載入順序同頁面：card-layout.js、card-state.js 在 card-paint.js 前面，card-paint.js、card-style-a.js、card-style-b.js、card-style-c.js 在 card-renderer.js 前面
 function loadContext(files) {
     const context = vm.createContext({});
     context.window = context;
@@ -21,7 +29,7 @@ function loadContext(files) {
 }
 
 const context = loadContext(FILES);
-const { CardRenderer, CardLayout, CardState } = context;
+const { CardRenderer, CardLayout, CardState, CardPaint, CardStyleB } = context;
 
 // vm 裡建出來的陣列與物件原型和這邊不同，deepEqual 前先轉成這邊的一般值
 const plain = (value) => JSON.parse(JSON.stringify(value));
@@ -180,17 +188,18 @@ const contrast = (a, b) => (Math.max(luminance(a), luminance(b)) + 0.05) / (Math
 // ---------- 模組與尺寸 ----------
 
 test('SIZES 與 fontsFor', () => {
-    // 模組：凍結、只有規定的三個成員、只掛一個全域
+    // 模組：凍結、只有規定的四個成員、每支腳本各掛一個全域（照載入順序）
     assert.equal(Object.isFrozen(CardRenderer), true);
-    assert.deepEqual(Object.keys(CardRenderer).sort(), ['SIZES', 'draw', 'fontsFor']);
+    assert.deepEqual(Object.keys(CardRenderer).sort(), ['SIZES', 'draw', 'fontsFor', 'photoBox']);
     assert.equal(typeof CardRenderer.draw, 'function');
     assert.equal(typeof CardRenderer.fontsFor, 'function');
     const alone = loadContext(FILES);
-    assert.deepEqual(Object.keys(alone).filter((name) => name !== 'window'), ['CardLayout', 'CardState', 'CardRenderer']);
+    assert.deepEqual(Object.keys(alone).filter((name) => name !== 'window'), ['CardLayout', 'CardState', 'CardPaint', 'CardStyleA', 'CardStyleB', 'CardStyleC', 'CardRenderer']);
 
-    // 兩種尺寸，凍結的
+    // 兩種尺寸，凍結的；和共用畫圖小工具的是同一個物件
     assert.deepEqual(plain(CardRenderer.SIZES), SIZE);
     assert.equal(deepFrozen(CardRenderer.SIZES), true);
+    assert.equal(CardRenderer.SIZES, CardPaint.SIZES);
 
     // fontsFor：名字用 Outfit 800（中文退回 Noto Sans TC），其他字是 Noto Sans TC 500、700，FF14.tw 是 Outfit 600
     const fonts = plain(CardRenderer.fontsFor(fullModel()));
@@ -218,6 +227,51 @@ test('SIZES 與 fontsFor', () => {
     // 什麼都沒填：只剩 FF14.tw 與 SE 版權字
     const none = plain(CardRenderer.fontsFor(emptyModel()));
     assert.deepEqual(none.map((entry) => entry.text).sort(), [NOTICE, 'FF14.tw'].sort());
+});
+
+// ---------- 風格與照片框 ----------
+
+test('photoBox：海報是整張卡片，每次回傳新的物件；不認得的風格當成海報、不認得的版型當成橫版', () => {
+    const landscape = { x: 0, y: 0, width: 1200, height: 675 };
+    const portrait = { x: 0, y: 0, width: 1080, height: 1350 };
+    assert.deepEqual(plain(CardRenderer.photoBox('b', 'landscape')), landscape);
+    assert.deepEqual(plain(CardRenderer.photoBox('b', 'portrait')), portrait);
+
+    // 每次回傳新的物件：呼叫端拿去改也不會動到下一次的結果
+    assert.notEqual(CardRenderer.photoBox('b', 'landscape'), CardRenderer.photoBox('b', 'landscape'));
+    assert.notEqual(CardStyleB.photoBox('landscape'), CardStyleB.photoBox('landscape'));
+
+    // 不認得的風格當成海報，不認得的版型當成橫版（物件原型上的名字也不算認得）
+    assert.deepEqual(plain(CardRenderer.photoBox('zzz', 'portrait')), portrait);
+    assert.deepEqual(plain(CardRenderer.photoBox('b', 'zzz')), landscape);
+    assert.deepEqual(plain(CardRenderer.photoBox('constructor', 'constructor')), landscape);
+    assert.deepEqual(plain(CardRenderer.photoBox(undefined, undefined)), landscape);
+});
+
+test("model.style 沒寫、是 'b' 或不認得時都畫海報", () => {
+    const expected = plain(render(fullModel()).calls);
+    assert.ok(expected.length > 100, '海報畫了不少東西');
+    for (const style of ['b', 'zzz', 'constructor']) {
+        assert.deepEqual(plain(render(fullModel({ style })).calls), expected, `style 是 ${JSON.stringify(style)}`);
+    }
+});
+
+test('CardPaint、CardStyleB 凍結', () => {
+    assert.equal(Object.isFrozen(CardPaint), true);
+    assert.equal(Object.isFrozen(CardStyleB), true);
+    assert.deepEqual(Object.keys(CardStyleB).sort(), ['draw', 'photoBox', 'texts']);
+    // 海報要用的小工具都在（名字照任務書，之後的風格也靠這些名字），常數也是凍結的
+    for (const name of [
+        'fontString', 'toPixels', 'firstChar', 'sum', 'tintOf', 'roundedRect', 'drawText', 'measurer', 'fittedSize',
+        'drawCapsule', 'drawIcon', 'stackUp', 'spacedWidth', 'drawSpaced', 'drawBackdrop', 'hoursBlock'
+    ]) {
+        assert.equal(typeof CardPaint[name], 'function', `CardPaint.${name}`);
+    }
+    assert.equal(CardPaint.LINE_NORMAL, 1.45);
+    assert.equal(CardPaint.FIT_FLOOR, 0.3);
+    assert.equal(CardPaint.ELLIPSIS, '…');
+    assert.deepEqual(plain(CardPaint.FAMILIES), { display: 'Outfit, "Noto Sans TC", sans-serif', sans: '"Noto Sans TC", sans-serif', serif: '"Noto Serif TC", serif' });
+    assert.equal(deepFrozen(CardPaint.FAMILIES), true);
 });
 
 // ---------- 只有必填三項 ----------

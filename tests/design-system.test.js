@@ -58,7 +58,7 @@ function contrast(a, b) {
 // 這個檔案的職責就是彙整元件，允許 @import components/*.css
 const IMPORT_ALLOWED = new Set(['assets/css/tools-common.css']);
 
-// 自動列舉 assets/css 與 tools/*/ 底下所有 .css，每一個都要守 token 規則（沒有例外：角色卡的卡片現在畫在 canvas 上，配色在 card-renderer.js）
+// 自動列舉 assets/css 與 tools/*/ 底下所有 .css，每一個都要守 token 規則（沒有例外：角色卡的卡片現在畫在 canvas 上，配色在 card-paint.js 與 card-style-*.js）
 function listAllCssFiles() {
     const out = [...listFiles('assets/css', ['.css']), ...listFiles('tools', ['.css'])];
     return out.sort();
