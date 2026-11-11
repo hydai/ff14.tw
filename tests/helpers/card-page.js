@@ -7,7 +7,7 @@
 //   page.chip('cardLikes', 'msq').click(); page.key('ArrowRight', page.$('tab-basic')); page.setLang('ja'); page.setNarrow(false);
 //   page.texts(); page.drawCalls(); page.stored; page.toasts; page.consoleErrors; await page.flush();
 //   const again = await page.reopen();
-//   page.pick(page.file({ width: 4000, height: 1500 })); await page.flush(); page.slide(150); page.drag([[300, 200], [330, 205]]); page.pointer('down', { pointerType: 'touch' });
+//   page.pick(page.file({ width: 4000, height: 1500 })); await page.flush(); page.slide(150); page.slide(40, { id: 'imageX' }); page.drag([[300, 200], [330, 205]]); page.pointer('down', { pointerType: 'touch' });
 //   page.focus('cardName'); page.press('downloadCard'); await page.flush(); page.downloads; page.shares; page.shareCalls; page.clipboardCalls; page.clipboardWrites;
 //   page.blobRequests(); page.releaseFonts(); page.setBlobFails(true); page.$('imageViewer').classList.contains('active');
 //   page.createdCanvases(); // 頁面自己建的 canvas（縮圖、模糊小圖…）
@@ -53,7 +53,8 @@
 //   不是物件的東西丟 TypeError，和瀏覽器一樣）；pick(...檔案) 照瀏覽器選檔案：#cardImageInput.files 換成這些檔案（FileList 的替身：length、item()、索引、迭代，
 //   沒有陣列的方法），派送 input 與 change；沒給檔案是取消（files 空的）。頁面把 input.value 設成 ''，files 就清空（和瀏覽器一樣，設成別的字丟錯）。
 //   objectUrls 是 { created, revoked }：每一次 URL.createObjectURL／revokeObjectURL 的網址
-// - 滑桿與拖曳：slide(值, { release }) 設定 #imageZoom 的值並派送 input，release（預設 true）再派送 change（disabled 的滑桿丟錯：使用者動不了）；
+// - 滑桿與拖曳：slide(值, { id, release }) 設定滑桿的值並派送 input，id 是哪一個滑桿（預設 'imageZoom'，也可以是位置滑桿 'imageX'、'imageY'），
+//   release（預設 true）再派送 change（disabled 的滑桿丟錯：使用者動不了；替身不做瀏覽器的 min、max、step 整理，給多少就是多少，由頁面自己夾）；
 //   pointer(類型, { x, y, id, pointerType, button, buttons }) 在卡片的 canvas 上派送 pointerdown／move／up／cancel（類型寫 'down'、'move'、'up'、'cancel'；x、y 是 clientX、clientY，
 //   id 預設 1、pointerType 預設 'mouse'、button 預設 0），會冒泡、可取消，回傳事件；事件的 buttons（MouseEvent.buttons：左鍵 1、右鍵 2、中鍵 4）照瀏覽器：
 //   pointerdown 到 pointerup／pointercancel 之前是按著的那顆按鍵（替身自己記著哪個 pointer 按著），其他時候（只是在卡片上移動、放開的那一刻）是 0；
@@ -761,9 +762,9 @@ async function createCardPage({
             fire(input, 'input');
             fire(input, 'change');
         },
-        slide(value, { release = true } = {}) {
-            const element = elementOf('imageZoom');
-            assert.ok(element.disabled !== true, '#imageZoom 是 disabled：使用者動不了');
+        slide(value, { id = 'imageZoom', release = true } = {}) {
+            const element = elementOf(id);
+            assert.ok(element.disabled !== true, `#${id} 是 disabled：使用者動不了`);
             element.value = String(value);
             fire(element, 'input');
             if (release) fire(element, 'change');

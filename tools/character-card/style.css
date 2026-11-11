@@ -255,7 +255,7 @@
     box-shadow: var(--ring-primary);
 }
 
-/* 角色圖：上傳是 <label> 包著看不見的檔案輸入（樣式是按鈕），下面是狀態、縮放滑桿、置中／填滿／調整圖片。按鈕放不下就換行，不左右捲 */
+/* 角色圖：上傳是 <label> 包著看不見的檔案輸入（樣式是按鈕），下面是狀態、縮放滑桿、左右與上下的位置滑桿、置中／填滿／調整圖片。按鈕放不下就換行，不左右捲 */
 .image-actions {
     display: flex;
     flex-wrap: wrap;
@@ -276,7 +276,9 @@
     margin-top: 0;
 }
 
-.image-zoom {
+/* 縮放與位置（左右、上下）三個滑桿：整排寬，不比手機寬 */
+.image-zoom,
+.image-range {
     display: block;
     width: 100%;
     min-height: var(--control-md);

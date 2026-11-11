@@ -13,6 +13,12 @@
 // 角色圖：上傳的圖由 card-image.js 縮小、轉成 JPEG（卡片畫的與瀏覽器記住的是同一張：轉出來之後再讀回來才用），位置與縮放存在 state.crops
 // （每一種「風格 × 橫直版」各一份，鍵是 CardState.cropKey）。卡片上拖曳（pointer 事件）：滑鼠直接拖；手指從卡片上滑要能捲動頁面，所以只有按了「調整圖片」（調整模式，觸控為主的裝置才有）才拖，
 // 其他時候 pointerdown 什麼都不做。上傳、還原都用流水號（imageToken）：同時有好幾次在讀，只有最新的算數。
+// 位置滑桿「左右」「上下」（#imageX、#imageY）是不能拖曳卡片的人（鍵盤、單指點一下：WCAG 2.5.7）移動圖片的另一個做法：值是這一份位置（-1～1）乘 100 之後最接近的 5 的倍數，
+// 拖滑桿只重畫、放開才存（同縮放滑桿），旁邊的字與 aria-valuetext 是同一句（syncPosition()：0 是「置中」，其他寫偏哪邊與多少，換語言時重寫）；
+// 沒有圖片、或這種風格與版型的照片框在那個方向沒有多出來的部分（CardLayout.canPan：拖曳也拖不動）時 disabled，值寫 0、字寫「置中」（畫面上圖在那個方向本來就是置中的），
+// 記住的位置不改，有空間時（放大、換風格或版型）再顯示它。
+// 換風格或版型時位置換成另一份：拖曳到一半（用鍵盤換風格、版型，滑鼠鍵還按在卡片上）的先結束它（update()），不然下一次移動會把舊的起點套到新的那一份；
+// 換上新的圖（上傳、還原）時也一樣（setImage()）：先結束拖曳到一半的，不存舊圖的位置。
 // 名片的背景是壓暗的模糊截圖：模糊由 CardImage.blur 做成一張小 canvas（不用 ctx.filter，畫圖程式也不碰 DOM），橫版與直版各一張（this.backdrops），
 // 在圖換掉的當下（setImage()：上傳、還原、移除圖片、清除全部）一起做、一起放掉，之後重畫、換風格、換版型都用做好的那一張。
 // 字型：Google Fonts 的中文字型依字分批載入，沒載入的字會退成別的字型，所以每畫一次就看有沒有還沒請求過的字，有就請瀏覽器載入（這一次請求的算一批）；
@@ -110,6 +116,14 @@ class CharacterCardApp {
         ['removed', ['char_card_image_removed', '已移除圖片']],
         ['restore_failed', ['char_card_image_restore_failed', '上次的圖片讀不出來，請重新上傳。']]
     ]);
+    // 位置滑桿（左右、上下）：滑桿的 id → 它動的方向（crop 的 x、y），旁邊的字是 `${id}Value`。滑桿的字與 aria-valuetext 是同一句：0 是 POSITION_CENTER，
+    // 負的是偏左、偏上（圖的左邊、上邊對齊框），正的是偏右、偏下，{n} 是百分比的數字（絕對值）。翻譯鍵一律寫成完整的字串，不用組的
+    static POSITION_SLIDERS = new Map([['imageX', 'x'], ['imageY', 'y']]);
+    static POSITION_CENTER = ['char_card_image_pos_center', '置中'];
+    static POSITION_TEXT = {
+        x: { negative: ['char_card_image_pos_left', '偏左 {n}%'], positive: ['char_card_image_pos_right', '偏右 {n}%'] },
+        y: { negative: ['char_card_image_pos_up', '偏上 {n}%'], positive: ['char_card_image_pos_down', '偏下 {n}%'] }
+    };
     // 遊玩時段的日子與時段：form 是表單上的全名（勾選框的名稱），card 是畫在卡片上的短標籤（英文的全名縮在卡片上小到看不清）
     static DAY_LABELS = {
         weekday: { form: ['char_card_day_weekday', '平日'], card: ['char_card_card_day_weekday', '平日'] },
@@ -225,6 +239,10 @@ class CharacterCardApp {
             imageStatus: byId('cardImageStatus'),
             imageZoom: byId('imageZoom'),
             imageZoomValue: byId('imageZoomValue'),
+            imageX: byId('imageX'),
+            imageXValue: byId('imageXValue'),
+            imageY: byId('imageY'),
+            imageYValue: byId('imageYValue'),
             imageCenter: byId('imageCenter'),
             imageFill: byId('imageFill'),
             imageRemove: byId('imageRemove'),
@@ -429,6 +447,10 @@ class CharacterCardApp {
             // 拖滑桿的過程只重畫，放開（change）才存
             const zoom = Number(target.value) / 100;
             if (Number.isFinite(zoom)) this.setCrop({ zoom }, { save: false });
+        } else if (CharacterCardApp.POSITION_SLIDERS.has(target.id)) {
+            // 位置滑桿（左右、上下）：同縮放，值是位置乘 100（超出 -100～100 的由 CardState.normalize 夾回去，滑桿跟著收回來）
+            const offset = Number(target.value) / 100;
+            if (Number.isFinite(offset)) this.setCrop({ [CharacterCardApp.POSITION_SLIDERS.get(target.id)]: offset }, { save: false });
         }
     }
 
@@ -449,7 +471,7 @@ class CharacterCardApp {
             // 風格：勾到哪一個就是哪一種（value 是 a、b、c；不合格的 CardState.normalize 會換回海報）。
             // 單選的 name 不能叫 style：表單裡有叫 style 的欄位時，form.style 會變成 RadioNodeList，蓋掉元素自己的 style（CSSStyleDeclaration）
             if (target.checked === true) this.update({ style: target.getAttribute('value') });
-        } else if (target.id === 'imageZoom') {
+        } else if (target.id === 'imageZoom' || CharacterCardApp.POSITION_SLIDERS.has(target.id)) {
             CardState.save(this.storage, this.state);
         } else if (target.id === 'cardImageInput') {
             this.chooseImage(target);
@@ -491,9 +513,13 @@ class CharacterCardApp {
         this.update({ hours });
     }
 
-    // 改了狀態：整理、存起來、更新由狀態算出來的控制項（按鈕、計數、重點色）、重畫卡片
+    // 改了狀態：整理、存起來、更新由狀態算出來的控制項（按鈕、計數、重點色）、重畫卡片。
+    // 風格或版型換了，圖片的位置就換成另一份（CardState.cropKey）：拖曳到一半（用鍵盤換風格或版型，滑鼠鍵還按在卡片上）的話先結束它，
+    // 放掉指標抓取；拖到現在的位置已經在原來那一份裡，下面存的就是它（所以結束時不另外存）。不結束的話，下一次移動會拿按下去那一刻的舊位置，套到新的那一份上
     update(patch) {
-        this.state = CardState.normalize({ ...this.state, ...patch }, this.jobs);
+        const next = CardState.normalize({ ...this.state, ...patch }, this.jobs);
+        if (this.drag !== null && CardState.cropKey(next) !== CardState.cropKey(this.state)) this.stopDrag({ save: false, release: true });
+        this.state = next;
         CardState.save(this.storage, this.state);
         this.syncDerived();
         this.syncErrors();
@@ -692,6 +718,7 @@ class CharacterCardApp {
     }
 
     // 角色圖的控制項：沒有圖片時縮放、置中、填滿、移除、調整都不能按；滑桿與百分比跟著這種風格與版型的縮放（沒有圖片寫預設的 100%，存著的位置要有圖片才用得上）；
+    // 位置滑桿（左右、上下）跟著這種風格與版型的位置（syncPosition()）；
     // 「調整圖片」只有觸控為主的裝置才顯示；卡片有圖片時才有拖曳的游標（.has-image）
     syncImage() {
         const { elements } = this;
@@ -701,8 +728,37 @@ class CharacterCardApp {
         elements.imageZoom.value = String(percent);
         elements.imageZoom.setAttribute('aria-valuetext', `${percent}%`);
         elements.imageZoomValue.textContent = `${percent}%`;
+        this.syncPosition();
         elements.imageAdjust.hidden = !this.isCoarse();
         elements.canvas.classList.toggle('has-image', has);
+    }
+
+    // 位置滑桿（左右、上下）：值是這種風格與版型的位置（-1～1）乘 100 之後最接近的 5 的倍數（滑桿的間隔是 5：拖曳停在 -0.2467 時滑桿停在 -25，
+    // 這裡只寫滑桿，不改記住的位置；再拉就從滑桿的值繼續），旁邊的字與 aria-valuetext 是同一句。
+    // 沒有圖片、或那個方向在這種風格與版型的照片框裡沒有多出來的部分（CardLayout.canPan：拖曳也拖不動）時 disabled，值寫 0、字寫「置中」：
+    // 畫面上圖在那個方向本來就是置中的（記住的位置在那個方向用不上）。記住的位置照舊不改，那個方向又有空間時（放大、換成別種風格或版型）滑桿再顯示它。
+    // 換語言時也呼叫（relabel()）重寫字
+    syncPosition() {
+        const { elements, image } = this;
+        const crop = CardState.cropOf(this.state);
+        const box = CardRenderer.photoBox(this.state.style, this.state.format);
+        const pan = image === null ? { x: false, y: false } : CardLayout.canPan(image.width, image.height, box.width, box.height, crop.zoom);
+        for (const [id, axis] of CharacterCardApp.POSITION_SLIDERS) {
+            const value = pan[axis] ? Math.round(crop[axis] * 20) * 5 : 0;
+            const text = this.positionText(axis, value);
+            const slider = elements[id];
+            slider.disabled = !pan[axis];
+            slider.value = String(value);
+            slider.setAttribute('aria-valuetext', text);
+            elements[`${id}Value`].textContent = text;
+        }
+    }
+
+    // 位置滑桿的字：axis 是 'x'（左右）或 'y'（上下），value 是滑桿的值（-100～100）。0 是「置中」，其他是「偏左 40%」這樣的一句
+    positionText(axis, value) {
+        if (value === 0) return this.label(CharacterCardApp.POSITION_CENTER);
+        const [key, fallback] = CharacterCardApp.POSITION_TEXT[axis][value < 0 ? 'negative' : 'positive'];
+        return this.t(key, fallback, { n: Math.abs(value) });
     }
 
     // 一組切換按鈕：選了的 aria-pressed 與 .active 一起換；滿了（max）時沒選的都不能按，locked（主職）永遠不能按
@@ -756,6 +812,7 @@ class CharacterCardApp {
         this.renderClearButton();
         this.renderAdjustButton();
         this.renderImageStatus();
+        this.syncPosition();
         this.renderCounters();
     }
 
@@ -915,10 +972,13 @@ class CharacterCardApp {
      * 畫卡片用的角色圖換了（上傳、還原、移除圖片、清除全部）：舊的名片背景小圖先放掉（寬高設成 0：iOS Safari 的 canvas 記憶體有總量上限），
      * 新的圖橫版與直版各做一張小圖（CardImage.blur；不丟例外，做不出來的那張是 null，名片就畫預設背景）。每一張圖只做這一次：
      * 重畫、換風格、換版型都用做好的。呼叫端自己重畫（放掉的小圖不能再拿去畫）。
+     * 換上新的圖（picture 不是 null：上傳、還原）時，拖曳到一半的先結束：放掉指標抓取，不存舊圖的位置（上傳接著就把位置清掉）；
+     * 不結束的話，下一次移動會把舊圖按下去那一刻的位置套到新圖上。沒有圖片（null）的路徑由 dropImage() 結束拖曳。
      * @param {{source: *, width: number, height: number} | null} picture - 畫卡片用的圖；null 是沒有圖片
      */
     setImage(picture) {
         this.releaseBackdrops();
+        if (picture !== null) this.stopDrag({ save: false, release: true });
         this.image = picture;
         if (picture === null) return;
         this.backdrops = Object.fromEntries(Object.entries(CardRenderer.SIZES).map(([format, size]) => [format, CardImage.blur(picture, size, this.imageDeps)]));

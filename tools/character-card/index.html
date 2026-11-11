@@ -230,7 +230,9 @@
                         <h2 class="editor-panel-title" data-i18n="char_card_panel_image">角色圖</h2>
                         <!-- 上傳：<label> 包著檔案輸入（.visually-hidden：看不見但 Tab 得到，焦點外框畫在按鈕上），字在輸入框外面的 <span>。
                              狀態（處理中、已上傳、太大不會記住…）寫在 #cardImageStatus，aria-live 念給螢幕閱讀器。
-                             在卡片上拖曳移動圖片、縮放、置中與填滿都要有圖片才能用，一開始 disabled；script.js 照有沒有圖片切換。
+                             在卡片上拖曳移動圖片、縮放、左右與上下的位置滑桿、置中與填滿都要有圖片才能用，一開始 disabled；script.js 照有沒有圖片切換。
+                             「左右」「上下」兩個滑桿是不能拖曳卡片的人（鍵盤、單指點一下）移動圖片的另一個做法：值是位置（-100～100，間隔 5），旁邊的字（#imageXValue、#imageYValue）
+                             與 aria-valuetext 是同一句，0 是「置中」，其他寫偏哪邊與多少，由 script.js 照位置寫；那個方向沒有多出來的部分（圖剛好和照片框一樣寬或高）時也 disabled，這時寫 0 與「置中」（記住的位置不改，有空間時再顯示）。
                              「調整圖片」一開始 hidden，只有觸控為主的裝置才由 script.js 顯示：手機上手指從卡片上滑要能捲動頁面，按了它才在卡片上拖 -->
                         <div class="form-group">
                             <div class="image-actions">
@@ -245,6 +247,20 @@
                                 <span class="field-count" id="imageZoomValue">100%</span>
                             </div>
                             <input type="range" class="image-zoom" id="imageZoom" min="100" max="300" step="5" value="100" disabled aria-valuetext="100%">
+                        </div>
+                        <div class="form-group">
+                            <div class="field-head">
+                                <label class="form-label" for="imageX" data-i18n="char_card_image_x">左右</label>
+                                <span class="field-count" id="imageXValue">置中</span>
+                            </div>
+                            <input type="range" class="image-range" id="imageX" min="-100" max="100" step="5" value="0" disabled aria-valuetext="置中">
+                        </div>
+                        <div class="form-group">
+                            <div class="field-head">
+                                <label class="form-label" for="imageY" data-i18n="char_card_image_y">上下</label>
+                                <span class="field-count" id="imageYValue">置中</span>
+                            </div>
+                            <input type="range" class="image-range" id="imageY" min="-100" max="100" step="5" value="0" disabled aria-valuetext="置中">
                         </div>
                         <div class="form-group image-actions">
                             <button type="button" class="btn btn-secondary" id="imageCenter" disabled data-i18n="char_card_image_center">置中</button>

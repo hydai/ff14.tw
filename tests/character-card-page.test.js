@@ -4944,6 +4944,548 @@ test('名片與資訊卡的拖曳照照片框換算（不是整張卡片）：�
     nearCrop(cropsOf(poster)['b-landscape'], expectedDrag(poster, WIDE_IMAGE, FILL, 60, 0), '海報照整張卡片換算');
 });
 
+// ---------- 位置滑桿：左右、上下 ----------
+// 不能拖曳卡片的人（鍵盤、單指點一下，WCAG 2.5.7）用「左右」「上下」兩個滑桿移動圖片：值是位置（-1～1）乘 100 之後最接近的 5 的倍數，
+// 旁邊的字與 aria-valuetext 是同一句（0 是「置中」，其他寫偏哪邊與多少）；那個方向沒有多出來的部分（CardLayout.canPan）或沒有圖片時 disabled，
+// disabled 時值是 0、字是「置中」（畫面上圖在那個方向本來就是置中的），記住的位置不改，有空間時（放大、換風格或版型）再顯示它
+const positionOf = (page, id) => ({
+    value: page.$(id).value, text: page.$(id).getAttribute('aria-valuetext'), shown: page.$(`${id}Value`).textContent, disabled: page.$(id).disabled === true
+});
+// 一個滑桿的樣子：值、字（aria-valuetext 與旁邊的字是同一句）、disabled
+const sliderIs = (value, text, disabled = false) => ({ value, text, shown: text, disabled });
+const canMove = (page) => ({ x: page.$('imageX').disabled !== true, y: page.$('imageY').disabled !== true });
+const POSITION_TEXT = {
+    zh: { x: '左右', y: '上下', pos_center: '置中', pos_left: '偏左 {n}%', pos_right: '偏右 {n}%', pos_up: '偏上 {n}%', pos_down: '偏下 {n}%' },
+    en: { x: 'Horizontal', y: 'Vertical', pos_center: 'Centered', pos_left: 'Left {n}%', pos_right: 'Right {n}%', pos_up: 'Up {n}%', pos_down: 'Down {n}%' },
+    ja: { x: '左右', y: '上下', pos_center: '中央', pos_left: '左に {n}%', pos_right: '右に {n}%', pos_up: '上に {n}%', pos_down: '下に {n}%' }
+};
+
+test('位置滑桿的標記：左右、上下兩個，-100～100、間隔 5、預設 0，各有 <label> 與旁邊的字，在縮放的下面；沒有圖片時 disabled、aria-valuetext 是「置中」', async () => {
+    const panel = sliceElementById(HTML, 'panel-image');
+    const order = ['imageZoom', 'imageX', 'imageY', 'imageCenter'].map((id) => panel.indexOf(`id="${id}"`));
+    assert.ok(order.every((at, index) => at !== -1 && (index === 0 || at > order[index - 1])), `縮放、左右、上下、置中的順序不對：${order}`);
+    for (const [id, name, key] of [['imageX', '左右', 'char_card_image_x'], ['imageY', '上下', 'char_card_image_y']]) {
+        const slider = tagAttrs(HTML, id);
+        assert.deepEqual([slider.type, slider.min, slider.max, slider.step, slider.value], ['range', '-100', '100', '5', '0'], `#${id}`);
+        assert.ok(classesOf(slider).includes('image-range'), `#${id} 的 class`);
+        assert.match(panel, new RegExp(`<input [^>]*id="${id}"[^>]*\\sdisabled`), `#${id} 一開始就 disabled`);
+        assert.equal(slider['aria-valuetext'], '置中');
+        assert.match(panel, new RegExp(`<label [^>]*for="${id}"[^>]*data-i18n="${key}"[^>]*>${name}</label>`), `#${id} 有 <label>`);
+        // 旁邊的字和縮放一樣是 <span class="field-count">，在標籤的右邊；字是 script.js 照位置寫的（沒有 data-i18n：它不是固定的一句）
+        const value = tagAttrs(HTML, `${id}Value`);
+        assert.ok(classesOf(value).includes('field-count'), `#${id}Value 的 class`);
+        assert.equal(value['data-i18n'], undefined);
+        assert.match(panel, new RegExp(`<span [^>]*id="${id}Value"[^>]*>置中</span>`), `#${id}Value 的預設文字`);
+        assert.match(panel, new RegExp(`<div class="field-head">\\s*<label [^>]*for="${id}"[^>]*>${name}</label>\\s*<span [^>]*id="${id}Value"[^>]*>置中</span>\\s*</div>\\s*<input [^>]*id="${id}"`), `#${id}：標籤在左、字在右、滑桿在下面`);
+    }
+    // 沒有 <output>（它自帶 role="status"，每動一下就念一次，和滑桿自己念的重複）
+    assert.doesNotMatch(panel, /<output/);
+
+    // 打開頁面：沒有圖片，兩個滑桿都在 0、disabled，字是預設的「置中」（和 index.html 的預設文字、zh 翻譯一樣）
+    const page = await createCardPage();
+    for (const id of ['imageX', 'imageY']) assert.deepEqual(positionOf(page, id), sliderIs('0', '置中', true), `#${id}`);
+    assert.equal(labelOf(page, 'imageX'), '左右');
+    assert.equal(labelOf(page, 'imageY'), '上下');
+    assert.equal(translationValues(TRANSLATIONS, 'zh').get('char_card_image_pos_center'), '置中');
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('很寬的截圖在海報橫版：左右能拉、上下 disabled；放大到 150% 兩個都能拉，回到 100% 上下又 disabled；disabled 的滑桿動不了', async () => {
+    const page = await createCardPage();
+    await upload(page, WIDE);
+    // 4000×1500 縮成 2048×768 放進 1200×675：寬多出 600，高剛好
+    assert.deepEqual(canMove(page), { x: true, y: false });
+    assert.deepEqual(positionOf(page, 'imageX'), sliderIs('0', '置中'));
+    assert.deepEqual(positionOf(page, 'imageY'), sliderIs('0', '置中', true));
+    assert.throws(() => page.slide(10, { id: 'imageY' }), /#imageY 是 disabled/);
+
+    page.slide(150);
+    assert.deepEqual(canMove(page), { x: true, y: true });
+    page.slide(100);
+    assert.deepEqual(canMove(page), { x: true, y: false });
+    // 縮放滑桿與「填滿」換了縮放，能拉的方向也跟著換
+    page.slide(105);
+    assert.deepEqual(canMove(page), { x: true, y: true });
+    page.press('imageFill');
+    assert.deepEqual(canMove(page), { x: true, y: false });
+
+    // 直的圖（1500×4000 縮成 768×2048）：相反，上下能拉、左右 disabled
+    await upload(page, { width: 1500, height: 4000 });
+    assert.deepEqual(canMove(page), { x: false, y: true });
+    assert.throws(() => page.slide(10, { id: 'imageX' }), /#imageX 是 disabled/);
+
+    // 和框一樣比例的圖（1600×900 放進 1200×675）：剛好填滿，兩個方向都 disabled，放大 5% 才有
+    await upload(page);
+    assert.deepEqual(canMove(page), { x: false, y: false });
+    page.slide(105);
+    assert.deepEqual(canMove(page), { x: true, y: true });
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('拉左右、上下：input 只重畫、change 才存；40 是「偏右 40%」、-40 是「偏左 40%」，100 是「偏下 100%」、-25 是「偏上 25%」，卡片照新的位置畫', async () => {
+    const page = await createCardPage();
+    await upload(page, WIDE);
+    page.slide(150); // 放大之後左右、上下都有多出來的部分
+    const zoomed = { x: 0, y: 0, zoom: 1.5 };
+
+    // 拉的過程（input）：馬上重畫、不存；滑桿旁的字與 aria-valuetext 是同一句
+    const writes = page.storageWrites.length;
+    const draws = page.drawCount();
+    page.slide(40, { id: 'imageX', release: false });
+    assert.equal(page.drawCount(), draws + 1, '只重畫一次');
+    assert.deepEqual(drawnRect(pictureDraws(page)[0]), expectedRect(page, WIDE_IMAGE, { ...zoomed, x: 0.4 }));
+    assert.deepEqual(positionOf(page, 'imageX'), sliderIs('40', '偏右 40%'));
+    assert.equal(page.storageWrites.length, writes, '拉的過程不存');
+    // 放開（change）才存，存一次
+    page.slide(40, { id: 'imageX' });
+    assert.equal(page.storageWrites.length, writes + 1);
+    assert.deepEqual(cropsOf(page)['b-landscape'], { x: 0.4, y: 0, zoom: 1.5 });
+
+    // 負的是偏左
+    page.slide(-40, { id: 'imageX' });
+    assert.deepEqual(positionOf(page, 'imageX'), sliderIs('-40', '偏左 40%'));
+    assert.deepEqual(drawnRect(pictureDraws(page)[0]), expectedRect(page, WIDE_IMAGE, { ...zoomed, x: -0.4 }));
+    assert.deepEqual(cropsOf(page)['b-landscape'], { x: -0.4, y: 0, zoom: 1.5 });
+    page.slide(0, { id: 'imageX' });
+    assert.deepEqual(positionOf(page, 'imageX'), sliderIs('0', '置中'));
+
+    // 上下：正的是偏下（圖貼著下緣）、負的是偏上
+    page.slide(100, { id: 'imageY' });
+    assert.deepEqual(positionOf(page, 'imageY'), sliderIs('100', '偏下 100%'));
+    assert.deepEqual(drawnRect(pictureDraws(page)[0]), expectedRect(page, WIDE_IMAGE, { ...zoomed, y: 1 }));
+    assert.deepEqual(cropsOf(page)['b-landscape'], { x: 0, y: 1, zoom: 1.5 });
+    page.slide(-25, { id: 'imageY' });
+    assert.deepEqual(positionOf(page, 'imageY'), sliderIs('-25', '偏上 25%'));
+    assert.deepEqual(drawnRect(pictureDraws(page)[0]), expectedRect(page, WIDE_IMAGE, { ...zoomed, y: -0.25 }));
+    assert.deepEqual(cropsOf(page)['b-landscape'], { x: 0, y: -0.25, zoom: 1.5 });
+
+    // 兩個方向各動各的，縮放不動
+    page.slide(60, { id: 'imageX' });
+    assert.deepEqual(cropsOf(page)['b-landscape'], { x: 0.6, y: -0.25, zoom: 1.5 });
+    assert.equal(page.$('imageZoom').value, '150');
+    assert.deepEqual(positionOf(page, 'imageY'), sliderIs('-25', '偏上 25%'));
+    // 超出範圍的值收回 ±100，滑桿跟著收回來
+    page.slide(999, { id: 'imageX' });
+    assert.deepEqual(positionOf(page, 'imageX'), sliderIs('100', '偏右 100%'));
+    assert.equal(cropsOf(page)['b-landscape'].x, 1);
+    page.slide(-999, { id: 'imageY' });
+    assert.deepEqual(positionOf(page, 'imageY'), sliderIs('-100', '偏上 100%'));
+    assert.equal(cropsOf(page)['b-landscape'].y, -1);
+
+    // 直版有自己的一份：沒動過，兩個滑桿在 0（直版的框 1080×1350，寬圖的左右多出很多、上下剛好，所以上下 disabled）
+    page.press('formatPortrait');
+    assert.deepEqual(positionOf(page, 'imageX'), sliderIs('0', '置中'));
+    assert.deepEqual(positionOf(page, 'imageY'), sliderIs('0', '置中', true));
+    assert.deepEqual(page.toasts, []);
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('拖曳、置中、填滿之後滑桿跟著；拖到不是 5 的倍數時停在最接近的刻度、字跟著刻度（記住的位置不動），再拉從那裡繼續', async () => {
+    const page = await createCardPage();
+    await upload(page, WIDE);
+
+    // 往右拖 37 個 CSS 像素（卡片上 74 個像素）：位置是 -37/150（約 -0.2467，不在 5 的倍數上），滑桿停在最接近的 -25；拖到一半滑桿就跟著
+    page.pointer('down', { x: 300, y: 200 });
+    page.pointer('move', { x: 337, y: 200 });
+    assert.deepEqual(positionOf(page, 'imageX'), sliderIs('-25', '偏左 25%'), '拖到一半');
+    page.pointer('up', { x: 337, y: 200 });
+    const dragged = cropsOf(page)['b-landscape'];
+    nearCrop(dragged, expectedDrag(page, WIDE_IMAGE, FILL, 74, 0), '記住的是拖到的位置');
+    near(dragged.x, -37 / 150, '位置');
+    assert.notEqual(dragged.x, -0.25, '不是刻度上的值，不然這個測試分不出來');
+    assert.deepEqual(positionOf(page, 'imageX'), sliderIs('-25', '偏左 25%'));
+    assert.deepEqual(positionOf(page, 'imageY'), sliderIs('0', '置中', true), '上下拖不動');
+
+    // 只是同步滑桿（別的欄位改了、換語言、重新打開）不會把記住的位置改成刻度上的值
+    page.type('cardName', 'Luna');
+    page.setLang('en');
+    page.setLang('zh');
+    nearCrop(plain(page.app.state.crops['b-landscape']), dragged, '同步滑桿不改位置');
+    nearCrop(cropsOf(page)['b-landscape'], dragged, '記住的也不變');
+    const again = await page.reopen();
+    nearCrop(plain(again.app.state.crops['b-landscape']), dragged, '重新打開：位置照舊');
+    assert.deepEqual(positionOf(again, 'imageX'), sliderIs('-25', '偏左 25%'), '重新打開：滑桿停在最接近的刻度');
+    nearCrop(cropsOf(again)['b-landscape'], dragged, '重新打開之後記住的位置照舊');
+    assert.deepEqual(again.storageWrites, [], '打開時不改記憶');
+
+    // 再拉：從滑桿停的刻度繼續（鍵盤按一下 → 是 +5：-25 → -20），位置變成滑桿的值
+    page.slide(-20, { id: 'imageX' });
+    assert.deepEqual(cropsOf(page)['b-landscape'], { x: -0.2, y: 0, zoom: 1 });
+    assert.deepEqual(positionOf(page, 'imageX'), sliderIs('-20', '偏左 20%'));
+
+    // 放大到 150%：上下也拉得動。按「置中」：兩個滑桿回到 0
+    page.slide(150);
+    assert.deepEqual(positionOf(page, 'imageX'), sliderIs('-20', '偏左 20%'), '縮放不改位置');
+    assert.deepEqual(positionOf(page, 'imageY'), sliderIs('0', '置中'));
+    page.press('imageCenter');
+    assert.deepEqual(positionOf(page, 'imageX'), sliderIs('0', '置中'));
+    assert.deepEqual(positionOf(page, 'imageY'), sliderIs('0', '置中'));
+
+    // 兩個方向一起拖：往右 37、往下 11 個 CSS 像素（卡片上 74、22 個像素）→ x 約 -0.0987（-10），y 約 -0.1304（-15）
+    page.drag([[300, 200], [337, 211]]);
+    nearCrop(cropsOf(page)['b-landscape'], expectedDrag(page, WIDE_IMAGE, { x: 0, y: 0, zoom: 1.5 }, 74, 22), '兩個方向一起拖');
+    assert.deepEqual(positionOf(page, 'imageX'), sliderIs('-10', '偏左 10%'));
+    assert.deepEqual(positionOf(page, 'imageY'), sliderIs('-15', '偏上 15%'));
+    assert.deepEqual(drawnRect(pictureDraws(page)[0]), expectedRect(page, WIDE_IMAGE, plain(page.app.state.crops['b-landscape'])));
+
+    // 按「填滿」：位置與縮放都回到預設，兩個滑桿在 0，寬圖在橫版上下又 disabled
+    page.press('imageFill');
+    assert.deepEqual(positionOf(page, 'imageX'), sliderIs('0', '置中'));
+    assert.deepEqual(positionOf(page, 'imageY'), sliderIs('0', '置中', true));
+    assert.equal(page.$('imageZoom').value, '100');
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('換風格與版型：滑桿是那一份的位置，能不能拉照那一種的照片框（同一張方形截圖：海報橫版只能拉上下，名片與資訊卡橫版只能拉左右）', async () => {
+    const page = await createCardPage();
+    await upload(page, { width: 1000, height: 1000 });
+
+    // 海報橫版（照片框是整張卡片 1200×675）：圖寬剛好、高多出來 → 只能拉上下
+    assert.deepEqual(canMove(page), { x: false, y: true });
+    page.slide(60, { id: 'imageY' });
+    assert.deepEqual(positionOf(page, 'imageY'), sliderIs('60', '偏下 60%'));
+
+    // 名片橫版（照片框 417×603）：高剛好、寬多出來 → 只能拉左右；它自己那一份沒動過，兩個滑桿在 0
+    pickStyle(page, 'a');
+    assert.deepEqual(canMove(page), { x: true, y: false });
+    assert.deepEqual(positionOf(page, 'imageX'), sliderIs('0', '置中'));
+    assert.deepEqual(positionOf(page, 'imageY'), sliderIs('0', '置中', true));
+    page.slide(-35, { id: 'imageX' });
+    assert.deepEqual(positionOf(page, 'imageX'), sliderIs('-35', '偏左 35%'));
+
+    // 名片直版（照片框 994×543）：寬剛好、高多出來
+    page.press('formatPortrait');
+    assert.deepEqual(canMove(page), { x: false, y: true });
+    assert.deepEqual(positionOf(page, 'imageX'), sliderIs('0', '置中', true));
+    assert.deepEqual(positionOf(page, 'imageY'), sliderIs('0', '置中'));
+    page.slide(20, { id: 'imageY' });
+    // 資訊卡直版（照片框 994×488）一樣，也是自己的一份
+    pickStyle(page, 'c');
+    assert.deepEqual(canMove(page), { x: false, y: true });
+    assert.deepEqual(positionOf(page, 'imageY'), sliderIs('0', '置中'));
+    // 資訊卡橫版（照片框 404×598）：只能拉左右
+    page.press('formatLandscape');
+    assert.deepEqual(canMove(page), { x: true, y: false });
+    // 海報直版（整張卡片 1080×1350）：高剛好、寬多出來 → 只能拉左右
+    pickStyle(page, 'b');
+    page.press('formatPortrait');
+    assert.deepEqual(canMove(page), { x: true, y: false });
+    assert.deepEqual(positionOf(page, 'imageX'), sliderIs('0', '置中'));
+
+    // 回到各自的那一份：位置都還在
+    page.press('formatLandscape');
+    assert.deepEqual(canMove(page), { x: false, y: true });
+    assert.deepEqual(positionOf(page, 'imageY'), sliderIs('60', '偏下 60%'));
+    assert.deepEqual(positionOf(page, 'imageX'), sliderIs('0', '置中', true));
+    pickStyle(page, 'a');
+    assert.deepEqual(positionOf(page, 'imageX'), sliderIs('-35', '偏左 35%'));
+    page.press('formatPortrait');
+    assert.deepEqual(positionOf(page, 'imageY'), sliderIs('20', '偏下 20%'));
+    assert.deepEqual(cropsOf(page), {
+        'b-landscape': { x: 0, y: 0.6, zoom: 1 }, 'a-landscape': { x: -0.35, y: 0, zoom: 1 }, 'a-portrait': { x: 0, y: 0.2, zoom: 1 }
+    });
+
+    // 重新打開（現在是名片直版）：滑桿是那一份的位置
+    const again = await page.reopen();
+    assert.equal(again.app.state.style, 'a');
+    assert.deepEqual(canMove(again), { x: false, y: true });
+    assert.deepEqual(positionOf(again, 'imageY'), sliderIs('20', '偏下 20%'));
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('切換語言：滑桿的標籤與字（旁邊的字與 aria-valuetext）換成那個語言，值與位置不變', async () => {
+    const page = await createCardPage();
+    await upload(page, WIDE);
+    page.slide(150);
+    page.slide(40, { id: 'imageX' });
+    page.slide(-25, { id: 'imageY' });
+    const crop = cropsOf(page)['b-landscape'];
+
+    for (const lang of LANGS) {
+        page.setLang(lang);
+        const text = POSITION_TEXT[lang];
+        assert.equal(labelOf(page, 'imageX'), text.x, `${lang} 的左右`);
+        assert.equal(labelOf(page, 'imageY'), text.y, `${lang} 的上下`);
+        assert.deepEqual(positionOf(page, 'imageX'), sliderIs('40', text.pos_right.replace('{n}', '40')), `${lang}：偏右 40%`);
+        assert.deepEqual(positionOf(page, 'imageY'), sliderIs('-25', text.pos_up.replace('{n}', '25')), `${lang}：偏上 25%`);
+        // 這個語言的其他四句：左、下、置中
+        page.slide(-40, { id: 'imageX' });
+        assert.deepEqual(positionOf(page, 'imageX'), sliderIs('-40', text.pos_left.replace('{n}', '40')), `${lang}：偏左 40%`);
+        page.slide(100, { id: 'imageY' });
+        assert.deepEqual(positionOf(page, 'imageY'), sliderIs('100', text.pos_down.replace('{n}', '100')), `${lang}：偏下 100%`);
+        page.slide(0, { id: 'imageX' });
+        page.slide(0, { id: 'imageY' });
+        assert.deepEqual(positionOf(page, 'imageX'), sliderIs('0', text.pos_center), `${lang}：置中`);
+        assert.deepEqual(positionOf(page, 'imageY'), sliderIs('0', text.pos_center), `${lang}：置中`);
+        // 換回原來的位置，下一輪語言接著比
+        page.slide(40, { id: 'imageX' });
+        page.slide(-25, { id: 'imageY' });
+    }
+    assert.deepEqual(cropsOf(page)['b-landscape'], crop);
+
+    // 換語言本身不動位置、不存：只是重寫字
+    const quiet = await createCardPage();
+    await upload(quiet, WIDE);
+    quiet.slide(150);
+    quiet.slide(40, { id: 'imageX' });
+    const before = quiet.storageWrites.length;
+    quiet.setLang('en');
+    assert.deepEqual(positionOf(quiet, 'imageX'), sliderIs('40', 'Right 40%'));
+    quiet.setLang('ja');
+    assert.deepEqual(positionOf(quiet, 'imageX'), sliderIs('40', '右に 40%'));
+    assert.equal(quiet.storageWrites.length, before);
+
+    // 沒有圖片時也跟著語言：置中
+    const empty = await createCardPage({ lang: 'ja' });
+    for (const id of ['imageX', 'imageY']) assert.deepEqual(positionOf(empty, id), sliderIs('0', '中央', true));
+    empty.setLang('en');
+    for (const id of ['imageX', 'imageY']) assert.deepEqual(positionOf(empty, id), sliderIs('0', 'Centered', true));
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('移除圖片、清除全部：兩個滑桿回到 0、disabled、字是「置中」；沒有圖片時存著的位置用不上；重新打開還原位置', async () => {
+    const page = await createCardPage();
+    await upload(page, WIDE);
+    page.slide(150);
+    page.slide(40, { id: 'imageX' });
+    page.slide(-25, { id: 'imageY' });
+
+    // 重新打開：圖片與位置都還原，滑桿停在那一份的位置
+    const again = await page.reopen();
+    assert.deepEqual(canMove(again), { x: true, y: true });
+    assert.deepEqual(positionOf(again, 'imageX'), sliderIs('40', '偏右 40%'));
+    assert.deepEqual(positionOf(again, 'imageY'), sliderIs('-25', '偏上 25%'));
+    assert.deepEqual(drawnRect(pictureDraws(again)[0]), expectedRect(again, WIDE_IMAGE, { x: 0.4, y: -0.25, zoom: 1.5 }));
+
+    // 移除圖片：沒有圖片，記住的位置用不上，兩個滑桿回到 0
+    page.press('imageRemove');
+    for (const id of ['imageX', 'imageY']) assert.deepEqual(positionOf(page, id), sliderIs('0', '置中', true), `移除之後的 #${id}`);
+    assert.throws(() => page.slide(10, { id: 'imageX' }), /disabled/);
+    // 再上傳一張：新的圖從填滿置中開始
+    await upload(page, WIDE);
+    assert.deepEqual(positionOf(page, 'imageX'), sliderIs('0', '置中'));
+    assert.deepEqual(positionOf(page, 'imageY'), sliderIs('0', '置中', true));
+
+    // 清除全部（要按兩次）：欄位與圖片一起清掉，兩個滑桿回到 0、disabled
+    page.slide(150);
+    page.slide(60, { id: 'imageX' });
+    page.slide(-80, { id: 'imageY' });
+    page.press('clearAll');
+    page.press('clearAll');
+    assert.equal(page.$('cardCanvas').classList.contains('has-image'), false);
+    for (const id of ['imageX', 'imageY']) assert.deepEqual(positionOf(page, id), sliderIs('0', '置中', true), `清除全部之後的 #${id}`);
+
+    // 沒有圖片、記憶裡卻有位置（例如圖片太大沒記住）：滑桿還是 0、disabled，不顯示用不上的位置
+    const orphan = await createCardPage({ stored: { [KEY]: JSON.stringify({ crops: { 'b-landscape': { x: 0.5, y: -0.5, zoom: 2.5 } } }) } });
+    for (const id of ['imageX', 'imageY']) assert.deepEqual(positionOf(orphan, id), sliderIs('0', '置中', true), `沒有圖片的 #${id}`);
+    assert.deepEqual(page.consoleErrors, []);
+    assert.deepEqual(orphan.consoleErrors, []);
+});
+
+test('位置滑桿 disabled（沒有圖片，或那個方向沒有多出來的部分）時值是 0、字是「置中」，記住的位置不改；有空間時（放大、換風格或版型）又顯示記住的位置', async () => {
+    const page = await createCardPage();
+    await upload(page, WIDE);
+    // 在 150% 把上下拉到「偏上 25%」、左右拉到「偏右 40%」
+    page.slide(150);
+    page.slide(-25, { id: 'imageY' });
+    page.slide(40, { id: 'imageX' });
+    assert.deepEqual(positionOf(page, 'imageY'), sliderIs('-25', '偏上 25%'));
+    assert.deepEqual(cropsOf(page)['b-landscape'], { x: 0.4, y: -0.25, zoom: 1.5 });
+
+    // 縮放拉回 100%：寬圖在橫版上下沒有多出來的部分（圖剛好和框一樣高，畫面上圖在上下本來就是置中的），「上下」disabled，值是 0、字是「置中」；
+    // 記住的位置不改（crop.y 還是 -0.25，畫面上的記憶也是）；左右還有空間，照舊
+    page.slide(100);
+    assert.deepEqual(positionOf(page, 'imageY'), sliderIs('0', '置中', true), '沒有空間：0 與置中');
+    assert.deepEqual(positionOf(page, 'imageX'), sliderIs('40', '偏右 40%'), '左右還有空間：照舊');
+    assert.equal(page.app.state.crops['b-landscape'].y, -0.25, '記住的位置不改');
+    assert.deepEqual(cropsOf(page)['b-landscape'], { x: 0.4, y: -0.25, zoom: 1 }, '存起來的也不改');
+    assert.equal(drawnRect(pictureDraws(page)[0]).dy, 0, '畫面上圖在上下是置中的');
+    // 換語言時照樣寫 0 的那一句
+    page.setLang('en');
+    assert.deepEqual(positionOf(page, 'imageY'), sliderIs('0', 'Centered', true));
+    page.setLang('zh');
+    // 重新打開（縮放還是 100%）：一樣，記住的位置還在
+    const again = await page.reopen();
+    assert.deepEqual(positionOf(again, 'imageY'), sliderIs('0', '置中', true), '重新打開：0 與置中');
+    assert.equal(again.app.state.crops['b-landscape'].y, -0.25, '重新打開：記住的位置不改');
+    assert.deepEqual(again.storageWrites, []);
+
+    // 又放大：有空間了，顯示記住的位置，和圖一起（圖又往上偏）
+    page.slide(150);
+    assert.deepEqual(positionOf(page, 'imageY'), sliderIs('-25', '偏上 25%'), '有空間：又顯示記住的位置');
+    assert.deepEqual(drawnRect(pictureDraws(page)[0]), expectedRect(page, WIDE_IMAGE, { x: 0.4, y: -0.25, zoom: 1.5 }));
+    again.slide(150);
+    assert.deepEqual(positionOf(again, 'imageY'), sliderIs('-25', '偏上 25%'), '重新打開之後放大：也顯示記住的位置');
+
+    // 左右也一樣：直的圖（768×2048）在橫版左右沒有多出來的部分
+    await upload(page, { width: 1500, height: 4000 });
+    page.slide(150);
+    page.slide(60, { id: 'imageX' });
+    assert.deepEqual(positionOf(page, 'imageX'), sliderIs('60', '偏右 60%'));
+    page.slide(100);
+    assert.deepEqual(positionOf(page, 'imageX'), sliderIs('0', '置中', true));
+    assert.deepEqual(cropsOf(page)['b-landscape'], { x: 0.6, y: 0, zoom: 1 });
+    assert.equal(drawnRect(pictureDraws(page)[0]).dx, 0, '畫面上圖在左右是置中的');
+    page.slide(150);
+    assert.deepEqual(positionOf(page, 'imageX'), sliderIs('60', '偏右 60%'));
+
+    // 換風格或版型：記住的位置在那一份沒有空間的時候一樣寫 0，到有空間的那一份才顯示。1600×900 放進海報橫版（同比例）兩個方向都沒有空間，
+    // 記憶裡海報橫版的位置是 (0.5, 0.2)、名片橫版的是 (-0.35, 0)；名片橫版的照片框左右有空間
+    const stored = {
+        crops: { 'b-landscape': { x: 0.5, y: 0.2, zoom: 1 }, 'a-landscape': { x: -0.35, y: 0, zoom: 1 } }
+    };
+    const fixed = await createCardPage({ stored: { [KEY]: JSON.stringify(stored), [IMAGE_KEY]: dataUrlOf(1600, 900) } });
+    assert.deepEqual(canMove(fixed), { x: false, y: false });
+    for (const id of ['imageX', 'imageY']) assert.deepEqual(positionOf(fixed, id), sliderIs('0', '置中', true), `海報橫版的 #${id}：沒有空間`);
+    pickStyle(fixed, 'a');
+    assert.deepEqual(canMove(fixed), { x: true, y: false });
+    assert.deepEqual(positionOf(fixed, 'imageX'), sliderIs('-35', '偏左 35%'), '名片橫版：左右有空間，顯示它自己那一份');
+    assert.deepEqual(positionOf(fixed, 'imageY'), sliderIs('0', '置中', true));
+    pickStyle(fixed, 'b');
+    assert.deepEqual(positionOf(fixed, 'imageX'), sliderIs('0', '置中', true), '換回海報橫版：又沒有空間');
+    assert.deepEqual(plain(fixed.app.state.crops['b-landscape']), { x: 0.5, y: 0.2, zoom: 1 }, '換來換去都不改記住的位置');
+    // 放大 5%：兩個方向都有空間，記住的位置回來
+    fixed.slide(105);
+    assert.deepEqual(positionOf(fixed, 'imageX'), sliderIs('50', '偏右 50%'));
+    assert.deepEqual(positionOf(fixed, 'imageY'), sliderIs('20', '偏下 20%'));
+    assert.deepEqual(plain(fixed.app.state.crops['b-landscape']), { x: 0.5, y: 0.2, zoom: 1.05 });
+    for (const checked of [page, again, fixed]) assert.deepEqual(checked.consoleErrors, []);
+});
+
+test('拖曳到一半換風格或版型：先結束這一次拖曳（放掉指標、存起來），拖到的位置留在原來那一份，下一次移動不會把舊的起點套到新的那一份', async () => {
+    const switches = [
+        ['換成名片', (page) => pickStyle(page, 'a'), 'a-landscape'],
+        ['換成資訊卡', (page) => pickStyle(page, 'c'), 'c-landscape'],
+        ['換成直版', (page) => page.press('formatPortrait'), 'b-portrait']
+    ];
+    for (const [name, change, slot] of switches) {
+        const page = await createCardPage();
+        await upload(page, WIDE);
+        const canvas = page.$('cardCanvas');
+
+        // 在海報（橫版）拖到一半：滑鼠鍵還按著，換風格或版型用的是鍵盤（單選與版型的按鈕）
+        page.pointer('down', { x: 300, y: 200 });
+        page.pointer('move', { x: 330, y: 205 });
+        const reached = plain(page.app.state.crops['b-landscape']);
+        nearCrop(reached, expectedDrag(page, WIDE_IMAGE, FILL, 60, 10), `${name}：拖到一半的位置`);
+        assert.equal(canvas.classList.contains('is-dragging'), true);
+        assert.equal(page.captures.filter((capture) => capture.call === 'release').length, 0);
+
+        change(page);
+        // 這一次拖曳結束了：放掉指標（頁面自己放，滑鼠鍵還按著，瀏覽器不會送 pointerup），拖到的位置留在海報那一份並存起來
+        assert.equal(canvas.classList.contains('is-dragging'), false, `${name}：拖曳結束`);
+        assert.deepEqual(page.captures.map((capture) => capture.call), ['set', 'release', 'lost'], `${name}：放掉指標抓取`);
+        nearCrop(plain(page.app.state.crops['b-landscape']), reached, `${name}：海報拖到的位置留著`);
+        nearCrop(cropsOf(page)['b-landscape'], reached, `${name}：存起來的也是`);
+        assert.equal(cropsOf(page)[slot], undefined, `${name}：新的那一份沒有被動到`);
+
+        // 鍵還按著，滑鼠繼續移動：不算拖曳，新的那一份照舊沒有位置、卡片畫的是填滿置中（滑鼠鍵按著，buttons 是 1）
+        const writes = page.storageWrites.length;
+        assert.equal(page.pointer('move', { x: 420, y: 230 }).buttons, 1);
+        page.pointer('move', { x: 100, y: 100 });
+        assert.equal(page.app.state.crops[slot], undefined, `${name}：下一次移動不會把舊的起點套到 ${slot}`);
+        nearCrop(plain(page.app.state.crops['b-landscape']), reached, `${name}：海報的位置沒再動`);
+        assert.deepEqual(drawnRect(pictureDraws(page)[0]), expectedPlace(page, WIDE_IMAGE, FILL), `${name}：卡片畫的是新的那一份（填滿置中）`);
+        // 放開：沒有東西再結束，也不再存
+        page.pointer('up', { x: 100, y: 100 });
+        assert.equal(page.storageWrites.length, writes);
+        assert.equal(cropsOf(page)[slot], undefined);
+        nearCrop(cropsOf(page)['b-landscape'], reached);
+        assert.deepEqual(page.consoleErrors, [], name);
+
+        // 下一次按下去照常從新的那一份開始拖
+        page.drag([[300, 200], [330, 200]]);
+        const box = boxOf(page);
+        nearCrop(cropsOf(page)[slot], plain(page.window.CardLayout.dragCrop(FILL, 60, 0, WIDE_IMAGE.width, WIDE_IMAGE.height, box.width, box.height)), `${name}：之後的拖曳從 ${slot} 的位置開始`);
+    }
+
+    // 沒換風格與版型就不結束：拖到一半改別的欄位（打字、選職業）照樣接著拖
+    const page = await createCardPage();
+    await upload(page, WIDE);
+    page.pointer('down', { x: 300, y: 200 });
+    page.pointer('move', { x: 330, y: 200 });
+    page.type('cardName', 'Luna');
+    page.select('cardMainJob', 'Pictomancer');
+    assert.equal(page.$('cardCanvas').classList.contains('is-dragging'), true, '改別的欄位不結束拖曳');
+    page.pointer('move', { x: 360, y: 200 });
+    nearCrop(page.app.state.crops['b-landscape'], { x: -0.4, y: 0, zoom: 1 }, '接著拖');
+    // 按已經是這個的版型按鈕不是換：版型沒變，位置還是同一份
+    page.press('formatLandscape');
+    assert.equal(page.$('cardCanvas').classList.contains('is-dragging'), true, '版型沒變就不結束拖曳');
+    page.pointer('up', { x: 360, y: 200 });
+    assert.equal(page.$('cardCanvas').classList.contains('is-dragging'), false);
+    nearCrop(cropsOf(page)['b-landscape'], { x: -0.4, y: 0, zoom: 1 });
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('新上傳的圖在拖曳到一半換上來：先結束拖曳（放掉指標、不存舊圖的位置），下一次移動不會把舊圖的起點套到新圖上，新圖還是填滿置中', async () => {
+    const TALL = { width: 768, height: 2048 };
+    const page = await createCardPage();
+    await upload(page, WIDE);
+    const canvas = page.$('cardCanvas');
+
+    // 舊圖拖到一半（滑鼠鍵還按著）
+    page.pointer('down', { x: 300, y: 200 });
+    page.pointer('move', { x: 330, y: 205 });
+    nearCrop(page.app.state.crops['b-landscape'], expectedDrag(page, WIDE_IMAGE, FILL, 60, 10), '舊圖拖到一半的位置');
+    assert.equal(canvas.classList.contains('is-dragging'), true);
+
+    // 這時選了另一張圖（1500×4000 縮成 768×2048），讀得慢：先不讓它讀完。拖曳照舊
+    const slow = page.file({ width: 1500, height: 4000, hold: true });
+    page.pick(slow);
+    await page.flush();
+    assert.equal(page.$('cardImageStatus').textContent, '處理中…');
+    assert.equal(canvas.classList.contains('is-dragging'), true, '還在讀的時候拖曳照舊');
+    assert.deepEqual(page.captures.map((capture) => capture.call), ['set']);
+
+    // 在拖曳的當中讀完：新圖換上來，拖曳結束（放掉指標抓取：滑鼠鍵還按著，瀏覽器不會送 pointerup），位置是新圖的填滿置中，舊圖的位置不存
+    page.finishFile(slow);
+    await page.flush();
+    assert.equal(page.$('cardImageStatus').textContent, '已上傳');
+    assert.equal(canvas.classList.contains('is-dragging'), false, '新圖換上來，拖曳結束');
+    assert.deepEqual(page.captures.map((capture) => capture.call), ['set', 'release', 'lost'], '放掉指標抓取');
+    assert.deepEqual(plain(page.app.state.crops), {}, '新圖從填滿置中開始');
+    assert.deepEqual(cropsOf(page), {}, '舊圖拖到的位置沒有存起來');
+    assert.deepEqual(drawnRect(pictureDraws(page)[0]), expectedRect(page, TALL, FILL), '畫的是新圖，填滿置中');
+    assert.equal(pictureDraws(page).length, 1);
+
+    // 滑鼠鍵還按著，繼續移動：不算拖曳，新圖的位置不動、不存（這是這個測試要擋的：舊圖按下去那一刻的位置不能套到新圖）
+    const writes = page.storageWrites.length;
+    assert.equal(page.pointer('move', { x: 420, y: 230 }).buttons, 1);
+    page.pointer('move', { x: 100, y: 100 });
+    assert.deepEqual(plain(page.app.state.crops), {}, '下一次移動不會動到新圖的位置');
+    assert.deepEqual(drawnRect(pictureDraws(page)[0]), expectedRect(page, TALL, FILL), '新圖還是填滿置中');
+    for (const id of ['imageX', 'imageY']) assert.equal(page.$(id).value, '0', `#${id} 在 0`);
+    page.pointer('up', { x: 100, y: 100 });
+    assert.equal(page.storageWrites.length, writes, '放開也不再存');
+    assert.deepEqual(cropsOf(page), {});
+
+    // 下一次按下去照常拖新圖：直的圖在橫版上下有多出來的部分，往下拖 40 個 CSS 像素
+    page.drag([[300, 200], [300, 240]]);
+    nearCrop(cropsOf(page)['b-landscape'], expectedDrag(page, TALL, FILL, 0, 80), '之後的拖曳從新圖的填滿置中開始');
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('位置滑桿的樣式與翻譯：.image-range 同 .image-zoom（整排寬、不比手機寬）；三語照規定的字，{n} 都在', () => {
+    // 樣式：和縮放滑桿同一份（共用一條規則），只用 token
+    assert.ok(declarations('.image-range').length > 0, 'style.css 有 .image-range');
+    assert.equal(declarations('.image-range'), declarations('.image-zoom'));
+    assert.match(declarations('.image-range'), /width:\s*100%/);
+    assert.match(declarations('.image-range'), /min-height:\s*var\(--control-md\)/);
+    assert.match(declarations('.image-range'), /accent-color:\s*var\(--color-primary\)/);
+
+    // 翻譯：8 個鍵三語逐字照規定；左右、上下的字只差一個方向，{n} 是絕對值
+    for (const lang of LANGS) {
+        const values = translationValues(TRANSLATIONS, lang);
+        for (const [name, text] of Object.entries(POSITION_TEXT[lang])) assert.equal(values.get(`char_card_image_${name}`), text, `${lang} 的 char_card_image_${name}`);
+        for (const name of ['pos_left', 'pos_right', 'pos_up', 'pos_down']) assert.ok(values.get(`char_card_image_${name}`).includes('{n}'), `${lang} 的 ${name} 有 {n}`);
+        assert.ok(!values.get('char_card_image_pos_center').includes('{'), `${lang} 的 pos_center 沒有參數`);
+    }
+    // script.js 用到這幾個鍵（寫成完整的字串，tests/scripts.test.js 才掃得到）
+    for (const name of ['pos_center', 'pos_left', 'pos_right', 'pos_up', 'pos_down']) assert.ok(SCRIPT.includes(`'char_card_image_${name}'`), `script.js 用 char_card_image_${name}`);
+    for (const name of ['x', 'y']) assert.ok(HTML.includes(`data-i18n="char_card_image_${name}"`), `index.html 用 char_card_image_${name}`);
+});
+
 test('卡片上的小標與值跟著介面語言：名片與資訊卡的小標、大國防聯軍、在找什麼（照 CardState.LOOKING 的順序，用那個語言的分隔接起來）', async () => {
     const page = await createCardPage({ lang: 'en' });
     fillRequired(page);

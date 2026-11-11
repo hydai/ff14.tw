@@ -15,6 +15,8 @@
  * char_card_day_*、char_card_slot_* 是表單上的全名。
  * char_card_image_* 是角色圖：按鈕與標籤，以及上傳狀態（處理中、已上傳、太大不會記住、讀不出來、已移除、上次的圖片讀不出來）；
  * char_card_image_adjust 與 char_card_image_adjust_done 是同一顆按鈕的兩種字（調整模式前後）。
+ * char_card_image_x、char_card_image_y 是位置滑桿「左右」「上下」的標籤；char_card_image_pos_* 是滑桿旁的字與 aria-valuetext（同一句）：
+ * pos_center 是 0（「置中」，沒有參數），pos_left／pos_right（左右，負的偏左、正的偏右）與 pos_up／pos_down（上下，負的偏上、正的偏下）的 {n} 是百分比的數字（絕對值，% 在句子裡）。
  * 輸出：char_card_download、char_card_share、char_card_copy 是預覽下面（手機是最下方）的按鈕，char_card_share 也是大圖裡的分享鈕；
  * char_card_error_* 是必填沒填就按下載時寫在欄位下面的錯誤；{file} 是下載的檔名（char_card_downloaded）；
  * 產生圖之前等太久（10 秒）就照目前的畫面產生：char_card_image_slow 是上傳的截圖還在處理時的 toast，char_card_fonts_slow 是其他（字型、職業圖示）；
@@ -138,6 +140,13 @@ const CharacterCardTranslations = {
         // 角色圖
         char_card_image_upload: '上傳截圖',
         char_card_image_zoom: '縮放',
+        char_card_image_x: '左右',
+        char_card_image_y: '上下',
+        char_card_image_pos_center: '置中',
+        char_card_image_pos_left: '偏左 {n}%',
+        char_card_image_pos_right: '偏右 {n}%',
+        char_card_image_pos_up: '偏上 {n}%',
+        char_card_image_pos_down: '偏下 {n}%',
         char_card_image_center: '置中',
         char_card_image_fill: '填滿',
         char_card_image_remove: '移除圖片',
@@ -315,6 +324,13 @@ const CharacterCardTranslations = {
         // Character image
         char_card_image_upload: 'Upload screenshot',
         char_card_image_zoom: 'Zoom',
+        char_card_image_x: 'Horizontal',
+        char_card_image_y: 'Vertical',
+        char_card_image_pos_center: 'Centered',
+        char_card_image_pos_left: 'Left {n}%',
+        char_card_image_pos_right: 'Right {n}%',
+        char_card_image_pos_up: 'Up {n}%',
+        char_card_image_pos_down: 'Down {n}%',
         char_card_image_center: 'Center',
         char_card_image_fill: 'Fill',
         char_card_image_remove: 'Remove picture',
@@ -492,6 +508,13 @@ const CharacterCardTranslations = {
         // キャラクター画像
         char_card_image_upload: 'スクリーンショットを選ぶ',
         char_card_image_zoom: '拡大',
+        char_card_image_x: '左右',
+        char_card_image_y: '上下',
+        char_card_image_pos_center: '中央',
+        char_card_image_pos_left: '左に {n}%',
+        char_card_image_pos_right: '右に {n}%',
+        char_card_image_pos_up: '上に {n}%',
+        char_card_image_pos_down: '下に {n}%',
         char_card_image_center: '中央に戻す',
         char_card_image_fill: '全体に合わせる',
         char_card_image_remove: '画像を削除',
