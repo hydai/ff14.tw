@@ -31,7 +31,7 @@ const CardImage = (() => {
     const FALLBACK = Object.freeze({ maxEdge: 1600, quality: 0.8 });
 
     // JPEG 沒有透明：有透明的圖（PNG 去背的截圖）轉出來時，透明的地方各家瀏覽器不一樣（黑或白），所以先鋪一層不透明的底色。
-    // 用預設背景起點的深藍紫（card-renderer.js 的 COLORS.backdropStart）：透明的地方露出來的就是卡片本來的底色
+    // 用預設背景起點的深藍紫（card-paint.js 的 BACKDROP_START）：透明的地方露出來的就是卡片本來的底色
     const FLATTEN_COLOR = '#1b1d45';
     // 圖片只收這個開頭的字串（和 card-state.js 存圖片的規則一樣）
     const IMAGE_PREFIX = 'data:image/';

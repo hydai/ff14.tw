@@ -29,7 +29,7 @@ const isSame = (a, b, message) => assert.ok(a === b, message);
 const TABS = ['basic', 'profile', 'play', 'image', 'style'];
 const shownPanels = (page) => TABS.filter((key) => page.isShown(`panel-${key}`));
 const selectedTabs = (page) => TABS.filter((key) => page.$(`tab-${key}`).getAttribute('aria-selected') === 'true');
-// 卡片背景的對角漸層停在重點色上（card-renderer.js 的 drawBackdrop）
+// 卡片背景的對角漸層停在重點色上（card-paint.js 的 drawBackdrop）
 const accentOnCard = (page) => {
     const gradient = page.drawCalls().find((call) => call.op === 'createLinearGradient');
     assert.ok(gradient, '預設背景有一個對角漸層');
@@ -2318,7 +2318,7 @@ test('頁面替身本身（角色圖）：檔案輸入、blob: 網址、角色�
 
 test('index.html：腳本順序、標準字型連結＋Outfit、不載入 security-utils.js、沒有 innerHTML；style.css：沒有 overflow-x、沒有色碼、用 hidden 切換的元素都有 display: none', () => {
     // 腳本順序：i18n 三個、頁首頁尾與共用腳本（tools-registry.js 在 nav-template.js 前、layout-loader.js 在 common.js 前）、共用的遊戲資料與 ModalManager、
-    // 這個工具的模組（card-export.js 在 card-image.js 後面、script.js 前面），最後是 script.js
+    // 這個工具的模組（card-paint.js、card-style-b.js 在 card-renderer.js 前面，card-export.js 在 card-image.js 後面、script.js 前面），最後是 script.js
     const scripts = [...HTML.matchAll(/<script src="([^"]+)"/g)].map((m) => m[1]);
     const ORDER = [
         '../../assets/js/i18n/i18n-manager.js',
@@ -2333,6 +2333,8 @@ test('index.html：腳本順序、標準字型連結＋Outfit、不載入 securi
         '../../assets/js/modal-manager.js',
         'card-state.js',
         'card-layout.js',
+        'card-paint.js',
+        'card-style-b.js',
         'card-renderer.js',
         'card-image.js',
         'card-export.js',
