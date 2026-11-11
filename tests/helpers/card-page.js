@@ -10,6 +10,7 @@
 //   page.pick(page.file({ width: 4000, height: 1500 })); await page.flush(); page.slide(150); page.drag([[300, 200], [330, 205]]); page.pointer('down', { pointerType: 'touch' });
 //   page.focus('cardName'); page.press('downloadCard'); await page.flush(); page.downloads; page.shares; page.shareCalls; page.clipboardCalls; page.clipboardWrites;
 //   page.blobRequests(); page.releaseFonts(); page.setBlobFails(true); page.$('imageViewer').classList.contains('active');
+//   page.createdCanvases(); // 頁面自己建的 canvas（縮圖、模糊小圖…）
 //
 // - 照 index.html 建出 #cardTool 與全螢幕大圖 #imageViewer（mountFromHtml），照 index.html 的 <script src> 順序載入這個工具的翻譯檔、共用的 ff14-game-data.js、
 //   工具目錄自己的每一個腳本（src 不含 /：card-state.js、card-layout.js、card-renderer.js、card-export.js、script.js…），最後 new CharacterCardApp()，
@@ -31,6 +32,11 @@
 //   所以 drawCalls() 只看得到最近一次畫的東西（每次畫之前都要設寬高；頁面少設的話，記錄會一直累積，測試看得出來）。
 //   drawCalls() 是頁面那張 canvas（#cardCanvas）現在的 context 記下的呼叫，texts() 是其中每一次 fillText 畫的字，drawCount() 是 getContext 被呼叫了幾次
 //   （＝畫了幾次）。toBlob(callback, type, quality) 把 { type, quality } 記在 blobRequests 後非同步呼叫 callback(blob)，toDataURL(type) 回傳固定的 data URL
+//   createdCanvases() 是頁面自己建的每一張 canvas（頁面呼叫 document.createElement('canvas') 的結果，照建的順序；index.html 裡本來就有的 #cardCanvas 不算）：
+//   每一筆是 { element, width, height, created, calls }。element 是那張 canvas 本身（拿來和 drawImage 的第一個參數比，要用 ===）；width、height 是現在的大小
+//   （頁面把它放掉就是 0，同真的 canvas 設成 0 的放掉法）；created 是第一次 getContext('2d') 的當下的大小 [寬, 高]（頁面都是建出來設好寬高就馬上畫，所以就是建出來的大小；
+//   沒呼叫過是 null）；calls 是它現在的 context 記下的呼叫（設定寬高會清掉，所以放掉的 canvas 是 []，沒呼叫過 getContext 也是 []）。
+//   縮圖用的暫存 canvas 與名片的模糊小圖都在這裡
 // - document.fonts：load(font, text) 把 { font, text } 記在 fontLoads，回傳 Promise<[]>。fontsDelay 是 true 時 load() 一直不回來：同一次畫
 //   （同一次 getContext）請求的 load() 算一批（頁面每畫一次就請求一批），heldFontBatches() 是還在等的每一批（照請求的順序，每一批是 [{ font, text }]）；
 //   releaseFonts() 讓還在等的每一批回來，releaseFonts(index) 只放行還在等的第 index 批（0 起算），模擬後請求的字型先載完、慢的那一批還在等；
@@ -245,7 +251,7 @@ function strictLists(parent) {
 function patchCanvas(element, env) {
     // context 到 getContext() 才建：設定 width 或 height 只把現在的丟掉（下一次 getContext 拿到全新、重設過的 context），
     // 不然頁面每畫一次要設寬又設高，每次都白建兩個記錄 context（各約 35 個函式）
-    const state = { context: null, draws: 0, blobRequests: [] };
+    const state = { context: null, draws: 0, blobRequests: [], created: null };
     for (const name of ['width', 'height']) {
         Object.defineProperty(element, name, {
             configurable: true,
@@ -259,6 +265,7 @@ function patchCanvas(element, env) {
     element.getContext = (type) => {
         assert.equal(type, '2d', 'canvas 替身只有 2d');
         state.draws += 1;
+        state.created ??= [element.width, element.height];
         state.context ??= createRecordingContext();
         return state.context;
     };
@@ -313,6 +320,7 @@ async function createCardPage({
     const clipboardCalls = [];
     const downloads = [];
     const canvases = new WeakMap();
+    const madeCanvases = [];
     const objectUrls = { created: [], revoked: [] };
     const blobFiles = new Map();
     const captures = [];
@@ -393,7 +401,11 @@ async function createCardPage({
             }
         });
         strictLists(element);
-        if (element.tagName === 'CANVAS') canvases.set(element, patchCanvas(element, { displayScale: () => scale, blobFails: () => blobFailing, dataUrlRequests }));
+        if (element.tagName === 'CANVAS') {
+            const state = patchCanvas(element, { displayScale: () => scale, blobFails: () => blobFailing, dataUrlRequests });
+            canvases.set(element, state);
+            madeCanvases.push({ element, state });
+        }
         // <a download href="blob:…"> 被點：瀏覽器去讀那個網址存成檔案。照 Firefox 的規則，連結沒有接在文件上時點了沒有用（不記）
         if (element.tagName === 'A') {
             const clickLink = element.click;
@@ -791,6 +803,14 @@ async function createCardPage({
         texts: () => drawCalls().filter((call) => call.op === 'fillText').map((call) => call.args[0]),
         drawCount: () => stateOf().draws,
         blobRequests: () => stateOf().blobRequests,
+        // 頁面自己建的每一張 canvas（見檔頭）；#cardCanvas 不算。每一筆的 width、height、created、calls 是現在的值（放掉之後 width、height 是 0）
+        createdCanvases: () => madeCanvases.filter(({ element }) => element !== cardCanvas).map(({ element, state }) => ({
+            element,
+            get width() { return element.width; },
+            get height() { return element.height; },
+            get created() { return state.created; },
+            get calls() { return state.context?.calls ?? []; }
+        })),
         runTimeouts() {
             for (const timeout of [...timeouts]) {
                 if (timeout.cleared || timeout.done) continue;

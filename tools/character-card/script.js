@@ -13,6 +13,8 @@
 // 角色圖：上傳的圖由 card-image.js 縮小、轉成 JPEG（卡片畫的與瀏覽器記住的是同一張：轉出來之後再讀回來才用），位置與縮放存在 state.crops
 // （每一種「風格 × 橫直版」各一份，鍵是 CardState.cropKey）。卡片上拖曳（pointer 事件）：滑鼠直接拖；手指從卡片上滑要能捲動頁面，所以只有按了「調整圖片」（調整模式，觸控為主的裝置才有）才拖，
 // 其他時候 pointerdown 什麼都不做。上傳、還原都用流水號（imageToken）：同時有好幾次在讀，只有最新的算數。
+// 名片的背景是壓暗的模糊截圖：模糊由 CardImage.blur 做成一張小 canvas（不用 ctx.filter，畫圖程式也不碰 DOM），橫版與直版各一張（this.backdrops），
+// 在圖換掉的當下（setImage()：上傳、還原、移除圖片、清除全部）一起做、一起放掉，之後重畫、換風格、換版型都用做好的那一張。
 // 字型：Google Fonts 的中文字型依字分批載入，沒載入的字會退成別的字型，所以每畫一次就看有沒有還沒請求過的字，有就請瀏覽器載入（這一次請求的算一批）；
 // 這一批載入完（失敗也算：卡片用備用字型）就重畫一次，不等別批。fontsReady() 等到請求過的每一批都載入完並重畫過：等的時候又請求的也等，
 // 先請求的那一批比後請求的慢（後請求的先載完）也一樣，下載、分享、複製之前要等它。
@@ -179,8 +181,11 @@ class CharacterCardApp {
         // （每開始一次、圖片拿掉與清除全部都加一，慢的那一次回來發現流水號變了就不算）；imageLoad 是還在讀的上傳（只有最新的一次算數，所以只記它）：
         // 那一次的 Promise，沒有是 null，下載、分享、複製之前要等它讀完；imageWaits 是正在等它的匯出（imageSettled()），imageLoad 一換（見 setImageLoad()）就叫醒；
         // imageStatus 是狀態那一行現在寫的句子（IMAGE_STATUS 的名字，null 是空的，換語言時照它重寫）；adjusting 是調整模式；
-        // drag 是拖曳到一半的狀態 { pointerId, x, y, crop, moved（離按下去的地方超過 DRAG_SLOP_PX 了嗎）}，沒在拖是 null
+        // drag 是拖曳到一半的狀態 { pointerId, x, y, crop, moved（離按下去的地方超過 DRAG_SLOP_PX 了嗎）}，沒在拖是 null；
+        // backdrops 是名片的模糊背景小圖 { landscape, portrait }（每一張是 CardImage.blur 的結果 { source, width, height }，做不出來的是 null），沒有圖片是 null：
+        // 跟著 image 一起換（setImage()），buildModel() 用現在版型的那一張
         this.image = null;
+        this.backdrops = null;
         this.imageToken = 0;
         this.imageLoad = null;
         this.imageWaits = new Set();
@@ -858,7 +863,7 @@ class CharacterCardApp {
             if (token === this.imageToken) this.setImageStatus('failed');
             return;
         }
-        this.image = picture;
+        this.setImage(picture);
         this.state = CardState.normalize({ ...this.state, crops: {} }, this.jobs);
         CardState.save(this.storage, this.state);
         this.setImageStatus(this.rememberImage(prepared.dataUrl) ? 'uploaded' : 'not_saved');
@@ -877,7 +882,7 @@ class CharacterCardApp {
         try {
             const picture = await CardImage.fromDataUrl(dataUrl, this.imageDeps);
             if (token !== this.imageToken) return;
-            this.image = picture;
+            this.setImage(picture);
         } catch (error) {
             if (token !== this.imageToken) return;
             CardState.saveImage(this.storage, null);
@@ -906,11 +911,34 @@ class CharacterCardApp {
         this.elements.imageInput.focus();
     }
 
-    // 圖片拿掉（移除圖片、清除全部）：還在讀的上傳與還原都不算了（下載也不用等它），檔案輸入清空，拖曳與調整模式結束（卡片不再攔截手指）。呼叫端自己重畫
+    /**
+     * 畫卡片用的角色圖換了（上傳、還原、移除圖片、清除全部）：舊的名片背景小圖先放掉（寬高設成 0：iOS Safari 的 canvas 記憶體有總量上限），
+     * 新的圖橫版與直版各做一張小圖（CardImage.blur；不丟例外，做不出來的那張是 null，名片就畫預設背景）。每一張圖只做這一次：
+     * 重畫、換風格、換版型都用做好的。呼叫端自己重畫（放掉的小圖不能再拿去畫）。
+     * @param {{source: *, width: number, height: number} | null} picture - 畫卡片用的圖；null 是沒有圖片
+     */
+    setImage(picture) {
+        this.releaseBackdrops();
+        this.image = picture;
+        if (picture === null) return;
+        this.backdrops = Object.fromEntries(Object.entries(CardRenderer.SIZES).map(([format, size]) => [format, CardImage.blur(picture, size, this.imageDeps)]));
+    }
+
+    // 名片的模糊背景小圖放掉：每一張 canvas 的寬高設成 0，不再留著
+    releaseBackdrops() {
+        for (const backdrop of Object.values(this.backdrops ?? {})) {
+            if (backdrop === null) continue;
+            backdrop.source.width = 0;
+            backdrop.source.height = 0;
+        }
+        this.backdrops = null;
+    }
+
+    // 圖片拿掉（移除圖片、清除全部）：還在讀的上傳與還原都不算了（下載也不用等它），名片的模糊小圖放掉，檔案輸入清空，拖曳與調整模式結束（卡片不再攔截手指）。呼叫端自己重畫
     dropImage() {
         this.imageToken += 1;
         this.setImageLoad(null);
-        this.image = null;
+        this.setImage(null);
         this.elements.imageInput.value = '';
         this.stopDrag({ save: false });
         this.setAdjusting(false);
@@ -1036,7 +1064,7 @@ class CharacterCardApp {
 
     // 畫面模型：CardRenderer.draw 要的樣子，文字照介面語言。重點色一律來自 CardState.accentOf，這裡不寫顏色；
     // 喜歡的內容與在找什麼照 CardState.LIKES、CardState.LOOKING 的順序（不是點選的順序）。fcName、gc、looking、contact 與 labels 是名片與資訊卡要畫的
-    // （海報不畫）；gc 與 looking 已經翻成介面語言的官方名稱，looking 選了好幾個時接成一個字串；labels 是卡片上的小標。backdrop 是名片的模糊背景小圖（還沒有，沒有就畫預設背景）
+    // （海報不畫）；gc 與 looking 已經翻成介面語言的官方名稱，looking 選了好幾個時接成一個字串；labels 是卡片上的小標。backdrop 是名片的模糊背景小圖（現在這個版型的那一張，見 setImage()；沒有截圖或做不出來是 null，名片就畫預設背景）
     buildModel() {
         const { state } = this;
         const jobOf = (key) => this.jobs.find((job) => job.key === key);
@@ -1063,7 +1091,7 @@ class CharacterCardApp {
             intro: state.intro,
             accent: CardState.accentOf(state, this.jobs),
             image: this.image,
-            backdrop: null,
+            backdrop: this.backdrops?.[state.format] ?? null,
             crop: CardState.cropOf(state),
             labels: Object.fromEntries(Object.entries(CharacterCardApp.CARD_LABELS).map(([name, entry]) => [name, this.label(entry)])),
             levelLabel: CharacterCardApp.LEVEL_LABEL,

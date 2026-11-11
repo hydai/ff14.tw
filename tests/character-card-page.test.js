@@ -5056,3 +5056,374 @@ test('風格的翻譯：卡片上的小標與分隔、不會畫出這一項的�
     }
     for (const name of Object.keys(STYLE_TEXT.zh)) assert.ok(HTML.includes(`data-i18n="char_card_style_${name}"`), `index.html 用 char_card_style_${name}`);
 });
+
+// ---------- 名片的模糊背景 ----------
+// 名片的背景是截圖縮小再放大的模糊小圖（CardImage.blur；不用 ctx.filter，舊的 Safari 沒有）：上傳與還原截圖時，橫版與直版各做一張，
+// 名片照 cover 鋪滿整張卡片、再壓暗；海報與資訊卡不畫它。截圖換掉、移除圖片、清除全部時，舊的小圖寬高設成 0 放掉（iOS Safari 的 canvas 記憶體有總量上限）。
+// WIDE（4000×1500）縮成 2048×768：橫版的卡片（1200×675）照 cover 放成 1800×675，除以 cellPx（5.2 × 1200 / 100 = 62.4）是 28.8 × 10.8 → 29×11，放大 4 倍是 116×44；
+// 直版（1080×1350，cellPx 是 56.16）放成 3600×1350 → 64.1 × 24.0 → 64×24，放大 4 倍是 256×96
+const BACKDROP = { landscape: [116, 44], portrait: [256, 96] };
+const DIM = 'rgba(0,0,0,0.58)';
+// 1000×3000 縮成 683×2048、1500×4000 縮成 768×2048：兩種卡片的小圖都是 76×232、76×204（直的圖，兩種卡片算出來剛好一樣）
+const TALL = { width: 1000, height: 3000 };
+const TALL_BACKDROP = [76, 232];
+const TALLER = { width: 1500, height: 4000 };
+const TALLER_BACKDROP = [76, 204];
+
+// 卡片上畫的、來源是頁面建的 canvas 的 drawImage（名片的模糊背景）。比來源用 ===（assert.equal 失敗時會展開整份 fake-dom）
+function backdropDraws(page) {
+    const made = page.createdCanvases();
+    return page.drawCalls().filter((call) => call.op === 'drawImage' && made.some(({ element }) => element === call.args[0]));
+}
+// 現在畫在卡片上的模糊小圖是頁面建的哪一張（createdCanvases() 的一筆）；沒有畫是 null
+function backdropOf(page) {
+    const draws = backdropDraws(page);
+    assert.ok(draws.length <= 1, `卡片上最多畫一張模糊小圖，現在畫了 ${draws.length} 張`);
+    return draws.length === 0 ? null : page.createdCanvases().find(({ element }) => element === draws[0].args[0]);
+}
+const sizeOfCanvas = (canvas) => {
+    assert.ok(canvas, '沒有這張小圖');
+    return [canvas.width, canvas.height];
+};
+// 頁面建的 canvas 裡還沒放掉的（寬高不是 0）
+const aliveCanvases = (page) => page.createdCanvases().filter(({ width, height }) => width > 0 || height > 0);
+const hasDefaultBackdrop = (page) => page.drawCalls().some((call) => call.op === 'createRadialGradient');
+
+test('名片有截圖時，鋪滿整張卡片的是一張小的 canvas（模糊小圖），之後壓暗；海報、資訊卡不畫它', async () => {
+    const page = await createCardPage();
+    fillRequired(page);
+    pickStyle(page, 'a');
+
+    // 還沒有截圖：預設背景，沒有模糊小圖，也沒建過 canvas
+    assert.equal(backdropDraws(page).length, 0);
+    assert.ok(hasDefaultBackdrop(page), '預設背景的光點');
+    assert.equal(page.createdCanvases().length, 0);
+
+    await upload(page, WIDE);
+    const [draw] = backdropDraws(page);
+    assert.equal(backdropDraws(page).length, 1, '卡片上畫了一張模糊小圖');
+    assert.deepEqual(sizeOfCanvas(backdropOf(page)), BACKDROP.landscape, '很小的一張 canvas，不是 2048×768 的截圖');
+    // 置中填滿整張卡片（coverRect，不跟著照片框的位置）
+    assert.deepEqual(drawnRect(draw), expectedRect(page, { width: 116, height: 44 }, FILL));
+    // 之後壓暗：接著畫的第一個填色是整張卡片、rgba(0,0,0,0.58)
+    const calls = page.drawCalls();
+    const dim = calls.slice(calls.indexOf(draw) + 1).find((call) => call.op === 'fillRect');
+    assert.deepEqual(dim.args, [0, 0, 1200, 675]);
+    assert.equal(dim.fillStyle, DIM);
+    // 有圖了就不畫預設背景；截圖本身只畫在照片框裡，在模糊小圖後面（模糊小圖是背景）
+    assert.ok(!hasDefaultBackdrop(page));
+    const photo = pictureDraws(page);
+    assert.equal(photo.length, 1);
+    assert.deepEqual(drawnRect(photo[0]), expectedBoxRect(page, WIDE_IMAGE, FILL));
+    assert.ok(calls.indexOf(draw) < calls.indexOf(photo[0]));
+
+    // 海報、資訊卡不畫它（海報把截圖鋪滿整張卡片，資訊卡把截圖放在照片框裡）；換回名片又是它
+    for (const style of ['b', 'c']) {
+        pickStyle(page, style);
+        assert.equal(backdropDraws(page).length, 0, `${style}：不畫模糊小圖`);
+        assert.equal(pictureDraws(page).length, 1, `${style}：畫的是截圖`);
+    }
+    pickStyle(page, 'a');
+    assert.equal(backdropDraws(page).length, 1);
+    assert.deepEqual(sizeOfCanvas(backdropOf(page)), BACKDROP.landscape);
+    assert.deepEqual(page.consoleErrors, []);
+    assert.deepEqual(page.toasts, []);
+});
+
+test('換版型用那個版型的小圖；同一張截圖只算一次（重畫、換風格、換版型都不再建 canvas）', async () => {
+    const page = await createCardPage();
+    fillRequired(page);
+    pickStyle(page, 'a');
+    await upload(page, WIDE);
+    const count = page.createdCanvases().length;
+    assert.ok(count > 0);
+    const landscape = backdropOf(page);
+    assert.deepEqual(sizeOfCanvas(landscape), BACKDROP.landscape);
+
+    // 直版：用直版的小圖（另一張 canvas，照 1080×1350 算），鋪滿 1080×1350
+    page.press('formatPortrait');
+    const portrait = backdropOf(page);
+    assert.deepEqual(sizeOfCanvas(portrait), BACKDROP.portrait);
+    assert.ok(portrait.element !== landscape.element, '直版的小圖是另一張');
+    assert.deepEqual(drawnRect(backdropDraws(page)[0]), expectedRect(page, { width: 256, height: 96 }, FILL));
+    // 換回橫版：還是剛才那一張，不是重做的
+    page.press('formatLandscape');
+    assert.ok(backdropOf(page).element === landscape.element, '換回橫版用同一張');
+
+    // 重畫（打字、縮放、拖曳、換語言）、換風格、換版型、下載：都不再建 canvas，兩張小圖也都沒放掉
+    page.type('cardName', 'Luna');
+    page.type('cardTitle', 'Hero of Light');
+    page.slide(150);
+    page.drag([[300, 200], [330, 205]]);
+    page.setLang('en');
+    page.setLang('zh');
+    for (const style of ['b', 'c', 'a', 'b', 'a']) pickStyle(page, style);
+    page.press('formatPortrait');
+    page.press('formatLandscape');
+    page.press('formatPortrait');
+    page.press('downloadCard');
+    await page.flush();
+    assert.equal(page.blobRequests().length, 1);
+    assert.equal(page.createdCanvases().length, count, '同一張截圖只算一次：之後都不再建 canvas');
+    assert.deepEqual(sizeOfCanvas(landscape), BACKDROP.landscape, '橫版的小圖還在');
+    assert.deepEqual(sizeOfCanvas(portrait), BACKDROP.portrait, '直版的小圖還在');
+    assert.ok(backdropOf(page).element === portrait.element, '現在是直版：畫的是直版的小圖');
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('換一張截圖、移除圖片、清除全部：舊的小圖寬高變 0；名片回到預設背景或換成新圖的小圖', async () => {
+    const page = await createCardPage();
+    fillRequired(page);
+    pickStyle(page, 'a');
+    await upload(page, WIDE);
+    const first = { landscape: backdropOf(page) };
+    page.press('formatPortrait');
+    first.portrait = backdropOf(page);
+    page.press('formatLandscape');
+    // 縮圖轉 JPEG 用的暫存 canvas 與模糊的中間幾張都放掉了：還活著的只有橫版與直版各一張小圖
+    assert.equal(aliveCanvases(page).length, 2);
+
+    // 換一張（1000×3000 縮成 683×2048）：舊的兩張放掉，兩個版型各換成新圖的小圖
+    await upload(page, TALL);
+    for (const [format, old] of Object.entries(first)) assert.deepEqual(sizeOfCanvas(old), [0, 0], `${format}：舊的小圖放掉了`);
+    const second = { landscape: backdropOf(page) };
+    assert.deepEqual(sizeOfCanvas(second.landscape), TALL_BACKDROP);
+    assert.ok(second.landscape.element !== first.landscape.element);
+    assert.deepEqual(drawnRect(backdropDraws(page)[0]), expectedRect(page, { width: 76, height: 232 }, FILL));
+    page.press('formatPortrait');
+    second.portrait = backdropOf(page);
+    assert.deepEqual(sizeOfCanvas(second.portrait), TALL_BACKDROP);
+    assert.ok(second.portrait.element !== first.portrait.element);
+    page.press('formatLandscape');
+    assert.equal(aliveCanvases(page).length, 2, '還活著的只有新的兩張');
+
+    // 移除圖片：新的兩張也放掉，名片回到預設背景（沒有模糊小圖，有預設背景的光點）
+    page.press('imageRemove');
+    for (const [format, canvas] of Object.entries(second)) assert.deepEqual(sizeOfCanvas(canvas), [0, 0], `${format}：移除圖片時放掉了`);
+    assert.equal(backdropDraws(page).length, 0);
+    assert.ok(hasDefaultBackdrop(page), '回到預設背景');
+    assert.equal(aliveCanvases(page).length, 0, '頁面建的 canvas 都放掉了');
+    // 再上傳一張：又是新圖的小圖
+    await upload(page, WIDE);
+    const third = backdropOf(page);
+    assert.deepEqual(sizeOfCanvas(third), BACKDROP.landscape);
+    assert.ok(!hasDefaultBackdrop(page));
+
+    // 清除全部（要按兩次）：小圖放掉；風格回到海報，再選名片還是預設背景
+    page.press('clearAll');
+    page.press('clearAll');
+    assert.deepEqual(sizeOfCanvas(third), [0, 0], '清除全部時放掉了');
+    assert.equal(aliveCanvases(page).length, 0);
+    pickStyle(page, 'a');
+    assert.equal(backdropDraws(page).length, 0);
+    assert.ok(hasDefaultBackdrop(page), '清除全部之後名片是預設背景');
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('截圖還在處理時選名片：處理好之後背景是新的那張的小圖（不是舊圖、也不是預設背景）', async () => {
+    // 第一次上傳，還在處理（上傳的檔案還沒讀完）：選名片是預設背景；處理好才換成這張的小圖
+    const page = await createCardPage();
+    fillRequired(page);
+    const file = page.file({ ...WIDE, hold: true });
+    page.pick(file);
+    await page.flush();
+    assert.equal(page.$('cardImageStatus').textContent, '處理中…');
+    pickStyle(page, 'a');
+    assert.equal(backdropDraws(page).length, 0, '還沒處理好：預設背景');
+    assert.ok(hasDefaultBackdrop(page));
+    page.finishFile(file);
+    await page.flush();
+    assert.equal(page.$('cardImageStatus').textContent, '已上傳');
+    assert.deepEqual(sizeOfCanvas(backdropOf(page)), BACKDROP.landscape, '處理好了：背景是這張的小圖');
+    assert.ok(!hasDefaultBackdrop(page));
+
+    // 已經有一張舊的，換一張時還在處理：名片的背景還是舊圖的小圖，處理好才換成新的那張，舊的放掉
+    const old = backdropOf(page);
+    const next = page.file({ ...TALLER, hold: true });
+    page.pick(next);
+    await page.flush();
+    assert.equal(page.$('cardImageStatus').textContent, '處理中…');
+    assert.ok(backdropOf(page).element === old.element, '還在處理：還是舊圖的小圖');
+    assert.deepEqual(sizeOfCanvas(old), BACKDROP.landscape);
+    page.finishFile(next);
+    await page.flush();
+    const fresh = backdropOf(page);
+    assert.deepEqual(sizeOfCanvas(fresh), TALLER_BACKDROP, '處理好了：背景是新的那張的小圖');
+    assert.ok(fresh.element !== old.element, '不是舊圖的');
+    assert.deepEqual(sizeOfCanvas(old), [0, 0], '舊的放掉了');
+    assert.ok(!hasDefaultBackdrop(page));
+    assert.deepEqual(page.consoleErrors, []);
+
+    // 後選的比先選的早處理好：先選的比較晚讀完，不蓋掉後選的，也不為它做小圖
+    const racing = await createCardPage();
+    fillRequired(racing);
+    pickStyle(racing, 'a');
+    const slow = racing.file({ ...WIDE, hold: true });
+    const quick = racing.file(TALLER);
+    racing.pick(slow);
+    await racing.flush();
+    racing.pick(quick);
+    await racing.flush();
+    assert.deepEqual(sizeOfCanvas(backdropOf(racing)), TALLER_BACKDROP);
+    const canvasCount = racing.createdCanvases().length;
+    racing.finishFile(slow);
+    await racing.flush();
+    assert.deepEqual(sizeOfCanvas(backdropOf(racing)), TALLER_BACKDROP, '先選的晚到不蓋掉後選的');
+    // 先選的還是會把圖縮小一次（轉 JPEG 的暫存 canvas，轉完就放掉），但不會為它做小圖（橫版與直版各十幾張 canvas）
+    assert.ok(racing.createdCanvases().length - canvasCount <= 1, '不為先選的做小圖');
+    assert.equal(aliveCanvases(racing).length, 2, '還活著的還是後選的兩張小圖');
+    assert.deepEqual(racing.consoleErrors, []);
+});
+
+test('重新打開時還原記住的截圖，名片的背景是它的小圖', async () => {
+    const page = await createCardPage();
+    fillRequired(page);
+    pickStyle(page, 'a');
+    await upload(page, WIDE);
+
+    // 重新打開：還原好之後，名片的背景是這張的小圖（存著的風格是名片）；還原時沒有轉 JPEG 的暫存 canvas，只有橫版與直版各一張小圖
+    const again = await page.reopen();
+    assert.equal(again.app.state.style, 'a');
+    assert.deepEqual(sizeOfCanvas(backdropOf(again)), BACKDROP.landscape);
+    assert.ok(!hasDefaultBackdrop(again));
+    assert.equal(aliveCanvases(again).length, 2);
+    again.press('formatPortrait');
+    assert.deepEqual(sizeOfCanvas(backdropOf(again)), BACKDROP.portrait, '直版也有');
+    assert.deepEqual(again.consoleErrors, []);
+
+    // 還在還原（存著的圖還沒讀回來）：預設背景；讀回來才換成小圖
+    const slow = await page.reopen({ pictureLoads: 'hold' });
+    assert.equal(slow.app.state.style, 'a');
+    assert.equal(backdropDraws(slow).length, 0, '還原好之前：預設背景');
+    assert.ok(hasDefaultBackdrop(slow));
+    assert.equal(slow.createdCanvases().length, 0);
+    slow.finishPictures(true);
+    await slow.app.ready;
+    assert.deepEqual(sizeOfCanvas(backdropOf(slow)), BACKDROP.landscape, '還原好了：背景是它的小圖');
+    assert.ok(!hasDefaultBackdrop(slow));
+
+    // 存著的圖解不開：丟掉，名片是預設背景，沒有為它建任何 canvas
+    const broken = await createCardPage({ stored: { [KEY]: JSON.stringify({ style: 'a' }), [IMAGE_KEY]: 'data:image/jpeg;base64,AAAA' } });
+    assert.equal(broken.app.state.style, 'a');
+    assert.equal(backdropDraws(broken).length, 0);
+    assert.ok(hasDefaultBackdrop(broken));
+    assert.equal(broken.createdCanvases().length, 0);
+
+    // 還原還沒完成時使用者已經上傳了新的：舊的晚到不蓋掉新的，也不為它做小圖（讀得出來與讀不出來都一樣）
+    for (const lateOk of [true, false]) {
+        const racing = await createCardPage({ stored: { [KEY]: JSON.stringify({ style: 'a' }), [IMAGE_KEY]: dataUrlOf(1024, 576) }, pictureLoads: 'hold' });
+        racing.pick(racing.file(WIDE));
+        await racing.flush();
+        racing.pictures[2].finish(true);
+        await racing.flush();
+        assert.deepEqual(sizeOfCanvas(backdropOf(racing)), BACKDROP.landscape, '新上傳的小圖');
+        const canvasCount = racing.createdCanvases().length;
+        racing.pictures[0].finish(lateOk);
+        await racing.flush();
+        assert.deepEqual(sizeOfCanvas(backdropOf(racing)), BACKDROP.landscape, `${lateOk ? '舊圖讀回來了' : '舊圖讀不出來'}：不蓋掉新的小圖`);
+        assert.equal(racing.createdCanvases().length, canvasCount, '也不為舊圖做小圖');
+        assert.equal(aliveCanvases(racing).length, 2);
+        assert.deepEqual(racing.consoleErrors, []);
+    }
+});
+
+test('模糊小圖做不出來（拿不到 2d）：名片照樣畫預設背景，截圖還在照片框裡，建過的 canvas 都放掉，頁面不丟錯', async () => {
+    const page = await createCardPage();
+    fillRequired(page);
+    pickStyle(page, 'a');
+    // 寬度不到 400 的 canvas 拿不到 2d（像瀏覽器的 canvas 記憶體用完了）：轉 JPEG 用的 2048×768 不受影響，模糊的第三步（256×96）就失敗
+    const createCanvas = page.app.imageDeps.createCanvas;
+    page.app.imageDeps.createCanvas = (width, height) => {
+        const canvas = createCanvas(width, height);
+        if (width < 400) canvas.getContext = () => null;
+        return canvas;
+    };
+    await upload(page, WIDE);
+    assert.equal(page.$('cardImageStatus').textContent, '已上傳', '截圖本身沒事');
+    assert.equal(page.stored.get(IMAGE_KEY), dataUrlOf(2048, 768));
+    assert.equal(backdropDraws(page).length, 0, '沒有模糊小圖');
+    assert.ok(hasDefaultBackdrop(page), '名片畫預設背景');
+    assert.equal(pictureDraws(page).length, 1, '截圖還在照片框裡');
+    assert.deepEqual(drawnRect(pictureDraws(page)[0]), expectedBoxRect(page, WIDE_IMAGE, FILL));
+    assert.equal(page.createdCanvases().filter(({ created }) => created === null).length, 2, '橫版與直版各試過，各在第三張（256×96）拿不到 2d');
+    assert.equal(aliveCanvases(page).length, 0, '建過的 canvas 都放掉了');
+    // 換版型、換風格、再上傳一張（這次 canvas 又正常了）：照常
+    page.press('formatPortrait');
+    assert.equal(backdropDraws(page).length, 0);
+    page.app.imageDeps.createCanvas = createCanvas;
+    await upload(page, WIDE);
+    assert.deepEqual(sizeOfCanvas(backdropOf(page)), BACKDROP.portrait, '之後的截圖照常做小圖');
+    assert.equal(aliveCanvases(page).length, 2);
+    assert.deepEqual(page.consoleErrors, []);
+    assert.deepEqual(page.toasts, []);
+});
+
+test('長寬比很極端的截圖：做出來的小圖會超過 4096 就不做，名片畫預設背景（不是一張透明的 canvas）；做得出來的版型照常', async () => {
+    const page = await createCardPage();
+    fillRequired(page);
+    pickStyle(page, 'a');
+    // 瀏覽器不肯給太大的 canvas（Chrome 超過上限時不丟例外，畫出來是透明的，名片的背景就變成接近全黑的底色）。
+    // 8192×160 縮成 2048×40：橫版的小圖 554×11、放大 4 倍是 2216×44，沒問題；直版的小圖 1231×24、放大 4 倍是 4924×96，寬超過 4096：不做
+    await upload(page, { width: 8192, height: 160 });
+    assert.equal(page.$('cardImageStatus').textContent, '已上傳', '截圖本身沒事');
+    assert.deepEqual(sizeOfCanvas(backdropOf(page)), [2216, 44], '橫版照常有小圖');
+    page.press('formatPortrait');
+    assert.equal(backdropDraws(page).length, 0, '直版沒有小圖');
+    assert.ok(hasDefaultBackdrop(page), '直版畫預設背景，不是一張透明的 canvas');
+    assert.equal(pictureDraws(page).length, 1, '截圖還在照片框裡');
+    assert.deepEqual(drawnRect(pictureDraws(page)[0]), expectedBoxRect(page, { width: 2048, height: 40 }, FILL));
+    page.press('formatLandscape');
+    assert.deepEqual(sizeOfCanvas(backdropOf(page)), [2216, 44]);
+    // 頁面一張超過 4096 的 canvas 都沒建過；還活著的只有橫版那一張小圖（直版的一張都沒建）
+    for (const { created } of page.createdCanvases()) assert.ok(created === null || Math.max(...created) <= 4096, `建了 ${created} 的 canvas`);
+    assert.equal(aliveCanvases(page).length, 1);
+
+    // 兩種版型都超過（20000×10 縮成 2048×1）：橫版也畫預設背景，一張小圖也沒有，舊的小圖放掉了
+    const old = backdropOf(page);
+    await upload(page, { width: 20000, height: 10 });
+    assert.equal(page.$('cardImageStatus').textContent, '已上傳');
+    assert.deepEqual(sizeOfCanvas(old), [0, 0], '舊的小圖放掉了');
+    for (const format of ['formatLandscape', 'formatPortrait']) {
+        page.press(format);
+        assert.equal(backdropDraws(page).length, 0, `${format}：沒有小圖`);
+        assert.ok(hasDefaultBackdrop(page), `${format}：預設背景`);
+        assert.equal(pictureDraws(page).length, 1, `${format}：截圖還在照片框裡`);
+    }
+    assert.equal(aliveCanvases(page).length, 0);
+    for (const { created } of page.createdCanvases()) assert.ok(created === null || Math.max(...created) <= 4096, `建了 ${created} 的 canvas`);
+
+    // 再上傳一張正常的圖：兩種版型都照常有小圖
+    await upload(page, WIDE);
+    assert.deepEqual(sizeOfCanvas(backdropOf(page)), BACKDROP.portrait);
+    page.press('formatLandscape');
+    assert.deepEqual(sizeOfCanvas(backdropOf(page)), BACKDROP.landscape);
+    assert.equal(aliveCanvases(page).length, 2);
+    assert.deepEqual(page.consoleErrors, []);
+    assert.deepEqual(page.toasts, []);
+});
+
+test('頁面替身本身（createdCanvases）：記下頁面建的每一張 canvas，不含 #cardCanvas；created 是第一次 getContext 的大小；放掉之後寬高是 0', async () => {
+    const page = await createCardPage();
+    assert.equal(page.createdCanvases().length, 0, '一打開沒有建過（#cardCanvas 是 index.html 裡的，不算）');
+    const first = page.app.createCanvas(40, 30);
+    const second = page.app.createCanvas(8, 6);
+    const made = page.createdCanvases();
+    assert.equal(made.length, 2);
+    assert.ok(made[0].element === first && made[1].element === second, '照建的順序');
+    assert.deepEqual([made[0].width, made[0].height], [40, 30]);
+    assert.equal(made[0].created, null, '還沒呼叫過 getContext');
+    assert.deepEqual(made[0].calls, []);
+    // 第一次 getContext 的當下記下大小；之後改大小不改它，也清掉畫的呼叫（和真的 canvas 一樣）
+    const ctx = first.getContext('2d');
+    ctx.drawImage(second, 0, 0, 40, 30);
+    assert.deepEqual(made[0].created, [40, 30]);
+    assert.deepEqual(made[0].calls.map((call) => call.op), ['drawImage']);
+    first.width = 0;
+    first.height = 0;
+    assert.deepEqual([made[0].width, made[0].height], [0, 0], '同一筆記錄看得到現在的大小');
+    assert.deepEqual(made[0].created, [40, 30]);
+    assert.deepEqual(made[0].calls, []);
+    // 另一次打開是另一份記錄
+    const other = await createCardPage();
+    assert.equal(other.createdCanvases().length, 0);
+});
