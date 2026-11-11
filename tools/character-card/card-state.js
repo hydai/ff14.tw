@@ -10,8 +10,8 @@
  * - hours：遊玩時段，`${DAYS 的一個}-${SLOTS 的一個}`，例如 'weekday-evening'
  * - likes、looking：喜歡的內容（最多 LIMITS.likes 個）、在找什麼；intro、contact：自我介紹與聯絡方式
  * - accent：重點色，'#rrggbb' 或 'auto'（照主職的職能）
- * - style、format：卡片的風格與橫直版
- * - crops：圖片的位置與縮放，每一種「風格 × 橫直版」各一份，鍵是 `${style}-${format}`，值是 { x, y, zoom }
+ * - style、format：卡片的風格（'a' 名片、'b' 海報、'c' 資訊卡，預設海報）與橫直版
+ * - crops：圖片的位置與縮放，每一種「風格 × 橫直版」各一份（六份），鍵是 `${style}-${format}`，值是 { x, y, zoom }
  *   （x、y 是 -1～1：-1 靠左／上、0 置中、1 靠右／下；zoom 是 1～3）
  *
  * 職業清單（jobs）是共用的 assets/js/ff14-game-data.js 裡的那份職業陣列（每一個有 key 與 role），由呼叫端當參數傳進來，
@@ -66,7 +66,8 @@ const CardState = (() => {
     const SLOTS = Object.freeze(['morning', 'afternoon', 'evening', 'lateNight']);
     const GCS = Object.freeze(['maelstrom', 'twinAdder', 'immortalFlames']);
     const FORMATS = Object.freeze(['landscape', 'portrait']);
-    const STYLES = Object.freeze(['b']);
+    // 風格：a 名片、b 海報、c 資訊卡。第一次上線只有 b（存著的資料都是 b），之後加的 a、c 不需要轉換存著的內容
+    const STYLES = Object.freeze(['a', 'b', 'c']);
 
     // 重點色：照主職的職能。畫在卡片上的成品，不跟著網站的深淺色
     const ROLE_COLORS = Object.freeze({

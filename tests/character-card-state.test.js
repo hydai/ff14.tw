@@ -142,7 +142,8 @@ test('defaults 的形狀與 LIMITS、LIKES 等常數', () => {
     assert.deepEqual(plain(SLOTS), ['morning', 'afternoon', 'evening', 'lateNight']);
     assert.deepEqual(plain(GCS), ['maelstrom', 'twinAdder', 'immortalFlames']);
     assert.deepEqual(plain(FORMATS), ['landscape', 'portrait']);
-    assert.deepEqual(plain(STYLES), ['b']);
+    // 風格：名片 a、海報 b、資訊卡 c（預設是海報，見 EXPECTED_DEFAULTS）
+    assert.deepEqual(plain(STYLES), ['a', 'b', 'c']);
     assert.deepEqual(plain(ROLE_COLORS), {
         tank: '#4f74d6', healer: '#3f9e5c', dps: '#d4574e', crafting: '#8a63d2', gathering: '#c99a2e'
     });
@@ -254,8 +255,10 @@ test('normalize：壞掉的內容變回預設、丟掉壞的部分', () => {
     for (const bad of ['square', 'Portrait', '', 7, null]) {
         assert.equal(normalize({ format: bad }, jobs).format, 'landscape', `format ${util.inspect(bad)}`);
     }
-    assert.equal(normalize({ style: 'b' }, jobs).style, 'b');
-    for (const bad of ['z', 'B', '', 7, null]) {
+    // 風格：名片（a）、海報（b）、資訊卡（c）都收；不在表裡、大小寫不對、不是字串的是預設的海報
+    for (const style of STYLES) assert.equal(normalize({ style }, jobs).style, style);
+    assert.deepEqual(['a', 'b', 'c'].map((style) => normalize({ style }, jobs).style), ['a', 'b', 'c']);
+    for (const bad of ['d', 'z', 'A', 'B', 'C', '', ' a', 'a ', 'ab', 1, 7, null, undefined, ['a'], { style: 'a' }]) {
         assert.equal(normalize({ style: bad }, jobs).style, 'b', `style ${util.inspect(bad)}`);
     }
 
@@ -269,18 +272,27 @@ test('normalize：壞掉的內容變回預設、丟掉壞的部分', () => {
         assert.equal(normalize({ accent: input }, jobs).accent, expected, `accent ${util.inspect(input)}`);
     }
 
-    // crops：只留合格的鍵（目前的 STYLES × FORMATS），x／y 夾在 -1～1、zoom 夾在 1～3，不是數字的整筆丟掉
+    // crops：只留合格的鍵（STYLES × FORMATS 的六份），x／y 夾在 -1～1、zoom 夾在 1～3，不是數字的整筆丟掉；三種風格的規則都一樣
     assert.deepEqual(plain(normalize({
         crops: {
             'b-landscape': { x: 5, y: -5, zoom: 10 },
             'b-portrait': { x: 0.25, y: -0.5, zoom: 0.2 },
-            'a-landscape': { x: 0, y: 0, zoom: 1 },
+            'a-landscape': { x: 0.5, y: 0.5, zoom: 2 },
+            'a-portrait': { x: -5, y: 5, zoom: 0 },
+            'c-landscape': { x: 0, y: 0, zoom: 3 },
+            'c-portrait': { x: 0.1, y: -0.1, zoom: 99 },
+            'd-landscape': { x: 0, y: 0, zoom: 1 },
+            'A-landscape': { x: 0, y: 0, zoom: 1 },
             'b-square': { x: 0, y: 0, zoom: 1 },
             landscape: { x: 0, y: 0, zoom: 1 }
         }
     }, jobs).crops), {
         'b-landscape': { x: 1, y: -1, zoom: 3 },
-        'b-portrait': { x: 0.25, y: -0.5, zoom: 1 }
+        'b-portrait': { x: 0.25, y: -0.5, zoom: 1 },
+        'a-landscape': { x: 0.5, y: 0.5, zoom: 2 },
+        'a-portrait': { x: -1, y: 1, zoom: 1 },
+        'c-landscape': { x: 0, y: 0, zoom: 3 },
+        'c-portrait': { x: 0.1, y: -0.1, zoom: 3 }
     });
     for (const bad of [
         { x: '0.5', y: 0, zoom: 1 }, { x: 0, y: '0', zoom: 1 }, { x: 0, y: 0, zoom: '2' },
@@ -289,17 +301,23 @@ test('normalize：壞掉的內容變回預設、丟掉壞的部分', () => {
         { x: null, y: 0, zoom: 1 }, { x: [0], y: 0, zoom: 1 }, { x: true, y: 0, zoom: 1 },
         null, 7, 'x', true, []
     ]) {
-        assert.deepEqual(plain(normalize({ crops: { 'b-landscape': bad } }, jobs).crops), {}, `crop ${util.inspect(bad)}`);
+        for (const key of ['b-landscape', 'a-landscape', 'a-portrait', 'c-landscape', 'c-portrait']) {
+            assert.deepEqual(plain(normalize({ crops: { [key]: bad } }, jobs).crops), {}, `${key} 的 crop ${util.inspect(bad)}`);
+        }
     }
-    // 壞的那一份不連累好的那一份
+    // 壞的那一份不連累好的那一份（同一種風格的另一個版型，或別種風格）
     assert.deepEqual(
         plain(normalize({ crops: { 'b-landscape': { x: 'left', y: 0, zoom: 1 }, 'b-portrait': { x: 0.5, y: 0.5, zoom: 2 } } }, jobs).crops),
         { 'b-portrait': { x: 0.5, y: 0.5, zoom: 2 } }
     );
+    assert.deepEqual(
+        plain(normalize({ crops: { 'a-landscape': { x: 'left', y: 0, zoom: 1 }, 'a-portrait': null, 'c-landscape': { x: 0.5, y: 0.5, zoom: 2 }, 'b-portrait': { x: 0, y: 0, zoom: 1.5 } } }, jobs).crops),
+        { 'c-landscape': { x: 0.5, y: 0.5, zoom: 2 }, 'b-portrait': { x: 0, y: 0, zoom: 1.5 } }
+    );
     // 多的欄位拿掉
     assert.deepEqual(
-        plain(normalize({ crops: { 'b-landscape': { x: 0, y: 0, zoom: 1, rotate: 90 } } }, jobs).crops),
-        { 'b-landscape': { x: 0, y: 0, zoom: 1 } }
+        plain(normalize({ crops: { 'b-landscape': { x: 0, y: 0, zoom: 1, rotate: 90 }, 'a-portrait': { x: 0, y: 0, zoom: 1, rotate: 90 } } }, jobs).crops),
+        { 'b-landscape': { x: 0, y: 0, zoom: 1 }, 'a-portrait': { x: 0, y: 0, zoom: 1 } }
     );
     for (const bad of [null, undefined, 'b-landscape', 7, true, []]) {
         assert.deepEqual(plain(normalize({ crops: bad }, jobs).crops), {}, `crops ${util.inspect(bad)}`);
@@ -523,15 +541,23 @@ test('roleOf 與 accentOf', () => {
 
 // ---------- 圖片位置 ----------
 
-test('cropKey 與 cropOf：橫版、直版各記一份，沒記過是填滿置中', () => {
+test('cropKey 與 cropOf：風格與橫直版各記一份（六份），沒記過是填滿置中', () => {
     assert.equal(cropKey(defaults()), 'b-landscape');
     assert.equal(cropKey({ ...defaults(), format: 'portrait' }), 'b-portrait');
-    // 鍵就是 `${style}-${format}`，目前的 STYLES × FORMATS 每一種都有
+    // 鍵就是 `${style}-${format}`，STYLES × FORMATS 的六種每一種都有
+    const keys = [];
     for (const style of STYLES) {
-        for (const format of FORMATS) assert.equal(cropKey({ ...defaults(), style, format }), `${style}-${format}`);
+        for (const format of FORMATS) {
+            assert.equal(cropKey({ ...defaults(), style, format }), `${style}-${format}`);
+            keys.push(`${style}-${format}`);
+        }
     }
+    assert.deepEqual(keys, ['a-landscape', 'a-portrait', 'b-landscape', 'b-portrait', 'c-landscape', 'c-portrait']);
+    assert.equal(cropKey({ style: 'c', format: 'portrait' }), 'c-portrait');
+    assert.equal(cropKey({ style: 'a', format: 'landscape' }), 'a-landscape');
     // style 或 format 不合格（沒整理過的狀態）：當成預設的那一份
     assert.equal(cropKey({ style: 'z', format: 'portrait' }), 'b-portrait');
+    assert.equal(cropKey({ style: 'd', format: 'portrait' }), 'b-portrait');
     assert.equal(cropKey({ style: 'b', format: 'square' }), 'b-landscape');
     assert.equal(cropKey({}), 'b-landscape');
     assert.equal(cropKey(null), 'b-landscape');
@@ -541,6 +567,13 @@ test('cropKey 與 cropOf：橫版、直版各記一份，沒記過是填滿置�
     assert.deepEqual(plain(cropOf({ ...state, format: 'landscape' })), { x: 0.25, y: -0.5, zoom: 1.5 });
     // 另一份有記、這一份沒記：這一份是預設
     assert.deepEqual(plain(cropOf({ ...state, format: 'landscape', crops: { 'b-portrait': { x: 1, y: 1, zoom: 2 } } })), { x: 0, y: 0, zoom: 1 });
+    // 別種風格有記、這種風格沒記：這種風格是預設；換成有記的那種風格就讀到它
+    const crops = { 'a-landscape': { x: 0.5, y: -0.5, zoom: 2 }, 'c-portrait': { x: -0.25, y: 0.25, zoom: 1.25 } };
+    assert.deepEqual(plain(cropOf({ ...defaults(), style: 'b', crops })), { x: 0, y: 0, zoom: 1 });
+    assert.deepEqual(plain(cropOf({ ...defaults(), style: 'a', crops })), { x: 0.5, y: -0.5, zoom: 2 });
+    assert.deepEqual(plain(cropOf({ ...defaults(), style: 'a', format: 'portrait', crops })), { x: 0, y: 0, zoom: 1 });
+    assert.deepEqual(plain(cropOf({ ...defaults(), style: 'c', format: 'portrait', crops })), { x: -0.25, y: 0.25, zoom: 1.25 });
+    assert.deepEqual(plain(cropOf({ ...defaults(), style: 'c', crops })), { x: 0, y: 0, zoom: 1 });
     // 沒記過
     assert.deepEqual(plain(cropOf(defaults())), { x: 0, y: 0, zoom: 1 });
     assert.deepEqual(plain(cropOf({ ...defaults(), crops: {} })), { x: 0, y: 0, zoom: 1 });
@@ -611,6 +644,44 @@ test('load／save／saveImage／clear', () => {
     const frozenStorage = createStorage();
     assert.equal(save(frozenStorage, deepFreeze(plain(state))), true);
     assert.deepEqual(JSON.parse(frozenStorage.data.get(STORAGE_KEY)), LUNA);
+});
+
+test('第一次上線存的資料（style: b、只有 b 的兩份位置）讀出來和存的一樣；換成名片或資訊卡時，它們的位置是沒記過的填滿置中，海報的兩份不動', () => {
+    // 第一次上線的版本只能存 'b'，位置只有 b-landscape、b-portrait 兩份，v 是 1
+    const first = {
+        v: 1, name: 'Luna Starweaver', world: '伊弗利特', mainJob: 'Pictomancer', level: 98, subJobs: ['Paladin'], title: '', fcName: 'Starlit Hall', fcTag: 'STAR',
+        gc: 'twinAdder', hours: ['weekday-evening'], likes: ['msq'], looking: ['friends'], intro: 'Hello!', contact: 'Discord: luna.example', accent: 'auto',
+        style: 'b', format: 'portrait', crops: { 'b-landscape': { x: 0.25, y: -0.5, zoom: 1.5 }, 'b-portrait': { x: -1, y: 1, zoom: 3 } }
+    };
+    const storage = createStorage({ [STORAGE_KEY]: JSON.stringify(first) });
+    const { state } = load(storage, jobs);
+    assert.deepEqual(plain(state), first, '讀出來和存的一樣：照舊是海報，位置不變');
+    assert.deepEqual(writes(storage), [], '讀不會寫');
+    assert.deepEqual(plain(cropOf(state)), { x: -1, y: 1, zoom: 3 });
+
+    // 換成名片或資訊卡（兩種版型）：它們自己的位置還沒記過，是填滿置中；海報的兩份照舊在記憶裡
+    for (const style of ['a', 'c']) {
+        for (const format of FORMATS) {
+            assert.deepEqual(plain(cropOf({ ...state, style, format })), { x: 0, y: 0, zoom: 1 }, `${style}-${format}`);
+        }
+    }
+    // 換風格之後存、再讀：名片多了自己的一份，海報的兩份與別的欄位原封不動；換回海報，位置還在
+    const switched = normalize({ ...state, style: 'a', format: 'landscape', crops: { ...state.crops, 'a-landscape': { x: 0.3, y: 0, zoom: 2 } } }, jobs);
+    assert.equal(save(storage, switched), true);
+    const again = load(storage, jobs).state;
+    assert.equal(again.style, 'a');
+    assert.deepEqual(plain(again.crops), { ...first.crops, 'a-landscape': { x: 0.3, y: 0, zoom: 2 } });
+    assert.deepEqual(plain(cropOf(again)), { x: 0.3, y: 0, zoom: 2 });
+    assert.deepEqual(plain(cropOf({ ...again, style: 'b', format: 'portrait' })), { x: -1, y: 1, zoom: 3 });
+    assert.deepEqual(plain(cropOf({ ...again, style: 'b', format: 'landscape' })), { x: 0.25, y: -0.5, zoom: 1.5 });
+    assert.deepEqual(plain({ ...again, style: 'b', format: 'portrait', crops: first.crops }), first);
+
+    // 存著壞掉的風格（被改壞，或以後的版本才有的風格）：回到海報，位置照 b 的那兩份
+    for (const style of ['d', 'B', 1, null, ['a']]) {
+        const odd = load(createStorage({ [STORAGE_KEY]: JSON.stringify({ ...first, style }) }), jobs).state;
+        assert.equal(odd.style, 'b', `style ${util.inspect(style)}`);
+        assert.deepEqual(plain(odd.crops), first.crops);
+    }
 });
 
 test('load：不是 JSON、壞掉的內容照常打開，丟掉壞的部分', () => {

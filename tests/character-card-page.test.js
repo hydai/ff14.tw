@@ -5,6 +5,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 
 const { createCardPage, dataUrlOf } = require('./helpers/card-page.js');
+const { lines } = require('./helpers/card-drawing.js');
 const { tagAttrs, sliceElementById, classesOf } = require('./helpers/html-fragment.js');
 const { translationKeySet, translationValues } = require('./helpers/translation-parsers.js');
 
@@ -251,7 +252,7 @@ test('字數計數「5／21」與 maxlength', async () => {
     for (const [id, key] of fields) {
         assert.equal(page.$(id).getAttribute('maxlength'), String(LIMITS[key]), `#${id} 的 maxlength`);
         assert.equal(page.$(`${id}Count`).textContent, `0／${LIMITS[key]}`, `#${id}Count`);
-        // 計數的 id 排第一；海報風格不畫的欄位（部隊名稱、聯絡方式）後面再接一個說明的 id（見「海報風格不畫的四個欄位」的測試）
+        // 計數的 id 排第一；海報風格不畫的欄位（部隊名稱、聯絡方式）在海報時後面再接一個說明的 id（見「四行小字」的測試）
         const [first, ...more] = (page.$(id).getAttribute('aria-describedby') ?? '').split(/\s+/);
         assert.equal(first, `${id}Count`);
         assert.deepEqual(more, ['cardFcName', 'cardContact'].includes(id) ? [`${id}NotDrawn`] : [], `#${id} 的 aria-describedby 後面`);
@@ -2348,10 +2349,11 @@ test('index.html：腳本順序、標準字型連結＋Outfit、不載入 securi
     assert.ok(!scripts.some((src) => src.endsWith('security-utils.js')), '不載入 security-utils.js');
     assert.ok(!scripts.includes('character-card-data.js'), '舊的資料檔拿掉了');
 
-    // 字型：標準的 Noto Sans TC 連結照舊，另外多一條 Outfit（名字與 FF14.tw 用；FF14.tw 是 600，名字是 800）
+    // 字型：標準的 Noto Sans TC 連結照舊，另外多一條 Outfit 加 Noto Serif TC（海報的名字用 Outfit 800、FF14.tw 用 Outfit 600，名片的名字用 Noto Serif TC 700）
     assert.ok(HTML.includes('<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">'));
-    assert.ok(HTML.includes('<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;800&display=swap" rel="stylesheet">'));
+    assert.ok(HTML.includes('<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;800&family=Noto+Serif+TC:wght@700&display=swap" rel="stylesheet">'));
     assert.ok(HTML.indexOf('Outfit:wght') > HTML.indexOf('Noto+Sans+TC:wght'));
+    assert.equal((HTML.match(/<link href="https:\/\/fonts\.googleapis\.com\/css2\?/g) ?? []).length, 2, '只有 Noto Sans TC 與 Outfit＋Noto Serif TC 兩條字型連結');
     assert.ok(HTML.includes('href="https://fonts.gstatic.com" crossorigin'));
     assert.doesNotMatch(HTML, /card-templates\.css/, '舊的卡片樣式拿掉了');
     assert.ok(HTML.indexOf('assets/css/tokens.css') < HTML.indexOf('assets/css/common.css'));
@@ -2382,8 +2384,8 @@ test('index.html：腳本順序、標準字型連結＋Outfit、不載入 securi
     }
 
     // .card 與 .form-control 等共用樣式設了 display，會蓋掉瀏覽器內建的 [hidden]：JS 用 hidden 切換的元素都要自己寫 display: none
-    // （五個面板、自己輸入的伺服器欄位）。標記裡一開始就 hidden 的也一樣
-    for (const selector of ['.editor-panel[hidden]', '#cardWorldCustomGroup[hidden]']) {
+    // （五個面板、自己輸入的伺服器欄位、換成名片或資訊卡時藏起來的四行「不會畫出這一項」，.form-text 設了 display: block）。標記裡一開始就 hidden 的也一樣
+    for (const selector of ['.editor-panel[hidden]', '#cardWorldCustomGroup[hidden]', '.not-drawn[hidden]']) {
         assert.match(declarations(selector), /display:\s*none/, `${selector} 要有 display: none`);
     }
     assert.match(SCRIPT, /\.hidden\s*=/);
@@ -2458,7 +2460,8 @@ test('標記與版面：表單、預覽、群組與輸入框的名稱；電腦�
         assert.match(HTML, new RegExp(`id="${id}Label"`));
     }
     assert.match(HTML, /<div class="[^"]*" role="radiogroup" aria-labelledby="cardAccentLabel">/);
-    assert.equal((HTML.match(/<input [^>]*type="radio"/g) ?? []).length, 2);
+    assert.match(HTML, /<div class="[^"]*" role="radiogroup" aria-labelledby="cardStyleLabel">/);
+    assert.equal((HTML.match(/<input [^>]*type="radio"/g) ?? []).length, 5, '重點色的兩個單選加風格的三個單選');
     for (const id of ['formatLandscape', 'formatPortrait']) assert.match(HTML, new RegExp(`id="${id}"[^>]*aria-pressed="(true|false)"`));
     assert.doesNotMatch(HTML, /style="/, '沒有內嵌樣式');
 
@@ -2478,6 +2481,19 @@ test('標記與版面：表單、預覽、群組與輸入框的名稱；電腦�
     assert.match(declarations('.preview-canvas', BASE_CSS), /max-height:\s*35vh/);
     assert.match(declarations('.preview-canvas', BASE_CSS), /max-width:\s*100%/);
     assert.match(declarations('.preview-canvas', BASE_CSS), /height:\s*auto/);
+    // 風格的單選（「樣式」分頁最上面）：.style-options 和重點色的 .accent-options 是同一條規則（直排、間距）；每個選項是兩欄的 grid（單選、名稱），
+    // 說明在第二欄、名稱下面，緊貼著名稱（margin-top: 0 蓋掉 .editor-panel .form-text 的上邊距：同樣重，所以要排在它後面）
+    assert.equal(declarations('.style-options', BASE_CSS), declarations('.accent-options', BASE_CSS));
+    assert.match(declarations('.style-options', BASE_CSS), /display:\s*flex/);
+    assert.match(declarations('.style-options', BASE_CSS), /flex-direction:\s*column/);
+    assert.match(declarations('.style-option', BASE_CSS), /display:\s*grid/);
+    assert.match(declarations('.style-option', BASE_CSS), /grid-template-columns:\s*auto minmax\(0, 1fr\)/);
+    assert.match(declarations('.style-option .form-check-input', BASE_CSS), /grid-column:\s*1/);
+    assert.match(declarations('.style-option .form-check-label', BASE_CSS), /grid-column:\s*2/);
+    assert.match(declarations('.editor-panel .style-hint', BASE_CSS), /grid-column:\s*2/);
+    assert.match(declarations('.editor-panel .style-hint', BASE_CSS), /grid-row:\s*2/);
+    assert.match(declarations('.editor-panel .style-hint', BASE_CSS), /margin-top:\s*0(?![\w.])/);
+    assert.ok(CSS.indexOf('.editor-panel .style-hint') > CSS.indexOf('.editor-panel .form-text'), '.style-hint 排在 .editor-panel .form-text 後面，margin-top: 0 才蓋得掉');
     // 欄寫 minmax(0, …)，長的字換行，不撐開版面；不能按的按鈕看得出來；放不下的分頁換行，不左右捲
     assert.match(declarations('.editor-form', BASE_CSS), /min-width:\s*0/);
     assert.match(declarations('.chip:disabled', BASE_CSS), /cursor:\s*not-allowed/);
@@ -2559,64 +2575,6 @@ test('翻譯：三語的鍵一樣，每個鍵的 {參數} 三語一樣，index.h
         ['Wkdy', 'Wknd', 'Morn', 'Aft', 'Eve', 'Late']);
     assert.deepEqual(['char_card_card_day_weekday', 'char_card_card_day_weekend', 'char_card_card_slot_morning', 'char_card_card_slot_afternoon', 'char_card_card_slot_evening', 'char_card_card_slot_late_night'].map((key) => values.ja.get(key)),
         ['平日', '休日', '朝', '昼', '夜', '深夜']);
-});
-
-// 海報風格不畫的四個欄位（部隊名稱、大國防聯軍、聯絡方式、在找什麼）：欄位照樣能填、也會記住，但卡片上不會出現。欄位底下各寫一行小字說明，
-// 接進 aria-describedby（螢幕閱讀器聚焦到欄位時念）；會畫在卡片上的欄位沒有。之後換風格、這四項裡有哪一項畫上卡片了，要把它的說明拿掉
-const NOT_DRAWN_TEXT = { zh: '目前的海報風格不會畫出這一項', en: 'Not shown on the current poster style', ja: '今のポスタースタイルには表示されません' };
-const NOT_DRAWN = [['cardFcName', 'cardFcNameNotDrawn'], ['cardGc', 'cardGcNotDrawn'], ['cardContact', 'cardContactNotDrawn'], ['cardLooking', 'cardLookingNotDrawn']];
-test('海報風格不畫的四個欄位底下各寫一行說明，接進 aria-describedby；會畫的欄位沒有；說明跟著介面語言', async () => {
-    const page = await createCardPage();
-    const describedIds = (element) => (element.getAttribute('aria-describedby') ?? '').split(/\s+/).filter(Boolean);
-
-    // 翻譯：三語逐字
-    for (const lang of LANGS) assert.equal(translationValues(TRANSLATIONS, lang).get('char_card_not_drawn'), NOT_DRAWN_TEXT[lang], `${lang} 的 char_card_not_drawn`);
-
-    // 四個欄位：底下緊接著一行 .form-text（每個欄位各有自己的 id），欄位的 aria-describedby 指到它（有字數計數的欄位，計數的 id 還在、排前面）
-    assert.equal(new Set(NOT_DRAWN.map(([, hint]) => hint)).size, 4, '每個欄位各有自己的 id');
-    for (const [fieldId, hintId] of NOT_DRAWN) {
-        const field = page.$(fieldId);
-        const hint = page.$(hintId);
-        assert.equal(hint.tagName, 'SPAN', hintId);
-        assert.ok(hint.classList.contains('form-text'), `#${hintId} 用共用的 .form-text`);
-        assert.equal(hint.getAttribute('data-i18n'), 'char_card_not_drawn', hintId);
-        assert.equal(hint.textContent, NOT_DRAWN_TEXT.zh, hintId);
-        isSame(hint.previousElementSibling, field, `#${hintId} 緊接在 #${fieldId} 底下`);
-        assert.deepEqual(describedIds(field), page.$(`${fieldId}Count`) ? [`${fieldId}Count`, hintId] : [hintId], `#${fieldId} 的 aria-describedby`);
-    }
-    // 在找什麼是一組按鈕：說明接在 role="group" 的那個元素上，群組的名稱照舊指到標題
-    assert.equal(page.$('cardLooking').getAttribute('role'), 'group');
-    assert.equal(page.$('cardLooking').getAttribute('aria-labelledby'), 'cardLookingLabel');
-
-    // 只有這四個：整頁用這個字串的元素就是這四行；其他的控制項（會畫在卡片上的）的 aria-describedby 都沒有指到它們
-    assert.deepEqual(all(page.document, '[data-i18n="char_card_not_drawn"]').map((element) => element.getAttribute('id')).sort(), NOT_DRAWN.map(([, hint]) => hint).sort());
-    const hintIds = new Set(NOT_DRAWN.map(([, hint]) => hint));
-    const withHint = all(page.$('cardForm'), '[aria-describedby]').filter((element) => describedIds(element).some((id) => hintIds.has(id)));
-    assert.deepEqual(withHint.map((element) => element.getAttribute('id')).sort(), NOT_DRAWN.map(([field]) => field).sort());
-    for (const id of ['cardName', 'cardWorld', 'cardWorldCustom', 'cardMainJob', 'cardLevel', 'cardSubJobs', 'cardTitle', 'cardFcTag', 'cardHours', 'cardLikes', 'cardIntro']) {
-        assert.ok(!describedIds(page.$(id)).some((item) => hintIds.has(item)), `#${id} 會畫在卡片上，沒有這行說明`);
-    }
-
-    // 說明說的是實話：四個欄位都填了，卡片上還是沒有它們的字（中文與英文介面都一樣）；會畫的欄位都在卡片上
-    fillEverything(page);
-    page.chip('cardLooking', 'fc').click();
-    page.chip('cardLooking', 'friends').click();
-    for (const lang of ['zh', 'en']) {
-        page.setLang(lang);
-        const texts = page.texts();
-        for (const hidden of ['Moonlit Garden', 'Discord: luna_star', ...['gc_twin_adder', 'looking_static', 'looking_fc', 'looking_friends'].map((key) => translationValues(TRANSLATIONS, lang).get(`char_card_${key}`))]) {
-            assert.ok(!texts.some((text) => text.includes(hidden)), `${lang}：卡片上不會有 ${hidden}`);
-        }
-        for (const drawn of ['Luna Starweaver', 'Tiamat', '«MOON»', 'Looking for a Savage static.']) assert.ok(texts.includes(drawn), `${lang}：卡片上有 ${drawn}`);
-    }
-    page.setLang('zh');
-
-    // 說明跟著介面語言（欄位的名稱與選項不變）
-    for (const lang of ['en', 'ja', 'zh']) {
-        page.setLang(lang);
-        for (const [, hintId] of NOT_DRAWN) assert.equal(page.$(hintId).textContent, NOT_DRAWN_TEXT[lang], `${lang}：#${hintId}`);
-    }
-    assert.deepEqual(page.consoleErrors, []);
 });
 
 // ---------- 輸出：下載、分享、複製、全螢幕大圖、必填的驗證、LINE 的提示、手機打字 ----------
@@ -4411,4 +4369,690 @@ test('輸出的翻譯：每個新的 char_card_* 鍵三語都有，zh 照規定�
     for (const key of ['downloaded', 'share_failed', 'copied', 'copy_failed', 'export_failed', 'fonts_slow', 'image_slow', 'share_ready']) {
         assert.ok(SCRIPT.includes(`'char_card_${key}'`), `script.js 用 char_card_${key}`);
     }
+});
+
+// ---------- 風格：名片、海報、資訊卡 ----------
+// 三種風格用同一份資料：「樣式」分頁最上面的單選換風格，卡片馬上重畫、記在同一個 localStorage 鍵（state.style），重新打開還是那一種。
+// 卡片現在畫的是哪一種：名片先鋪 #120f24、資訊卡先鋪 #f4f5fa（第一次 fillRect 的底色）；海報先畫截圖或預設背景的漸層（fillStyle 是漸層物件），所以是其他
+const STYLES = ['a', 'b', 'c'];
+const STYLE_RADIO = { a: 'styleA', b: 'styleB', c: 'styleC' };
+const styleDrawn = (page) => {
+    const first = page.drawCalls().find((call) => call.op === 'fillRect');
+    assert.ok(first, '卡片至少填了一次色');
+    return { '#120f24': 'a', '#f4f5fa': 'c' }[first.fillStyle] ?? 'b';
+};
+const checkedStyles = (page) => STYLES.filter((style) => page.$(STYLE_RADIO[style]).checked === true);
+const pickStyle = (page, style) => page.toggle(STYLE_RADIO[style]);
+// 畫出來的每一段字：名片與資訊卡的小標是一個字一個字畫的（字距），接回一段才看得到整個字；放不下一行的值折成好幾行，每一行是一段
+const drawnLines = (page) => lines({ calls: page.drawCalls() }).map((line) => line.text);
+const drawsText = (page, text) => drawnLines(page).some((line) => line.includes(text));
+// 值放不下一行時折成好幾行（拉丁字母在空白處折，中日文在任何字之間折）：每一行接起來再找
+const drawsValue = (page, value) => [' ', ''].some((glue) => drawnLines(page).join(glue).includes(value));
+// 這種風格與版型的照片框（canvas 的像素）：海報是整張卡片，名片與資訊卡是框
+const boxOf = (page, style = page.app.state.style, format = page.app.state.format) => plain(page.window.CardRenderer.photoBox(style, format));
+// 名片、資訊卡的照片框裡，這張圖畫在哪裡：框的左上角加上 coverRect 填滿框的位置（drawImage 的座標是整張卡片上的）
+const expectedBoxRect = (page, image, crop, box = boxOf(page)) => {
+    const rect = plain(page.window.CardLayout.coverRect(image.width, image.height, box.width, box.height, crop));
+    return { dx: box.x + rect.dx, dy: box.y + rect.dy, dw: rect.dw, dh: rect.dh };
+};
+// 那一張圖現在畫在哪裡：海報鋪滿整張卡片，名片與資訊卡在照片框裡
+const expectedPlace = (page, image, crop) => (page.app.state.style === 'b' ? expectedRect(page, image, crop) : expectedBoxRect(page, image, crop));
+const describedIds = (element) => (element.getAttribute('aria-describedby') ?? '').split(/\s+/).filter(Boolean);
+
+const STYLE_TEXT = {
+    zh: {
+        label: '風格', a: '名片', b: '海報', c: '資訊卡',
+        a_hint: '資訊最完整，部隊、大國防聯軍、在找什麼、聯絡方式都會畫出來', b_hint: '截圖鋪滿、名字放大，資訊精簡', c_hint: '淺色底，字最好讀，資訊和名片一樣完整'
+    },
+    en: {
+        label: 'Design', a: 'Name card', b: 'Poster', c: 'Info card',
+        a_hint: "The most complete: your Free Company, Grand Company, what you're looking for and how to reach you are all on the card",
+        b_hint: 'Your screenshot fills the card and your name is big; fewer details',
+        c_hint: "A light background that's the easiest to read, with everything the name card has"
+    },
+    ja: {
+        label: 'デザイン', a: '名刺', b: 'ポスター', c: '情報カード',
+        a_hint: '情報がいちばん多い。FC、グランドカンパニー、探していること、連絡先も入ります',
+        b_hint: 'スクリーンショットを全面に、名前を大きく。情報は少なめ',
+        c_hint: '明るい背景でいちばん読みやすい。情報は名刺と同じです'
+    }
+};
+// 海報風格不畫的四個欄位（部隊名稱、大國防聯軍、聯絡方式、在找什麼）底下各一行說明：只有海報時才有，名片與資訊卡會畫出它們
+const NOT_DRAWN_TEXT = {
+    zh: '海報風格不會畫出這一項（名片、資訊卡會）',
+    en: "The poster style doesn't show this (the name card and info card do)",
+    ja: 'ポスターには表示されません（名刺と情報カードには表示されます）'
+};
+const NOT_DRAWN = [['cardFcName', 'cardFcNameNotDrawn'], ['cardGc', 'cardGcNotDrawn'], ['cardContact', 'cardContactNotDrawn'], ['cardLooking', 'cardLookingNotDrawn']];
+// 名片與資訊卡上的小標與在找什麼的分隔（char_card_card_*）
+const CARD_TEXT = {
+    zh: { fc: '部隊', gc: '大國防聯軍', looking: '在找什麼', likes: '喜歡的內容', hours: '遊玩時段', subjobs: '其他職業', main_job: '主職', list_sep: '、' },
+    en: { fc: 'Free Company', gc: 'Grand Company', looking: 'Looking for', likes: 'Favorite content', hours: 'Play hours', subjobs: 'Other jobs', main_job: 'Main job', list_sep: ', ' },
+    ja: { fc: 'フリーカンパニー', gc: 'グランドカンパニー', looking: '探していること', likes: '好きなコンテンツ', hours: 'プレイ時間帯', subjobs: 'ほかのジョブ', main_job: 'メインジョブ', list_sep: '、' }
+};
+
+test('風格：三個單選照名片、海報、資訊卡的順序，預設海報；群組有名稱，說明接在各自的選項上；切換語言時名稱與說明換字', async () => {
+    const page = await createCardPage();
+    // 翻譯：三語逐字
+    for (const lang of LANGS) {
+        const values = translationValues(TRANSLATIONS, lang);
+        for (const [name, text] of Object.entries(STYLE_TEXT[lang])) assert.equal(values.get(`char_card_style_${name}`), text, `${lang} 的 char_card_style_${name}`);
+    }
+
+    // 「樣式」分頁最上面（重點色前面）一組「風格」：名稱是前面那一行，群組是 role="radiogroup"（同重點色的寫法）
+    const groups = kids(page.$('panel-style')).filter((child) => child.classList.contains('form-group'));
+    assert.ok(groups[0].contains(page.$('cardStyleLabel')), '風格是「樣式」裡的第一組');
+    assert.ok(groups[1].contains(page.$('cardAccentLabel')), '重點色在風格後面');
+    const group = page.$('styleB').parentNode.parentNode;
+    assert.ok(groups[0].contains(group));
+    assert.ok(group.classList.contains('style-options'));
+    assert.equal(group.getAttribute('role'), 'radiogroup');
+    assert.equal(group.getAttribute('aria-labelledby'), 'cardStyleLabel');
+    isSame(page.$('cardStyleLabel').nextElementSibling, group, '名稱緊接在群組前面');
+    assert.equal(page.$('cardStyleLabel').getAttribute('data-i18n'), 'char_card_style_label');
+    assert.ok(page.$('cardStyleLabel').classList.contains('form-label'));
+    assert.equal(page.$('cardStyleLabel').textContent, STYLE_TEXT.zh.label);
+
+    // 三個單選照名片、海報、資訊卡的順序；每一個選項是 單選、名稱、說明 三個元素，說明用 aria-describedby 接在自己的單選上
+    const options = kids(group);
+    assert.equal(options.length, 3);
+    STYLES.forEach((style, index) => {
+        const [radio, label, hint, ...rest] = kids(options[index]);
+        assert.equal(rest.length, 0, `${style}：只有單選、名稱、說明`);
+        assert.ok(options[index].classList.contains('form-check') && options[index].classList.contains('style-option'), `${style}：用共用的 .form-check`);
+        assert.equal(radio.getAttribute('id'), STYLE_RADIO[style]);
+        assert.equal(radio.getAttribute('type'), 'radio');
+        // name 不能叫 style：表單裡有叫 style 的欄位時，form.style 會變成 RadioNodeList，蓋掉元素自己的 style（CSSStyleDeclaration）
+        assert.equal(radio.getAttribute('name'), 'cardStyle');
+        assert.equal(radio.getAttribute('value'), style);
+        assert.ok(radio.classList.contains('form-check-input'));
+        assert.equal(label.tagName, 'LABEL');
+        assert.equal(label.getAttribute('for'), STYLE_RADIO[style]);
+        assert.ok(label.classList.contains('form-check-label'));
+        assert.equal(label.getAttribute('data-i18n'), `char_card_style_${style}`);
+        assert.equal(label.textContent, STYLE_TEXT.zh[style]);
+        assert.equal(hint.getAttribute('id'), `${STYLE_RADIO[style]}Hint`);
+        assert.ok(hint.classList.contains('form-text') && hint.classList.contains('style-hint'), `${style}：說明用共用的 .form-text`);
+        assert.equal(hint.getAttribute('data-i18n'), `char_card_style_${style}_hint`);
+        assert.equal(hint.textContent, STYLE_TEXT.zh[`${style}_hint`]);
+        assert.deepEqual(describedIds(radio), [hint.getAttribute('id')], `${style}：說明用 aria-describedby 接在自己的單選上`);
+    });
+
+    // 預設海報；一次只選一個（原生單選）；還沒改任何東西時什麼都沒存
+    assert.deepEqual(checkedStyles(page), ['b']);
+    assert.equal(styleDrawn(page), 'b');
+    assert.ok(!page.stored.has(KEY));
+    pickStyle(page, 'a');
+    assert.deepEqual(checkedStyles(page), ['a']);
+    pickStyle(page, 'c');
+    assert.deepEqual(checkedStyles(page), ['c']);
+    pickStyle(page, 'b');
+    assert.deepEqual(checkedStyles(page), ['b']);
+
+    // 切換語言：群組的名稱、三個選項的名稱與說明換成那個語言，選的不變
+    pickStyle(page, 'c');
+    for (const lang of ['en', 'ja', 'zh']) {
+        page.setLang(lang);
+        assert.equal(page.$('cardStyleLabel').textContent, STYLE_TEXT[lang].label, `${lang}：群組的名稱`);
+        for (const style of STYLES) {
+            assert.equal(labelOf(page, STYLE_RADIO[style]), STYLE_TEXT[lang][style], `${lang}：${style} 的名稱`);
+            assert.equal(page.$(`${STYLE_RADIO[style]}Hint`).textContent, STYLE_TEXT[lang][`${style}_hint`], `${lang}：${style} 的說明`);
+        }
+        assert.deepEqual(checkedStyles(page), ['c'], `${lang}：選的不變`);
+        assert.equal(styleDrawn(page), 'c');
+    }
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('選名片、資訊卡：卡片重畫成那一種、記在 ff14tw_character_card、重新打開還是那一種（單選也勾著）；canvas 的說明不變；下載的 PNG 是那一種；清除全部回到海報', async () => {
+    const page = await createCardPage();
+    fillRequired(page);
+    const label = page.$('cardCanvas').getAttribute('aria-label');
+    assert.equal(label, '角色卡預覽：Luna Starweaver，Tiamat，繪靈法師 Lv 100');
+    assert.equal(styleDrawn(page), 'b');
+    assert.equal(saved(page).style, 'b');
+
+    for (const style of ['a', 'c', 'b', 'a']) {
+        const before = page.drawCount();
+        pickStyle(page, style);
+        assert.equal(page.drawCount(), before + 1, `選 ${style}：重畫一次`);
+        assert.equal(styleDrawn(page), style, `選 ${style}：卡片畫的是那一種`);
+        assert.deepEqual(checkedStyles(page), [style]);
+        assert.equal(saved(page).style, style, '記在 ff14tw_character_card（同一個鍵，v 不變）');
+        assert.equal(saved(page).v, 1);
+        assert.equal(saved(page).name, NAME, '別的欄位不動');
+        assert.equal(page.$('cardCanvas').getAttribute('aria-label'), label, 'canvas 的說明不寫風格');
+        assert.equal(page.$('cardCanvas').width, 1200);
+        assert.equal(page.$('cardCanvas').height, 675);
+        // 三種風格畫同一份資料：名字、伺服器、職業、版權字（名片與資訊卡的版權字接在 FF14.tw 後面）
+        for (const text of [NAME, 'Tiamat', '繪靈法師', NOTICE]) assert.ok(drawsText(page, text), `${style}：卡片上有 ${text}`);
+    }
+
+    // 重新打開：還是那一種，單選也勾著，字型照那一種請求
+    for (const style of ['a', 'c']) {
+        pickStyle(page, style);
+        const again = await page.reopen();
+        assert.equal(styleDrawn(again), style, `重新打開還是 ${style}`);
+        assert.deepEqual(checkedStyles(again), [style]);
+        assert.equal(again.$('cardName').value, NAME);
+        assert.equal(saved(again).style, style);
+        assert.deepEqual(again.consoleErrors, []);
+    }
+
+    // 下載的 PNG 是現在選的那一種（拍下來的就是畫面上那一張）：橫版的名片、直版的資訊卡
+    pickStyle(page, 'a');
+    page.press('downloadCard');
+    await page.flush();
+    const [landscape] = page.blobRequests();
+    assert.deepEqual([landscape.type, landscape.width, landscape.height], ['image/png', 1200, 675]);
+    assert.equal(styleDrawn(page), 'a', '下載的是名片');
+    assert.equal(landscape.draws, page.drawCount(), '拍下來之後沒有再畫別的');
+    assert.deepEqual(landscape.texts, page.texts());
+    assert.equal(page.downloads.at(-1).file, OUT_FILE);
+    page.press('formatPortrait');
+    pickStyle(page, 'c');
+    page.press('downloadCard');
+    await page.flush();
+    const portrait = page.blobRequests().at(-1);
+    assert.deepEqual([portrait.width, portrait.height], [1080, 1350]);
+    assert.equal(styleDrawn(page), 'c', '下載的是資訊卡');
+    assert.deepEqual(portrait.texts, page.texts());
+    assert.equal(page.downloads.length, 2);
+
+    // 清除全部回到海報（兩個鍵都清，單選也回到海報，版型也回到橫版）
+    page.press('clearAll');
+    page.press('clearAll');
+    assert.equal(styleDrawn(page), 'b');
+    assert.deepEqual(checkedStyles(page), ['b']);
+    assert.ok(!page.stored.has(KEY));
+    assert.equal(page.$('cardCanvas').width, 1200);
+    page.type('cardName', 'Luna');
+    assert.equal(saved(page).style, 'b');
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+// 只有名片會畫的字：主職旁邊那一行「Lv 100 · 主職」（海報與資訊卡都只畫「Lv 100」）
+const NAME_CARD_ONLY = 'Lv 100 · 主職';
+
+test('分享與複製做出來的 PNG 也是現在選的風格，不只下載：選名片時拍下來的畫面有名片才畫的字，和畫面上那一張一樣', async () => {
+    const page = await createCardPage({ share: 'ok', clipboard: 'ok' });
+    fillRequired(page);
+    pickStyle(page, 'a');
+    assert.equal(styleDrawn(page), 'a');
+
+    // 分享：傳出去的 PNG 是名片
+    page.press('shareCard');
+    await page.flush();
+    assert.equal(page.shares.length, 1);
+    assert.equal(page.blobRequests().length, 1);
+    const shared = page.blobRequests().at(-1);
+    assert.ok(shared.texts.includes(NAME_CARD_ONLY), `分享的 PNG 是名片：有「${NAME_CARD_ONLY}」`);
+    assert.deepEqual(shared.texts, page.texts(), '拍下來的就是畫面上那一張');
+
+    // 複製：寫進剪貼簿的 PNG 是名片
+    page.press('copyCard');
+    await page.flush();
+    assert.equal(page.clipboardWrites.length, 1);
+    assert.equal(page.blobRequests().length, 2);
+    const copied = page.blobRequests().at(-1);
+    assert.ok(copied.texts.includes(NAME_CARD_ONLY), `複製的 PNG 是名片：有「${NAME_CARD_ONLY}」`);
+    assert.deepEqual(copied.texts, page.texts(), '拍下來的就是畫面上那一張');
+
+    // 對照：換回海報，同一條路做出來的 PNG 沒有名片才畫的字（上面的檢查分得出風格）
+    pickStyle(page, 'b');
+    page.press('shareCard');
+    await page.flush();
+    assert.ok(!page.blobRequests().at(-1).texts.includes(NAME_CARD_ONLY), '海報的 PNG 沒有名片才畫的字');
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('第一次上線存的資料：照舊是海報、位置不變；第一次換到名片時是填滿置中，換回海報位置還在', async () => {
+    // 第一次上線的版本只能存 'b'，位置只有 b-landscape、b-portrait 兩份
+    const crops = { 'b-landscape': { x: -0.4, y: 0.2, zoom: 1.5 }, 'b-portrait': { x: 0.3, y: -0.6, zoom: 2 } };
+    const first = {
+        v: 1, name: NAME, world: 'Tiamat', mainJob: 'Pictomancer', level: 100, subJobs: [], title: '', fcName: '', fcTag: '', gc: '',
+        hours: [], likes: [], looking: [], intro: '', contact: '', accent: 'auto', style: 'b', format: 'landscape', crops
+    };
+    const page = await createCardPage({ stored: { [KEY]: JSON.stringify(first), [IMAGE_KEY]: dataUrlOf(2048, 768) } });
+
+    // 打開：照舊是海報，位置與縮放不變，打開時不改記憶
+    assert.equal(styleDrawn(page), 'b');
+    assert.deepEqual(checkedStyles(page), ['b']);
+    assert.deepEqual(drawnRect(pictureDraws(page)[0]), expectedRect(page, WIDE_IMAGE, crops['b-landscape']));
+    assert.equal(page.$('imageZoom').value, '150');
+    assert.deepEqual(plain(page.app.state.crops), crops);
+    assert.deepEqual(page.storageWrites, []);
+
+    // 第一次換到名片：它自己的位置還沒記過，是填滿置中，縮放滑桿回到 100%；記住的位置原封不動，只多存了風格
+    pickStyle(page, 'a');
+    assert.equal(styleDrawn(page), 'a');
+    assert.deepEqual(drawnRect(pictureDraws(page)[0]), expectedBoxRect(page, WIDE_IMAGE, FILL));
+    assert.equal(page.$('imageZoom').value, '100');
+    assert.deepEqual(plain(saved(page)), { ...first, style: 'a' });
+    // 資訊卡、名片與資訊卡的直版也一樣
+    pickStyle(page, 'c');
+    assert.equal(styleDrawn(page), 'c');
+    assert.deepEqual(drawnRect(pictureDraws(page)[0]), expectedBoxRect(page, WIDE_IMAGE, FILL));
+    assert.equal(page.$('imageZoom').value, '100');
+    page.press('formatPortrait');
+    assert.deepEqual(drawnRect(pictureDraws(page)[0]), expectedBoxRect(page, WIDE_IMAGE, FILL));
+    assert.equal(page.$('imageZoom').value, '100');
+    pickStyle(page, 'a');
+    assert.deepEqual(drawnRect(pictureDraws(page)[0]), expectedBoxRect(page, WIDE_IMAGE, FILL));
+    assert.deepEqual(cropsOf(page), crops, '一路換下來，記住的位置都沒動');
+
+    // 換回海報：橫版與直版各自的位置與縮放都還在
+    pickStyle(page, 'b');
+    assert.equal(styleDrawn(page), 'b');
+    assert.deepEqual(drawnRect(pictureDraws(page)[0]), expectedRect(page, WIDE_IMAGE, crops['b-portrait']));
+    assert.equal(page.$('imageZoom').value, '200');
+    page.press('formatLandscape');
+    assert.deepEqual(drawnRect(pictureDraws(page)[0]), expectedRect(page, WIDE_IMAGE, crops['b-landscape']));
+    assert.equal(page.$('imageZoom').value, '150');
+    assert.deepEqual(cropsOf(page), crops);
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('四行小字：海報時顯示並接在 aria-describedby（字數計數在前）；名片、資訊卡時 hidden、aria-describedby 沒有它；換回海報接回去；其他 id 不動；三語的新字', async () => {
+    const page = await createCardPage();
+    // 翻譯：三語逐字
+    for (const lang of LANGS) assert.equal(translationValues(TRANSLATIONS, lang).get('char_card_not_drawn'), NOT_DRAWN_TEXT[lang], `${lang} 的 char_card_not_drawn`);
+
+    // 標記：四個欄位底下緊接著一行 .form-text.not-drawn（每個欄位各有自己的 id）
+    assert.equal(new Set(NOT_DRAWN.map(([, hint]) => hint)).size, 4, '每個欄位各有自己的 id');
+    for (const [fieldId, hintId] of NOT_DRAWN) {
+        const hint = page.$(hintId);
+        assert.equal(hint.tagName, 'SPAN', hintId);
+        assert.ok(hint.classList.contains('form-text') && hint.classList.contains('not-drawn'), `#${hintId} 是 .form-text.not-drawn`);
+        assert.equal(hint.getAttribute('data-i18n'), 'char_card_not_drawn', hintId);
+        assert.equal(hint.textContent, NOT_DRAWN_TEXT.zh, hintId);
+        isSame(hint.previousElementSibling, page.$(fieldId), `#${hintId} 緊接在 #${fieldId} 底下`);
+    }
+    // 在找什麼是一組按鈕：說明接在 role="group" 的那個元素上，群組的名稱照舊指到標題
+    assert.equal(page.$('cardLooking').getAttribute('role'), 'group');
+    assert.equal(page.$('cardLooking').getAttribute('aria-labelledby'), 'cardLookingLabel');
+    // 整頁只有這四行；其他的控制項（卡片上三種風格都會畫的）的 aria-describedby 都沒有指到它們
+    const hintIds = new Set(NOT_DRAWN.map(([, hint]) => hint));
+    assert.deepEqual(all(page.document, '.not-drawn').map((element) => element.getAttribute('id')).sort(), [...hintIds].sort());
+    assert.deepEqual(all(page.document, '[data-i18n="char_card_not_drawn"]').map((element) => element.getAttribute('id')).sort(), [...hintIds].sort());
+    for (const id of ['cardName', 'cardWorld', 'cardWorldCustom', 'cardMainJob', 'cardLevel', 'cardSubJobs', 'cardTitle', 'cardFcTag', 'cardHours', 'cardLikes', 'cardIntro']) {
+        assert.ok(!describedIds(page.$(id)).some((item) => hintIds.has(item)), `#${id} 三種風格都會畫，沒有這行說明`);
+    }
+
+    // 海報：四行都顯示，接在欄位 aria-describedby 裡字數計數的 id 後面（沒有計數的欄位就在最前面）；名片、資訊卡：藏起來，並從 aria-describedby 拿掉
+    const withHint = { cardFcName: ['cardFcNameCount', 'cardFcNameNotDrawn'], cardGc: ['cardGcNotDrawn'], cardContact: ['cardContactCount', 'cardContactNotDrawn'], cardLooking: ['cardLookingNotDrawn'] };
+    const withoutHint = { cardFcName: ['cardFcNameCount'], cardGc: [], cardContact: ['cardContactCount'], cardLooking: [] };
+    const expectHints = (style, message) => {
+        const shown = style === 'b';
+        for (const [fieldId, hintId] of NOT_DRAWN) {
+            assert.equal(page.isShown(hintId), shown, `${message}：#${hintId} 的顯示`);
+            assert.deepEqual(describedIds(page.$(fieldId)), (shown ? withHint : withoutHint)[fieldId], `${message}：#${fieldId} 的 aria-describedby`);
+        }
+    };
+    expectHints('b', '一打開（海報）');
+    for (const style of ['a', 'b', 'c', 'b', 'c', 'a', 'b']) {
+        pickStyle(page, style);
+        expectHints(style, `選 ${style}`);
+    }
+    // 沒有計數的欄位拿掉說明之後，aria-describedby 整個拿掉（不留空的）
+    pickStyle(page, 'a');
+    assert.equal(page.$('cardGc').getAttribute('aria-describedby'), null);
+    assert.equal(page.$('cardLooking').getAttribute('aria-describedby'), null);
+    // 不在海報時打字、選項、按鈕：藏起來的說明不會又冒出來
+    page.type('cardFcName', 'Moonlit Garden');
+    page.type('cardContact', 'Discord: luna_star');
+    page.select('cardGc', 'twinAdder');
+    page.chip('cardLooking', 'static').click();
+    expectHints('a', '名片時填了這四個欄位');
+    // 重新打開：存的是名片，說明一開始就是藏著的
+    const again = await page.reopen();
+    for (const [fieldId, hintId] of NOT_DRAWN) {
+        assert.equal(again.isShown(hintId), false, `重新打開：#${hintId}`);
+        assert.ok(!describedIds(again.$(fieldId)).includes(hintId), `重新打開：#${fieldId}`);
+    }
+    pickStyle(page, 'b');
+
+    // 其他 id 不動：換風格只拿掉、接回說明自己的 id（接在字數計數的 id 後面，沒有計數就放最前面）
+    page.$('cardFcName').setAttribute('aria-describedby', 'cardFcNameCount cardFcNameNotDrawn extraNote');
+    page.$('cardGc').setAttribute('aria-describedby', 'gcNote cardGcNotDrawn');
+    pickStyle(page, 'c');
+    assert.deepEqual(describedIds(page.$('cardFcName')), ['cardFcNameCount', 'extraNote']);
+    assert.deepEqual(describedIds(page.$('cardGc')), ['gcNote']);
+    pickStyle(page, 'b');
+    assert.deepEqual(describedIds(page.$('cardFcName')), ['cardFcNameCount', 'cardFcNameNotDrawn', 'extraNote']);
+    assert.deepEqual(describedIds(page.$('cardGc')), ['cardGcNotDrawn', 'gcNote']);
+
+    // 說明跟著介面語言（不管現在顯不顯示）
+    for (const style of ['b', 'a']) {
+        pickStyle(page, style);
+        for (const lang of ['en', 'ja', 'zh']) {
+            page.setLang(lang);
+            for (const [, hintId] of NOT_DRAWN) assert.equal(page.$(hintId).textContent, NOT_DRAWN_TEXT[lang], `${style}、${lang}：#${hintId}`);
+        }
+    }
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+// 四個欄位與它們底下的說明被寫了什麼：欄位的 setAttribute、removeAttribute，說明的 hidden（每一筆是「元素 id.動作」）。
+// 每打一個字都會重算一次這四行，值沒變就不該寫：焦點所在的欄位被寫了 aria-describedby，有的螢幕閱讀器會把說明再念一次
+function watchNotDrawnWrites(page) {
+    const writes = [];
+    for (const [fieldId, hintId] of NOT_DRAWN) {
+        const field = page.$(fieldId);
+        for (const method of ['setAttribute', 'removeAttribute']) {
+            const original = field[method].bind(field);
+            field[method] = (name, ...rest) => {
+                writes.push(`${fieldId}.${method}(${name})`);
+                return original(name, ...rest);
+            };
+        }
+        const hint = page.$(hintId);
+        const { get, set } = Object.getOwnPropertyDescriptor(hint, 'hidden');
+        Object.defineProperty(hint, 'hidden', {
+            configurable: true,
+            get,
+            set: (value) => {
+                writes.push(`${hintId}.hidden = ${value}`);
+                set(value);
+            }
+        });
+    }
+    return writes;
+}
+
+test('四行小字：值沒變就不重寫（打字、選項、焦點所在的欄位都一樣，名片換資訊卡也沒有要改的）；換風格時只寫有變的，各一次', async () => {
+    const page = await createCardPage();
+    const writes = watchNotDrawnWrites(page);
+    const taken = () => writes.splice(0).sort();
+
+    // 海報：每打一個字、選一個選項、按一顆按鈕都會重算，但說明還是顯示著、aria-describedby 還是接著，一次都不寫（焦點在欄位上打字也一樣）
+    page.focus('cardFcName');
+    page.type('cardFcName', 'Moonlit Garden');
+    page.type('cardFcName', 'Moonlit Garden 2');
+    page.focus('cardContact');
+    page.type('cardContact', 'Discord: luna_star');
+    page.select('cardGc', 'twinAdder');
+    page.chip('cardLooking', 'static').click();
+    page.type('cardName', NAME);
+    assert.deepEqual(taken(), [], '海報：沒換風格，一次都沒寫');
+
+    // 換成名片：四行藏起來，四個欄位的 aria-describedby 拿掉說明（部隊名稱與聯絡方式剩字數計數，另外兩個整個拿掉）：只寫這八處，各一次
+    pickStyle(page, 'a');
+    assert.deepEqual(taken(), [
+        'cardFcNameNotDrawn.hidden = true', 'cardGcNotDrawn.hidden = true', 'cardContactNotDrawn.hidden = true', 'cardLookingNotDrawn.hidden = true',
+        'cardFcName.setAttribute(aria-describedby)', 'cardContact.setAttribute(aria-describedby)',
+        'cardGc.removeAttribute(aria-describedby)', 'cardLooking.removeAttribute(aria-describedby)'
+    ].sort(), '海報換名片：每一處各寫一次');
+    page.focus('cardContact');
+    page.type('cardContact', 'Discord: luna_star_2');
+    page.type('cardFcName', 'Moonlit');
+    page.select('cardGc', 'maelstrom');
+    page.chip('cardLooking', 'fc').click();
+    assert.deepEqual(taken(), [], '名片：打字與選項也不寫');
+
+    // 名片換資訊卡：兩種都不畫這四行，說明早就藏著、aria-describedby 早就沒有它，沒有要改的
+    pickStyle(page, 'c');
+    assert.deepEqual(taken(), [], '名片換資訊卡：一次都沒寫');
+
+    // 換回海報：四行顯示出來、說明接回 aria-describedby（沒有計數的欄位原本沒有這個屬性，是新寫上去的），各一次
+    pickStyle(page, 'b');
+    assert.deepEqual(taken(), [
+        'cardFcNameNotDrawn.hidden = false', 'cardGcNotDrawn.hidden = false', 'cardContactNotDrawn.hidden = false', 'cardLookingNotDrawn.hidden = false',
+        'cardFcName.setAttribute(aria-describedby)', 'cardContact.setAttribute(aria-describedby)',
+        'cardGc.setAttribute(aria-describedby)', 'cardLooking.setAttribute(aria-describedby)'
+    ].sort(), '資訊卡換海報：每一處各寫一次');
+    // 該寫的有寫：說明顯示、接在字數計數的 id 後面
+    for (const [, hintId] of NOT_DRAWN) assert.equal(page.isShown(hintId), true, `#${hintId} 又顯示了`);
+    assert.deepEqual(describedIds(page.$('cardFcName')), ['cardFcNameCount', 'cardFcNameNotDrawn']);
+    assert.deepEqual(describedIds(page.$('cardGc')), ['cardGcNotDrawn']);
+    page.type('cardFcName', 'Moonlit Garden');
+    assert.deepEqual(taken(), [], '換回海報之後打字也不寫');
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('說明說的是實話：四個欄位都填了，海報上沒有它們的字，名片與資訊卡上有（部隊名稱與簡稱、大國防聯軍、在找什麼、聯絡方式）；中文與英文介面都一樣', async () => {
+    const page = await createCardPage();
+    fillEverything(page); // 直版；在找什麼已經選了固定隊
+    page.chip('cardLooking', 'fc').click();
+    page.chip('cardLooking', 'friends').click();
+    for (const lang of ['zh', 'en']) {
+        page.setLang(lang);
+        const text = (key) => translationValues(TRANSLATIONS, lang).get(key);
+        const looking = ['static', 'fc', 'friends'].map((key) => text(`char_card_looking_${key}`)).join(text('char_card_card_list_sep'));
+        const fourFields = ['Moonlit Garden', 'Discord: luna_star', text('char_card_gc_twin_adder'), looking];
+        // 海報：四個欄位的字一個都沒有；會畫的字（名字、伺服器、簡稱、自我介紹）在
+        pickStyle(page, 'b');
+        for (const hidden of fourFields) assert.ok(!drawsValue(page, hidden), `${lang}、海報：卡片上不會有 ${hidden}`);
+        for (const drawn of ['Luna Starweaver', 'Tiamat', '«MOON»', 'Looking for a Savage static.']) assert.ok(drawsValue(page, drawn), `${lang}、海報：卡片上有 ${drawn}`);
+        // 名片與資訊卡：部隊名稱與簡稱、大國防聯軍、在找什麼（照順序接起來）、聯絡方式都畫出來
+        for (const style of ['a', 'c']) {
+            pickStyle(page, style);
+            assert.equal(styleDrawn(page), style);
+            for (const shown of [...fourFields, '«MOON»', 'Luna Starweaver', 'Tiamat', 'Looking for a Savage static.']) assert.ok(drawsValue(page, shown), `${lang}、${style}：卡片上有 ${shown}`);
+        }
+    }
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('換風格、換版型各用自己那一份位置：在海報拖過、縮放過之後換名片是填滿置中（縮放滑桿也回到 100%），在名片拖曳只改 crops[\'a-landscape\']', async () => {
+    const page = await createCardPage();
+    await upload(page, WIDE);
+    const slider = page.$('imageZoom');
+    const zoomsOf = () => plain(Object.fromEntries(Object.entries(cropsOf(page)).map(([key, crop]) => [key, crop.zoom])));
+
+    // 在海報（橫版）縮放、拖曳
+    page.slide(200);
+    page.drag([[300, 200], [330, 205]]);
+    const poster = cropsOf(page)['b-landscape'];
+    assert.equal(poster.zoom, 2);
+    assert.ok(poster.x < 0 && poster.y !== 0, '拖過了');
+    assert.deepEqual(Object.keys(cropsOf(page)), ['b-landscape']);
+
+    // 換名片：它自己的位置沒記過，是填滿置中，縮放滑桿與它旁邊的字也回到 100%；海報的位置原封不動
+    pickStyle(page, 'a');
+    assert.equal(pictureDraws(page).length, 1);
+    assert.deepEqual(drawnRect(pictureDraws(page)[0]), expectedBoxRect(page, WIDE_IMAGE, FILL));
+    assert.equal(slider.value, '100');
+    assert.equal(slider.getAttribute('aria-valuetext'), '100%');
+    assert.equal(page.$('imageZoomValue').textContent, '100%');
+    assert.deepEqual(cropsOf(page), { 'b-landscape': poster });
+
+    // 在名片拖曳：只多一份 a-landscape，海報的不動
+    page.drag([[300, 200], [330, 200]]);
+    const nameCard = cropsOf(page)['a-landscape'];
+    assert.ok(nameCard.x < 0 && nameCard.zoom === 1, '名片的位置動了');
+    assert.deepEqual(Object.keys(cropsOf(page)).sort(), ['a-landscape', 'b-landscape']);
+    assert.deepEqual(cropsOf(page)['b-landscape'], poster);
+    assert.deepEqual(drawnRect(pictureDraws(page)[0]), expectedBoxRect(page, WIDE_IMAGE, nameCard));
+
+    // 名片的直版也有自己的一份：沒記過是填滿置中；縮放只改這一份
+    page.press('formatPortrait');
+    assert.deepEqual(drawnRect(pictureDraws(page)[0]), expectedBoxRect(page, WIDE_IMAGE, FILL));
+    assert.equal(slider.value, '100');
+    page.slide(150);
+    assert.deepEqual(zoomsOf(), { 'a-landscape': 1, 'a-portrait': 1.5, 'b-landscape': 2 });
+    assert.deepEqual(cropsOf(page)['a-landscape'], nameCard);
+
+    // 資訊卡：橫版、直版都是沒記過的填滿置中；各動各的
+    pickStyle(page, 'c');
+    assert.deepEqual(drawnRect(pictureDraws(page)[0]), expectedBoxRect(page, WIDE_IMAGE, FILL));
+    assert.equal(slider.value, '100');
+    page.slide(120);
+    page.press('formatLandscape');
+    assert.deepEqual(drawnRect(pictureDraws(page)[0]), expectedBoxRect(page, WIDE_IMAGE, FILL));
+    assert.equal(slider.value, '100');
+    page.slide(250);
+    assert.deepEqual(zoomsOf(), { 'a-landscape': 1, 'a-portrait': 1.5, 'b-landscape': 2, 'c-landscape': 2.5, 'c-portrait': 1.2 });
+
+    // 換回海報：位置與縮放都在；換回名片：拖過的位置在
+    pickStyle(page, 'b');
+    assert.deepEqual(drawnRect(pictureDraws(page)[0]), expectedPlace(page, WIDE_IMAGE, poster));
+    assert.equal(slider.value, '200');
+    pickStyle(page, 'a');
+    assert.deepEqual(drawnRect(pictureDraws(page)[0]), expectedBoxRect(page, WIDE_IMAGE, nameCard));
+    assert.equal(slider.value, '100');
+
+    // 重新打開：六份裡記過的都在，記憶裡的風格是名片
+    const again = await page.reopen();
+    assert.deepEqual(plain(again.app.state.crops), plain(page.app.state.crops));
+    assert.equal(again.app.state.style, 'a');
+    assert.deepEqual(drawnRect(pictureDraws(again)[0]), expectedBoxRect(again, WIDE_IMAGE, nameCard));
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('名片與資訊卡的拖曳照照片框換算（不是整張卡片）：往右拖 30 個 CSS 像素，存的位置等於 CardLayout.dragCrop(起點, 60, 0, 圖寬, 圖高, 框的寬, 框的高)', async () => {
+    const TALL_IMAGE = { width: 768, height: 2048 };
+    for (const style of ['a', 'c']) {
+        for (const format of ['landscape', 'portrait']) {
+            const key = `${style}-${format}`;
+            const page = await createCardPage();
+            pickStyle(page, style);
+            if (format === 'portrait') page.press('formatPortrait');
+            await upload(page, WIDE);
+            const canvas = page.$('cardCanvas');
+            const box = boxOf(page);
+            assert.ok(box.width < canvas.width || box.height < canvas.height, `${key}：照片框比整張卡片小`);
+            // 卡片在畫面上縮成一半：滑鼠移 30 個 CSS 像素，是卡片上的 60 個像素；拖的是框裡的圖，所以照框的大小換算
+            assert.equal(canvas.getBoundingClientRect().width, canvas.width / 2);
+            page.drag([[300, 200], [330, 200]]);
+            const ofBox = plain(page.window.CardLayout.dragCrop(FILL, 60, 0, WIDE_IMAGE.width, WIDE_IMAGE.height, box.width, box.height));
+            const ofCard = expectedDrag(page, WIDE_IMAGE, FILL, 60, 0);
+            nearCrop(cropsOf(page)[key], ofBox, `${key}：照照片框換算`);
+            assert.ok(ofBox.x < 0, `${key}：往右拖，圖跟著往右，x 變小`);
+            assert.ok(Math.abs(ofBox.x - ofCard.x) > 1e-3, `${key}：和用整張卡片換算的不一樣（不然這個測試分不出來）`);
+            assert.deepEqual(Object.keys(cropsOf(page)), [key], `${key}：只動這一份`);
+            assert.deepEqual(drawnRect(pictureDraws(page)[0]), expectedBoxRect(page, WIDE_IMAGE, cropsOf(page)[key], box), `${key}：圖畫在框裡`);
+
+            // 上下也一樣：換一張直的圖（位置從填滿置中開始），往下拖 40 個 CSS 像素
+            await upload(page, { width: 1500, height: 4000 });
+            page.drag([[300, 200], [300, 240]]);
+            const tallOfBox = plain(page.window.CardLayout.dragCrop(FILL, 0, 80, TALL_IMAGE.width, TALL_IMAGE.height, box.width, box.height));
+            const tallOfCard = expectedDrag(page, TALL_IMAGE, FILL, 0, 80);
+            nearCrop(cropsOf(page)[key], tallOfBox, `${key}：上下也照照片框換算`);
+            assert.ok(tallOfBox.y < 0, `${key}：往下拖，y 變小`);
+            assert.ok(Math.abs(tallOfBox.y - tallOfCard.y) > 1e-3, `${key}：和用整張卡片換算的不一樣`);
+            assert.deepEqual(drawnRect(pictureDraws(page)[0]), expectedBoxRect(page, TALL_IMAGE, cropsOf(page)[key], box));
+            assert.deepEqual(page.consoleErrors, []);
+        }
+    }
+
+    // 海報的框就是整張卡片：換算和第一次上線一樣
+    const poster = await createCardPage();
+    await upload(poster, WIDE);
+    assert.deepEqual(boxOf(poster), { x: 0, y: 0, width: 1200, height: 675 });
+    poster.drag([[300, 200], [330, 200]]);
+    nearCrop(cropsOf(poster)['b-landscape'], expectedDrag(poster, WIDE_IMAGE, FILL, 60, 0), '海報照整張卡片換算');
+});
+
+test('卡片上的小標與值跟著介面語言：名片與資訊卡的小標、大國防聯軍、在找什麼（照 CardState.LOOKING 的順序，用那個語言的分隔接起來）', async () => {
+    const page = await createCardPage({ lang: 'en' });
+    fillRequired(page);
+    page.type('cardFcName', 'Moonlit Garden');
+    page.type('cardFcTag', 'MOON');
+    page.select('cardGc', 'twinAdder');
+    page.type('cardContact', 'Discord: luna_star');
+    page.chip('cardLooking', 'fc').click(); // 先選的是部隊：卡片上還是照 CardState.LOOKING 的順序（固定隊、部隊），不是點選的順序
+    page.chip('cardLooking', 'static').click();
+    page.chip('cardLikes', 'savage').click();
+    page.toggle('hours-weekday-evening');
+    page.chip('cardSubJobs', 'Paladin').click();
+    page.press('formatPortrait'); // 直版的值放得下一行（橫版的值會折行，折行的字拆成兩段）
+    assert.deepEqual(plain(page.window.CardState.LOOKING), ['static', 'fc', 'friends']);
+    assert.deepEqual(plain(page.app.state.looking), ['fc', 'static']);
+
+    // 英文：小標（一個字一個字畫的，接回一段）、大國防聯軍是官方的英文名稱、在找什麼用「, 」接；名片的「Lv 100 · Main job」。
+    // 值在三小欄裡放不下一行時會折行（資訊卡的三格小卡比名片窄），所以值用 drawsValue 看
+    pickStyle(page, 'a');
+    for (const label of ['Free Company', 'Grand Company', 'Looking for', 'Favorite content', 'Play hours', 'Lv 100 · Main job']) assert.ok(drawnLines(page).includes(label), `英文的名片上有小標 ${label}`);
+    for (const value of ['Moonlit Garden «MOON»', 'Order of the Twin Adder', 'Static, Free Company', 'Discord: luna_star']) assert.ok(drawsValue(page, value), `英文的名片上有 ${value}`);
+    pickStyle(page, 'c');
+    for (const label of ['Free Company', 'Grand Company', 'Looking for', 'Favorite content', 'Play hours', 'Other jobs', 'Lv 100']) assert.ok(drawnLines(page).includes(label), `英文的資訊卡上有小標 ${label}`);
+    for (const value of ['Moonlit Garden «MOON»', 'Order of the Twin Adder', 'Static, Free Company', 'Discord: luna_star']) assert.ok(drawsValue(page, value), `英文的資訊卡上有 ${value}`);
+
+    // 換成日文、中文：小標、官方名稱與分隔都跟著換，選的不變；用不到的另一個語言的字沒有
+    for (const lang of ['ja', 'zh']) {
+        const card = CARD_TEXT[lang];
+        const text = (key) => translationValues(TRANSLATIONS, lang).get(key);
+        const looking = `${text('char_card_looking_static')}${card.list_sep}${text('char_card_looking_fc')}`;
+        page.setLang(lang);
+        pickStyle(page, 'a');
+        for (const label of [card.fc, card.gc, card.looking, card.likes, card.hours, `Lv 100 · ${card.main_job}`]) assert.ok(drawnLines(page).includes(label), `${lang} 的名片上有小標 ${label}`);
+        for (const value of [text('char_card_gc_twin_adder'), looking]) assert.ok(drawsValue(page, value), `${lang} 的名片上有 ${value}`);
+        pickStyle(page, 'c');
+        for (const label of [card.fc, card.gc, card.looking, card.likes, card.hours, card.subjobs]) assert.ok(drawnLines(page).includes(label), `${lang} 的資訊卡上有小標 ${label}`);
+        for (const value of [text('char_card_gc_twin_adder'), looking]) assert.ok(drawsValue(page, value), `${lang} 的資訊卡上有 ${value}`);
+        for (const other of ['Free Company', 'Order of the Twin Adder', 'Looking for', 'Static, Free Company']) assert.ok(!drawsValue(page, other), `${lang}：卡片上沒有英文的 ${other}`);
+    }
+    assert.deepEqual(plain(page.app.state.looking), ['fc', 'static'], '語言不改選的順序');
+    assert.equal(saved(page).gc, 'twinAdder');
+
+    // 沒填的欄位整塊不畫：沒選大國防聯軍、沒選在找什麼時，值與小標都沒有
+    page.select('cardGc', '');
+    page.chip('cardLooking', 'fc').click();
+    page.chip('cardLooking', 'static').click();
+    page.setLang('en');
+    for (const style of ['a', 'c']) {
+        pickStyle(page, style);
+        for (const gone of ['Grand Company', 'Order of the Twin Adder', 'Looking for', 'Static']) assert.ok(!drawsValue(page, gone), `${style}：沒填的 ${gone} 不畫`);
+        assert.ok(drawsText(page, 'Free Company'), `${style}：部隊還在`);
+    }
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('選名片時下載要等襯線字：名字用 Noto Serif TC 700，載完才產生，下載的圖不能用備用字型', async () => {
+    const page = await createCardPage({ fontsDelay: true });
+    fillRequired(page);
+    page.releaseFonts(); // 海報的字型先載完，只看名片多出來的襯線字
+    await page.flush();
+    assert.deepEqual(page.heldFontBatches(), []);
+    assert.ok(!page.fontLoads.some(({ font }) => font.includes('Noto Serif TC')), '海報不用襯線字');
+
+    pickStyle(page, 'a');
+    // 名片的名字用 Noto Serif TC 700：請瀏覽器載入，而且含名字的每一個字
+    const serif = page.fontLoads.filter(({ font }) => font.startsWith('700 ') && font.includes('Noto Serif TC'));
+    assert.equal(serif.length, 1, '襯線字請求了一次');
+    assert.ok([...NAME].every((char) => serif[0].text.includes(char)), '含名字的每一個字');
+    assert.equal(page.heldFontBatches().length, 1, '這一批還在等');
+    assert.ok(page.heldFontBatches()[0].some(({ font }) => font.includes('Noto Serif TC')), '等的就是襯線字那一批');
+
+    // 還沒載完就按下載：toBlob 還沒被呼叫，沒有下載、沒有 toast
+    page.press('downloadCard');
+    await page.flush();
+    assert.equal(page.blobRequests().length, 0, '襯線字還沒載完，toBlob 還沒被呼叫');
+    assert.deepEqual(page.downloads, []);
+    assert.deepEqual(page.toasts, []);
+
+    // 載完（重畫過）才產生：拍下來的是名片，名字畫在上面
+    page.releaseFonts();
+    await page.flush();
+    assert.equal(page.blobRequests().length, 1);
+    assert.equal(page.downloads.length, 1);
+    assert.deepEqual(page.heldFontBatches(), []);
+    assert.equal(styleDrawn(page), 'a');
+    const [request] = page.blobRequests();
+    assert.ok(request.texts.includes(NAME), '名字畫在圖上');
+    assert.deepEqual(request.texts, page.texts());
+    assert.deepEqual(page.toasts.map((toast) => toast.message), [`已下載 ${OUT_FILE}`], '沒有逾時的 toast');
+
+    // 換成資訊卡：不用襯線字，沒有新的襯線字要等
+    pickStyle(page, 'c');
+    assert.equal(page.fontLoads.filter(({ font }) => font.includes('Noto Serif TC')).length, 1, '資訊卡沒有再請求襯線字');
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('風格的翻譯：卡片上的小標與分隔、不會畫出這一項的說明，三語都有、zh 照規定的字；鍵都有人用', () => {
+    const values = Object.fromEntries(LANGS.map((lang) => [lang, translationValues(TRANSLATIONS, lang)]));
+    for (const lang of LANGS) {
+        for (const [name, text] of Object.entries(CARD_TEXT[lang])) assert.equal(values[lang].get(`char_card_card_${name}`), text, `${lang} 的 char_card_card_${name}`);
+        assert.equal(values[lang].get('char_card_not_drawn'), NOT_DRAWN_TEXT[lang], `${lang} 的 char_card_not_drawn`);
+    }
+    // 英文的分隔結尾有一個空格（「Static, Free Company」），中文與日文是頓號
+    assert.equal(values.en.get('char_card_card_list_sep'), ', ');
+    assert.equal(values.zh.get('char_card_card_list_sep'), '、');
+    // 小標與分隔用寫死的鍵（tests/scripts.test.js 才掃得到），風格單選的字寫在 index.html 的 data-i18n
+    for (const name of Object.keys(CARD_TEXT.zh)) assert.ok(SCRIPT.includes(`'char_card_card_${name}'`), `script.js 用 char_card_card_${name}`);
+    for (const key of ['char_card_gc_maelstrom', 'char_card_gc_twin_adder', 'char_card_gc_immortal_flames', 'char_card_looking_static', 'char_card_looking_fc', 'char_card_looking_friends']) {
+        assert.ok(SCRIPT.includes(`'${key}'`), `script.js 用 ${key}（卡片上的大國防聯軍與在找什麼）`);
+    }
+    for (const name of Object.keys(STYLE_TEXT.zh)) assert.ok(HTML.includes(`data-i18n="char_card_style_${name}"`), `index.html 用 char_card_style_${name}`);
 });

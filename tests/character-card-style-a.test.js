@@ -6,7 +6,7 @@ const vm = require('node:vm');
 
 const { createRecordingContext, fakeMeasure } = require('./helpers/canvas-recorder.js');
 const {
-    card, SIZE, cq, ACCENT, NOTICE, INTRO, DAYS, SLOTS, SUB_ICONS, picture, requiredModel, emptyModel, fullModel, maxedModel, longestLikes,
+    card, SIZE, cq, ACCENT, NOTICE, INTRO, DAYS, SLOTS, SUB_ICONS, picture, requiredModel, emptyModel, fullModel, maxedModel, tallestModel, longestLikes,
     render, drawn, lines, textBoxes, fills, imageCalls, plain, near, inside, overlaps
 } = require('./helpers/card-drawing.js');
 
@@ -774,44 +774,99 @@ test('照片框的光環與陰影：陰影由不透明的照片框形狀投出�
 
 // ---------- 填到上限 ----------
 
+// 資訊欄放得下：每一段字都在資訊欄裡、互不重疊，也沒有字在照片框裡；形狀（膠囊、時段格子、自我介紹的線、細線）與圖示也都在資訊欄裡；
+// 每個欄位都畫出來；底部一列貼著資訊欄的底
+function assertFitsInfoColumn(ctx, format, where) {
+    const { photo, info } = boxes(format);
+    const photoBox = { left: photo.x, right: photo.x + photo.width, top: photo.y, bottom: photo.y + photo.height };
+    const found = textBoxes(ctx);
+    assert.ok(found.length >= 30, `${where}：畫了 ${found.length} 段字`);
+    for (const box of found) {
+        assert.ok(Number.isFinite(box.left) && Number.isFinite(box.top));
+        assert.ok(inside(box, info), `${where}：「${box.text}」超出資訊欄（${box.left}～${box.right}、${box.top}～${box.bottom}；資訊欄 ${JSON.stringify(info)}）`);
+        assert.equal(overlaps(box, photoBox), false, `${where}：「${box.text}」在照片框裡`);
+    }
+    for (let i = 0; i < found.length; i++) {
+        for (let j = i + 1; j < found.length; j++) {
+            assert.equal(overlaps(found[i], found[j]), false, `${where}：「${found[i].text}」與「${found[j].text}」重疊`);
+        }
+    }
+    // 形狀（膠囊、時段格子、自我介紹的線、細線）也都在資訊欄裡，圖示也是。整張卡片的底、壓暗與照片框（含光環）裡的不算
+    const ring = cq(format, 0.25);
+    const inPhoto = (shape) => shape.x >= photo.x - ring - 1e-6 && shape.y >= photo.y - ring - 1e-6 && shape.x + shape.w <= photo.x + photo.width + ring + 1e-6 && shape.y + shape.h <= photo.y + photo.height + ring + 1e-6;
+    const infoShapes = fills(ctx).filter((shape) => shape.w < SIZE[format].width && !inPhoto(shape));
+    assert.ok(infoShapes.length >= 6 + 8 + 2, `${where}：資訊欄裡的形狀 ${infoShapes.length} 個`);
+    for (const shape of infoShapes) {
+        assert.ok(shape.x >= info.x - 1e-6 && shape.x + shape.w <= info.x + info.width + 1e-6 && shape.y >= info.y - 1e-6 && shape.y + shape.h <= info.y + info.height + 1e-6, `${where}：形狀超出資訊欄 ${JSON.stringify({ x: shape.x, y: shape.y, w: shape.w, h: shape.h })}`);
+    }
+    for (const image of imageCalls(ctx)) {
+        assert.ok(image.x >= info.x - 1e-6 && image.x + image.w <= info.x + info.width + 1e-6 && image.y >= info.y - 1e-6 && image.y + image.h <= info.y + info.height + 1e-6, `${where}：圖示超出資訊欄`);
+    }
+    // 每個欄位都畫出來：6 個膠囊、8 格時段、自我介紹最多 2 行、三個其他職業
+    assert.equal(chipShapes(ctx).length, 6, `${where}：6 個膠囊`);
+    assert.equal(hourCells(ctx).length, 8);
+    assert.equal(introLines(ctx, format).length >= 1 && introLines(ctx, format).length <= 2, true);
+    assert.equal(imageCalls(ctx).length, 4);
+    // 底部一列貼著資訊欄的底（一行字的高度是字級的 1.45 倍，字的框是字級那麼高，在這一行的正中）
+    const foot = found.find((box) => box.text === FOOT);
+    near(foot.bottom + (foot.bottom - foot.top) * (LINE_NORMAL - 1) / 2, info.y + info.height, `${where}：底部一列貼著資訊欄的底`, 0.02);
+}
+
+// 這一個量的是寬度：每個欄位都填到上限，但 wide 的名字 21 個字會縮到約 66%（直版省出約 27px 的高度）、latin 的自我介紹只有 1 行，直版因此還有約 26px（wide）、
+// 35px（latin）的空位，量不到高度最擠的情況（見下一個測試）
 test('每個欄位填到上限（wide、latin）：橫版、直版的每一段字都在資訊欄裡、互不重疊，也沒有字在照片框裡', () => {
     for (const script of ['wide', 'latin']) {
+        for (const format of FORMATS) assertFitsInfoColumn(render(maxedModel('a', { script }, { format })), format, `${script} ${format}`);
+    }
+});
+
+// 這一個量的是高度：名字短（不縮）、其他區塊都到最高（tallestModel）。直版加起來比資訊欄高 5.21px，所以 8 個間距一起縮小，每個從 1.9cqw（20.52px）
+// 縮成 19.87px（和 card-style-a.js 檔案開頭、CLAUDE.md 寫的數字一樣：改了這裡要一起改）；橫版放得下，間距照草稿。這個縮小用的是 stackDown 的保險，
+// 所以有這一個測試守住：縮得很少，沒有任何東西重疊，底部一列貼著資訊欄的底，最後一個區塊在它上面
+test('名字短、其他區塊都到最高（zh、en、ja）：資訊欄放得下、互不重疊；直版的間距從 20.52px 縮成 19.87px，橫版照草稿的 15px', () => {
+    for (const lang of ['zh', 'en', 'ja']) {
         for (const format of FORMATS) {
-            const { photo, info } = boxes(format);
-            const photoBox = { left: photo.x, right: photo.x + photo.width, top: photo.y, bottom: photo.y + photo.height };
-            const ctx = render(maxedModel('a', { script }, { format }));
-            const found = textBoxes(ctx);
-            assert.ok(found.length >= 30, `${script} ${format}：畫了 ${found.length} 段字`);
-            const where = `${script} ${format}`;
-            for (const box of found) {
-                assert.ok(Number.isFinite(box.left) && Number.isFinite(box.top));
-                assert.ok(inside(box, info), `${where}：「${box.text}」超出資訊欄（${box.left}～${box.right}、${box.top}～${box.bottom}；資訊欄 ${JSON.stringify(info)}）`);
-                assert.equal(overlaps(box, photoBox), false, `${where}：「${box.text}」在照片框裡`);
+            const where = `${lang} ${format}`;
+            const { info } = boxes(format);
+            const px = (landscape, portrait) => cq(format, pick(format, landscape, portrait));
+            const model = tallestModel('a', { lang }, { format });
+            const ctx = render(model);
+
+            // 這份內容真的是最高的（不是的話，下面的數字量到的是較矮的內容）：名字不縮、三欄資訊那一排有 2 行（部隊的值折成 2 行）、
+            // 喜歡的內容 2 列而且字級是 100%、自我介紹 2 行、每個區塊都在
+            near(lineOf(ctx, 'Luna').px, px(4.6, 6.6), `${where}：名字不縮`);
+            const metaValues = lines(ctx).filter((line) => line.fillStyle === COLORS.text && Math.abs(line.px - px(1.4, 2.05)) < 0.011);
+            assert.equal(distinct(metaValues.filter((line) => Math.abs(line.x - info.x) < 1e-6).map((line) => line.y)).length, 2, `${where}：部隊的值折成 2 行`);
+            assert.equal(distinct(chipShapes(ctx).map((chip) => chip.y)).length, 2, `${where}：喜歡的內容 2 列`);
+            for (const label of model.likes) near(lineOf(ctx, label).px, px(1.22, 1.8), `${where}：膠囊「${label}」字級 100%`);
+            assert.equal(introLines(ctx, format).length, 2, `${where}：自我介紹 2 行`);
+            for (const text of [model.title, model.world, model.contact]) assert.ok(hasLine(ctx, text), `${where}：「${text}」有畫`);
+            assert.equal(imageCalls(ctx).length, 4, `${where}：主職與 3 個其他職業的圖示`);
+            assert.equal(rules(ctx).length, 1, `${where}：細線`);
+
+            assertFitsInfoColumn(ctx, format, where);
+
+            // 資訊欄真的放得下：第一個區塊（稱號）從資訊欄的頂開始，底部一列貼著資訊欄的底，最後一個區塊（自我介紹）的底在它上面。
+            // 區塊之間的間距（stackDown 實際用的）量稱號與名字之間的
+            const title = lineOf(ctx, model.title);
+            const name = lineOf(ctx, 'Luna');
+            near(title.y, info.y + px(1.35, 1.9) * LINE_NORMAL / 2, `${where}：稱號從資訊欄的頂開始`, 0.011);
+            const gap = (name.y - name.px * 1.12 / 2) - (title.y + px(1.35, 1.9) * LINE_NORMAL / 2);
+            const foot = lineOf(ctx, FOOT);
+            const footTop = foot.y - foot.px * LINE_NORMAL / 2;
+            near(footTop + foot.px * LINE_NORMAL, info.y + info.height, `${where}：底部一列貼著資訊欄的底`, 0.011);
+            const lastBottom = introLines(ctx, format).at(-1).y + px(1.45, 2.15) * 1.55 / 2;
+            assert.ok(lastBottom <= footTop + 1e-6, `${where}：最後一個區塊（自我介紹）的底 ${lastBottom} 在底部一列的頂 ${footTop} 上面`);
+            const specified = px(1.25, 1.9);
+            if (format === 'landscape') {
+                near(gap, specified, `${where}：橫版放得下，間距照草稿的 1.25cqw`, 1e-6);
+                assert.ok(footTop - lastBottom >= gap - 1e-6, `${where}：橫版最後一個區塊與底部一列之間至少一個間距`);
+            } else {
+                near(specified, 20.52, `${where}：草稿的 1.9cqw`, 1e-9);
+                assert.ok(gap < specified, `${where}：直版放不下，間距縮小了（${gap}／${specified}）`);
+                near(gap, 19.87, `${where}：直版的間距縮成 19.87px`, 0.01);
+                near(footTop - lastBottom, gap, `${where}：直版剛好填滿，最後一個區塊與底部一列之間也是縮小後的間距`, 1e-6);
             }
-            for (let i = 0; i < found.length; i++) {
-                for (let j = i + 1; j < found.length; j++) {
-                    assert.equal(overlaps(found[i], found[j]), false, `${where}：「${found[i].text}」與「${found[j].text}」重疊`);
-                }
-            }
-            // 形狀（膠囊、時段格子、自我介紹的線、細線）也都在資訊欄裡，圖示也是。整張卡片的底、壓暗與照片框（含光環）裡的不算
-            const ring = cq(format, 0.25);
-            const inPhoto = (shape) => shape.x >= photo.x - ring - 1e-6 && shape.y >= photo.y - ring - 1e-6 && shape.x + shape.w <= photo.x + photo.width + ring + 1e-6 && shape.y + shape.h <= photo.y + photo.height + ring + 1e-6;
-            const infoShapes = fills(ctx).filter((shape) => shape.w < SIZE[format].width && !inPhoto(shape));
-            assert.ok(infoShapes.length >= 6 + 8 + 2, `${where}：資訊欄裡的形狀 ${infoShapes.length} 個`);
-            for (const shape of infoShapes) {
-                assert.ok(shape.x >= info.x - 1e-6 && shape.x + shape.w <= info.x + info.width + 1e-6 && shape.y >= info.y - 1e-6 && shape.y + shape.h <= info.y + info.height + 1e-6, `${where}：形狀超出資訊欄 ${JSON.stringify({ x: shape.x, y: shape.y, w: shape.w, h: shape.h })}`);
-            }
-            for (const image of imageCalls(ctx)) {
-                assert.ok(image.x >= info.x - 1e-6 && image.x + image.w <= info.x + info.width + 1e-6 && image.y >= info.y - 1e-6 && image.y + image.h <= info.y + info.height + 1e-6, `${where}：圖示超出資訊欄`);
-            }
-            // 每個欄位都畫出來：6 個膠囊、8 格時段、自我介紹最多 2 行、三個其他職業
-            assert.equal(chipShapes(ctx).length, 6, `${where}：6 個膠囊`);
-            assert.equal(hourCells(ctx).length, 8);
-            assert.equal(introLines(ctx, format).length >= 1 && introLines(ctx, format).length <= 2, true);
-            assert.equal(imageCalls(ctx).length, 4);
-            // 底部一列貼著資訊欄的底（一行字的高度是字級的 1.45 倍，字的框是字級那麼高，在這一行的正中）
-            const foot = found.find((box) => box.text === FOOT);
-            near(foot.bottom + (foot.bottom - foot.top) * (LINE_NORMAL - 1) / 2, info.y + info.height, `${where}：底部一列貼著資訊欄的底`, 0.02);
         }
     }
 });

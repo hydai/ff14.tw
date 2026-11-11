@@ -6,7 +6,7 @@ const vm = require('node:vm');
 
 const { createRecordingContext, fakeMeasure } = require('./helpers/canvas-recorder.js');
 const {
-    card, SIZE, cq, ACCENT, NOTICE, INTRO, DAYS, SLOTS, SUB_ICONS, picture, requiredModel, emptyModel, fullModel, maxedModel, longestLikes,
+    card, SIZE, cq, ACCENT, NOTICE, INTRO, DAYS, SLOTS, SUB_ICONS, picture, requiredModel, emptyModel, fullModel, maxedModel, tallestModel, longestLikes,
     render, drawn, lines, textBoxes, fills, imageCalls, backgroundOf, plain, near, inside, overlaps
 } = require('./helpers/card-drawing.js');
 
@@ -788,6 +788,47 @@ test('名字用 Noto Sans TC 700，放不下整行縮小（最多縮到 30%）�
     }
 });
 
+test('稱號放不下資訊欄時整行縮小（最多縮到 30%），行高照原本的字級、其他字都不動；放得下的不縮', () => {
+    for (const format of FORMATS) {
+        const { info } = boxes(format);
+        const base = cp(format, 1.45, 2.1);
+        // 放得下的不縮：一般的稱號與最長的 30 個字（預設的假量字）
+        for (const text of ['Starfarer', '寬'.repeat(30), 'W'.repeat(30)]) {
+            const line = lineOf(render(fullModel('c', { format, title: text })), text);
+            near(line.px, base, `${format}「${text}」放得下，不縮`);
+            assert.equal(line.font, fontOf(700, base));
+            near(line.x, info.x);
+        }
+
+        // 放不下：用 recorder 的 measure 選項把稱號量得比資訊欄寬（只有稱號的字變寬，其他字照舊）
+        const title = '寬'.repeat(30);
+        const model = fullModel('c', { format, title });
+        const normal = render(model);
+        const normalLine = lineOf(normal, title);
+        const stripped = (ctx) => ({ texts: plain(drawn(ctx).filter((piece) => piece.text !== title)), shapes: plain(fills(ctx).map(({ call, ...shape }) => shape)) });
+        for (const factor of [1.5, 2, 4]) {
+            const widened = render(model, { measure: (font, text) => fakeMeasure(font, text) * (text === title ? factor : 1) });
+            const line = lineOf(widened, title);
+            const where = `${format} 量寬 ${factor} 倍`;
+            // 縮到剛好放得下（在量寬之後的量字下，整段的寬度就是資訊欄的寬），字型、顏色、位置照舊
+            assert.ok(line.px < base, `${where}：縮小了（${line.px}／${base}）`);
+            assert.ok(line.px >= base * 0.3 - 0.011, `${where}：最多縮到 30%`);
+            const width = factor * fakeMeasure(line.font, title);
+            assert.ok(line.x + width <= info.x + info.width + 1e-6, `${where}：稱號畫出來 ${width}，超出資訊欄的寬 ${info.width}`);
+            assert.ok(width >= info.width * 0.97, `${where}：縮得比需要的多（${width}／${info.width}）`);
+            assert.equal(line.font, fontOf(700, line.px));
+            assert.equal(line.fillStyle, titleColorOf());
+            near(line.x, info.x);
+            // 行高照原本的字級：稱號的中線不動，名字、伺服器與其他每一段字、每一個形狀都和沒縮的時候一樣
+            near(line.y, normalLine.y, `${where}：稱號的中線不動`, 1e-9);
+            assert.deepEqual(stripped(widened), stripped(normal), `${where}：稱號以外的字與形狀都不動`);
+        }
+        // 縮到下限就不再縮（最多縮到 30%）
+        const floor = lineOf(render(model, { measure: (font, text) => fakeMeasure(font, text) * (text === title ? 100 : 1) }), title);
+        near(floor.px, base * 0.3, `${format}：縮到 30% 為止`, 0.011);
+    }
+});
+
 test('灰字：小標、時段的字與底部一列是 #697084，伺服器與 Lv 是 #5b6275，名字是 #141826，值與自我介紹是 #1d2233；每一個灰字和它的底都是 4.5:1 以上', () => {
     for (const format of FORMATS) {
         const ctx = render(fullModel('c', { format, fcName: 'Moon', fcTag: 'MOON' }));
@@ -807,6 +848,9 @@ test('灰字：小標、時段的字與底部一列是 #697084，伺服器與 Lv
 
 // ---------- 對比度 ----------
 
+// 唯一的例外：這裡的畫面模型（fullModel、maxedModel）職業都有圖示，檢查不到沒有圖示的職業畫在重點色方塊裡的大字（CardPaint.drawIcon）。它的字色是
+// CardLayout.textColorOn 在白字與深字裡挑對比度高的，最差的重點色上約 4.2:1，不到 4.5:1；但它一定是粗體大字（方塊邊長的 0.55 倍：徽章裡 23.8px 起，
+// 其他職業的方塊 19.1px 起），WCAG 的大字只要 3:1（見 card-style-c.js 檔案開頭）
 test('每一段字和它的底至少 4.5:1：每種重點色（含很淺的）× 橫直版 × 全部填滿與每個欄位填到上限', () => {
     const ACCENTS = ['#4f74d6', '#3f9e5c', '#d4574e', '#8a63d2', '#c99a2e', '#ffff66', '#ffffff'];
     let checked = 0;
@@ -907,52 +951,95 @@ test('backgroundOf（測試輔助）：這一次畫字之前、包住字的中�
 
 // ---------- 填到上限 ----------
 
+// 資訊欄放得下：每一段字都在資訊欄裡（徽章的字在照片框裡）、互不重疊，照片框裡只有徽章的字；形狀與圖示也都在範圍裡；
+// 每個欄位都畫出來；底部一列貼著資訊欄的底
+function assertFitsInfoColumn(ctx, model, format, where) {
+    const { photo, info } = boxes(format);
+    const photoRegion = { left: photo.x, right: photo.x + photo.width, top: photo.y, bottom: photo.y + photo.height };
+    const found = textBoxes(ctx);
+    assert.ok(found.length >= 30, `${where}：畫了 ${found.length} 段字`);
+    const badgeTexts = [model.job.name, 'Lv 100'];
+    for (const box of found) {
+        assert.ok(Number.isFinite(box.left) && Number.isFinite(box.top));
+        if (badgeTexts.includes(box.text)) {
+            assert.ok(inside(box, photo), `${where}：徽章的「${box.text}」超出照片框`);
+        } else {
+            assert.ok(inside(box, info), `${where}：「${box.text}」超出資訊欄（${box.left}～${box.right}、${box.top}～${box.bottom}；資訊欄 ${JSON.stringify(info)}）`);
+        }
+    }
+    // 照片框裡（和照片框的面積有重疊的字）只有徽章的兩段字
+    assert.deepEqual(sorted(found.filter((box) => overlaps(box, photoRegion)).map((box) => box.text)), sorted(badgeTexts), `${where}：照片框裡只有徽章的字`);
+    for (let i = 0; i < found.length; i++) {
+        for (let j = i + 1; j < found.length; j++) {
+            assert.equal(overlaps(found[i], found[j]), false, `${where}：「${found[i].text}」與「${found[j].text}」重疊`);
+        }
+    }
+    // 資訊欄裡的形狀（小卡、自我介紹的框、膠囊、時段格子、其他職業的方塊）也都在資訊欄裡
+    const shapes = [...framesOf(ctx, format), ...chipShapes(ctx), ...hourCells(ctx), ...subTiles(ctx)];
+    assert.equal(shapes.length, 3 + 1 + 6 + 8 + 3, `${where}：資訊欄裡的形狀`);
+    for (const shape of shapes) {
+        assert.ok(shape.x >= info.x - 1e-6 && shape.x + shape.w <= info.x + info.width + 1e-6 && shape.y >= info.y - 1e-6 && shape.y + shape.h <= info.y + info.height + 1e-6, `${where}：形狀超出資訊欄 ${JSON.stringify({ x: shape.x, y: shape.y, w: shape.w, h: shape.h })}`);
+    }
+    // 其他職業的圖示在資訊欄裡，主職的圖示在徽章裡（照片框的左右範圍裡）
+    for (const image of imageCalls(ctx)) {
+        const region = image.image.picture === 'pld' ? { x: photo.x, width: photo.width, y: photo.y, height: photo.height + cp(format, 1.8, 2.6) } : info;
+        assert.ok(image.x >= region.x - 1e-6 && image.x + image.w <= region.x + region.width + 1e-6 && image.y >= region.y - 1e-6 && image.y + image.h <= region.y + region.height + 1e-6, `${where}：圖示超出範圍`);
+    }
+    // 每個欄位都畫出來：3 張小卡、6 個膠囊、8 格時段、自我介紹最多 2 行、4 張圖示
+    assert.equal(factTiles(ctx, format, info).length, 3);
+    assert.equal(chipShapes(ctx).length, 6, `${where}：6 個膠囊`);
+    assert.equal(hourCells(ctx).length, 8);
+    assert.equal(lines(ctx).filter((line) => line.font === fontOf(500, cp(format, 1.45, 2.1))).length <= 2, true);
+    assert.equal(imageCalls(ctx).length, 4);
+    // 底部一列貼著資訊欄的底
+    const foot = found.find((box) => box.text === FOOT);
+    near(foot.bottom + (foot.bottom - foot.top) * (LINE_NORMAL - 1) / 2, info.y + info.height, `${where}：底部一列貼著資訊欄的底`, 0.02);
+}
+
+// 這一個量的是寬度：每個欄位都填到上限，但 wide 的名字 21 個字會縮小、latin 的自我介紹只有 1 行，量不到高度最擠的情況（見下一個測試）
 test('每個欄位填到上限（wide、latin）：橫版、直版的每一段字都在資訊欄裡、互不重疊；照片框裡只有徽章的字', () => {
     for (const script of ['wide', 'latin']) {
         for (const format of FORMATS) {
-            const { photo, info } = boxes(format);
-            const photoRegion = { left: photo.x, right: photo.x + photo.width, top: photo.y, bottom: photo.y + photo.height };
             const model = maxedModel('c', { script }, { format });
+            assertFitsInfoColumn(render(model), model, format, `${script} ${format}`);
+        }
+    }
+});
+
+// 這一個量的是高度：名字短（不縮）、其他區塊都到最高（tallestModel）。資訊卡兩種版型都放得下，區塊之間的間距照草稿，不用 stackDown 的保險
+// （同一份內容，名片的直版就要把間距略縮小，見 tests/character-card-style-a.test.js）
+test('名字短、其他區塊都到最高（zh、en、ja）：資訊欄放得下、互不重疊，區塊之間的間距照草稿的 1.4／2cqw，不用縮', () => {
+    for (const lang of ['zh', 'en', 'ja']) {
+        for (const format of FORMATS) {
+            const where = `${lang} ${format}`;
+            const { info } = boxes(format);
+            const model = tallestModel('c', { lang }, { format });
             const ctx = render(model);
-            const found = textBoxes(ctx);
-            const where = `${script} ${format}`;
-            assert.ok(found.length >= 30, `${where}：畫了 ${found.length} 段字`);
-            const badgeTexts = [model.job.name, 'Lv 100'];
-            for (const box of found) {
-                assert.ok(Number.isFinite(box.left) && Number.isFinite(box.top));
-                if (badgeTexts.includes(box.text)) {
-                    assert.ok(inside(box, photo), `${where}：徽章的「${box.text}」超出照片框`);
-                } else {
-                    assert.ok(inside(box, info), `${where}：「${box.text}」超出資訊欄（${box.left}～${box.right}、${box.top}～${box.bottom}；資訊欄 ${JSON.stringify(info)}）`);
-                }
-            }
-            // 照片框裡（和照片框的面積有重疊的字）只有徽章的兩段字
-            assert.deepEqual(sorted(found.filter((box) => overlaps(box, photoRegion)).map((box) => box.text)), sorted(badgeTexts), `${where}：照片框裡只有徽章的字`);
-            for (let i = 0; i < found.length; i++) {
-                for (let j = i + 1; j < found.length; j++) {
-                    assert.equal(overlaps(found[i], found[j]), false, `${where}：「${found[i].text}」與「${found[j].text}」重疊`);
-                }
-            }
-            // 資訊欄裡的形狀（小卡、自我介紹的框、膠囊、時段格子、其他職業的方塊）也都在資訊欄裡
-            const shapes = [...framesOf(ctx, format), ...chipShapes(ctx), ...hourCells(ctx), ...subTiles(ctx)];
-            assert.equal(shapes.length, 3 + 1 + 6 + 8 + 3, `${where}：資訊欄裡的形狀`);
-            for (const shape of shapes) {
-                assert.ok(shape.x >= info.x - 1e-6 && shape.x + shape.w <= info.x + info.width + 1e-6 && shape.y >= info.y - 1e-6 && shape.y + shape.h <= info.y + info.height + 1e-6, `${where}：形狀超出資訊欄 ${JSON.stringify({ x: shape.x, y: shape.y, w: shape.w, h: shape.h })}`);
-            }
-            // 其他職業的圖示在資訊欄裡，主職的圖示在徽章裡（照片框的左右範圍裡）
-            for (const image of imageCalls(ctx)) {
-                const region = image.image.picture === 'pld' ? { x: photo.x, width: photo.width, y: photo.y, height: photo.height + cp(format, 1.8, 2.6) } : info;
-                assert.ok(image.x >= region.x - 1e-6 && image.x + image.w <= region.x + region.width + 1e-6 && image.y >= region.y - 1e-6 && image.y + image.h <= region.y + region.height + 1e-6, `${where}：圖示超出範圍`);
-            }
-            // 每個欄位都畫出來：3 張小卡、6 個膠囊、8 格時段、自我介紹最多 2 行、4 張圖示
-            assert.equal(factTiles(ctx, format, info).length, 3);
-            assert.equal(chipShapes(ctx).length, 6, `${where}：6 個膠囊`);
-            assert.equal(hourCells(ctx).length, 8);
-            assert.equal(lines(ctx).filter((line) => line.font === fontOf(500, cp(format, 1.45, 2.1))).length <= 2, true);
-            assert.equal(imageCalls(ctx).length, 4);
-            // 底部一列貼著資訊欄的底
-            const foot = found.find((box) => box.text === FOOT);
-            near(foot.bottom + (foot.bottom - foot.top) * (LINE_NORMAL - 1) / 2, info.y + info.height, `${where}：底部一列貼著資訊欄的底`, 0.02);
+
+            // 這份內容真的是最高的（不是的話，下面的數字量到的是較矮的內容）：名字不縮、第一張小卡（部隊）的值折成 2 行、
+            // 喜歡的內容 2 列而且字級是 100%、自我介紹 2 行、每個區塊都在
+            near(lineOf(ctx, 'Luna').px, cp(format, 4.2, 6.2), `${where}：名字不縮`);
+            const fcValues = lines(ctx).filter((line) => line.fillStyle === COLORS.value && line.font === fontOf(700, cp(format, 1.4, 2)) && Math.abs(line.x - (info.x + cp(format, 1.2, 1.6))) < 1e-6);
+            assert.equal(distinct(fcValues.map((line) => line.y)).length, 2, `${where}：部隊的值折成 2 行`);
+            assert.equal(distinct(chipShapes(ctx).map((chip) => chip.y)).length, 2, `${where}：喜歡的內容 2 列`);
+            for (const label of model.likes) near(lineOf(ctx, label).px, cp(format, 1.22, 1.8), `${where}：膠囊「${label}」字級 100%`);
+            assert.equal(lines(ctx).filter((line) => line.font === fontOf(500, cp(format, 1.45, 2.1))).length, 2, `${where}：自我介紹 2 行`);
+            for (const text of [model.title, model.world, model.contact]) assert.ok(hasLine(ctx, text), `${where}：「${text}」有畫`);
+            assert.equal(subTiles(ctx).length, 3, `${where}：3 個其他職業`);
+            assert.equal(imageCalls(ctx).length, 4, `${where}：主職與 3 個其他職業的圖示`);
+
+            assertFitsInfoColumn(ctx, model, format, where);
+
+            // 資訊欄真的放得下：第一個區塊（抬頭）從資訊欄的頂開始，底部一列貼著資訊欄的底，最後一個區塊（自我介紹的框）的底在它上面；
+            // 區塊之間的間距（stackDown 實際用的）量抬頭最後一行（伺服器）與第一張小卡之間的，照草稿的 rowGap，沒有縮
+            near(lineOf(ctx, model.title).y, info.y + cp(format, 1.45, 2.1) * LINE_NORMAL / 2, `${where}：稱號從資訊欄的頂開始`, 0.011);
+            const gap = factTiles(ctx, format, info)[0].y - (lineOf(ctx, model.world).y + cp(format, 1.4, 2) * LINE_NORMAL / 2);
+            const foot = lineOf(ctx, FOOT);
+            const footTop = foot.y - foot.px * LINE_NORMAL / 2;
+            near(footTop + foot.px * LINE_NORMAL, info.y + info.height, `${where}：底部一列貼著資訊欄的底`, 0.011);
+            const quote = quoteBoxOf(ctx, format, info);
+            assert.ok(quote.y + quote.h <= footTop - gap + 1e-6, `${where}：最後一個區塊（自我介紹的框）的底 ${quote.y + quote.h} 在底部一列的頂 ${footTop} 上面，中間至少一個間距`);
+            near(gap, cp(format, 1.4, 2), `${where}：區塊之間的間距照草稿，沒有縮`, 1e-6);
         }
     }
 });

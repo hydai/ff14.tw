@@ -29,6 +29,11 @@
 //   伺服器 20、部隊名稱 20、簡稱 5、聯絡方式 40、自我介紹 60 個字；大國防聯軍與在找什麼用英文最長的選項，喜歡的內容是日文最寬的 6 個，
 //   3 個其他職業，8 格時段全選（欄名與列名用英文全名），主職名稱是 FF14_JOBS 三種語言的名稱裡照 fakeMeasure 最寬的那一個
 // - longestLikes(lang, count = 6)：翻譯檔裡那個語言的喜歡的內容的標籤，照 fakeMeasure 挑最寬的 count 個，排列照翻譯檔的順序（同 CardState.LIKES）
+// - tallestModel(style, { lang = 'zh' }, overrides)：資訊欄「最高」的內容（maxedModel 量的是寬度，這個量的是高度）：名字短（'Luna'，不縮），
+//   其他每個區塊都到它最高的樣子——稱號、伺服器、主職與 3 個其他職業、部隊名稱 20 字加簡稱 5 字（值折成 2 行）、大國防聯軍與在找什麼（那個語言最長的
+//   官方名稱）、喜歡的內容 6 個且排成 2 列而字級還是 100%（TALLEST_LIKES，A、C 的橫版與直版四種版面都是）、8 格時段全選、60 字的自我介紹（2 行）、
+//   聯絡方式 40 字。小標、時段的欄名列名與官方名稱讀自翻譯檔，所以 lang 是 'zh'、'en'、'ja'。maxedModel 量的是寬度，量不到高度最擠的擠法：wide 的名字
+//   21 字會縮到約 66%（名片直版省出約 27px）、latin 的自我介紹只有 1 行，名片直版因此還有約 26px（wide）、35px（latin）的空位，所以高度要用這一個量
 //
 // 畫與讀記錄
 // - render(model, options)：用 CardRenderer.draw 畫在記錄 context 上（options 同 createRecordingContext），回傳那個 context
@@ -183,6 +188,54 @@ function maxedModel(style, { script = 'wide' } = {}, overrides = {}) {
     });
 }
 
+// 每個語言排成 2 列、字級還是 100% 的 6 個喜歡的內容（翻譯檔 char_card_like_ 後面的鍵）：同一組在 A、C 的橫版與直版四種版面都排成 2 列而不縮，
+// 其中最窄的是資訊卡橫版（左欄 328px、字級 14.64px）；照 fakeMeasure 在這個條件下挑最寬的，同寬的取翻譯檔裡靠前的。翻譯檔改了字，這份不會自己跟著變：
+// 用到 tallestModel 的測試都要先檢查膠囊是 2 列、字級是 100%（見那些測試），不是的話改這裡
+const TALLEST_LIKES = Object.freeze({
+    zh: Object.freeze(['msq', 'trials', 'ultimate', 'alliance', 'deep_dungeon', 'roleplay']),
+    en: Object.freeze(['msq', 'leveling', 'trials', 'savage', 'ultimate', 'deep_dungeon']),
+    ja: Object.freeze(['msq', 'trials', 'ultimate', 'alliance', 'glamour', 'photo'])
+});
+
+function tallestModel(style, { lang = 'zh' } = {}, overrides = {}) {
+    assert.ok(Object.hasOwn(TALLEST_LIKES, lang), `lang 是 ${Object.keys(TALLEST_LIKES).join('、')} 其中一個，不是 ${JSON.stringify(lang)}`);
+    const values = translationValues(TRANSLATIONS, lang);
+    const text = (key) => {
+        assert.ok(values.has(key), `${lang} 的翻譯檔裡找不到 ${key}`);
+        return values.get(key);
+    };
+    const wide = (count) => '寬'.repeat(count);
+    const everyHour = card.CardState.DAYS.flatMap((day) => card.CardState.SLOTS.map((slot) => `${day}-${slot}`));
+    return fullModel(style, {
+        name: 'Luna',
+        title: wide(30),
+        world: wide(20),
+        fcName: wide(20),
+        fcTag: wide(5),
+        contact: wide(40),
+        intro: wide(60),
+        // 大國防聯軍與在找什麼：那個語言最長的官方名稱（英文的 Order of the Twin Adder、三個都選的 Static, Free Company, Friends）
+        gc: text('char_card_gc_twin_adder'),
+        looking: ['static', 'fc', 'friends'].map((key) => text(`char_card_looking_${key}`)).join(text('char_card_card_list_sep')),
+        labels: {
+            fc: text('char_card_card_fc'),
+            gc: text('char_card_card_gc'),
+            looking: text('char_card_card_looking'),
+            likes: text('char_card_card_likes'),
+            hours: text('char_card_card_hours'),
+            subJobs: text('char_card_card_subjobs'),
+            mainJob: text('char_card_card_main_job')
+        },
+        likes: TALLEST_LIKES[lang].map((key) => text(`char_card_like_${key}`)),
+        hours: {
+            days: ['weekday', 'weekend'].map((day) => text(`char_card_card_day_${day}`)),
+            slots: ['morning', 'afternoon', 'evening', 'late_night'].map((slot) => text(`char_card_card_slot_${slot}`)),
+            on: new Set(everyHour)
+        },
+        ...overrides
+    });
+}
+
 // ---------- 畫與讀記錄 ----------
 
 function render(model, options) {
@@ -282,6 +335,6 @@ const overlaps = (a, b, epsilon = 1e-6) => a.left < b.right - epsilon && b.left 
 
 module.exports = {
     loadCard, card, SIZE, cq, ACCENT, NOTICE, INTRO, DAYS, SLOTS, LABELS_ZH, SUB_ICONS, picture,
-    requiredModel, emptyModel, fullModel, maxedModel, longestLikes,
+    requiredModel, emptyModel, fullModel, maxedModel, tallestModel, longestLikes,
     render, drawn, lines, textBoxes, fills, imageCalls, backgroundOf, plain, near, inside, overlaps
 };

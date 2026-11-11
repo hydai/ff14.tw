@@ -1,12 +1,17 @@
 // 角色卡產生器的編輯畫面
 // 表單 ↔ 狀態（CardState）↔ 畫在 canvas 上的卡片（CardRenderer）：每改一個欄位，狀態先整理過（CardState.normalize）、存起來、再重畫；
-// 卡片就是畫面上那張 canvas，之後下載的是同一張。欄位的規則（字數上限、預設值、重點色）在 card-state.js，畫圖在 card-renderer.js，
-// 這裡只管畫面與事件。伺服器與職業的清單來自共用的 assets/js/ff14-game-data.js（window.FF14_JOBS、FF14_WORLDS、FF14_TC_WORLDS，只從 window 讀）。
+// 卡片就是畫面上那張 canvas，之後下載的是同一張。欄位的規則（字數上限、預設值、重點色）在 card-state.js，畫圖在 card-renderer.js 與三種風格的檔案
+// （card-style-a.js 名片、card-style-b.js 海報、card-style-c.js 資訊卡），這裡只管畫面與事件。
+// 伺服器與職業的清單來自共用的 assets/js/ff14-game-data.js（window.FF14_JOBS、FF14_WORLDS、FF14_TC_WORLDS，只從 window 讀）。
+// 風格：「樣式」分頁最上面的三個單選（name="cardStyle"）換 state.style，三種風格用同一份資料，換了就重畫、存起來。海報不畫部隊名稱、大國防聯軍、聯絡方式、在找什麼，
+// 這四個欄位底下的說明（.not-drawn）只在選了海報時顯示，名片與資訊卡時 hidden 並從欄位的 aria-describedby 拿掉（syncNotDrawn()）。
+// 畫面模型（buildModel()）多了名片與資訊卡要的欄位與翻好的小標。圖片的位置每一種「風格 × 橫直版」各一份（CardState.cropKey）：拖曳照那種風格的照片框換算
+// （CardRenderer.photoBox：海報是整張卡片，名片與資訊卡是框）。
 // 手機（768px 以下）五組欄位用分頁切換（script.js 用 hidden 切換面板），電腦五組都顯示；預覽的位置、sticky 與分頁列的顯示都在 style.css。
 // 記住：每一次讀寫都由 CardState 包 try/catch；瀏覽器封鎖網站資料時連 window.localStorage 本身都會丟例外，所以取 storage 也包 try，
 // 取不到就傳 null（CardState 當成讀不到、寫不進去），這次打開期間照常運作，只是不記住。
 // 角色圖：上傳的圖由 card-image.js 縮小、轉成 JPEG（卡片畫的與瀏覽器記住的是同一張：轉出來之後再讀回來才用），位置與縮放存在 state.crops
-// （每個版型各一份）。卡片上拖曳（pointer 事件）：滑鼠直接拖；手指從卡片上滑要能捲動頁面，所以只有按了「調整圖片」（調整模式，觸控為主的裝置才有）才拖，
+// （每一種「風格 × 橫直版」各一份，鍵是 CardState.cropKey）。卡片上拖曳（pointer 事件）：滑鼠直接拖；手指從卡片上滑要能捲動頁面，所以只有按了「調整圖片」（調整模式，觸控為主的裝置才有）才拖，
 // 其他時候 pointerdown 什麼都不做。上傳、還原都用流水號（imageToken）：同時有好幾次在讀，只有最新的算數。
 // 字型：Google Fonts 的中文字型依字分批載入，沒載入的字會退成別的字型，所以每畫一次就看有沒有還沒請求過的字，有就請瀏覽器載入（這一次請求的算一批）；
 // 這一批載入完（失敗也算：卡片用備用字型）就重畫一次，不等別批。fontsReady() 等到請求過的每一批都載入完並重畫過：等的時候又請求的也等，
@@ -114,6 +119,34 @@ class CharacterCardApp {
         evening: { form: ['char_card_slot_evening', '晚上'], card: ['char_card_card_slot_evening', '晚上'] },
         lateNight: { form: ['char_card_slot_late_night', '深夜'], card: ['char_card_card_slot_late_night', '深夜'] }
     };
+    // 風格（CardState.STYLES 的鍵）→ 單選的 id
+    static STYLE_RADIOS = { a: 'styleA', b: 'styleB', c: 'styleC' };
+    // 海報不畫的四個欄位 id → 它底下那行「海報風格不會畫出這一項」的 id；說明只在 NOT_DRAWN_STYLES 的風格（海報）顯示，名片與資訊卡會畫出這四項
+    static NOT_DRAWN = [['cardFcName', 'cardFcNameNotDrawn'], ['cardGc', 'cardGcNotDrawn'], ['cardContact', 'cardContactNotDrawn'], ['cardLooking', 'cardLookingNotDrawn']];
+    static NOT_DRAWN_STYLES = new Set(['b']);
+    // 畫在名片與資訊卡上的值：大國防聯軍（CardState.GCS 的鍵）、在找什麼（CardState.LOOKING 的鍵）→ [翻譯鍵, 中文預設文字]，和表單上選項的字一樣（官方名稱）；
+    // 在找什麼選了好幾個時，照 CardState.LOOKING 的順序、用 LOOKING_SEP 接起來（中文、日文是「、」，英文是「, 」）。翻譯鍵一律寫成完整的字串，不用組的
+    static GCS = {
+        maelstrom: ['char_card_gc_maelstrom', '黑渦團'],
+        twinAdder: ['char_card_gc_twin_adder', '雙蛇黨'],
+        immortalFlames: ['char_card_gc_immortal_flames', '不滅隊']
+    };
+    static LOOKING = {
+        static: ['char_card_looking_static', '固定隊'],
+        fc: ['char_card_looking_fc', '部隊'],
+        friends: ['char_card_looking_friends', '朋友']
+    };
+    static LOOKING_SEP = ['char_card_card_list_sep', '、'];
+    // 畫在名片與資訊卡上的小標（畫面模型 labels 的鍵）→ [翻譯鍵, 中文預設文字]
+    static CARD_LABELS = {
+        fc: ['char_card_card_fc', '部隊'],
+        gc: ['char_card_card_gc', '大國防聯軍'],
+        looking: ['char_card_card_looking', '在找什麼'],
+        likes: ['char_card_card_likes', '喜歡的內容'],
+        hours: ['char_card_card_hours', '遊玩時段'],
+        subJobs: ['char_card_card_subjobs', '其他職業'],
+        mainJob: ['char_card_card_main_job', '主職']
+    };
 
     constructor() {
         this.jobs = window.FF14_JOBS;
@@ -203,6 +236,7 @@ class CharacterCardApp {
             viewerClose: byId('viewerClose')
         };
         this.formatButtons = new Map([['landscape', byId('formatLandscape')], ['portrait', byId('formatPortrait')]]);
+        this.styleRadios = new Map(Object.entries(CharacterCardApp.STYLE_RADIOS).map(([style, id]) => [style, byId(id)]));
         this.likeChips = this.chipsOf(this.elements.likes, 'like');
         this.lookingChips = this.chipsOf(this.elements.looking, 'looking');
         this.worldNames = new Set([...window.FF14_TC_WORLDS, ...window.FF14_WORLDS.worlds]);
@@ -406,6 +440,10 @@ class CharacterCardApp {
             target.value = String(this.state.level);
         } else if (target.id === 'accentAuto' || target.id === 'accentCustom') {
             if (target.checked === true) this.update({ accent: target.id === 'accentAuto' ? 'auto' : this.elements.accentColor.value });
+        } else if (target.getAttribute('name') === 'cardStyle') {
+            // 風格：勾到哪一個就是哪一種（value 是 a、b、c；不合格的 CardState.normalize 會換回海報）。
+            // 單選的 name 不能叫 style：表單裡有叫 style 的欄位時，form.style 會變成 RadioNodeList，蓋掉元素自己的 style（CSSStyleDeclaration）
+            if (target.checked === true) this.update({ style: target.getAttribute('value') });
         } else if (target.id === 'imageZoom') {
             CardState.save(this.storage, this.state);
         } else if (target.id === 'cardImageInput') {
@@ -606,7 +644,7 @@ class CharacterCardApp {
         }
     }
 
-    // 由狀態算出來的控制項：切換按鈕（按下與不能按）、字數與個數的計數、重點色的單選與色票、版型的按鈕。不碰文字欄，使用者正在打字
+    // 由狀態算出來的控制項：切換按鈕（按下與不能按）、字數與個數的計數、風格與重點色的單選與色票、版型的按鈕、四行「不會畫出這一項」。不碰文字欄，使用者正在打字
     syncDerived() {
         const { state } = this;
         const { LIMITS } = CardState;
@@ -618,6 +656,8 @@ class CharacterCardApp {
             button.setAttribute('aria-pressed', on ? 'true' : 'false');
             button.classList.toggle('active', on);
         }
+        for (const [style, radio] of this.styleRadios) radio.checked = state.style === style;
+        this.syncNotDrawn();
         this.syncImage();
         const custom = state.accent !== 'auto';
         this.elements.accentAuto.checked = !custom;
@@ -627,7 +667,26 @@ class CharacterCardApp {
         this.renderCounters();
     }
 
-    // 角色圖的控制項：沒有圖片時縮放、置中、填滿、移除、調整都不能按；滑桿與百分比跟著這個版型的縮放（沒有圖片寫預設的 100%，存著的位置要有圖片才用得上）；
+    // 四個欄位底下的「海報風格不會畫出這一項」：只有海報（NOT_DRAWN_STYLES）時顯示，名片與資訊卡會畫出這四項，就藏起來；欄位的 aria-describedby 也只在顯示時指到它
+    // （藏起來的說明不該被念出來）。接在字數計數的 id 後面（欄位沒有計數就放最前面），aria-describedby 裡其他的 id 照舊，一個都沒有了就把屬性拿掉。
+    // 每打一個字（update()）都會進來：值沒變就不寫，尤其是焦點所在的欄位，aria-describedby 被寫了，有的螢幕閱讀器會把說明再念一次
+    syncNotDrawn() {
+        const shown = CharacterCardApp.NOT_DRAWN_STYLES.has(this.state.style);
+        for (const [fieldId, hintId] of CharacterCardApp.NOT_DRAWN) {
+            const field = document.getElementById(fieldId);
+            const hint = document.getElementById(hintId);
+            if (hint.hidden !== !shown) hint.hidden = !shown;
+            const ids = this.describedBy(field).filter((id) => id !== hintId);
+            if (shown) ids.splice(ids.indexOf(`${fieldId}Count`) + 1, 0, hintId);
+            if (ids.length === 0) {
+                if (field.hasAttribute('aria-describedby')) field.removeAttribute('aria-describedby');
+            } else if (field.getAttribute('aria-describedby') !== ids.join(' ')) {
+                field.setAttribute('aria-describedby', ids.join(' '));
+            }
+        }
+    }
+
+    // 角色圖的控制項：沒有圖片時縮放、置中、填滿、移除、調整都不能按；滑桿與百分比跟著這種風格與版型的縮放（沒有圖片寫預設的 100%，存著的位置要有圖片才用得上）；
     // 「調整圖片」只有觸控為主的裝置才顯示；卡片有圖片時才有拖曳的游標（.has-image）
     syncImage() {
         const { elements } = this;
@@ -871,7 +930,7 @@ class CharacterCardApp {
     // ---------- 角色圖的位置與縮放、拖曳 ----------
 
     /**
-     * 改這個版型的位置與縮放（patch 蓋在目前的上面，整理過再寫回 state.crops；另一個版型的不動），重畫。
+     * 改這種風格與版型的位置與縮放（patch 蓋在目前的上面，整理過再寫回 state.crops；其他風格與版型的不動），重畫。
      * 拖曳與拖滑桿的過程 save 是 false，只重畫，放開才存。沒有圖片時什麼都不做。
      * @param {{x?: number, y?: number, zoom?: number}} patch
      * @param {{save: boolean}} options
@@ -927,6 +986,7 @@ class CharacterCardApp {
     }
 
     // 拖：一律從按下去那一刻的位置與座標算（不是一段一段累加）。滑鼠與手指的座標是 CSS 像素，卡片的座標是 canvas 像素，差 canvas.width / 畫面上的寬度。
+    // 拖的是照片框裡的圖：框是這種風格與版型的照片框（CardRenderer.photoBox，海報是整張卡片，名片與資訊卡是卡片上的一塊），圖跟著指標移動同樣的距離。
     // 卡片藏起來（畫面上的寬度是 0）時不算
     moveDrag(event) {
         const { drag, image } = this;
@@ -944,7 +1004,8 @@ class CharacterCardApp {
         const rect = canvas.getBoundingClientRect();
         if (!(rect.width > 0)) return;
         const scale = canvas.width / rect.width;
-        const crop = CardLayout.dragCrop(drag.crop, (event.clientX - drag.x) * scale, (event.clientY - drag.y) * scale, image.width, image.height, canvas.width, canvas.height);
+        const box = CardRenderer.photoBox(this.state.style, this.state.format);
+        const crop = CardLayout.dragCrop(drag.crop, (event.clientX - drag.x) * scale, (event.clientY - drag.y) * scale, image.width, image.height, box.width, box.height);
         this.setCrop(crop, { save: false });
     }
 
@@ -974,17 +1035,23 @@ class CharacterCardApp {
     // ---------- 畫卡片 ----------
 
     // 畫面模型：CardRenderer.draw 要的樣子，文字照介面語言。重點色一律來自 CardState.accentOf，這裡不寫顏色；
-    // 喜歡的內容照 CardState.LIKES 的順序（不是點選的順序）
+    // 喜歡的內容與在找什麼照 CardState.LIKES、CardState.LOOKING 的順序（不是點選的順序）。fcName、gc、looking、contact 與 labels 是名片與資訊卡要畫的
+    // （海報不畫）；gc 與 looking 已經翻成介面語言的官方名稱，looking 選了好幾個時接成一個字串；labels 是卡片上的小標。backdrop 是名片的模糊背景小圖（還沒有，沒有就畫預設背景）
     buildModel() {
         const { state } = this;
         const jobOf = (key) => this.jobs.find((job) => job.key === key);
         const main = jobOf(state.mainJob);
         return {
+            style: state.style,
             format: state.format,
             name: state.name,
             title: state.title,
             world: state.world,
+            fcName: state.fcName,
             fcTag: state.fcTag,
+            gc: state.gc === '' ? '' : this.label(CharacterCardApp.GCS[state.gc]),
+            looking: CardState.LOOKING.filter((key) => state.looking.includes(key)).map((key) => this.label(CharacterCardApp.LOOKING[key])).join(this.label(CharacterCardApp.LOOKING_SEP)),
+            contact: state.contact,
             job: main ? { name: this.nameOf(main), level: state.level, icon: this.iconOf(main) } : null,
             subJobs: state.subJobs.map(jobOf).filter(Boolean).map((job) => ({ name: this.nameOf(job), icon: this.iconOf(job) })),
             likes: CardState.LIKES.filter((key) => state.likes.includes(key)).map((key) => this.label(CharacterCardApp.LIKES[key])),
@@ -996,7 +1063,9 @@ class CharacterCardApp {
             intro: state.intro,
             accent: CardState.accentOf(state, this.jobs),
             image: this.image,
+            backdrop: null,
             crop: CardState.cropOf(state),
+            labels: Object.fromEntries(Object.entries(CharacterCardApp.CARD_LABELS).map(([name, entry]) => [name, this.label(entry)])),
             levelLabel: CharacterCardApp.LEVEL_LABEL,
             mark: CharacterCardApp.MARK,
             notice: CharacterCardApp.NOTICE

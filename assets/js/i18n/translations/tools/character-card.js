@@ -5,9 +5,14 @@
  * {job}、{level} 是預覽圖說明裡的主職與等級，{parts} 是已經填了的幾段（名字、伺服器、主職）用 char_card_preview_sep 接起來的字
  * （char_card_preview_label）：沒填的部分不寫，所以不是一個留空格的樣板，一個都沒填時用 char_card_preview_empty。
  * 遊戲用語（大國防聯軍、部隊、職能、喜歡的內容、在找什麼）照 TERMINOLOGY.md 與官方名稱；職業的名稱在 assets/js/ff14-game-data.js（三語都有）。
- * char_card_not_drawn 是部隊名稱、大國防聯軍、聯絡方式、在找什麼四個欄位底下的說明：現在的海報風格不會把它們畫在卡片上（欄位照樣能填、也會記住），
- * 只說現在的風格，不承諾之後的風格；四個欄位用同一句。
- * char_card_card_* 是畫在卡片上的短標籤（英文的全名縮在卡片上小到看不清）；char_card_day_*、char_card_slot_* 是表單上的全名。
+ * char_card_style_* 是「樣式」分頁最上面的風格單選：char_card_style_label 是群組的名稱，char_card_style_a／_b／_c 是名片、海報、資訊卡三個選項的名稱，
+ * char_card_style_a_hint／_b_hint／_c_hint 是每個選項下面的一行說明（用 aria-describedby 接在各自的單選上）。
+ * char_card_not_drawn 是部隊名稱、大國防聯軍、聯絡方式、在找什麼四個欄位底下的說明：海報風格不會把它們畫在卡片上（欄位照樣能填、也會記住），
+ * 名片與資訊卡會畫，所以這一句只在選了海報時顯示（script.js 的 syncNotDrawn() 換成名片、資訊卡時把它藏起來）；句子指出另外兩種風格會畫；四個欄位用同一句。
+ * char_card_card_* 是畫在卡片上的短標籤（英文的全名縮在卡片上小到看不清）：char_card_card_day_*、char_card_card_slot_* 是時段格子的列名與欄名；
+ * char_card_card_fc／_gc／_looking／_likes／_hours／_subjobs 是名片與資訊卡上各區塊的小標，char_card_card_main_job 是名片「Lv 100 · 主職」裡的「主職」；
+ * char_card_card_list_sep 是在找什麼選了好幾個時，畫在卡片上的值之間的分隔（中文、日文是「、」，英文是「, 」，結尾有一個空格）。
+ * char_card_day_*、char_card_slot_* 是表單上的全名。
  * char_card_image_* 是角色圖：按鈕與標籤，以及上傳狀態（處理中、已上傳、太大不會記住、讀不出來、已移除、上次的圖片讀不出來）；
  * char_card_image_adjust 與 char_card_image_adjust_done 是同一顆按鈕的兩種字（調整模式前後）。
  * 輸出：char_card_download、char_card_share、char_card_copy 是預覽下面（手機是最下方）的按鈕，char_card_share 也是大圖裡的分享鈕；
@@ -109,8 +114,8 @@ const CharacterCardTranslations = {
         char_card_looking_fc: '部隊',
         char_card_looking_friends: '朋友',
 
-        // 目前的海報風格不畫的欄位（部隊名稱、大國防聯軍、聯絡方式、在找什麼）底下的說明
-        char_card_not_drawn: '目前的海報風格不會畫出這一項',
+        // 海報風格不畫的欄位（部隊名稱、大國防聯軍、聯絡方式、在找什麼）底下的說明（只有選了海報時顯示；名片與資訊卡會畫出這四項）
+        char_card_not_drawn: '海報風格不會畫出這一項（名片、資訊卡會）',
 
         // 畫在卡片上的時段短標籤
         char_card_card_day_weekday: '平日',
@@ -119,6 +124,16 @@ const CharacterCardTranslations = {
         char_card_card_slot_afternoon: '下午',
         char_card_card_slot_evening: '晚上',
         char_card_card_slot_late_night: '深夜',
+
+        // 畫在名片與資訊卡上的小標，以及在找什麼選了好幾個時值之間的分隔
+        char_card_card_fc: '部隊',
+        char_card_card_gc: '大國防聯軍',
+        char_card_card_looking: '在找什麼',
+        char_card_card_likes: '喜歡的內容',
+        char_card_card_hours: '遊玩時段',
+        char_card_card_subjobs: '其他職業',
+        char_card_card_main_job: '主職',
+        char_card_card_list_sep: '、',
 
         // 角色圖
         char_card_image_upload: '上傳截圖',
@@ -136,6 +151,13 @@ const CharacterCardTranslations = {
         char_card_image_restore_failed: '上次的圖片讀不出來，請重新上傳。',
 
         // 樣式
+        char_card_style_label: '風格',
+        char_card_style_a: '名片',
+        char_card_style_b: '海報',
+        char_card_style_c: '資訊卡',
+        char_card_style_a_hint: '資訊最完整，部隊、大國防聯軍、在找什麼、聯絡方式都會畫出來',
+        char_card_style_b_hint: '截圖鋪滿、名字放大，資訊精簡',
+        char_card_style_c_hint: '淺色底，字最好讀，資訊和名片一樣完整',
         char_card_accent_label: '重點色',
         char_card_accent_auto: '跟著職能',
         char_card_accent_custom: '自己選',
@@ -269,8 +291,8 @@ const CharacterCardTranslations = {
         char_card_looking_fc: 'Free Company',
         char_card_looking_friends: 'Friends',
 
-        // Note under the fields the current poster style does not draw (Free Company name, Grand Company, contact, looking for)
-        char_card_not_drawn: 'Not shown on the current poster style',
+        // Note under the fields the poster style does not draw (Free Company name, Grand Company, contact, looking for); only shown while the poster style is selected
+        char_card_not_drawn: "The poster style doesn't show this (the name card and info card do)",
 
         // Short labels for the hours drawn on the card
         char_card_card_day_weekday: 'Wkdy',
@@ -279,6 +301,16 @@ const CharacterCardTranslations = {
         char_card_card_slot_afternoon: 'Aft',
         char_card_card_slot_evening: 'Eve',
         char_card_card_slot_late_night: 'Late',
+
+        // Labels drawn on the name card and the info card, and the separator between several "looking for" values
+        char_card_card_fc: 'Free Company',
+        char_card_card_gc: 'Grand Company',
+        char_card_card_looking: 'Looking for',
+        char_card_card_likes: 'Favorite content',
+        char_card_card_hours: 'Play hours',
+        char_card_card_subjobs: 'Other jobs',
+        char_card_card_main_job: 'Main job',
+        char_card_card_list_sep: ', ',
 
         // Character image
         char_card_image_upload: 'Upload screenshot',
@@ -296,6 +328,13 @@ const CharacterCardTranslations = {
         char_card_image_restore_failed: "Your last picture couldn't be loaded. Please upload it again.",
 
         // Style
+        char_card_style_label: 'Design',
+        char_card_style_a: 'Name card',
+        char_card_style_b: 'Poster',
+        char_card_style_c: 'Info card',
+        char_card_style_a_hint: "The most complete: your Free Company, Grand Company, what you're looking for and how to reach you are all on the card",
+        char_card_style_b_hint: 'Your screenshot fills the card and your name is big; fewer details',
+        char_card_style_c_hint: "A light background that's the easiest to read, with everything the name card has",
         char_card_accent_label: 'Accent color',
         char_card_accent_auto: 'Match the job role',
         char_card_accent_custom: 'Pick my own',
@@ -429,8 +468,8 @@ const CharacterCardTranslations = {
         char_card_looking_fc: 'FC',
         char_card_looking_friends: 'フレンド',
 
-        // 今のポスタースタイルでは描かない項目（フリーカンパニー名、グランドカンパニー、連絡先、探していること）の下の説明
-        char_card_not_drawn: '今のポスタースタイルには表示されません',
+        // ポスターでは描かない項目（フリーカンパニー名、グランドカンパニー、連絡先、探していること）の下の説明（ポスターを選んでいるときだけ表示。名刺と情報カードには表示される）
+        char_card_not_drawn: 'ポスターには表示されません（名刺と情報カードには表示されます）',
 
         // カードに描く時間帯の短いラベル
         char_card_card_day_weekday: '平日',
@@ -439,6 +478,16 @@ const CharacterCardTranslations = {
         char_card_card_slot_afternoon: '昼',
         char_card_card_slot_evening: '夜',
         char_card_card_slot_late_night: '深夜',
+
+        // 名刺と情報カードに描く小見出しと、「探していること」を複数選んだときの値の区切り
+        char_card_card_fc: 'フリーカンパニー',
+        char_card_card_gc: 'グランドカンパニー',
+        char_card_card_looking: '探していること',
+        char_card_card_likes: '好きなコンテンツ',
+        char_card_card_hours: 'プレイ時間帯',
+        char_card_card_subjobs: 'ほかのジョブ',
+        char_card_card_main_job: 'メインジョブ',
+        char_card_card_list_sep: '、',
 
         // キャラクター画像
         char_card_image_upload: 'スクリーンショットを選ぶ',
@@ -456,6 +505,13 @@ const CharacterCardTranslations = {
         char_card_image_restore_failed: '前回の画像を読み込めませんでした。もう一度アップロードしてください。',
 
         // スタイル
+        char_card_style_label: 'デザイン',
+        char_card_style_a: '名刺',
+        char_card_style_b: 'ポスター',
+        char_card_style_c: '情報カード',
+        char_card_style_a_hint: '情報がいちばん多い。FC、グランドカンパニー、探していること、連絡先も入ります',
+        char_card_style_b_hint: 'スクリーンショットを全面に、名前を大きく。情報は少なめ',
+        char_card_style_c_hint: '明るい背景でいちばん読みやすい。情報は名刺と同じです',
         char_card_accent_label: '強調色',
         char_card_accent_auto: 'ロールに合わせる',
         char_card_accent_custom: '自分で選ぶ',
