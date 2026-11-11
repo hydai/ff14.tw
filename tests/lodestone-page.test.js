@@ -2355,7 +2355,8 @@ test('index.html：#lodestoneTool 裡的三種畫面與找人表單；腳本順�
     assert.ok(!HTML.includes('security-utils.js'));
     const sources = [...HTML.matchAll(/<script src="([^"]+)"/g)].map((m) => m[1]);
     assert.deepEqual(sources.slice(-5), ['lodestone-data.js', 'lodestone-model.js', 'lodestone-store.js', 'lodestone-tabs.js', 'script.js']);
-    assert.equal(sources.at(-6), '../../assets/js/common.js');
+    assert.equal(sources.at(-6), '../../assets/js/ff14-game-data.js', '共用的職業與伺服器資料在 lodestone-data.js 前面');
+    assert.equal(sources.at(-7), '../../assets/js/common.js');
 
     // 舊頁面的全域都拿掉了，職業圖示的舊表也是（職業的圖示路徑寫在 LODESTONE_JOBS 裡）
     for (const name of ['LODESTONE_JOB_ICONS', 'LODESTONE_TRANSLATIONS', 'LODESTONE_ROLE_COLORS', 'LODESTONE_ROLE_TEXT_COLORS']) assert.equal(page.window[name], undefined, name);
@@ -2484,7 +2485,7 @@ test('用語：這個工具的中文不出現舊用語（公會、大國防軍�
     assert.ok(LODESTONE_JOBS.some((job) => /召喚士|魔道士/u.test(job.names.ja)), '日文的職業名有「召喚士」「魔道士」');
     assert.ok(LODESTONE_JOBS.every((job) => typeof job.names.zh === 'string' && job.names.zh !== ''), '每個職業都有中文名稱');
 
-    // 每一份要檢查的中文：翻譯檔只看 zh 的值；lodestone-data.js 只看職業的中文名稱與原文對照表的中文（不看 en、ja 與表的鍵，那是官網的原文）；
+    // 每一份要檢查的中文：翻譯檔只看 zh 的值；職業（共用的 ff14-game-data.js）只看中文名稱，lodestone-data.js 只看原文對照表的中文（不看 en、ja 與表的鍵，那是官網的原文）；
     // 其他檔案看整份檔案裡的中文（字串、標記與註解）
     const sources = {
         '翻譯檔的 zh': [...translationValues(TRANSLATIONS, 'zh').values()],

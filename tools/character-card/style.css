@@ -1,414 +1,528 @@
 /* ==========================================================================
-   角色卡產生器 — 頁面外殼只寫版面；顏色、圓角、字級一律來自 tokens.css 與共用元件
-   卡片成品（.preview-section 與 .character-card 家族）在 card-templates.css：
-   那是使用者自訂的成品，不隨站台主題變色，也不受 token 規則約束
+   角色卡產生器 — 編輯畫面。只寫版面；顏色、圓角、字級一律來自 tokens.css 與共用元件（.card、.form-control、.chip、.tab、.btn）。
+   手機（768px 以下，沒有 @media 的基本規則）：說明、預覽（sticky，高度最多 35vh）、分頁、目前分頁的欄位，一欄。
+   電腦（769px 以上）：左邊五組欄位、右邊預覽（sticky），沒有分頁列。
+   不能左右捲：欄寫 minmax(0, …)，長的字換行，不用 overflow-x；按鈕與輸入框不被壓扁（共用元件的 height 都有同值的 min-height）。
+   卡片本身是 canvas，畫在圖上的配色在 card-renderer.js，不跟著網站的深淺色。拖曳移動角色圖的游標與 touch-action 見 .preview-canvas 那一段。
+   輸出：下載、分享、複製的按鈕列（#cardActions）電腦在預覽下面，手機固定在畫面最下方；全螢幕大圖（#imageViewer）；手機打字時（.is-typing）按鈕列收起、預覽縮小
    ========================================================================== */
 
-.tool-container {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: var(--space-9);
-    max-width: 1400px;
-    margin: var(--space-9) auto 0;
-}
-
-/* 圖片設定：外觀由 .card 提供 */
-.image-controls {
-    padding: var(--space-7);
-}
-
-.image-controls h3 {
-    margin: 0 0 var(--space-6);
-    padding-bottom: var(--space-4);
-    border-bottom: 1px solid var(--color-border);
-    font-size: var(--text-xl);
-    font-weight: var(--weight-semibold);
-    color: var(--color-heading);
-}
-
-.controls-row {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: var(--space-6);
-    align-items: start;
-}
-
-.control-group {
+/* DOM 的順序是說明、分頁、表單、預覽（電腦的由左到右）；手機用 order 把預覽排在分頁上面。
+   sticky 的預覽要住在整個 .editor 裡才有空間往下走，所以手機用 flex 直排（grid 的一格只有它自己那麼高） */
+.editor {
     display: flex;
     flex-direction: column;
-    align-items: center;
     gap: var(--space-3);
 }
 
-.control-group label {
-    font-size: var(--text-sm);
-    font-weight: var(--weight-medium);
-    color: var(--color-heading);
+.editor-lead {
+    order: -2;
+    margin: 0;
+    font-size: var(--text-md);
+    text-wrap: balance;
 }
 
-.control-group span {
-    font-size: var(--text-sm);
-    font-weight: var(--weight-semibold);
-    color: var(--color-primary);
+/* 分頁（手機）：五個一排，放不下就換行，不左右捲 */
+.editor-tabs {
+    flex-wrap: wrap;
 }
 
-/* 位置方向鍵 */
-.position-controls {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: var(--space-1);
-    width: fit-content;
+.editor-tabs .tab {
+    flex: 1 1 auto;
+    padding: 0 var(--space-2);
 }
 
-#moveUp { grid-column: 2; grid-row: 1; }
-#moveDown { grid-column: 2; grid-row: 3; }
-#moveLeft { grid-column: 1; grid-row: 2; }
-#moveRight { grid-column: 3; grid-row: 2; }
-
-.control-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 36px;
-    height: 36px;
-    border: 1px solid var(--color-border-strong);
-    border-radius: var(--radius-md);
-    background: var(--color-surface);
-    color: var(--color-heading);
-    font-size: var(--text-lg);
-    cursor: pointer;
-    box-shadow: var(--shadow-sm);
-    transition: background-color var(--duration-base) var(--ease), border-color var(--duration-base) var(--ease), color var(--duration-base) var(--ease), transform var(--duration-base) var(--ease);
-}
-
-.control-btn:hover {
-    border-color: var(--color-primary);
-    background: var(--color-primary-tint);
-    color: var(--color-primary);
-    transform: translateY(-1px);
-}
-
-.control-btn:focus-visible {
-    outline: none;
-    box-shadow: var(--ring-primary);
-}
-
-.control-btn:active {
-    transform: translateY(0);
-}
-
-/* 滑桿 */
-.control-group input[type="range"] {
-    width: 120px;
-    height: 6px;
-    border-radius: var(--radius-full);
-    background: var(--color-border-strong);
-    outline: none;
-    -webkit-appearance: none;
-    appearance: none;
-}
-
-.control-group input[type="range"]::-webkit-slider-thumb {
-    width: 18px;
-    height: 18px;
-    border-radius: var(--radius-full);
-    background: var(--color-primary);
-    box-shadow: var(--shadow-sm);
-    cursor: pointer;
-    -webkit-appearance: none;
-}
-
-.control-group input[type="range"]::-moz-range-track {
-    width: 100%;
-    height: 6px;
-    border: 0;
-    border-radius: var(--radius-full);
-    background: var(--color-border-strong);
-}
-
-.control-group input[type="range"]::-moz-range-thumb {
-    width: 18px;
-    height: 18px;
-    border: 0;
-    border-radius: var(--radius-full);
-    background: var(--color-primary);
-    box-shadow: var(--shadow-sm);
-    cursor: pointer;
-}
-
-.control-group input[type="range"]:focus-visible {
-    box-shadow: var(--ring-primary);
-}
-
-/* 圖片上傳 */
-.file-input {
-    padding: var(--space-3) var(--space-5);
-    border: 2px dashed var(--color-primary);
-    border-radius: var(--radius-md);
-    background: var(--color-surface);
-    color: var(--color-text);
-    font-size: var(--text-sm);
-    font-weight: var(--weight-medium);
-    text-align: center;
-    cursor: pointer;
-    transition: border-style var(--duration-base) var(--ease), background-color var(--duration-base) var(--ease), transform var(--duration-base) var(--ease);
-}
-
-.file-input:hover {
-    border-style: solid;
-    background: var(--color-primary-tint);
-    transform: translateY(-1px);
-}
-
-.action-buttons {
+.editor-form {
     display: flex;
     flex-direction: column;
-    gap: var(--space-2);
-}
-
-/* 表單：外觀由 .card 與 .form-control / .form-label 提供 */
-.input-section {
-    padding: var(--space-9);
-}
-
-.form-group {
-    margin-bottom: var(--space-7);
-}
-
-.color-input-wrapper {
-    display: flex;
-    align-items: center;
     gap: var(--space-4);
+    min-width: 0;
 }
 
-.color-input-wrapper input[type="color"] {
-    width: 60px;
-    height: 60px;
-    padding: 0;
-    border: 2px solid var(--color-border-strong);
-    border-radius: var(--radius-lg);
-    background: var(--color-surface);
-    box-shadow: var(--shadow-sm);
-    cursor: pointer;
-}
-
-.color-input-wrapper input[type="text"] {
-    flex: 1;
-    font-family: var(--font-mono);
-    letter-spacing: 0.08em;
-}
-
-.button-group {
-    display: flex;
+/* 一組欄位：.card 預設 overflow: hidden，會切掉按鈕與輸入框的焦點外框，所以改成 visible。
+   .card 設了 display，會蓋掉瀏覽器內建的 [hidden]，手機用 hidden 切換分頁就要自己寫 */
+.editor-panel {
     gap: var(--space-4);
-    margin-top: var(--space-9);
+    padding: var(--space-4);
+    overflow: visible;
 }
 
-.button-group .btn {
-    flex: 1;
+.editor-panel[hidden] {
+    display: none;
 }
 
-/* 伺服器／職業選擇：手風琴 */
-.collapsible-header {
+/* 自己輸入的伺服器欄位：選了「其他」才出現。.form-group 沒設 display，但 JS 用 hidden 切換的元素一律自己寫一條，不靠預設 */
+#cardWorldCustomGroup[hidden] {
+    display: none;
+}
+
+/* 面板能用程式移焦點（手機變電腦時焦點在分頁上），但平常滑鼠點到不畫外框，鍵盤到達時才畫 */
+.editor-panel:focus {
+    outline: none;
+}
+
+.editor-panel:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+.editor-panel .form-group {
+    margin-bottom: 0;
+}
+
+.editor-panel .form-text {
+    margin-top: var(--space-2);
+}
+
+.editor-panel-title {
+    margin: 0;
+    font-size: var(--text-lg);
+}
+
+/* 名片資訊那一組裡的第二個標題（自我介紹與聯絡）：上面畫一條線分開 */
+.editor-panel-title-next {
+    margin-top: var(--space-3);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--color-border);
+}
+
+/* 標籤在左、字數在右 */
+.field-head {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    padding: var(--space-4);
-    margin-bottom: var(--space-4);
-    background: var(--color-surface-2);
-    border-radius: var(--radius-md);
-    cursor: pointer;
-    transition: background-color var(--duration-base) var(--ease);
+    align-items: baseline;
+    gap: var(--space-2);
+    margin-bottom: var(--space-2);
 }
 
-.collapsible-header:hover {
-    background: var(--color-primary-tint);
+.field-head .form-label {
+    min-width: 0;
+    margin-bottom: 0;
 }
 
-.collapsible-header label {
-    margin: 0;
-    cursor: pointer;
+.field-count {
+    flex: none;
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
 }
 
-.collapse-toggle {
+/* 並排的兩個欄位：手機（481px 以上才並排）一欄一個 */
+.field-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-4);
+}
+
+.field-row .form-group {
+    min-width: 0;
+}
+
+/* .chip 設了 cursor 與 hover 的底色，不能按的（滿了、主職）要看得出來，滑過去也不變 */
+.chip:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.chip:disabled:hover {
+    transform: none;
+    border-color: var(--color-border-strong);
+    background: var(--color-surface);
+    color: var(--color-text);
+}
+
+/* 遊玩時段：每一天一列，每個時段是一格（勾選框在上、名稱在下）。手機兩欄、480px 以上四欄，英文的 Afternoon 放得下 */
+.hours-field {
+    display: grid;
+    gap: var(--space-3);
+}
+
+.hours-day {
+    display: grid;
+    gap: var(--space-1);
+}
+
+.hours-day-name {
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    color: var(--color-heading);
+}
+
+.hours-slots {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-2);
+}
+
+.hours-slot {
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    width: var(--control-sm);
-    height: var(--control-sm);
-    border: 1px solid var(--color-border-strong);
-    border-radius: var(--radius-md);
-    background: var(--color-surface);
-    color: var(--color-heading);
-    cursor: pointer;
-    transition: background-color var(--duration-base) var(--ease), color var(--duration-base) var(--ease), border-color var(--duration-base) var(--ease);
-}
-
-.collapse-toggle:hover {
-    border-color: var(--color-primary);
-    background: var(--color-primary-tint);
-    color: var(--color-primary);
-}
-
-.toggle-icon {
-    display: inline-block;
-    font-size: var(--text-sm);
-    transition: transform var(--duration-slow) var(--ease);
-}
-
-.collapse-toggle.collapsed .toggle-icon {
-    transform: rotate(-90deg);
-}
-
-.collapsible-content {
-    max-height: 1000px;
-    overflow: hidden;
-    opacity: 1;
-    transition: max-height var(--duration-slow) var(--ease), opacity var(--duration-slow) var(--ease);
-}
-
-.collapsible-content.collapsed {
-    max-height: 0;
-    opacity: 0;
-}
-
-/* 選項卡（單選，不是篩選膠囊，維持工具自有） */
-.selection-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-    gap: var(--space-3);
-    margin-bottom: var(--space-4);
-}
-
-.selection-btn {
-    position: relative;
-    padding: var(--space-4) var(--space-5);
+    gap: var(--space-1);
+    min-height: var(--control-lg);
+    padding: var(--space-1) var(--space-2);
     border: 1px solid var(--color-border-strong);
     border-radius: var(--radius-md);
     background: var(--color-surface);
     color: var(--color-text);
-    font-family: inherit;
     font-size: var(--text-sm);
-    font-weight: var(--weight-semibold);
+    text-align: center;
+    overflow-wrap: anywhere;
     cursor: pointer;
-    transition: border-color var(--duration-base) var(--ease), background-color var(--duration-base) var(--ease), color var(--duration-base) var(--ease), transform var(--duration-base) var(--ease), box-shadow var(--duration-base) var(--ease);
 }
 
-.selection-btn:hover {
+.hours-slot:hover {
+    border-color: var(--color-primary);
+}
+
+.hours-slot:has(:checked) {
     border-color: var(--color-primary);
     background: var(--color-primary-tint);
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-sm);
 }
 
-.selection-btn:focus-visible {
-    outline: none;
+.hours-slot:focus-within {
+    border-color: var(--color-primary);
     box-shadow: var(--ring-primary);
 }
 
-.selection-btn.selected {
-    border-color: var(--color-primary);
-    background: var(--color-primary);
-    color: var(--color-on-primary);
-    box-shadow: var(--shadow-md);
-}
-
-.selection-btn.selected::after {
-    content: "✓";
-    position: absolute;
-    top: var(--space-1);
-    right: var(--space-2);
-    font-size: var(--text-xs);
-    font-weight: var(--weight-bold);
-}
-
-/* 已選結果列（顯示與否由 JS 的 style.display 控制） */
-.selected-server {
-    display: none;
-    align-items: center;
-    gap: var(--space-4);
-    margin-top: var(--space-4);
-    padding: var(--space-4) var(--space-6);
-    background: var(--color-primary-tint);
-    border: 1px solid var(--color-primary);
-    border-radius: var(--radius-lg);
-}
-
-.selected-label {
-    font-size: var(--text-xs);
-    font-weight: var(--weight-semibold);
-    letter-spacing: 0.04em;
-    color: var(--color-heading);
-}
-
-.selected-value {
-    flex: 1;
-    font-size: var(--text-lg);
-    font-weight: var(--weight-semibold);
-    color: var(--color-primary);
-}
-
-/* 職業分類：外觀由 .card 提供 */
-.job-category {
-    padding: var(--space-5);
-    margin-bottom: var(--space-6);
-}
-
-.job-category-title {
+/* 重點色：兩個單選，「自己選」後面接色票 */
+.accent-options {
     display: flex;
-    align-items: center;
-    gap: var(--space-3);
-    margin: 0 0 var(--space-4);
-    padding-bottom: var(--space-3);
-    border-bottom: 1px solid var(--color-border);
-    font-size: var(--text-md);
-    font-weight: var(--weight-semibold);
-    color: var(--color-heading);
-}
-
-.job-category-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    border-radius: var(--radius-md);
-    background: var(--color-primary-tint);
-    color: var(--color-primary);
-    font-size: var(--text-md);
-}
-
-.job-category .selection-grid {
-    grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+    flex-direction: column;
     gap: var(--space-2);
 }
 
-/* 響應式（卡片本身的縮放在 card-templates.css） */
-@media (max-width: 768px) {
-    .tool-container {
-        gap: var(--space-7);
-    }
+.accent-options .form-check {
+    margin-bottom: 0;
+}
 
-    .input-section {
-        padding: var(--space-7);
-    }
+.accent-custom {
+    flex-wrap: wrap;
+}
 
-    .button-group {
-        flex-direction: column;
-    }
+.accent-color {
+    width: var(--control-lg);
+    height: var(--control-md);
+    min-height: var(--control-md);
+    padding: var(--space-1);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    cursor: pointer;
+}
 
-    .controls-row {
-        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-        gap: var(--space-4);
+.accent-color:focus-visible {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: var(--ring-primary);
+}
+
+/* 角色圖：上傳是 <label> 包著看不見的檔案輸入（樣式是按鈕），下面是狀態、縮放滑桿、置中／填滿／調整圖片。按鈕放不下就換行，不左右捲 */
+.image-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+/* 看不見的檔案輸入（.visually-hidden 是 absolute）跟著按鈕定位；鍵盤聚焦到它時，焦點外框畫在按鈕上 */
+.image-upload {
+    position: relative;
+}
+
+.image-upload:has(input:focus-visible) {
+    box-shadow: var(--ring-primary);
+}
+
+/* 沒有狀態文字時不留空隙（.editor-panel .form-text 有上邊距）。元素一直在頁面上，aria-live 才念得到之後寫進去的字 */
+.editor-panel .image-status:empty {
+    margin-top: 0;
+}
+
+.image-zoom {
+    display: block;
+    width: 100%;
+    min-height: var(--control-md);
+    accent-color: var(--color-primary);
+}
+
+/* .btn 設了 display，會蓋掉瀏覽器內建的 [hidden]：「調整圖片」只有觸控為主的裝置才顯示（script.js 切換 hidden） */
+#imageAdjust[hidden] {
+    display: none;
+}
+
+/* 預覽：手機排在最上面（order）、跟著往下捲（sticky，要蓋住捲上來的欄位，所以有不透明的底），卡片高度最多 35vh，照比例縮小，不變形。
+   canvas 的寬高是卡片的尺寸（橫版 1200×675、直版 1080×1350），畫面上的大小全由這裡決定 */
+.preview-pane {
+    order: -1;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+    min-width: 0;
+    padding: var(--space-2) 0;
+    background: var(--color-bg);
+}
+
+.preview-canvas {
+    display: block;
+    width: auto;
+    max-width: 100%;
+    height: auto;
+    max-height: 35vh;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    /* 拖曳移動圖片時不要選到字（Safari 要加前綴） */
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+/* 在卡片上拖曳移動圖片（script.js 用 pointer 事件）。有圖片時滑鼠直接拖，游標是 grab（只有滑鼠才有游標，所以放在 pointer: fine）；
+   手指從卡片上滑要能捲動頁面，所以平常不設 touch-action，按了「調整圖片」（.is-adjusting）才設成 none，而且要在手指按下去之前就設好才有用。
+   拖的時候是 grabbing：.is-dragging 排在最後，才蓋得掉 grab */
+@media (pointer: fine) {
+    .preview-canvas.has-image {
+        cursor: grab;
     }
 }
 
-@media (max-width: 480px) {
-    .input-section {
-        padding: var(--space-6);
+.preview-canvas.is-adjusting {
+    touch-action: none;
+    cursor: grab;
+}
+
+.preview-canvas.is-dragging {
+    cursor: grabbing;
+}
+
+.preview-format {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-2);
+}
+
+/* 下載、分享、複製的按鈕：電腦在預覽下面（同一欄，跟著 sticky 的預覽走）；手機（768px 以下）固定在畫面最下方，見後面的 @media。
+   .btn 設了 display，會蓋掉瀏覽器內建的 [hidden]：分享與複製只有瀏覽器支援才顯示（script.js 切換 hidden） */
+.preview-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-2);
+}
+
+#shareCard[hidden],
+#copyCard[hidden] {
+    display: none;
+}
+
+/* LINE 的內建瀏覽器才有的提示（「在 LINE 裡可能存不了圖，建議先用瀏覽器打開再填：用瀏覽器打開」）：在按鈕下面獨占一整列。.form-text 設了 display: block，會蓋掉 [hidden] */
+.line-tip {
+    flex: 1 0 100%;
+    margin: 0;
+    font-size: var(--text-sm);
+    line-height: var(--leading-snug);
+    text-align: center;
+}
+
+#lineTip[hidden] {
+    display: none;
+}
+
+/* ---------- 全螢幕大圖（#imageViewer） ---------- */
+
+/* 共用的 .dialog-overlay / .dialog（外觀、遮罩、焦點陷阱與 Esc）：顯示與隱藏由 ModalManager 加減 .active。
+   共用的 .dialog-overlay 本身是 display: flex，所以預設要自己藏起來。
+   z-index：整個畫面都是大圖，頁首的漢堡按鈕（1002）與回到頂部鈕（--z-overlay）不能壓在它上面，所以疊在它們上面（同陸行鳥染色的色票面板），在 toast 之下 */
+.viewer-overlay {
+    display: none;
+    z-index: calc(var(--z-modal) + 2);
+    padding: 0;
+}
+
+.viewer-overlay.active {
+    display: flex;
+}
+
+/* 整個畫面：標題在上、按鈕在下，圖在中間縮到放得進去（不超過寬度與高度、不變形），所以不會左右捲。
+   overscroll-behavior：在大圖上滑不會接著捲動後面的頁面 */
+.viewer {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: none;
+    height: 100%;
+    max-height: none;
+    border: 0;
+    border-radius: 0;
+    overscroll-behavior: contain;
+}
+
+.viewer .dialog-header {
+    justify-content: center;
+    text-align: center;
+}
+
+/* min-height: 0：flex 的子項預設不會縮到比內容小，圖太高時要讓它縮 */
+.viewer-body {
+    flex: 1 1 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
+    padding: var(--space-3);
+}
+
+/* 長按圖片存檔（iOS、Android 的瀏覽器）靠圖片本身：這裡不能把圖片的觸控、選取或長按選單關掉 */
+.viewer-image {
+    display: block;
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+}
+
+.viewer-actions {
+    flex-wrap: wrap;
+    justify-content: center;
+    padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
+}
+
+#viewerDownload[hidden],
+#viewerShare[hidden] {
+    display: none;
+}
+
+/* 並排的欄位：主職與等級、部隊名稱與簡稱 */
+@media (min-width: 481px) {
+    .field-row-job {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 8rem);
     }
 
-    .controls-row {
-        grid-template-columns: 1fr;
+    .field-row-fc {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 9rem);
+    }
+}
+
+@media (min-width: 480px) {
+    .hours-slots {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}
+
+/* 很窄的手機：卡片的內距收小，欄位多一點寬度 */
+@media (max-width: 359px) {
+    .editor-panel {
+        padding: var(--space-3);
+    }
+}
+
+/* 手機（768px 以下）：下載與分享固定在畫面最下方（拇指按得到，捲到哪裡都在），上方的小卡不再放按鈕。
+   --card-actions-height 是這一列有多高（上下內距、一顆按鈕、safe-area；有 LINE 的提示時多一個間距與兩行字）：
+   頁尾的底部留出這麼多（頁尾的底色一路接到按鈕列底下，捲到最底看得到整個頁尾），共用的回到頂部鈕（.back-to-top 是 fixed，bottom: var(--space-5)，不提高會壓在按鈕列上）提高這麼多；
+   scroll-padding：焦點移到欄位時（必填沒填、Tab）不被固定的按鈕列（下）與 sticky 的預覽（上，35vh 的卡片加版型按鈕的高度）蓋住。
+   設計：手機最下方是「下載圖片」與「分享」，複製圖片是電腦的。
+   手機打字（.is-typing，script.js 在文字欄、文字框得到焦點時加在 #cardTool 上，離開時拿掉；選單不算，不開鍵盤）：鍵盤多半開著，按鈕列收起來，上方的卡片縮到 20vh，讓正在打的欄位看得到 */
+@media (max-width: 768px) {
+    :root {
+        --card-actions-height: calc(var(--control-lg) + var(--space-5) + env(safe-area-inset-bottom, 0px));
+        scroll-padding-top: calc(35vh + var(--space-10));
+        scroll-padding-bottom: var(--card-actions-height);
+    }
+
+    :root:has(#lineTip:not([hidden])) {
+        --card-actions-height: calc(var(--control-lg) + var(--space-5) + var(--space-2) + var(--space-8) + env(safe-area-inset-bottom, 0px));
+    }
+
+    :root:has(.is-typing) {
+        scroll-padding-top: calc(20vh + var(--space-10));
+        scroll-padding-bottom: 0;
+    }
+
+    .preview-actions {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        padding: var(--space-2) var(--space-4) calc(var(--space-2) + env(safe-area-inset-bottom, 0px));
+        background: var(--color-surface);
+        border-top: 1px solid var(--color-border);
+    }
+
+    .preview-actions .btn {
+        flex: 1 1 auto;
+        min-width: 0;
+        height: var(--control-lg);
+        min-height: var(--control-lg);
+        padding-inline: var(--space-3);
+    }
+
+    #copyCard {
+        display: none;
+    }
+
+    .footer {
+        padding-bottom: calc(var(--space-6) + var(--card-actions-height));
+    }
+
+    .back-to-top {
+        bottom: calc(var(--space-5) + var(--card-actions-height));
+    }
+
+    .is-typing .preview-canvas {
+        max-height: 20vh;
+    }
+
+    .is-typing #cardActions {
+        display: none;
+    }
+}
+
+/* 電腦：左邊五組欄位（3fr）、右邊預覽（2fr，sticky），分頁列不顯示、五組都看得到。
+   sticky 的預覽放在和表單同一列：那一列有整個表單那麼高，預覽才有空間往下走 */
+@media (min-width: 769px) {
+    .editor {
+        display: grid;
+        grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+        column-gap: var(--space-6);
+        row-gap: var(--space-4);
+        align-items: start;
+    }
+
+    .editor-lead {
+        order: 0;
+        grid-column: 1 / -1;
+        font-size: var(--text-lg);
+    }
+
+    .editor-tabs {
+        display: none;
+    }
+
+    .editor-form {
+        gap: var(--space-5);
+    }
+
+    .editor-panel {
+        padding: var(--space-5);
+    }
+
+    .preview-pane {
+        order: 0;
+        top: var(--space-4);
+        align-self: start;
+        padding: 0;
+        background: none;
+    }
+
+    .preview-canvas {
+        max-height: 70vh;
     }
 }

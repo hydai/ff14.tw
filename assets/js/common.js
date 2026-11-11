@@ -703,15 +703,5 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 
-// 全域可用的常數
-const FF14_JOBS = {
-    TANK: ['騎士', '戰士', '暗黑騎士', '絕槍戰士'],
-    HEALER: ['白魔法師', '學者', '占星術士', '賢者'],
-    MELEE: ['武僧', '龍騎士', '忍者', '武士', '鐮刀'],
-    RANGED: ['詩人', '機工士', '舞者'],
-    CASTER: ['黑魔法師', '召喚師', '赤魔法師', '青魔法師']
-};
-
 // 匯出給其他模組使用
 window.FF14Utils = FF14Utils;
-window.FF14_JOBS = FF14_JOBS;
