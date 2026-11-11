@@ -1,4 +1,4 @@
-// 記錄呼叫的 2D context 替身，給 tests/character-card-renderer.test.js 與角色卡頁面的替身共用。
+// 記錄呼叫的 2D context 替身，給 tests/character-card-renderer.test.js、tests/helpers/card-drawing.js（名片與資訊卡的畫圖測試）與角色卡頁面的替身共用。
 // 這是輔助模組，不是測試檔（只有 tests/*.test.js 會被 node --test 執行）。node 裡沒有 canvas，畫圖的程式要靠它測。
 //
 //   const { createRecordingContext, fakeMeasure } = require('./helpers/canvas-recorder.js');
@@ -11,7 +11,8 @@
 //   標點、©、«»）一個字 0.6 × 字級，其他（中日韓、全形字、…）一個字 1 × 字級。字級從 font 字串裡的 `<數字>px` 讀，讀不到是 10
 //   （真的 canvas 預設的 10px sans-serif）。createRecordingContext 的 measure 選項是同樣形狀的函式 (font, text) => 寬度，
 //   measureText(text) 傳進去的 font 是量的當下 context.font
-// - context.calls：每一次方法呼叫依序記一筆 { op, args, font, fillStyle, strokeStyle, lineWidth, globalAlpha, textAlign, textBaseline }，
+// - context.calls：每一次方法呼叫依序記一筆 { op, args, font, fillStyle, strokeStyle, lineWidth, globalAlpha, textAlign, textBaseline,
+//   shadowColor, shadowBlur, shadowOffsetX, shadowOffsetY, imageSmoothingEnabled, imageSmoothingQuality }，
 //   後面幾項是呼叫當下的設定（所以 fillText 看得到當時的字型與顏色）。measureText 也記；createLinearGradient／createRadialGradient
 //   另外多一個 result（那個漸層物件：{ kind, args, stops: [[位置, 顏色]…] }，addColorStop 加的停點記在 stops 裡）。
 //   fillStyle 設成漸層物件時，記下來的 fillStyle 就是那個物件
@@ -19,8 +20,10 @@
 //   quadraticCurveTo、bezierCurveTo、rect、roundRect、fill、stroke、clip、fillRect、strokeRect、clearRect、fillText、strokeText、
 //   drawImage、measureText、createLinearGradient、createRadialGradient。用到沒列在這裡的方法會丟 TypeError（is not a function），
 //   所以畫圖的程式用了這裡沒有的 API，測試會當場失敗。translate、scale 只記下來，不會真的改後面的座標（目前的畫法都用絕對座標）
-// - 設定（一般的屬性）：font、fillStyle、strokeStyle、lineWidth、globalAlpha、textAlign、textBaseline；save() 存下它們、restore()
-//   還原（沒有可還原的 save 時什麼都不做，同真的 canvas），所以「畫完把 context 的設定還原」測得到
+// - 設定（一般的屬性）：font、fillStyle、strokeStyle、lineWidth、globalAlpha、textAlign、textBaseline，加上陰影的 shadowColor、
+//   shadowBlur、shadowOffsetX、shadowOffsetY 與圖片縮放的 imageSmoothingEnabled、imageSmoothingQuality（初始值同真的 canvas：
+//   陰影是 'rgba(0, 0, 0, 0)' 與 0、縮放是 true 與 'low'）；save() 存下它們、restore() 還原（沒有可還原的 save 時什麼都不做，
+//   同真的 canvas），所以「畫完把 context 的設定還原」測得到，每一筆 call 也記著當下的陰影與縮放（看得出哪一次 fill 帶著陰影）
 // - 比真的 canvas 嚴格的地方（真的 canvas 會默默忽略，測試要當場看到）：數字參數不是有限的數字（NaN、Infinity）丟 TypeError；
 //   fillText／strokeText 的字不是字串丟 TypeError；drawImage 的參數不是 3、5、9 個丟 TypeError；addColorStop 的位置不在 0～1 丟 RangeError
 // - missing 選項：列出的方法不定義，用來模擬舊的瀏覽器（例如 ['roundRect']）
@@ -47,7 +50,13 @@ const STATE_DEFAULTS = Object.freeze({
     lineWidth: 1,
     globalAlpha: 1,
     textAlign: 'start',
-    textBaseline: 'alphabetic'
+    textBaseline: 'alphabetic',
+    shadowColor: 'rgba(0, 0, 0, 0)',
+    shadowBlur: 0,
+    shadowOffsetX: 0,
+    shadowOffsetY: 0,
+    imageSmoothingEnabled: true,
+    imageSmoothingQuality: 'low'
 });
 
 const RECORDED_METHODS = Object.freeze([

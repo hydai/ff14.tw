@@ -2,7 +2,7 @@
  * 角色卡產生器的畫卡片：照畫面模型（model）在任何 2D context 上畫出一張卡片。
  * 畫面上的預覽與下載的 PNG 是同一張 canvas，所以怎麼畫都在這一組腳本裡，只畫圖、不碰 DOM，也不自己去拿 canvas。
  * 這支只做三件事：把 model 整理成畫圖用的 view、列出要載入的字型、照 model.style 交給那一種風格去畫（和回答那一種風格的照片框）。
- * 每一種風格一支腳本（現在只有風格 B「海報」：card-style-b.js），風格自己的顏色、版面數字與區塊都在它的檔案裡；
+ * 每一種風格一支腳本（風格 A「名片」：card-style-a.js、風格 B「海報」：card-style-b.js），風格自己的顏色、版面數字與區塊都在它的檔案裡；
  * 三種風格共用的畫圖小工具在 card-paint.js（CardPaint）。
  *
  * - SIZES：兩種卡片的大小 { landscape: { width: 1200, height: 675 }, portrait: { width: 1080, height: 1350 } }，頁面照它設定 canvas 的寬高
@@ -14,14 +14,18 @@
  * - photoBox(style, format)：那種風格的截圖鋪滿的框 { x, y, width, height }（canvas 的像素，每次回傳新的物件）。風格不認得當成 'b'，版型不認得當成 'landscape'
  *
  * model 是頁面組好、已經翻譯的畫面模型：
- *   { style, format, name, title, world, fcTag, job: { name, level, icon }, subJobs: [{ name, icon }], likes: [string],
+ *   { style, format, name, title, world, fcName, fcTag, gc, looking, contact, job: { name, level, icon }, subJobs: [{ name, icon }], likes: [string],
  *     hours: { days: [label, label], slots: [label × 4], on: Set<'weekday-evening'…> }, intro, accent,
- *     image: { source, width, height } | null, crop: { x, y, zoom }, levelLabel: 'Lv', mark: 'FF14.tw', notice: 'FINAL FANTASY XIV © SQUARE ENIX' }
- * - style 是風格表（STYLE_MODULES）的鍵（現在只有 'b'）；沒寫或不認得就是 'b'。format 是 SIZES 的鍵；沒寫或不認得就是 'landscape'
- * - icon 是已載入的圖片（drawImage 認得的東西）或 null；null 時畫重點色的圓角方塊與職業名稱的第一個字。image.source 同
+ *     image: { source, width, height } | null, backdrop: { source, width, height } | null, crop: { x, y, zoom },
+ *     labels: { fc, gc, looking, likes, hours, subJobs, mainJob }, levelLabel: 'Lv', mark: 'FF14.tw', notice: 'FINAL FANTASY XIV © SQUARE ENIX' }
+ * - style 是風格表（STYLE_MODULES）的鍵（'a'、'b'）；沒寫或不認得就是 'b'。format 是 SIZES 的鍵；沒寫或不認得就是 'landscape'
+ * - icon 是已載入的圖片（drawImage 認得的東西）或 null；null 時畫重點色的圓角方塊與職業名稱的第一個字。image.source、backdrop.source 同
  * - likes 照 CardState.LIKES 的順序、最多 CardState.LIMITS.likes 個，subJobs 最多 CardState.LIMITS.subJobs 個（多的不畫）；
  *   hours.on 的鍵是 `${CardState.DAYS 的一個}-${CardState.SLOTS 的一個}`，days、slots 是這些的標籤，照 DAYS、SLOTS 的順序
  * - accent 是 '#rrggbb'（CardState.accentOf 的結果），重點色全都從這裡來，這支不寫死任何職能的顏色
+ * - fcName、fcTag：部隊名稱與簡稱；gc：大國防聯軍；looking：在找什麼（頁面翻譯好、已經接成一個字串）；contact：聯絡方式；
+ *   backdrop：名片的模糊小圖（頁面在上傳與還原截圖時做好，檢查同 image）。這幾項海報不畫，名片會畫
+ * - labels：卡片上的小標（頁面照介面語言翻好）；沒給或空白的用中文預設：部隊、大國防聯軍、在找什麼、喜歡的內容、遊玩時段、其他職業、主職
  * - 沒填的欄位（空字串、只有空白、null、undefined）整塊不畫，不留空位；什麼都沒填時只畫背景、FF14.tw 與 SE 版權字。
  *   SE 版權字一定畫（卡片上畫了 SE 的職業圖示）：model 沒給 notice 時用內建的那一句
  *
@@ -30,23 +34,25 @@
  * draw 畫出來的字與 texts 列的字是同一份 view，所以「要載入的字」與「畫出來的字」是同一份。
  *
  * 常數與小函式都收在最外層那個立即執行的函式裡，不會多出全域的名稱，和頁面其他腳本的名稱不會撞到；
- * 需要 card-state.js（CardState）、card-paint.js（CardPaint）與 card-style-b.js（CardStyleB）先載入。
+ * 需要 card-state.js（CardState）、card-paint.js（CardPaint）、card-style-a.js（CardStyleA）與 card-style-b.js（CardStyleB）先載入。
  */
 const CardRenderer = (() => {
     // 嚴格模式：傳進來的資料被凍結時，想改它的地方會丟 TypeError，不會被默默忽略
     'use strict';
 
-    const { SIZES, fontString } = window.CardPaint;
+    const { SIZES, fontString, isObject } = window.CardPaint;
     const { DAYS, SLOTS, LIMITS, ROLE_COLORS } = window.CardState;
 
     // 風格表：model.style 是這裡的鍵（之後的風格加在這裡）
-    const STYLE_MODULES = Object.freeze({ b: window.CardStyleB });
+    const STYLE_MODULES = Object.freeze({ a: window.CardStyleA, b: window.CardStyleB });
     const DEFAULT_STYLE = 'b';
     const DEFAULT_FORMAT = 'landscape';
 
     // fontsFor() 給的字型字串用這個字級（載入字型只看字重與字體，字級用不到）
     const LOAD_PX = 16;
 
+    // 卡片上的小標：model.labels 沒給或空白的用這些中文
+    const DEFAULT_LABELS = Object.freeze({ fc: '部隊', gc: '大國防聯軍', looking: '在找什麼', likes: '喜歡的內容', hours: '遊玩時段', subJobs: '其他職業', mainJob: '主職' });
     const DEFAULT_LEVEL_LABEL = 'Lv';
     const DEFAULT_MARK = 'FF14.tw';
     const DEFAULT_NOTICE = 'FINAL FANTASY XIV © SQUARE ENIX';
@@ -54,7 +60,6 @@ const CardRenderer = (() => {
 
     // ---------- 小工具 ----------
 
-    const isObject = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
     const hasText = (value) => typeof value === 'string' && value.trim() !== '';
     const clean = (value) => (typeof value === 'string' ? value.trim() : '');
     const isIterable = (value) => value !== null && value !== undefined && typeof value[Symbol.iterator] === 'function';
@@ -73,6 +78,15 @@ const CardRenderer = (() => {
         return { on, days: labels(value.days, DAYS.length), slots: labels(value.slots, SLOTS.length) };
     }
 
+    // 卡片上的小標：每一個沒給或空白的用中文預設
+    function labelsOf(value) {
+        const source = isObject(value) ? value : {};
+        return Object.fromEntries(Object.entries(DEFAULT_LABELS).map(([key, fallback]) => [key, hasText(source[key]) ? source[key].trim() : fallback]));
+    }
+
+    // 已載入的圖片與它的大小 { source, width, height }；沒有圖片（沒給、source 是空的）是 null
+    const pictureOf = (value) => (isObject(value) && value.source ? { source: value.source, width: value.width, height: value.height } : null);
+
     // 任何東西 → 畫圖用的樣子：字串去掉前後空白、沒填的是 ''，沒有的區塊是 null 或 []。fontsFor() 與 draw() 都從這裡來，
     // 所以「要載入的字」與「畫出來的字」是同一份
     function viewOf(model) {
@@ -82,19 +96,24 @@ const CardRenderer = (() => {
         const level = typeof job.level === 'number' ? job.level : Number(hasText(job.level) ? job.level : NaN);
         const levelLabel = hasText(source.levelLabel) ? source.levelLabel.trim() : DEFAULT_LEVEL_LABEL;
         const tag = clean(source.fcTag);
-        const image = isObject(source.image) && source.image.source ? { source: source.image.source, width: source.image.width, height: source.image.height } : null;
         return {
             style: keyOf(STYLE_MODULES, source.style, DEFAULT_STYLE),
             format: keyOf(SIZES, source.format, DEFAULT_FORMAT),
             accent: typeof source.accent === 'string' && HEX_COLOR.test(source.accent) ? source.accent : ROLE_COLORS.dps,
-            image,
+            image: pictureOf(source.image),
+            backdrop: pictureOf(source.backdrop),
             crop: source.crop,
             mark: hasText(source.mark) ? source.mark.trim() : DEFAULT_MARK,
             notice: hasText(source.notice) ? source.notice.trim() : DEFAULT_NOTICE,
             name: clean(source.name),
             title: clean(source.title),
             world: clean(source.world),
+            fcName: clean(source.fcName),
             tag: tag === '' ? '' : `«${tag}»`,
+            gc: clean(source.gc),
+            looking: clean(source.looking),
+            contact: clean(source.contact),
+            labels: labelsOf(source.labels),
             job: jobName === '' ? null : { name: jobName, icon: job.icon || null, level: Number.isFinite(level) ? `${levelLabel} ${level}` : '' },
             subJobs: (Array.isArray(source.subJobs) ? source.subJobs : [])
                 .filter(isObject)

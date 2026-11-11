@@ -41,17 +41,11 @@ const CardStyleB = (() => {
 
     const { fitScale, wrapText, layoutChips, coverRect } = window.CardLayout;
     const {
-        SIZES, LINE_NORMAL, FIT_FLOOR, ELLIPSIS, FAMILIES,
-        fontString, toPixels, firstChar, sum, tintOf,
-        roundedRect, drawText, measurer, fittedSize, drawCapsule, drawIcon, stackUp,
-        spacedWidth, drawSpaced, drawBackdrop, hoursBlock
+        SIZES, LINE_NORMAL, FIT_FLOOR, ELLIPSIS, FAMILIES, ICON_LETTER,
+        deepFreeze, geometryOf, fontString, sum, tintOf,
+        roundedRect, drawText, measurer, fittedSize, drawCapsule, drawIcon, iconLetters, stackUp,
+        spacedWidth, drawSpaced, drawBackdrop, hoursBlock, listTexts
     } = window.CardPaint;
-
-    const isObject = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
-    const deepFreeze = (value) => {
-        for (const inner of Object.values(value)) if (isObject(inner)) deepFreeze(inner);
-        return Object.freeze(value);
-    };
 
     // ---------- 顏色（畫在圖上的成品，不跟著網站的深淺色）----------
 
@@ -85,7 +79,7 @@ const CardStyleB = (() => {
 
     // ---------- 版面數字（草稿的 cqw：卡片寬度的 1%）----------
 
-    // 每一個數字都是 cqw，畫的時候換成像素（CardPaint.toPixels）；字串（layout）照舊。名稱照草稿的 CSS：
+    // 每一個數字都是 cqw，畫的時候換成像素（CardPaint.geometryOf）；字串（layout）照舊。名稱照草稿的 CSS：
     // top、bottom 是 .top、.bottom（y 是離上邊、下邊的距離，edge 是左右的邊距），pill、chip 是 .pill、.chip，
     // lead 是左下那一欄，side 是右下那一組，subs 是其他職業，hours 是時段格子，se 是 SE 版權字；hairline 是膠囊的邊框線寬
     const SPECS = deepFreeze({
@@ -131,27 +125,18 @@ const CardStyleB = (() => {
     const CHIP_MAX_ROWS = 2;
     const TITLE_SPACING = 0.3; // 稱號的字距，單位是 em（草稿的 letter-spacing: 0.3em）
 
-    function geometry(format) {
-        const { width, height } = SIZES[format];
-        return { width, height, ...toPixels(SPECS[format], width / 100) };
-    }
-
     // ---------- 載入字型 ----------
 
     // 這張卡片要載入的字：每一段字與它用的字型 { kind, text }，沒填的欄位不列。要和 draw() 畫出來的字一致（用同一份 view），
     // 所以 draw() 多畫了什麼字，這裡也要跟著加
     function texts(view) {
-        const found = [];
-        const add = (kind, ...strings) => {
-            for (const text of strings) if (typeof text === 'string' && text !== '') found.push({ kind, text });
-        };
-        // 沒有圖示的職業畫名稱的第一個字（粗體）
-        const letters = [view.job, ...view.subJobs].filter((item) => item !== null && item.icon === null).map((item) => firstChar(item.name));
-        add(FONTS.name, view.name);
-        add(FONTS.mark, view.mark);
-        add(FONTS.bold, view.job?.name, ...letters);
-        add(FONTS.text, view.world, view.tag, view.title.toUpperCase(), view.job?.level, ...view.likes, view.intro === '' ? '' : view.intro + ELLIPSIS, ...(view.hours ? [...view.hours.days, ...view.hours.slots] : []), view.notice);
-        return found;
+        return listTexts([
+            [FONTS.name, view.name],
+            [FONTS.mark, view.mark],
+            [FONTS.bold, view.job?.name],
+            [ICON_LETTER, ...iconLetters(view)],
+            [FONTS.text, view.world, view.tag, view.title.toUpperCase(), view.job?.level, ...view.likes, view.intro === '' ? '' : view.intro + ELLIPSIS, ...(view.hours ? [...view.hours.days, ...view.hours.slots] : []), view.notice]
+        ]);
     }
 
     // ---------- 背景 ----------
@@ -393,7 +378,7 @@ const CardStyleB = (() => {
     // ---------- 畫一張卡片 ----------
 
     function draw(ctx, view) {
-        const g = geometry(view.format);
+        const g = geometryOf(SPECS, view.format);
         drawBackground(ctx, view, g);
         drawShade(ctx, g);
         drawTop(ctx, view, g);
