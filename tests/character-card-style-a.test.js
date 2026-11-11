@@ -2,6 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const util = require('node:util');
 const vm = require('node:vm');
 
 const { createRecordingContext, fakeMeasure } = require('./helpers/canvas-recorder.js');
@@ -947,6 +948,33 @@ test('沒有 roundRect 的瀏覽器：改用 arcTo 畫圓角，畫出一樣的�
     assert.equal(old.calls.filter((call) => call.op === 'clip').length, 1);
 });
 
+// ---------- 稱號裡看起來是一個字的 ----------
+
+// 看起來是一個字、卻不只一個 Unicode 字元的東西。用跳脫寫：編輯器與工具不會悄悄把它們改寫成別的形式（零寬連接符號是看不見的）
+const FLAG = '\u{1F1F9}\u{1F1FC}'; // 🇹🇼：兩個區域指示符號
+const FAMILY = '\u{1F468}\u{200D}\u{1F469}\u{200D}\u{1F467}'; // 👨‍👩‍👧：三個 emoji 用零寬連接符號接起來
+const E_ACUTE = 'e\u{301}'; // é：e 加上組合用的重音符號
+const GRAPHEME_TITLE = `Hi ${FLAG} ${FAMILY} Caf${E_ACUTE}`; // Hi 🇹🇼 👨‍👩‍👧 Café
+// 被拆開時才會單獨出現的東西：區域指示符號、零寬連接符號、組合用的重音符號
+const LONE_PIECES = ['\u{1F1F9}', '\u{1F1FC}', '\u{200D}', '\u{301}'];
+
+test('稱號裡的國旗、emoji 組合與組合字各畫一次，不拆開；字距照舊', () => {
+    for (const format of FORMATS) {
+        const ctx = render(fullModel('a', { title: GRAPHEME_TITLE, format }));
+        // 接起來還是整個稱號（原樣，名片不轉大寫）
+        const title = lineOf(ctx, GRAPHEME_TITLE);
+        assert.equal(title.font, fontOf(500, SANS, cq(format, pick(format, 1.35, 1.9))));
+        // 每個字素一次 fillText：H、i、空白、國旗、空白、家庭 emoji、空白、C、a、f、é
+        const glyphs = drawn(ctx).filter((piece) => piece.y === title.y && piece.font === title.font && piece.fillStyle === title.fillStyle);
+        assert.deepEqual(glyphs.map((piece) => piece.text), ['H', 'i', ' ', FLAG, ' ', FAMILY, ' ', 'C', 'a', 'f', E_ACUTE], format);
+        for (let i = 0; i + 1 < glyphs.length; i++) near(glyphs[i + 1].x - glyphs[i].x, glyphs[i].width + 0.22 * glyphs[i].px, `${format}：稱號第 ${i + 1} 與 ${i + 2} 個字素的間距`);
+
+        const pieces = drawn(ctx).map((piece) => piece.text);
+        for (const whole of [FLAG, FAMILY, E_ACUTE]) assert.ok(pieces.includes(whole), `${format}：畫出來的字裡有整個的 ${util.inspect(whole)}`);
+        for (const lone of LONE_PIECES) assert.ok(!pieces.includes(lone), `${format}：沒有單獨的 ${util.inspect(lone)}`);
+    }
+});
+
 // ---------- 載入字型 ----------
 
 test('fontsFor：名字用 Noto Serif TC 700；畫出來的每一段字都有列到，也不多列', () => {
@@ -964,7 +992,7 @@ test('fontsFor：名字用 Noto Serif TC 700；畫出來的每一段字都有列
         likes: ['高難度', '幻化', 'ガンブレイカー'],
         intro: '零式開荒中，晚上常在利姆薩・羅敏薩拍照，歡迎一起刷寶圖！'.repeat(2)
     });
-    const models = [fullModel('a'), fullModel('a', { format: 'portrait' }), requiredModel('a'), emptyModel('a'), cjk];
+    const models = [fullModel('a'), fullModel('a', { format: 'portrait' }), requiredModel('a'), emptyModel('a'), cjk, fullModel('a', { title: GRAPHEME_TITLE })];
     for (const model of models) {
         const fonts = plain(CardRenderer.fontsFor(model));
         const ctx = render(model);

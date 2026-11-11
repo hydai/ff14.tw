@@ -10,10 +10,16 @@ const SHARED = 'assets/js/ff14-game-data.js';
 const STATE_FILE = 'tools/character-card/card-state.js';
 
 // 這些腳本都把東西掛在 window 上，所以讓 window 指向 context 本身（同 dungeon-list.test.js）。
-// 每個 context 各載一份，改了其中一個不會影響另一個
-function loadContext(files) {
+// 每個 context 各載一份，改了其中一個不會影響另一個。
+// withoutSegmenter：模擬沒有 Intl.Segmenter 的舊瀏覽器（Firefox 125 以前）：腳本載入時才決定怎麼切字，
+// 所以要在載入之前把這個 context 的 Intl.Segmenter 拿掉（Intl 是每個 context 各一份，不影響別的）
+function loadContext(files, { withoutSegmenter = false } = {}) {
     const context = vm.createContext({});
     context.window = context;
+    if (withoutSegmenter) {
+        vm.runInContext('delete Intl.Segmenter', context);
+        assert.equal(vm.runInContext('typeof Intl.Segmenter', context), 'undefined');
+    }
     for (const file of files) {
         vm.runInContext(fs.readFileSync(path.join(ROOT, file), 'utf8'), context, { filename: file });
     }
@@ -388,6 +394,63 @@ test('normalize：字數用 Unicode 字元算，不會把一個字切成兩半',
         assert.doesNotMatch(value, /[\ud800-\udbff](?![\udc00-\udfff])|(?<![\ud800-\udbff])[\udc00-\udfff]/, field);
         assert.equal(Array.from(value).length, LIMITS[field], field);
     }
+});
+
+// 看起來是一個字、卻不只一個 Unicode 字元的東西。用跳脫寫：編輯器與工具不會悄悄把它們改寫成別的形式（零寬連接符號是看不見的）
+const FLAG = '\u{1F1F9}\u{1F1FC}'; // 🇹🇼：兩個區域指示符號（2 個字元）
+const FAMILY = '\u{1F468}\u{200D}\u{1F469}\u{200D}\u{1F467}'; // 👨‍👩‍👧：三個 emoji 用零寬連接符號接起來（5 個字元）
+const E_ACUTE = 'e\u{301}'; // é：e 加上組合用的重音符號（2 個字元）
+
+test('normalize：上限照舊以 Unicode 字元計，剛好落在一個字中間（國旗、emoji 組合、組合字）時退到前一個完整的字', () => {
+    // 稱號上限 30。國旗是 2 個字元：29 個 A 加國旗是 31 個字元，第 30 個字元落在國旗中間，國旗整個拿掉
+    assert.equal(normalize({ title: 'A'.repeat(29) + FLAG }, jobs).title, 'A'.repeat(29));
+    // 28 個 A 加國旗剛好 30 個字元：原樣，國旗算 2 個字元
+    assert.equal(normalize({ title: 'A'.repeat(28) + FLAG }, jobs).title, 'A'.repeat(28) + FLAG);
+    // 後面還有字：28 個 A 加國旗剛好用完上限，後面的拿掉；29 個 A 加國旗與後面的字，國旗與後面的字都拿掉
+    assert.equal(normalize({ title: 'A'.repeat(28) + FLAG + 'B' }, jobs).title, 'A'.repeat(28) + FLAG);
+    assert.equal(normalize({ title: 'A'.repeat(29) + FLAG + 'B' }, jobs).title, 'A'.repeat(29));
+    // 40 個一般的字照舊切成 30 個
+    assert.equal(normalize({ title: 'C'.repeat(40) }, jobs).title, 'C'.repeat(30));
+
+    // 名字上限 21。é（e 加重音符號）是 2 個字元：20 個 B 加 é 是 22 個字元，切在 e 與重音符號中間的話會留下沒有重音的 e，所以整個 é 拿掉
+    assert.equal(normalize({ name: 'B'.repeat(20) + E_ACUTE }, jobs).name, 'B'.repeat(20));
+    assert.equal(normalize({ name: 'B'.repeat(19) + E_ACUTE }, jobs).name, 'B'.repeat(19) + E_ACUTE, '剛好 21 個字元：原樣');
+    // 家庭 emoji 是 5 個字元：跨過上限時整個拿掉，不管切在第幾個字元
+    for (const before of [17, 18, 19, 20]) {
+        assert.equal(normalize({ name: 'B'.repeat(before) + FAMILY }, jobs).name, 'B'.repeat(before), `${before} 個字元加家庭 emoji：整個拿掉`);
+    }
+    assert.equal(normalize({ name: 'B'.repeat(16) + FAMILY }, jobs).name, 'B'.repeat(16) + FAMILY, '剛好 21 個字元：原樣');
+    // 前面有整個的字素（國旗、家庭 emoji）：上限內的完整字素都留著，只拿掉跨過上限的那一個
+    assert.equal(normalize({ name: FLAG + FAMILY + 'B'.repeat(13) + E_ACUTE }, jobs).name, FLAG + FAMILY + 'B'.repeat(13), '2 + 5 + 13 = 20 個字元，é 跨過上限');
+    assert.equal(normalize({ name: FLAG + FAMILY + E_ACUTE.repeat(10) }, jobs).name, FLAG + FAMILY + E_ACUTE.repeat(7), '2 + 5 + 7 × 2 = 21 個字元，剛好用完上限');
+    // 一個字素自己就比上限長（5 個字元的上限放不下 7 個字元的 emoji 組合）：沒有完整的字素可留，是空字串
+    const FAMILY_OF_FOUR = '\u{1F469}\u{200D}\u{1F469}\u{200D}\u{1F467}\u{200D}\u{1F466}';
+    assert.equal(Array.from(FAMILY_OF_FOUR).length, 7);
+    assert.equal(normalize({ fcTag: FAMILY_OF_FOUR }, jobs).fcTag, '');
+    assert.equal(normalize({ fcTag: 'X' + FAMILY_OF_FOUR }, jobs).fcTag, 'X');
+
+    // 每個字串欄位都一樣（同一個切法）：上限 − 1 個字元加國旗 → 國旗拿掉；上限 − 2 個字元加國旗 → 原樣
+    for (const field of ['name', 'world', 'title', 'fcName', 'fcTag', 'intro', 'contact']) {
+        const limit = LIMITS[field];
+        assert.equal(normalize({ [field]: 'X'.repeat(limit - 1) + FLAG }, jobs)[field], 'X'.repeat(limit - 1), field);
+        assert.equal(normalize({ [field]: 'X'.repeat(limit - 2) + FLAG }, jobs)[field], 'X'.repeat(limit - 2) + FLAG, field);
+    }
+
+    // 沒超過上限的原樣不動（UTF-16 的單位數超過上限、字元數沒超過也是）
+    assert.equal(normalize({ title: FLAG.repeat(15) }, jobs).title, FLAG.repeat(15), '15 面國旗 = 30 個字元');
+    assert.equal(normalize({ title: FLAG.repeat(16) }, jobs).title, FLAG.repeat(15), '16 面 = 32 個字元，切在第 15 面後面');
+});
+
+test('normalize：沒有 Intl.Segmenter 的舊瀏覽器照以前的切法，切在上限的字元上（不丟錯）', () => {
+    const old = loadContext([SHARED, STATE_FILE], { withoutSegmenter: true });
+    const normalizeOld = old.CardState.normalize;
+    // 29 個 A 加國旗：切在第 30 個字元，留下國旗的第一個區域指示符號（以前的行為）
+    assert.equal(normalizeOld({ title: 'A'.repeat(29) + FLAG }, old.FF14_JOBS).title, 'A'.repeat(29) + '\u{1F1F9}');
+    assert.equal(normalizeOld({ name: 'B'.repeat(20) + E_ACUTE }, old.FF14_JOBS).name, 'B'.repeat(20) + 'e');
+    // 一般的字、沒超過上限的字照舊
+    assert.equal(normalizeOld({ title: 'C'.repeat(40) }, old.FF14_JOBS).title, 'C'.repeat(30));
+    assert.equal(normalizeOld({ title: 'A'.repeat(28) + FLAG }, old.FF14_JOBS).title, 'A'.repeat(28) + FLAG);
+    assert.equal(normalizeOld({ name: '\u{1F600}'.repeat(30) }, old.FF14_JOBS).name, '\u{1F600}'.repeat(21));
 });
 
 test('normalize 傳深層凍結的內容也算得對，不改傳進來的東西', () => {

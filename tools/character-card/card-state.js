@@ -20,7 +20,10 @@
  *
  * - defaults()：一個欄位都沒填的狀態
  * - normalize()：任何東西（存著的內容、傳進來的物件）→ 合格的狀態，壞的部分丟掉。不 trim、不收空白：頁面是邊打邊整理，
- *   trim 會吃掉打到一半的空白；只切長度（以 Unicode 字元計，不會把代理對切成兩半），不是字串的欄位是 ''
+ *   trim 會吃掉打到一半的空白；只切長度：上限以 Unicode 字元計（一面國旗算 2 個），不會把代理對切成兩半；上限剛好落在一個字素
+ *   （看起來是一個字：國旗、家庭 emoji、e 加重音符號）中間時，退到前一個完整的字素，不會留下半面國旗（所以結果可能比上限少，
+ *   最多少「那個字素的字元數減一」個：一個家庭 emoji 有 5 個字元，最多少 4 個；第一個字素就比上限長時，結果是空字串；
+ *   沒有 Intl.Segmenter 的舊瀏覽器沒辦法分辨，照切在上限的字元上）。不是字串的欄位是 ''
  * - validate()：必填的有沒有填（只有空白算沒填）
  * - roleOf()、accentOf()：主職的職能與卡片的重點色
  * - cropKey()、cropOf()：目前的風格與橫直版對到的那一份圖片位置
@@ -112,6 +115,12 @@ const CardState = (() => {
     // 圖片只收這個開頭的字串（縮圖時 canvas 轉出來的 dataURL）
     const IMAGE_PREFIX = 'data:image/';
 
+    // 切字素（看起來是一個字）用的 Intl.Segmenter，載入時建一次；沒有它的舊瀏覽器（Firefox 125 以前）是 null：cleanText() 照 Unicode 字元切。
+    // card-layout.js 的 graphemes() 是同一個做法，但這支比它先載入、也單獨測試，不去讀 CardLayout，所以自己建一個
+    const SEGMENTER = typeof Intl !== 'undefined' && typeof Intl.Segmenter === 'function'
+        ? new Intl.Segmenter(undefined, { granularity: 'grapheme' })
+        : null;
+
     // 表格用的名稱查詢不能直接 table[key]：key 是 constructor、__proto__ 這類名字時會拿到 Object.prototype 上的東西
     const hasOwn = (object, key) => Object.prototype.hasOwnProperty.call(object, key);
     const isObject = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -150,14 +159,28 @@ const CardState = (() => {
 
     // ---------- 整理 ----------
 
-    // 字串欄位：不是字串是 ''；超過上限就切掉後面的字。以 Unicode 字元計（Array.from 一個字元一項），不會把代理對
-    // （emoji、罕用字）切成兩半。不 trim：頁面邊打邊整理，trim 會吃掉打到一半的空白
+    // 字串欄位：不是字串是 ''；超過上限就切掉後面的字。上限以 Unicode 字元計（Array.from 一個字元一項），不會把代理對
+    // （emoji、罕用字）切成兩半；上限剛好落在一個字素（國旗、家庭 emoji、e 加重音符號）中間時，退到前一個完整的字素。
+    // 不 trim：頁面邊打邊整理，trim 會吃掉打到一半的空白
     function cleanText(value, limit) {
         if (typeof value !== 'string') return '';
         // UTF-16 的單位數不超過上限，字元數一定也不超過，不用拆開來數
         if (value.length <= limit) return value;
         const chars = Array.from(value);
-        return chars.length <= limit ? value : chars.slice(0, limit).join('');
+        if (chars.length <= limit) return value;
+        // 沒有 Intl.Segmenter：切在上限的字元上
+        if (SEGMENTER === null) return chars.slice(0, limit).join('');
+        // 一個字素一個字素往下加（字素的大小也以 Unicode 字元計），加到下一個會超過上限為止。上限不是落在字素中間時，
+        // 結果和切在上限的字元上一樣；落在中間時，那個字素整個不要（一個字素就比上限長，連第一個都放不下，結果是空字串）
+        let kept = '';
+        let count = 0;
+        for (const { segment } of SEGMENTER.segment(value)) {
+            const size = Array.from(segment).length;
+            if (count + size > limit) break;
+            kept += segment;
+            count += size;
+        }
+        return kept;
     }
 
     // 等級：有限的數字，或數字的字串（<input type="number"> 的值是字串，前後的空白不管），四捨五入、夾在 levelMin～levelMax；

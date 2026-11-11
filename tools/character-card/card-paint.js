@@ -25,7 +25,7 @@
  * - toPixels(value, unit)：版面數字（草稿的 cqw：卡片寬度的 1%）換成像素：數字乘上 unit，物件逐一往下換，其他（字串）照舊
  * - geometryOf(specs, format)：一種風格的版面數字（specs：每種版型一份，數字是 cqw）換成那一種版型的像素：
  *   { width, height, ...toPixels(specs[format], width / 100) }，每次回傳新的物件
- * - firstChar(text)：第一個字（以 Unicode 字元計，不會把代理對切成兩半），空字串是 ''
+ * - firstChar(text)：第一個字（以字素計，見 CardLayout.graphemes：國旗、家庭 emoji、e 加重音符號整個算一個，也不會把代理對切成兩半），空字串是 ''
  * - sum(numbers)：加總
  * - mixOf(hex, other, amount)：'#rrggbb' 往另一個顏色 other 混 amount（0～1，0 是 hex 本身、1 是 other）：每個色版 Math.round(a + (b - a) * amount)，
  *   輸出小寫的 '#rrggbb'
@@ -41,16 +41,18 @@
  * - measurer(ctx, font)：量字函式 (text) => 寬度，給 CardLayout 用：每次先把字型套上去再量
  * - fittedSize(ctx, kind, basePx, text, maxWidth)：text 用 basePx 畫放不下 maxWidth 時，縮到剛好放得下（最多縮到 FIT_FLOOR）；回傳實際的字級
  * - spacedWidth(ctx, text, kind, px, spacing)：字距 spacing（單位是 em，字級的倍數）一個字一個字畫的話，這段字有多寬：
- *   每個字的寬度加上字與字之間的字距（最後一個字後面沒有）；空字串是 0。不用 ctx.letterSpacing（舊的 Safari 沒有）
- * - drawSpaced(ctx, text, x, centerY, kind, px, spacing, color)：字距 spacing（em）一個字一個字畫，寬度就是 spacedWidth
+ *   每個字的寬度加上字與字之間的字距（最後一個字後面沒有）；空字串是 0。「一個字」是一個字素（CardLayout.graphemes：國旗、家庭 emoji、
+ *   e 加重音符號是一個字，不拆開）。不用 ctx.letterSpacing（舊的 Safari 沒有）
+ * - drawSpaced(ctx, text, x, centerY, kind, px, spacing, color)：字距 spacing（em）一個字一個字畫（每個字素一次 fillText，字距加在字素後面），
+ *   寬度就是 spacedWidth
  * - fittedSpacedSize(ctx, kind, basePx, text, spacing, maxWidth)：字距畫出來的字，用 basePx 畫放不下 maxWidth 時縮到剛好放得下
  *   （最多縮到 FIT_FLOOR）；回傳實際的字級（fittedSize 的字距版）
- * - labelBlock(ctx, text, spec, maxWidth)：小標（部隊、喜歡的內容…）：字距一個字一個字畫，放不下 maxWidth 整行縮小（最多縮到 FIT_FLOOR）。
+ * - labelBlock(ctx, text, spec, maxWidth)：小標（部隊、喜歡的內容…）：字距一個字（字素）一個字畫，放不下 maxWidth 整行縮小（最多縮到 FIT_FLOOR）。
  *   spec = { kind, font, spacing, color }（字型的種類、原本的字級、字距（em）、顏色）；回傳 { height, draw(x, top) }，高度是原本字級的一行（縮小也不變）
  * - drawCapsule(ctx, x, y, w, h, fill, stroke, border)：膠囊：半透明的底加邊框。CSS 的邊框在框裡面，描邊的路徑往裡縮半條線寬才對得上。
  *   沒有邊框（border 是 0 或沒給，stroke 也不用給）時只填色、不描邊（canvas 的 lineWidth 設成 0 會被忽略，沿用上一次的線寬，不能照樣描）
  * - drawIcon(ctx, item, x, y, size, accent)：職業圖示，item 是 { name, icon }。有圖（icon 是 drawImage 認得的東西）就畫在 (x, y) 的 size × size 方塊裡；
- *   沒有（例如 Beastmaster）畫重點色 accent 的圓角方塊，中間是名稱的第一個字，字色照重點色的亮度選白或深色（CardLayout.textColorOn）。
+ *   沒有（例如 Beastmaster）畫重點色 accent 的圓角方塊，中間是名稱的第一個字（字素），字色照重點色的亮度選白或深色（CardLayout.textColorOn）。
  *   這個字用 ICON_LETTER（Noto Sans TC 700）畫，所以風格的 texts() 要把 iconLetters(view) 列進這個字型
  * - drawBackdrop(ctx, accent, rect, unit)：沒有截圖時的預設背景，畫在 rect = { x, y, width, height } 裡：由深藍紫到重點色 accent 的對角漸層
  *   （從 rect 的左上到右下），再撒上固定位置的柔和光點（整顆都在 rect 裡，每次畫都一樣）。unit 是一個 cqw 的像素，光點的半徑照它算
@@ -82,7 +84,7 @@
  *   列名那一欄和內容一樣寬，剩下的寬度平分給 4 個時段欄；標籤放不下就整組縮小，不超出 spec.width
  *
  * 風格的 texts(view)（這張卡片要載入的字）用的小工具（view 是 CardRenderer 整理好的畫面模型）：
- * - iconLetters(view)：沒有圖示的職業（主職與其他職業）各畫名稱的第一個字（drawIcon 的替身），回傳這些字的陣列（名稱是空的沒有字可畫，不列）；
+ * - iconLetters(view)：沒有圖示的職業（主職與其他職業）各畫名稱的第一個字（字素，drawIcon 的替身），回傳這些字的陣列（名稱是空的沒有字可畫，不列）；
  *   它們要用 ICON_LETTER 的字型載入
  * - listTexts(groups)：groups 是 [[kind, ...字], …]（kind 是 { weight, family }），照順序列成 [{ kind, text }]，不是字串與空字串的略過
  *
@@ -120,7 +122,7 @@ const CardPaint = (() => {
     // 嚴格模式：傳進來的資料被凍結時，想改它的地方會丟 TypeError，不會被默默忽略
     'use strict';
 
-    const { fitScale, textColorOn, contrastRatio, wrapText, layoutChips, coverRect } = window.CardLayout;
+    const { fitScale, textColorOn, contrastRatio, wrapText, layoutChips, coverRect, graphemes } = window.CardLayout;
 
     const isObject = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
     const deepFreeze = (value) => {
@@ -168,8 +170,8 @@ const CardPaint = (() => {
 
     // ---------- 小工具 ----------
 
-    // 第一個字（以 Unicode 字元計，不會把代理對切成兩半）
-    const firstChar = (text) => Array.from(text)[0] ?? '';
+    // 第一個字（以字素計：國旗、家庭 emoji、e 加重音符號整個算一個，也不會把代理對切成兩半）
+    const firstChar = (text) => graphemes(text)[0] ?? '';
     const sum = (numbers) => numbers.reduce((total, number) => total + number, 0);
 
     // 版面數字 → 像素：數字乘上 unit，物件逐一往下換，其他（字串）照舊
@@ -260,12 +262,12 @@ const CardPaint = (() => {
         return basePx * fitScale(measurer(ctx, fontString(kind, basePx))(text), maxWidth, FIT_FLOOR);
     }
 
-    // 字距 spacing（em）一個字一個字畫的寬度：每個字的寬度加上字與字之間的字距，最後一個字後面沒有
+    // 字距 spacing（em）一個字一個字畫的寬度：每個字（字素）的寬度加上字與字之間的字距，最後一個字後面沒有
     function spacedWidth(ctx, text, kind, px, spacing) {
-        const chars = Array.from(text);
-        if (chars.length === 0) return 0;
+        const units = graphemes(text);
+        if (units.length === 0) return 0;
         const measure = measurer(ctx, fontString(kind, px));
-        return sum(chars.map(measure)) + (chars.length - 1) * px * spacing;
+        return sum(units.map(measure)) + (units.length - 1) * px * spacing;
     }
 
     // 字距 spacing（em）一個字一個字畫的字，用 basePx 畫放不下 maxWidth 時，縮到剛好放得下（最多縮到 FIT_FLOOR）；回傳實際的字級。
@@ -274,18 +276,18 @@ const CardPaint = (() => {
         return basePx * fitScale(spacedWidth(ctx, text, kind, basePx, spacing), maxWidth, FIT_FLOOR);
     }
 
-    // 字距 spacing（em）一個字一個字畫：畫一個字，游標往右移這個字的寬度加一個字距
+    // 字距 spacing（em）一個字一個字畫：畫一個字（一個字素：國旗、家庭 emoji、e 加重音符號都整個畫一次），游標往右移這個字的寬度加一個字距
     function drawSpaced(ctx, text, x, centerY, kind, px, spacing, color) {
         const font = fontString(kind, px);
         const measure = measurer(ctx, font);
         let cursor = x;
-        for (const char of Array.from(text)) {
-            drawText(ctx, char, cursor, centerY, font, color);
-            cursor += measure(char) + px * spacing;
+        for (const unit of graphemes(text)) {
+            drawText(ctx, unit, cursor, centerY, font, color);
+            cursor += measure(unit) + px * spacing;
         }
     }
 
-    // 小標：字距 spec.spacing（em）一個字一個字畫，放不下 maxWidth 整行縮小（最多縮到 FIT_FLOOR）。spec = { kind, font, spacing, color }；
+    // 小標：字距 spec.spacing（em）一個字（字素）一個字畫，放不下 maxWidth 整行縮小（最多縮到 FIT_FLOOR）。spec = { kind, font, spacing, color }；
     // 高度是原本字級的一行（縮小也不變）
     function labelBlock(ctx, text, spec, maxWidth) {
         const px = fittedSpacedSize(ctx, spec.kind, spec.font, text, spec.spacing, maxWidth);
@@ -305,7 +307,7 @@ const CardPaint = (() => {
         ctx.stroke();
     }
 
-    // 職業圖示：有圖就畫圖；沒有（例如 Beastmaster）畫重點色的圓角方塊，中間是名稱的第一個字，字色照重點色的亮度選白或深色
+    // 職業圖示：有圖就畫圖；沒有（例如 Beastmaster）畫重點色的圓角方塊，中間是名稱的第一個字（字素），字色照重點色的亮度選白或深色
     function drawIcon(ctx, item, x, y, size, accent) {
         if (item.icon) {
             ctx.drawImage(item.icon, x, y, size, size);
@@ -320,7 +322,7 @@ const CardPaint = (() => {
         drawText(ctx, letter, x + (size - measurer(ctx, font)(letter)) / 2, y + size / 2, font, textColorOn(accent));
     }
 
-    // 沒有圖示的職業（主職與其他職業）各畫名稱的第一個字（drawIcon 的替身）：回傳這些字。名稱是空的沒有字可畫（drawIcon 也不畫），不列
+    // 沒有圖示的職業（主職與其他職業）各畫名稱的第一個字（字素，drawIcon 的替身）：回傳這些字。名稱是空的沒有字可畫（drawIcon 也不畫），不列
     function iconLetters(view) {
         return [view.job, ...view.subJobs]
             .filter((item) => item !== null && item.icon === null)
