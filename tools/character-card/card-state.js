@@ -24,6 +24,10 @@
  *   （看起來是一個字：國旗、家庭 emoji、e 加重音符號）中間時，退到前一個完整的字素，不會留下半面國旗（所以結果可能比上限少，
  *   最多少「那個字素的字元數減一」個：一個家庭 emoji 有 5 個字元，最多少 4 個；第一個字素就比上限長時，結果是空字串；
  *   沒有 Intl.Segmenter 的舊瀏覽器沒辦法分辨，照切在上限的字元上）。不是字串的欄位是 ''
+ * - fitInput()：打字時把欄位的字放到上限（頁面不用瀏覽器的 maxlength，每次輸入完自己呼叫）：比對上一次接受的字與現在的字，
+ *   找出這次打進來（或貼上、取代選取）的那一段，前後原本的字不動（被改到一部分的字素，例如換掉的國旗，整個算是換掉的），
+ *   打進來的字照整段新字的字素，從前面一個一個放到上限為止，放不下的字素整個不放（不切到半面國旗），
+ *   回傳接受的字與游標該放的位置。游標只當提示，不準時不採用
  * - validate()：必填的有沒有填（只有空白算沒填）
  * - roleOf()、accentOf()：主職的職能與卡片的重點色
  * - cropKey()、cropOf()：目前的風格與橫直版對到的那一份圖片位置
@@ -181,6 +185,119 @@ const CardState = (() => {
             count += size;
         }
         return kept;
+    }
+
+    // UTF-16 的位置（輸入框的 selectionEnd 就是這種）→ chars（一個 Unicode 字元一項的陣列）裡的序號，也就是它前面有幾個字元。
+    // 不是整數、超出範圍、落在代理對中間（不在兩個字元的交界）是 -1
+    function charIndexAt(chars, position) {
+        if (!Number.isInteger(position) || position < 0) return -1;
+        let units = 0;
+        for (let index = 0; index < chars.length; index++) {
+            if (units === position) return index;
+            units += chars[index].length;
+            if (units > position) return -1;
+        }
+        return units === position ? chars.length : -1;
+    }
+
+    // 游標指出的分法：游標前面是前段加打進來的字，游標後面是 before 原本就有的結尾（after 與 before 都是一個 Unicode 字元一項的陣列）。
+    // 前段是 before 與游標前面的字開頭相同的部分，最多到 before 去掉結尾之後的長度（不和結尾重疊）。
+    // 提示不合格是 null：不是整數、超出範圍、落在代理對中間，或游標後面的字不是 before 的結尾
+    function splitAtCaret(before, after, caret) {
+        const cut = charIndexAt(after, caret);
+        if (cut < 0) return null;
+        const tailSize = after.length - cut;
+        if (tailSize > before.length) return null;
+        for (let offset = 0; offset < tailSize; offset++) {
+            if (before[before.length - tailSize + offset] !== after[cut + offset]) return null;
+        }
+        const most = Math.min(before.length - tailSize, cut);
+        let headSize = 0;
+        while (headSize < most && before[headSize] === after[headSize]) headSize++;
+        return { headSize, tailSize };
+    }
+
+    /**
+     * 打字時把欄位的字放到上限，不切到半個字。瀏覽器的 maxlength 照 UTF-16 的單位算，放不下時會從國旗或 emoji 組合中間切開，
+     * 所以頁面不用它，每次輸入完把上一次接受的字（previous）與現在的字（next）交給這個函式：比對出這次打進來
+     * （或貼上、取代選取）的那一段，前後原本的字一個都不動（被改到一部分的字素，例如換掉的國旗，整個算是換掉的）；
+     * 打進來的字照整段新字的字素，從前面一個一個放，放到下一個會超過上限為止，不跳過放不下的去放後面的。
+     * - 比對與計算都以 Unicode 字元為單位，不會切開代理對。打進來的字和旁邊的字一樣時（Anna 的 A 後面打 n），前後比對分不出
+     *   打在哪裡，才靠 caret：它合格（UTF-16 的整數位置、不在代理對中間、游標後面的字就是 previous 的結尾），而且指出的分法
+     *   和前後比對一樣是最小的改動時才採用，所以不準的提示（例如程式改過欄位的字之後，游標在最後面）不會刪到原本的字
+     * - 前後原本的字加起來就超過上限（previous 本來就放不下）時，沒有地方放打進來的字，照 cleanText 從最後面切
+     * - 沒有 Intl.Segmenter 的舊瀏覽器照 Unicode 字元切（國旗可能被切開，同 cleanText）
+     * @param {*} previous - 這一格上一次接受的字；不是字串是 ''
+     * @param {*} next - 現在的字（瀏覽器剛輸入完的樣子）；不是字串是 ''
+     * @param {number} limit - 上限，以 Unicode 字元計
+     * @param {number | null} [caret] - 輸入之後的游標（輸入框的 selectionEnd，UTF-16 的位置）；不知道是 null。只當提示
+     * @returns {{value: string, caret: number | null}} value 是接受的字，不超過 limit 個字元；caret 在 value 就是 next（什麼都不用改）時是 null，
+     *   否則是游標該放的 UTF-16 位置，也就是放進去的最後一個字後面（照 cleanText 切的時候是 value.length）。每次都是新的物件
+     */
+    function fitInput(previous, next, limit, caret = null) {
+        const text = typeof next === 'string' ? next : '';
+        // UTF-16 的單位數不超過上限，字元數一定也不超過，不用拆開來數（同 cleanText）
+        if (text.length <= limit) return { value: text, caret: null };
+        const after = Array.from(text);
+        if (after.length <= limit) return { value: text, caret: null };
+        const before = typeof previous === 'string' ? Array.from(previous) : [];
+
+        // 這次打進來的那一段：前後比對，開頭相同的有 headSize 個字元，結尾相同的有 tailSize 個字元（兩邊都不和前段重疊）。
+        // 兩個加起來最長，也就是最小的改動
+        const shared = Math.min(before.length, after.length);
+        let headSize = 0;
+        while (headSize < shared && before[headSize] === after[headSize]) headSize++;
+        let tailSize = 0;
+        while (tailSize < shared - headSize && before[before.length - 1 - tailSize] === after[after.length - 1 - tailSize]) tailSize++;
+
+        // 提示指出的分法只在同樣是最小的改動（前後比對的字數一樣多）時採用，它只決定打在哪裡
+        const hinted = splitAtCaret(before, after, caret);
+        if (hinted !== null && hinted.headSize + hinted.tailSize === headSize + tailSize) {
+            headSize = hinted.headSize;
+            tailSize = hinted.tailSize;
+        }
+
+        // 前段與後段都要落在 previous 的字素邊界上：比對是一個字元一個字元比，選取一面國旗貼上另一面時，兩面的第一個字母
+        // 一樣就會被算成沒改的前段（AA🇹🇼 換成 🇹🇯🇯🇵，前段變成 AA🇹），打進來的字再怎麼切都會留下半面國旗。
+        // 被改到一部分的字素整個算是換掉的。前段往前對齊之後，結尾相同的部分重新算，結尾的開頭再往後對齊：
+        // 兩端各自往外對齊的話，在 🇹🇼 前面貼上 🇹🇯 時，原本的 🇹🇼 會整面落在換掉的那一段裡
+        if (SEGMENTER !== null) {
+            const edges = graphemeEdges(before);
+            if (!edges.has(headSize)) {
+                while (!edges.has(headSize)) headSize--;
+                const most = Math.min(before.length, after.length) - headSize;
+                tailSize = 0;
+                while (tailSize < most && before[before.length - 1 - tailSize] === after[after.length - 1 - tailSize]) tailSize++;
+            }
+            while (!edges.has(before.length - tailSize)) tailSize--;
+        }
+
+        const room = limit - (headSize + tailSize);
+        if (room < 0) {
+            const value = cleanText(text, limit);
+            return { value, caret: value.length };
+        }
+
+        // 打進來的字放到 room 個字元為止，交給 cleanText 切「前段加打進來的字」，上限是前段加 room：照字素從前面一個一個放，
+        // 放不下的字素整個不放，不跳過它去放後面的（沒有 Intl.Segmenter 時照 Unicode 字元切）。連前段一起切，字素的邊界才照
+        // 整段新字算（打進來的字可能和前段最後一個字合成一個字素）。切出來比前段還短時（e 後面打的重音符號放不下：e 和重音符號
+        // 是同一個字素，整個被切掉），打進來的字一個都不放，前段原樣留著，原本的 e 不動
+        const fitted = cleanText(after.slice(0, after.length - tailSize).join(''), headSize + room);
+        const keptSize = Math.max(headSize, Array.from(fitted).length);
+        const head = after.slice(0, keptSize).join('');
+        const tail = after.slice(after.length - tailSize).join('');
+        return { value: head + tail, caret: head.length };
+    }
+
+    // previous 的字素邊界：每個字素前後的位置（以 Unicode 字元計，含 0 與結尾）。只在有 SEGMENTER 時用
+    function graphemeEdges(chars) {
+        const edges = new Set([0]);
+        let index = 0;
+        for (const { segment } of SEGMENTER.segment(chars.join(''))) {
+            index += Array.from(segment).length;
+            edges.add(index);
+        }
+        return edges;
     }
 
     // 等級：有限的數字，或數字的字串（<input type="number"> 的值是字串，前後的空白不管），四捨五入、夾在 levelMin～levelMax；
@@ -449,7 +566,7 @@ const CardState = (() => {
 
     return Object.freeze({
         STORAGE_KEY, IMAGE_KEY, LIMITS, LIKES, LOOKING, DAYS, SLOTS, GCS, FORMATS, STYLES, ROLE_COLORS,
-        defaults, normalize, validate, roleOf, accentOf, cropKey, cropOf, load, save, saveImage, clear
+        defaults, normalize, fitInput, validate, roleOf, accentOf, cropKey, cropOf, load, save, saveImage, clear
     });
 })();
 
