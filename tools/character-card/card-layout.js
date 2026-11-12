@@ -6,11 +6,21 @@
  * 常數與小函式都收在最外層那個立即執行的函式裡，不會多出全域的名稱，和頁面其他腳本的名稱不會撞到。
  *
  * - fitScale(textWidth, maxWidth, minScale = 0.55)：名字放不下時整行縮多少。放得下是 1，否則 max(minScale, maxWidth / textWidth)。
- * - wrapText(text, maxWidth, measure, maxLines)：折成一行一個字串的陣列。
+ * - graphemes(text)：把一段字切成「看起來是一個字」的單位（字素，grapheme）的陣列。國旗（兩個區域指示符號）、家庭 emoji（用零寬連接符號接起來的
+ *   幾個 emoji）、加上膚色的 emoji、鍵帽、e 加上重音符號這類組合字，各是一個；其他的字（中日韓、拉丁字母、標點、空白、單一個 emoji、罕用字）
+ *   每個 Unicode 字元一個，所以一般的字切出來和 Array.from 一樣。\r\n 也是一個字素。卡片上凡是一個字一個字處理的地方（一個字一個字畫、折行、
+ *   取第一個字）都用它。用瀏覽器內建的 Intl.Segmenter（granularity: 'grapheme'，載入時建一次）切；沒有它的舊瀏覽器（Firefox 125 以前）
+ *   退回 Array.from：每個 Unicode 字元一個（不會把代理對拆成兩半，但國旗會被拆成兩個區域指示符號）。
+ *   接起來永遠是原文；空字串與不是字串都是 []，每次回傳新的陣列。
+ * - wrapText(text, maxWidth, measure, maxLines)：折成一行一個字串的陣列。下面說的「一個字」都是一個字素（見 graphemes）。
  *   - 中日韓的字任兩個字之間都能斷：CJK 統一表意文字（含擴充 A）、CJK 標點、平假名與片假名、韓文、全形與半形字。
  *     其他文字（英文、數字、西里爾字母…）只在空白斷，單一個字比 maxWidth 還寬時才從單字裡逐字斷。
- *   - 以 Unicode 字元為單位，不會把代理對（emoji、罕用字）拆成兩半。
- *   - 每一行開頭與結尾的空白拿掉；換行與 tab 也只是空白（canvas 畫字時本來就當成空白），所以一行裡不會有換行字元。
+ *   - 以字素為單位：國旗、家庭 emoji、e 加重音符號都是整個在這一行或整個在下一行，斷行、從單字裡斷、接上 … 都不會切在它們中間，
+ *     也不會把代理對（emoji、罕用字）拆成兩半。能不能斷、行首能不能放，看字素的第一個字元；算不算空白，要整個字素都是空白：
+ *     「空格加組合符號」（顏文字常有，例如 Lenny 臉）是一個字、不是空白，所以不會被拿掉，也不會因為它有空格就在它前後斷行。
+ *     沒有 Intl.Segmenter 的舊瀏覽器退回以 Unicode 字元為單位。
+ *   - 每一行開頭與結尾只由空白組成的字素拿掉；換行與 tab 也只是空白（canvas 畫字時本來就當成空白），所以一行裡不會有換行字元：
+ *     每個換行字元變成一個空白（\r\n 是兩個字元，所以是兩個空白，和以前一樣）。
  *   - 行首禁用：「，。、！？；：」』）〉》」和半形的「,.!?;:)」不放在行首。斷在它前面的話，往前找最近的、能斷的位置，
  *     整個英文單字會跟著標點一起下去（「FFXIV，」不會被拆成「FFXI」「V，」）；找不到這樣的位置（例如單字從這一行的
  *     開頭就放不下，本來就只能從單字裡斷）時，才一個字一個字往前帶，讓標點前面的字跟著下去。怎麼排都排不出這樣的行
@@ -64,6 +74,25 @@ const CardLayout = (() => {
         return Math.max(minScale, maxWidth / textWidth);
     }
 
+    // ---------- 看起來是一個字（字素）----------
+
+    // 切字素用的 Intl.Segmenter，載入時建一次。沒有它的舊瀏覽器（Firefox 125 以前）是 null：graphemes() 照 Unicode 字元切
+    const SEGMENTER = typeof Intl !== 'undefined' && typeof Intl.Segmenter === 'function'
+        ? new Intl.Segmenter(undefined, { granularity: 'grapheme' })
+        : null;
+
+    /**
+     * 把一段字切成「看起來是一個字」的單位（字素）：國旗、家庭 emoji、膚色、鍵帽、e 加重音符號各是一個，其他的字每個 Unicode 字元一個。
+     * 規則見檔案開頭的說明。
+     * @param {string} text
+     * @returns {string[]} 每一項是一個字素，接起來是 text；沒有字或 text 不是字串是 []。每次都是新的陣列
+     */
+    function graphemes(text) {
+        if (typeof text !== 'string') return [];
+        if (SEGMENTER === null) return Array.from(text);
+        return Array.from(SEGMENTER.segment(text), (part) => part.segment);
+    }
+
     // ---------- 折行 ----------
 
     // 任兩個字之間都能斷的字（中日韓沒有空白分詞）。每一項是一個 Unicode 區塊的 [起, 迄]（都含）。
@@ -78,14 +107,19 @@ const CardLayout = (() => {
         [0xac00, 0xd7af], // 韓文音節
         [0xff00, 0xffef] // 全形與半形字
     ]);
-    const breaksAnywhere = (char) => {
-        const code = char.codePointAt(0);
+    // unit 是一個字素：看它的第一個字元（字素裡接在後面的是組合用的記號，不影響）
+    const breaksAnywhere = (unit) => {
+        const code = unit.codePointAt(0);
         return BREAK_ANYWHERE.some(([from, to]) => code >= from && code <= to);
     };
     // 行首不能放的字：逗號、句號、頓號、驚嘆號、問號、分號、冒號、右引號、右括號（全形與半形）
     const NO_LINE_START = new Set(Array.from('，。、！？；：」』）〉》,.!?;:)'));
-    // 空白：包含全形空白（0x3000，同時在 BREAK_ANYWHERE 裡，當成空白處理，行首、行尾會被拿掉）與不換行空白
-    const SPACE = /\s/;
+    // 一個字素的第一個字元：行首能不能放（NO_LINE_START）看它
+    const headOf = (unit) => String.fromCodePoint(unit.codePointAt(0));
+    // 算不算空白：整個字素都是空白才算。空白同 \s，包含全形空白（0x3000，同時在 BREAK_ANYWHERE 裡，當成空白處理，行首、行尾會被拿掉）與不換行空白。
+    // 只有一個字元的字素，和直接問那個字元是不是 \s 一樣；空格加組合符號（顏文字常有）是一個字、不是空白：只看第一個字元的話，
+    // 它在行首會被跳過、符號就不見了，前後也會被當成能斷行的空白
+    const isSpace = (unit) => !/\S/.test(unit);
     // 換行、tab 之類：水平 tab、換行、垂直 tab、換頁、歸位（0x09～0x0d）、NEL（0x85）、行分隔與段分隔（0x2028、0x2029）。
     // 換成一般的空白，一行裡才不會有換行字元
     const isLineBreak = (code) => (code >= 0x09 && code <= 0x0d) || code === 0x85 || code === 0x2028 || code === 0x2029;
@@ -95,17 +129,18 @@ const CardLayout = (() => {
     function canBreakAt(chars, at) {
         const before = chars[at - 1];
         const after = chars[at];
-        return SPACE.test(before) || SPACE.test(after) || breaksAnywhere(before) || breaksAnywhere(after);
+        return isSpace(before) || isSpace(after) || breaksAnywhere(before) || breaksAnywhere(after);
     }
 
     // 從位置 at 起第一個不是空白的字的位置（後面都是空白就是 chars.length）
     function skipSpaces(chars, at) {
         let next = at;
-        while (next < chars.length && SPACE.test(chars[next])) next++;
+        while (next < chars.length && isSpace(chars[next])) next++;
         return next;
     }
 
-    // chars[from, to) 這一段字，拿掉行尾的空白（行首的空白在換行時已經跳過了）
+    // chars[from, to) 這一段字，拿掉行尾的空白（行首的空白在換行時已經跳過了）。用 trimEnd，不用 trim：一個比整行還寬的顏文字硬斷時，
+    // 行首可以是「空格加組合符號」，trim 會把那個空格拿掉，留下沒有依附的符號，等於又把一個字拆開
     const lineText = (chars, from, to) => chars.slice(from, to).join('').trimEnd();
 
     // 這一行最多到 limit（不含）：chars[limit] 放不下。挑真正斷開的位置：
@@ -114,7 +149,11 @@ const CardLayout = (() => {
     //    （標點前面的那個字一起下去）
     // 3. 還是沒有（怎麼斷下一行都從行首禁用的字開始，或只剩一個字）：照原本的 limit，不留空行
     function chooseBreak(chars, start, limit) {
-        const startsAllowed = (at) => !NO_LINE_START.has(chars[skipSpaces(chars, at)]);
+        // 下一行從 at 之後第一個不是空白的字開始：那個字（後面沒有字就沒有）不能是行首禁用的
+        const startsAllowed = (at) => {
+            const next = skipSpaces(chars, at);
+            return next >= chars.length || !NO_LINE_START.has(headOf(chars[next]));
+        };
         for (let at = limit; at > start; at--) {
             if (canBreakAt(chars, at) && startsAllowed(at)) return at;
         }
@@ -151,15 +190,16 @@ const CardLayout = (() => {
      * @param {number} maxWidth - 一行能用的寬度
      * @param {(text: string) => number} measure - 量一段字有多寬（字型已經套好）
      * @param {number} [maxLines] - 最多幾行，不傳是不限；超過的部分換成最後一行結尾的 …
-     * @returns {string[]} 每一行都不是空的，行首與行尾沒有空白；沒有字（或 maxLines 小於 1）是 []
+     * @returns {string[]} 每一行都不是空的，行首與行尾沒有只由空白組成的字素（「空格加組合符號」不算，空格留著）；沒有字（或 maxLines 小於 1）是 []
      */
     function wrapText(text, maxWidth, measure, maxLines = Infinity) {
         if (typeof text !== 'string') return [];
         const lineLimit = Math.floor(maxLines);
         if (!(lineLimit >= 1)) return [];
 
-        // Array.from 一個字元一項（不是一個 UTF-16 單位一項），所以代理對不會被拆開
-        const chars = Array.from(text, (char) => (isLineBreak(char.codePointAt(0)) ? ' ' : char));
+        // 一個字素一項（國旗、家庭 emoji、e 加重音符號都不拆開，也不會把代理對拆成兩半）。換行與 tab 換成空白，每個字元一個空白：
+        // \r\n 是一個字素、兩個字元，所以是兩個空白，和以前一樣
+        const chars = graphemes(text).map((unit) => (isLineBreak(unit.codePointAt(0)) ? ' '.repeat(Array.from(unit).length) : unit));
         // 每一行是 [from, to)：chars 裡的第 from 個字起、到第 to 個字之前
         const ranges = [];
         let start = skipSpaces(chars, 0);
@@ -351,7 +391,7 @@ const CardLayout = (() => {
         return contrastRatio(hex, DARK) > contrastRatio(hex, WHITE) ? DARK : WHITE;
     }
 
-    return Object.freeze({ fitScale, wrapText, layoutChips, coverRect, dragCrop, canPan, contrastRatio, textColorOn });
+    return Object.freeze({ fitScale, graphemes, wrapText, layoutChips, coverRect, dragCrop, canPan, contrastRatio, textColorOn });
 })();
 
 // Export for use in other modules

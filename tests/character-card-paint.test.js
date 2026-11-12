@@ -228,6 +228,72 @@ test('spacedWidth：空字串是 0，一個字沒有字距，多個字加上字�
     assert.equal(spacedWidth(ctx, String.fromCodePoint(0x20bb7), TEXT, 10, 0.5), 10);
 });
 
+// ---------- 看起來是一個字的（字素）一起畫 ----------
+
+// 看起來是一個字、卻不只一個 Unicode 字元的東西。用跳脫寫：編輯器與工具不會悄悄把它們改寫成別的形式（零寬連接符號是看不見的）
+const FLAG = '\u{1F1F9}\u{1F1FC}'; // 🇹🇼：兩個區域指示符號（2 個字元）
+const FAMILY = '\u{1F468}\u{200D}\u{1F469}\u{200D}\u{1F467}'; // 👨‍👩‍👧：三個 emoji 用零寬連接符號接起來（5 個字元）
+const E_ACUTE = 'e\u{301}'; // é：e 加上組合用的重音符號（2 個字元）
+
+test('spacedWidth、drawSpaced、firstChar 以字素為單位：國旗與家庭 emoji 各畫一次，字距加在字素後面', () => {
+    const { spacedWidth, drawSpaced, firstChar, fontString } = CardPaint;
+    const text = `${FLAG}A${FAMILY}`;
+    const font = fontString(TEXT, 10);
+    // 假的量字：碼位小於 U+0250 的字 0.6 × 字級，其他 1 × 字級 → 國旗（2 個字元）20、A 6、家庭 emoji（5 個字元）50
+    assert.deepEqual([FLAG, 'A', FAMILY].map((piece) => fakeMeasure(font, piece)), [20, 6, 50]);
+
+    // 字距 0.2em = 2px：三個字素的寬度加兩個字距（不是八個字元之間的七個字距）
+    const ctx = createRecordingContext();
+    near(spacedWidth(ctx, text, TEXT, 10, 0.2), 20 + 6 + 50 + 2 * 2, '', 1e-9);
+    near(spacedWidth(ctx, FLAG, TEXT, 10, 0.5), 20, '只有一個字素：沒有字距', 1e-9);
+    near(spacedWidth(ctx, `${FLAG}${FLAG}`, TEXT, 10, 0.5), 20 + 20 + 5, '兩個字素之間一個字距', 1e-9);
+    assert.equal(spacedWidth(ctx, '', TEXT, 10, 0.2), 0);
+
+    // drawSpaced：每個字素一次 fillText，x 每次前進 字素的寬度 + 字距
+    drawSpaced(ctx, text, 100, 50, TEXT, 10, 0.2, '#abcdef');
+    const glyphs = ctx.calls.filter((call) => call.op === 'fillText');
+    assert.deepEqual(glyphs.map((call) => call.args[0]), [FLAG, 'A', FAMILY]);
+    near(glyphs[0].args[1], 100, '第一個字素在 x', 1e-9);
+    near(glyphs[1].args[1], 100 + 20 + 2, '第二個字素在第一個字素的寬度加一個字距之後', 1e-9);
+    near(glyphs[2].args[1], 100 + 20 + 2 + 6 + 2, '', 1e-9);
+    for (const call of glyphs) {
+        assert.equal(call.args[2], 50);
+        assert.equal(call.font, font);
+        assert.equal(call.fillStyle, '#abcdef');
+    }
+    // 最後畫完的位置就是 spacedWidth 加上最後一個字距：整段字畫出來的寬度和量出來的一樣
+    near(glyphs[2].args[1] + 50 - 100, spacedWidth(ctx, text, TEXT, 10, 0.2), '最後一個字素的右邊 = 起點 + spacedWidth', 1e-9);
+
+    // 沒有字距（0）時字素緊接著；組合字（e 加重音符號）也是一次
+    const tight = createRecordingContext();
+    drawSpaced(tight, `${E_ACUTE}${FLAG}`, 0, 10, TEXT, 10, 0, '#000000');
+    const tightGlyphs = tight.calls.filter((call) => call.op === 'fillText');
+    assert.deepEqual(tightGlyphs.map((call) => call.args[0]), [E_ACUTE, FLAG]);
+    assert.deepEqual(tightGlyphs.map((call) => call.args[1]), [0, fakeMeasure(font, E_ACUTE)]);
+
+    // firstChar：第一個字素（一般的字就是第一個字元）
+    assert.equal(firstChar(`${FLAG}X`), FLAG);
+    assert.equal(firstChar(`${E_ACUTE}x`), E_ACUTE);
+    assert.equal(firstChar(FAMILY), FAMILY);
+    assert.equal(firstChar('Paladin'), 'P');
+    assert.equal(firstChar('\u{20BB7}野'), '\u{20BB7}');
+    assert.equal(firstChar(''), '');
+});
+
+test('labelBlock、drawIcon、iconLetters 也以字素為單位：小標一個字素畫一次，沒有圖示的職業畫名稱的第一個字素', () => {
+    const { labelBlock, drawIcon, iconLetters } = CardPaint;
+    const glyphs = (ctx) => ctx.calls.filter((call) => call.op === 'fillText').map((call) => call.args[0]);
+
+    const labelCtx = createRecordingContext();
+    labelBlock(labelCtx, `${FLAG}A${E_ACUTE}`, { kind: TEXT, font: 10, spacing: 0.2, color: '#697084' }, 200).draw(0, 0);
+    assert.deepEqual(glyphs(labelCtx), [FLAG, 'A', E_ACUTE]);
+
+    const iconCtx = createRecordingContext();
+    drawIcon(iconCtx, { name: `${FLAG}戰士`, icon: null }, 0, 0, 40, '#4f74d6');
+    assert.deepEqual(glyphs(iconCtx), [FLAG], '方塊裡是整個國旗，不是半個');
+    assert.deepEqual(plain(iconLetters({ job: { name: `${FLAG}戰士`, icon: null }, subJobs: [{ name: `${E_ACUTE}clair`, icon: null }, { name: `${FAMILY}X`, icon: null }] })), [FLAG, E_ACUTE, FAMILY]);
+});
+
 // ---------- 小標 ----------
 
 test('labelBlock：字距一個字一個字畫，高度是原本字級的一行，放不下整行縮小到剛好放得下（最多縮到 FIT_FLOOR）', () => {

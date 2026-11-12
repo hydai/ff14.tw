@@ -9,10 +9,16 @@ const ROOT = path.join(__dirname, '..');
 const LAYOUT_FILE = 'tools/character-card/card-layout.js';
 
 // 這支腳本把東西掛在 window 上，所以讓 window 指向 context 本身（同 character-card-state.test.js）。
-// 每個 context 各載一份，改了其中一個不會影響另一個
-function loadContext(files) {
+// 每個 context 各載一份，改了其中一個不會影響另一個。
+// withoutSegmenter：模擬沒有 Intl.Segmenter 的舊瀏覽器（Firefox 125 以前）：腳本載入時才決定怎麼切字，
+// 所以要在載入之前把這個 context 的 Intl.Segmenter 拿掉（Intl 是每個 context 各一份，不影響別的）
+function loadContext(files, { withoutSegmenter = false } = {}) {
     const context = vm.createContext({});
     context.window = context;
+    if (withoutSegmenter) {
+        vm.runInContext('delete Intl.Segmenter', context);
+        assert.equal(vm.runInContext('typeof Intl.Segmenter', context), 'undefined');
+    }
     for (const file of files) {
         vm.runInContext(fs.readFileSync(path.join(ROOT, file), 'utf8'), context, { filename: file });
     }
@@ -22,7 +28,7 @@ function loadContext(files) {
 const context = loadContext([LAYOUT_FILE]);
 const { CardLayout } = context;
 // 故意用解構取出：頁面不一定用 CardLayout.xxx() 的寫法呼叫，這些函式不能靠 this
-const { fitScale, wrapText, layoutChips, coverRect, dragCrop, canPan, textColorOn, contrastRatio } = CardLayout;
+const { fitScale, wrapText, layoutChips, coverRect, dragCrop, canPan, textColorOn, contrastRatio, graphemes } = CardLayout;
 
 // vm 裡建出來的陣列與物件原型和這邊不同，deepEqual 前先轉成這邊的一般值（不能傳 undefined，也看不出 -0）
 const plain = (value) => JSON.parse(JSON.stringify(value));
@@ -51,11 +57,24 @@ const measure = (text) => Array.from(text).reduce((sum, char) => sum + (isLatin(
 const CHINESE_60 = '甲乙丙丁戊己庚辛壬癸'.repeat(6); // 60 個字，每個字寬 10
 const SENTENCE = 'the quick brown fox jumps over the lazy dog';
 
+// 看起來是一個字、卻不只一個 Unicode 字元的東西。用跳脫寫：編輯器與工具不會悄悄把它們改寫成別的形式（零寬連接符號是看不見的）
+const FLAG = '\u{1F1F9}\u{1F1FC}'; // 🇹🇼：兩個區域指示符號（2 個字元）
+const FLAG_JP = '\u{1F1EF}\u{1F1F5}'; // 🇯🇵
+const FAMILY = '\u{1F468}\u{200D}\u{1F469}\u{200D}\u{1F467}'; // 👨‍👩‍👧：三個 emoji 用零寬連接符號接起來（5 個字元）
+const E_ACUTE = 'e\u{301}'; // é：e 加上組合用的重音符號（2 個字元）
+const THUMB = '\u{1F44D}\u{1F3FD}'; // 👍🏽：加上膚色
+const KEYCAP = '1\u{FE0F}\u{20E3}'; // 1️⃣：數字加變體選擇符與外框
+// 空格後面接著組合符號：也是一個字素，不是空白（顏文字常有）。Lenny 臉有三個：括號後面、兩顆眼睛之間各一個，
+// 組合符號是 U+0361 與 U+035C，接在前面的空格上（不寫成真的字元，理由同上）
+const LENNY = '( \u{0361}° \u{035C}ʖ \u{0361}°)';
+// 組合用的符號（U+0300～U+036F）的個數：折行之後一個都不能少
+const marksOf = (text) => (text.match(/[\u{0300}-\u{036F}]/gu) ?? []).length;
+
 // ---------- 模組 ----------
 
-test('CardLayout：只掛一個全域、模組凍結、只有規定的八個函式', () => {
+test('CardLayout：只掛一個全域、模組凍結、只有規定的九個函式', () => {
     assert.equal(Object.isFrozen(CardLayout), true);
-    assert.deepEqual(Object.keys(CardLayout).sort(), ['canPan', 'contrastRatio', 'coverRect', 'dragCrop', 'fitScale', 'layoutChips', 'textColorOn', 'wrapText']);
+    assert.deepEqual(Object.keys(CardLayout).sort(), ['canPan', 'contrastRatio', 'coverRect', 'dragCrop', 'fitScale', 'graphemes', 'layoutChips', 'textColorOn', 'wrapText']);
     for (const [name, fn] of Object.entries(CardLayout)) assert.equal(typeof fn, 'function', name);
 
     // 只掛 CardLayout 一個全域：常數與小函式都收在立即執行的函式裡，不會和頁面其他腳本的名稱撞在一起；
@@ -87,6 +106,57 @@ test('fitScale：放得下是 1，放不下照比例縮小，不低於下限 0.5
     assert.equal(fitScale(NaN, 200), 1);
     assert.equal(fitScale(100, NaN), 1);
     assert.equal(fitScale(100, Infinity), 1);
+});
+
+// ---------- graphemes ----------
+
+test('graphemes：國旗、家庭 emoji、組合字、膚色、鍵帽、CRLF 各是一個字素；其他的字一個字元一個字素', () => {
+    const text = `${FLAG}${FAMILY}${E_ACUTE}${THUMB}${KEYCAP}\r\n寬\u{20BB7}`;
+    assert.deepEqual(plain(graphemes(text)), [FLAG, FAMILY, E_ACUTE, THUMB, KEYCAP, '\r\n', '寬', '\u{20BB7}']);
+    // 這幾個字素各自不只一個 Unicode 字元，所以和 Array.from 的切法不一樣
+    assert.equal(Array.from(FLAG).length, 2);
+    assert.equal(Array.from(FAMILY).length, 5);
+    assert.ok(graphemes(text).length < Array.from(text).length);
+
+    // 一般的字（拉丁字母、空白、中日韓、標點、罕用字、單一個 emoji）就是每個字元一個字素，和 Array.from 一樣
+    const plainText = 'Ab 你好，ひ\u{1F98A}\u{20BB7}';
+    assert.deepEqual(plain(graphemes(plainText)), Array.from(plainText));
+    assert.deepEqual(plain(graphemes(plainText)), ['A', 'b', ' ', '你', '好', '，', 'ひ', '\u{1F98A}', '\u{20BB7}']);
+
+    // 接起來還是原文；每次回傳新的陣列
+    assert.equal(graphemes(text).join(''), text);
+    assert.notEqual(graphemes(text), graphemes(text));
+
+    // 空字串是 []；不是字串也是 []，不丟錯
+    assert.deepEqual(plain(graphemes('')), []);
+    for (const bad of [null, undefined, 42, true, ['a'], { length: 1 }, Symbol.iterator]) {
+        assert.deepEqual(plain(graphemes(bad)), [], util.inspect(bad));
+    }
+});
+
+test('graphemes：沒有 Intl.Segmenter 時照 Array.from 切（每個 Unicode 字元一項），不丟錯', () => {
+    const old = loadContext([LAYOUT_FILE], { withoutSegmenter: true });
+    const fallback = old.CardLayout.graphemes;
+    assert.equal(typeof fallback, 'function');
+
+    // 國旗是兩個區域指示符號，家庭 emoji 是五個字元
+    assert.deepEqual(plain(fallback(FLAG)), ['\u{1F1F9}', '\u{1F1FC}']);
+    assert.deepEqual(plain(fallback(FAMILY)), Array.from(FAMILY));
+    assert.equal(fallback(FAMILY).length, 5);
+    const text = `${FLAG}${FAMILY}${E_ACUTE}${THUMB}${KEYCAP}\r\n寬\u{20BB7}`;
+    assert.deepEqual(plain(fallback(text)), Array.from(text));
+    // 代理對還是一個字元，不會拆成兩半
+    assert.deepEqual(plain(fallback('寬\u{20BB7}\u{1F98A}')), ['寬', '\u{20BB7}', '\u{1F98A}']);
+
+    // 空字串與不是字串的東西，和有 Intl.Segmenter 時一樣
+    assert.deepEqual(plain(fallback('')), []);
+    for (const bad of [null, undefined, 42, ['a']]) assert.deepEqual(plain(fallback(bad)), [], util.inspect(bad));
+
+    // 折行也回到以前的切法：窄到放不下一顆國旗時，兩個區域指示符號各一行（有 Intl.Segmenter 時一顆國旗一行，見下面）
+    assert.deepEqual(plain(old.CardLayout.wrapText(FLAG.repeat(3), SIZE, measure)), Array.from(FLAG.repeat(3)));
+    assert.deepEqual(plain(wrapText(FLAG.repeat(3), SIZE, measure)), [FLAG, FLAG, FLAG]);
+    // 一般的字照常折，不丟錯
+    assert.deepEqual(plain(old.CardLayout.wrapText(CHINESE_60, 20 * SIZE, measure, 10)), [CHINESE_60.slice(0, 20), CHINESE_60.slice(20, 40), CHINESE_60.slice(40)]);
 });
 
 // ---------- wrapText ----------
@@ -179,11 +249,14 @@ test('wrapText：中日韓與全形的字任兩個字之間都能斷，其他文
         全形字: 'ＡＢＣＤ',
         'CJK 擴充 A': String.fromCodePoint(0x3400, 0x3401, 0x3402, 0x3403),
         'CJK 標點': '「「「「',
-        韓文字母: String.fromCodePoint(0x1100, 0x1101, 0x1102, 0x1103),
+        // 韓文字母（U+1100 起的組合用字母）：連續的聲母（U+1100～U+1103）會合成一個字素（一個音節塊），所以這裡用收尾子音與聲母交錯的
+        // 四個字母，每個字元自己是一個字素，才是「任兩個字之間都能斷」的樣子；真正的音節塊（聲母、母音、收尾子音）見下面
+        韓文字母: String.fromCodePoint(0x11a8, 0x1100, 0x11ab, 0x1102),
         韓文相容字母: String.fromCodePoint(0x3131, 0x3132, 0x3133, 0x3134)
     };
     for (const [name, word] of Object.entries(breakable)) {
         const chars = Array.from(word);
+        assert.equal(graphemes(word).length, 4, `${name}：四個字素，每個字元自己是一個`);
         assert.deepEqual(plain(wrapText(`ab ${word}`, 40, measure, 10)), [`ab ${chars.slice(0, 2).join('')}`, chars.slice(2).join('')], name);
     }
     // 不在清單裡的文字（拉丁字母、西里爾字母、希臘字母、emoji）只在空白斷：整個單字到下一行
@@ -354,6 +427,152 @@ test('wrapText：有 maxLines 時，前面的行和不限行數時一樣，最�
             }
         }
     }
+});
+
+// 一個字素不管幾個字元，都只能整個在這一行或整個在下一行：折行、接「…」都不會切在中間
+test('wrapText 不切開字素：國旗、家庭 emoji、重音符號、空格加組合符號在任何寬度、任何 maxLines 下都是整個的', () => {
+    const cases = [
+        // 旅人、國旗、家庭 emoji、Caf 加上 é（單一字元）再加一個組合用的重音符號、空白、三面日本國旗
+        { text: `旅人${FLAG}${FAMILY}Caf\u{E9}\u{301} ${FLAG_JP.repeat(3)}`, units: 2 + 1 + 1 + 3 + 1 + 1 + 3, note: '字素：旅、人、國旗、家庭、C、a、f、é、空白、三面國旗' },
+        // 顏文字：括號、三個空格加組合符號、兩顆眼睛、括號共 8 個字素，前後各有一個單字和一個空白
+        { text: `hello ${LENNY} world`, units: 5 + 1 + 8 + 1 + 5, note: '字素：hello、空白、顏文字的 8 個字素、空白、world' }
+    ];
+    for (const { text, units, note } of cases) {
+        const original = plain(graphemes(text));
+        assert.equal(original.length, units, note);
+        const known = new Set(original);
+        const isBlank = (unit) => unit.trim() === '';
+        const solid = original.filter((unit) => !isBlank(unit));
+
+        for (let width = 1; width <= 400; width++) {
+            const where = `${util.inspect(text)}、寬度 ${width}`;
+            // 每一行的每個字素都是原文的字素，或接在最後一行的 …；不會出現被切開的半個國旗、單獨的連接符號或重音符號
+            for (const maxLines of [1, 2, 3]) {
+                for (const line of wrapText(text, width, measure, maxLines)) {
+                    for (const unit of plain(graphemes(line))) {
+                        assert.ok(known.has(unit) || unit === '…', `${where}、maxLines ${maxLines}：「${line}」裡的 ${util.inspect(unit)} 不是原文的字素`);
+                    }
+                }
+            }
+            // 不限行數：每一行的字素接起來（去掉空白）剛好是原文的字素，一個不少、順序不變（「空格加組合符號」不是空白，一個都不能被拿掉）
+            const joined = plain(wrapText(text, width, measure)).flatMap((line) => plain(graphemes(line))).filter((unit) => !isBlank(unit));
+            assert.deepEqual(joined, solid, where);
+        }
+    }
+});
+
+// 空格後面接著組合符號是一個字素（顏文字常有），不是空白：不能在行首被當成空白跳過、行尾被拿掉，不然符號就不見了
+test('wrapText：空格加組合符號是一個字，不是空白：任何寬度都不會被拿掉，行首與行尾也沒有只由空白組成的字素', () => {
+    const text = `hello ${LENNY} world`;
+    // 前提：空格加組合符號是一個字素，不是空白
+    const units = plain(graphemes(text));
+    assert.ok(units.includes(' \u{0361}') && units.includes(' \u{035C}'), '空格加組合符號各是一個字素');
+    assert.equal(marksOf(text), 3);
+    const isBlank = (unit) => !/\S/.test(unit);
+
+    for (let width = 1; width <= 400; width++) {
+        const lines = plain(wrapText(text, width, measure));
+        // 每一行接起來（去掉空白）的組合符號，個數和原文一樣
+        assert.equal(marksOf(lines.join('').replace(/\s/g, '')), 3, `寬度 ${width}：組合符號不見了`);
+        for (const line of lines) {
+            const lineUnits = plain(graphemes(line));
+            assert.ok(lineUnits.length > 0, `寬度 ${width}：有空行`);
+            assert.ok(!isBlank(lineUnits[0]), `寬度 ${width}：「${line}」以只由空白組成的字素開頭`);
+            assert.ok(!isBlank(lineUnits[lineUnits.length - 1]), `寬度 ${width}：「${line}」以只由空白組成的字素結尾`);
+        }
+    }
+});
+
+test('wrapText：以「空格加組合符號」開頭的字串，任何寬度都留著那個符號（空格、不換行空白都一樣）', () => {
+    for (const space of [' ', '\u{A0}']) {
+        const lead = `${space}\u{0301}`;
+        const text = `${lead}abc def`;
+        assert.deepEqual(plain(graphemes(text)).slice(0, 2), [lead, 'a'], '開頭的空格加符號是一個字素');
+        for (let width = 1; width <= 400; width++) {
+            const lines = plain(wrapText(text, width, measure));
+            assert.equal(marksOf(lines.join('')), 1, `${util.inspect(text)}、寬度 ${width}：符號不見了`);
+            assert.ok(lines[0].startsWith(lead), `${util.inspect(text)}、寬度 ${width}：第一行要以「空格加符號」開頭（${util.inspect(lines[0])}）`);
+        }
+    }
+});
+
+test('wrapText：一個字素比整行還寬時它自己一行，不切開；窄到每個字素都放不下時，每一行剛好一個字素', () => {
+    // 寬度 5 比任何一個字素都窄（最窄的拉丁字母 6）：每個字素各一行，空白略過
+    const text = `旅${FLAG}${FAMILY}Caf\u{E9}\u{301} ${FLAG_JP}`;
+    assert.deepEqual(plain(wrapText(text, 5, measure)), plain(graphemes(text)).filter((unit) => unit !== ' '));
+    // 家庭 emoji 50 寬：前面的字加它放不下這一行（12 + 50 > 60），它整個到下一行，不是拆開接在 ab 後面
+    assert.deepEqual(plain(wrapText(`ab${FAMILY}`, 60, measure)), ['ab', FAMILY]);
+    assert.deepEqual(plain(wrapText(`ab ${FAMILY} cd`, 60, measure)), ['ab', FAMILY, 'cd']);
+    // 放得下就留在同一行
+    assert.deepEqual(plain(wrapText(`ab${FAMILY}`, 70, measure)), [`ab${FAMILY}`]);
+});
+
+test('wrapText：長單字只能從字與字之間斷的時候，組合字（e 加重音符號）不拆開，重音符號不會留在行首', () => {
+    const word = 'cafe\u{301}'.repeat(4); // c、a、f、é（每個 é 是兩個字元，16 寬）重複四次
+    const known = new Set(plain(graphemes(word)));
+    assert.equal(known.size, 4);
+    for (let width = 6; width <= 140; width++) {
+        const lines = plain(wrapText(word, width, measure));
+        assert.equal(lines.join(''), word, `寬度 ${width}`);
+        for (const line of lines) {
+            for (const unit of plain(graphemes(line))) assert.ok(known.has(unit), `寬度 ${width}：「${line}」裡的 ${util.inspect(unit)} 不是原文的字素`);
+        }
+    }
+});
+
+test('wrapText：拆開寫的韓文（聲母、母音、收尾子音）是一個音節塊一個字素，只在音節之間斷', () => {
+    // 한：聲母 U+1112、母音 U+1161、收尾子音 U+11AB（3 個字元，量字是 30 寬）。macOS 的檔名之類的來源會用這種拆開的寫法
+    const HAN = '\u{1112}\u{1161}\u{11AB}';
+    const word = HAN.repeat(4);
+    assert.deepEqual(plain(graphemes(word)), [HAN, HAN, HAN, HAN]);
+    // 寬 70：ab 加一個音節 48，再一個 78 放不下；音節之間任何位置都能斷（和預先組好的韓文一樣），音節裡面不能
+    assert.deepEqual(plain(wrapText(`ab ${word}`, 70, measure, 10)), [`ab ${HAN}`, HAN + HAN, HAN]);
+    // 寬 25 比一個音節（30）還窄：每個音節自己一行，不會斷在聲母、母音、收尾子音之間
+    assert.deepEqual(plain(wrapText(`ab ${word}`, 25, measure, 10)), ['ab', HAN, HAN, HAN, HAN]);
+});
+
+test('wrapText：接「…」時也不切開字素', () => {
+    // 三面國旗各 20 寬。寬 45 放得下兩面，接上「…」（10 寬）要少一面：留一面國旗再接 …，不是留半面
+    assert.deepEqual(plain(wrapText(FLAG.repeat(3), 45, measure, 1)), [`${FLAG}…`]);
+    // 寬 50：兩面加 … 剛好放得下
+    assert.deepEqual(plain(wrapText(FLAG.repeat(3), 50, measure, 1)), [`${FLAG}${FLAG}…`]);
+    // 家庭 emoji（50 寬）放不下就整個拿掉，不留 👨‍👩‍ 這種斷在連接符號後面的東西
+    assert.deepEqual(plain(wrapText(`ab${FAMILY}cd`, 60, measure, 1)), ['ab…']);
+    // 組合字：é（e 加重音符號，兩個字元）也是整個留下或整個拿掉，不會變成沒有重音的 e。
+    // 寬 40：abc 加一個 é 是 34，再接 … 是 44 放不下，所以 é 整個拿掉
+    assert.deepEqual(plain(wrapText(`abc${E_ACUTE.repeat(3)}`, 40, measure, 1)), ['abc…']);
+    // 寬 50：abc 加一個 é 再接 … 剛好 44，放得下，é 完整留下
+    assert.deepEqual(plain(wrapText(`abc${E_ACUTE.repeat(3)}`, 50, measure, 1)), [`abc${E_ACUTE}…`]);
+});
+
+test('wrapText：か加分開寫的濁音符號（U+3099）是一個字素，任何寬度都不會被拆開', () => {
+    const KA = 'か\u{3099}'; // か 後面接著獨立的濁音符號，看起來是「が」
+    const text = `あ${KA}い${KA}う`;
+    assert.deepEqual(plain(graphemes(text)), ['あ', KA, 'い', KA, 'う'], 'か加濁音符號是一個字素');
+    const known = new Set(['あ', KA, 'い', 'う']);
+    for (let width = 1; width <= 400; width++) {
+        const lines = plain(wrapText(text, width, measure));
+        assert.equal(lines.join(''), text, `寬度 ${width}：接起來是原文`);
+        for (const line of lines) {
+            for (const unit of plain(graphemes(line))) assert.ok(known.has(unit), `寬度 ${width}：「${line}」裡的 ${util.inspect(unit)} 不是原文的字素`);
+        }
+    }
+});
+
+test('wrapText：行首禁用的標點接在國旗（或家庭 emoji、組合字）後面時，整個字素跟著它一起到下一行，沒有一行以「，」開頭', () => {
+    const comma = '，';
+    for (const unit of [FLAG, FAMILY, E_ACUTE]) {
+        const text = `ab${unit}${comma}cd`;
+        // 字素加標點放得進一行（國旗 20 寬加「，」10 寬是 30）的寬度，才排得出沒有標點開頭的行；
+        // 再窄，字素與標點不能在同一行，標點只好在行首（照一般的排法，不留空行）
+        for (let width = measure(unit) + measure(comma); width <= 400; width++) {
+            for (const line of wrapText(text, width, measure)) {
+                assert.ok(!line.startsWith(comma), `${util.inspect(text)}、寬度 ${width}：「${line}」以「，」開頭`);
+            }
+        }
+    }
+    // 寬 35：ab 後面放不下國旗加標點（12 + 20 + 10 > 35），國旗帶著標點一起到下一行，不是留下半面國旗
+    assert.deepEqual(plain(wrapText(`ab${FLAG}，cd`, 35, measure)), ['ab', `${FLAG}，`, 'cd']);
 });
 
 // ---------- layoutChips ----------

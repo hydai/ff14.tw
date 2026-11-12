@@ -2,6 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const util = require('node:util');
 const vm = require('node:vm');
 
 const { createRecordingContext, fakeMeasure, fontSize } = require('./helpers/canvas-recorder.js');
@@ -627,6 +628,35 @@ test('沒填的欄位什麼都不畫', () => {
     assert.equal(capsules(render(fullModel({ likes: [] }))).filter((shape) => shape.fillStyle === 'rgba(255,255,255,0.14)').length, 0);
 });
 
+// ---------- 稱號裡看起來是一個字的 ----------
+
+// 看起來是一個字、卻不只一個 Unicode 字元的東西。用跳脫寫：編輯器與工具不會悄悄把它們改寫成別的形式（零寬連接符號是看不見的）
+const FLAG = '\u{1F1F9}\u{1F1FC}'; // 🇹🇼：兩個區域指示符號
+const FAMILY = '\u{1F468}\u{200D}\u{1F469}\u{200D}\u{1F467}'; // 👨‍👩‍👧：三個 emoji 用零寬連接符號接起來
+const E_ACUTE = 'e\u{301}'; // é：e 加上組合用的重音符號
+const GRAPHEME_TITLE = `Hi ${FLAG} ${FAMILY} Caf${E_ACUTE}`; // Hi 🇹🇼 👨‍👩‍👧 Café；海報轉大寫：HI 🇹🇼 👨‍👩‍👧 CAFÉ
+// 被拆開時才會單獨出現的東西：區域指示符號、零寬連接符號、組合用的重音符號
+const LONE_PIECES = ['\u{1F1F9}', '\u{1F1FC}', '\u{200D}', '\u{301}'];
+
+test('稱號裡的國旗、emoji 組合與組合字各畫一次，不拆開；大寫、字距照舊', () => {
+    for (const format of ['landscape', 'portrait']) {
+        const ctx = render(fullModel({ title: GRAPHEME_TITLE, format }));
+        const texts = drawn(ctx);
+        // 稱號轉大寫（海報的草稿 text-transform: uppercase）：é 的 e 變成 E，重音符號還接在後面；每個字素一次 fillText
+        const title = bySize(texts, cq(format, format === 'landscape' ? 1.4 : 2));
+        assert.deepEqual(title.map((t) => t.text), ['H', 'I', ' ', FLAG, ' ', FAMILY, ' ', 'C', 'A', 'F', 'E\u{301}'], format);
+        assert.equal(title.map((t) => t.text).join(''), GRAPHEME_TITLE.toUpperCase());
+        // 字距 0.3em 照舊：下一個字素的 x = 這個字素的 x + 這個字素的寬度 + 字距
+        for (let i = 0; i + 1 < title.length; i++) {
+            near(title[i + 1].x - title[i].x, title[i].width + 0.3 * title[i].px, `${format}：稱號第 ${i + 1} 與 ${i + 2} 個字素的間距`);
+        }
+
+        const pieces = texts.map((t) => t.text);
+        for (const whole of [FLAG, FAMILY, 'E\u{301}']) assert.ok(pieces.includes(whole), `${format}：畫出來的字裡有整個的 ${util.inspect(whole)}`);
+        for (const lone of LONE_PIECES) assert.ok(!pieces.includes(lone), `${format}：沒有單獨的 ${util.inspect(lone)}`);
+    }
+});
+
 // ---------- 載入字型 ----------
 
 test('fontsFor 涵蓋每一個畫出來的字', () => {
@@ -646,7 +676,10 @@ test('fontsFor 涵蓋每一個畫出來的字', () => {
             likes: ['高難度', '幻化', 'ガンブレイカー'],
             intro: '零式開荒中，晚上常在利姆薩・羅敏薩拍照，歡迎一起刷寶圖！'.repeat(2),
             mark: 'FF14.tw'
-        })
+        }),
+        // 稱號裡有國旗、emoji 組合與組合字（畫的時候一個字素一個字素畫，要載入的字照舊是整段）
+        fullModel({ title: GRAPHEME_TITLE }),
+        fullModel({ title: GRAPHEME_TITLE, format: 'portrait' })
     ];
     for (const model of models) {
         const fonts = plain(CardRenderer.fontsFor(model));
