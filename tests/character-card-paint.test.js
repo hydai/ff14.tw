@@ -1,8 +1,8 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { createRecordingContext, fakeMeasure } = require('./helpers/canvas-recorder.js');
-const { card, plain, near, picture, lines } = require('./helpers/card-drawing.js');
+const { createRecordingContext, fakeMeasure, fontSize } = require('./helpers/canvas-recorder.js');
+const { card, plain, near, picture, lines, render, fullModel, backgroundOf } = require('./helpers/card-drawing.js');
 
 // 共用的畫圖小工具（card-paint.js）：用 canvas-recorder.js 的記錄 context 與假的量字（碼位小於 U+0250 的字 0.6 × 字級，其他 1 × 字級）
 const { CardPaint, CardLayout } = card;
@@ -962,4 +962,56 @@ test('likesAndHours：左邊喜歡的內容（小標加膠囊）、右邊遊玩�
     near(at(wide, '遊玩時段').x, 320, '時段還在右欄', 1e-9);
     // 傳凍結的資料也行
     assert.doesNotThrow(() => likesAndHours(createRecordingContext(), Object.freeze(view()), Object.freeze({ ...spec, chips: Object.freeze(chips), hours: Object.freeze(hours), label: Object.freeze(label) })).draw(0));
+});
+
+// ---------- 沒有圖示的職業畫在重點色方塊裡的字 ----------
+
+// 職業沒有圖示（例如 Beastmaster）時，CardPaint.drawIcon 畫一個重點色的圓角方塊，中間是名稱的第一個字，字色是 CardLayout.textColorOn 在白字與深字裡挑對比度高的。
+// 最差的重點色上它不到 4.5:1，而資訊卡「每一段字至少 4.5:1」的測試（character-card-style-c.test.js）用的畫面模型職業都有圖示，畫不出這個字，所以「它一定是
+// WCAG 的大字（粗體 14pt，18.67px 以上），大字只要 3:1」要在這裡守住。三種風格都用 drawIcon 畫主職與其他職業，所以畫整張卡片、從記錄裡讀回這些字來檢查
+test('沒有圖示的職業畫在重點色方塊裡的字：三種風格 × 橫直版 × 每種重點色，都是粗體大字（18.67px 以上）、字色是 textColorOn(重點色)、底就是重點色、至少 3:1', () => {
+    const { ICON_LETTER, fontString } = CardPaint;
+    // 重點色：五個職能的預設色，加上自己選得到的幾種：白字與深字交界的 #7b7b7b、#7c7c7c（對比度最低的兩階灰）、很淺的黃、白、黑
+    const ACCENTS = [...Object.values(card.CardState.ROLE_COLORS), '#7b7b7b', '#7c7c7c', '#ffff66', '#ffffff', '#000000'];
+    const LETTERS = new Set(['B', '白', '黑']);
+    const LARGE_BOLD_PX = (14 * 4) / 3; // WCAG 的大字：粗體 14pt，也就是 18.67px
+    assert.ok(ICON_LETTER.weight >= 700, '字是粗體：18.67px 才是大字的門檻（不是粗體要 24px）');
+
+    let checked = 0;
+    let smallest = Infinity;
+    let lowest = Infinity;
+    for (const style of card.CardState.STYLES) {
+        for (const format of card.CardState.FORMATS) {
+            for (const accent of ACCENTS) {
+                const where = `${style} ${format} ${accent}`;
+                // 主職與三個其他職業都沒有圖示：每張卡片畫 4 個字（主職的 B，其他職業的 白、B、黑）
+                const ctx = render(fullModel(style, {
+                    format,
+                    accent,
+                    job: { name: 'Beastmaster', level: 100, icon: null },
+                    subJobs: [{ name: '白魔法師', icon: null }, { name: 'Bard', icon: null }, { name: '黑魔法師', icon: null }]
+                }));
+                // 代替圖示的字要同時符合三件事：字是上面那幾個之一、字型是 drawIcon 用的 ICON_LETTER（字級不限）、畫字之前最後一次填色是這個重點色（方塊就畫在字的底下）
+                const letters = ctx.calls.filter((call) => call.op === 'fillText'
+                    && LETTERS.has(call.args[0])
+                    && call.font === fontString(ICON_LETTER, fontSize(call.font))
+                    && backgroundOf(ctx, call) === accent);
+                assert.deepEqual(letters.map((call) => call.args[0]).sort(), ['B', 'B', '白', '黑'], `${where}：畫在重點色方塊裡的字`);
+                for (const call of letters) {
+                    const px = fontSize(call.font);
+                    const ratio = CardLayout.contrastRatio(call.fillStyle, accent);
+                    assert.ok(px >= LARGE_BOLD_PX, `${where}：「${call.args[0]}」是 ${px}px，不到大字的 ${LARGE_BOLD_PX.toFixed(2)}px`);
+                    assert.equal(call.fillStyle, CardLayout.textColorOn(accent), `${where}：「${call.args[0]}」的字色`);
+                    assert.ok(ratio >= 3, `${where}：「${call.args[0]}」${call.fillStyle} 在 ${accent} 上只有 ${ratio.toFixed(2)}:1`);
+                    smallest = Math.min(smallest, px);
+                    lowest = Math.min(lowest, ratio);
+                    checked += 1;
+                }
+            }
+        }
+    }
+    assert.equal(checked, 240, '3 種風格 × 2 種版型 × 10 種重點色 × 每張 4 個字');
+    // 現在量到的邊界：最小的字是名片與資訊卡橫版的其他職業（方塊邊長 2.9cqw = 34.8px，字級是它的 0.55 倍）；最低的對比度是 #7b7b7b 上的白字，約 4.23:1。對比度比大字的 3:1 高出很多；字級只比大字的 18.67px 多 0.47px，邊界很窄
+    near(smallest, 19.14, '最小的字級');
+    assert.ok(lowest > 4.2, `最低的對比度 ${lowest}`);
 });

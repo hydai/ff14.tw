@@ -45,7 +45,7 @@
  *   所有字色都是不透明的 #rrggbb（測試用 CardLayout.contrastRatio 逐段字檢查）。
  *   唯一的例外：沒有圖示的職業（例如 Beastmaster）畫在重點色方塊裡的那個字（CardPaint.drawIcon），字色是 CardLayout.textColorOn 在白字與深字裡挑對比度高的，
  *   最差的重點色上約 4.2:1，不到 4.5:1；它一定是大字（粗體，方塊邊長的 0.55 倍：徽章裡 23.8px 起，其他職業的方塊 19.1px 起），WCAG 的大字只要 3:1，
- *   所以不另外調色。逐段字檢查用的畫面模型，職業都有圖示，檢查不到這個字
+ *   所以不另外調色。逐段字檢查用的畫面模型職業都有圖示，所以這個字的大小與對比度另外在 tests/character-card-paint.test.js 檢查（三種風格都一樣）
  * - 名字草稿是 900，這裡是 Noto Sans TC 700（頁面標準的 Google Fonts 連結載得到的最粗，字重只用 500 與 700）；沒指定字重的字（小標、時段、自我介紹、
  *   底部一列）草稿是 400，這裡用 500；沒寫 line-height 的一行字，行高是字級的 CardPaint.LINE_NORMAL 倍（草稿的 normal）
  * - 小標的字距 0.08em 一個字一個字畫（不用 ctx.letterSpacing，舊的 Safari 沒有）
