@@ -105,11 +105,13 @@
 //   解構、.length、[0] 可以直接用。只換這份 document 與它建出來的每個元素（document、html、head、body 與 createElement 建的），不動 fake-dom 的元素類別；
 //   fake-dom 的 previousElementSibling／nextElementSibling 靠父節點的 .children 是陣列，所以這兩個也在這裡自己用 childNodes 算。
 //   .childNodes（瀏覽器也是 NodeList）沒有換：fake-dom 自己拿它當陣列在改節點樹，換了會壞掉；那個只靠 tests/character-card-page.test.js 的掃描擋
-// - 操作：type(id, text) 照瀏覽器打字（整格換成 text）：設定 value（游標到最後）、派送 isComposing 是 false 的 input。頁面沒有 maxlength，超過上限的字
-//   是頁面自己（CardState.fitInput）切的，這裡不截；
-//   insert(id, text, { start, end = start }) 把字的 [start, end)（UTF-16 的位置）換成 text：插入（不寫 end）、貼上、取代選取的字，游標放在放進去的字後面，
-//   派送 isComposing 是 false 的 input（頁面只在欄位有焦點時才把游標放回去，測試要看游標先 focus()）；
-//   compose(id) 開始用輸入法組字：派送 compositionstart，回傳 { update(值, 游標 = 值的長度), commit(值, { order = 'end-last', caret = 值的長度 }) }：
+// - 操作：type(id, text) 整格換成 text：設定 value（游標到最後）、派送 isComposing 是 false 的 input，不派送 beforeinput（像瀏覽器自動填入、程式插字：
+//   沒有改之前的選取，頁面照前後比對）。頁面沒有 maxlength，超過上限的字是頁面自己（CardState.fitInput）切的，這裡不截；
+//   insert(id, text, { start, end = start, inputType = 'insertText' }) 照使用者打字、貼上：先把選取設成 [start, end)（UTF-16 的位置；插入不寫 end，
+//   取代選取的字寫 end），派送可以取消的 beforeinput（inputType、data 是 text、isComposing 是 false；這時字與選取都還是改之前的，同 Chrome），
+//   沒被取消才把 [start, end) 換成 text、游標放在放進去的字後面、派送同樣 inputType 的 input（頁面只在欄位有焦點時才把游標放回去，測試要看游標先 focus()）；
+//   compose(id, { start, end = start } = {}) 開始用輸入法組字：有 start 時先把選取設成 [start, end)（組字要換掉的範圍，頁面在 compositionstart 記下來），
+//   再派送 compositionstart，回傳 { update(值, 游標 = 值的長度), commit(值, { order = 'end-last', caret = 值的長度 }) }：
 //   update 設定字與游標、派送 isComposing 是 true 的 input（組字中，可以呼叫很多次）；commit 是選完字：設定字與游標之後照 order 派送，'end-last'（Chrome）是
 //   isComposing 是 true 的 input、compositionend，'input-last'（Mozilla 說明的 Firefox）是 compositionend、isComposing 是 false 的 input。事件都會冒泡，游標是 UTF-16 的位置；
 //   select(id, value) 找不到有這個 value 的 option 就丟錯（瀏覽器會把值變成空的），否則設定 value、派送 input 與 change；
@@ -779,22 +781,31 @@ async function createCardPage({
             fire(element, 'input', { isComposing: false });
         },
         // 把字的 [start, end)（UTF-16 的位置）換成 text，游標放在放進去的字後面
-        insert(target, text, { start, end = start } = {}) {
+        insert(target, text, { start, end = start, inputType = 'insertText' } = {}) {
             const element = elementOf(target);
             const value = String(element.value);
             assert.ok(Number.isInteger(start) && start >= 0 && end >= start && end <= value.length,
                 `insert：[${start}, ${end}) 不在 #${element.getAttribute('id')} 的字裡（長度 ${value.length}）`);
+            element.setSelectionRange(start, end);
+            const before = new win.Event('beforeinput', { bubbles: true, cancelable: true, inputType, data: String(text), isComposing: false });
+            if (!element.dispatchEvent(before)) return;
             element.value = value.slice(0, start) + text + value.slice(end);
             element.setSelectionRange(start + String(text).length, start + String(text).length);
-            fire(element, 'input', { isComposing: false });
+            fire(element, 'input', { inputType, data: String(text), isComposing: false });
         },
         // 開始用輸入法組字（見檔頭說明）
-        compose(target) {
+        compose(target, { start, end = start } = {}) {
             const element = elementOf(target);
             const put = (value, caret) => {
                 element.value = value;
                 element.setSelectionRange(caret, caret);
             };
+            if (start !== undefined) {
+                const length = String(element.value).length;
+                assert.ok(Number.isInteger(start) && start >= 0 && end >= start && end <= length,
+                    `compose：[${start}, ${end}) 不在 #${element.getAttribute('id')} 的字裡（長度 ${length}）`);
+                element.setSelectionRange(start, end);
+            }
             fire(element, 'compositionstart');
             return {
                 update(value, caret = value.length) {
