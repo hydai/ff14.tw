@@ -27,7 +27,8 @@
  * - fitInput()：打字時把欄位的字放到上限（頁面不用瀏覽器的 maxlength，每次輸入完自己呼叫）：比對上一次接受的字與現在的字，
  *   找出這次打進來（或貼上、取代選取）的那一段，前後原本的字不動（被改到一部分的字素，例如換掉的國旗，整個算是換掉的），
  *   打進來的字照整段新字的字素，從前面一個一個放到上限為止，放不下的字素整個不放（不切到半面國旗），
- *   回傳接受的字與游標該放的位置。游標只當提示，不準時不採用
+ *   回傳接受的字與游標該放的位置。頁面記下的改之前的選取（range）合格時照它分出換掉的那一段（全選再貼上時換掉選取的字）；
+ *   沒有時照前後比對，游標只當提示，不準時不採用
  * - validate()：必填的有沒有填（只有空白算沒填）
  * - roleOf()、accentOf()：主職的職能與卡片的重點色
  * - cropKey()、cropOf()：目前的風格與橫直版對到的那一份圖片位置
@@ -222,6 +223,9 @@ const CardState = (() => {
      * 所以頁面不用它，每次輸入完把上一次接受的字（previous）與現在的字（next）交給這個函式：比對出這次打進來
      * （或貼上、取代選取）的那一段，前後原本的字一個都不動（被改到一部分的字素，例如換掉的國旗，整個算是換掉的）；
      * 打進來的字照整段新字的字素，從前面一個一個放，放到下一個會超過上限為止，不跳過放不下的去放後面的。
+     * - 頁面在 beforeinput、compositionstart 記下改之前的選取（range）時，照它就知道換掉的是哪一段，不用比對猜：只看兩段字，
+     *   「全選 HELLO 貼上 SAYHELLO」和「在 HELLO 前面插入 SAY」一模一樣，有 range 才分得出前者要換成 SAYHE、後者放不下。
+     *   range 不合格（不是整數、超出範圍、落在代理對中間、現在的字開頭不是選取前面的字或結尾不是選取後面的字）時照下面的比對
      * - 比對與計算都以 Unicode 字元為單位，不會切開代理對。打進來的字和旁邊的字一樣時（Anna 的 A 後面打 n），前後比對分不出
      *   打在哪裡，才靠 caret：它合格（UTF-16 的整數位置、不在代理對中間、游標後面的字就是 previous 的結尾），而且指出的分法
      *   和前後比對一樣是最小的改動時才採用，所以不準的提示（例如程式改過欄位的字之後，游標在最後面）不會刪到原本的字
@@ -231,10 +235,11 @@ const CardState = (() => {
      * @param {*} next - 現在的字（瀏覽器剛輸入完的樣子）；不是字串是 ''
      * @param {number} limit - 上限，以 Unicode 字元計
      * @param {number | null} [caret] - 輸入之後的游標（輸入框的 selectionEnd，UTF-16 的位置）；不知道是 null。只當提示
+     * @param {{start: number, end: number} | null} [range] - 改之前的選取（UTF-16 的位置，previous 裡的）；沒有是 null
      * @returns {{value: string, caret: number | null}} value 是接受的字，不超過 limit 個字元；caret 在 value 就是 next（什麼都不用改）時是 null，
      *   否則是游標該放的 UTF-16 位置，也就是放進去的最後一個字後面（照 cleanText 切的時候是 value.length）。每次都是新的物件
      */
-    function fitInput(previous, next, limit, caret = null) {
+    function fitInput(previous, next, limit, caret = null, range = null) {
         const text = typeof next === 'string' ? next : '';
         // UTF-16 的單位數不超過上限，字元數一定也不超過，不用拆開來數（同 cleanText）
         if (text.length <= limit) return { value: text, caret: null };
@@ -242,32 +247,43 @@ const CardState = (() => {
         if (after.length <= limit) return { value: text, caret: null };
         const before = typeof previous === 'string' ? Array.from(previous) : [];
 
-        // 這次打進來的那一段：前後比對，開頭相同的有 headSize 個字元，結尾相同的有 tailSize 個字元（兩邊都不和前段重疊）。
-        // 兩個加起來最長，也就是最小的改動
-        const shared = Math.min(before.length, after.length);
-        let headSize = 0;
-        while (headSize < shared && before[headSize] === after[headSize]) headSize++;
-        let tailSize = 0;
-        while (tailSize < shared - headSize && before[before.length - 1 - tailSize] === after[after.length - 1 - tailSize]) tailSize++;
+        // 這次換掉的那一段：選取前面的 headSize 個字元與後面的 tailSize 個字元原樣留著。有合格的 range（改之前的選取）就照它
+        const selected = rangeIn(before, after, range);
+        let headSize;
+        let tailSize;
+        if (selected !== null) {
+            ({ headSize, tailSize } = selected);
+        } else {
+            // 沒有：前後比對，開頭相同的有 headSize 個字元，結尾相同的有 tailSize 個字元（兩邊都不和前段重疊）。
+            // 兩個加起來最長，也就是最小的改動
+            const shared = Math.min(before.length, after.length);
+            headSize = 0;
+            while (headSize < shared && before[headSize] === after[headSize]) headSize++;
+            tailSize = 0;
+            while (tailSize < shared - headSize && before[before.length - 1 - tailSize] === after[after.length - 1 - tailSize]) tailSize++;
 
-        // 提示指出的分法只在同樣是最小的改動（前後比對的字數一樣多）時採用，它只決定打在哪裡
-        const hinted = splitAtCaret(before, after, caret);
-        if (hinted !== null && hinted.headSize + hinted.tailSize === headSize + tailSize) {
-            headSize = hinted.headSize;
-            tailSize = hinted.tailSize;
+            // 提示指出的分法只在同樣是最小的改動（前後比對的字數一樣多）時採用，它只決定打在哪裡
+            const hinted = splitAtCaret(before, after, caret);
+            if (hinted !== null && hinted.headSize + hinted.tailSize === headSize + tailSize) {
+                headSize = hinted.headSize;
+                tailSize = hinted.tailSize;
+            }
         }
 
         // 前段與後段都要落在 previous 的字素邊界上：比對是一個字元一個字元比，選取一面國旗貼上另一面時，兩面的第一個字母
         // 一樣就會被算成沒改的前段（AA🇹🇼 換成 🇹🇯🇯🇵，前段變成 AA🇹），打進來的字再怎麼切都會留下半面國旗。
-        // 被改到一部分的字素整個算是換掉的。前段往前對齊之後，結尾相同的部分重新算，結尾的開頭再往後對齊：
-        // 兩端各自往外對齊的話，在 🇹🇼 前面貼上 🇹🇯 時，原本的 🇹🇼 會整面落在換掉的那一段裡
+        // 被改到一部分的字素整個算是換掉的。前後比對時，前段往前對齊之後，結尾相同的部分重新算，結尾的開頭再往後對齊：
+        // 兩端各自往外對齊的話，在 🇹🇼 前面貼上 🇹🇯 時，原本的 🇹🇼 會整面落在換掉的那一段裡。照 range 時兩端只往外對齊、
+        // 不重新比對結尾：重新比對又會把選取的字算成沒改的後段（全選 HELLO 貼上 SAYHELLO 時，HELLO 又被留下來）
         if (SEGMENTER !== null) {
             const edges = graphemeEdges(before);
             if (!edges.has(headSize)) {
                 while (!edges.has(headSize)) headSize--;
-                const most = Math.min(before.length, after.length) - headSize;
-                tailSize = 0;
-                while (tailSize < most && before[before.length - 1 - tailSize] === after[after.length - 1 - tailSize]) tailSize++;
+                if (selected === null) {
+                    const most = Math.min(before.length, after.length) - headSize;
+                    tailSize = 0;
+                    while (tailSize < most && before[before.length - 1 - tailSize] === after[after.length - 1 - tailSize]) tailSize++;
+                }
             }
             while (!edges.has(before.length - tailSize)) tailSize--;
         }
@@ -287,6 +303,25 @@ const CardState = (() => {
         const head = after.slice(0, keptSize).join('');
         const tail = after.slice(after.length - tailSize).join('');
         return { value: head + tail, caret: head.length };
+    }
+
+    // 改之前的選取（{ start, end }，UTF-16 的位置，before 裡的）→ 選取前面與後面各有幾個字元（before 與 after 都是一個 Unicode 字元一項的陣列）。
+    // 不合格是 null：不是物件、位置不是整數、超出範圍、start 比 end 大、落在代理對中間，或 after 的開頭不是選取前面的字、
+    // 結尾不是選取後面的字（兩段在 after 裡重疊也算），也就是選取和這次的改動對不上（例如別次記下的選取）
+    function rangeIn(before, after, range) {
+        if (range === null || typeof range !== 'object') return null;
+        const headSize = charIndexAt(before, range.start);
+        const cut = charIndexAt(before, range.end);
+        if (headSize < 0 || cut < 0 || headSize > cut) return null;
+        const tailSize = before.length - cut;
+        if (headSize + tailSize > after.length) return null;
+        for (let index = 0; index < headSize; index++) {
+            if (before[index] !== after[index]) return null;
+        }
+        for (let offset = 1; offset <= tailSize; offset++) {
+            if (before[before.length - offset] !== after[after.length - offset]) return null;
+        }
+        return { headSize, tailSize };
     }
 
     // previous 的字素邊界：每個字素前後的位置（以 Unicode 字元計，含 0 與結尾）。只在有 SEGMENTER 時用

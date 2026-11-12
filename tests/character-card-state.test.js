@@ -678,6 +678,34 @@ test('fitInput：換掉的字素和貼上的字素開頭一樣時，被改到的
     }
 });
 
+test('fitInput：有改之前的選取（range）就照它：全選再貼上是換掉選取的字，在前面插入時放不下；range 不合格時照前後比對', () => {
+    // 只看兩段字，「全選 HELLO 貼上 SAYHELLO」和「在 HELLO 前面插入 SAY」一模一樣，靠 range 才分得出來
+    assert.deepEqual(plain(fitInput('HELLO', 'SAYHELLO', 5, 8, { start: 0, end: 5 })), { value: 'SAYHE', caret: 5 }, '全選再貼上');
+    assert.deepEqual(plain(fitInput('HELLO', 'SAYHELLO', 5, 3, { start: 0, end: 0 })), { value: 'HELLO', caret: 0 }, '在前面插入');
+    // 沒有 range（瀏覽器沒送 beforeinput，例如自動填入、程式插字）：分不出來，照前後比對當成在前面插入，原本的字留著
+    assert.deepEqual(plain(fitInput('HELLO', 'SAYHELLO', 5, 8)), { value: 'HELLO', caret: 0 }, '沒有 range');
+    // 選取一部分再貼上：選取的字換掉，貼上的字放到上限為止，選取後面的字留著
+    assert.deepEqual(plain(fitInput('HELLO', 'HEYOURLO', 5, 6, { start: 2, end: 3 })), { value: 'HEYLO', caret: 3 });
+    // 換掉一面國旗：照 range 也一樣只放得下第一面
+    assert.deepEqual(plain(fitInput(`AA${FLAG}`, `AA${FLAG_TJ}${FLAG_JP}`, 5, 10, { start: 2, end: 6 })), { value: `AA${FLAG_TJ}`, caret: 6 });
+    // 收合的 range 就是游標的位置：打進來的字和旁邊的字一樣時也知道打在哪裡（不用靠打完之後的游標）
+    assert.deepEqual(plain(fitInput('Anna', 'Annna', 4, null, { start: 1, end: 1 })), { value: 'Anna', caret: 1 });
+    // 選取落在一面國旗中間（瀏覽器不會這樣選，程式可能）：只選了 🇹🇼 的後半，換成 🇯🇵。被改到的國旗整面算是換掉的，
+    // 新的字照整段的字素切是 🇹🇯 加落單的 🇵：放得下的 🇹🇯 整面放進去，不留下落單的字母
+    assert.deepEqual(plain(fitInput(`AA${FLAG}`, `AA\u{1F1F9}${FLAG_JP}`, 4, 8, { start: 4, end: 6 })), { value: `AA${FLAG_TJ}`, caret: 6 });
+
+    // 不合格的 range 照前後比對（結果和沒有 range 一樣）：和這次的改動對不上（別次記下的選取）、不是物件、不是整數、
+    // 超出範圍、start 比 end 大、落在代理對中間
+    for (const bad of [{ start: 1, end: 2 }, { start: 3, end: 3 }, null, 'x', 5, { start: '0', end: 5 }, { start: 0 }, { start: 0, end: 1.5 },
+        { start: -1, end: 5 }, { start: 0, end: 6 }, { start: 3, end: 2 }]) {
+        assert.deepEqual(plain(fitInput('HELLO', 'SAYHELLO', 5, 8, bad)), { value: 'HELLO', caret: 0 }, JSON.stringify(bad));
+    }
+    assert.deepEqual(plain(fitInput('𠮷𠮷', '𠮷𠮷𠮷', 2, null, { start: 1, end: 2 })), plain(fitInput('𠮷𠮷', '𠮷𠮷𠮷', 2)), '落在代理對中間');
+    // range 不改傳進去的物件
+    const frozen = Object.freeze({ start: 0, end: 5 });
+    assert.deepEqual(plain(fitInput('HELLO', 'SAYHELLO', 5, 8, frozen)), { value: 'SAYHE', caret: 5 });
+});
+
 test('fitInput：隨機掃描', () => {
     // 看起來是一個字的單位：一般字、中日韓、罕用字（代理對）、國旗（三面，開頭的字母互相重疊）、家庭 emoji、e 加重音符號、
     // emoji 加膚色、か加濁點、空白。組合的那幾個用跳脫寫，是為了不讓編輯器悄悄改寫成單一字元的寫法
@@ -767,6 +795,20 @@ test('fitInput：隨機掃描（取代選取的字）：結果的每個字素都
         for (let count = 1 + Math.floor(random() * 6); count > 0; count--) inserted += pick(UNITS);
         const next = previous.slice(0, start) + inserted + previous.slice(end);
         const label = `第 ${index} 組：上限 ${limit}，${JSON.stringify(previous)} 的 ${start}～${end} 換成 ${JSON.stringify(inserted)}`;
+
+        // 有改之前的選取（range）：照它，結果正好是選取前面的字、貼上的字照字素從前面放得下的最長一段、選取後面的字
+        let room = limit - charCount(previous.slice(0, start)) - charCount(previous.slice(end));
+        let accepted = '';
+        for (const { segment } of segmenter.segment(inserted)) {
+            const size = charCount(segment);
+            if (size > room) break;
+            accepted += segment;
+            room -= size;
+        }
+        const expected = previous.slice(0, start) + accepted + previous.slice(end);
+        const exact = fitInput(previous, next, limit, start + inserted.length, { start, end });
+        assert.equal(exact.value, expected, `${label}，有 range`);
+        assert.equal(exact.caret, expected === next ? null : start + accepted.length, `${label}，有 range 的游標`);
 
         for (const hint of [start + inserted.length, null]) {
             const result = fitInput(previous, next, limit, hint);
