@@ -11,6 +11,8 @@
 //   page.focus('cardName'); page.press('downloadCard'); await page.flush(); page.downloads; page.shares; page.shareCalls; page.clipboardCalls; page.clipboardWrites;
 //   page.blobRequests(); page.releaseFonts(); page.setBlobFails(true); page.$('imageViewer').classList.contains('active');
 //   page.createdCanvases(); // 頁面自己建的 canvas（縮圖、模糊小圖…）
+//   page.focus('cardTitle'); page.insert('cardTitle', '🇹🇼', { start: 3 }); // 插在中間（取代選取的字：{ start, end }），游標放在放進去的字後面
+//   const ime = page.compose('cardName'); ime.update('Luna倫'); ime.commit('Luna倫敦', { order: 'input-last' }); // 輸入法組字（兩種事件順序）
 //
 // - 照 index.html 建出 #cardTool 與全螢幕大圖 #imageViewer（mountFromHtml），照 index.html 的 <script src> 順序載入這個工具的翻譯檔、共用的 ff14-game-data.js、
 //   工具目錄自己的每一個腳本（src 不含 /：card-state.js、card-layout.js、card-renderer.js、card-export.js、script.js…），最後 new CharacterCardApp()，
@@ -90,6 +92,12 @@
 //   activeElement 還是被藏起來的那個元素，也沒有 focusout；頁面要自己先讓它失去焦點（blur()）才收得掉「焦點在欄位上」的狀態（例如 .is-typing）。
 //   藏起來的元素 focus() 照樣拿不到焦點
 //   focus() 在焦點真的換過去之後還會在這個元素上派送 focusin（冒泡，relatedTarget 是剛失去焦點的元素，原本是 body 就是 null；fake-dom 只派送 focusout）
+//   <input> 與 <textarea> 的 value 換成存取器（fake-dom 的 value 只是一般的屬性，沒有游標；初始是空字串）：文字欄（type 是 text、search、tel、url、password 的 <input>，
+//   沒寫 type 也是 text）與 <textarea> 另有 selectionStart、selectionEnd（可讀可寫）與 setSelectionRange(start, end)：指定 value 時兩個都移到字的最後（同瀏覽器；
+//   HTML 規格是值有變時才移，這裡不管有沒有變都移：頁面本來就只在字真的變了才指定，多指定一次會看到游標跑到最後面），setSelectionRange 把位置夾在 0～字的長度、
+//   結束不比開始大時兩個都放在結束。位置是 UTF-16 的單位，同瀏覽器。其他型別（number、email、color、range、checkbox…）的 selectionStart、selectionEnd 讀到 null、
+//   setSelectionRange 丟 InvalidStateError，同瀏覽器：頁面不該對它們設游標。位置不是 0 以上的整數丟錯（瀏覽器會默默換算，測試要當場看到）。
+//   檔案輸入的 value 另有自己的規則（patchFileInput），不受影響；<select> 照舊是一般的屬性
 // - querySelectorAll() 與 .children 的結果和瀏覽器一樣：querySelectorAll() 是 NodeList 的替身（length、item()、索引、forEach()、entries()、keys()、values()、
 //   迭代），.children 是 HTMLCollection 的替身（length、item()、namedItem()、索引、迭代，連 forEach() 都沒有）。兩個都沒有 map、filter、find、some、every、
 //   reduce、includes、indexOf、at、flatMap、slice 這些陣列的方法：fake-dom 自己回傳一般的陣列，頁面少轉成陣列（Array.from()、[...]）時測試照樣過，
@@ -97,7 +105,13 @@
 //   解構、.length、[0] 可以直接用。只換這份 document 與它建出來的每個元素（document、html、head、body 與 createElement 建的），不動 fake-dom 的元素類別；
 //   fake-dom 的 previousElementSibling／nextElementSibling 靠父節點的 .children 是陣列，所以這兩個也在這裡自己用 childNodes 算。
 //   .childNodes（瀏覽器也是 NodeList）沒有換：fake-dom 自己拿它當陣列在改節點樹，換了會壞掉；那個只靠 tests/character-card-page.test.js 的掃描擋
-// - 操作：type(id, text) 照瀏覽器打字：超過 maxlength 的部分打不進去（以 UTF-16 的單位算），然後設定 value、派送 input；
+// - 操作：type(id, text) 照瀏覽器打字（整格換成 text）：設定 value（游標到最後）、派送 isComposing 是 false 的 input。頁面沒有 maxlength，超過上限的字
+//   是頁面自己（CardState.fitInput）切的，這裡不截；
+//   insert(id, text, { start, end = start }) 把字的 [start, end)（UTF-16 的位置）換成 text：插入（不寫 end）、貼上、取代選取的字，游標放在放進去的字後面，
+//   派送 isComposing 是 false 的 input（頁面只在欄位有焦點時才把游標放回去，測試要看游標先 focus()）；
+//   compose(id) 開始用輸入法組字：派送 compositionstart，回傳 { update(值, 游標 = 值的長度), commit(值, { order = 'end-last', caret = 值的長度 }) }：
+//   update 設定字與游標、派送 isComposing 是 true 的 input（組字中，可以呼叫很多次）；commit 是選完字：設定字與游標之後照 order 派送，'end-last'（Chrome）是
+//   isComposing 是 true 的 input、compositionend，'input-last'（Mozilla 說明的 Firefox）是 compositionend、isComposing 是 false 的 input。事件都會冒泡，游標是 UTF-16 的位置；
 //   select(id, value) 找不到有這個 value 的 option 就丟錯（瀏覽器會把值變成空的），否則設定 value、派送 input 與 change；
 //   press(目標) 是 click()（click 派送的當下算在使用者手勢裡，見 share 的 'expired'）；toggle(目標) 是勾選框、單選的 click()（不是這兩種就丟錯）；focus(目標) 是 focus()（會派送 focusin）；目標可以是 id 或元素。
 //   chip(群組 id, 值) 是 #cardSubJobs、#cardLikes、#cardLooking 裡 data-job、data-like、data-looking 等於值的那顆按鈕（找不到丟錯）。
@@ -135,6 +149,10 @@ const ICON_MODES = ['load', 'fail', 'hold'];
 const PICTURE_MODES = ['load', 'hold'];
 const CAPTURE_MODES = ['ok', 'throws'];
 const POINTER_EVENTS = ['down', 'move', 'up', 'cancel'];
+// 輸入法選完字時事件的順序（compose().commit 的 order）：Chrome 是 isComposing 的 input 再 compositionend，Mozilla 說明 Firefox 是 compositionend 再 isComposing 為 false 的 input
+const COMPOSITION_ORDERS = ['end-last', 'input-last'];
+// 有選取範圍（selectionStart、selectionEnd、setSelectionRange）的 <input> 型別，同瀏覽器：其他型別（number、email、color、range、checkbox…）讀到 null，setSelectionRange 丟錯
+const SELECTABLE_TYPES = new Set(['text', 'search', 'tel', 'url', 'password']);
 // MouseEvent.button（0 左、1 中、2 右）→ MouseEvent.buttons 裡那一顆的位元（1 左、4 中、2 右）
 const BUTTON_BITS = [1, 4, 2];
 
@@ -246,6 +264,40 @@ function strictLists(parent) {
             return siblings[siblings.indexOf(parent) + step] ?? null;
         };
     }
+}
+
+// 一個 <input> 或 <textarea> 的 value 與游標（見檔頭說明）：fake-dom 的 value 只是一般的屬性，沒有游標，所以換成存取器，指定 value 時游標移到字的最後。
+// 位置都是 UTF-16 的單位；元素的 type 屬性是建出元素之後才設的，所以能不能選取，用的當下才看
+function addSelection(element) {
+    let value = '';
+    let start = 0;
+    let end = 0;
+    const selectable = () => element.tagName === 'TEXTAREA' || SELECTABLE_TYPES.has((element.getAttribute('type') || 'text').toLowerCase());
+    // 同 HTML 規格的「set the selection range」：位置夾在 0～字的長度，結束不比開始大時，開始與結束都放在結束
+    const select = (from, to) => {
+        assert.ok(Number.isInteger(from) && from >= 0 && Number.isInteger(to) && to >= 0, `選取的位置要是 0 以上的整數：${from}、${to}`);
+        end = Math.min(to, value.length);
+        start = Math.min(from, end);
+    };
+    Object.defineProperty(element, 'value', {
+        configurable: true,
+        get: () => value,
+        set: (next) => {
+            value = String(next);
+            start = value.length;
+            end = value.length;
+        }
+    });
+    Object.defineProperties(element, {
+        selectionStart: { configurable: true, get: () => (selectable() ? start : null), set: (position) => select(position, Math.max(position, end)) },
+        selectionEnd: { configurable: true, get: () => (selectable() ? end : null), set: (position) => select(start, position) }
+    });
+    element.setSelectionRange = (from, to) => {
+        if (!selectable()) {
+            throw Object.assign(new Error(`Failed to execute 'setSelectionRange' on 'HTMLInputElement': The input element's type ('${element.getAttribute('type')}') does not support selection.`), { name: 'InvalidStateError' });
+        }
+        select(from, to);
+    };
 }
 
 // 一張 canvas 的替身（見檔頭說明）。回傳這張 canvas 的記錄：{ context, draws, blobRequests }。env 是頁面共用的東西：
@@ -403,6 +455,8 @@ async function createCardPage({
             }
         });
         strictLists(element);
+        // 文字欄、文字框與其他 <input> 的 value，加上游標（見檔頭說明）；<select> 與按鈕照舊
+        if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') addSelection(element);
         if (element.tagName === 'CANVAS') {
             const state = patchCanvas(element, { displayScale: () => scale, blobFails: () => blobFailing, dataUrlRequests });
             canvases.set(element, state);
@@ -695,7 +749,7 @@ async function createCardPage({
     };
     const stateOf = () => canvases.get($('cardCanvas'));
     const drawCalls = () => stateOf().context?.calls ?? [];
-    const fire = (element, type) => element.dispatchEvent(new win.Event(type, { bubbles: true }));
+    const fire = (element, type, init = {}) => element.dispatchEvent(new win.Event(type, { bubbles: true, ...init }));
 
     const api = {
         window: win,
@@ -718,11 +772,47 @@ async function createCardPage({
         downloads,
         $,
         isShown: (target) => isShown(elementOf(target)),
+        // 整格換成 text（游標到最後）；頁面沒有 maxlength，超過上限的字由頁面切（見檔頭說明）
         type(target, text) {
             const element = elementOf(target);
-            const max = Number(element.getAttribute('maxlength'));
-            element.value = element.hasAttribute('maxlength') && Number.isFinite(max) ? String(text).slice(0, max) : String(text);
-            fire(element, 'input');
+            element.value = String(text);
+            fire(element, 'input', { isComposing: false });
+        },
+        // 把字的 [start, end)（UTF-16 的位置）換成 text，游標放在放進去的字後面
+        insert(target, text, { start, end = start } = {}) {
+            const element = elementOf(target);
+            const value = String(element.value);
+            assert.ok(Number.isInteger(start) && start >= 0 && end >= start && end <= value.length,
+                `insert：[${start}, ${end}) 不在 #${element.getAttribute('id')} 的字裡（長度 ${value.length}）`);
+            element.value = value.slice(0, start) + text + value.slice(end);
+            element.setSelectionRange(start + String(text).length, start + String(text).length);
+            fire(element, 'input', { isComposing: false });
+        },
+        // 開始用輸入法組字（見檔頭說明）
+        compose(target) {
+            const element = elementOf(target);
+            const put = (value, caret) => {
+                element.value = value;
+                element.setSelectionRange(caret, caret);
+            };
+            fire(element, 'compositionstart');
+            return {
+                update(value, caret = value.length) {
+                    put(value, caret);
+                    fire(element, 'input', { isComposing: true });
+                },
+                commit(value, { order = 'end-last', caret = value.length } = {}) {
+                    assert.ok(COMPOSITION_ORDERS.includes(order), `commit 的 order 是 ${COMPOSITION_ORDERS.join('、')} 其中一個，不是 ${JSON.stringify(order)}`);
+                    put(value, caret);
+                    if (order === 'end-last') {
+                        fire(element, 'input', { isComposing: true });
+                        fire(element, 'compositionend');
+                    } else {
+                        fire(element, 'compositionend');
+                        fire(element, 'input', { isComposing: false });
+                    }
+                }
+            };
         },
         select(target, value) {
             const element = elementOf(target);

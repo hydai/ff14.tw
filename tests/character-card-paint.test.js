@@ -1015,3 +1015,41 @@ test('沒有圖示的職業畫在重點色方塊裡的字：三種風格 × 橫�
     near(smallest, 19.14, '最小的字級');
     assert.ok(lowest > 4.2, `最低的對比度 ${lowest}`);
 });
+
+// ---------- 名字放 21 個 emoji ----------
+
+// 欄位的字數上限以 Unicode 字元計（一個 emoji 算 1 個字，同旁邊的計數），所以名字可以放 21 個 emoji。別的平台的 emoji 字型可能比中文字寬：這裡假設一個 emoji 1.3 倍寬
+// （比 Mac 的 Chrome 寬 30%）。三種風格 × 橫直版的名字都要縮到放得進它的欄：右邊不超出 21 個全形字的名字（那是它的欄原本就要放得下的），而且沒有縮到底限（FIT_FLOOR）。
+// 2026-11-12 用這個量字量過：最緊的海報直版縮到 31.8%，底限是 30%
+test('名字 21 個 emoji、emoji 量成 1.3 倍寬時（別的平台的 emoji 字型可能比中文字寬），三種風格 × 橫直版都縮到放得進它的欄', () => {
+    // 字級是 fontString 無條件捨去到 0.01px 的，兩個名字的右邊都貼著欄的右邊，但各自少了捨去的那一點：21 個全形字的名字，右邊最多比欄的右邊少 21 × 0.01 = 0.21px
+    // （量到 emoji 名字的右邊比它多出來的，海報橫版最多 0.126px，名片橫版 0.063px，就是這一點，不是超出欄）。所以比較時，emoji 名字可以比 21 個全形字的名字多出這個量，不能再多
+    const FLOOR_SLACK = 21 * 0.01 + 1e-6;
+    // 假的量字：字級乘每個 Unicode 字元的寬度。碼位 U+1F000 以後（emoji）是 1.3，零寬連接符號與變體選擇符號是 0，U+0250 以前（拉丁字母、數字、標點）是 0.6，其他（中日韓）是 1
+    const widthOf = (char) => {
+        const code = char.codePointAt(0);
+        if (code >= 0x1F000) return 1.3;
+        if (code === 0x200D || code === 0xFE0F) return 0;
+        return code < 0x250 ? 0.6 : 1;
+    };
+    const measure = (font, text) => Array.from(text).reduce((sum, char) => sum + widthOf(char) * fontSize(font), 0);
+    const EMOJI = '😀'.repeat(21);
+    const WIDE = '寬'.repeat(21);
+    // 這種風格與版型畫這個名字的那一次 fillText：字級，與右邊（字是靠左畫的：x 加整個名字的寬）
+    const nameOf = (style, format, name) => {
+        const calls = render(fullModel(style, { format, name }), { measure }).calls.filter((call) => call.op === 'fillText' && call.args[0] === name);
+        assert.equal(calls.length, 1, `${style} ${format}：名字「${name}」畫了幾次`);
+        return { size: fontSize(calls[0].font), right: calls[0].args[1] + measure(calls[0].font, name) };
+    };
+
+    for (const style of card.CardState.STYLES) {
+        for (const format of card.CardState.FORMATS) {
+            const where = `${style} ${format}`;
+            const short = nameOf(style, format, 'Luna');
+            const emoji = nameOf(style, format, EMOJI);
+            const wide = nameOf(style, format, WIDE);
+            assert.ok(emoji.size > short.size * FIT_FLOOR, `${where}：emoji 名字的字級 ${emoji.size} 縮到底限了（${short.size} × ${FIT_FLOOR}）`);
+            assert.ok(emoji.right <= wide.right + FLOOR_SLACK, `${where}：emoji 名字的右邊 ${emoji.right} 超出 21 個全形字的右邊 ${wide.right}（可以多 ${FLOOR_SLACK}）`);
+        }
+    }
+});
