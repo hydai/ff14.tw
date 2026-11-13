@@ -850,7 +850,7 @@ test('灰字：小標、時段的字與底部一列是 #697084，伺服器與 Lv
 
 // 唯一的例外：這裡的畫面模型（fullModel、maxedModel）職業都有圖示，檢查不到沒有圖示的職業畫在重點色方塊裡的大字（CardPaint.drawIcon）。它的字色是
 // CardLayout.textColorOn 在白字與深字裡挑對比度高的，最差的重點色上約 4.2:1，不到 4.5:1；但它一定是粗體大字（方塊邊長的 0.55 倍：徽章裡 23.8px 起，
-// 其他職業的方塊 19.1px 起），WCAG 的大字只要 3:1（見 card-style-c.js 檔案開頭）
+// 其他職業的方塊 19.1px 起），WCAG 的大字只要 3:1（見 card-style-c.js 檔案開頭）。這個字的大小與對比度另外在 tests/character-card-paint.test.js 檢查（三種風格都一樣）
 test('每一段字和它的底至少 4.5:1：每種重點色（含很淺的）× 橫直版 × 全部填滿與每個欄位填到上限', () => {
     const ACCENTS = ['#4f74d6', '#3f9e5c', '#d4574e', '#8a63d2', '#c99a2e', '#ffff66', '#ffffff'];
     let checked = 0;

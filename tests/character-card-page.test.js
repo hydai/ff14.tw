@@ -18,6 +18,10 @@ const KEY = 'ff14tw_character_card';
 const IMAGE_KEY = 'ff14tw_character_card_image';
 const MARK = 'FF14.tw';
 const NOTICE = 'FINAL FANTASY XIV © SQUARE ENIX';
+// 字數上限的測試用的字（都寫成跳脫的碼位：一個「看起來是一個字」的東西有幾個字元，一看就知道）
+const FLAG = '\u{1F1F9}\u{1F1FC}'; // 🇹🇼：兩個區域指示符號（2 個字元，算 2 個字）
+const FAMILY = '\u{1F468}\u{200D}\u{1F469}\u{200D}\u{1F467}'; // 👨‍👩‍👧：三個 emoji 用零寬連接符號接起來（5 個字元）
+const E_ACUTE = 'e\u{301}'; // é：e 加上組合用的重音符號（2 個字元；不是一個字元的 é）
 const HTML = read('tools/character-card/index.html');
 const SCRIPT = read('tools/character-card/script.js');
 const CSS = read('tools/character-card/style.css').replace(/\/\*[\s\S]*?\*\//g, '');
@@ -263,14 +267,15 @@ test('打名字、選伺服器與主職：卡片重畫出這些字，aria-label 
     assert.equal(page.$('cardLevel').value, '100');
 });
 
-test('字數計數「5／21」與 maxlength', async () => {
+test('字數計數「5／21」與上限：7 個欄位沒有 maxlength，打超過上限時欄位、計數、卡片與記住的資料都停在上限', async () => {
     const page = await createCardPage();
     const { LIMITS } = page.window.CardState;
-    // 有字數上限的欄位：maxlength 等於 CardState.LIMITS，旁邊的計數一開始是「0／上限」，輸入框用 aria-describedby 指到它
+    // 有字數上限的欄位：沒有 maxlength（它以 UTF-16 的單位計，和計數對不起來，放不下時還會從國旗中間切開；上限由頁面照 CardState.LIMITS 以 Unicode 字元計），
+    // 旁邊的計數一開始是「0／上限」，輸入框用 aria-describedby 指到它
     const fields = [['cardName', 'name'], ['cardWorldCustom', 'world'], ['cardTitle', 'title'], ['cardFcName', 'fcName'], ['cardFcTag', 'fcTag'],
         ['cardIntro', 'intro'], ['cardContact', 'contact']];
     for (const [id, key] of fields) {
-        assert.equal(page.$(id).getAttribute('maxlength'), String(LIMITS[key]), `#${id} 的 maxlength`);
+        assert.equal(page.$(id).hasAttribute('maxlength'), false, `#${id} 沒有 maxlength`);
         assert.equal(page.$(`${id}Count`).textContent, `0／${LIMITS[key]}`, `#${id}Count`);
         // 計數的 id 排第一；海報風格不畫的欄位（部隊名稱、聯絡方式）在海報時後面再接一個說明的 id（見「四行小字」的測試）
         const [first, ...more] = (page.$(id).getAttribute('aria-describedby') ?? '').split(/\s+/);
@@ -280,11 +285,12 @@ test('字數計數「5／21」與 maxlength', async () => {
 
     page.type('cardName', 'Aerin');
     assert.equal(page.$('cardNameCount').textContent, '5／21');
-    // 到上限時不能再打（瀏覽器的 maxlength）：卡片與記憶裡也只有 21 個字
+    // 到上限時放不下的字不放（頁面自己切，不是瀏覽器的 maxlength）：欄位、計數、卡片與記憶裡都只有 21 個字
     page.type('cardName', 'x'.repeat(30));
-    assert.equal(page.$('cardName').value.length, 21);
+    assert.equal(page.$('cardName').value, 'x'.repeat(21));
     assert.equal(page.$('cardNameCount').textContent, '21／21');
     assert.equal(saved(page).name, 'x'.repeat(21));
+    assert.ok(page.texts().includes('x'.repeat(21)));
     // 以 Unicode 字元計：𠮷 一個字，不是兩個
     page.type('cardName', '𠮷野家');
     assert.equal(page.$('cardNameCount').textContent, '3／21');
@@ -304,6 +310,467 @@ test('字數計數「5／21」與 maxlength', async () => {
     assert.equal(page.$('cardIntro').value, 'a b c d');
     assert.equal(saved(page).intro, 'a b c d');
     assert.equal(page.$('cardIntroCount').textContent, '7/60');
+});
+
+// ---------- 字數上限：沒有 maxlength，頁面每次輸入完自己檢查（CardState.fitInput） ----------
+// 放得進上限就照收；放不下時只拿掉這次打進來的字，而且是整個字素（國旗、家庭 emoji、加了重音符號的字不會只剩一半），前後原本的字不動，游標放回打字的地方。
+// 輸入法組字中不改欄位的字（會打斷輸入法），選完字（compositionend）才檢查，change 再檢查一次。頁面只在欄位有焦點時才放游標：測試要看游標，先 focus()
+const caretOf = (page, id) => [page.$(id).selectionStart, page.$(id).selectionEnd];
+const changeEvent = (page) => new page.window.Event('change', { bubbles: true });
+
+test('國旗、家庭 emoji 與組合字到上限時整個不放，原本的字不動', async () => {
+    // 放得下：19 個字加國旗（2 個字）剛好 21，整面放進去；欄位、計數、記住的與卡片上的一樣
+    const fits = await createCardPage();
+    fits.type('cardName', 'W'.repeat(19));
+    fits.type('cardName', 'W'.repeat(19) + FLAG);
+    assert.equal(fits.$('cardName').value, 'W'.repeat(19) + FLAG);
+    assert.equal(fits.$('cardNameCount').textContent, '21／21');
+    assert.equal(saved(fits).name, 'W'.repeat(19) + FLAG);
+    assert.ok(fits.texts().includes('W'.repeat(19) + FLAG));
+
+    // 差一格放不下：整面不放（不是只放一個區域指示符號，那會畫成一個字母方塊），原本的字不動
+    const page = await createCardPage();
+    page.type('cardName', 'W'.repeat(20));
+    page.type('cardName', 'W'.repeat(20) + FLAG);
+    assert.equal(page.$('cardName').value, 'W'.repeat(20));
+    assert.equal(page.$('cardNameCount').textContent, '20／21');
+    assert.equal(saved(page).name, 'W'.repeat(20));
+    assert.ok(page.texts().includes('W'.repeat(20)));
+    assert.ok(!page.texts().some((text) => /[\u{1F1E6}-\u{1F1FF}]/u.test(text)), '卡片上沒有任何區域指示符號');
+
+    // 家庭 emoji（5 個字元）：部隊簡稱剩 3 格，放不下，整個不放
+    page.type('cardFcTag', 'AB');
+    page.type('cardFcTag', 'AB' + FAMILY);
+    assert.equal(page.$('cardFcTag').value, 'AB');
+    assert.equal(page.$('cardFcTagCount').textContent, '2／5');
+    assert.equal(saved(page).fcTag, 'AB');
+
+    // 組合字：e 後面再打重音符號放不下，只拿掉重音符號，原本的 e 留著
+    page.type('cardName', 'W'.repeat(20) + 'e');
+    page.type('cardName', 'W'.repeat(20) + E_ACUTE);
+    assert.equal(page.$('cardName').value, 'W'.repeat(20) + 'e');
+    assert.equal(saved(page).name, 'W'.repeat(20) + 'e');
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('選取一面國旗貼上兩面，新國旗和舊的第一個字母一樣：只放得下的那一面整面放進去，不留下半面國旗', async () => {
+    const FLAG_TJ = '\u{1F1F9}\u{1F1EF}'; // 🇹🇯：第一個字母和 🇹🇼 一樣
+    const FLAG_JP = '\u{1F1EF}\u{1F1F5}'; // 🇯🇵
+    const segmenter = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
+    const loneRegional = (text) => Array.from(segmenter.segment(text), ({ segment }) => segment).some((segment) => /^[\u{1F1E6}-\u{1F1FF}]$/u.test(segment));
+    const page = await createCardPage();
+    page.focus('cardFcTag');
+    page.type('cardFcTag', `AA${FLAG}`);
+    // 選取整面國旗（UTF-16 的 2～6）貼上 🇹🇯🇯🇵：部隊簡稱上限 5，AA 加一面國旗剛好 4 個字，第二面放不下
+    page.insert('cardFcTag', `${FLAG_TJ}${FLAG_JP}`, { start: 2, end: 6 });
+    assert.equal(page.$('cardFcTag').value, `AA${FLAG_TJ}`);
+    assert.equal(page.$('cardFcTagCount').textContent, '4／5');
+    assert.equal(saved(page).fcTag, `AA${FLAG_TJ}`);
+    assert.equal(page.app.state.fcTag, `AA${FLAG_TJ}`);
+    assert.deepEqual([page.$('cardFcTag').selectionStart, page.$('cardFcTag').selectionEnd], [6, 6]);
+    assert.ok(!page.texts().some(loneRegional), '卡片上沒有落單的半面國旗');
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('改之前的選取：全選再貼上是換掉選取的字，在前面插入時放不下；沒有 beforeinput、拖放與復原時照前後比對', async () => {
+    const page = await createCardPage();
+    const field = page.$('cardFcTag');
+    page.focus('cardFcTag');
+    // 瀏覽器沒送 beforeinput 就改了欄位的字（自動填入、程式插字）：直接換掉字、放游標、派送 input
+    const replaceWithoutBeforeInput = (value, caret) => {
+        field.value = value;
+        field.setSelectionRange(caret, caret);
+        field.dispatchEvent(new page.window.Event('input', { bubbles: true, isComposing: false }));
+    };
+
+    // 部隊簡稱（上限 5）全選 HELLO 貼上 SAYHELLO：換掉選取的字，貼上的字放到上限為止（Codex 的例子）
+    page.type('cardFcTag', 'HELLO');
+    page.insert('cardFcTag', 'SAYHELLO', { start: 0, end: 5, inputType: 'insertFromPaste' });
+    assert.equal(field.value, 'SAYHE');
+    assert.equal(page.$('cardFcTagCount').textContent, '5／5');
+    assert.equal(page.app.state.fcTag, 'SAYHE');
+    assert.equal(saved(page).fcTag, 'SAYHE');
+    assert.deepEqual(caretOf(page, 'cardFcTag'), [5, 5]);
+
+    // 在 HELLO 前面插入 SAY（沒有選取）：改完的字和上面一模一樣，但這次放不下，HELLO 留著，游標回到最前面
+    page.type('cardFcTag', 'HELLO');
+    page.insert('cardFcTag', 'SAY', { start: 0 });
+    assert.equal(field.value, 'HELLO');
+    assert.deepEqual(caretOf(page, 'cardFcTag'), [0, 0]);
+
+    // 沒有 beforeinput：只看兩段字分不出來，照前後比對當成在前面插入，HELLO 留著
+    page.type('cardFcTag', 'HELLO');
+    replaceWithoutBeforeInput('SAYHELLO', 8);
+    assert.equal(field.value, 'HELLO');
+    // 沒有 beforeinput 時游標提示照樣用：Annab 滿了，在兩個 n 前面再插一個 n，游標回到打字的地方，不會往右偏一格
+    page.type('cardFcTag', 'Annab');
+    replaceWithoutBeforeInput('Annnab', 2);
+    assert.equal(field.value, 'Annab');
+    assert.deepEqual(caretOf(page, 'cardFcTag'), [1, 1]);
+
+    // 拖放與復原的 beforeinput 不記選取（拖放時的選取不是放下的位置，復原換回去的範圍和選取無關），而且會拿掉之前記下的：
+    // 先記下全選，再來一個拖放或復原的 beforeinput，之後的改動照前後比對（之前記下的全選要是還在，就會變成 SAYHE）
+    for (const inputType of ['insertFromDrop', 'historyUndo']) {
+        page.type('cardFcTag', 'HELLO');
+        field.setSelectionRange(0, 5);
+        field.dispatchEvent(new page.window.Event('beforeinput', { bubbles: true, cancelable: true, inputType: 'insertText', isComposing: false }));
+        field.dispatchEvent(new page.window.Event('beforeinput', { bubbles: true, cancelable: true, inputType, isComposing: false }));
+        replaceWithoutBeforeInput('SAYHELLO', 8);
+        assert.equal(field.value, 'HELLO', inputType);
+    }
+
+    // 記下的選取只用一次：用過之後，沒有 beforeinput 的改動照前後比對
+    page.type('cardFcTag', 'HELLO');
+    page.insert('cardFcTag', 'X', { start: 0, end: 5 });
+    assert.equal(field.value, 'X');
+    replaceWithoutBeforeInput('SAYHELLO', 8);
+    assert.equal(field.value, 'SAYHE', '上一次接受的是 X，前後比對：X 換成 SAYHELLO，放得下的 SAYHE');
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('emoji 算 1 個字：稱號放得下 30 個 emoji，計數「30／30」，第 31 個不放', async () => {
+    const page = await createCardPage();
+    // 以前的 maxlength 照 UTF-16 算（一個 emoji 2 個單位）：稱號打 15 個 emoji 就滿了，計數卻寫「15／30」
+    page.type('cardTitle', '😀'.repeat(30));
+    assert.equal(page.$('cardTitle').value, '😀'.repeat(30));
+    assert.equal(page.$('cardTitleCount').textContent, '30／30');
+    assert.equal(saved(page).title, '😀'.repeat(30));
+    page.type('cardTitle', '😀'.repeat(31));
+    assert.equal(page.$('cardTitle').value, '😀'.repeat(30));
+    assert.equal(page.$('cardTitleCount').textContent, '30／30');
+    assert.equal(saved(page).title, '😀'.repeat(30));
+});
+
+test('插在中間：後面的字留著，游標回到打字的地方；取代選取的字', async () => {
+    const page = await createCardPage();
+    // 稱號 29 個字，在第 14 個字後面插入國旗（2 個字）：只剩 1 格放不下，整面不放，後面的字一個都不動，游標回到插入的地方
+    page.focus('cardTitle');
+    page.type('cardTitle', 'A'.repeat(29));
+    page.insert('cardTitle', FLAG, { start: 14 });
+    assert.equal(page.$('cardTitle').value, 'A'.repeat(29));
+    assert.deepEqual(caretOf(page, 'cardTitle'), [14, 14]);
+    assert.equal(saved(page).title, 'A'.repeat(29));
+
+    // 打進來的字和旁邊的字一樣（Annab 滿了，在兩個 n 前面再打一個 n）：只看前後的字分不出打在哪裡，靠游標回到第 1 個字後面，不會往右偏
+    page.focus('cardFcTag');
+    page.type('cardFcTag', 'Annab');
+    page.insert('cardFcTag', 'n', { start: 1 });
+    assert.equal(page.$('cardFcTag').value, 'Annab');
+    assert.deepEqual(caretOf(page, 'cardFcTag'), [1, 1]);
+
+    // 取代選取的字：聯絡方式 40 個字，選取第 10～13 個字（3 個）換成「AB」、國旗、「CD」：選取的字照舊被換掉，放得下的只有「AB」，後面的字不動
+    page.focus('cardContact');
+    page.type('cardContact', 'x'.repeat(40));
+    page.insert('cardContact', 'AB' + FLAG + 'CD', { start: 10, end: 13 });
+    assert.equal(page.$('cardContact').value, 'x'.repeat(10) + 'AB' + 'x'.repeat(27));
+    assert.deepEqual(caretOf(page, 'cardContact'), [12, 12]);
+    assert.equal(saved(page).contact, 'x'.repeat(10) + 'AB' + 'x'.repeat(27));
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('輸入法組字：組字中超過上限不改欄位，選完字時（兩種事件順序）只留放得下的，卡片與記住的資料跟著改', async () => {
+    // end-last 是 Chrome（isComposing 的 input，然後 compositionend），input-last 是 Mozilla 說明的 Firefox（compositionend，然後 isComposing 為 false 的 input）；各開一個新的頁面
+    for (const order of ['end-last', 'input-last']) {
+        const page = await createCardPage();
+        page.focus('cardName');
+        page.type('cardName', 'W'.repeat(20));
+        const ime = page.compose('cardName');
+        ime.update('W'.repeat(20) + 'ㄌ');
+        ime.update('W'.repeat(20) + 'ㄌㄨ');
+        // 組字中：欄位照舊是 22 個字（組字中改欄位的字會打斷輸入法），計數寫 22／21
+        assert.equal(page.$('cardName').value, 'W'.repeat(20) + 'ㄌㄨ', `${order}：組字中不改欄位`);
+        assert.equal(page.$('cardNameCount').textContent, '22／21', order);
+        // 組字記號還在（compositionstart 之後、還沒 compositionend）時收到 isComposing 為 false 的 input：當作安全網，照樣不改（沒有已知會這樣送的鍵盤）
+        page.$('cardName').dispatchEvent(new page.window.Event('input', { bubbles: true, isComposing: false }));
+        assert.equal(page.$('cardName').value, 'W'.repeat(20) + 'ㄌㄨ', `${order}：isComposing 為 false 的 input 也不改`);
+
+        // 選完字：兩種順序都只留放得下的「倫」；欄位、計數、狀態、記住的資料與卡片上的字一樣，游標在放進去的字後面
+        const kept = 'W'.repeat(20) + '倫';
+        ime.commit('W'.repeat(20) + '倫敦', { order });
+        assert.equal(page.$('cardName').value, kept, order);
+        assert.equal(page.$('cardNameCount').textContent, '21／21', order);
+        assert.equal(page.app.state.name, kept, order);
+        assert.equal(saved(page).name, kept, order);
+        assert.ok(page.texts().includes(kept), `${order}：卡片上的字`);
+        assert.deepEqual(caretOf(page, 'cardName'), [21, 21], order);
+        assert.deepEqual(page.consoleErrors, []);
+    }
+});
+
+test('isComposing 為 true 的 input 不檢查，就算沒收到 compositionstart；之後一般的 input 才檢查', async () => {
+    const page = await createCardPage();
+    page.focus('cardName');
+    page.type('cardName', 'W'.repeat(20));
+    // 沒有 compositionstart（組字記號沒有加）：只有 input 的 isComposing 說這是組字中，超過上限的字也不能動（前一個測試的 isComposing 為 false 是另一半）
+    const field = page.$('cardName');
+    field.value = 'W'.repeat(20) + 'ㄌㄨ';
+    field.dispatchEvent(new page.window.Event('input', { bubbles: true, isComposing: true }));
+    assert.equal(field.value, 'W'.repeat(20) + 'ㄌㄨ', '組字中不改欄位');
+    assert.equal(page.$('cardNameCount').textContent, '22／21');
+    // 之後一般的 input（isComposing 為 false，也沒有組字記號）才檢查：拿掉放不下的字，欄位、計數、記住的資料與狀態一樣
+    field.dispatchEvent(new page.window.Event('input', { bubbles: true, isComposing: false }));
+    assert.equal(field.value, 'W'.repeat(20) + 'ㄌ');
+    assert.equal(page.$('cardNameCount').textContent, '21／21');
+    assert.equal(page.app.state.name, 'W'.repeat(20) + 'ㄌ');
+    assert.equal(saved(page).name, 'W'.repeat(20) + 'ㄌ');
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('在滿的欄位中間組字，選完字時欄位、狀態與記住的資料都和組字前一樣', async () => {
+    const page = await createCardPage();
+    page.focus('cardName');
+    page.type('cardName', 'A'.repeat(21));
+    // 組字從第 10 個字後面開始（compositionstart 時的游標，頁面記下來當換掉的範圍）；組字中游標在組的字後面（同瀏覽器）。
+    // 滿了，組的字放不下，整個不放，其他的 A 一個都不動，游標回到組字的地方
+    const ime = page.compose('cardName', { start: 10 });
+    ime.update('A'.repeat(10) + 'ㄌ' + 'A'.repeat(11), 11);
+    ime.commit('A'.repeat(10) + '倫' + 'A'.repeat(11), { order: 'end-last', caret: 11 });
+    assert.equal(page.$('cardName').value, 'A'.repeat(21));
+    assert.equal(page.app.state.name, 'A'.repeat(21));
+    assert.equal(saved(page).name, 'A'.repeat(21));
+    assert.equal(page.$('cardNameCount').textContent, '21／21');
+    assert.deepEqual(caretOf(page, 'cardName'), [10, 10]);
+});
+
+test('在滿的欄位中間組字：組字中存起來與畫在卡片上的是放得下的字，欄位原本最後面的字不會先被丟掉', async () => {
+    const page = await createCardPage();
+    const original = 'A'.repeat(20) + 'Z';
+    page.focus('cardName');
+    page.type('cardName', original);
+    // 在第 10 個字後面組字，組字中的字（ㄌ）放不下：欄位照舊有 22 個字（組字中不改欄位），但存起來的與卡片上的是放得下的字，最後面的 Z 還在。
+    // （狀態只靠 CardState.normalize 整理的話，它從最後面切，Z 會先被丟掉，到選完字才回來）
+    const ime = page.compose('cardName', { start: 10 });
+    ime.update('A'.repeat(10) + 'ㄌ' + 'A'.repeat(10) + 'Z', 11);
+    assert.equal(page.$('cardName').value, 'A'.repeat(10) + 'ㄌ' + 'A'.repeat(10) + 'Z', '組字中不改欄位');
+    assert.equal(page.$('cardNameCount').textContent, '22／21');
+    assert.equal(page.app.state.name, original, '組字中的狀態');
+    assert.equal(saved(page).name, original, '組字中記住的資料');
+    assert.ok(page.texts().includes(original), '組字中卡片上的字');
+
+    // 選完字：組的字放不下，整個不放，原本的字都在，游標回到組字的地方；欄位、狀態、記住的資料與卡片上的字一樣
+    ime.commit('A'.repeat(10) + '倫' + 'A'.repeat(10) + 'Z', { order: 'end-last', caret: 11 });
+    assert.equal(page.$('cardName').value, original);
+    assert.equal(page.$('cardNameCount').textContent, '21／21');
+    assert.equal(page.app.state.name, original);
+    assert.equal(saved(page).name, original);
+    assert.ok(page.texts().includes(original));
+    assert.deepEqual(caretOf(page, 'cardName'), [10, 10]);
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('選取一段字後用輸入法組字取代它：選取的字被換掉，新的字放到上限為止', async () => {
+    const page = await createCardPage();
+    page.focus('cardTitle');
+    page.type('cardTitle', 'A'.repeat(30));
+    // 選取第 5～10 個字（5 個 A）開始組字，選完的字有 7 個：選取的 5 個照舊被換掉，新的字只放得下 5 個，後面的 20 個 A 不動
+    const ime = page.compose('cardTitle', { start: 5, end: 10 });
+    ime.update('A'.repeat(5) + 'ㄌ' + 'A'.repeat(20), 6);
+    ime.commit('A'.repeat(5) + '倫敦大學圖書館' + 'A'.repeat(20), { order: 'end-last', caret: 12 });
+    const expected = 'A'.repeat(5) + '倫敦大學圖' + 'A'.repeat(20);
+    assert.equal(page.$('cardTitle').value, expected);
+    assert.equal(page.$('cardTitleCount').textContent, '30／30');
+    assert.equal(page.app.state.title, expected);
+    assert.equal(saved(page).title, expected);
+    assert.deepEqual(caretOf(page, 'cardTitle'), [10, 10]);
+});
+
+test('全選後用輸入法組字取代它（Android 的鍵盤打英文也多半是組字）：照組字開始時的選取換掉選取的字，不會當成在前面插入（兩種事件順序）', async () => {
+    for (const order of ['end-last', 'input-last']) {
+        const page = await createCardPage();
+        const field = page.$('cardFcTag');
+        page.focus('cardFcTag');
+        page.type('cardFcTag', 'HELLO');
+        // 部隊簡稱（上限 5）全選 HELLO 開始組字，選完是 SAYHELLO：換掉選取的字，放得下的是 SAYHE。
+        // 只看前後兩段字的話，會當成在 HELLO 前面插入 SAY，放不下，HELLO 留著
+        const ime = page.compose('cardFcTag', { start: 0, end: 5 });
+        ime.update('SAY');
+        ime.update('SAYHELLO');
+        assert.equal(field.value, 'SAYHELLO', `${order}：組字中不改欄位`);
+        assert.equal(page.app.state.fcTag, 'SAYHE', `${order}：組字中的狀態`);
+        ime.commit('SAYHELLO', { order });
+        assert.equal(field.value, 'SAYHE', order);
+        assert.equal(page.$('cardFcTagCount').textContent, '5／5', order);
+        assert.equal(page.app.state.fcTag, 'SAYHE', order);
+        assert.equal(saved(page).fcTag, 'SAYHE', order);
+        assert.deepEqual(caretOf(page, 'cardFcTag'), [5, 5], order);
+        assert.deepEqual(page.consoleErrors, [], order);
+    }
+});
+
+test('change 是安全網：組字中離開欄位、沒有 compositionend 時，change 照樣改回上限之內', async () => {
+    const page = await createCardPage();
+    page.type('cardName', 'W'.repeat(20));
+    const ime = page.compose('cardName');
+    ime.update('W'.repeat(20) + 'ㄌㄨ');
+    assert.equal(page.$('cardName').value, 'W'.repeat(20) + 'ㄌㄨ', '組字中不改欄位');
+    page.$('cardName').dispatchEvent(changeEvent(page));
+    assert.equal(page.$('cardName').value, 'W'.repeat(20) + 'ㄌ');
+    assert.equal(page.$('cardNameCount').textContent, '21／21');
+    assert.equal(page.app.state.name, 'W'.repeat(20) + 'ㄌ');
+    assert.equal(saved(page).name, 'W'.repeat(20) + 'ㄌ');
+    // 組字記號已經拿掉：之後打字照樣檢查
+    page.type('cardName', 'W'.repeat(22));
+    assert.equal(page.$('cardName').value, 'W'.repeat(21));
+    assert.equal(saved(page).name, 'W'.repeat(21));
+
+    // 在滿的欄位中間組字：組字中的字不算進「上一次接受的字」，離開欄位時拿掉的是組的字，原本的字（包括後面的）一個都不動
+    const middle = await createCardPage();
+    middle.type('cardTitle', 'A'.repeat(30));
+    const second = middle.compose('cardTitle');
+    second.update('A'.repeat(10) + 'ㄌ' + 'A'.repeat(20), 11);
+    assert.equal(middle.$('cardTitle').value, 'A'.repeat(10) + 'ㄌ' + 'A'.repeat(20), '組字中不改欄位');
+    middle.$('cardTitle').dispatchEvent(changeEvent(middle));
+    assert.equal(middle.$('cardTitle').value, 'A'.repeat(30));
+    assert.equal(middle.app.state.title, 'A'.repeat(30));
+    assert.equal(saved(middle).title, 'A'.repeat(30));
+    assert.deepEqual(page.consoleErrors, []);
+    assert.deepEqual(middle.consoleErrors, []);
+});
+
+test('change 在欄位的字已經放得下時什麼都不做：欄位照舊，不存、不重畫（字被改了的 change 才更新）', async () => {
+    const page = await createCardPage();
+    page.select('cardWorld', '__custom');
+    const texts = {
+        cardName: 'Luna', cardWorldCustom: 'Nevermore', cardTitle: 'Hero', cardFcName: 'Moonlit Garden', cardFcTag: 'MOON', cardIntro: 'Hello', cardContact: 'luna_star'
+    };
+    for (const [id, text] of Object.entries(texts)) page.type(id, text);
+    // 7 個欄位都一樣：字放得下時，change 不改欄位，也不呼叫 update()（update 一定存一次、重畫一次）
+    for (const [id, text] of Object.entries(texts)) {
+        const writes = page.storageWrites.length;
+        const draws = page.drawCount();
+        page.$(id).dispatchEvent(changeEvent(page));
+        assert.equal(page.$(id).value, text, `#${id} 的字`);
+        assert.equal(page.storageWrites.length, writes, `#${id}：沒有存`);
+        assert.equal(page.drawCount(), draws, `#${id}：沒有重畫`);
+    }
+    assert.equal(saved(page).name, 'Luna');
+
+    // 對照：組字中離開欄位、字超過上限而被改回來的 change 會存、會重畫
+    const ime = page.compose('cardName');
+    ime.update('W'.repeat(20) + 'ㄌㄨ');
+    const writes = page.storageWrites.length;
+    const draws = page.drawCount();
+    page.$('cardName').dispatchEvent(changeEvent(page));
+    assert.equal(page.$('cardName').value, 'W'.repeat(20) + 'ㄌ');
+    assert.ok(page.storageWrites.length > writes, '字被改了：存');
+    assert.ok(page.drawCount() > draws, '字被改了：重畫');
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('沒有焦點時收到超過上限的字（瀏覽器自動填入）也切到上限、不丟錯，之後在這一格打字照樣算對', async () => {
+    const page = await createCardPage();
+    const field = page.$('cardName');
+    // 欄位沒有焦點時不動游標（Safari 對沒有焦點的欄位呼叫 setSelectionRange 會把焦點搶過來）：記下每一次呼叫
+    const placed = [];
+    const original = field.setSelectionRange;
+    field.setSelectionRange = (...args) => {
+        placed.push(args);
+        original(...args);
+    };
+    page.type('cardName', 'Q'.repeat(25));
+    assert.equal(field.value, 'Q'.repeat(21));
+    assert.equal(page.$('cardNameCount').textContent, '21／21');
+    assert.equal(saved(page).name, 'Q'.repeat(21));
+    assert.deepEqual(placed, []);
+    assert.deepEqual(page.consoleErrors, []);
+
+    // 之後在這一格打字：上一次接受的字是切過的 21 個 Q（不是空的）。這時有焦點，在第 5 個字後面插一個 R：放不下，拿掉的是 R，後面的 Q 不動，游標放回插入的地方。
+    // 上一次接受的字要是空的，會把整段都當成新打的，從前面放滿 21 個（5 個 Q、R、15 個 Q），後面的 Q 被切掉。
+    // 游標：第一個 [5, 5] 是 insert() 先放的改之前的選取（beforeinput 時的），[6, 6] 是 insert() 放的放進去的字後面，最後的 [5, 5] 是頁面放回去的
+    page.focus('cardName');
+    page.insert('cardName', 'R', { start: 5 });
+    assert.equal(field.value, 'Q'.repeat(21));
+    assert.deepEqual(caretOf(page, 'cardName'), [5, 5]);
+    assert.deepEqual(placed, [[5, 5], [6, 6], [5, 5]]);
+    // 在最後面再多打一個字也一樣放不下，游標放回最後面
+    page.type('cardName', 'Q'.repeat(21) + 'R');
+    assert.equal(field.value, 'Q'.repeat(21));
+    assert.deepEqual(placed, [[5, 5], [6, 6], [5, 5], [21, 21]]);
+    assert.deepEqual(page.consoleErrors, []);
+});
+
+test('自己輸入的伺服器（上限 20）也一樣', async () => {
+    const page = await createCardPage();
+    page.select('cardWorld', '__custom');
+    page.type('cardWorldCustom', 'W'.repeat(19) + FLAG);
+    assert.equal(page.$('cardWorldCustom').value, 'W'.repeat(19));
+    assert.equal(page.$('cardWorldCustomCount').textContent, '19／20');
+    assert.equal(saved(page).world, 'W'.repeat(19));
+    // 18 個字加國旗剛好 20：放得下，整面放進去
+    page.type('cardWorldCustom', 'W'.repeat(18) + FLAG);
+    assert.equal(page.$('cardWorldCustom').value, 'W'.repeat(18) + FLAG);
+    assert.equal(page.$('cardWorldCustomCount').textContent, '20／20');
+    assert.equal(saved(page).world, 'W'.repeat(18) + FLAG);
+});
+
+test('一句話自我介紹：換行先換成空白再算上限', async () => {
+    // 剩 3 格時貼上「a、換行、b」：換行（\r\n 也一樣）先換成一個空白，變成 3 個字，整段放得進去
+    const page = await createCardPage();
+    page.type('cardIntro', 'x'.repeat(57));
+    page.insert('cardIntro', 'a\r\nb', { start: 57 });
+    assert.equal(page.$('cardIntro').value, 'x'.repeat(57) + 'a b');
+    assert.equal(page.$('cardIntroCount').textContent, '60／60');
+    assert.equal(saved(page).intro, 'x'.repeat(57) + 'a b');
+
+    // 剩 2 格時貼上「a、換行、b、c」：換成空白之後 4 個字，只放得下「a」與空白
+    const tight = await createCardPage();
+    tight.type('cardIntro', 'x'.repeat(58));
+    tight.insert('cardIntro', 'a\r\nbc', { start: 58 });
+    assert.equal(tight.$('cardIntro').value, 'x'.repeat(58) + 'a ');
+    assert.equal(tight.$('cardIntroCount').textContent, '60／60');
+    assert.equal(saved(tight).intro, 'x'.repeat(58) + 'a ');
+});
+
+test('重新打開與清除全部之後，上一次接受的字就是寫回欄位的字', async () => {
+    const stored = { [KEY]: JSON.stringify({ name: 'W'.repeat(21), title: 'A'.repeat(28) + FLAG }) };
+    const page = await createCardPage({ stored });
+    assert.equal(page.$('cardName').value, 'W'.repeat(21));
+    assert.equal(page.$('cardTitle').value, 'A'.repeat(28) + FLAG);
+    // 滿的欄位再打一個字：放不下，原本的字不動
+    page.type('cardName', 'W'.repeat(21) + 'X');
+    assert.equal(page.$('cardName').value, 'W'.repeat(21));
+    page.type('cardTitle', 'A'.repeat(28) + FLAG + 'Z');
+    assert.equal(page.$('cardTitle').value, 'A'.repeat(28) + FLAG);
+
+    // 重新打開後的第一次輸入：上一次接受的字是寫回欄位的 21 個 W（不是空的）。選取前 10 個字換成 11 個 Q（共 22 個字）：選取的字被換掉，
+    // 放得下 10 個 Q，後面的 11 個 W 不動；上一次接受的字是空的話會當成全部都是新打的，從前面放滿 21 個（Q 11 個、W 10 個）
+    const again = await page.reopen();
+    again.type('cardName', 'Q'.repeat(11) + 'W'.repeat(11));
+    assert.equal(again.$('cardName').value, 'Q'.repeat(10) + 'W'.repeat(11));
+    assert.equal(saved(again).name, 'Q'.repeat(10) + 'W'.repeat(11));
+
+    // 清除全部：欄位是空的，上一次接受的字也是空的（不是清除前的字）：同樣的輸入，從前面放滿 21 個
+    page.press('clearAll');
+    page.press('clearAll');
+    assert.equal(page.$('cardName').value, '');
+    page.type('cardName', 'Q'.repeat(11) + 'W'.repeat(11));
+    assert.equal(page.$('cardName').value, 'Q'.repeat(11) + 'W'.repeat(10));
+    page.type('cardName', 'XYZ');
+    assert.equal(page.$('cardName').value, 'XYZ');
+    assert.equal(saved(page).name, 'XYZ');
+    assert.deepEqual(page.consoleErrors, []);
+    assert.deepEqual(again.consoleErrors, []);
+});
+
+test('清除全部也拿掉組字記號：組字到一半（沒有 compositionend、也沒有 change）按清除全部，之後在這一格打字照樣檢查', async () => {
+    const page = await createCardPage();
+    // 組字到一半：超過上限的 22 個字留在欄位裡，組字記號加上了；沒有選完字（沒有 compositionend），也沒有離開欄位（沒有 change）
+    const ime = page.compose('cardName');
+    ime.update('W'.repeat(20) + 'ㄌㄨ');
+    assert.equal(page.$('cardName').value, 'W'.repeat(20) + 'ㄌㄨ', '組字中不改欄位');
+    assert.equal(page.$('cardNameCount').textContent, '22／21');
+    // 清除全部（要按兩次）：欄位寫回空的，沒有欄位還在組字，組字記號也要拿掉
+    page.press('clearAll');
+    page.press('clearAll');
+    assert.equal(page.$('cardName').value, '');
+    // 之後在這一格打字（isComposing 為 false 的 input）：照樣檢查，欄位、計數、狀態與記住的資料都是放得下的 21 個。
+    // 組字記號留著的話這一格不檢查：欄位與計數是 25 個字（25／21），狀態與記住的資料卻是 21 個
+    page.type('cardName', 'Q'.repeat(25));
+    assert.equal(page.$('cardName').value, 'Q'.repeat(21));
+    assert.equal(page.$('cardNameCount').textContent, '21／21');
+    assert.equal(page.app.state.name, 'Q'.repeat(21));
+    assert.equal(saved(page).name, 'Q'.repeat(21));
+    assert.deepEqual(page.consoleErrors, []);
 });
 
 test('伺服器：繁中服一組 6 個排第一、國際服 85 個；選「其他」出現自己輸入的欄位，卡片畫自己輸入的字', async () => {
@@ -1216,11 +1683,140 @@ test('頁面替身本身：canvas 重設、matchMedia、字型與圖示的控制
     assert.throws(() => vm.runInContext("document.getElementById('cardLikes').children.forEach((chip) => chip)", page.window), /forEach is not a function/);
     assert.equal(vm.runInContext("Array.from(document.getElementById('cardLikes').querySelectorAll('button')).map((chip) => chip.dataset.like).length", page.window), 16);
 
-    // type 照 maxlength 截斷；select 找不到的選項丟錯；toggle 只認勾選框與單選
+    // 整頁沒有 maxlength，type() 不截斷：部隊簡稱的 'ABCDE' 是頁面自己切的（見前面「字數上限」那幾個測試）；select 找不到的選項丟錯；toggle 只認勾選框與單選
+    assert.equal(page.document.querySelectorAll('[maxlength]').length, 0);
     page.type('cardFcTag', 'ABCDEFGH');
     assert.equal(page.$('cardFcTag').value, 'ABCDE');
     assert.throws(() => page.select('cardMainJob', 'Nope'), /沒有 value/);
     assert.throws(() => page.toggle('cardName'), /不是勾選框或單選/);
+});
+
+test('頁面替身本身（輸入）：文字欄的游標、type()、insert() 與 compose() 兩種事件順序', async () => {
+    const page = await createCardPage();
+    // 文字欄與 <textarea> 有游標（fake-dom 沒有）：一開始在最前面；指定 value 時兩個都移到字的最後；setSelectionRange() 設定選取，位置夾在 0～字的長度，
+    // 結束不比開始大時兩個都放在結束；selectionStart、selectionEnd 也能直接指定
+    const name = page.$('cardName');
+    assert.deepEqual(caretOf(page, 'cardName'), [0, 0]);
+    name.value = 'abcdef';
+    assert.equal(name.value, 'abcdef');
+    assert.deepEqual(caretOf(page, 'cardName'), [6, 6]);
+    name.setSelectionRange(1, 2);
+    assert.deepEqual(caretOf(page, 'cardName'), [1, 2]);
+    name.setSelectionRange(2, 99);
+    assert.deepEqual(caretOf(page, 'cardName'), [2, 6]);
+    name.setSelectionRange(4, 3);
+    assert.deepEqual(caretOf(page, 'cardName'), [3, 3]);
+    name.selectionStart = 5;
+    assert.deepEqual(caretOf(page, 'cardName'), [5, 5]);
+    name.selectionEnd = 6;
+    assert.deepEqual(caretOf(page, 'cardName'), [5, 6]);
+    name.value = 'xyz';
+    assert.deepEqual(caretOf(page, 'cardName'), [3, 3]);
+    assert.throws(() => name.setSelectionRange(-1, 2), /0 以上的整數/);
+    assert.throws(() => name.setSelectionRange(1.5, 2), /0 以上的整數/);
+    const intro = page.$('cardIntro');
+    assert.equal(intro.tagName, 'TEXTAREA');
+    intro.value = '一二三';
+    assert.deepEqual(caretOf(page, 'cardIntro'), [3, 3]);
+    // 位置是 UTF-16 的單位：一面國旗 4 個
+    intro.value = FLAG;
+    assert.deepEqual(caretOf(page, 'cardIntro'), [4, 4]);
+    // 其他型別的 <input> 沒有選取範圍（同瀏覽器）：讀到 null，setSelectionRange 丟 InvalidStateError；value 照舊是設什麼讀到什麼的字串；<select> 沒有游標
+    for (const id of ['cardLevel', 'accentColor', 'imageZoom']) {
+        const input = page.$(id);
+        assert.equal(input.selectionStart, null, `#${id} 的 selectionStart`);
+        assert.equal(input.selectionEnd, null, `#${id} 的 selectionEnd`);
+        assert.throws(() => input.setSelectionRange(0, 0), { name: 'InvalidStateError' }, `#${id} 的 setSelectionRange`);
+    }
+    page.$('cardLevel').value = '87';
+    assert.equal(page.$('cardLevel').value, '87');
+    assert.equal(page.$('cardWorld').setSelectionRange, undefined);
+
+    // type()：整格換成 text、游標在最後、派送 isComposing 為 false 的 input（不看 maxlength），不派送 beforeinput
+    const seen = [];
+    const title = page.$('cardTitle');
+    title.addEventListener('beforeinput', (event) => seen.push(
+        ['beforeinput', event.inputType, event.data, event.isComposing, event.bubbles, event.cancelable, title.value, caretOf(page, 'cardTitle')]));
+    title.addEventListener('input', (event) => seen.push([event.type, event.inputType, event.isComposing, event.bubbles]));
+    page.type('cardTitle', 'ABC');
+    assert.deepEqual(seen, [['input', undefined, false, true]]);
+    assert.deepEqual(caretOf(page, 'cardTitle'), [3, 3]);
+
+    // insert()：先把選取設成 [start, end)，派送會冒泡、可以取消的 beforeinput（inputType 預設 insertText，data 是 text，isComposing 為 false；
+    // 這時字與選取都還是改之前的），沒被取消才把 [start, end) 換成 text（插入、取代選取的字）、游標放在放進去的字後面（UTF-16 的位置），
+    // 再派送同一個 inputType、isComposing 為 false 的 input
+    seen.length = 0;
+    page.insert('cardTitle', 'xy', { start: 1 });
+    assert.equal(title.value, 'AxyBC');
+    assert.deepEqual(caretOf(page, 'cardTitle'), [3, 3]);
+    page.insert('cardTitle', FLAG, { start: 1, end: 3, inputType: 'insertFromPaste' });
+    assert.equal(title.value, `A${FLAG}BC`);
+    assert.deepEqual(caretOf(page, 'cardTitle'), [5, 5]);
+    assert.deepEqual(seen, [
+        ['beforeinput', 'insertText', 'xy', false, true, true, 'ABC', [1, 1]],
+        ['input', 'insertText', false, true],
+        ['beforeinput', 'insertFromPaste', FLAG, false, true, true, 'AxyBC', [1, 3]],
+        ['input', 'insertFromPaste', false, true]
+    ]);
+    // beforeinput 被取消（preventDefault）時字不改、不派送 input，選取停在 insert() 設的改之前的選取
+    seen.length = 0;
+    const cancel = (event) => event.preventDefault();
+    title.addEventListener('beforeinput', cancel);
+    page.insert('cardTitle', 'zz', { start: 0, end: 1 });
+    title.removeEventListener('beforeinput', cancel);
+    assert.equal(title.value, `A${FLAG}BC`);
+    assert.deepEqual(caretOf(page, 'cardTitle'), [0, 1]);
+    assert.deepEqual(seen, [['beforeinput', 'insertText', 'zz', false, true, true, `A${FLAG}BC`, [0, 1]]]);
+    assert.throws(() => page.insert('cardTitle', 'z', { start: 99 }), /不在 #cardTitle 的字裡/);
+    assert.throws(() => page.insert('cardTitle', 'z', { start: 3, end: 2 }), /不在 #cardTitle 的字裡/);
+    assert.throws(() => page.insert('cardTitle', 'z'), /不在 #cardTitle 的字裡/);
+
+    // compose()：先派送 compositionstart；update() 設定字與游標（預設在最後）、派送 isComposing 為 true 的 input；
+    // commit() 設定字與游標之後，end-last（Chrome）是 isComposing 為 true 的 input、compositionend，input-last（Mozilla 說明的 Firefox）是 compositionend、isComposing 為 false 的 input
+    // （事件都會冒泡；在欄位上收到的 compositionstart、compositionend 也一樣冒泡到表單）
+    const record = (event) => seen.push(event.type === 'input' ? `input:${event.isComposing}` : event.type);
+    const field = page.$('cardContact');
+    for (const type of ['compositionstart', 'input', 'compositionend']) field.addEventListener(type, record);
+    const bubbled = [];
+    for (const type of ['compositionstart', 'compositionend']) page.$('cardForm').addEventListener(type, (event) => bubbled.push(event.type));
+    seen.length = 0;
+    const endLast = page.compose('cardContact');
+    endLast.update('ㄌ');
+    endLast.update('ㄌㄨ');
+    assert.equal(field.value, 'ㄌㄨ');
+    assert.deepEqual(caretOf(page, 'cardContact'), [2, 2]);
+    endLast.update('abcdef', 3);
+    assert.deepEqual(caretOf(page, 'cardContact'), [3, 3], 'update() 的第二個參數是游標');
+    endLast.commit('倫敦', { caret: 1 });
+    assert.equal(field.value, '倫敦');
+    assert.deepEqual(caretOf(page, 'cardContact'), [1, 1], 'commit() 的 caret 是游標');
+    assert.deepEqual(seen, ['compositionstart', 'input:true', 'input:true', 'input:true', 'input:true', 'compositionend']);
+    assert.deepEqual(bubbled, ['compositionstart', 'compositionend']);
+
+    seen.length = 0;
+    bubbled.length = 0;
+    const inputLast = page.compose('cardContact');
+    inputLast.update('ㄌ');
+    inputLast.commit('倫', { order: 'input-last' });
+    assert.equal(field.value, '倫');
+    assert.deepEqual(caretOf(page, 'cardContact'), [1, 1], 'commit() 的游標預設在字的最後');
+    assert.deepEqual(seen, ['compositionstart', 'input:true', 'compositionend', 'input:false']);
+    assert.deepEqual(bubbled, ['compositionstart', 'compositionend']);
+    assert.throws(() => inputLast.commit('倫', { order: 'sideways' }), /order 是 end-last、input-last 其中一個/);
+
+    // compose() 的 start、end：派送 compositionstart 之前把選取設成 [start, end)（組字要換掉的範圍）；沒寫時選取不動
+    const selectionAtStart = [];
+    const onStart = () => selectionAtStart.push(caretOf(page, 'cardContact'));
+    field.addEventListener('compositionstart', onStart);
+    page.compose('cardContact', { start: 0, end: 1 });
+    page.compose('cardContact', { start: 1 });
+    field.setSelectionRange(0, 0);
+    page.compose('cardContact');
+    field.removeEventListener('compositionstart', onStart);
+    assert.deepEqual(selectionAtStart, [[0, 1], [1, 1], [0, 0]]);
+    assert.throws(() => page.compose('cardContact', { start: 5 }), /不在 #cardContact 的字裡/);
+    assert.throws(() => page.compose('cardContact', { start: 1, end: 0 }), /不在 #cardContact 的字裡/);
+    assert.deepEqual(page.consoleErrors, []);
 });
 
 // ---------- 角色圖：上傳、拖曳、縮放、調整模式 ----------

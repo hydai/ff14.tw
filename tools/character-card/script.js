@@ -72,15 +72,14 @@ class CharacterCardApp {
     // 焦點在這些 input 上是在打字（手機的鍵盤多半開著）；沒寫 type 的 input 也是 text。勾選框、單選、滑桿、檔案、顏色與按鈕不算
     static TEXT_INPUT_TYPES = new Set(['text', 'search', 'email', 'url', 'tel', 'number']);
 
-    // 有字數上限的文字欄位 id → 狀態的鍵（自己輸入的伺服器另外處理：它是 world，而且只有選了「其他」才算數）
-    static TEXT_FIELDS = new Map([
-        ['cardName', 'name'], ['cardTitle', 'title'], ['cardFcName', 'fcName'], ['cardFcTag', 'fcTag'], ['cardIntro', 'intro'], ['cardContact', 'contact']
-    ]);
-    // 字數計數：欄位 id → 狀態的鍵（計數的元素是 `${id}Count`）
-    static COUNTED_FIELDS = [
+    // 有字數上限的文字欄位 id → 狀態的鍵（上限是 CardState.LIMITS 的那一項，字數計數的元素是 `${id}Count`；自己輸入的伺服器是 world，只有選了「其他」才看得到）。
+    // 欄位沒有 maxlength：它以 UTF-16 的單位計（一面國旗 4 個），和旁邊的計數對不起來，放不下時還會從國旗或 emoji 組合中間切開。上限由頁面照 CardState.fitInput 管
+    // （fitField()）：每次輸入完照計數的算法（以 Unicode 字元計）檢查，只拿掉這次打進來、放不下的字（整個字素；換掉的範圍照 beforeinput、compositionstart 記下的選取，
+    // 沒有時照前後比對）；輸入法組字中不檢查（改欄位的字會打斷組字），選完字（compositionend）才檢查，change 再檢查一次
+    static COUNTED_FIELDS = new Map([
         ['cardName', 'name'], ['cardWorldCustom', 'world'], ['cardTitle', 'title'], ['cardFcName', 'fcName'], ['cardFcTag', 'fcTag'],
         ['cardIntro', 'intro'], ['cardContact', 'contact']
-    ];
+    ]);
 
     // 主職選單的分組：職能（限定職業不管職能都放 limited）→ [翻譯鍵, 中文預設文字]
     static ROLES = [
@@ -211,6 +210,13 @@ class CharacterCardApp {
         this.imageStatus = null;
         this.adjusting = false;
         this.drag = null;
+        // 字數上限（fitField()）：accepted 是每個有字數上限的欄位（COUNTED_FIELDS）上一次接受的字（欄位 id → 字），輸入完拿它和欄位現在的字比，找出這次打進來的那一段；
+        // 打開頁面與清除全部寫回欄位時（syncForm()）、每次檢查之後更新，輸入法組字中不更新。composing 是正在用輸入法組字的欄位 id：
+        // compositionstart 加進去，compositionend、change 與 syncForm()（整份欄位都寫回去了）拿掉，在裡面的欄位不檢查。editRanges 是改之前的選取
+        // （欄位 id → { start, end, before }，beforeinput 與 compositionstart 記，見 handleBeforeInput()），每次檢查之後與 syncForm() 拿掉。都要在第一次 syncForm() 之前建好
+        this.accepted = new Map();
+        this.composing = new Set();
+        this.editRanges = new Map();
 
         const byId = (id) => document.getElementById(id);
         this.elements = {
@@ -372,6 +378,11 @@ class CharacterCardApp {
         form.addEventListener('submit', (event) => event.preventDefault());
         form.addEventListener('input', (event) => this.handleInput(event));
         form.addEventListener('change', (event) => this.handleChange(event));
+        // 改之前的選取（beforeinput 會冒泡）：全選再貼上時才知道是換掉選取的字
+        form.addEventListener('beforeinput', (event) => this.handleBeforeInput(event));
+        // 輸入法組字（compositionstart、compositionend 會冒泡，所以掛在表單上）：組字中不檢查字數上限，選完字才檢查
+        form.addEventListener('compositionstart', (event) => this.handleCompositionStart(event));
+        form.addEventListener('compositionend', (event) => this.handleCompositionEnd(event));
 
         const { LIMITS } = CardState;
         this.bindChips(this.elements.subJobs, 'job', (key) => this.toggleItem('subJobs', key, { max: LIMITS.subJobs, locked: this.state.mainJob }));
@@ -436,14 +447,21 @@ class CharacterCardApp {
         });
     }
 
-    // 文字欄、等級與重點色的色票：每打一個字（或動一下）就更新。不把值寫回欄位（使用者正在打），一句話自我介紹的換行除外
+    // 文字欄、等級與重點色的色票：每打一個字（或動一下）就更新。有字數上限的文字欄（COUNTED_FIELDS，自己輸入的伺服器也是）先檢查（checkField()）：
+    // 放不下的字、一句話自我介紹的換行會寫回欄位，update() 用的是檢查完的字；其他欄位不把值寫回去（使用者正在打）。
+    // 輸入法組字中不檢查：isComposing 為 true，或這一格在 compositionstart 之後、compositionend（或 change）之前（組字記號還在時收到 isComposing 為 false 的 input 也不檢查，當作安全網；沒有已知會這樣送的鍵盤）；
+    // 組字中改欄位的字會打斷輸入法，所以欄位的字與 accepted 都不動，游標也不動。但交給 update() 的是 fitResult() 放得下的字，不是欄位的字：欄位的字超過上限時，
+    // CardState.normalize 會從最後面切掉，在滿的欄位中間組字就會把欄位原本最後面的字先丟掉（存起來、畫在卡片上都沒有它們），要到選完字才回來
     handleInput(event) {
         const target = event.target;
-        if (CharacterCardApp.TEXT_FIELDS.has(target.id)) {
-            if (target.id === 'cardIntro') this.keepOneLine(target);
-            this.update({ [CharacterCardApp.TEXT_FIELDS.get(target.id)]: target.value });
-        } else if (target.id === 'cardWorldCustom') {
-            this.update({ world: target.value });
+        const key = CharacterCardApp.COUNTED_FIELDS.get(target.id);
+        if (key !== undefined) {
+            if (event.isComposing === true || this.composing.has(target.id)) {
+                this.update({ [key]: this.fitResult(target, this.caretHint(target)).value });
+            } else {
+                this.checkField(target);
+                this.update({ [key]: target.value });
+            }
         } else if (target.id === 'cardLevel') {
             this.update({ level: target.value });
         } else if (target.id === 'accentColor') {
@@ -459,10 +477,16 @@ class CharacterCardApp {
         }
     }
 
-    // 選單、單選與勾選框：選好才更新；等級欄離開時才把沒整理過的字（150、空的）改成整理過的值
+    // 選單、單選與勾選框：選好才更新；等級欄離開時才把沒整理過的字（150、空的）改成整理過的值。
+    // 有字數上限的文字欄的 change 是安全網：組字中離開欄位而沒有收到 compositionend 時，這裡才把欄位改回上限之內（組字記號也在這裡拿掉）；
+    // 字被改了才更新（沒改的話，欄位、狀態與記住的資料本來就一樣）
     handleChange(event) {
         const target = event.target;
-        if (target.id === 'cardWorld') {
+        const key = CharacterCardApp.COUNTED_FIELDS.get(target.id);
+        if (key !== undefined) {
+            this.composing.delete(target.id);
+            if (this.checkField(target)) this.update({ [key]: target.value });
+        } else if (target.id === 'cardWorld') {
             this.chooseWorld(target.value);
         } else if (target.id === 'cardMainJob') {
             this.update({ mainJob: target.value });
@@ -485,10 +509,98 @@ class CharacterCardApp {
         }
     }
 
-    // 一句話自我介紹是一句話：換行（\r\n、\r、\n）一律換成空白，卡片自己照寬度折行
+    // 輸入法開始組字：這一格在 compositionend（或 change）之前不檢查字數上限。這時的選取就是組字要換掉的範圍，記下來（recordRange()）
+    handleCompositionStart(event) {
+        const target = event.target;
+        if (!CharacterCardApp.COUNTED_FIELDS.has(target.id)) return;
+        this.composing.add(target.id);
+        this.recordRange(target);
+    }
+
+    // 改之前的選取：beforeinput 時欄位的字與選取都還是改之前的（Chrome 量過），記下來給 CardState.fitInput 當這次換掉的範圍。只看改之前與改之後的字，
+    // 「全選 HELLO 貼上 SAYHELLO」和「在 HELLO 前面插入 SAY」一模一樣，有選取才知道前者要換成 SAYHE、後者放不下。
+    // 只記打字、貼上這類放進字的改動（inputType 是 insert 開頭的）；拖放（選取不是放下的位置）、刪除、復原與重做（換回去的範圍和選取無關）不記，
+    // 舊的也拿掉，這幾種照前後比對。組字中不記：組字要換掉的範圍在 compositionstart 記過了
+    handleBeforeInput(event) {
+        const target = event.target;
+        if (!CharacterCardApp.COUNTED_FIELDS.has(target.id)) return;
+        if (event.isComposing === true || this.composing.has(target.id)) return;
+        const type = String(event.inputType ?? '');
+        if (type.startsWith('insert') && type !== 'insertFromDrop') this.recordRange(target);
+        else this.editRanges.delete(target.id);
+    }
+
+    // 記下這一格現在的選取與字（改之前的）；沒有選取範圍的欄位（selectionStart 不是數字）不記
+    recordRange(field) {
+        const { selectionStart: start, selectionEnd: end } = field;
+        if (typeof start === 'number' && typeof end === 'number') this.editRanges.set(field.id, { start, end, before: String(field.value ?? '') });
+        else this.editRanges.delete(field.id);
+    }
+
+    // 這一格記下的改之前的選取，記的時候的字就是上一次接受的字才用（不然是別次改動的選取）；沒有是 null。
+    // 用不用得上由 CardState.fitInput 再檢查一次：選取前後的字要和現在的字頭尾對得上
+    rangeFor(field) {
+        const range = this.editRanges.get(field.id);
+        if (range === undefined || range.before !== (this.accepted.get(field.id) ?? '')) return null;
+        return { start: range.start, end: range.end };
+    }
+
+    // 輸入法選完字：欄位的字這時才定案，檢查、更新。瀏覽器的事件順序不一樣（Chrome 是 isComposing 為 true 的 input 再 compositionend，Mozilla 說明 Firefox 是 compositionend
+    // 再 isComposing 為 false 的 input），所以 input、compositionend、change 三個時機都檢查，每一次的檢查結果都一樣，不靠事件的順序
+    handleCompositionEnd(event) {
+        const target = event.target;
+        const key = CharacterCardApp.COUNTED_FIELDS.get(target.id);
+        if (key === undefined) return;
+        this.composing.delete(target.id);
+        this.checkField(target);
+        this.update({ [key]: target.value });
+    }
+
+    // 輸入完的檢查（不是組字中的 input、compositionend、change 都跑這一個）：一句話自我介紹先把換行換成空白，再把字放到上限（fitField()）。
+    // 回傳欄位的字有沒有被改。keepOneLine() 改了字的話，游標已經被移到最後面（指定 .value 的結果），那時的 selectionEnd 不是打字的地方，不當提示
+    checkField(field) {
+        const flattened = field.id === 'cardIntro' && this.keepOneLine(field);
+        return this.fitField(field, flattened ? null : this.caretHint(field)) || flattened;
+    }
+
+    // 輸入之後的游標（selectionEnd，UTF-16 的位置），給 fitInput 當提示；不是數字（沒有選取範圍的欄位）是 null
+    caretHint(field) {
+        return typeof field.selectionEnd === 'number' ? field.selectionEnd : null;
+    }
+
+    // 欄位現在的字照 CardState.fitInput 放到上限的結果 { value, caret }（上一次接受的字是 accepted 裡的，改之前的選取是 rangeFor()）。
+    // 只算，不寫回欄位、不動 accepted、editRanges 與游標
+    fitResult(field, caret) {
+        const limit = CardState.LIMITS[CharacterCardApp.COUNTED_FIELDS.get(field.id)];
+        return CardState.fitInput(this.accepted.get(field.id) ?? '', String(field.value ?? ''), limit, caret, this.rangeFor(field));
+    }
+
+    // 字數上限：照 CardState.fitInput 把欄位的字放到上限（以 Unicode 字元計，同旁邊的計數）：比對上一次接受的字與現在的字，只拿掉這次打進來、放不下的字
+    // （整個字素），前後原本的字不動。回傳欄位的字有沒有被改。caret 是輸入之後的游標（selectionEnd，UTF-16 的位置）：只當提示，不準時 fitInput 不採用；不知道是 null。
+    // 字有變才寫回 .value，游標只在欄位有焦點時才放回打字的地方：瀏覽器自動填入、密碼管理員會在沒有焦點時改欄位的字，Safari 對沒有焦點的欄位呼叫 setSelectionRange 還會把焦點搶過來。
+    // 檢查完，欄位現在的字就是上一次接受的字
+    fitField(field, caret) {
+        const text = String(field.value ?? '');
+        const fitted = this.fitResult(field, caret);
+        const changed = fitted.value !== text;
+        if (changed) {
+            field.value = fitted.value;
+            if (fitted.caret !== null && document.activeElement === field && typeof field.setSelectionRange === 'function') {
+                field.setSelectionRange(fitted.caret, fitted.caret);
+            }
+        }
+        this.accepted.set(field.id, fitted.value);
+        // 記下的選取用過了：下一次改動有自己的 beforeinput（或 compositionstart）
+        this.editRanges.delete(field.id);
+        return changed;
+    }
+
+    // 一句話自我介紹是一句話：換行（\r\n、\r、\n）一律換成空白，卡片自己照寬度折行。回傳欄位的字有沒有被改
     keepOneLine(textarea) {
         const value = textarea.value.replace(/\r\n|\r|\n/g, ' ');
-        if (value !== textarea.value) textarea.value = value;
+        if (value === textarea.value) return false;
+        textarea.value = value;
+        return true;
     }
 
     // 選了伺服器：「其他」就讓自己輸入的欄位出現、焦點移進去，伺服器是欄位裡的字（還沒打就是空的）；選清單裡的就藏起來
@@ -651,7 +763,7 @@ class CharacterCardApp {
 
     // ---------- 把狀態寫進控制項 ----------
 
-    // 把整份狀態寫進每一個控制項（打開頁面與清除全部時）。平常使用者正在打字，不寫回文字欄
+    // 把整份狀態寫進每一個控制項（打開頁面與清除全部時）。平常使用者正在打字，不寫回文字欄（放不下的字與換行是例外：fitField()、keepOneLine()）
     syncForm() {
         const { state, elements } = this;
         elements.name.value = state.name;
@@ -667,6 +779,13 @@ class CharacterCardApp {
         for (const box of elements.hours.querySelectorAll('input')) box.checked = state.hours.includes(box.getAttribute('value'));
         this.syncDerived();
         elements.accentColor.value = CardState.accentOf(state, this.jobs);
+        // 有字數上限的欄位：寫回去的字就是上一次接受的字（自己輸入的伺服器在 syncWorld() 寫過了），之後的輸入拿它來比
+        for (const id of CharacterCardApp.COUNTED_FIELDS.keys()) this.accepted.set(id, String(document.getElementById(id).value ?? ''));
+        // 每個欄位的字都寫回去了，所以不再有欄位算在組字，記下的選取也不再是改之前的：組字記號只有 compositionend 與 change 會拿掉，
+        // 組字到一半寫回欄位時（例如按清除全部而瀏覽器沒有先結束組字；Chrome 點按鈕時會先送 compositionend 與 change）兩個都沒來的話，
+        // 留著的記號會讓那一格之後打的字都不檢查字數上限
+        this.composing.clear();
+        this.editRanges.clear();
     }
 
     // 伺服器：沒選或在兩份清單裡的就選那一項，自己輸入的欄位藏起來；不在清單裡的選「其他」，欄位出現並帶著那個字

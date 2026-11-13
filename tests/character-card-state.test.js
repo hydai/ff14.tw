@@ -33,7 +33,7 @@ const jobs = context.FF14_JOBS;
 // 故意用解構取出：頁面不一定用 CardState.xxx() 的寫法呼叫，這些函式不能靠 this
 const {
     STORAGE_KEY, IMAGE_KEY, LIMITS, LIKES, LOOKING, DAYS, SLOTS, GCS, FORMATS, STYLES, ROLE_COLORS,
-    defaults, normalize, validate, roleOf, accentOf, cropKey, cropOf, load, save, saveImage, clear
+    defaults, normalize, fitInput, validate, roleOf, accentOf, cropKey, cropOf, load, save, saveImage, clear
 } = CardState;
 
 // vm 裡建出來的陣列與物件原型和這邊不同，deepEqual 前先轉成這邊的一般值（不能傳 undefined）
@@ -165,7 +165,7 @@ test('defaults 的形狀與 LIMITS、LIKES 等常數', () => {
     assert.equal(Object.isFrozen(CardState), true);
     assert.deepEqual(Object.keys(CardState).sort(), [
         'DAYS', 'FORMATS', 'GCS', 'IMAGE_KEY', 'LIKES', 'LIMITS', 'LOOKING', 'ROLE_COLORS', 'SLOTS', 'STORAGE_KEY', 'STYLES',
-        'accentOf', 'clear', 'cropKey', 'cropOf', 'defaults', 'load', 'normalize', 'roleOf', 'save', 'saveImage', 'validate'
+        'accentOf', 'clear', 'cropKey', 'cropOf', 'defaults', 'fitInput', 'load', 'normalize', 'roleOf', 'save', 'saveImage', 'validate'
     ]);
 
     // 只掛 CardState 一個全域：常數與小函式都收在立即執行的函式裡，不會和頁面其他腳本的名稱撞在一起
@@ -491,6 +491,337 @@ test('normalize 傳深層凍結的內容也算得對，不改傳進來的東西'
     state.subJobs.push('Dancer');
     state.crops['b-landscape'].x = 0;
     assert.equal(JSON.stringify(raw), before);
+});
+
+// ---------- fitInput ----------
+
+// 單獨的代理字元（高位代理後面沒有低位，或低位前面沒有高位）：切在代理對中間的字串才會有
+const LONE_SURROGATE = /[\ud800-\udbff](?![\udc00-\udfff])|(?<![\ud800-\udbff])[\udc00-\udfff]/;
+
+test('fitInput：沒超過上限照收、caret 是 null；超過時只留放得下的', () => {
+    assert.deepEqual(plain(fitInput('Luna', 'Luna Star', 21)), { value: 'Luna Star', caret: null });
+    assert.deepEqual(plain(fitInput('abc', 'ab', 2)), { value: 'ab', caret: null });
+    // 剛好上限的後面再打一個：只拿掉打進來的，游標放在放進去的最後一個字後面
+    assert.deepEqual(plain(fitInput('x'.repeat(21), 'x'.repeat(22), 21)), { value: 'x'.repeat(21), caret: 21 });
+    // 長貼上（幾千個字）：馬上放到上限為止，而且是整個字素。國旗是 2 個字元、a 是 1 個，5 個字元放得下 國旗、a、國旗；
+    // caret 是 UTF-16 的位置（每個區域指示符號佔 2 個單位：4 + 1 + 4）
+    assert.deepEqual(plain(fitInput('', 'x'.repeat(5000), 5)), { value: 'xxxxx', caret: 5 });
+    assert.deepEqual(plain(fitInput('', (FLAG + 'a').repeat(2000), 5)), { value: FLAG + 'a' + FLAG, caret: 9 });
+});
+
+test('fitInput：國旗、家庭 emoji 放不下時整個不放，放得下時整個放', () => {
+    // 19 個 W 加國旗剛好 21 個字元：放得下，什麼都不用改（caret 是 null）
+    assert.deepEqual(plain(fitInput('W'.repeat(19), 'W'.repeat(19) + FLAG, 21)), { value: 'W'.repeat(19) + FLAG, caret: null });
+    // 20 個 W 加國旗是 22 個字元：國旗整個不放，不留半面
+    assert.deepEqual(plain(fitInput('W'.repeat(20), 'W'.repeat(20) + FLAG, 21)), { value: 'W'.repeat(20), caret: 20 });
+    // 家庭 emoji 是 5 個字元：AB 後面剩 3 個字元放不下，空的欄位放得下剛好 5 個
+    assert.deepEqual(plain(fitInput('AB', 'AB' + FAMILY, 5)), { value: 'AB', caret: 2 });
+    assert.deepEqual(plain(fitInput('', FAMILY, 5)), { value: FAMILY, caret: null });
+});
+
+test('fitInput：在原本的字後面打組合符號或膚色而放不下時，只拿掉打進來的，原本的字留著', () => {
+    // 打進來的那一段自己切字素（不連前面的字一起切）：e 後面打的重音符號放不下，拿掉的只有符號，原本的 e 不會跟著被拿掉
+    assert.deepEqual(plain(fitInput('W'.repeat(20) + 'e', 'W'.repeat(20) + E_ACUTE, 21)), { value: 'W'.repeat(20) + 'e', caret: 21 });
+    // か 後面打濁點（が 寫成か加上組合用的濁點 U+3099）
+    assert.deepEqual(plain(fitInput('かかかかか', 'かかかかか\u{3099}', 5)), { value: 'かかかかか', caret: 5 });
+    // 👍 後面打膚色（👍 是 1 個字元、佔 2 個 UTF-16 單位，所以 caret 是 10）
+    assert.deepEqual(plain(fitInput('👍'.repeat(5), '👍'.repeat(5) + '\u{1F3FD}', 5)), { value: '👍'.repeat(5), caret: 10 });
+});
+
+test('fitInput：插在中間時後面的字留著、游標在放進去的字後面；取代選取的字時選取的字照舊被換掉；不跳過放不下的字素', () => {
+    // 29 個 A 的中間（第 14 個後面）貼國旗：放不下，國旗拿掉，後面 15 個 A 一個都沒少，游標回到插入的地方
+    const flagInMiddle = 'A'.repeat(14) + FLAG + 'A'.repeat(15);
+    assert.deepEqual(plain(fitInput('A'.repeat(29), flagInMiddle, 30)), { value: 'A'.repeat(29), caret: 14 });
+    // 給提示（游標在國旗後面，UTF-16 位置 18）：結果一樣
+    assert.deepEqual(plain(fitInput('A'.repeat(29), flagInMiddle, 30, 18)), { value: 'A'.repeat(29), caret: 14 });
+    // 選取 cd 之後貼上 XYZW：選取的字照舊被換掉，貼上的字放得下 2 個，ef 留著
+    assert.deepEqual(plain(fitInput('abcdef', 'abXYZWef', 6)), { value: 'abXYef', caret: 4 });
+    // 貼上的字裡有放不下的字素：停在那裡，不跳過它去放後面放得下的 C、D
+    assert.deepEqual(
+        plain(fitInput('x'.repeat(37), 'x'.repeat(37) + 'AB' + FLAG + 'CD', 40)),
+        { value: 'x'.repeat(37) + 'AB', caret: 39 }
+    );
+});
+
+test('fitInput：caret 提示：打進來的字和旁邊的字一樣時照提示找到打字的地方；提示不合格時照前後比對', () => {
+    // Anna 的 A 後面打 n，滿了放不下：前後比對分不出打在哪個 n 前面，靠游標（在 2）才知道是 A 後面
+    assert.deepEqual(plain(fitInput('Anna', 'Annna', 4, 2)), { value: 'Anna', caret: 1 });
+    // 沒有提示就照前後比對：當成打在最後面的那個 n 旁邊，游標在 3
+    assert.deepEqual(plain(fitInput('Anna', 'Annna', 4)), { value: 'Anna', caret: 3 });
+
+    // 提示不合格時照前後比對（結果和沒有提示一樣）。落在代理對中間：UTF-16 位置 21 在第一個區域指示符號的兩個單位中間
+    const flagAtEnd = 'W'.repeat(20) + FLAG;
+    assert.deepEqual(plain(fitInput('W'.repeat(20), flagAtEnd, 21, 21)), { value: 'W'.repeat(20), caret: 20 });
+    // 超出範圍、負數、小數，以及不是整數的東西
+    for (const hint of [99, -1, 1.5, NaN, Infinity, '2', undefined]) {
+        assert.deepEqual(plain(fitInput('W'.repeat(20), flagAtEnd, 21, hint)), { value: 'W'.repeat(20), caret: 20 }, `提示 ${util.inspect(hint)}`);
+    }
+    // 落在罕用字（1 個字元、2 個單位）的中間：3 在第二個 𠮷 的兩個單位中間，它後面的半個字（低位代理）加上最後一個 𠮷，
+    // 剛好也是 previous 的結尾，用 UTF-16 的字串切會誤當成合格。不採用，結果和沒有提示一樣（游標 4）；
+    // 在字元的交界（4）就合格，採用（游標在 2：打在第一個 𠮷 後面）
+    const rareMiddle = fitInput('𠮷𠮷', '𠮷𠮷𠮷', 2, 3);
+    assert.deepEqual(plain(rareMiddle), { value: '𠮷𠮷', caret: 4 });
+    assert.doesNotMatch(rareMiddle.value, LONE_SURROGATE);
+    assert.deepEqual(plain(fitInput('𠮷𠮷', '𠮷𠮷𠮷', 2, 4)), { value: '𠮷𠮷', caret: 2 });
+    // 游標後面的字不是 previous 的結尾（游標 3 後面是 aXX，Luna 不是以 aXX 結尾）
+    assert.deepEqual(plain(fitInput('Luna', 'LunaXX', 4, 3)), { value: 'Luna', caret: 4 });
+
+    // 不準的提示不採用，不會因為它刪到原本的字：程式把欄位的字換掉之後，游標常常在最後面。
+    // 這裡其實是在 A 的中間（第 10 個後面）貼了「倫」，提示（22）卻在最後面
+    const inMiddle = 'A'.repeat(10) + '倫' + 'A'.repeat(11);
+    assert.deepEqual(plain(fitInput('A'.repeat(21), inMiddle, 21, 22)), { value: 'A'.repeat(21), caret: 10 });
+    // 準的提示（11：「倫」後面）結果一樣
+    assert.deepEqual(plain(fitInput('A'.repeat(21), inMiddle, 21, 11)), { value: 'A'.repeat(21), caret: 10 });
+});
+
+test('fitInput：代理對不會被切開', () => {
+    // 國旗的兩個區域指示符號各是一個字元（代理對）：前面多了一個，後面原本的那個留著，不會把後面那個切成半個
+    const result = fitInput('\u{1F1EF}', '\u{1F1F9}\u{1F1EF}', 1);
+    assert.deepEqual(plain(result), { value: '\u{1F1EF}', caret: 0 });
+    assert.doesNotMatch(result.value, LONE_SURROGATE);
+});
+
+test('fitInput：前後原本的字加起來就超過上限時，照 cleanText 從最後面切', () => {
+    // previous 本來就超過上限（例如以前存的、沒整理過的）：沒有「打進來的那一段」可拿，照 cleanText 切在上限的字元上
+    assert.deepEqual(plain(fitInput('x'.repeat(30), 'x'.repeat(31), 21)), { value: 'x'.repeat(21), caret: 21 });
+    // 上限落在國旗中間：照 cleanText 退到前一個完整的字素，國旗整個不要
+    const tooLong = 'W'.repeat(20) + FLAG + 'W'.repeat(4);
+    assert.deepEqual(plain(fitInput(tooLong, tooLong + 'Z', 21)), { value: 'W'.repeat(20), caret: 20 });
+});
+
+test('fitInput：不是字串的當成空字串，每次回傳新的物件', () => {
+    assert.deepEqual(plain(fitInput(undefined, 'abc', 2)), { value: 'ab', caret: 2 });
+    assert.deepEqual(plain(fitInput(null, null, 5)), { value: '', caret: null });
+    for (const bad of [7, true, ['a'], { a: 1 }]) {
+        assert.deepEqual(plain(fitInput(bad, 'abc', 2)), { value: 'ab', caret: 2 }, `previous ${util.inspect(bad)}`);
+        assert.deepEqual(plain(fitInput('abc', bad, 2)), { value: '', caret: null }, `next ${util.inspect(bad)}`);
+    }
+    // 同樣的參數呼叫兩次：回傳的不是同一個物件（沒超過、放到上限、照 cleanText 切，三條路都一樣）
+    for (const [previous, next] of [['Luna', 'Luna Star'], ['x'.repeat(21), 'x'.repeat(22)], ['x'.repeat(30), 'x'.repeat(31)]]) {
+        const first = fitInput(previous, next, 21);
+        const second = fitInput(previous, next, 21);
+        assert.notEqual(first, second);
+        assert.deepEqual(plain(first), plain(second));
+    }
+});
+
+test('fitInput：沒有 Intl.Segmenter 時照 Unicode 字元切（國旗可能被切開，同 cleanText）', () => {
+    const old = loadContext([SHARED, STATE_FILE], { withoutSegmenter: true });
+    const fitOld = old.CardState.fitInput;
+    // 20 個 W 後面貼國旗：放得下 1 個字元，國旗被切開，留下第一個區域指示符號（和 cleanText 一樣的舊行為）
+    assert.deepEqual(plain(fitOld('W'.repeat(20), 'W'.repeat(20) + FLAG, 21)), { value: 'W'.repeat(20) + '\u{1F1F9}', caret: 22 });
+    // 沒超過上限、照 cleanText 切的兩條路和有 Intl.Segmenter 時一樣
+    assert.deepEqual(plain(fitOld('Luna', 'Luna Star', 21)), { value: 'Luna Star', caret: null });
+    assert.deepEqual(plain(fitOld('x'.repeat(30), 'x'.repeat(31), 21)), { value: 'x'.repeat(21), caret: 21 });
+    // 組合字也是：5 個字元放得下 2 個 é（4 個字元）再加一個 e，第 3 個 é 的重音符號被切掉；有 Intl.Segmenter 時是 2 個完整的 é
+    assert.deepEqual(plain(fitOld('', E_ACUTE.repeat(3), 5)), { value: E_ACUTE.repeat(2) + 'e', caret: 5 });
+    assert.deepEqual(plain(fitInput('', E_ACUTE.repeat(3), 5)), { value: E_ACUTE.repeat(2), caret: 4 });
+});
+
+// 固定種子的亂數（mulberry32）：每次跑都是同一批字串
+function mulberry32(seed) {
+    let state = seed >>> 0;
+    return () => {
+        state = (state + 0x6d2b79f5) >>> 0;
+        let t = state;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+}
+
+const charCount = (text) => Array.from(text).length;
+
+// small 的每個 Unicode 字元都照順序出現在 big 裡（中間可以夾別的字）
+function isSubsequence(small, big) {
+    const chars = Array.from(big);
+    let at = 0;
+    for (const char of Array.from(small)) {
+        while (at < chars.length && chars[at] !== char) at++;
+        if (at === chars.length) return false;
+        at++;
+    }
+    return true;
+}
+
+// value 是不是 next 拿掉中間連續的一段之後的樣子：前面一截與後面一截都和 next 的頭尾一樣（什麼都沒拿掉也算）
+function dropsOneRun(value, next) {
+    const kept = Array.from(value);
+    const full = Array.from(next);
+    if (kept.length > full.length) return false;
+    for (let head = 0; head <= kept.length; head++) {
+        const tail = kept.length - head;
+        const headMatches = kept.slice(0, head).every((char, index) => char === full[index]);
+        const tailMatches = kept.slice(head).every((char, index) => char === full[full.length - tail + index]);
+        if (headMatches && tailMatches) return true;
+    }
+    return false;
+}
+
+// 另外兩面國旗：🇹🇯 和 🇹🇼 的第一個字母一樣，🇯🇵 的第一個字母是 🇹🇯 的第二個字母（一個字元一個字元比對時會被算成相同的字）
+const FLAG_TJ = '\u{1F1F9}\u{1F1EF}';
+const FLAG_JP = '\u{1F1EF}\u{1F1F5}';
+
+test('fitInput：換掉的字素和貼上的字素開頭一樣時，被改到的字素整個算是換掉的，不留下半面國旗', () => {
+    // 部隊簡稱（上限 5）是 AA🇹🇼，選取整面國旗（UTF-16 的 2～6）貼上 🇹🇯🇯🇵：只放得下第一面國旗
+    assert.deepEqual(plain(fitInput(`AA${FLAG}`, `AA${FLAG_TJ}${FLAG_JP}`, 5, 10)), { value: `AA${FLAG_TJ}`, caret: 6 });
+    assert.deepEqual(plain(fitInput(`AA${FLAG}`, `AA${FLAG_TJ}${FLAG_JP}`, 5)), { value: `AA${FLAG_TJ}`, caret: 6 }, '沒有提示');
+    // 後面還有字：一樣只放得下第一面，後面的 B 不動
+    assert.deepEqual(plain(fitInput(`AA${FLAG}B`, `AA${FLAG_TJ}${FLAG_JP}B`, 5, 10)), { value: `AA${FLAG_TJ}B`, caret: 6 });
+    assert.deepEqual(plain(fitInput(`AA${FLAG}B`, `AA${FLAG_TJ}${FLAG_JP}B`, 5)), { value: `AA${FLAG_TJ}B`, caret: 6 }, '沒有提示');
+    // 一面也放不下：選取的國旗照舊被換掉，不留下舊國旗的第一個字母
+    assert.deepEqual(plain(fitInput(`AA${FLAG}`, `AA${FLAG_TJ}`, 3, 6)), { value: 'AA', caret: 2 });
+    assert.deepEqual(plain(fitInput(`AA${FLAG}`, `AA${FLAG_TJ}`, 3)), { value: 'AA', caret: 2 }, '沒有提示');
+    // 在原本的 🇹🇼 前面貼上 🇹🇯（放不下）：原本的國旗整面留著，不會被當成換掉的（沒有提示、提示不準、提示準都一樣）
+    for (const hint of [null, 8, 4]) {
+        assert.deepEqual(plain(fitInput(FLAG, `${FLAG_TJ}${FLAG}`, 2, hint)), { value: FLAG, caret: 0 }, `提示 ${hint}`);
+    }
+});
+
+test('fitInput：有改之前的選取（range）就照它：全選再貼上是換掉選取的字，在前面插入時放不下；range 不合格時照前後比對', () => {
+    // 只看兩段字，「全選 HELLO 貼上 SAYHELLO」和「在 HELLO 前面插入 SAY」一模一樣，靠 range 才分得出來
+    assert.deepEqual(plain(fitInput('HELLO', 'SAYHELLO', 5, 8, { start: 0, end: 5 })), { value: 'SAYHE', caret: 5 }, '全選再貼上');
+    assert.deepEqual(plain(fitInput('HELLO', 'SAYHELLO', 5, 3, { start: 0, end: 0 })), { value: 'HELLO', caret: 0 }, '在前面插入');
+    // 沒有 range（瀏覽器沒送 beforeinput，例如自動填入、程式插字）：分不出來，照前後比對當成在前面插入，原本的字留著
+    assert.deepEqual(plain(fitInput('HELLO', 'SAYHELLO', 5, 8)), { value: 'HELLO', caret: 0 }, '沒有 range');
+    // 選取一部分再貼上：選取的字換掉，貼上的字放到上限為止，選取後面的字留著
+    assert.deepEqual(plain(fitInput('HELLO', 'HEYOURLO', 5, 6, { start: 2, end: 3 })), { value: 'HEYLO', caret: 3 });
+    // 換掉一面國旗：照 range 也一樣只放得下第一面
+    assert.deepEqual(plain(fitInput(`AA${FLAG}`, `AA${FLAG_TJ}${FLAG_JP}`, 5, 10, { start: 2, end: 6 })), { value: `AA${FLAG_TJ}`, caret: 6 });
+    // 收合的 range 就是游標的位置：打進來的字和旁邊的字一樣時也知道打在哪裡（不用靠打完之後的游標）
+    assert.deepEqual(plain(fitInput('Anna', 'Annna', 4, null, { start: 1, end: 1 })), { value: 'Anna', caret: 1 });
+    // 選取落在一面國旗中間（瀏覽器不會這樣選，程式可能）：只選了 🇹🇼 的後半，換成 🇯🇵。被改到的國旗整面算是換掉的，
+    // 新的字照整段的字素切是 🇹🇯 加落單的 🇵：放得下的 🇹🇯 整面放進去，不留下落單的字母
+    assert.deepEqual(plain(fitInput(`AA${FLAG}`, `AA\u{1F1F9}${FLAG_JP}`, 4, 8, { start: 4, end: 6 })), { value: `AA${FLAG_TJ}`, caret: 6 });
+
+    // 不合格的 range 照前後比對（結果和沒有 range 一樣）：和這次的改動對不上（別次記下的選取）、不是物件、不是整數、
+    // 超出範圍、start 比 end 大、落在代理對中間
+    for (const bad of [{ start: 1, end: 2 }, { start: 3, end: 3 }, null, 'x', 5, { start: '0', end: 5 }, { start: 0 }, { start: 0, end: 1.5 },
+        { start: -1, end: 5 }, { start: 0, end: 6 }, { start: 3, end: 2 }]) {
+        assert.deepEqual(plain(fitInput('HELLO', 'SAYHELLO', 5, 8, bad)), { value: 'HELLO', caret: 0 }, JSON.stringify(bad));
+    }
+    assert.deepEqual(plain(fitInput('𠮷𠮷', '𠮷𠮷𠮷', 2, null, { start: 1, end: 2 })), plain(fitInput('𠮷𠮷', '𠮷𠮷𠮷', 2)), '落在代理對中間');
+    // range 不改傳進去的物件
+    const frozen = Object.freeze({ start: 0, end: 5 });
+    assert.deepEqual(plain(fitInput('HELLO', 'SAYHELLO', 5, 8, frozen)), { value: 'SAYHE', caret: 5 });
+});
+
+test('fitInput：隨機掃描', () => {
+    // 看起來是一個字的單位：一般字、中日韓、罕用字（代理對）、國旗（三面，開頭的字母互相重疊）、家庭 emoji、e 加重音符號、
+    // emoji 加膚色、か加濁點、空白。組合的那幾個用跳脫寫，是為了不讓編輯器悄悄改寫成單一字元的寫法
+    const UNITS = ['a', '寬', '𠮷', FLAG, FLAG_TJ, FLAG_JP, FAMILY, E_ACUTE, '👍\u{1F3FD}', 'か\u{3099}', ' '];
+    // 獨立的答案：測試自己用 Node 的 Intl.Segmenter 把插入的字切成字素
+    const segmenter = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
+    const random = mulberry32(20261112);
+    const pick = (list) => list[Math.floor(random() * list.length)];
+
+    for (let index = 0; index < 2000; index++) {
+        const limit = 1 + Math.floor(random() * 30);
+        // previous：單位一個一個接，接到再接一個就會超過上限為止。cuts 是單位之間的位置（UTF-16，含最前面與最後面）
+        let previous = '';
+        const cuts = [0];
+        for (;;) {
+            const unit = pick(UNITS);
+            if (charCount(previous) + charCount(unit) > limit) break;
+            previous += unit;
+            cuts.push(previous.length);
+        }
+        // 在 previous 的某個單位之間插入 1～6 個單位（打字、貼上）
+        const at = pick(cuts);
+        let inserted = '';
+        for (let count = 1 + Math.floor(random() * 6); count > 0; count--) inserted += pick(UNITS);
+        const next = previous.slice(0, at) + inserted + previous.slice(at);
+        const label = `第 ${index} 組：上限 ${limit}，${JSON.stringify(previous)} 的 ${at} 插入 ${JSON.stringify(inserted)}`;
+
+        // 有提示（游標在插入的字後面）：插入的字照字素從前面放，放得進「上限 − previous 的字元數」的最長一段，前後原本的字不動
+        let room = limit - charCount(previous);
+        let accepted = '';
+        for (const { segment } of segmenter.segment(inserted)) {
+            const size = charCount(segment);
+            if (size > room) break;
+            accepted += segment;
+            room -= size;
+        }
+        const expected = previous.slice(0, at) + accepted + previous.slice(at);
+        const hinted = fitInput(previous, next, limit, at + inserted.length);
+        assert.equal(hinted.value, expected, label);
+        assert.equal(hinted.caret, expected === next ? null : at + accepted.length, label);
+        assert.doesNotMatch(hinted.value, LONE_SURROGATE, label);
+
+        // 沒有提示：前後比對可能把打進來的字算成旁邊相同的字，位置不一定是插入的地方，但一定不超過上限、
+        // 原本的字都照順序在、只拿掉打進來的那一段。提示不準（在最前面、最後面、後面再多一格…）時也一樣：不會刪到原本的字
+        for (const hint of [null, 0, at, next.length, next.length + 1]) {
+            const result = fitInput(previous, next, limit, hint);
+            const tag = `${label}，提示 ${hint}`;
+            assert.ok(charCount(result.value) <= limit, `${tag}：超過上限`);
+            assert.ok(isSubsequence(previous, result.value), `${tag}：原本的字少了`);
+            assert.ok(dropsOneRun(result.value, next), `${tag}：不是 next 拿掉中間連續一段`);
+            assert.doesNotMatch(result.value, LONE_SURROGATE, tag);
+            if (result.value === next) {
+                assert.equal(result.caret, null, tag);
+            } else {
+                assert.ok(Number.isInteger(result.caret) && result.caret >= 0 && result.caret <= result.value.length, `${tag}：caret ${result.caret}`);
+                assert.doesNotMatch(result.value.slice(0, result.caret), LONE_SURROGATE, `${tag}：caret 在代理對中間`);
+            }
+        }
+    }
+});
+
+test('fitInput：隨機掃描（取代選取的字）：結果的每個字素都是完整的單位，選取以外的字都在', () => {
+    // 同上一個掃描的單位。單位互相接在一起不會合成別的字素（國旗都是兩個字母一組），所以結果照字素切開，每一段都該是一個完整的單位：
+    // 切到半面國旗、半個家庭 emoji、拿掉 e 留下重音符號，都會切出不是單位的一段
+    const UNITS = ['a', '寬', '𠮷', FLAG, FLAG_TJ, FLAG_JP, FAMILY, E_ACUTE, '👍\u{1F3FD}', 'か\u{3099}', ' '];
+    const segmenter = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
+    const random = mulberry32(20261113);
+    const pick = (list) => list[Math.floor(random() * list.length)];
+    const wholeUnits = (text) => Array.from(segmenter.segment(text), ({ segment }) => segment).every((segment) => UNITS.includes(segment));
+
+    for (let index = 0; index < 2000; index++) {
+        const limit = 1 + Math.floor(random() * 30);
+        let previous = '';
+        const cuts = [0];
+        for (;;) {
+            const unit = pick(UNITS);
+            if (charCount(previous) + charCount(unit) > limit) break;
+            previous += unit;
+            cuts.push(previous.length);
+        }
+        // 選取 previous 裡從某個單位之間到另一個單位之間的一段（可能是空的：就是插入），貼上 1～6 個單位
+        const first = Math.floor(random() * cuts.length);
+        const last = first + Math.floor(random() * (cuts.length - first));
+        const start = cuts[first];
+        const end = cuts[last];
+        let inserted = '';
+        for (let count = 1 + Math.floor(random() * 6); count > 0; count--) inserted += pick(UNITS);
+        const next = previous.slice(0, start) + inserted + previous.slice(end);
+        const label = `第 ${index} 組：上限 ${limit}，${JSON.stringify(previous)} 的 ${start}～${end} 換成 ${JSON.stringify(inserted)}`;
+
+        // 有改之前的選取（range）：照它，結果正好是選取前面的字、貼上的字照字素從前面放得下的最長一段、選取後面的字
+        let room = limit - charCount(previous.slice(0, start)) - charCount(previous.slice(end));
+        let accepted = '';
+        for (const { segment } of segmenter.segment(inserted)) {
+            const size = charCount(segment);
+            if (size > room) break;
+            accepted += segment;
+            room -= size;
+        }
+        const expected = previous.slice(0, start) + accepted + previous.slice(end);
+        const exact = fitInput(previous, next, limit, start + inserted.length, { start, end });
+        assert.equal(exact.value, expected, `${label}，有 range`);
+        assert.equal(exact.caret, expected === next ? null : start + accepted.length, `${label}，有 range 的游標`);
+
+        for (const hint of [start + inserted.length, null]) {
+            const result = fitInput(previous, next, limit, hint);
+            const tag = `${label}，提示 ${hint}`;
+            assert.ok(charCount(result.value) <= limit, `${tag}：超過上限`);
+            assert.ok(wholeUnits(result.value), `${tag}：切出不完整的字素 ${JSON.stringify(result.value)}`);
+            assert.ok(dropsOneRun(result.value, next), `${tag}：不是 next 拿掉中間連續一段`);
+            assert.ok(result.value.startsWith(previous.slice(0, start)), `${tag}：選取前面的字少了`);
+            assert.ok(isSubsequence(previous.slice(end), result.value), `${tag}：選取後面的字少了`);
+            if (hint !== null) assert.ok(result.value.endsWith(previous.slice(end)), `${tag}：選取後面的字不在最後`);
+            assert.doesNotMatch(result.value, LONE_SURROGATE, tag);
+        }
+    }
 });
 
 // ---------- validate ----------

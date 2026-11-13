@@ -921,6 +921,24 @@ test('textColorOn：和照公式另外算的對照組逐色一致（紅綠藍各
     assert.ok(darkCount > 30 && darkCount < 186, `深色字 ${darkCount} 色`);
 });
 
+test('textColorOn：256 階灰上挑出來的字至少 3:1（對比度只看亮度，灰階涵蓋所有亮度），最差的是 #7b7b7b 的白字，約 4.23:1', () => {
+    // 沒有圖示的職業畫在重點色方塊裡的字（CardPaint.drawIcon）一定是 WCAG 的大字，只要 3:1（character-card-paint.test.js 檢查它的大小）；
+    // 這裡守住另一半：不管重點色是什麼，textColorOn 在白字與深字裡挑出來的都至少 3:1
+    let worst = null;
+    for (let v = 0; v <= 255; v++) {
+        const hex = `#${v.toString(16).padStart(2, '0').repeat(3)}`;
+        const picked = textColorOn(hex);
+        const ratio = contrastRatio(picked, hex);
+        assert.ok(ratio >= 3, `${hex}：${picked} 只有 ${ratio.toFixed(2)}:1`);
+        if (worst === null || ratio < worst.ratio) worst = { hex, ratio };
+    }
+    // 最差的是白字與深字交界的 #7b7b7b（白字 4.2327；再亮一階的 #7c7c7c 換成深字，4.2336）。所有顏色理論上最差約 4.20:1（兩種字的對比度剛好相等的亮度），
+    // 灰階只有 256 階，剛好落在那個亮度兩邊的就是這兩階
+    assert.equal(worst.hex, '#7b7b7b');
+    assert.equal(textColorOn('#7b7b7b'), '#ffffff');
+    assert.ok(worst.ratio >= 4.23 && worst.ratio < 4.24, `最差的對比度 ${worst.ratio}`);
+});
+
 // ---------- contrastRatio ----------
 
 test('contrastRatio：兩個 #rrggbb 的 WCAG 對比度（1～21），和先後無關、大小寫都行，同色是 1，有一個不是 #rrggbb 是 1', () => {
