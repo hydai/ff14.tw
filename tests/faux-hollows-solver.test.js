@@ -49,6 +49,17 @@ test('flatten()：252 種盤面，每種 36 格，5 個障礙物、6 格劍、4 
     assert.equal(layouts.size, 16);
 });
 
+test('盤面資料：252 種都不一樣；每 4 種一組，是同一種盤面依序順時針轉 90°（第 4 種再轉一次回到第 1 種）', () => {
+    // issue #84：最後一種抄成了第 219 種，遊戲裡會出現的那一種（寶箱在右下）就不在資料裡
+    assert.equal(new Set(BOARDS.map((board) => board.join(''))).size, 252);
+    // 順時針轉 90°：新的第 r 列第 c 格是原本的第 5 − c 列第 r 格
+    const rotate = (board) => board.map((_, p) => board[(5 - (p % 6)) * 6 + Math.floor(p / 6)]);
+    for (let i = 0; i < BOARDS.length; i++) {
+        const next = i % 4 === 3 ? i - 3 : i + 1;
+        assert.deepEqual(plain(BOARDS[next]), plain(rotate(BOARDS[i])), `第 ${i} 種轉 90° 應該是第 ${next} 種`);
+    }
+});
+
 test('一打開：障礙物階段、252 種、32 格能標（格 1、11、24、34 在每一種盤面都不是障礙物）、沒有目標', () => {
     const v = view({});
     assert.deepEqual(pick(v, ['phase', 'matches', 'known', 'auto', 'left', 'goal', 'next', 'foxCells']),
@@ -143,6 +154,19 @@ test('次數用完就完成；清掉一格又剩 1 次、目標回來', () => {
     const keys = ['left', 'goal', 'next', 'foxCells'];
     assert.deepEqual(pick(view(full), keys), { left: 0, goal: null, next: [], foxCells: [] });
     assert.deepEqual(pick(view({ ...full, empty: [0, 3, 23] }), keys), { left: 1, goal: 'fox', next: [29], foxCells: [29] });
+});
+
+test('issue #84 的盤面：標 7、16、18（補上 27、32），劍 13、21，宗長 23 → 寶箱在右上或右下各一半；右下能標寶箱', () => {
+    const marks = { obstacle: [7, 16, 18], sword: [13, 21], fox: [23] };
+    const v = view(marks);
+    assert.deepEqual(pick(v, ['phase', 'matches', 'auto', 'left', 'goal', 'next']),
+        { phase: 'reveal', matches: 2, auto: [27, 32], left: 8, goal: 'sword', next: [14, 15, 19, 20] });
+    assert.deepEqual([4, 5, 10, 11, 28, 29, 34, 35].map((p) => v.chest[p]), [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]);
+    // 遊戲裡寶箱在右下：28 的小選單有寶箱，標了以後只剩那一種
+    assert.deepEqual(plain(choices(BOARDS, stateOf(marks), 28)), ['chest', 'empty']);
+    const found = view({ ...marks, chest: [28] });
+    assert.equal(found.matches, 1);
+    assert.deepEqual([29, 34, 35, 4].map((p) => found.chest[p]), [1, 1, 1, 0]);
 });
 
 test('choices()：把這格當成還沒翻開時可能是什麼，照 ITEMS 的順序', () => {
