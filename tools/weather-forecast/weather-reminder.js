@@ -1,6 +1,6 @@
 /**
  * FF14 Weather Forecast - Weather Reminder
- * The page's one weather reminder ("remind me"): the target it waits for, which is its
+ * The recurring weather reminder ("remind me"): the target it waits for, which is its
  * own and stays when the page shows something else; how many minutes before the start
  * it goes off; and the alerts it hands to ReminderScheduler. Remembered in localStorage;
  * a browser that blocks site data only means it lasts while this page is open.
@@ -153,6 +153,8 @@ class WeatherReminder {
         const zone = window.WeatherZoneData.getZone(target.zoneId);
         return window.WeatherAnswer.occurrences(zone, target, now, limit).map(occurrence => ({
             key,
+            zoneId: target.zoneId,
+            event: target.desiredWeathers.length ? null : target.event,
             start: occurrence.start,
             end: occurrence.end,
             leadMs,

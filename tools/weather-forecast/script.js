@@ -47,9 +47,17 @@ class WeatherForecast {
         this.store = new WeatherStore();
         this.search = new WeatherSearch();
         this.reminder = new WeatherReminder();
+        this.periodReminders = new WeatherPeriodReminders();
+        this.periodModal = new ModalManager();
+        this.editingPeriod = null;
         this.scheduler = new ReminderScheduler({
             notifiedKey: WeatherForecast.CONSTANTS.NOTIFIED_KEY,
-            getAlerts: (now) => this.reminder.alerts(now),
+            getAlerts: (now, notified) => {
+                const before = this.periodReminders.entries.size;
+                const alerts = this.periodReminders.combinedAlerts(this.reminder.alerts(now), now, notified);
+                if (this.periodReminders.entries.size !== before) this.refreshPeriodButtons();
+                return alerts;
+            },
             onDue: (alert) => this.handleReminderDue(alert)
         });
 
@@ -99,6 +107,11 @@ class WeatherForecast {
             nextMoreBtn: document.getElementById('nextMoreBtn'),
             timetableTitle: document.getElementById('timetableTitle'),
             resultsBody: document.getElementById('resultsBody'),
+            periodDialog: document.getElementById('periodDialog'),
+            periodTarget: document.getElementById('periodTarget'),
+            periodLead: document.getElementById('periodLead'),
+            periodPreview: document.getElementById('periodPreview'),
+            periodConfirm: document.getElementById('periodConfirm'),
             showMoreBtn: document.getElementById('showMoreBtn')
         };
 
@@ -167,6 +180,14 @@ class WeatherForecast {
         this.elements.leadSelect.addEventListener('change', () => this.handleLeadChange());
         this.elements.reminderCancelBtn.addEventListener('click', () => this.handleReminderCancel());
         this.elements.reminderNoticeCancel.addEventListener('click', () => this.handleReminderNoticeCancel());
+        this.elements.resultsBody.addEventListener('click', event => {
+            const button = event.target.closest('.wx-period-bell');
+            if (button) this.togglePeriodReminder(button);
+        });
+        this.elements.periodLead.addEventListener('change', () => this.renderPeriodPreview());
+        this.elements.periodConfirm.addEventListener('click', () => this.confirmPeriodReminder());
+        document.getElementById('periodDismiss').addEventListener('click', () => this.periodModal.hide());
+        document.getElementById('periodSound').addEventListener('click', () => ReminderScheduler.previewSound());
 
         // Another tab set or cancelled the reminder; key null: it cleared this site's storage.
         // A reminder that went off in another tab: the time shown moves on to the next one now,
@@ -178,6 +199,13 @@ class WeatherForecast {
             } else if (this.scheduler.isRecordKey(e.key)) {
                 this.renderReminder();
             }
+            if (e.key === null || e.key?.startsWith(WeatherPeriodReminders.PREFIX)) {
+                this.periodReminders.reload(e.key);
+                this.refreshPeriodButtons();
+                if (this.editingPeriod && this.periodReminders.get(this.editingPeriod.zoneId, this.editingPeriod.start)) {
+                    this.periodModal.hide();
+                }
+            }
         };
         window.addEventListener('storage', this.handleStorage);
 
@@ -187,7 +215,7 @@ class WeatherForecast {
         // unlocks by itself). Every action unlocks again: it costs nothing once the sound is on, and a
         // phone can suspend it again.
         this.handleUnlockSound = () => {
-            if (this.reminder.active) {
+            if (this.reminder.active || this.periodReminders.entries.size) {
                 ReminderScheduler.unlockSound();
             }
         };
@@ -278,10 +306,12 @@ class WeatherForecast {
      * The option text has the number in it, so it is written here rather than by data-i18n.
      */
     buildLeadSelect() {
-        for (const minutes of WeatherReminder.LEAD_OPTIONS) {
-            const option = document.createElement('option');
-            option.setAttribute('value', String(minutes));
-            this.elements.leadSelect.appendChild(option);
+        for (const select of [this.elements.leadSelect, this.elements.periodLead]) {
+            for (const minutes of WeatherReminder.LEAD_OPTIONS) {
+                const option = document.createElement('option');
+                option.setAttribute('value', String(minutes));
+                select.appendChild(option);
+            }
         }
         this.relabelLeadSelect();
     }
@@ -290,8 +320,10 @@ class WeatherForecast {
      * Write the "notify" options in the current language; the same nodes stay, so does the choice
      */
     relabelLeadSelect() {
-        for (const option of this.elements.leadSelect.querySelectorAll('option')) {
-            option.textContent = this.getText('weather_lead_option', '開始前 {n} 分鐘', { n: option.getAttribute('value') });
+        for (const select of [this.elements.leadSelect, this.elements.periodLead]) {
+            for (const option of select.children) {
+                option.textContent = this.getText('weather_lead_option', '開始前 {n} 分鐘', { n: option.getAttribute('value') });
+            }
         }
     }
 
@@ -309,6 +341,7 @@ class WeatherForecast {
             if (!this.refreshOnPeriodChange(now)) {
                 this.refreshOnMinuteChange(now);
             }
+            if (this.editingPeriod) this.renderPeriodPreview();
         }, WeatherForecast.CONSTANTS.TIME_UPDATE_INTERVAL);
     }
 
@@ -375,6 +408,7 @@ class WeatherForecast {
                 this.cancelTimeRangeSelection();
                 // The timetable starts again at 24 rows in another zone; a new period keeps its length
                 if (state.zoneId !== this.timetableZoneId) {
+                    this.periodModal.hide();
                     this.timetableZoneId = state.zoneId;
                     this.timetableCount = WeatherForecast.CONSTANTS.INITIAL_RESULTS;
                 }
@@ -436,6 +470,7 @@ class WeatherForecast {
         this.updateMoreSummary();
         this.renderAnswer();
         this.renderTimetable();
+        if (this.editingPeriod) this.renderPeriodPreview();
     }
 
     /**
@@ -625,15 +660,11 @@ class WeatherForecast {
      * @param {object} alert - From WeatherReminder.alerts()
      */
     handleReminderDue(alert) {
-        const reminder = this.reminder.active;
-        if (!reminder) return;
-
-        const { target } = reminder;
+        const zone = WeatherZoneData.getZone(alert.zoneId);
         const left = alert.start - Date.now();
         const params = {
-            zone: this.reminderTargetNames(target).zone,
-            // This time's weather, or the special event when that is the target
-            weather: target.desiredWeathers.length > 0 ? this.weatherName(alert.data.weather) : this.eventName(target.event),
+            zone: zone[this.getLanguage()] || zone.zh,
+            weather: alert.event ? this.eventName(alert.event) : this.weatherName(alert.data.weather),
             n: Math.max(1, Math.ceil(left / WeatherForecast.CONSTANTS.MINUTE_MS))
         };
         const title = left <= 0
@@ -646,6 +677,10 @@ class WeatherForecast {
         });
 
         ReminderScheduler.deliver({ title, body, tag: ReminderScheduler.idOf(alert) });
+        if (alert.periodReminder) {
+            this.periodReminders.cancel(alert.zoneId, alert.start);
+            this.refreshPeriodButtons();
+        }
         this.renderReminder();
     }
 
@@ -948,9 +983,6 @@ class WeatherForecast {
         const next = reminder ? this.reminder.nextAlert(now, this.scheduler.notifiedIds()) : null;
         const fireAt = next ? ReminderScheduler.fireAt(next) : null;
         const time = fireAt === null ? '' : this.formatRemindWhen(fireAt, now);
-        // Set too late to go off the lead before the start: it goes off at the start, so the sentence
-        // must not say "N minutes before" (it would read as starting N minutes after that time)
-        const atStart = next !== null && fireAt === next.start;
         const onCard = this.answerHasResult && this.reminder.isFor(this.store.state);
 
         answerActions.hidden = !this.answerHasResult;
@@ -960,12 +992,7 @@ class WeatherForecast {
             leadSelect.value = String(lead);
         }
         reminderSet.hidden = !onCard;
-        let setText = '';
-        if (onCard && time) {
-            setText = atStart
-                ? this.getText('weather_reminder_set_start', '{time} 開始時提醒你。頁面要開著才會響。', { time })
-                : this.getText('weather_reminder_set', '{time} 提醒你（開始前 {n} 分鐘）。頁面要開著才會響。', { time, n: lead });
-        }
+        const setText = onCard && next ? this.reminderTimeText(next, now) : '';
         WeatherForecast.writeLine(reminderSetText, setText);
         // The line saying when it goes off already says the page has to stay open
         remindHint.hidden = Boolean(setText);
@@ -980,6 +1007,16 @@ class WeatherForecast {
 
         // Next to the reminder controls only: a card without them (just the zone's weather) has nothing it explains
         WeatherForecast.writeLine(notifyStatus, reminder && this.answerHasResult ? this.notifyStatusText() : '');
+    }
+
+    reminderTimeText(alert, now) {
+        const fireAt = ReminderScheduler.fireAt(alert);
+        const time = this.formatRemindWhen(fireAt, now);
+        return fireAt === alert.start
+            ? this.getText('weather_reminder_set_start', '{time} 開始時提醒你。頁面要開著才會響。', { time })
+            : this.getText('weather_reminder_set', '{time} 提醒你（開始前 {n} 分鐘）。頁面要開著才會響。', {
+                time, n: alert.leadMs / WeatherReminder.MINUTE_MS
+            });
     }
 
     /**
@@ -1076,6 +1113,7 @@ class WeatherForecast {
      */
     renderTimetable() {
         const zone = this.store.getCurrentZone();
+        const focusStart = this.elements.resultsBody.contains(document.activeElement) && document.activeElement.dataset.start;
         this.elements.resultsBody.textContent = '';
         if (!zone) return;
 
@@ -1105,7 +1143,18 @@ class WeatherForecast {
             row.appendChild(etCell);
 
             // Weather
-            row.appendChild(this.createWeatherCell(period.weather, lang));
+            const weatherCell = this.createWeatherCell(period.weather, lang);
+            if (period.start > now) {
+                const bell = document.createElement('button');
+                bell.type = 'button';
+                bell.className = 'btn btn-ghost btn-sm btn-icon-only wx-period-bell';
+                bell.dataset.start = String(period.start);
+                bell.dataset.weather = period.weather;
+                bell.textContent = '🔔';
+                this.updatePeriodButton(bell, zone, now);
+                (weatherCell.firstElementChild || weatherCell).appendChild(bell);
+            }
+            row.appendChild(weatherCell);
 
             this.elements.resultsBody.appendChild(row);
         }
@@ -1115,6 +1164,89 @@ class WeatherForecast {
             this.elements.timetableTitle,
             this.timetableCount >= WeatherForecast.CONSTANTS.MAX_RESULTS
         );
+        if (focusStart) {
+            (this.elements.resultsBody.querySelector(`[data-start="${focusStart}"]`) || this.elements.timetableTitle).focus();
+        }
+    }
+
+    periodName(zone, start, weather, now) {
+        return this.getText('weather_period_target', '{zone}・{time}・{weather}', {
+            zone: zone[this.getLanguage()] || zone.zh,
+            time: this.formatDayTime(start, now),
+            weather: this.weatherName(weather)
+        });
+    }
+
+    updatePeriodButton(button, zone, now) {
+        const start = Number(button.dataset.start);
+        const target = this.periodName(zone, start, button.dataset.weather, now);
+        const alert = this.periodReminders.get(zone.id, start);
+        const label = alert
+            ? this.getText('weather_period_cancel', '取消{target}的單次提醒（{time}）', {
+                target, time: this.formatRemindWhen(ReminderScheduler.fireAt(alert), now)
+            })
+            : this.getText('weather_period_add', '設定{target}的單次提醒', { target });
+        button.setAttribute('aria-pressed', String(Boolean(alert)));
+        button.setAttribute('aria-label', label);
+        button.title = label;
+    }
+
+    refreshPeriodButtons() {
+        const zone = this.store.getCurrentZone();
+        if (!zone) return;
+        const now = Date.now();
+        for (const button of this.elements.resultsBody.querySelectorAll('.wx-period-bell')) {
+            this.updatePeriodButton(button, zone, now);
+        }
+    }
+
+    togglePeriodReminder(button) {
+        const zoneId = this.store.state.zoneId;
+        const start = Number(button.dataset.start);
+        const now = Date.now();
+        if (start <= now) return;
+        if (this.periodReminders.get(zoneId, start)) {
+            this.periodReminders.cancel(zoneId, start);
+            this.updatePeriodButton(button, this.store.getCurrentZone(), now);
+            return;
+        }
+        this.editingPeriod = { zoneId, start, weather: button.dataset.weather };
+        this.elements.periodLead.value = String(this.reminder.leadMinutes);
+        this.renderPeriodPreview();
+        this.periodModal.show(this.elements.periodDialog, { onClose: () => {
+            this.editingPeriod = null;
+            // A period change, midnight, or a language change may have replaced the opening button.
+            if (this.store.state.zoneId === zoneId) {
+                (this.elements.resultsBody.querySelector(`[data-start="${start}"]`) || this.elements.timetableTitle).focus();
+            }
+        } });
+    }
+
+    renderPeriodPreview() {
+        const period = this.editingPeriod;
+        if (!period) return;
+        const now = Date.now();
+        if (period.start <= now) {
+            this.periodModal.hide();
+            return;
+        }
+        const label = this.periodName(WeatherZoneData.getZone(period.zoneId), period.start, period.weather, now);
+        WeatherForecast.writeLine(this.elements.periodTarget, label);
+        const leadMs = Number(this.elements.periodLead.value) * WeatherReminder.MINUTE_MS;
+        WeatherForecast.writeLine(this.elements.periodPreview, this.reminderTimeText({ start: period.start, armedAt: now, leadMs }, now));
+    }
+
+    confirmPeriodReminder() {
+        const period = this.editingPeriod;
+        const lead = Number(this.elements.periodLead.value);
+        const now = Date.now();
+        if (period && period.start > now) {
+            ReminderScheduler.unlockSound();
+            ReminderScheduler.requestPermission();
+            this.periodReminders.arm(period.zoneId, period.start, lead, now);
+            this.refreshPeriodButtons();
+        }
+        this.periodModal.hide();
     }
 
     /**
@@ -1137,6 +1269,7 @@ class WeatherForecast {
         icon.textContent = info.icon;
 
         const name = document.createElement('span');
+        name.className = 'weather-name';
         name.textContent = info[lang] || info.zh;
 
         weatherSpan.appendChild(icon);
@@ -1303,6 +1436,7 @@ class WeatherForecast {
             clearInterval(this.timeUpdateInterval);
         }
         this.scheduler.stop();
+        this.periodModal.hide();
         window.removeEventListener('storage', this.handleStorage);
         for (const type of WeatherForecast.CONSTANTS.UNLOCK_SOUND_EVENTS) {
             document.removeEventListener(type, this.handleUnlockSound, { capture: true });

@@ -64,7 +64,7 @@ class ReminderScheduler {
     /**
      * @param {Object} options
      * @param {string} options.notifiedKey 已提醒紀錄在 localStorage 的名字開頭（每一次存在 notifiedKey|id）
-     * @param {function(number): Object[]} options.getAlerts 傳入現在的時間，回傳目前所有的 Alert
+     * @param {function(number, Set<string>): Object[]} options.getAlerts 傳入現在的時間與已提醒的 ID，回傳目前所有的 Alert
      * @param {function(Object): void} options.onDue 一個提醒到了
      * @param {function(): number} [options.now] 現在的時間（毫秒），預設 Date.now
      */
@@ -109,9 +109,10 @@ class ReminderScheduler {
      */
     check() {
         const now = this.now();
-        const alerts = this.getAlerts(now);
+        const notified = this.notifiedIds();
+        const alerts = this.getAlerts(now, notified);
         const fired = [];
-        for (const alert of ReminderScheduler.due(alerts, now, this.notifiedIds())) {
+        for (const alert of ReminderScheduler.due(alerts, now, notified)) {
             if (this._claimWithLock(alert)) continue;
             if (!this._claim(alert, now)) continue;
             fired.push(alert);
@@ -247,7 +248,8 @@ class ReminderScheduler {
      */
     _currentDue(id) {
         const now = this.now();
-        const alert = ReminderScheduler.due(this.getAlerts(now), now, this.notifiedIds())
+        const notified = this.notifiedIds();
+        const alert = ReminderScheduler.due(this.getAlerts(now, notified), now, notified)
             .find((candidate) => ReminderScheduler.idOf(candidate) === id);
         return alert ? { alert, now } : null;
     }
@@ -287,6 +289,18 @@ class ReminderScheduler {
         }
     }
 
+    /** Preview the site's two tones during a click, without sending a notification. */
+    static async previewSound() {
+        try {
+            const context = ReminderScheduler._audioContext(false);
+            if (!context) return;
+            if (context.state !== 'running') await context.resume();
+            ReminderScheduler._playSound();
+        } catch {
+            // Audio may be unavailable in this browser.
+        }
+    }
+
     /**
      * 提醒到了：每次都在頁面上顯示提示並發出提示音，允許的話再送出系統通知。
      * 三件事各自處理失敗，互不影響，也不丟例外。
@@ -307,12 +321,12 @@ class ReminderScheduler {
      * 瀏覽器的自動播放限制只有在使用者操作時才解得開。
      * @private
      */
-    static _audioContext() {
+    static _audioContext(resume = true) {
         const Context = window.AudioContext || window.webkitAudioContext;
         if (!Context) return null;
         if (!ReminderScheduler._audio) ReminderScheduler._audio = new Context();
         const context = ReminderScheduler._audio;
-        if (context.state !== 'running') {
+        if (resume && context.state !== 'running') {
             const resumed = context.resume();
             if (resumed && typeof resumed.catch === 'function') resumed.catch(() => {});
         }

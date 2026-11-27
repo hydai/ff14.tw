@@ -34,7 +34,9 @@ function assertTimetable(page, zoneId, count) {
         assert.equal(row.children.length, 3, '三欄：本地時間、ET、天氣');
         assert.equal(row.children[0].textContent, dayTime(start, page.now));
         assert.equal(row.children[1].textContent, `${pad(calc.getEorzeaTime(start).hours)}:00`);
-        assert.equal(row.children[2].textContent, `${info.icon}${info.zh}`);
+        assert.equal(row.children[2].querySelector('.weather-icon').textContent, info.icon);
+        assert.equal(row.children[2].querySelector('.weather-name').textContent, info.zh);
+        assert.equal(Boolean(row.children[2].querySelector('button')), i > 0, '只有未來時段有鈴鐺');
         assert.equal(row.classList.contains('current-weather'), i === 0, '只有目前這一段標出來');
     });
 }
