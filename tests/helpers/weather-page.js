@@ -48,14 +48,15 @@ function scriptSources(html) {
 const PAGE_HTML = read(`${TOOL_DIR}/index.html`);
 // 翻譯檔、共用的提醒排程與工具目錄自己的腳本；其他共用腳本（頁首、頁尾、common.js）不載入，用到的部分改用下面的替身
 const PAGE_SCRIPTS = scriptSources(PAGE_HTML)
-    .filter((src) => !src.includes('/') || [`../../${TRANSLATIONS}`, `../../${SCHEDULER}`].includes(src))
+    .filter((src) => !src.includes('/') || [`../../${TRANSLATIONS}`, `../../${SCHEDULER}`, '../../assets/js/modal-manager.js'].includes(src))
     .map((src) => path.posix.join(TOOL_DIR, src));
 
 function createWeatherPage({ hash = '', now = 1_760_000_000_000, lang = 'zh', stored = {}, storageThrows = false, notification = 'default' } = {}) {
     assert.ok(NOTIFICATION_MODES.includes(notification), `不認得的 notification：${notification}`);
     const dom = createFakeDom({ url: PAGE_URL + hash });
     const win = dom.window;
-    const storage = new Map(Object.entries(stored));
+    // Passing the same Map gives tabs shared storage without automatically dispatching storage events.
+    const storage = stored instanceof Map ? stored : new Map(Object.entries(stored));
     const toasts = [];
     const clipboard = [];
     const intervals = [];

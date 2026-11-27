@@ -503,7 +503,7 @@ test('頁面上每一個用 hidden 切換的元素在 style.css 都有 display: 
         // 答案卡的幾行與之後幾次
         'answerWhen', 'answerWait', 'answerMeta', 'answerExtra', 'nextSection', 'nextMoreBtn',
         // 提醒：答案卡上方的提醒中那一行、答案卡裡的提醒我與設好的提醒、通知的說明
-        'reminderNotice', 'reminderNoticeText', 'answerActions', 'remindBtn', 'remindHint', 'reminderSet', 'reminderSetText', 'notifyStatus'
+        'reminderNotice', 'reminderNoticeText', 'answerActions', 'remindBtn', 'remindHint', 'reminderSet', 'reminderSetText', 'notifyStatus', 'periodNotifyStatus'
     ];
     for (const id of toggled) {
         assert.ok(html.includes(` id="${id}"`), `index.html 要有 #${id}`);

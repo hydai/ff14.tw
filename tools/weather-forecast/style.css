@@ -32,7 +32,8 @@
 #remindHint[hidden],
 #reminderSet[hidden],
 #reminderSetText[hidden],
-#notifyStatus[hidden] {
+#notifyStatus[hidden],
+#periodNotifyStatus[hidden] {
     display: none;
 }
 
@@ -216,7 +217,8 @@
 }
 
 /* 共用的 .form-control 是整行寬，這裡跟著選項的寬度 */
-#leadSelect {
+#leadSelect,
+#periodLead {
     width: auto;
 }
 
@@ -328,6 +330,37 @@
     gap: var(--space-2);
 }
 
+.wx-period-bell {
+    flex-shrink: 0;
+}
+
+.wx-period-bell[aria-pressed="false"] {
+    filter: grayscale(1);
+}
+
+.wx-period-bell[aria-pressed="true"] {
+    background: var(--color-primary-tint);
+    border-color: var(--color-primary);
+}
+
+#periodDialog {
+    z-index: var(--z-modal);
+}
+
+#periodDialog:not(.active) {
+    display: none;
+}
+
+#periodDialog .dialog-body {
+    display: grid;
+    justify-items: start;
+    gap: var(--space-3);
+}
+
+#periodDialog p {
+    margin: 0;
+}
+
 #nextMoreBtn,
 #showMoreBtn {
     margin-top: var(--space-4);
@@ -361,6 +394,23 @@
 
 /* 很窄的手機：之後幾次的 ET 那一段換到第二行 */
 @media (max-width: 479px) {
+    .results-table td:first-child {
+        white-space: normal;
+    }
+
+    .results-table th,
+    .results-table td {
+        padding-inline: var(--space-1);
+    }
+
+    .weather-cell {
+        gap: var(--space-1);
+    }
+
+    .weather-name {
+        overflow-wrap: anywhere;
+    }
+
     .wx-next {
         grid-template-columns: minmax(0, 1fr) auto;
     }

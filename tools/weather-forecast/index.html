@@ -148,6 +148,7 @@
 
                         <div class="card wx-section" id="timetableSection">
                             <h2 class="wx-section-title" id="timetableTitle" tabindex="-1"></h2>
+                            <p class="wx-hint" id="periodNotifyStatus" aria-live="polite" hidden></p>
                             <div class="table-wrap">
                                 <table class="table results-table">
                                     <thead>
@@ -165,6 +166,26 @@
                         </div>
                     </div>
                 </section>
+                <div class="dialog-overlay" id="periodDialog" role="dialog" aria-modal="true" aria-labelledby="periodDialogTitle" aria-describedby="periodTarget">
+                    <div class="dialog">
+                        <div class="dialog-header">
+                            <h3 class="dialog-title" id="periodDialogTitle" data-i18n="weather_period_once">只提醒這一次</h3>
+                        </div>
+                        <div class="dialog-body">
+                            <p id="periodTarget"></p>
+                            <div class="wx-lead">
+                                <label for="periodLead" data-i18n="weather_lead_label">通知時間</label>
+                                <select class="form-control form-control-sm" id="periodLead" autofocus></select>
+                            </div>
+                            <p class="wx-hint" id="periodPreview" aria-live="polite"></p>
+                            <button class="btn btn-sm btn-ghost" id="periodSound" type="button" data-i18n="weather_period_sound">試聽提示音</button>
+                        </div>
+                        <div class="dialog-actions">
+                            <button class="btn btn-ghost" id="periodDismiss" type="button" data-i18n="weather_period_dismiss">取消</button>
+                            <button class="btn btn-outline" id="periodConfirm" type="button" data-i18n="weather_period_confirm">設定提醒</button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </main>
@@ -181,12 +202,14 @@
     <script src="../../assets/js/common.js"></script>
     <script src="../../assets/js/security-utils.js"></script>
     <script src="../../assets/js/reminder-scheduler.js"></script>
+    <script src="../../assets/js/modal-manager.js"></script>
     <script src="zone-data.js"></script>
     <script src="weather-calculator.js"></script>
     <script src="weather-store.js"></script>
     <script src="weather-search.js"></script>
     <script src="weather-answer.js"></script>
     <script src="weather-reminder.js"></script>
+    <script src="period-reminders.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

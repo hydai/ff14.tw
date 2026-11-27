@@ -68,6 +68,14 @@ const WeatherForecastTranslations = {
 
         // 提醒
         weather_remind: '提醒我',
+        weather_period_once: '只提醒這一次',
+        weather_period_target: '{zone}・{time}・{weather}',
+        weather_period_label: '{target}的單次提醒',
+        weather_period_add: '設定{target}的單次提醒',
+        weather_period_cancel: '取消{target}的單次提醒（{time}）',
+        weather_period_sound: '試聽提示音',
+        weather_period_dismiss: '取消',
+        weather_period_confirm: '設定提醒',
         weather_lead_label: '通知時間',
         weather_lead_option: '開始前 {n} 分鐘',
         weather_remind_hint: '頁面要開著才會響',
@@ -214,6 +222,14 @@ const WeatherForecastTranslations = {
 
         // Reminder
         weather_remind: 'Remind me',
+        weather_period_once: 'Remind me just this once',
+        weather_period_target: '{zone} · {time} · {weather}',
+        weather_period_label: 'One-time reminder for {target}',
+        weather_period_add: 'Set a one-time reminder for {target}',
+        weather_period_cancel: 'Cancel the one-time reminder for {target} ({time})',
+        weather_period_sound: 'Preview sound',
+        weather_period_dismiss: 'Cancel',
+        weather_period_confirm: 'Set reminder',
         weather_lead_label: 'Notify',
         weather_lead_option: '{n} min before',
         weather_remind_hint: 'Keep this page open to get it',
@@ -360,6 +376,14 @@ const WeatherForecastTranslations = {
 
         // 通知
         weather_remind: '通知する',
+        weather_period_once: 'この回だけ通知',
+        weather_period_target: '{zone}・{time}・{weather}',
+        weather_period_label: '{target}の一度限りの通知',
+        weather_period_add: '{target}の通知を設定',
+        weather_period_cancel: '{target}の通知（{time}）を取り消す',
+        weather_period_sound: '通知音を試聴',
+        weather_period_dismiss: 'キャンセル',
+        weather_period_confirm: '通知を設定',
         weather_lead_label: '通知',
         weather_lead_option: '{n}分前',
         weather_remind_hint: 'このページを開いたままにしてください',

@@ -1,6 +1,6 @@
 /**
  * FF14 Weather Forecast - Weather Reminder
- * The page's one weather reminder ("remind me"): the target it waits for, which is its
+ * The recurring weather reminder ("remind me"): the target it waits for, which is its
  * own and stays when the page shows something else; how many minutes before the start
  * it goes off; and the alerts it hands to ReminderScheduler. Remembered in localStorage;
  * a browser that blocks site data only means it lasts while this page is open.
@@ -97,6 +97,7 @@ class WeatherReminder {
 
         this.lead = WeatherReminder.LEAD_OPTIONS.includes(saved.leadMinutes) ? saved.leadMinutes : WeatherReminder.DEFAULT_LEAD;
         this.reminder = WeatherReminder.normalizeReminder(saved.reminder);
+        this.localOnly = false;
     }
 
     /**
@@ -153,6 +154,9 @@ class WeatherReminder {
         const zone = window.WeatherZoneData.getZone(target.zoneId);
         return window.WeatherAnswer.occurrences(zone, target, now, limit).map(occurrence => ({
             key,
+            zoneId: target.zoneId,
+            deliveryGroup: target.zoneId,
+            event: target.desiredWeathers.length ? null : target.event,
             start: occurrence.start,
             end: occurrence.end,
             leadMs,
@@ -177,7 +181,8 @@ class WeatherReminder {
         const { ReminderScheduler } = window;
         const pending = alert => alert.armedAt < alert.start
             && now < alert.end
-            && !notifiedIds.has(ReminderScheduler.idOf(alert));
+            && !notifiedIds.has(ReminderScheduler.idOf(alert))
+            && !notifiedIds.has(ReminderScheduler.deliveryIdOf(alert));
         let alerts = this.alerts(now);
         try {
             while (alerts.length > 0 && !pending(alerts[alerts.length - 1])) {
@@ -215,8 +220,9 @@ class WeatherReminder {
                 leadMinutes: this.lead,
                 reminder: this.reminder
             }));
+            this.localOnly = false;
         } catch (error) {
-            // Not remembered for next time
+            this.localOnly = true;
         }
     }
 

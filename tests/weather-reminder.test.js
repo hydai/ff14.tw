@@ -582,7 +582,9 @@ test('到時間：頁內提示、提示音，允許時加系統通知；下一�
     // 記在 localStorage（這一次自己的項目）：重新整理、另一個分頁都不會再響這一次
     assert.deepEqual(
         Array.from(page.storage).filter(([name]) => name.startsWith(`${NOTIFIED_KEY}|`)),
-        [[`${NOTIFIED_KEY}|weather:kozamauka-7--0-24|${first.start}`, String(first.start)]]
+        [[`${NOTIFIED_KEY}|weather:kozamauka-7--0-24|${first.start}`, JSON.stringify({
+            start: first.start, deliveryId: `delivery:kozamauka|${first.start}|${fireAt}`
+        })]]
     );
 
     page.tick(1000);

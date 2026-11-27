@@ -346,6 +346,17 @@ test('check：先記進紀錄，再呼叫 onDue；每一次各存一個項目，
     for (const name of [KEY, `${KEY}x|k|1`, 'other|k|1', null]) assert.equal(scheduler.isRecordKey(name), false, String(name));
 });
 
+test('joint receipts from before delivery groups still suppress both original bells', t => {
+    const recurring = { ...A, key: 'weather:pagos-thunder', deliveryGroup: 'pagos' };
+    const row = { ...recurring, key: 'weather-period:pagos:one' };
+    const stored = mapStorage({
+        [`${KEY}|${recurring.key}|${A.start}`]: JSON.stringify({ start: A.start, relatedId: `${row.key}|${A.start}` })
+    });
+    const scheduler = tab(setup(t, { storage: stored }), { getAlerts: () => [recurring, row] });
+    assert.equal(scheduler.check().length, 0);
+    assert.equal(stored.writes, 0);
+});
+
 test('兩個分頁共用紀錄：同一次只有一個分頁觸發', (t) => {
     const page = setup(t);
     let onDueCalls = 0;
@@ -481,6 +492,71 @@ test('兩個分頁同時各搶到不同的一次，紀錄還沒同步過去就�
     await settle();
     assert.deepEqual(delivered, ['A:k', 'B:second'], '鎖放開之後誰都不再提醒');
 });
+
+for (const first of ['row', 'combined']) {
+    test(`one delivery with stale storage before and after the grace period (${first} first)`, async t => {
+        const storage = syncedStorage();
+        const locks = fakeLocks();
+        const notifications = [];
+        const row = { ...A, key: 'weather-period:pagos:one', deliveryGroup: 'pagos' };
+        const combined = { ...row, key: 'weather:pagos-thunder', relatedId: `${row.key}|${row.start}` };
+        const editLock = 'weather-period|pagos|' + A.start;
+        const open = alert => {
+            const page = setup(t, { storage: storage.view(), locks });
+            return new page.ReminderScheduler({
+                notifiedKey: KEY, now: () => A.start,
+                getAlerts: () => [alert],
+                claimLockName: () => editLock,
+                onDue: current => notifications.push(current.key)
+            });
+        };
+        const second = first === 'row' ? combined : row;
+        const winner = open(first === 'row' ? row : combined);
+        const other = open(second);
+        winner.check();
+        await settle();
+        assert.equal(notifications.length, 1);
+        assert.equal(locks.held.has(editLock), false, 'edits can proceed during the grace period');
+        assert.equal(locks.held.size, 1);
+        other.check(); // Its storage view still has no receipts.
+        await settle();
+        assert.equal(notifications.length, 1);
+        assert.equal(locks.requests.at(-1).name, Array.from(locks.held)[0]);
+        storage.sync();
+        t.mock.timers.tick(5001);
+        await settle();
+        assert.equal(locks.held.size, 0);
+        other.check();
+        await settle();
+        assert.equal(notifications.length, 1, 'the scheduled delivery is also recorded after the lock expires');
+        storage.sync();
+        const reopened = open(second);
+        reopened.check();
+        await settle();
+        assert.equal(notifications.length, 1);
+        assert.ok(reopened.notifiedIds().has(`${combined.key}|${combined.start}`), 'the recurring bell remembers this occurrence');
+    });
+}
+
+for (const [change, replacement] of [
+    ['the scheduled time', { leadMs: 60_000 }],
+    ['the bell generation', { key: 'weather-period:pagos:replacement' }]
+]) {
+    test(`a pending claim is retried when ${change} changes even if both alerts are due`, async t => {
+        const page = setup(t, { locks: fakeLocks() });
+        let alert = { ...A, key: 'weather-period:pagos:original', deliveryGroup: 'pagos' };
+        const delivered = [];
+        const scheduler = tab(page, { getAlerts: () => [alert], onDue: current => delivered.push(current) });
+        scheduler.check();
+        alert = { ...alert, ...replacement };
+        await settle();
+        assert.deepEqual(delivered, []);
+        assert.equal(page.storage.writes, 0);
+        scheduler.check();
+        await settle();
+        assert.deepEqual(delivered, [alert]);
+    });
+}
 
 test('等鎖的時候改了提早分鐘數：拿到鎖時照現在的提醒重新挑，舊的不提醒也不記，之後照新的提早分鐘數提醒', async (t) => {
     const page = setup(t, { locks: fakeLocks() });
@@ -839,6 +915,55 @@ test('deliver：AudioContext 還在暫停（重新整理後還沒有人操作過
     deliver();
     assert.equal(audio.log.starts.length, 2);
     assert.equal(audio.log.contexts, 1, '共用同一個 AudioContext');
+});
+
+test('a silent delivery hands sound to exactly one running tab while the toast stays in the claiming tab', async t => {
+    const storage = mapStorage();
+    const locks = fakeLocks();
+    const peers = [];
+    const makePeer = blocked => {
+        const audio = fakeAudio({ blocked });
+        const page = setup(t, { storage, locks, AudioContext: audio.AudioContext });
+        const scheduler = tab(page);
+        peers.push(scheduler);
+        if (!blocked) page.ReminderScheduler.unlockSound();
+        return { scheduler, audio, page };
+    };
+    const untouched = makePeer(true);
+    const first = makePeer(false);
+    const second = makePeer(false);
+    const write = storage.setItem.bind(storage);
+    storage.setItem = (key, value) => {
+        write(key, value);
+        if (key === untouched.scheduler.soundRequestKey) {
+            for (const peer of peers) peer.handleSoundRequest({ key, newValue: value });
+        }
+    };
+    untouched.scheduler.deliverAcrossTabs({ title: 'Thunder', body: '16:46', tag: 'pagos' });
+    await settle();
+    assert.deepEqual([untouched, first, second].map(peer => peer.page.toasts().length), [1, 0, 0]);
+    assert.equal(untouched.audio.log.starts.length, 0);
+    assert.deepEqual([...first.audio.log.frequencies, ...second.audio.log.frequencies], [880, 1100]);
+    assert.ok(first.audio.log.starts.length === 0 || second.audio.log.starts.length === 0);
+    assert.equal(storage.data.has(untouched.scheduler.soundRequestKey), false);
+});
+
+test('a sound request is neither queued on a blocked context nor replayed after it expires', async t => {
+    const audio = fakeAudio({ blocked: true });
+    const page = setup(t, { AudioContext: audio.AudioContext, locks: fakeLocks() });
+    let now = A.start;
+    const scheduler = tab(page, { now: () => now });
+    const event = { key: scheduler.soundRequestKey, newValue: JSON.stringify({ tag: 'pagos', time: now }) };
+    page.ReminderScheduler.unlockSound();
+    scheduler.handleSoundRequest(event);
+    audio.policy.blocked = false;
+    page.ReminderScheduler.unlockSound();
+    await settle();
+    assert.equal(audio.log.starts.length, 0);
+    now += page.ReminderScheduler.CONSTANTS.SOUND_REQUEST_TTL_MS;
+    scheduler.handleSoundRequest(event);
+    await settle();
+    assert.equal(audio.log.starts.length, 0);
 });
 
 test('deliver：頁內提示、提示音、系統通知互不影響，其中一個做不到也不丟例外', (t) => {
