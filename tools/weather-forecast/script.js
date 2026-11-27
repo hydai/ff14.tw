@@ -110,6 +110,7 @@ class WeatherForecast {
             nextList: document.getElementById('nextList'),
             nextMoreBtn: document.getElementById('nextMoreBtn'),
             timetableTitle: document.getElementById('timetableTitle'),
+            periodNotifyStatus: document.getElementById('periodNotifyStatus'),
             resultsBody: document.getElementById('resultsBody'),
             periodDialog: document.getElementById('periodDialog'),
             periodTarget: document.getElementById('periodTarget'),
@@ -979,7 +980,7 @@ class WeatherForecast {
     renderReminder() {
         const {
             answerActions, remindBtn, leadSelect, remindHint, reminderSet, reminderSetText,
-            notifyStatus, reminderNotice, reminderNoticeText
+            reminderNotice, reminderNoticeText
         } = this.elements;
         const now = Date.now();
         const reminder = this.reminder.active;
@@ -1009,8 +1010,15 @@ class WeatherForecast {
             })
             : '');
 
-        // Next to the reminder controls only: a card without them (just the zone's weather) has nothing it explains
-        WeatherForecast.writeLine(notifyStatus, reminder && this.answerHasResult ? this.notifyStatusText() : '');
+        this.renderNotifyStatus();
+    }
+
+    renderNotifyStatus() {
+        const onCard = this.reminder.active && this.answerHasResult;
+        const onTimetable = !onCard && this.periodReminders.entries.size > 0;
+        const text = onCard || onTimetable ? this.notifyStatusText() : '';
+        WeatherForecast.writeLine(this.elements.notifyStatus, onCard ? text : '');
+        WeatherForecast.writeLine(this.elements.periodNotifyStatus, onTimetable ? text : '');
     }
 
     reminderTimeText(alert, now) {
@@ -1169,7 +1177,8 @@ class WeatherForecast {
             this.timetableCount >= WeatherForecast.CONSTANTS.MAX_RESULTS
         );
         if (focusStart) {
-            (this.elements.resultsBody.querySelector(`[data-start="${focusStart}"]`) || this.elements.timetableTitle).focus();
+            const target = this.elements.resultsBody.querySelector(`[data-start="${focusStart}"]`) || this.elements.timetableTitle;
+            target.focus({ preventScroll: true });
         }
     }
 
@@ -1197,6 +1206,7 @@ class WeatherForecast {
     }
 
     refreshPeriodButtons() {
+        this.renderNotifyStatus();
         const zone = this.store.getCurrentZone();
         if (!zone) return;
         const now = Date.now();
@@ -1247,7 +1257,7 @@ class WeatherForecast {
         const now = Date.now();
         if (period && period.start > now) {
             ReminderScheduler.unlockSound();
-            ReminderScheduler.requestPermission();
+            ReminderScheduler.requestPermission().then(() => this.renderNotifyStatus());
             this.periodReminders.arm(period.zoneId, period.start, lead, now);
         }
         this.periodModal.hide();

@@ -5,6 +5,7 @@ class WeatherPeriodReminders {
 
     constructor(onChange) {
         this.entries = new Map();
+        this.cancelled = new Map(); // Row key -> persisted generation whose removal failed in this tab.
         this.reload();
         this.onChange = onChange;
     }
@@ -28,6 +29,7 @@ class WeatherPeriodReminders {
             // Entries saved before generations were introduced keep their original delivery ID.
             key: `weather-period:${zoneId}:${generation ?? armedAt}`,
             zoneId, start, armedAt,
+            deliveryGroup: zoneId,
             end: start + WeatherCalculator.WEATHER_DURATION_MS,
             leadMs: leadMinutes * WeatherReminder.MINUTE_MS,
             data: { weather: WeatherCalculator.getWeatherForZone(zone, start) }
@@ -44,6 +46,7 @@ class WeatherPeriodReminders {
             if (start > Date.now() && !this.entries.has(key)) {
                 try {
                     window.localStorage.setItem(key, JSON.stringify({ leadMinutes, armedAt: now, generation }));
+                    this.cancelled.delete(key);
                 } catch {
                     alert.localOnly = true;
                 }
@@ -62,12 +65,15 @@ class WeatherPeriodReminders {
     removeIfCurrent(row) {
         const key = WeatherPeriodReminders.storageKey(row.zoneId, row.start);
         this.reload(key);
-        if (this.entries.get(key)?.key === row.key) {
+        const current = this.entries.get(key);
+        if (current?.key === row.key) {
             this.entries.delete(key);
-            try {
-                window.localStorage.removeItem(key);
-            } catch {
-                // The in-memory bell is already cancelled.
+            if (!current.localOnly) {
+                try {
+                    window.localStorage.removeItem(key);
+                } catch {
+                    this.cancelled.set(key, row.key);
+                }
             }
         }
         this.onChange?.();
@@ -76,7 +82,9 @@ class WeatherPeriodReminders {
     reload(changedKey = null) {
         try {
             const storage = window.localStorage;
-            const keys = changedKey ? [changedKey] : Array.from({ length: storage.length }, (_, i) => storage.key(i));
+            const keys = changedKey ? [changedKey] : new Set([
+                ...this.cancelled.keys(), ...Array.from({ length: storage.length }, (_, i) => storage.key(i))
+            ]);
             if (!changedKey) {
                 for (const [key, row] of this.entries) {
                     if (!row.localOnly) this.entries.delete(key);
@@ -86,6 +94,7 @@ class WeatherPeriodReminders {
                 if (!key?.startsWith(WeatherPeriodReminders.PREFIX)) continue;
                 const raw = storage.getItem(key);
                 if (raw === null) {
+                    this.cancelled.delete(key);
                     if (!this.entries.get(key)?.localOnly) this.entries.delete(key);
                     continue;
                 }
@@ -97,6 +106,8 @@ class WeatherPeriodReminders {
                     // A malformed entry only affects this row.
                 }
                 const alert = WeatherPeriodReminders.makeAlert(zoneId, Number(timestamp), saved?.leadMinutes, saved?.armedAt, saved?.generation);
+                if (alert && alert.key === this.cancelled.get(key) && alert.end > Date.now()) continue;
+                this.cancelled.delete(key);
                 if (alert && key === WeatherPeriodReminders.storageKey(zoneId, alert.start) && alert.end > Date.now()) {
                     this.entries.set(key, alert);
                 } else {
@@ -127,7 +138,7 @@ class WeatherPeriodReminders {
                 && same.zoneId === row.zoneId && same.armedAt < same.start
                 && ReminderScheduler.fireAt(same) === ReminderScheduler.fireAt(row);
             // A tab may close after the scheduler writes its receipt but before it removes the bell.
-            if (row.end <= now || notified.has(ReminderScheduler.idOf(row))) {
+            if (row.end <= now || notified.has(ReminderScheduler.idOf(row)) || notified.has(ReminderScheduler.deliveryIdOf(row))) {
                 this.cancel(row);
                 continue;
             }

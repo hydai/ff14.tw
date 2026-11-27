@@ -3,11 +3,11 @@
  * 用在：天氣預報與特殊採集時間管理器的「提醒我」。
  * 這裡不認識任何一個工具：一個提醒是一段時間加上提早多久通知，要提醒什麼、寫什麼字都由呼叫端決定。
  *
- * - Alert：{ key, start, end, leadMs, armedAt, data? }，時間都是毫秒時間戳。armedAt 是這個提醒被設定的時間，
+ * - Alert：{ key, start, end, leadMs, armedAt, deliveryGroup?, data? }，時間都是毫秒時間戳。armedAt 是這個提醒被設定的時間，
  *   呼叫端要存起來（重新整理不能變）：設定的時候已經開始的那一次不補提醒。
  * - 到期的判斷是純函式 due()，不碰 DOM 也不讀時鐘，Node 裡就能測；實例每秒呼叫它一次（start()）。
  * - 已提醒過的 id（key|start）每一次各存成 localStorage 的一個項目：名字是 notifiedKey|id。
- *   一般紀錄的值是 start，合併送出的兩個提醒一起記成 { start, relatedId }。
+ *   一般紀錄的值是 start；共用通知時段的紀錄額外存 deliveryId，合併送出的另一個提醒存 relatedId。
  *   開著兩個分頁時同一次只有一個分頁會響；兩個分頁同時記下不同的兩次，各寫各的項目，不會互相蓋掉。
  *   瀏覽器有跨分頁的鎖（navigator.locks）時先搶鎖，兩個分頁剛好同時檢查也一樣（見 _claimWithLock()）。
  *   瀏覽器封鎖網站資料或寫不進去時，改靠這個頁面自己的記憶，這個頁面開著期間照樣只提醒一次。
@@ -44,6 +44,13 @@ class ReminderScheduler {
     /** 開始提醒的時間：提早 leadMs；設定的時候已經在提早的範圍內，就等到開始才提醒 */
     static fireAt(alert) {
         return alert.armedAt > alert.start - alert.leadMs ? alert.start : alert.start - alert.leadMs;
+    }
+
+    /** Alerts in one delivery group share a notification only for the same occurrence and scheduled time. */
+    static deliveryIdOf(alert) {
+        return alert.deliveryGroup
+            ? `delivery:${alert.deliveryGroup}|${alert.start}|${ReminderScheduler.fireAt(alert)}`
+            : ReminderScheduler.idOf(alert);
     }
 
     /**
@@ -141,14 +148,14 @@ class ReminderScheduler {
         document.removeEventListener('visibilitychange', this.handleVisibilityChange);
     }
 
-    /** 一次提醒在 localStorage 的名字，也是跨分頁的鎖的名字 @private */
+    /** 儲存紀錄與派送鎖共用的命名前綴。 @private */
     _recordName(id) {
         return `${this.notifiedKey}|${id}`;
     }
 
     /**
-     * 讀 localStorage 裡的紀錄（id -> start）：名字是 notifiedKey| 開頭的每一個項目。值不是一串數字（壞掉）的
-     * start 是 NaN，當作還沒提醒過，下一次記下別的提醒時刪掉；讀不到（瀏覽器封鎖網站資料）回傳 null。
+     * 讀取數字與 JSON 兩種紀錄，將提醒及其共用的 ID 對應到開始時間。壞掉的紀錄記為 NaN，
+     * 下一次寫入時清除。瀏覽器封鎖網站資料時回傳 null。
      * @private
      */
     _readStored() {
@@ -165,16 +172,17 @@ class ReminderScheduler {
                     record.set(id, Number(value));
                     continue;
                 }
-                // A joint delivery records both IDs in one write. Older single-ID receipts remain valid.
+                // Older receipts may name just the other bell in a joint delivery.
                 let receipt;
                 try {
                     receipt = JSON.parse(value);
                 } catch {
                     // Invalid receipts are pruned on the next claim.
                 }
-                if (Number.isSafeInteger(receipt?.start) && typeof receipt.relatedId === 'string') {
+                const aliases = [receipt?.deliveryId, receipt?.relatedId].filter(alias => typeof alias === 'string');
+                if (Number.isSafeInteger(receipt?.start) && aliases.length) {
                     record.set(id, receipt.start);
-                    record.set(receipt.relatedId, receipt.start);
+                    for (const alias of aliases) record.set(alias, receipt.start);
                 } else {
                     record.set(id, NaN);
                 }
@@ -186,11 +194,11 @@ class ReminderScheduler {
     }
 
     /** @private */
-    _writeStored(id, alert) {
+    _writeStored(id, alert, deliveryId) {
         try {
-            const value = alert.relatedId
-                ? JSON.stringify({ start: alert.start, relatedId: alert.relatedId })
-                : String(alert.start);
+            const value = deliveryId === id && !alert.relatedId ? String(alert.start) : JSON.stringify({
+                start: alert.start, deliveryId, relatedId: alert.relatedId
+            });
             window.localStorage.setItem(this._recordName(id), value);
         } catch (error) {
             // 寫不進去（空間滿了、被封鎖）：這個頁面靠 this.memory 照樣只提醒一次
@@ -215,25 +223,30 @@ class ReminderScheduler {
      */
     _claim(alert, now) {
         const id = ReminderScheduler.idOf(alert);
+        const deliveryId = ReminderScheduler.deliveryIdOf(alert);
         const stored = this._readStored();
-        if (this.memory.has(id) || (stored && Number.isFinite(stored.get(id)))) return false;
+        const recorded = key => this.memory.has(key) || Number.isFinite(stored?.get(key));
+        if (recorded(id)) return false;
+        // A different bell may have delivered this slot alone. Remember this bell too so editing its lead cannot replay it.
+        const alreadyDelivered = recorded(deliveryId);
         this.memory.add(id);
+        this.memory.add(deliveryId);
         if (alert.relatedId) this.memory.add(alert.relatedId);
         if (stored) {
-            this._writeStored(id, alert);
+            this._writeStored(id, alert, deliveryId);
             const oldest = now - ReminderScheduler.CONSTANTS.NOTIFIED_KEEP_MS;
             for (const [other, start] of stored) {
                 if (other !== id && !(start >= oldest)) this._removeStored(other); // 一天以前的、值壞掉的（NaN）
             }
         }
-        return true;
+        return !alreadyDelivered;
     }
 
     /**
-     * 有跨分頁的鎖（navigator.locks）時用鎖搶這一次提醒：鎖的名字是 notifiedKey|id，拿得到（ifAvailable）
+     * 跨分頁的鎖以 deliveryIdOf() 命名，共用通知時間的提醒會爭取同一把鎖。拿得到（ifAvailable）
      * 才照 _claim() 記下並呼叫 onDue，之後再握住 CLAIM_HOLD_MS 才放開。
      * 只靠 localStorage 擋不住同時檢查的兩個分頁：一個讀完、還沒寫回時，另一個也讀完了。
-     * 鎖一次只給一個分頁，另一個拿到 null 就不提醒；放開時紀錄早就同步過去，那個分頁的 due() 會直接跳過。
+     * 鎖一次只給一個分頁，另一個拿到 null 就不提醒。紀錄同步後也能認出同一個通知時間。
      * 要鎖的結果稍後才回來，這段時間裡提醒可能改了提早分鐘數、換了目標或被取消，那一段也可能已經結束（電腦睡著了），
      * 所以拿到鎖時照現在的提醒與時間重新挑一次（_currentDue()）：記下與交給 onDue 的是現在的那一次，不再到期就都不做。
      * 沒有鎖時回傳 false，照舊只靠紀錄。要鎖被拒絕（瀏覽器不讓這個網站使用儲存空間，例如封鎖網站資料）時，
@@ -244,7 +257,7 @@ class ReminderScheduler {
     _claimWithLock(alert) {
         const locks = window.navigator && window.navigator.locks;
         if (this.lockFailed || !locks || typeof locks.request !== 'function') return false;
-        const id = ReminderScheduler.idOf(alert);
+        const id = ReminderScheduler.deliveryIdOf(alert);
         if (this.claiming.has(id)) return true;
         this.claiming.add(id);
 
@@ -254,7 +267,7 @@ class ReminderScheduler {
                 granted = true;
                 try {
                     if (!lock) return;
-                    // Release the edit lock as soon as the receipt and UI are updated. Only the delivery ID needs the grace period.
+                    // Release the row for edits immediately; the shared notification slot stays locked through the grace period.
                     const deliver = () => this._deliverCurrent(alert);
                     const fired = this.claimLockName ? await ReminderScheduler.withLock(this.claimLockName(alert), deliver) : deliver();
                     if (fired) return new Promise(resolve => window.setTimeout(resolve, ReminderScheduler.CONSTANTS.CLAIM_HOLD_MS));
@@ -278,9 +291,9 @@ class ReminderScheduler {
     _currentDue(candidate) {
         const now = this.now();
         const notified = this.notifiedIds();
-        const id = ReminderScheduler.idOf(candidate);
+        const deliveryId = ReminderScheduler.deliveryIdOf(candidate);
         const alert = ReminderScheduler.due(this.getAlerts(now, notified, candidate), now, notified)
-            .find((item) => ReminderScheduler.idOf(item) === id);
+            .find((item) => item.key === candidate.key && ReminderScheduler.deliveryIdOf(item) === deliveryId);
         return alert ? { alert, now } : null;
     }
 

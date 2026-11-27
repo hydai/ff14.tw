@@ -87,6 +87,10 @@ test('matching recurring and one-shot alerts ring once together and the next mat
     const second = page.app.reminder.nextAlert(first.end);
     bellAt(page, first.start).click();
     page.$('periodConfirm').click();
+    const scheduler = page.window.ReminderScheduler;
+    const row = page.app.periodReminders.get(first.zoneId, first.start);
+    assert.notEqual(scheduler.idOf(row), scheduler.idOf(first));
+    assert.equal(scheduler.deliveryIdOf(row), scheduler.deliveryIdOf(first));
     page.tick(first.start - 5 * MINUTE - page.now);
     assert.equal(page.notifications.length, 1);
     assert.equal(page.beeps, 2);
@@ -235,7 +239,10 @@ test('bells saved without a generation still honor their original delivery recei
         page.tick(start - 5 * MINUTE - page.now);
         assert.equal(page.notifications.length, delivered ? 0 : 1);
         assert.equal(page.storage.has(key), false);
-        assert.equal(page.storage.get(receipt), String(start));
+        if (delivered) assert.equal(page.storage.get(receipt), String(start));
+        else assert.deepEqual(JSON.parse(page.storage.get(receipt)), {
+            start, deliveryId: `delivery:eureka-pagos|${start}|${start - 5 * MINUTE}`
+        });
     }
 });
 
@@ -262,6 +269,27 @@ test('the row toggle keeps its accessible name in each language and describes th
         assert.equal(bell.getAttribute('aria-description'), null);
         assert.equal(bell.title, add);
     }
+});
+
+test('automatic timetable redraws restore focus without scrolling, even when the focused period starts', t => {
+    const page = firstPage();
+    const [first, second] = buttons(page);
+    const start = Number(first.dataset.start);
+    const proto = Object.getPrototypeOf(first);
+    const focus = proto.focus;
+    const calls = [];
+    t.mock.method(proto, 'focus', function (options) {
+        calls.push({ element: this, preventScroll: options?.preventScroll });
+        return focus.call(this, options);
+    });
+    second.focus();
+    page.app.renderTimetable();
+    assert.ok(calls.at(-1).element === bellAt(page, Number(second.dataset.start)));
+    assert.equal(calls.at(-1).preventScroll, true);
+    bellAt(page, start).focus();
+    page.tick(start - page.now);
+    assert.ok(calls.at(-1).element === page.$('timetableTitle'));
+    assert.equal(calls.at(-1).preventScroll, true);
 });
 
 test('reopening after delivery clears a bell left in storage without ringing again', () => {
@@ -315,6 +343,92 @@ test('revalidating a due alert preserves in-memory bells when storage can be rea
     assert.deepEqual(page.notifications.map(n => n.title), ['恆冰之地 5 分鐘後雷雨']);
     assert.equal(page.app.periodReminders.entries.size, 0);
     assert.ok(page.app.reminder.active);
+});
+
+test('a failed storage removal keeps just the cancelled generation hidden and lets the player rearm', () => {
+    const page = firstPage();
+    const row = thunder(page);
+    const start = Number(row.dataset.start);
+    row.click();
+    page.$('periodConfirm').click();
+    const [key] = storedRows(page);
+    const original = page.storage.get(key);
+    page.window.localStorage.removeItem = () => { throw new Error('SecurityError'); };
+    row.click();
+    assert.equal(page.storage.get(key), original);
+    page.storageEvent(key);
+    page.storageEvent(null);
+    assert.equal(row.getAttribute('aria-pressed'), 'false');
+
+    // Replacing the saved row can fail too. A local replacement must survive rereads of the old saved one.
+    const setItem = page.window.localStorage.setItem;
+    page.window.localStorage.setItem = () => { throw new Error('QuotaExceededError'); };
+    row.click();
+    setLead(page, 3);
+    page.$('periodConfirm').click();
+    page.storageEvent(key);
+    assert.equal(page.app.periodReminders.get('eureka-pagos', start).leadMs, 3 * MINUTE);
+    row.click();
+    page.storageEvent(key);
+    assert.equal(row.getAttribute('aria-pressed'), 'false');
+
+    // A different generation saved by another tab is visible and can be replaced normally.
+    const other = firstPage({ now: page.now, stored: page.storage });
+    const otherRow = bellAt(other, start);
+    otherRow.click();
+    otherRow.click();
+    setLead(other, 10);
+    other.$('periodConfirm').click();
+    page.storageEvent(key);
+    assert.equal(page.app.periodReminders.get('eureka-pagos', start).leadMs, 10 * MINUTE);
+    page.window.localStorage.setItem = setItem;
+    row.click();
+    row.click();
+    setLead(page, 1);
+    page.$('periodConfirm').click();
+    const restored = firstPage({ now: page.now, stored: page.storage });
+    assert.equal(restored.app.periodReminders.get('eureka-pagos', start).leadMs, MINUTE);
+});
+
+test('a row-only reminder explains denied or unsupported notifications and clears the message on cancellation', () => {
+    for (const permission of ['denied', 'unsupported', 'granted']) {
+        const page = firstPage({ notification: permission });
+        page.selectZone('gridania');
+        assert.equal(page.app.answerHasResult, false);
+        const row = buttons(page)[0];
+        const status = page.$('periodNotifyStatus');
+        row.click();
+        page.$('periodConfirm').click();
+        assert.equal(status.hidden, permission === 'granted');
+        if (permission !== 'granted') {
+            assert.equal(status.textContent, page.app.notifyStatusText());
+            page.setLang('ja');
+            assert.match(status.textContent, /通知/);
+        }
+        const restored = createWeatherPage({ now: page.now, stored: page.storage, notification: permission });
+        assert.equal(restored.$('periodNotifyStatus').hidden, permission === 'granted');
+        buttons(page)[0].click();
+        assert.equal(status.hidden, true);
+    }
+});
+
+test('a pending permission prompt does not delay arming or restore a permission message after cancellation', async () => {
+    for (const cancel of [false, true]) {
+        const page = firstPage();
+        let answer;
+        page.window.Notification.requestPermission = () => new Promise(resolve => { answer = resolve; });
+        const bell = thunder(page);
+        bell.click();
+        page.$('periodConfirm').click();
+        assert.equal(bell.getAttribute('aria-pressed'), 'true');
+        assert.equal(page.$('periodNotifyStatus').hidden, true);
+        if (cancel) bell.click();
+        page.window.Notification.permission = 'denied';
+        answer('denied');
+        await page.settle();
+        assert.equal(page.$('periodNotifyStatus').hidden, cancel);
+        if (!cancel) assert.equal(page.$('periodNotifyStatus').textContent, page.app.notifyStatusText());
+    }
 });
 
 test('dismiss, a period starting while the editor is open, and expired storage never arm a stale row', () => {

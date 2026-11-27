@@ -155,6 +155,7 @@ class WeatherReminder {
         return window.WeatherAnswer.occurrences(zone, target, now, limit).map(occurrence => ({
             key,
             zoneId: target.zoneId,
+            deliveryGroup: target.zoneId,
             event: target.desiredWeathers.length ? null : target.event,
             start: occurrence.start,
             end: occurrence.end,
@@ -180,7 +181,8 @@ class WeatherReminder {
         const { ReminderScheduler } = window;
         const pending = alert => alert.armedAt < alert.start
             && now < alert.end
-            && !notifiedIds.has(ReminderScheduler.idOf(alert));
+            && !notifiedIds.has(ReminderScheduler.idOf(alert))
+            && !notifiedIds.has(ReminderScheduler.deliveryIdOf(alert));
         let alerts = this.alerts(now);
         try {
             while (alerts.length > 0 && !pending(alerts[alerts.length - 1])) {

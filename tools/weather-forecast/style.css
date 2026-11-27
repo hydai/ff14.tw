@@ -32,7 +32,8 @@
 #remindHint[hidden],
 #reminderSet[hidden],
 #reminderSetText[hidden],
-#notifyStatus[hidden] {
+#notifyStatus[hidden],
+#periodNotifyStatus[hidden] {
     display: none;
 }
 
