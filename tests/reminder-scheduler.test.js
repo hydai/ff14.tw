@@ -841,6 +841,55 @@ test('deliver：AudioContext 還在暫停（重新整理後還沒有人操作過
     assert.equal(audio.log.contexts, 1, '共用同一個 AudioContext');
 });
 
+test('a silent delivery hands sound to exactly one running tab while the toast stays in the claiming tab', async t => {
+    const storage = mapStorage();
+    const locks = fakeLocks();
+    const peers = [];
+    const makePeer = blocked => {
+        const audio = fakeAudio({ blocked });
+        const page = setup(t, { storage, locks, AudioContext: audio.AudioContext });
+        const scheduler = tab(page);
+        peers.push(scheduler);
+        if (!blocked) page.ReminderScheduler.unlockSound();
+        return { scheduler, audio, page };
+    };
+    const untouched = makePeer(true);
+    const first = makePeer(false);
+    const second = makePeer(false);
+    const write = storage.setItem.bind(storage);
+    storage.setItem = (key, value) => {
+        write(key, value);
+        if (key === untouched.scheduler.soundRequestKey) {
+            for (const peer of peers) peer.handleSoundRequest({ key, newValue: value });
+        }
+    };
+    untouched.scheduler.deliverAcrossTabs({ title: 'Thunder', body: '16:46', tag: 'pagos' });
+    await settle();
+    assert.deepEqual([untouched, first, second].map(peer => peer.page.toasts().length), [1, 0, 0]);
+    assert.equal(untouched.audio.log.starts.length, 0);
+    assert.deepEqual([...first.audio.log.frequencies, ...second.audio.log.frequencies], [880, 1100]);
+    assert.ok(first.audio.log.starts.length === 0 || second.audio.log.starts.length === 0);
+    assert.equal(storage.data.has(untouched.scheduler.soundRequestKey), false);
+});
+
+test('a sound request is neither queued on a blocked context nor replayed after it expires', async t => {
+    const audio = fakeAudio({ blocked: true });
+    const page = setup(t, { AudioContext: audio.AudioContext, locks: fakeLocks() });
+    let now = A.start;
+    const scheduler = tab(page, { now: () => now });
+    const event = { key: scheduler.soundRequestKey, newValue: JSON.stringify({ tag: 'pagos', time: now }) };
+    page.ReminderScheduler.unlockSound();
+    scheduler.handleSoundRequest(event);
+    audio.policy.blocked = false;
+    page.ReminderScheduler.unlockSound();
+    await settle();
+    assert.equal(audio.log.starts.length, 0);
+    now += page.ReminderScheduler.CONSTANTS.SOUND_REQUEST_TTL_MS;
+    scheduler.handleSoundRequest(event);
+    await settle();
+    assert.equal(audio.log.starts.length, 0);
+});
+
 test('deliver：頁內提示、提示音、系統通知互不影響，其中一個做不到也不丟例外', (t) => {
     const deliver = (page) => page.ReminderScheduler.deliver({ title: 'T', body: 'B', tag: 'x' });
 

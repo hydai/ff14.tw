@@ -47,16 +47,20 @@ class WeatherForecast {
         this.store = new WeatherStore();
         this.search = new WeatherSearch();
         this.reminder = new WeatherReminder();
-        this.periodReminders = new WeatherPeriodReminders();
+        this.periodReminders = new WeatherPeriodReminders(() => this.refreshPeriodButtons());
         this.periodModal = new ModalManager();
         this.editingPeriod = null;
         this.scheduler = new ReminderScheduler({
             notifiedKey: WeatherForecast.CONSTANTS.NOTIFIED_KEY,
-            getAlerts: (now, notified) => {
-                const before = this.periodReminders.entries.size;
-                const alerts = this.periodReminders.combinedAlerts(this.reminder.alerts(now), now, notified);
-                if (this.periodReminders.entries.size !== before) this.refreshPeriodButtons();
-                return alerts;
+            claimLockName: alert => WeatherPeriodReminders.storageKey(alert.zoneId, alert.start),
+            getAlerts: (now, notified, candidate) => {
+                if (candidate) {
+                    // Storage events can arrive after the lock. Read the current schedules before claiming either ID.
+                    if (!this.reminder.localOnly) this.reminder.reload();
+                    this.periodReminders.reload(WeatherPeriodReminders.storageKey(candidate.zoneId, candidate.start));
+                    this.refreshPeriodButtons();
+                }
+                return this.periodReminders.combinedAlerts(this.reminder.alerts(now), now, notified);
             },
             onDue: (alert) => this.handleReminderDue(alert)
         });
@@ -193,6 +197,7 @@ class WeatherForecast {
         // A reminder that went off in another tab: the time shown moves on to the next one now,
         // not at the next minute
         this.handleStorage = (e) => {
+            this.scheduler.handleSoundRequest(e);
             if (e.key === WeatherReminder.STORAGE_KEY || e.key === null) {
                 this.reminder.reload();
                 this.renderReminder();
@@ -676,10 +681,9 @@ class WeatherForecast {
             et: this.formatEtSpan(alert.start, alert.end)
         });
 
-        ReminderScheduler.deliver({ title, body, tag: ReminderScheduler.idOf(alert) });
+        this.scheduler.deliverAcrossTabs({ title, body, tag: ReminderScheduler.idOf(alert) });
         if (alert.periodReminder) {
-            this.periodReminders.cancel(alert.zoneId, alert.start);
-            this.refreshPeriodButtons();
+            this.periodReminders.removeIfCurrent(alert.periodReminder);
         }
         this.renderReminder();
     }
@@ -1181,14 +1185,15 @@ class WeatherForecast {
         const start = Number(button.dataset.start);
         const target = this.periodName(zone, start, button.dataset.weather, now);
         const alert = this.periodReminders.get(zone.id, start);
-        const label = alert
+        button.setAttribute('aria-label', this.getText('weather_period_label', '{target}的單次提醒', { target }));
+        button.setAttribute('aria-pressed', String(Boolean(alert)));
+        if (alert) button.setAttribute('aria-description', this.reminderTimeText(alert, now));
+        else button.removeAttribute('aria-description');
+        button.title = alert
             ? this.getText('weather_period_cancel', '取消{target}的單次提醒（{time}）', {
                 target, time: this.formatRemindWhen(ReminderScheduler.fireAt(alert), now)
             })
             : this.getText('weather_period_add', '設定{target}的單次提醒', { target });
-        button.setAttribute('aria-pressed', String(Boolean(alert)));
-        button.setAttribute('aria-label', label);
-        button.title = label;
     }
 
     refreshPeriodButtons() {
@@ -1205,9 +1210,9 @@ class WeatherForecast {
         const start = Number(button.dataset.start);
         const now = Date.now();
         if (start <= now) return;
-        if (this.periodReminders.get(zoneId, start)) {
-            this.periodReminders.cancel(zoneId, start);
-            this.updatePeriodButton(button, this.store.getCurrentZone(), now);
+        const row = this.periodReminders.get(zoneId, start);
+        if (row) {
+            this.periodReminders.cancel(row);
             return;
         }
         this.editingPeriod = { zoneId, start, weather: button.dataset.weather };
@@ -1244,7 +1249,6 @@ class WeatherForecast {
             ReminderScheduler.unlockSound();
             ReminderScheduler.requestPermission();
             this.periodReminders.arm(period.zoneId, period.start, lead, now);
-            this.refreshPeriodButtons();
         }
         this.periodModal.hide();
     }

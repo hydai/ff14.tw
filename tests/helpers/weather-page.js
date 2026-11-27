@@ -55,7 +55,8 @@ function createWeatherPage({ hash = '', now = 1_760_000_000_000, lang = 'zh', st
     assert.ok(NOTIFICATION_MODES.includes(notification), `不認得的 notification：${notification}`);
     const dom = createFakeDom({ url: PAGE_URL + hash });
     const win = dom.window;
-    const storage = new Map(Object.entries(stored));
+    // Passing the same Map gives tabs shared storage without automatically dispatching storage events.
+    const storage = stored instanceof Map ? stored : new Map(Object.entries(stored));
     const toasts = [];
     const clipboard = [];
     const intervals = [];

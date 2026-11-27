@@ -97,6 +97,7 @@ class WeatherReminder {
 
         this.lead = WeatherReminder.LEAD_OPTIONS.includes(saved.leadMinutes) ? saved.leadMinutes : WeatherReminder.DEFAULT_LEAD;
         this.reminder = WeatherReminder.normalizeReminder(saved.reminder);
+        this.localOnly = false;
     }
 
     /**
@@ -217,8 +218,9 @@ class WeatherReminder {
                 leadMinutes: this.lead,
                 reminder: this.reminder
             }));
+            this.localOnly = false;
         } catch (error) {
-            // Not remembered for next time
+            this.localOnly = true;
         }
     }
 

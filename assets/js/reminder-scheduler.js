@@ -6,7 +6,8 @@
  * - Alert：{ key, start, end, leadMs, armedAt, data? }，時間都是毫秒時間戳。armedAt 是這個提醒被設定的時間，
  *   呼叫端要存起來（重新整理不能變）：設定的時候已經開始的那一次不補提醒。
  * - 到期的判斷是純函式 due()，不碰 DOM 也不讀時鐘，Node 裡就能測；實例每秒呼叫它一次（start()）。
- * - 已提醒過的 id（key|start）每一次各存成 localStorage 的一個項目：名字是 notifiedKey|id，值是 start。
+ * - 已提醒過的 id（key|start）每一次各存成 localStorage 的一個項目：名字是 notifiedKey|id。
+ *   一般紀錄的值是 start，合併送出的兩個提醒一起記成 { start, relatedId }。
  *   開著兩個分頁時同一次只有一個分頁會響；兩個分頁同時記下不同的兩次，各寫各的項目，不會互相蓋掉。
  *   瀏覽器有跨分頁的鎖（navigator.locks）時先搶鎖，兩個分頁剛好同時檢查也一樣（見 _claimWithLock()）。
  *   瀏覽器封鎖網站資料或寫不進去時，改靠這個頁面自己的記憶，這個頁面開著期間照樣只提醒一次。
@@ -18,6 +19,7 @@ class ReminderScheduler {
         CHECK_INTERVAL: 1000, // 每秒檢查一次
         NOTIFIED_KEEP_MS: 24 * 60 * 60 * 1000, // 已提醒的紀錄只留一天
         CLAIM_HOLD_MS: 5000, // 搶到一次提醒的分頁再握住鎖 5 秒：放開時紀錄早就同步到別的分頁了
+        SOUND_REQUEST_TTL_MS: 5000, // Only relay a sound while its visual notification is fresh.
         ALERT_SHOW_MS: 8000, // 頁內提示停留 8 秒
         ALERT_FADE_MS: 300, // 收起的動畫時間
         BEEPS: [ // 提示音：880 Hz 接 1100 Hz 的兩聲（同特殊採集時間管理器的提示音）
@@ -64,14 +66,17 @@ class ReminderScheduler {
     /**
      * @param {Object} options
      * @param {string} options.notifiedKey 已提醒紀錄在 localStorage 的名字開頭（每一次存在 notifiedKey|id）
-     * @param {function(number, Set<string>): Object[]} options.getAlerts 傳入現在的時間與已提醒的 ID，回傳目前所有的 Alert
+     * @param {function(number, Set<string>, Object=): Object[]} options.getAlerts 第三個參數是拿到鎖後要再次確認的提醒
      * @param {function(Object): void} options.onDue 一個提醒到了
+     * @param {function(Object): string} [options.claimLockName] 與使用者編輯這次提醒共用的鎖
      * @param {function(): number} [options.now] 現在的時間（毫秒），預設 Date.now
      */
-    constructor({ notifiedKey, getAlerts, onDue, now = () => Date.now() }) {
+    constructor({ notifiedKey, getAlerts, onDue, claimLockName, now = () => Date.now() }) {
         this.notifiedKey = notifiedKey;
+        this.soundRequestKey = `${notifiedKey}:sound-request`;
         this.getAlerts = getAlerts;
         this.onDue = onDue;
+        this.claimLockName = claimLockName;
         this.now = now;
         this.memory = new Set(); // 這個頁面自己提醒過的 id：紀錄讀寫失敗時靠它照樣只提醒一次
         this.claiming = new Set(); // 正在等跨分頁的鎖的 id：每秒的檢查不重複要鎖
@@ -114,9 +119,10 @@ class ReminderScheduler {
         const fired = [];
         for (const alert of ReminderScheduler.due(alerts, now, notified)) {
             if (this._claimWithLock(alert)) continue;
-            if (!this._claim(alert, now)) continue;
-            fired.push(alert);
-            this.onDue(alert);
+            const current = this.claimLockName ? this._currentDue(alert) : { alert, now };
+            if (!current || !this._claim(current.alert, current.now)) continue;
+            fired.push(current.alert);
+            this.onDue(current.alert);
         }
         return fired;
     }
@@ -154,7 +160,24 @@ class ReminderScheduler {
                 const name = storage.key(i);
                 if (typeof name !== 'string' || !name.startsWith(prefix)) continue;
                 const value = storage.getItem(name);
-                record.set(name.slice(prefix.length), /^\d+$/.test(value) ? Number(value) : NaN);
+                const id = name.slice(prefix.length);
+                if (/^\d+$/.test(value)) {
+                    record.set(id, Number(value));
+                    continue;
+                }
+                // A joint delivery records both IDs in one write. Older single-ID receipts remain valid.
+                let receipt;
+                try {
+                    receipt = JSON.parse(value);
+                } catch {
+                    // Invalid receipts are pruned on the next claim.
+                }
+                if (Number.isSafeInteger(receipt?.start) && typeof receipt.relatedId === 'string') {
+                    record.set(id, receipt.start);
+                    record.set(receipt.relatedId, receipt.start);
+                } else {
+                    record.set(id, NaN);
+                }
             }
             return record;
         } catch (error) {
@@ -163,9 +186,12 @@ class ReminderScheduler {
     }
 
     /** @private */
-    _writeStored(id, start) {
+    _writeStored(id, alert) {
         try {
-            window.localStorage.setItem(this._recordName(id), String(start));
+            const value = alert.relatedId
+                ? JSON.stringify({ start: alert.start, relatedId: alert.relatedId })
+                : String(alert.start);
+            window.localStorage.setItem(this._recordName(id), value);
         } catch (error) {
             // 寫不進去（空間滿了、被封鎖）：這個頁面靠 this.memory 照樣只提醒一次
         }
@@ -192,8 +218,9 @@ class ReminderScheduler {
         const stored = this._readStored();
         if (this.memory.has(id) || (stored && Number.isFinite(stored.get(id)))) return false;
         this.memory.add(id);
+        if (alert.relatedId) this.memory.add(alert.relatedId);
         if (stored) {
-            this._writeStored(id, alert.start);
+            this._writeStored(id, alert);
             const oldest = now - ReminderScheduler.CONSTANTS.NOTIFIED_KEEP_MS;
             for (const [other, start] of stored) {
                 if (other !== id && !(start >= oldest)) this._removeStored(other); // 一天以前的、值壞掉的（NaN）
@@ -223,21 +250,23 @@ class ReminderScheduler {
 
         let granted = false;
         Promise.resolve()
-            .then(() => locks.request(this._recordName(id), { ifAvailable: true }, (lock) => {
+            .then(() => locks.request(this._recordName(id), { ifAvailable: true }, async (lock) => {
                 granted = true;
-                this.claiming.delete(id);
-                const current = lock ? this._currentDue(id) : null;
-                if (!current || !this._claim(current.alert, current.now)) return undefined;
-                const hold = new Promise((resolve) => window.setTimeout(resolve, ReminderScheduler.CONSTANTS.CLAIM_HOLD_MS));
-                this.onDue(current.alert);
-                return hold;
+                try {
+                    if (!lock) return;
+                    // Release the edit lock as soon as the receipt and UI are updated. Only the delivery ID needs the grace period.
+                    const deliver = () => this._deliverCurrent(alert);
+                    const fired = this.claimLockName ? await ReminderScheduler.withLock(this.claimLockName(alert), deliver) : deliver();
+                    if (fired) return new Promise(resolve => window.setTimeout(resolve, ReminderScheduler.CONSTANTS.CLAIM_HOLD_MS));
+                } finally {
+                    this.claiming.delete(id);
+                }
             }))
             .catch((error) => {
                 if (granted) throw error; // onDue 丟的例外：照樣丟出來
                 this.lockFailed = true;
                 this.claiming.delete(id);
-                const current = this._currentDue(id);
-                if (current && this._claim(current.alert, current.now)) this.onDue(current.alert);
+                this._deliverCurrent(alert);
             });
         return true;
     }
@@ -246,12 +275,34 @@ class ReminderScheduler {
      * 照現在的提醒與時間，id 這一次還到期的話回傳 { alert, now }（alert 是現在的 Alert 物件），不然回傳 null
      * @private
      */
-    _currentDue(id) {
+    _currentDue(candidate) {
         const now = this.now();
         const notified = this.notifiedIds();
-        const alert = ReminderScheduler.due(this.getAlerts(now, notified), now, notified)
-            .find((candidate) => ReminderScheduler.idOf(candidate) === id);
+        const id = ReminderScheduler.idOf(candidate);
+        const alert = ReminderScheduler.due(this.getAlerts(now, notified, candidate), now, notified)
+            .find((item) => ReminderScheduler.idOf(item) === id);
         return alert ? { alert, now } : null;
+    }
+
+    _deliverCurrent(candidate) {
+        const current = this._currentDue(candidate);
+        if (!current || !this._claim(current.alert, current.now)) return;
+        this.onDue(current.alert);
+        return current.alert;
+    }
+
+    /** Run a short storage update under the named lock. A browser that blocks locks can still use local state. */
+    static withLock(name, update, options = {}) {
+        const locks = window.navigator?.locks;
+        if (!locks?.request) return update();
+        let entered = false;
+        return locks.request(name, options, lock => {
+            entered = true;
+            if (lock) return update();
+        }).catch(error => {
+            if (entered) throw error;
+            return update();
+        });
     }
 
     // ---------- 權限與提示 ----------
@@ -309,11 +360,49 @@ class ReminderScheduler {
      * @param {string} options.body
      * @param {string} options.tag 系統通知的 tag：同一個 tag 的通知會互相取代
      * @param {string} [options.icon]
+     * @param {boolean} [resumeSound] 點擊之外的跨分頁派送會把提示音交給已解鎖的頁面
+     * @returns {boolean} 本頁是否已排入提示音
      */
-    static deliver({ title, body, tag, icon }) {
+    static deliver({ title, body, tag, icon }, resumeSound = true) {
         ReminderScheduler._showAlert(title, body);
-        ReminderScheduler._playSound();
+        const sounded = ReminderScheduler._playSound(resumeSound);
         ReminderScheduler._showNotification({ title, body, tag, icon });
+        return sounded;
+    }
+
+    /** If this tab cannot sound a delivered alert, wake the other tabs without repeating its visual notification. */
+    deliverAcrossTabs(options) {
+        // A suspended context needs a gesture. Leave it suspended and ask a running tab to play.
+        if (ReminderScheduler.deliver(options, false)) return;
+        try {
+            const storage = window.localStorage;
+            storage.setItem(this.soundRequestKey, JSON.stringify({ tag: options.tag, time: this.now() }));
+            storage.removeItem(this.soundRequestKey); // Only live tabs receive the request. Never replay it on reload.
+        } catch {
+            // The in-page and system notifications have already been delivered.
+        }
+    }
+
+    handleSoundRequest(event) {
+        if (event.key !== this.soundRequestKey || !event.newValue || ReminderScheduler._audio?.state !== 'running') return;
+        let request;
+        try {
+            request = JSON.parse(event.newValue);
+        } catch {
+            return;
+        }
+        if (typeof request?.tag !== 'string' || !Number.isSafeInteger(request.time)) return;
+        const sound = { key: `sound:${request.tag}`, start: request.time };
+        const lockName = this._recordName(ReminderScheduler.idOf(sound));
+        return ReminderScheduler.withLock(lockName, () => {
+            const now = this.now();
+            const remaining = request.time + ReminderScheduler.CONSTANTS.SOUND_REQUEST_TTL_MS - now;
+            if (now < request.time || remaining <= 0
+                || ReminderScheduler._audio?.state !== 'running') return;
+            if (this._claim(sound, now) && ReminderScheduler._playSound(false)) {
+                return new Promise(resolve => window.setTimeout(resolve, remaining));
+            }
+        }, { ifAvailable: true });
     }
 
     /**
@@ -339,10 +428,10 @@ class ReminderScheduler {
      * 排進暫停中的 AudioContext 的聲音不會丟掉，會等到使用者第一次點擊時才一起響。
      * @private
      */
-    static _playSound() {
+    static _playSound(resume = true) {
         try {
-            const context = ReminderScheduler._audioContext();
-            if (!context || context.state !== 'running') return;
+            const context = ReminderScheduler._audioContext(resume);
+            if (!context || context.state !== 'running') return false;
             for (const { frequency, offset } of ReminderScheduler.CONSTANTS.BEEPS) {
                 const begin = context.currentTime + offset;
                 const oscillator = context.createOscillator();
@@ -358,8 +447,9 @@ class ReminderScheduler {
                 oscillator.start(begin);
                 oscillator.stop(begin + 0.2);
             }
+            return true;
         } catch (error) {
-            // 放不出聲音就算了
+            return false;
         }
     }
 

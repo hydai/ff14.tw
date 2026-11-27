@@ -110,6 +110,160 @@ test('different lead times for the same start honor both scheduled times', () =>
     assert.equal(page.notifications[1].title, '恆冰之地 5 分鐘後雷雨');
 });
 
+test('changing a delivered recurring reminder from 10 to 5 minutes preserves the pending 5-minute bell across reload', () => {
+    const page = firstPage();
+    const lead = page.$('leadSelect');
+    const changeLead = minutes => {
+        lead.value = String(minutes);
+        lead.dispatchEvent(new page.window.Event('change'));
+    };
+    changeLead(10);
+    page.$('remindBtn').click();
+    const start = page.app.reminder.nextAlert(page.now).start;
+    bellAt(page, start).click();
+    setLead(page, 5);
+    page.$('periodConfirm').click();
+    page.tick(start - 10 * MINUTE - page.now);
+    assert.deepEqual(page.notifications.map(n => n.title), ['恆冰之地 10 分鐘後雷雨']);
+    page.tick(2 * MINUTE);
+    changeLead(5);
+    const restored = firstPage({ stored: page.storage, now: page.now, notification: 'granted' });
+    restored.tick(3 * MINUTE - 1);
+    assert.equal(bellAt(restored, start).getAttribute('aria-pressed'), 'true');
+    assert.equal(restored.notifications.length, 0);
+    restored.tick(1);
+    restored.tick(1000);
+    assert.deepEqual(restored.notifications.map(n => n.title), ['恆冰之地 5 分鐘後雷雨']);
+    assert.deepEqual(storedRows(restored), []);
+});
+
+test('a stale tab cannot cancel or claim a replacement, even if the row was rearmed in the same millisecond', () => {
+    const owner = firstPage();
+    const start = Number(thunder(owner).dataset.start);
+    const bell = bellAt(owner, start);
+    bell.click();
+    setLead(owner, 10);
+    owner.$('periodConfirm').click();
+    const stale = () => firstPage({ stored: owner.storage, now: owner.now, notification: 'granted' });
+    const clicking = stale();
+    const claiming = stale();
+    const previous = owner.app.periodReminders.get('eureka-pagos', start);
+    bell.click();
+    bell.click();
+    setLead(owner, 3);
+    owner.$('periodConfirm').click();
+    const replacement = owner.app.periodReminders.get('eureka-pagos', start);
+    assert.equal(previous.armedAt, replacement.armedAt);
+    assert.notEqual(previous.key, replacement.key);
+    bellAt(clicking, start).click(); // This tab still displays the old generation.
+    assert.equal(clicking.app.periodReminders.get('eureka-pagos', start).key, replacement.key);
+    claiming.tick(start - 10 * MINUTE - claiming.now);
+    assert.equal(claiming.notifications.length, 0);
+    assert.equal(storedRows(owner).length, 1);
+    claiming.tick(7 * MINUTE);
+    assert.deepEqual(claiming.notifications.map(n => n.title), ['恆冰之地 3 分鐘後雷雨']);
+    assert.deepEqual(storedRows(owner), []);
+});
+
+test('cleanup of a delivered generation leaves a rearmed bell intact when storage events arrive late', () => {
+    const owner = firstPage();
+    const start = Number(thunder(owner).dataset.start);
+    const bell = bellAt(owner, start);
+    bell.click();
+    setLead(owner, 10);
+    owner.$('periodConfirm').click();
+    const other = firstPage({ stored: owner.storage, now: owner.now, notification: 'granted' });
+    owner.tick(start - 10 * MINUTE - owner.now);
+    assert.equal(owner.notifications.length, 1);
+    bellAt(owner, start).click();
+    setLead(owner, 5);
+    owner.$('periodConfirm').click();
+    assert.equal(storedRows(owner).length, 1);
+    other.tick(owner.now - other.now); // Sees the receipt while still holding the old row in memory.
+    assert.equal(other.notifications.length, 0);
+    assert.equal(bellAt(other, start).getAttribute('aria-pressed'), 'true');
+    other.tick(5 * MINUTE);
+    assert.deepEqual(other.notifications.map(n => n.title), ['恆冰之地 5 分鐘後雷雨']);
+});
+
+test('arming, cancelling and dispatching wait on the same row lock and recheck after it is granted', async () => {
+    const page = firstPage({ notification: 'granted' });
+    const start = Number(thunder(page).dataset.start);
+    const rowKey = 'ff14tw_weather_period|eureka-pagos|' + start;
+    const waiting = [];
+    page.window.navigator.locks = {
+        request(name, options, callback) {
+            if (name !== rowKey) return Promise.resolve().then(() => callback({ name }));
+            return new Promise(resolve => waiting.push(() => resolve(callback({ name }))));
+        }
+    };
+    bellAt(page, start).click();
+    setLead(page, 10);
+    page.$('periodConfirm').click();
+    assert.equal(page.storage.has(rowKey), false);
+    assert.equal(waiting.length, 1);
+    waiting.shift()();
+    const owner = firstPage({ stored: page.storage, now: page.now });
+    page.tick(start - 10 * MINUTE - page.now);
+    await page.settle();
+    assert.equal(waiting.length, 1, 'delivery also waits for the edit in the other tab');
+    bellAt(owner, start).click();
+    bellAt(owner, start).click();
+    setLead(owner, 3);
+    owner.$('periodConfirm').click();
+    waiting.shift()();
+    await page.settle();
+    assert.equal(page.notifications.length, 0);
+    assert.equal(page.app.periodReminders.get('eureka-pagos', start).leadMs, 3 * MINUTE);
+    bellAt(page, start).click();
+    assert.equal(waiting.length, 1);
+    assert.equal(page.storage.has(rowKey), true);
+    waiting.shift()();
+    assert.equal(page.storage.has(rowKey), false);
+});
+
+test('bells saved without a generation still honor their original delivery receipts', () => {
+    const probe = firstPage();
+    const start = Number(thunder(probe).dataset.start);
+    const key = 'ff14tw_weather_period|eureka-pagos|' + start;
+    const saved = JSON.stringify({ armedAt: probe.now, leadMinutes: 5 });
+    const receipt = 'ff14tw_weather_notified|weather-period:eureka-pagos:' + probe.now + '|' + start;
+    for (const delivered of [false, true]) {
+        const stored = { [key]: saved };
+        if (delivered) stored[receipt] = String(start);
+        const page = firstPage({ stored, now: probe.now, notification: 'granted' });
+        page.tick(start - 5 * MINUTE - page.now);
+        assert.equal(page.notifications.length, delivered ? 0 : 1);
+        assert.equal(page.storage.has(key), false);
+        assert.equal(page.storage.get(receipt), String(start));
+    }
+});
+
+test('the row toggle keeps its accessible name in each language and describes the armed time separately', () => {
+    const page = firstPage();
+    const start = Number(thunder(page).dataset.start);
+    for (const [lang, zone] of [['zh', '恆冰之地'], ['en', 'Eureka Pagos'], ['ja', 'エウレカ']]) {
+        page.setLang(lang);
+        const bell = bellAt(page, start);
+        const name = bell.getAttribute('aria-label');
+        const add = bell.title;
+        assert.ok(name.includes(zone));
+        assert.equal(bell.getAttribute('aria-pressed'), 'false');
+        bell.click();
+        page.$('periodConfirm').click();
+        assert.equal(bell.getAttribute('aria-label'), name);
+        assert.equal(bell.getAttribute('aria-pressed'), 'true');
+        const time = page.window.WeatherCalculator.formatLocalTime(start - 5 * MINUTE);
+        assert.ok(bell.getAttribute('aria-description').includes(time));
+        assert.ok(bell.title.includes(time));
+        bell.click();
+        assert.equal(bell.getAttribute('aria-label'), name);
+        assert.equal(bell.getAttribute('aria-pressed'), 'false');
+        assert.equal(bell.getAttribute('aria-description'), null);
+        assert.equal(bell.title, add);
+    }
+});
+
 test('reopening after delivery clears a bell left in storage without ringing again', () => {
     for (const recurring of [false, true]) {
         const page = firstPage();
@@ -147,6 +301,20 @@ test('a late bell previews the start, uses the current language, and works with 
     assert.equal(page.document.querySelectorAll('.reminder-alert').length, 1);
     assert.equal(page.app.periodReminders.entries.size, 0);
     assert.equal(bellAt(page, start), undefined);
+});
+
+test('revalidating a due alert preserves in-memory bells when storage can be read but writes fail', () => {
+    const page = firstPage({ notification: 'granted' });
+    page.window.localStorage.setItem = () => { throw new Error('QuotaExceededError'); };
+    page.$('remindBtn').click();
+    const start = page.app.reminder.nextAlert(page.now).start;
+    bellAt(page, start).click();
+    page.$('periodConfirm').click();
+    page.tick(start - 5 * MINUTE - page.now);
+    page.tick(1000);
+    assert.deepEqual(page.notifications.map(n => n.title), ['恆冰之地 5 分鐘後雷雨']);
+    assert.equal(page.app.periodReminders.entries.size, 0);
+    assert.ok(page.app.reminder.active);
 });
 
 test('dismiss, a period starting while the editor is open, and expired storage never arm a stale row', () => {
